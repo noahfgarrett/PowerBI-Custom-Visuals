@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { DataLabelFormattingCard, TitleFormattingCard } from '../../core/src';
+import { DataLabelFormattingCard, ScrollFormattingCard, TitleFormattingCard } from '../../core/src';
 class NodeSettings extends formattingSettings.SimpleCard {
   width = new formattingSettings.NumUpDown({
     name: 'width',
@@ -333,6 +333,12 @@ export class SankeyDiagramSettings extends formattingSettings.Model {
 
   dataLabelFormattingCard = new DataLabelFormattingCard();
 
+  scrollFormattingCard = (() => {
+    const card = new ScrollFormattingCard();
+    card.minCategoryWidth.value = 20;
+    return card;
+  })();
+
   titleFormattingCard = new TitleFormattingCard();
 
   cards = [
@@ -344,6 +350,7 @@ export class SankeyDiagramSettings extends formattingSettings.Model {
     this.cardSettings,
     this.animationSettings,
     this.dataLabelFormattingCard,
+    this.scrollFormattingCard,
     this.titleFormattingCard,
   ];
 }

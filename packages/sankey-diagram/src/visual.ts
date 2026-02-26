@@ -28,6 +28,7 @@ import {
   getGlassStyle,
   renderChartTitle,
   applyDataLabelFormatting,
+  createScrollableChart,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -270,15 +271,35 @@ export class SankeyDiagramVisual implements IVisual {
       return;
     }
 
-    const width = viewport.width;
-    const height = viewport.height;
-    const innerWidth = width - MARGIN.left - MARGIN.right;
-    const innerHeight = height - MARGIN.top - MARGIN.bottom;
+    const baseWidth = viewport.width;
+    const baseHeight = viewport.height;
+    const baseInnerWidth = baseWidth - MARGIN.left - MARGIN.right;
+    const baseInnerHeight = baseHeight - MARGIN.top - MARGIN.bottom;
 
-    if (innerWidth <= 0 || innerHeight <= 0) return;
+    if (baseInnerWidth <= 0 || baseInnerHeight <= 0) return;
 
-    // Create SVG
-    const svg = d3.select(this.container)
+    // Compute unique node count for scroll density check
+    const nodeCount = data.nodes.length;
+
+    // Scroll support — vertical because sankey flows left-to-right and nodes stack vertically
+    const scroll = createScrollableChart({
+      container: this.container,
+      viewportWidth: baseWidth,
+      viewportHeight: baseHeight,
+      categoryCount: nodeCount,
+      scrollSettings: s.scrollFormattingCard,
+      availableChartWidth: baseInnerWidth,
+      availableChartHeight: baseInnerHeight,
+      direction: 'vertical',
+    });
+
+    const width = scroll.svgWidth;
+    const height = scroll.svgHeight;
+    const innerWidth = scroll.chartWidth;
+    const innerHeight = scroll.chartHeight;
+
+    // Create SVG inside the scroll wrapper (or container if no scrolling)
+    const svg = d3.select(scroll.svgParent)
       .append('svg')
       .attr('width', width)
       .attr('height', height);

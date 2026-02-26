@@ -569,6 +569,23 @@
         }
       }
     },
+    "scrollFormatting": {
+      "displayName": "Scroll",
+      "properties": {
+        "enableScroll": {
+          "displayName": "Enable Scroll",
+          "type": {
+            "bool": true
+          }
+        },
+        "minCategoryWidth": {
+          "displayName": "Min Node Height (px)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
     "cardSettings": {
       "displayName": "Card Style",
       "properties": {
