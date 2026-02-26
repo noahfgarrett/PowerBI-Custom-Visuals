@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { TitleFormattingCard } from '../../core/src';
+import { TitleFormattingCard, NumberFormattingCard} from '../../core/src';
 class ValueSettings extends formattingSettings.SimpleCard {
   fontSize = new formattingSettings.NumUpDown({
     name: 'fontSize',
@@ -191,6 +191,66 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
   slices = [this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
+class ConditionalColorSettings extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Conditional Coloring',
+    value: false,
+  });
+
+  threshold1 = new formattingSettings.NumUpDown({
+    name: 'threshold1',
+    displayName: 'Low Threshold',
+    value: 0,
+  });
+
+  threshold2 = new formattingSettings.NumUpDown({
+    name: 'threshold2',
+    displayName: 'High Threshold',
+    value: 50,
+  });
+
+  color1 = new formattingSettings.ColorPicker({
+    name: 'color1',
+    displayName: 'Below Low Color',
+    value: { value: '#F87171' },
+  });
+
+  color2 = new formattingSettings.ColorPicker({
+    name: 'color2',
+    displayName: 'Between Color',
+    value: { value: '#FBBF24' },
+  });
+
+  color3 = new formattingSettings.ColorPicker({
+    name: 'color3',
+    displayName: 'Above High Color',
+    value: { value: '#34D399' },
+  });
+
+  direction = new formattingSettings.ItemDropdown({
+    name: 'direction',
+    displayName: 'Direction',
+    items: [
+      { value: 'ascending', displayName: 'Ascending (low=bad, high=good)' },
+      { value: 'descending', displayName: 'Descending (low=good, high=bad)' },
+    ],
+    value: { value: 'ascending', displayName: 'Ascending (low=bad, high=good)' },
+  });
+
+  name = 'conditionalColorSettings';
+  displayName = 'Conditional Value Color';
+  slices = [
+    this.enabled,
+    this.threshold1,
+    this.threshold2,
+    this.color1,
+    this.color2,
+    this.color3,
+    this.direction,
+  ];
+}
+
 class AnimationSettings extends formattingSettings.SimpleCard {
   enabled = new formattingSettings.ToggleSwitch({
     name: 'enabled',
@@ -216,9 +276,12 @@ export class KpiCardSettings extends formattingSettings.Model {
   sparklineSettings = new SparklineSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
+  conditionalColorSettings = new ConditionalColorSettings();
 
   titleFormattingCard = new TitleFormattingCard();
 
+
+  numberFormattingCard = new NumberFormattingCard();
 
   cards = [
     this.valueSettings,
@@ -227,7 +290,8 @@ export class KpiCardSettings extends formattingSettings.Model {
     this.sparklineSettings,
     this.cardSettings,
     this.animationSettings,
+    this.conditionalColorSettings,
     this.titleFormattingCard,
-
+    this.numberFormattingCard,
   ];
 }

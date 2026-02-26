@@ -2,7 +2,7 @@
  * Bar Race — Power BI IVisual implementation.
  * Animated bar chart race showing top N items over time.
  * Bars resize and reorder with smooth CSS transitions as time advances.
- * Auto-play with configurable speed. Shows current time period label.
+ * User-controlled playback with play/pause, scrub, step, and speed controls.
  */
 
 import powerbi from 'powerbi-visuals-api';
@@ -45,11 +45,21 @@ interface RaceData {
   isEmpty: boolean;
 }
 
+/** Parsed speed multiplier from the dropdown string (e.g. '2x' -> 2). */
+const SPEED_MULTIPLIER_MAP: Record<string, number> = {
+  '0.5x': 0.5,
+  '1x': 1,
+  '1.5x': 1.5,
+  '2x': 2,
+  '3x': 3,
+};
+
 // ── Constants ───────────────────────────────────────────────────────
 
 const LABEL_AREA_WIDTH = 120;
 const VALUE_AREA_WIDTH = 70;
 const BAR_GAP = 4;
+const CONTROLS_HEIGHT = 28;
 
 // ── Visual ──────────────────────────────────────────────────────────
 
@@ -66,6 +76,9 @@ export class BarRaceVisual implements IVisual {
 
   /** Current time index in the race. */
   private currentTimeIndex: number = 0;
+
+  /** Whether the animation is currently playing. */
+  private isPlaying: boolean = false;
 
   /** Parsed race data. */
   private raceData: RaceData = {
@@ -85,6 +98,13 @@ export class BarRaceVisual implements IVisual {
   private viewport: HTMLElement | null = null;
   /** Time period label element. */
   private timeLabel: HTMLElement | null = null;
+
+  /** Playback control DOM references. */
+  private controlsBar: HTMLElement | null = null;
+  private playPauseBtn: HTMLButtonElement | null = null;
+  private scrubSlider: HTMLInputElement | null = null;
+  private speedSelect: HTMLSelectElement | null = null;
+  private frameCounter: HTMLElement | null = null;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
@@ -122,18 +142,23 @@ export class BarRaceVisual implements IVisual {
         return;
       }
 
-      // Reset time index
+      // Reset time index and playback state
       this.currentTimeIndex = 0;
+      this.isPlaying = false;
 
       // Build DOM structure (bars created once, updated per frame)
       this.buildDom(options.viewport);
 
+      // Build playback controls if enabled
+      this.buildControls();
+
       // Render initial frame
       this.renderFrame();
 
-      // Start auto-play if enabled
-      if (this.settings.raceSettings.autoPlay.value) {
-        this.startAutoPlay();
+      // Start auto-play if enabled (uses new playback setting)
+      const autoPlay = this.settings.playbackSettings.autoPlay.value;
+      if (autoPlay) {
+        this.play();
       }
       this.notifyRenderFinished();
     } catch (error) {
@@ -236,7 +261,7 @@ export class BarRaceVisual implements IVisual {
       const glass = getGlassStyle({
         mode: 'light',
         opacity: s.backgroundOpacity.value / 100,
-        backgroundColor: ((s as any).backgroundColor?.value?.value ?? (s as any).bgColor?.value?.value),
+        backgroundColor: ((s as unknown as Record<string, { value?: { value?: string } }>)['backgroundColor']?.value?.value ?? (s as unknown as Record<string, { value?: { value?: string } }>)['bgColor']?.value?.value),
         borderRadius: s.borderRadius.value,
       });
       Object.assign(this.container.style, glass);
@@ -428,11 +453,336 @@ export class BarRaceVisual implements IVisual {
 
     this.container.addEventListener('click', this.handleBackgroundClick);
 
-    // Time period label (bottom-right corner)
+    // Large timestamp watermark display
+    const ts = this.settings.timestampSettings;
     const timeLbl = document.createElement('div');
     timeLbl.className = 'bar-race-time';
+
+    if (ts.show.value) {
+      timeLbl.style.display = '';
+      timeLbl.style.fontSize = `${ts.fontSize.value}px`;
+      timeLbl.style.fontWeight = '700';
+      timeLbl.style.opacity = String(Math.max(0, Math.min(100, ts.opacity.value)) / 100);
+
+      const rawColor = ts.fontColor.value?.value;
+      timeLbl.style.color =
+        rawColor != null && rawColor.length > 0 ? rawColor : '#000000';
+
+      // Position based on dropdown value
+      const pos = ts.position.value?.value ?? 'bottomRight';
+      // Reset positioning defaults
+      timeLbl.style.top = '';
+      timeLbl.style.bottom = '';
+      timeLbl.style.left = '';
+      timeLbl.style.right = '';
+      timeLbl.style.transform = '';
+
+      switch (pos) {
+        case 'center':
+          timeLbl.style.top = '50%';
+          timeLbl.style.left = '50%';
+          timeLbl.style.transform = 'translate(-50%, -50%)';
+          break;
+        case 'topRight':
+          timeLbl.style.top = '16px';
+          timeLbl.style.right = '16px';
+          break;
+        case 'bottomRight':
+        default:
+          timeLbl.style.bottom = '16px';
+          timeLbl.style.right = '16px';
+          break;
+      }
+    } else {
+      timeLbl.style.display = 'none';
+    }
+
     this.container.appendChild(timeLbl);
     this.timeLabel = timeLbl;
+  }
+
+  // ── Playback Controls DOM ──────────────────────────────────────────
+
+  /**
+   * Builds the playback control bar (play/pause, step, scrub, speed, frame counter).
+   * Only builds if showControls is true and there are at least 2 frames.
+   */
+  private buildControls(): void {
+    // Reset control references
+    this.controlsBar = null;
+    this.playPauseBtn = null;
+    this.scrubSlider = null;
+    this.speedSelect = null;
+    this.frameCounter = null;
+
+    const pb = this.settings.playbackSettings;
+    if (!pb.showControls.value) return;
+
+    const totalFrames = this.raceData.timePeriods.length;
+    if (totalFrames < 2) return;
+
+    const controlPosition = pb.controlPosition.value?.value ?? 'bottom';
+
+    // Controls container
+    const bar = document.createElement('div');
+    bar.className = `bar-race-controls bar-race-controls--${controlPosition}`;
+    this.controlsBar = bar;
+
+    // Adjust viewport padding so bars don't overlap controls
+    if (this.viewport) {
+      if (controlPosition === 'top') {
+        this.viewport.style.paddingTop = `${CONTROLS_HEIGHT}px`;
+      } else {
+        this.viewport.style.paddingBottom = `${CONTROLS_HEIGHT}px`;
+      }
+    }
+
+    // ── Rewind to start ──
+    const rewindBtn = this.createControlButton('\u23EE', 'Rewind to start');
+    rewindBtn.addEventListener('click', () => this.seekTo(0));
+    bar.appendChild(rewindBtn);
+
+    // ── Step back ──
+    const stepBackBtn = this.createControlButton('\u23EA', 'Step back one frame');
+    stepBackBtn.addEventListener('click', () => this.stepBack());
+    bar.appendChild(stepBackBtn);
+
+    // ── Play / Pause ──
+    const playPauseBtn = this.createControlButton('\u25B6', 'Play');
+    playPauseBtn.addEventListener('click', () => this.togglePlayPause());
+    bar.appendChild(playPauseBtn);
+    this.playPauseBtn = playPauseBtn;
+
+    // ── Step forward ──
+    const stepFwdBtn = this.createControlButton('\u23E9', 'Step forward one frame');
+    stepFwdBtn.addEventListener('click', () => this.stepForward());
+    bar.appendChild(stepFwdBtn);
+
+    // ── Skip to end ──
+    const skipEndBtn = this.createControlButton('\u23ED', 'Skip to end');
+    skipEndBtn.addEventListener('click', () => this.seekTo(totalFrames - 1));
+    bar.appendChild(skipEndBtn);
+
+    // ── Scrub slider ──
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.className = 'bar-race-scrub';
+    slider.min = '0';
+    slider.max = String(totalFrames - 1);
+    slider.value = String(this.currentTimeIndex);
+    slider.setAttribute('aria-label', 'Scrub timeline');
+    slider.addEventListener('input', () => {
+      const idx = parseInt(slider.value, 10);
+      if (!isNaN(idx)) {
+        this.seekTo(idx);
+      }
+    });
+    bar.appendChild(slider);
+    this.scrubSlider = slider;
+
+    // ── Speed dropdown ──
+    const speedSel = document.createElement('select');
+    speedSel.className = 'bar-race-speed-select';
+    speedSel.setAttribute('aria-label', 'Playback speed');
+    const speedOptions = ['0.5x', '1x', '1.5x', '2x', '3x'];
+    const currentSpeed = pb.speed.value?.value ?? '1x';
+    for (const opt of speedOptions) {
+      const option = document.createElement('option');
+      option.value = opt;
+      option.textContent = opt;
+      if (opt === currentSpeed) {
+        option.selected = true;
+      }
+      speedSel.appendChild(option);
+    }
+    speedSel.addEventListener('change', () => {
+      // When user changes speed via the dropdown control, restart the
+      // interval if currently playing so the new speed takes effect.
+      if (this.isPlaying) {
+        this.stopInterval();
+        this.startInterval();
+      }
+    });
+    bar.appendChild(speedSel);
+    this.speedSelect = speedSel;
+
+    // ── Frame counter ──
+    const counter = document.createElement('span');
+    counter.className = 'bar-race-frame-counter';
+    counter.textContent = `${this.currentTimeIndex + 1}/${totalFrames}`;
+    bar.appendChild(counter);
+    this.frameCounter = counter;
+
+    this.container.appendChild(bar);
+  }
+
+  /** Creates a compact control button with the given text content and title. */
+  private createControlButton(text: string, title: string): HTMLButtonElement {
+    const btn = document.createElement('button');
+    btn.className = 'bar-race-ctrl-btn';
+    btn.textContent = text;
+    btn.title = title;
+    btn.setAttribute('aria-label', title);
+    return btn;
+  }
+
+  // ── Playback Logic ────────────────────────────────────────────────
+
+  /** Returns the effective speed multiplier from the dropdown (UI or settings). */
+  private getSpeedMultiplier(): number {
+    // Prefer the runtime dropdown value (user may have changed it at runtime)
+    if (this.speedSelect) {
+      return SPEED_MULTIPLIER_MAP[this.speedSelect.value] ?? 1;
+    }
+    const settingValue = this.settings.playbackSettings.speed.value?.value ?? '1x';
+    return SPEED_MULTIPLIER_MAP[settingValue] ?? 1;
+  }
+
+  /** Computes the interval duration in ms for the current speed. */
+  private getIntervalMs(): number {
+    const baseSpeed = Math.max(100, this.settings.raceSettings.playSpeed.value);
+    const multiplier = this.getSpeedMultiplier();
+    // Higher multiplier = faster = shorter interval
+    return Math.max(50, baseSpeed / multiplier);
+  }
+
+  /** Start or resume playback. */
+  private play(): void {
+    const totalFrames = this.raceData.timePeriods.length;
+    if (totalFrames <= 1) return;
+
+    // If we are already at the end and loop is off, restart from 0
+    if (this.currentTimeIndex >= totalFrames - 1 && !this.settings.playbackSettings.loop.value) {
+      this.currentTimeIndex = 0;
+      this.renderFrame();
+      this.syncControlsToFrame();
+    }
+
+    this.isPlaying = true;
+    this.updatePlayPauseIcon();
+    this.startInterval();
+  }
+
+  /** Pause playback. */
+  private pause(): void {
+    this.isPlaying = false;
+    this.stopInterval();
+    this.updatePlayPauseIcon();
+  }
+
+  /** Toggle between play and pause. */
+  private togglePlayPause(): void {
+    if (this.isPlaying) {
+      this.pause();
+    } else {
+      this.play();
+    }
+  }
+
+  /** Jump to a specific frame index and render it. */
+  private seekTo(frameIndex: number): void {
+    const totalFrames = this.raceData.timePeriods.length;
+    if (totalFrames === 0) return;
+
+    this.currentTimeIndex = Math.max(0, Math.min(frameIndex, totalFrames - 1));
+    this.renderFrame();
+    this.syncControlsToFrame();
+  }
+
+  /** Advance one frame forward. Pauses playback if at end and loop is off. */
+  private stepForward(): void {
+    const totalFrames = this.raceData.timePeriods.length;
+    if (totalFrames === 0) return;
+
+    // Pause if currently playing (step is manual)
+    if (this.isPlaying) {
+      this.pause();
+    }
+
+    if (this.currentTimeIndex < totalFrames - 1) {
+      this.currentTimeIndex++;
+    } else if (this.settings.playbackSettings.loop.value) {
+      this.currentTimeIndex = 0;
+    }
+
+    this.renderFrame();
+    this.syncControlsToFrame();
+  }
+
+  /** Go back one frame. */
+  private stepBack(): void {
+    const totalFrames = this.raceData.timePeriods.length;
+    if (totalFrames === 0) return;
+
+    // Pause if currently playing (step is manual)
+    if (this.isPlaying) {
+      this.pause();
+    }
+
+    if (this.currentTimeIndex > 0) {
+      this.currentTimeIndex--;
+    } else if (this.settings.playbackSettings.loop.value) {
+      this.currentTimeIndex = totalFrames - 1;
+    }
+
+    this.renderFrame();
+    this.syncControlsToFrame();
+  }
+
+  /** Start the setInterval that drives automatic frame advancement. */
+  private startInterval(): void {
+    this.stopInterval();
+    const intervalMs = this.getIntervalMs();
+    const totalFrames = this.raceData.timePeriods.length;
+
+    this.playIntervalId = setInterval(() => {
+      this.currentTimeIndex++;
+      if (this.currentTimeIndex >= totalFrames) {
+        if (this.settings.playbackSettings.loop.value) {
+          this.currentTimeIndex = 0;
+        } else {
+          // Stop at end
+          this.currentTimeIndex = totalFrames - 1;
+          this.pause();
+          return;
+        }
+      }
+      this.renderFrame();
+      this.syncControlsToFrame();
+    }, intervalMs);
+  }
+
+  /** Stop the play interval without changing isPlaying state. */
+  private stopInterval(): void {
+    if (this.playIntervalId !== null) {
+      clearInterval(this.playIntervalId);
+      this.playIntervalId = null;
+    }
+  }
+
+  /** Synchronize scrub slider, frame counter, and play/pause icon to current frame. */
+  private syncControlsToFrame(): void {
+    const totalFrames = this.raceData.timePeriods.length;
+    if (this.scrubSlider) {
+      this.scrubSlider.value = String(this.currentTimeIndex);
+    }
+    if (this.frameCounter) {
+      this.frameCounter.textContent = `${this.currentTimeIndex + 1}/${totalFrames}`;
+    }
+  }
+
+  /** Update the play/pause button icon to reflect current state. */
+  private updatePlayPauseIcon(): void {
+    if (!this.playPauseBtn) return;
+    if (this.isPlaying) {
+      this.playPauseBtn.textContent = '\u23F8';
+      this.playPauseBtn.title = 'Pause';
+      this.playPauseBtn.setAttribute('aria-label', 'Pause');
+    } else {
+      this.playPauseBtn.textContent = '\u25B6';
+      this.playPauseBtn.title = 'Play';
+      this.playPauseBtn.setAttribute('aria-label', 'Play');
+    }
   }
 
   // ── Frame Rendering ───────────────────────────────────────────────
@@ -504,24 +854,6 @@ export class BarRaceVisual implements IVisual {
     }
   }
 
-  // ── Auto-Play ─────────────────────────────────────────────────────
-
-  private startAutoPlay(): void {
-    const speed = Math.max(100, this.settings.raceSettings.playSpeed.value);
-    const totalPeriods = this.raceData.timePeriods.length;
-
-    if (totalPeriods <= 1) return;
-
-    this.playIntervalId = setInterval(() => {
-      this.currentTimeIndex++;
-      if (this.currentTimeIndex >= totalPeriods) {
-        // Loop back to start
-        this.currentTimeIndex = 0;
-      }
-      this.renderFrame();
-    }, speed);
-  }
-
   // ── Cleanup ───────────────────────────────────────────────────────
 
   private cleanup(): void {
@@ -532,10 +864,8 @@ export class BarRaceVisual implements IVisual {
     this.cancelFns = [];
 
     // Clear auto-play interval
-    if (this.playIntervalId !== null) {
-      clearInterval(this.playIntervalId);
-      this.playIntervalId = null;
-    }
+    this.stopInterval();
+    this.isPlaying = false;
   }
 
   private clearContainer(): void {
@@ -544,6 +874,11 @@ export class BarRaceVisual implements IVisual {
     }
     this.viewport = null;
     this.timeLabel = null;
+    this.controlsBar = null;
+    this.playPauseBtn = null;
+    this.scrubSlider = null;
+    this.speedSelect = null;
+    this.frameCounter = null;
   }
 
   // ── Formatting Model ──────────────────────────────────────────────

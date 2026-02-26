@@ -20,6 +20,7 @@ import {
   getGlassStyle,
   renderChartTitle,
   applyDataLabelFormatting,
+  applySortOrder,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -89,8 +90,8 @@ export class ChordDiagramVisual implements IVisual {
       );
     }
 
-    // Extract data
-    const data = this.extractData(dataView);
+    // Extract data and apply user-configured sort order to entities
+    const data = this.sortChordData(this.extractData(dataView));
 
     // Render
     this.render(data, options.viewport);
@@ -200,6 +201,67 @@ export class ChordDiagramVisual implements IVisual {
     }
 
     return { names, matrix, groupSelectionIds, chordSelectionIds };
+  }
+
+  // ── Sort Entities ────────────────────────────────────────────
+
+  /** Sort chord entities by total flow and reorder the adjacency matrix. */
+  private sortChordData(data: ChordData | null): ChordData | null {
+    if (!data) return null;
+
+    const n = data.names.length;
+    if (n <= 1) return data;
+
+    // Compute total flow per entity (sum of row + column in the matrix)
+    const totalFlow = data.names.map((name, i) => {
+      let flow = 0;
+      for (let j = 0; j < n; j++) {
+        flow += data.matrix[i][j] + data.matrix[j][i];
+      }
+      return { name, value: flow, originalIndex: i };
+    });
+
+    // Apply sort order
+    const sorted = applySortOrder(totalFlow, this.settings.sortFormattingCard);
+
+    // Build index mapping: newIndex -> originalIndex
+    const indexMap = sorted.map((item) => item.originalIndex);
+
+    // Reorder names
+    const sortedNames = indexMap.map((oi) => data.names[oi]);
+
+    // Reorder matrix rows and columns
+    const sortedMatrix: number[][] = indexMap.map((oi) =>
+      indexMap.map((oj) => data.matrix[oi][oj]),
+    );
+
+    // Rebuild selectionId maps with new names
+    const sortedGroupSelectionIds = new Map<string, ISelectionId>();
+    for (const name of sortedNames) {
+      const id = data.groupSelectionIds.get(name);
+      if (id) sortedGroupSelectionIds.set(name, id);
+    }
+
+    // Remap chord selection IDs: old indices -> new indices
+    const reverseMap = new Map<number, number>();
+    indexMap.forEach((oldIdx, newIdx) => reverseMap.set(oldIdx, newIdx));
+
+    const sortedChordSelectionIds = new Map<string, ISelectionId>();
+    for (const [key, id] of data.chordSelectionIds) {
+      const [oldSi, oldTi] = key.split('|').map(Number);
+      const newSi = reverseMap.get(oldSi);
+      const newTi = reverseMap.get(oldTi);
+      if (newSi !== undefined && newTi !== undefined) {
+        sortedChordSelectionIds.set(`${newSi}|${newTi}`, id);
+      }
+    }
+
+    return {
+      names: sortedNames,
+      matrix: sortedMatrix,
+      groupSelectionIds: sortedGroupSelectionIds,
+      chordSelectionIds: sortedChordSelectionIds,
+    };
   }
 
   // ── Rendering ────────────────────────────────────────────────
@@ -413,7 +475,78 @@ export class ChordDiagramVisual implements IVisual {
     // Apply shared formatting settings
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.chord-label');
 
+    // ── Legend ────────────────────────────────────────────────────
+    if (s.legendFormattingCard.showLegend.value) {
+      this.renderLegend(data, resolveColor);
+    }
+
     this.container.addEventListener('click', this.handleBackgroundClick);
+  }
+
+  // ── Legend Rendering ────────────────────────────────────────
+
+  private renderLegend(data: ChordData, resolveColor: (index: number) => string): void {
+    const legendFmtCard = this.settings.legendFormattingCard;
+    const rawFontColor = legendFmtCard.legendFontColor.value?.value;
+    const legendFontColor = rawFontColor != null && rawFontColor.length > 0 ? rawFontColor : '';
+    const legendFontSize = legendFmtCard.legendFontSize.value;
+    const position = this.getLegendPosition();
+
+    const legendDiv = document.createElement('div');
+    legendDiv.style.display = 'flex';
+    legendDiv.style.flexWrap = 'wrap';
+    legendDiv.style.gap = '12px';
+    legendDiv.style.padding = '6px 0';
+    legendDiv.style.justifyContent = 'center';
+
+    if (position === 'left' || position === 'right') {
+      legendDiv.style.flexDirection = 'column';
+      legendDiv.style.justifyContent = 'flex-start';
+    }
+
+    data.names.forEach((name, i) => {
+      const itemEl = document.createElement('div');
+      itemEl.style.display = 'flex';
+      itemEl.style.alignItems = 'center';
+      itemEl.style.gap = '5px';
+
+      const swatch = document.createElement('div');
+      swatch.style.width = '10px';
+      swatch.style.height = '10px';
+      swatch.style.borderRadius = '2px';
+      swatch.style.backgroundColor = resolveColor(i);
+      swatch.style.flexShrink = '0';
+
+      const label = document.createElement('span');
+      label.textContent = name;
+      if (legendFontColor.length > 0) label.style.color = legendFontColor;
+      if (legendFontSize !== 11) label.style.fontSize = `${legendFontSize}px`;
+
+      itemEl.appendChild(swatch);
+      itemEl.appendChild(label);
+      legendDiv.appendChild(itemEl);
+    });
+
+    if (position === 'top') {
+      // Insert after title but before SVG
+      const svg = this.container.querySelector('svg');
+      if (svg) {
+        this.container.insertBefore(legendDiv, svg);
+      } else {
+        this.container.appendChild(legendDiv);
+      }
+    } else {
+      this.container.appendChild(legendDiv);
+    }
+  }
+
+  private getLegendPosition(): string {
+    const val = this.settings.legendFormattingCard.legendPosition.value?.value;
+    const validPositions = ['bottom', 'top', 'left', 'right'];
+    if (typeof val === 'string' && validPositions.includes(val)) {
+      return val;
+    }
+    return 'bottom';
   }
 
   // ── Empty State ──────────────────────────────────────────────

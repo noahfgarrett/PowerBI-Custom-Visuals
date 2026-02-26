@@ -5,7 +5,136 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard } from '../../core/src';
+import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, NumberFormattingCard} from '../../core/src';
+
+// ── Reference Line Settings ─────────────────────────────────────────
+
+class ReferenceLineSettingsCard extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Reference Line',
+    value: false,
+  });
+
+  value = new formattingSettings.NumUpDown({
+    name: 'value',
+    displayName: 'Value',
+    value: 0,
+  });
+
+  lineColor = new formattingSettings.ColorPicker({
+    name: 'lineColor',
+    displayName: 'Line Color',
+    value: { value: '#EF4444' },
+  });
+
+  lineWidth = new formattingSettings.NumUpDown({
+    name: 'lineWidth',
+    displayName: 'Line Width',
+    value: 2,
+  });
+
+  lineStyle = new formattingSettings.ItemDropdown({
+    name: 'lineStyle',
+    displayName: 'Line Style',
+    items: [
+      { value: 'solid', displayName: 'Solid' },
+      { value: 'dashed', displayName: 'Dashed' },
+      { value: 'dotted', displayName: 'Dotted' },
+    ],
+    value: { value: 'dashed', displayName: 'Dashed' },
+  });
+
+  showLabel = new formattingSettings.ToggleSwitch({
+    name: 'showLabel',
+    displayName: 'Show Label',
+    value: true,
+  });
+
+  labelText = new formattingSettings.TextInput({
+    name: 'labelText',
+    displayName: 'Label Text',
+    value: '',
+    placeholder: 'Custom label (blank = value)',
+  });
+
+  showBand = new formattingSettings.ToggleSwitch({
+    name: 'showBand',
+    displayName: 'Show Band',
+    value: false,
+  });
+
+  bandUpperValue = new formattingSettings.NumUpDown({
+    name: 'bandUpperValue',
+    displayName: 'Band Upper Value',
+    value: 0,
+  });
+
+  bandOpacity = new formattingSettings.NumUpDown({
+    name: 'bandOpacity',
+    displayName: 'Band Opacity (%)',
+    value: 15,
+  });
+
+  name = 'referenceLineSettings';
+  displayName = 'Reference Line';
+  slices = [
+    this.show,
+    this.value,
+    this.lineColor,
+    this.lineWidth,
+    this.lineStyle,
+    this.showLabel,
+    this.labelText,
+    this.showBand,
+    this.bandUpperValue,
+    this.bandOpacity,
+  ];
+}
+
+// ── Top N / Others ──────────────────────────────────────────────────
+
+class TopNSettingsCard extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Top N',
+    value: false,
+  });
+
+  topN = new formattingSettings.NumUpDown({
+    name: 'topN',
+    displayName: 'Top N',
+    value: 10,
+  });
+
+  othersLabel = new formattingSettings.TextInput({
+    name: 'othersLabel',
+    displayName: 'Others Label',
+    value: 'Others',
+    placeholder: 'e.g. Others',
+  });
+
+  othersColor = new formattingSettings.ColorPicker({
+    name: 'othersColor',
+    displayName: 'Others Color',
+    value: { value: '#94A3B8' },
+  });
+
+  sortBy = new formattingSettings.ItemDropdown({
+    name: 'sortBy',
+    displayName: 'Sort By',
+    items: [
+      { value: 'value', displayName: 'Value' },
+      { value: 'name', displayName: 'Name' },
+    ],
+    value: { value: 'value', displayName: 'Value' },
+  });
+
+  name = 'topNSettings';
+  displayName = 'Top N / Others';
+  slices = [this.enabled, this.topN, this.othersLabel, this.othersColor, this.sortBy];
+}
+
 // ── Chart Mode ──────────────────────────────────────────────────────
 
 class ChartModeSettings extends formattingSettings.SimpleCard {
@@ -15,6 +144,7 @@ class ChartModeSettings extends formattingSettings.SimpleCard {
     items: [
       { value: 'grouped', displayName: 'Grouped' },
       { value: 'stacked', displayName: 'Stacked' },
+      { value: 'stacked100', displayName: '100% Stacked' },
       { value: 'combo', displayName: 'Combo (Bar + Line)' },
       { value: 'horizontal', displayName: 'Horizontal' },
       { value: 'diverging', displayName: 'Diverging' },
@@ -277,6 +407,38 @@ class AnimationSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration, this.staggerDelay];
 }
 
+// ── Drill-Down Settings ─────────────────────────────────────────────
+
+class DrillDownSettingsCard extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Drill-Down',
+    value: true,
+  });
+
+  showBreadcrumb = new formattingSettings.ToggleSwitch({
+    name: 'showBreadcrumb',
+    displayName: 'Show Breadcrumb',
+    value: true,
+  });
+
+  breadcrumbFontSize = new formattingSettings.NumUpDown({
+    name: 'breadcrumbFontSize',
+    displayName: 'Breadcrumb Font Size',
+    value: 11,
+  });
+
+  breadcrumbColor = new formattingSettings.ColorPicker({
+    name: 'breadcrumbColor',
+    displayName: 'Breadcrumb Color',
+    value: { value: '#64748B' },
+  });
+
+  name = 'drillDownSettings';
+  displayName = 'Drill-Down';
+  slices = [this.enabled, this.showBreadcrumb, this.breadcrumbFontSize, this.breadcrumbColor];
+}
+
 // ── Root Model ──────────────────────────────────────────────────────
 
 export class BarChartProSettings extends formattingSettings.Model {
@@ -288,6 +450,9 @@ export class BarChartProSettings extends formattingSettings.Model {
   legendSettings = new LegendSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettingsCard();
+  topNSettings = new TopNSettingsCard();
+  referenceLineSettings = new ReferenceLineSettingsCard();
+  drillDownSettings = new DrillDownSettingsCard();
 
   axisFormattingCard = new AxisFormattingCard();
 
@@ -297,6 +462,9 @@ export class BarChartProSettings extends formattingSettings.Model {
 
   titleFormattingCard = new TitleFormattingCard();
 
+  scrollFormattingCard = new ScrollFormattingCard();
+
+  numberFormattingCard = new NumberFormattingCard();
 
   cards = [
     this.chartMode,
@@ -307,10 +475,14 @@ export class BarChartProSettings extends formattingSettings.Model {
     this.legendSettings,
     this.cardSettings,
     this.animationSettings,
+    this.topNSettings,
+    this.referenceLineSettings,
+    this.drillDownSettings,
     this.axisFormattingCard,
     this.legendFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
-
+    this.scrollFormattingCard,
+    this.numberFormattingCard,
   ];
 }

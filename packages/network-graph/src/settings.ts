@@ -146,6 +146,30 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
   slices = [this.backgroundOpacity, this.borderRadius];
 }
 
+class ZoomSettings extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Zoom & Pan',
+    value: true,
+  });
+
+  minZoom = new formattingSettings.NumUpDown({
+    name: 'minZoom',
+    displayName: 'Min Zoom',
+    value: 0.3,
+  });
+
+  maxZoom = new formattingSettings.NumUpDown({
+    name: 'maxZoom',
+    displayName: 'Max Zoom',
+    value: 5,
+  });
+
+  name = 'zoomSettings';
+  displayName = 'Zoom & Pan';
+  slices = [this.enabled, this.minZoom, this.maxZoom];
+}
+
 class AnimationSettings extends formattingSettings.SimpleCard {
   enabled = new formattingSettings.ToggleSwitch({
     name: 'enabled',
@@ -171,6 +195,7 @@ export class NetworkGraphSettings extends formattingSettings.Model {
   colorSettings = new ColorSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
+  zoomSettings = new ZoomSettings();
 
   dataLabelFormattingCard = new DataLabelFormattingCard();
 
@@ -184,6 +209,7 @@ export class NetworkGraphSettings extends formattingSettings.Model {
     this.colorSettings,
     this.cardSettings,
     this.animationSettings,
+    this.zoomSettings,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
 

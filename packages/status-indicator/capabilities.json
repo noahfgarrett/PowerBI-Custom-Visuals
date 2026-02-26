@@ -189,6 +189,36 @@
               }
             ]
           }
+        },
+        "useCustomThresholds": {
+          "displayName": "Custom Thresholds",
+          "type": {
+            "bool": true
+          }
+        },
+        "threshold1": {
+          "displayName": "Warning Threshold",
+          "type": {
+            "numeric": true
+          }
+        },
+        "threshold2": {
+          "displayName": "Critical Threshold",
+          "type": {
+            "numeric": true
+          }
+        },
+        "showValue": {
+          "displayName": "Show Value",
+          "type": {
+            "bool": true
+          }
+        },
+        "valueFontSize": {
+          "displayName": "Value Font Size",
+          "type": {
+            "numeric": true
+          }
         }
       }
     },

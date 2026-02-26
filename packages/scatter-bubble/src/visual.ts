@@ -16,6 +16,7 @@ import {
   springEase,
   DURATION,
   formatNumber,
+  formatWithSettings,
   getGlassStyle,
   getHostChartColor,
   withOpacity,
@@ -24,6 +25,7 @@ import {
   applyGridFormatting,
   applyDataLabelFormatting,
   applyAllAxisFormatting,
+  resolveDropdown,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -34,6 +36,19 @@ import DataView = powerbi.DataView;
 import ISelectionId = powerbi.visuals.ISelectionId;
 
 import '../style/visual.less';
+
+// ── Regression Types ─────────────────────────────────────────────────
+
+type RegressionType = 'linear' | 'polynomial' | 'exponential' | 'logarithmic' | 'power';
+
+interface RegressionResult {
+  /** Predicted y for a given x */
+  predict: (x: number) => number;
+  /** R-squared goodness of fit */
+  r2: number;
+  /** Human-readable equation string */
+  equation: string;
+}
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -67,6 +82,279 @@ interface Margin {
 const MARGIN: Margin = { top: 20, right: 20, bottom: 40, left: 50 };
 const DEFAULT_BUBBLE_RADIUS = 6;
 const TOOLTIP_OFFSET = 12;
+
+// ── Regression Helpers ───────────────────────────────────────────────
+
+/** Compute R² from actual y values and predicted y values. */
+function computeR2(ys: number[], yPredicted: number[]): number {
+  const n = ys.length;
+  if (n === 0) return 0;
+  let yMean = 0;
+  for (let i = 0; i < n; i++) yMean += ys[i];
+  yMean /= n;
+
+  let ssTot = 0;
+  let ssRes = 0;
+  for (let i = 0; i < n; i++) {
+    ssTot += (ys[i] - yMean) ** 2;
+    ssRes += (ys[i] - yPredicted[i]) ** 2;
+  }
+  if (ssTot === 0) return 1;
+  return 1 - ssRes / ssTot;
+}
+
+/** Format a coefficient for display (3 significant digits). */
+function fmtCoeff(v: number): string {
+  if (Math.abs(v) < 1e-10) return '0';
+  return v.toPrecision(3);
+}
+
+/** Solve a system of linear equations using Gaussian elimination with partial pivoting.
+ *  `matrix` is an augmented matrix [A|b] of size rows x (rows+1). Mutated in place.
+ *  Returns the solution vector or null if singular. */
+function gaussianElimination(matrix: number[][]): number[] | null {
+  const n = matrix.length;
+
+  for (let col = 0; col < n; col++) {
+    // Partial pivoting
+    let maxRow = col;
+    let maxVal = Math.abs(matrix[col][col]);
+    for (let row = col + 1; row < n; row++) {
+      const absVal = Math.abs(matrix[row][col]);
+      if (absVal > maxVal) {
+        maxVal = absVal;
+        maxRow = row;
+      }
+    }
+    if (maxVal < 1e-12) return null; // Singular
+
+    // Swap rows
+    if (maxRow !== col) {
+      const temp = matrix[col];
+      matrix[col] = matrix[maxRow];
+      matrix[maxRow] = temp;
+    }
+
+    // Eliminate below
+    for (let row = col + 1; row < n; row++) {
+      const factor = matrix[row][col] / matrix[col][col];
+      for (let j = col; j <= n; j++) {
+        matrix[row][j] -= factor * matrix[col][j];
+      }
+    }
+  }
+
+  // Back substitution
+  const solution = new Array<number>(n);
+  for (let row = n - 1; row >= 0; row--) {
+    let sum = matrix[row][n];
+    for (let j = row + 1; j < n; j++) {
+      sum -= matrix[row][j] * solution[j];
+    }
+    solution[row] = sum / matrix[row][row];
+  }
+  return solution;
+}
+
+/** Linear regression: y = mx + b */
+function linearRegression(xs: number[], ys: number[]): RegressionResult {
+  const n = xs.length;
+  let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+  for (let i = 0; i < n; i++) {
+    sumX += xs[i];
+    sumY += ys[i];
+    sumXY += xs[i] * ys[i];
+    sumX2 += xs[i] * xs[i];
+  }
+  const denom = n * sumX2 - sumX * sumX;
+  const m = denom !== 0 ? (n * sumXY - sumX * sumY) / denom : 0;
+  const b = (sumY - m * sumX) / n;
+
+  const predicted = xs.map((x) => m * x + b);
+  const r2 = computeR2(ys, predicted);
+
+  const equation = `y = ${fmtCoeff(m)}x + ${fmtCoeff(b)}`;
+  return {
+    predict: (x: number) => m * x + b,
+    r2,
+    equation,
+  };
+}
+
+/** Polynomial regression: y = a0 + a1*x + a2*x^2 + ... */
+function polynomialRegression(xs: number[], ys: number[], order: number): RegressionResult {
+  const n = xs.length;
+  const clampedOrder = Math.max(2, Math.min(6, order));
+  const terms = clampedOrder + 1;
+
+  // Build normal equations matrix (augmented)
+  const matrix: number[][] = [];
+  for (let row = 0; row < terms; row++) {
+    const matRow = new Array<number>(terms + 1).fill(0);
+    for (let col = 0; col < terms; col++) {
+      let sum = 0;
+      for (let i = 0; i < n; i++) {
+        sum += Math.pow(xs[i], row + col);
+      }
+      matRow[col] = sum;
+    }
+    // RHS
+    let rhs = 0;
+    for (let i = 0; i < n; i++) {
+      rhs += Math.pow(xs[i], row) * ys[i];
+    }
+    matRow[terms] = rhs;
+    matrix.push(matRow);
+  }
+
+  const coeffs = gaussianElimination(matrix);
+  if (!coeffs) {
+    // Fallback to linear if singular
+    return linearRegression(xs, ys);
+  }
+
+  const predict = (x: number): number => {
+    let result = 0;
+    for (let j = 0; j < coeffs.length; j++) {
+      result += coeffs[j] * Math.pow(x, j);
+    }
+    return result;
+  };
+
+  const predicted = xs.map(predict);
+  const r2 = computeR2(ys, predicted);
+
+  // Build equation string
+  const parts: string[] = [];
+  for (let j = coeffs.length - 1; j >= 0; j--) {
+    if (Math.abs(coeffs[j]) < 1e-10) continue;
+    if (j === 0) {
+      parts.push(fmtCoeff(coeffs[j]));
+    } else if (j === 1) {
+      parts.push(`${fmtCoeff(coeffs[j])}x`);
+    } else {
+      parts.push(`${fmtCoeff(coeffs[j])}x^${j}`);
+    }
+  }
+  const equation = `y = ${parts.length > 0 ? parts.join(' + ') : '0'}`;
+
+  return { predict, r2, equation };
+}
+
+/** Exponential regression: y = a * e^(bx) — via ln(y) = ln(a) + bx */
+function exponentialRegression(xs: number[], ys: number[]): RegressionResult {
+  // Filter out non-positive y
+  const filteredX: number[] = [];
+  const filteredY: number[] = [];
+  for (let i = 0; i < xs.length; i++) {
+    if (ys[i] > 0) {
+      filteredX.push(xs[i]);
+      filteredY.push(ys[i]);
+    }
+  }
+  if (filteredX.length < 2) {
+    return linearRegression(xs, ys);
+  }
+
+  const lnY = filteredY.map((y) => Math.log(y));
+  const linResult = linearRegression(filteredX, lnY);
+
+  // ln(a) = intercept, b = slope
+  const lnA = linResult.predict(0); // b_coeff (intercept)
+  const a = Math.exp(lnA);
+  // Extract slope: predict(1) - predict(0)
+  const b = linResult.predict(1) - linResult.predict(0);
+
+  const predict = (x: number): number => a * Math.exp(b * x);
+  const predicted = filteredY.map((_y, i) => predict(filteredX[i]));
+  const r2 = computeR2(filteredY, predicted);
+
+  const equation = `y = ${fmtCoeff(a)}e^(${fmtCoeff(b)}x)`;
+  return { predict, r2, equation };
+}
+
+/** Logarithmic regression: y = a * ln(x) + b */
+function logarithmicRegression(xs: number[], ys: number[]): RegressionResult {
+  // Filter out non-positive x
+  const filteredX: number[] = [];
+  const filteredY: number[] = [];
+  for (let i = 0; i < xs.length; i++) {
+    if (xs[i] > 0) {
+      filteredX.push(xs[i]);
+      filteredY.push(ys[i]);
+    }
+  }
+  if (filteredX.length < 2) {
+    return linearRegression(xs, ys);
+  }
+
+  const lnX = filteredX.map((x) => Math.log(x));
+  const linResult = linearRegression(lnX, filteredY);
+
+  // a = slope in ln(x) space, b = intercept
+  const a = linResult.predict(1) - linResult.predict(0);
+  const b = linResult.predict(0);
+
+  const predict = (x: number): number => (x > 0 ? a * Math.log(x) + b : 0);
+  const predicted = filteredY.map((_y, i) => predict(filteredX[i]));
+  const r2 = computeR2(filteredY, predicted);
+
+  const equation = `y = ${fmtCoeff(a)}ln(x) + ${fmtCoeff(b)}`;
+  return { predict, r2, equation };
+}
+
+/** Power regression: y = a * x^b — via ln(y) = ln(a) + b*ln(x) */
+function powerRegression(xs: number[], ys: number[]): RegressionResult {
+  // Filter out non-positive x or y
+  const filteredX: number[] = [];
+  const filteredY: number[] = [];
+  for (let i = 0; i < xs.length; i++) {
+    if (xs[i] > 0 && ys[i] > 0) {
+      filteredX.push(xs[i]);
+      filteredY.push(ys[i]);
+    }
+  }
+  if (filteredX.length < 2) {
+    return linearRegression(xs, ys);
+  }
+
+  const lnX = filteredX.map((x) => Math.log(x));
+  const lnY = filteredY.map((y) => Math.log(y));
+  const linResult = linearRegression(lnX, lnY);
+
+  const lnA = linResult.predict(0);
+  const a = Math.exp(lnA);
+  const b = linResult.predict(1) - linResult.predict(0);
+
+  const predict = (x: number): number => (x > 0 ? a * Math.pow(x, b) : 0);
+  const predicted = filteredY.map((_y, i) => predict(filteredX[i]));
+  const r2 = computeR2(filteredY, predicted);
+
+  const equation = `y = ${fmtCoeff(a)}x^${fmtCoeff(b)}`;
+  return { predict, r2, equation };
+}
+
+/** Dispatch to the appropriate regression function. */
+function computeRegression(
+  xs: number[],
+  ys: number[],
+  type: RegressionType,
+  polynomialOrder: number,
+): RegressionResult {
+  switch (type) {
+    case 'polynomial':
+      return polynomialRegression(xs, ys, polynomialOrder);
+    case 'exponential':
+      return exponentialRegression(xs, ys);
+    case 'logarithmic':
+      return logarithmicRegression(xs, ys);
+    case 'power':
+      return powerRegression(xs, ys);
+    case 'linear':
+    default:
+      return linearRegression(xs, ys);
+  }
+}
 
 // ── Visual ───────────────────────────────────────────────────────────
 
@@ -389,6 +677,16 @@ export class ScatterBubbleVisual implements IVisual {
       this.renderYAxis(svg, yScale, chartHeight);
     }
 
+    // ── Quadrant Lines & Zones ────────────────────────────────
+    if (s.quadrantSettings.show.value) {
+      this.renderQuadrants(chartGroup, xScale, yScale, chartWidth, chartHeight);
+    }
+
+    // ── Trendline ──────────────────────────────────────────────
+    if (s.trendlineSettings.show.value && data.points.length >= 2) {
+      this.renderTrendline(chartGroup, data, xScale, yScale, chartWidth, chartHeight);
+    }
+
     // ── Bubbles ────────────────────────────────────────────────
     const bubblesGroup = document.createElementNS(svgNs, 'g');
     bubblesGroup.setAttribute('class', 'scatter-bubble-points');
@@ -532,7 +830,7 @@ export class ScatterBubbleVisual implements IVisual {
       const tickLabel = document.createElementNS(svgNs, 'text');
       tickLabel.setAttribute('y', '20');
       tickLabel.setAttribute('text-anchor', 'middle');
-      tickLabel.textContent = formatNumber(tick, { abbreviate: true, decimals: 1 });
+      tickLabel.textContent = formatWithSettings(tick, this.settings.numberFormattingCard);
       tickGroup.appendChild(tickLabel);
 
       axisGroup.appendChild(tickGroup);
@@ -575,10 +873,228 @@ export class ScatterBubbleVisual implements IVisual {
       tickLabel.setAttribute('x', '-10');
       tickLabel.setAttribute('dy', '0.32em');
       tickLabel.setAttribute('text-anchor', 'end');
-      tickLabel.textContent = formatNumber(tick, { abbreviate: true, decimals: 1 });
+      tickLabel.textContent = formatWithSettings(tick, this.settings.numberFormattingCard);
       tickGroup.appendChild(tickLabel);
 
       axisGroup.appendChild(tickGroup);
+    }
+  }
+
+  // ── Quadrant Rendering ─────────────────────────────────────────
+
+  private renderQuadrants(
+    chartGroup: SVGGElement,
+    xScale: d3.ScaleLinear<number, number>,
+    yScale: d3.ScaleLinear<number, number>,
+    chartWidth: number,
+    chartHeight: number,
+  ): void {
+    const svgNs = 'http://www.w3.org/2000/svg';
+    const q = this.settings.quadrantSettings;
+
+    const xPx = xScale(q.xValue.value);
+    const yPx = yScale(q.yValue.value);
+
+    // Clamp to chart area — skip rendering if divider is entirely outside
+    const xClamped = Math.max(0, Math.min(xPx, chartWidth));
+    const yClamped = Math.max(0, Math.min(yPx, chartHeight));
+
+    const quadrantGroup = document.createElementNS(svgNs, 'g');
+    quadrantGroup.setAttribute('class', 'scatter-bubble-quadrants');
+    chartGroup.appendChild(quadrantGroup);
+
+    const lineColor = q.lineColor.value?.value || '#94A3B8';
+    const lineWidth = q.lineWidth.value;
+    const lineStyleRaw = resolveDropdown(q.lineStyle) ?? 'dashed';
+
+    let dashArray = '';
+    if (lineStyleRaw === 'dashed') dashArray = '6,3';
+    else if (lineStyleRaw === 'dotted') dashArray = '2,2';
+
+    // ── Zone fills (optional) ─────────────────────────────────
+    const zoneFillOpacity = Math.max(0, Math.min(q.zoneFillOpacity.value, 20));
+    if (zoneFillOpacity > 0) {
+      const opacity = zoneFillOpacity / 100;
+      const zones: Array<{ x: number; y: number; w: number; h: number; color: string }> = [
+        // Top-left
+        { x: 0, y: 0, w: xClamped, h: yClamped, color: '#F59E0B' },
+        // Top-right
+        { x: xClamped, y: 0, w: chartWidth - xClamped, h: yClamped, color: '#10B981' },
+        // Bottom-left
+        { x: 0, y: yClamped, w: xClamped, h: chartHeight - yClamped, color: '#EF4444' },
+        // Bottom-right
+        { x: xClamped, y: yClamped, w: chartWidth - xClamped, h: chartHeight - yClamped, color: '#3B82F6' },
+      ];
+
+      for (const zone of zones) {
+        if (zone.w <= 0 || zone.h <= 0) continue;
+        const rect = document.createElementNS(svgNs, 'rect');
+        rect.setAttribute('x', String(zone.x));
+        rect.setAttribute('y', String(zone.y));
+        rect.setAttribute('width', String(zone.w));
+        rect.setAttribute('height', String(zone.h));
+        rect.setAttribute('fill', zone.color);
+        rect.setAttribute('opacity', String(opacity));
+        rect.setAttribute('pointer-events', 'none');
+        quadrantGroup.appendChild(rect);
+      }
+    }
+
+    // ── Divider lines ─────────────────────────────────────────
+    // Vertical line at xValue
+    const vLine = document.createElementNS(svgNs, 'line');
+    vLine.setAttribute('x1', String(xClamped));
+    vLine.setAttribute('x2', String(xClamped));
+    vLine.setAttribute('y1', '0');
+    vLine.setAttribute('y2', String(chartHeight));
+    vLine.setAttribute('stroke', lineColor);
+    vLine.setAttribute('stroke-width', String(lineWidth));
+    if (dashArray) vLine.setAttribute('stroke-dasharray', dashArray);
+    vLine.setAttribute('pointer-events', 'none');
+    quadrantGroup.appendChild(vLine);
+
+    // Horizontal line at yValue
+    const hLine = document.createElementNS(svgNs, 'line');
+    hLine.setAttribute('x1', '0');
+    hLine.setAttribute('x2', String(chartWidth));
+    hLine.setAttribute('y1', String(yClamped));
+    hLine.setAttribute('y2', String(yClamped));
+    hLine.setAttribute('stroke', lineColor);
+    hLine.setAttribute('stroke-width', String(lineWidth));
+    if (dashArray) hLine.setAttribute('stroke-dasharray', dashArray);
+    hLine.setAttribute('pointer-events', 'none');
+    quadrantGroup.appendChild(hLine);
+
+    // ── Quadrant labels ───────────────────────────────────────
+    if (q.showLabels.value) {
+      const fontSize = q.labelFontSize.value;
+      const labelColor = '#94A3B8';
+      const labels: Array<{ text: string; cx: number; cy: number }> = [
+        { text: q.topLeftLabel.value, cx: xClamped / 2, cy: yClamped / 2 },
+        { text: q.topRightLabel.value, cx: xClamped + (chartWidth - xClamped) / 2, cy: yClamped / 2 },
+        { text: q.bottomLeftLabel.value, cx: xClamped / 2, cy: yClamped + (chartHeight - yClamped) / 2 },
+        { text: q.bottomRightLabel.value, cx: xClamped + (chartWidth - xClamped) / 2, cy: yClamped + (chartHeight - yClamped) / 2 },
+      ];
+
+      for (const lbl of labels) {
+        if (!lbl.text) continue;
+        const text = document.createElementNS(svgNs, 'text');
+        text.setAttribute('x', String(lbl.cx));
+        text.setAttribute('y', String(lbl.cy));
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('dominant-baseline', 'central');
+        text.setAttribute('fill', labelColor);
+        text.setAttribute('font-size', `${fontSize}px`);
+        text.setAttribute('pointer-events', 'none');
+        text.textContent = lbl.text;
+        quadrantGroup.appendChild(text);
+      }
+    }
+  }
+
+  // ── Trendline Rendering ──────────────────────────────────────────
+
+  private renderTrendline(
+    chartGroup: SVGGElement,
+    data: ScatterData,
+    xScale: d3.ScaleLinear<number, number>,
+    yScale: d3.ScaleLinear<number, number>,
+    chartWidth: number,
+    chartHeight: number,
+  ): void {
+    const svgNs = 'http://www.w3.org/2000/svg';
+    const t = this.settings.trendlineSettings;
+
+    const xs = data.points.map((p) => p.x);
+    const ys = data.points.map((p) => p.y);
+
+    const regressionType = (resolveDropdown(t.type) ?? 'linear') as RegressionType;
+    const polynomialOrder = t.polynomialOrder.value;
+
+    const result = computeRegression(xs, ys, regressionType, polynomialOrder);
+
+    // Generate ~100 points along the x-domain for the trendline path
+    const xDomain = xScale.domain() as [number, number];
+    const xMin = xDomain[0];
+    const xMax = xDomain[1];
+    const step = (xMax - xMin) / 100;
+
+    const linePoints: Array<{ px: number; py: number }> = [];
+    for (let i = 0; i <= 100; i++) {
+      const xVal = xMin + i * step;
+      const yVal = result.predict(xVal);
+      // Only include points that produce finite values
+      if (Number.isFinite(yVal)) {
+        linePoints.push({
+          px: xScale(xVal),
+          py: yScale(yVal),
+        });
+      }
+    }
+
+    if (linePoints.length < 2) return;
+
+    // Build SVG path d attribute
+    const lineGen = d3.line<{ px: number; py: number }>()
+      .x((d) => d.px)
+      .y((d) => d.py);
+
+    const pathD = lineGen(linePoints);
+    if (!pathD) return;
+
+    const trendlineGroup = document.createElementNS(svgNs, 'g');
+    trendlineGroup.setAttribute('class', 'scatter-bubble-trendline');
+    chartGroup.appendChild(trendlineGroup);
+
+    // Render the trendline path
+    const lineColor = t.lineColor.value?.value || '#EF4444';
+    const lineWidth = t.lineWidth.value;
+    const lineStyleRaw = resolveDropdown(t.lineStyle) ?? 'dashed';
+    let dashArray = '';
+    if (lineStyleRaw === 'dashed') dashArray = '6,3';
+
+    const path = document.createElementNS(svgNs, 'path');
+    path.setAttribute('d', pathD);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', lineColor);
+    path.setAttribute('stroke-width', String(lineWidth));
+    if (dashArray) path.setAttribute('stroke-dasharray', dashArray);
+    path.setAttribute('pointer-events', 'none');
+    trendlineGroup.appendChild(path);
+
+    // Render equation and R² labels at top-right of chart area
+    const showEquation = t.showEquation.value;
+    const showR2 = t.showR2.value;
+
+    if (showEquation || showR2) {
+      const fontSize = t.labelFontSize.value;
+      let labelY = fontSize + 4;
+      const labelX = chartWidth - 8;
+
+      if (showEquation) {
+        const eqText = document.createElementNS(svgNs, 'text');
+        eqText.setAttribute('x', String(labelX));
+        eqText.setAttribute('y', String(labelY));
+        eqText.setAttribute('text-anchor', 'end');
+        eqText.setAttribute('font-size', `${fontSize}px`);
+        eqText.setAttribute('fill', lineColor);
+        eqText.setAttribute('pointer-events', 'none');
+        eqText.textContent = result.equation;
+        trendlineGroup.appendChild(eqText);
+        labelY += fontSize + 4;
+      }
+
+      if (showR2) {
+        const r2Text = document.createElementNS(svgNs, 'text');
+        r2Text.setAttribute('x', String(labelX));
+        r2Text.setAttribute('y', String(labelY));
+        r2Text.setAttribute('text-anchor', 'end');
+        r2Text.setAttribute('font-size', `${fontSize}px`);
+        r2Text.setAttribute('fill', lineColor);
+        r2Text.setAttribute('pointer-events', 'none');
+        r2Text.textContent = `R² = ${result.r2.toFixed(4)}`;
+        trendlineGroup.appendChild(r2Text);
+      }
     }
   }
 
@@ -595,20 +1111,22 @@ export class ScatterBubbleVisual implements IVisual {
     titleEl.textContent = pt.label || `Point ${pt.index + 1}`;
     tooltip.appendChild(titleEl);
 
+    const numberSettings = this.settings.numberFormattingCard;
+
     const xRow = document.createElement('div');
     xRow.className = 'scatter-bubble-tooltip-row';
-    xRow.textContent = `X: ${formatNumber(pt.x, { abbreviate: false, decimals: 2 })}`;
+    xRow.textContent = `X: ${formatWithSettings(pt.x, numberSettings)}`;
     tooltip.appendChild(xRow);
 
     const yRow = document.createElement('div');
     yRow.className = 'scatter-bubble-tooltip-row';
-    yRow.textContent = `Y: ${formatNumber(pt.y, { abbreviate: false, decimals: 2 })}`;
+    yRow.textContent = `Y: ${formatWithSettings(pt.y, numberSettings)}`;
     tooltip.appendChild(yRow);
 
     if (pt.size !== null) {
       const sizeRow = document.createElement('div');
       sizeRow.className = 'scatter-bubble-tooltip-row';
-      sizeRow.textContent = `Size: ${formatNumber(pt.size, { abbreviate: true })}`;
+      sizeRow.textContent = `Size: ${formatWithSettings(pt.size, numberSettings)}`;
       tooltip.appendChild(sizeRow);
     }
 

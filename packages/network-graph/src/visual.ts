@@ -301,9 +301,12 @@ export class NetworkGraphVisual implements IVisual {
       .data(simLinks)
       .join('line')
       .attr('class', 'network-link')
+      .attr('data-source', (d) => String(typeof d.source === 'string' ? d.source : (d.source as GraphNode).id))
+      .attr('data-target', (d) => String(typeof d.target === 'string' ? d.target : (d.target as GraphNode).id))
       .attr('stroke', resolvedLinkColor)
       .attr('stroke-opacity', linkOpacity)
-      .attr('stroke-width', (d) => Math.max(1, (d.weight / maxWeight) * resolvedLinkWidth * 4));
+      .attr('stroke-width', (d) => Math.max(1, (d.weight / maxWeight) * resolvedLinkWidth * 4))
+      .style('transition', 'opacity 0.15s ease');
 
     if (s.linkSettings.showArrows.value) {
       linkElements.attr('marker-end', 'url(#network-arrowhead)');
@@ -318,6 +321,7 @@ export class NetworkGraphVisual implements IVisual {
       .data(simNodes)
       .join('circle')
       .attr('class', 'network-node')
+      .attr('data-node', (d) => d.id)
       .attr('r', nodeRadius)
       .attr('fill', (_d, i) => usePalette
         ? getHostChartColor(this.host.colorPalette, i)
@@ -325,6 +329,7 @@ export class NetworkGraphVisual implements IVisual {
       .attr('stroke', s.nodeSettings.nodeBorderColor.value?.value || '#ffffff')
       .attr('stroke-width', s.nodeSettings.nodeBorderWidth.value)
       .style('cursor', 'pointer')
+      .style('transition', 'opacity 0.15s ease')
       .on('click', (event: MouseEvent, d) => {
         event.stopPropagation();
         void this.selectionManager.select(d.selectionId, event.ctrlKey || event.metaKey);
@@ -353,8 +358,10 @@ export class NetworkGraphVisual implements IVisual {
         .data(simNodes)
         .join('text')
         .attr('class', 'network-label')
+        .attr('data-node', (d) => d.id)
         .attr('dx', nodeRadius + LABEL_OFFSET)
         .attr('dy', '0.35em')
+        .style('transition', 'opacity 0.15s ease')
         .text((d) => d.id);
     }
 
@@ -421,6 +428,80 @@ export class NetworkGraphVisual implements IVisual {
       });
 
     nodeElements.call(dragBehavior);
+
+    // ── Zoom & Pan ───────────────────────────────────────────────
+
+    if (s.zoomSettings.enabled.value) {
+      const minZoom = s.zoomSettings.minZoom.value;
+      const maxZoom = s.zoomSettings.maxZoom.value;
+
+      const zoom = d3.zoom<SVGSVGElement, unknown>()
+        .scaleExtent([minZoom, maxZoom])
+        .on('zoom', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
+          g.attr('transform', event.transform.toString());
+        });
+
+      svg.call(zoom);
+
+      // Disable default double-click zoom, add custom reset behavior
+      svg.on('dblclick.zoom', null);
+      svg.on('dblclick', () => {
+        svg.transition()
+          .duration(300)
+          .call(zoom.transform, d3.zoomIdentity);
+      });
+    }
+
+    // ── Node Hover Highlight/Dim ─────────────────────────────────
+
+    // Build adjacency set for fast lookup: nodeId -> Set of connected nodeIds
+    const adjacency = new Map<string, Set<string>>();
+    for (const link of simLinks) {
+      const srcId = typeof link.source === 'string' ? link.source : (link.source as GraphNode).id;
+      const tgtId = typeof link.target === 'string' ? link.target : (link.target as GraphNode).id;
+      if (!adjacency.has(srcId)) adjacency.set(srcId, new Set());
+      if (!adjacency.has(tgtId)) adjacency.set(tgtId, new Set());
+      adjacency.get(srcId)!.add(tgtId);
+      adjacency.get(tgtId)!.add(srcId);
+    }
+
+    const svgNode = svg.node();
+    if (svgNode) {
+      const allNodes = svgNode.querySelectorAll('[data-node]');
+      const allLinks = svgNode.querySelectorAll('.network-link');
+
+      allNodes.forEach((el) => {
+        el.addEventListener('mouseenter', () => {
+          const hoveredId = el.getAttribute('data-node');
+          if (!hoveredId) return;
+          const neighbors = adjacency.get(hoveredId) ?? new Set<string>();
+
+          // Dim/highlight nodes and labels
+          allNodes.forEach((other) => {
+            const otherId = other.getAttribute('data-node');
+            const isHighlighted = otherId === hoveredId || neighbors.has(otherId ?? '');
+            (other as SVGElement).style.opacity = isHighlighted ? '1' : '0.2';
+          });
+
+          // Dim/highlight links
+          allLinks.forEach((link) => {
+            const srcId = link.getAttribute('data-source');
+            const tgtId = link.getAttribute('data-target');
+            const isConnected = srcId === hoveredId || tgtId === hoveredId;
+            (link as SVGElement).style.opacity = isConnected ? '1' : '0.2';
+          });
+        });
+
+        el.addEventListener('mouseleave', () => {
+          allNodes.forEach((other) => {
+            (other as SVGElement).style.opacity = '1';
+          });
+          allLinks.forEach((link) => {
+            (link as SVGElement).style.opacity = '1';
+          });
+        });
+      });
+    }
 
     // Entrance animations
     if (s.animationSettings.enabled.value) {

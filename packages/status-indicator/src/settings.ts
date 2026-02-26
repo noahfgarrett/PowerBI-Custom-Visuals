@@ -39,9 +39,15 @@ class ThresholdSettings extends formattingSettings.SimpleCard {
     items: [{ value: 'higherIsBetter', displayName: 'Higher is Better' }, { value: 'lowerIsBetter', displayName: 'Lower is Better' }],
     value: { value: 'higherIsBetter', displayName: 'Higher is Better' },
   });
+  useCustomThresholds = new formattingSettings.ToggleSwitch({ name: 'useCustomThresholds', displayName: 'Custom Thresholds', value: false });
+  threshold1 = new formattingSettings.NumUpDown({ name: 'threshold1', displayName: 'Warning Threshold', value: 33 });
+  threshold2 = new formattingSettings.NumUpDown({ name: 'threshold2', displayName: 'Critical Threshold', value: 66 });
+  showValue = new formattingSettings.ToggleSwitch({ name: 'showValue', displayName: 'Show Value', value: false });
+  valueFontSize = new formattingSettings.NumUpDown({ name: 'valueFontSize', displayName: 'Value Font Size', value: 10 });
   name = 'thresholdSettings';
   displayName = 'Thresholds';
-  slices = [this.goodColor, this.warningColor, this.criticalColor, this.direction];
+  slices = [this.goodColor, this.warningColor, this.criticalColor, this.direction,
+    this.useCustomThresholds, this.threshold1, this.threshold2, this.showValue, this.valueFontSize];
 }
 
 class PulseSettings extends formattingSettings.SimpleCard {

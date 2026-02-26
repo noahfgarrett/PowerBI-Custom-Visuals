@@ -153,6 +153,33 @@
         }
       }
     },
+    "targetSettings": {
+      "displayName": "Target",
+      "properties": {
+        "show": {
+          "displayName": "Show Target",
+          "type": {
+            "bool": true
+          }
+        },
+        "color": {
+          "displayName": "Target Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "lineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
     "animationSettings": {
       "displayName": "Animation",
       "properties": {

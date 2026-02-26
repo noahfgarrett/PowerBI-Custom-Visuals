@@ -140,6 +140,38 @@ class AnimationSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
+// -- Drill-Down Settings ------------------------------------------------------
+
+class DrillDownSettingsCard extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Drill-Down',
+    value: true,
+  });
+
+  showBreadcrumb = new formattingSettings.ToggleSwitch({
+    name: 'showBreadcrumb',
+    displayName: 'Show Breadcrumb',
+    value: true,
+  });
+
+  breadcrumbFontSize = new formattingSettings.NumUpDown({
+    name: 'breadcrumbFontSize',
+    displayName: 'Breadcrumb Font Size',
+    value: 11,
+  });
+
+  breadcrumbColor = new formattingSettings.ColorPicker({
+    name: 'breadcrumbColor',
+    displayName: 'Breadcrumb Color',
+    value: { value: '#64748B' },
+  });
+
+  name = 'drillDownSettings';
+  displayName = 'Drill-Down';
+  slices = [this.enabled, this.showBreadcrumb, this.breadcrumbFontSize, this.breadcrumbColor];
+}
+
 // -- Root Model ---------------------------------------------------------------
 
 export class TreemapProSettings extends formattingSettings.Model {
@@ -147,6 +179,7 @@ export class TreemapProSettings extends formattingSettings.Model {
   colorSettings = new ColorSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettingsCard();
+  drillDownSettings = new DrillDownSettingsCard();
 
   dataLabelFormattingCard = new DataLabelFormattingCard();
 
@@ -158,6 +191,7 @@ export class TreemapProSettings extends formattingSettings.Model {
     this.colorSettings,
     this.cardSettings,
     this.animationSettings,
+    this.drillDownSettings,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
 

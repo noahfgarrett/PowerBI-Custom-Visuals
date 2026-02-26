@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard } from '../../core/src';
+import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, NumberFormattingCard} from '../../core/src';
 // ── Scatter Settings ──────────────────────────────────────────────────
 
 class ScatterSettingsCard extends formattingSettings.SimpleCard {
@@ -146,6 +146,198 @@ class AnimationSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
+// ── Quadrant Settings ────────────────────────────────────────────────
+
+class QuadrantSettingsCard extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Quadrants',
+    value: false,
+  });
+
+  xValue = new formattingSettings.NumUpDown({
+    name: 'xValue',
+    displayName: 'X Divider Value',
+    value: 50,
+  });
+
+  yValue = new formattingSettings.NumUpDown({
+    name: 'yValue',
+    displayName: 'Y Divider Value',
+    value: 50,
+  });
+
+  lineColor = new formattingSettings.ColorPicker({
+    name: 'lineColor',
+    displayName: 'Line Color',
+    value: { value: '#94A3B8' },
+  });
+
+  lineWidth = new formattingSettings.NumUpDown({
+    name: 'lineWidth',
+    displayName: 'Line Width',
+    value: 1,
+  });
+
+  lineStyle = new formattingSettings.ItemDropdown({
+    name: 'lineStyle',
+    displayName: 'Line Style',
+    items: [
+      { value: 'solid', displayName: 'Solid' },
+      { value: 'dashed', displayName: 'Dashed' },
+      { value: 'dotted', displayName: 'Dotted' },
+    ],
+    value: { value: 'dashed', displayName: 'Dashed' },
+  });
+
+  showLabels = new formattingSettings.ToggleSwitch({
+    name: 'showLabels',
+    displayName: 'Show Labels',
+    value: true,
+  });
+
+  topRightLabel = new formattingSettings.TextInput({
+    name: 'topRightLabel',
+    displayName: 'Top-Right Label',
+    value: '',
+    placeholder: 'e.g. Stars',
+  });
+
+  topLeftLabel = new formattingSettings.TextInput({
+    name: 'topLeftLabel',
+    displayName: 'Top-Left Label',
+    value: '',
+    placeholder: 'e.g. Question Marks',
+  });
+
+  bottomRightLabel = new formattingSettings.TextInput({
+    name: 'bottomRightLabel',
+    displayName: 'Bottom-Right Label',
+    value: '',
+    placeholder: 'e.g. Cash Cows',
+  });
+
+  bottomLeftLabel = new formattingSettings.TextInput({
+    name: 'bottomLeftLabel',
+    displayName: 'Bottom-Left Label',
+    value: '',
+    placeholder: 'e.g. Dogs',
+  });
+
+  labelFontSize = new formattingSettings.NumUpDown({
+    name: 'labelFontSize',
+    displayName: 'Label Font Size',
+    value: 11,
+  });
+
+  zoneFillOpacity = new formattingSettings.NumUpDown({
+    name: 'zoneFillOpacity',
+    displayName: 'Zone Fill Opacity',
+    value: 0,
+  });
+
+  name = 'quadrantSettings';
+  displayName = 'Quadrant Lines';
+  slices = [
+    this.show,
+    this.xValue,
+    this.yValue,
+    this.lineColor,
+    this.lineWidth,
+    this.lineStyle,
+    this.showLabels,
+    this.topRightLabel,
+    this.topLeftLabel,
+    this.bottomRightLabel,
+    this.bottomLeftLabel,
+    this.labelFontSize,
+    this.zoneFillOpacity,
+  ];
+}
+
+// ── Trendline Settings ──────────────────────────────────────────────
+
+class TrendlineSettingsCard extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Trendline',
+    value: false,
+  });
+
+  type = new formattingSettings.ItemDropdown({
+    name: 'type',
+    displayName: 'Regression Type',
+    items: [
+      { value: 'linear', displayName: 'Linear' },
+      { value: 'polynomial', displayName: 'Polynomial' },
+      { value: 'exponential', displayName: 'Exponential' },
+      { value: 'logarithmic', displayName: 'Logarithmic' },
+      { value: 'power', displayName: 'Power' },
+    ],
+    value: { value: 'linear', displayName: 'Linear' },
+  });
+
+  polynomialOrder = new formattingSettings.NumUpDown({
+    name: 'polynomialOrder',
+    displayName: 'Polynomial Order',
+    value: 2,
+  });
+
+  lineColor = new formattingSettings.ColorPicker({
+    name: 'lineColor',
+    displayName: 'Line Color',
+    value: { value: '#EF4444' },
+  });
+
+  lineWidth = new formattingSettings.NumUpDown({
+    name: 'lineWidth',
+    displayName: 'Line Width',
+    value: 2,
+  });
+
+  lineStyle = new formattingSettings.ItemDropdown({
+    name: 'lineStyle',
+    displayName: 'Line Style',
+    items: [
+      { value: 'solid', displayName: 'Solid' },
+      { value: 'dashed', displayName: 'Dashed' },
+    ],
+    value: { value: 'dashed', displayName: 'Dashed' },
+  });
+
+  showEquation = new formattingSettings.ToggleSwitch({
+    name: 'showEquation',
+    displayName: 'Show Equation',
+    value: false,
+  });
+
+  showR2 = new formattingSettings.ToggleSwitch({
+    name: 'showR2',
+    displayName: 'Show R²',
+    value: true,
+  });
+
+  labelFontSize = new formattingSettings.NumUpDown({
+    name: 'labelFontSize',
+    displayName: 'Label Font Size',
+    value: 10,
+  });
+
+  name = 'trendlineSettings';
+  displayName = 'Trendline';
+  slices = [
+    this.show,
+    this.type,
+    this.polynomialOrder,
+    this.lineColor,
+    this.lineWidth,
+    this.lineStyle,
+    this.showEquation,
+    this.showR2,
+    this.labelFontSize,
+  ];
+}
+
 // ── Root Model ────────────────────────────────────────────────────────
 
 export class ScatterBubbleSettings extends formattingSettings.Model {
@@ -154,6 +346,8 @@ export class ScatterBubbleSettings extends formattingSettings.Model {
   legendSettings = new LegendSettingsCard();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettingsCard();
+  quadrantSettings = new QuadrantSettingsCard();
+  trendlineSettings = new TrendlineSettingsCard();
 
   axisFormattingCard = new AxisFormattingCard();
 
@@ -164,16 +358,20 @@ export class ScatterBubbleSettings extends formattingSettings.Model {
   titleFormattingCard = new TitleFormattingCard();
 
 
+  numberFormattingCard = new NumberFormattingCard();
+
   cards = [
     this.scatterSettings,
     this.axisSettings,
     this.legendSettings,
     this.cardSettings,
     this.animationSettings,
+    this.quadrantSettings,
+    this.trendlineSettings,
     this.axisFormattingCard,
     this.legendFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
-
+    this.numberFormattingCard,
   ];
 }

@@ -16,12 +16,15 @@ import {
   cubicOut,
   DURATION,
   formatNumber,
+  getDeltaColor,
   getGlassStyle,
   withOpacity,
   renderChartTitle,
   applyAxisFormatting,
   applyGridFormatting,
   applyDataLabelFormatting,
+  createScrollableChart,
+  applySortOrder,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -93,8 +96,11 @@ export class DumbbellChartVisual implements IVisual {
     // Apply glass effect
     this.applyCardStyle();
 
-    // Extract data
-    const rows = this.extractData(dataView);
+    // Extract data and apply user-configured sort order (sort by end value)
+    const rows = applySortOrder(
+      this.extractData(dataView).map((d) => ({ ...d, name: d.label, value: d.end })),
+      this.settings.sortFormattingCard,
+    );
 
     // Render
     if (rows.length === 0) {
@@ -224,15 +230,31 @@ export class DumbbellChartVisual implements IVisual {
 
     // Compute chart dimensions
     const padding = 8; // CSS padding on container
-    const svgWidth = viewport.width - padding * 2;
-    const svgHeight = viewport.height - padding * 2 - legendReserve;
-    const chartWidth = Math.max(0, svgWidth - margin.left - margin.right);
-    const chartHeight = Math.max(0, svgHeight - margin.top - margin.bottom);
+    const baseSvgWidth = viewport.width - padding * 2;
+    const baseSvgHeight = viewport.height - padding * 2 - legendReserve;
+    const baseChartWidth = Math.max(0, baseSvgWidth - margin.left - margin.right);
+    const baseChartHeight = Math.max(0, baseSvgHeight - margin.top - margin.bottom);
 
-    if (chartWidth <= 0 || chartHeight <= 0) {
+    if (baseChartWidth <= 0 || baseChartHeight <= 0) {
       this.renderEmpty();
       return;
     }
+
+    // Scroll support (vertical — categories on Y-axis)
+    const scroll = createScrollableChart({
+      container: this.container,
+      viewportWidth: baseSvgWidth,
+      viewportHeight: baseSvgHeight,
+      categoryCount: rows.length,
+      scrollSettings: s.scrollFormattingCard,
+      availableChartWidth: baseChartWidth,
+      availableChartHeight: baseChartHeight,
+      direction: 'vertical',
+    });
+    const svgWidth = scroll.svgWidth;
+    const svgHeight = scroll.svgHeight;
+    const chartWidth = scroll.chartWidth;
+    const chartHeight = scroll.chartHeight;
 
     // Settings values
     const dotRadius = s.dumbbellSettings.dotRadius.value;
@@ -248,7 +270,7 @@ export class DumbbellChartVisual implements IVisual {
     }
 
     // SVG
-    const svg = d3.select(this.container)
+    const svg = d3.select(scroll.svgParent)
       .append('svg')
       .attr('class', 'dumbbell-svg')
       .attr('width', svgWidth)
@@ -259,6 +281,20 @@ export class DumbbellChartVisual implements IVisual {
 
     // Data labels
     const showDataLabels = s.dataLabelFormattingCard.showDataLabels.value;
+
+    // Delta label settings
+    const showDeltaLabels = s.deltaLabelSettings.show.value;
+    const deltaFontSize = s.deltaLabelSettings.fontSize.value;
+    const deltaFontColorRaw = s.deltaLabelSettings.fontColor.value?.value;
+    const deltaFontColor = deltaFontColorRaw && deltaFontColorRaw.length > 0 ? deltaFontColorRaw : '';
+    const deltaFormatRaw = s.deltaLabelSettings.format.value;
+    const deltaFormat = (typeof deltaFormatRaw === 'string'
+      ? deltaFormatRaw
+      : (deltaFormatRaw as { value?: string })?.value) ?? 'absolute';
+    const deltaPositionRaw = s.deltaLabelSettings.position.value;
+    const deltaPosition = (typeof deltaPositionRaw === 'string'
+      ? deltaPositionRaw
+      : (deltaPositionRaw as { value?: string })?.value) ?? 'above';
 
     // Dumbbell-specific settings — apply if set, otherwise use fallback
     const lineColorValue = s.dumbbellSettings.lineColor.value?.value;
@@ -330,6 +366,7 @@ export class DumbbellChartVisual implements IVisual {
       const x1 = xScale(row.start);
       const x2 = xScale(row.end);
       const delay = rowIdx * STAGGER_DELAY;
+      const seriesIdx = String(rowIdx);
 
       // Connecting line (rendered as SVG path for drawPath animation)
       const minX = Math.min(x1, x2);
@@ -337,10 +374,12 @@ export class DumbbellChartVisual implements IVisual {
 
       const pathEl = chartGroup.append('path')
         .attr('class', 'dumbbell-line')
+        .attr('data-series', seriesIdx)
         .attr('d', `M${minX},${cy} L${maxX},${cy}`)
         .attr('stroke', resolvedLineColor)
         .attr('stroke-width', lineWidth)
-        .attr('fill', 'none');
+        .attr('fill', 'none')
+        .style('transition', 'opacity 0.15s ease');
       this.attachSelection(pathEl, row.selectionId);
 
       if (animEnabled) {
@@ -361,12 +400,14 @@ export class DumbbellChartVisual implements IVisual {
       // Start dot
       const startDot = chartGroup.append('circle')
         .attr('class', 'dumbbell-dot dumbbell-dot-start')
+        .attr('data-series', seriesIdx)
         .attr('cx', x1)
         .attr('cy', cy)
         .attr('r', dotRadius)
         .attr('fill', startColor)
         .attr('stroke', dotStrokeColor)
-        .attr('stroke-width', dotStrokeWidth);
+        .attr('stroke-width', dotStrokeWidth)
+        .style('transition', 'opacity 0.15s ease');
       this.attachSelection(startDot, row.selectionId);
 
       this.attachDotTooltip(startDot, row.label, 'Start', row.start);
@@ -374,12 +415,14 @@ export class DumbbellChartVisual implements IVisual {
       // End dot
       const endDot = chartGroup.append('circle')
         .attr('class', 'dumbbell-dot dumbbell-dot-end')
+        .attr('data-series', seriesIdx)
         .attr('cx', x2)
         .attr('cy', cy)
         .attr('r', dotRadius)
         .attr('fill', endColor)
         .attr('stroke', dotStrokeColor)
-        .attr('stroke-width', dotStrokeWidth);
+        .attr('stroke-width', dotStrokeWidth)
+        .style('transition', 'opacity 0.15s ease');
       this.attachSelection(endDot, row.selectionId);
 
       this.attachDotTooltip(endDot, row.label, 'End', row.end);
@@ -390,19 +433,90 @@ export class DumbbellChartVisual implements IVisual {
 
         chartGroup.append('text')
           .attr('class', 'dumbbell-data-label')
+          .attr('data-series', seriesIdx)
           .attr('x', x1)
           .attr('y', cy - labelOffset)
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', 'auto')
+          .style('transition', 'opacity 0.15s ease')
           .text(formatNumber(row.start, { abbreviate: true }));
 
         chartGroup.append('text')
           .attr('class', 'dumbbell-data-label')
+          .attr('data-series', seriesIdx)
           .attr('x', x2)
           .attr('y', cy - labelOffset)
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', 'auto')
+          .style('transition', 'opacity 0.15s ease')
           .text(formatNumber(row.end, { abbreviate: true }));
+      }
+
+      // Delta labels
+      if (showDeltaLabels) {
+        const delta = row.end - row.start;
+        const centerX = (x1 + x2) / 2;
+
+        // Build display text based on format setting
+        const absPart = formatNumber(delta, { abbreviate: true, showSign: true });
+        let displayText: string;
+
+        if (row.start === 0) {
+          // Edge case: start is zero — skip percentage, show absolute only
+          displayText = absPart;
+        } else {
+          const pctChange = ((row.end - row.start) / Math.abs(row.start)) * 100;
+          const pctPart = formatNumber(pctChange, {
+            abbreviate: false,
+            showSign: true,
+            decimals: 1,
+            suffix: '%',
+          });
+
+          switch (deltaFormat) {
+            case 'percent':
+              displayText = pctPart;
+              break;
+            case 'both':
+              displayText = `${absPart} (${pctPart})`;
+              break;
+            default: // 'absolute'
+              displayText = absPart;
+              break;
+          }
+        }
+
+        // Vertical offset based on position setting
+        let deltaY: number;
+        const deltaOffset = dotRadius + 6;
+        switch (deltaPosition) {
+          case 'below':
+            deltaY = cy + deltaOffset + deltaFontSize;
+            break;
+          case 'center':
+            deltaY = cy;
+            break;
+          default: // 'above'
+            deltaY = cy - deltaOffset;
+            break;
+        }
+
+        // Color: use user fontColor if set, otherwise green/red by sign
+        const deltaColor = deltaFontColor.length > 0
+          ? deltaFontColor
+          : getDeltaColor(delta);
+
+        chartGroup.append('text')
+          .attr('class', 'dumbbell-delta-label')
+          .attr('data-series', seriesIdx)
+          .attr('x', centerX)
+          .attr('y', deltaY)
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', deltaPosition === 'center' ? 'central' : 'auto')
+          .attr('font-size', `${deltaFontSize}px`)
+          .attr('fill', deltaColor)
+          .style('transition', 'opacity 0.15s ease')
+          .text(displayText);
       }
 
       // Animate dots
@@ -420,6 +534,26 @@ export class DumbbellChartVisual implements IVisual {
         }
       }
     });
+
+    // ── Series Hover Highlight/Dim ──────────────────────────────
+
+    const svgNode = svg.node();
+    if (svgNode) {
+      const seriesElements = svgNode.querySelectorAll('[data-series]');
+      seriesElements.forEach((el) => {
+        el.addEventListener('mouseenter', () => {
+          const seriesIdx = el.getAttribute('data-series');
+          seriesElements.forEach((other) => {
+            (other as SVGElement).style.opacity = other.getAttribute('data-series') === seriesIdx ? '1' : '0.2';
+          });
+        });
+        el.addEventListener('mouseleave', () => {
+          seriesElements.forEach((other) => {
+            (other as SVGElement).style.opacity = '1';
+          });
+        });
+      });
+    }
 
     // Apply axis and grid formatting from settings
     const svgEl = this.container.querySelector('svg');

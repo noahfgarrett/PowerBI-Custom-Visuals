@@ -270,6 +270,74 @@
         }
       }
     },
+    "conditionalColorSettings": {
+      "displayName": "Conditional Value Color",
+      "properties": {
+        "enabled": {
+          "displayName": "Enable Conditional Coloring",
+          "type": {
+            "bool": true
+          }
+        },
+        "threshold1": {
+          "displayName": "Low Threshold",
+          "type": {
+            "numeric": true
+          }
+        },
+        "threshold2": {
+          "displayName": "High Threshold",
+          "type": {
+            "numeric": true
+          }
+        },
+        "color1": {
+          "displayName": "Below Low Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "color2": {
+          "displayName": "Between Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "color3": {
+          "displayName": "Above High Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "direction": {
+          "displayName": "Direction",
+          "type": {
+            "enumeration": [
+              {
+                "value": "ascending",
+                "displayName": "Ascending (low=bad, high=good)"
+              },
+              {
+                "value": "descending",
+                "displayName": "Descending (low=good, high=bad)"
+              }
+            ]
+          }
+        }
+      }
+    },
     "animationSettings": {
       "displayName": "Animation",
       "properties": {
@@ -362,6 +430,56 @@
           "displayName": "Border Radius",
           "type": {
             "numeric": true
+          }
+        }
+      }
+    },
+    "numberFormatting": {
+      "displayName": "Number Format",
+      "properties": {
+        "displayUnits": {
+          "displayName": "Display Units",
+          "type": {
+            "enumeration": [
+              {
+                "value": "auto",
+                "displayName": "Auto"
+              },
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "thousands",
+                "displayName": "Thousands (K)"
+              },
+              {
+                "value": "millions",
+                "displayName": "Millions (M)"
+              },
+              {
+                "value": "billions",
+                "displayName": "Billions (B)"
+              }
+            ]
+          }
+        },
+        "decimalPlaces": {
+          "displayName": "Decimal Places",
+          "type": {
+            "numeric": true
+          }
+        },
+        "valuePrefix": {
+          "displayName": "Prefix",
+          "type": {
+            "text": true
+          }
+        },
+        "valueSuffix": {
+          "displayName": "Suffix",
+          "type": {
+            "text": true
           }
         }
       }

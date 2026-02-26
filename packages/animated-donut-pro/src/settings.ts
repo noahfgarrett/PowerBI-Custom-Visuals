@@ -6,6 +6,50 @@
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
 import { LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard } from '../../core/src';
+
+// ── Top N / Others ──────────────────────────────────────────────────
+
+class TopNSettingsCard extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Top N',
+    value: false,
+  });
+
+  topN = new formattingSettings.NumUpDown({
+    name: 'topN',
+    displayName: 'Top N',
+    value: 10,
+  });
+
+  othersLabel = new formattingSettings.TextInput({
+    name: 'othersLabel',
+    displayName: 'Others Label',
+    value: 'Others',
+    placeholder: 'e.g. Others',
+  });
+
+  othersColor = new formattingSettings.ColorPicker({
+    name: 'othersColor',
+    displayName: 'Others Color',
+    value: { value: '#94A3B8' },
+  });
+
+  sortBy = new formattingSettings.ItemDropdown({
+    name: 'sortBy',
+    displayName: 'Sort By',
+    items: [
+      { value: 'value', displayName: 'Value' },
+      { value: 'name', displayName: 'Name' },
+    ],
+    value: { value: 'value', displayName: 'Value' },
+  });
+
+  name = 'topNSettings';
+  displayName = 'Top N / Others';
+  slices = [this.enabled, this.topN, this.othersLabel, this.othersColor, this.sortBy];
+}
+
 // ── Donut Settings ──────────────────────────────────────────────────
 
 class DonutSettings extends formattingSettings.SimpleCard {
@@ -13,6 +57,17 @@ class DonutSettings extends formattingSettings.SimpleCard {
     name: 'innerRadius',
     displayName: 'Inner Radius (%)',
     value: 55,
+  });
+
+  arcShape = new formattingSettings.ItemDropdown({
+    name: 'arcShape',
+    displayName: 'Arc Shape',
+    items: [
+      { value: 'full', displayName: 'Full Circle (360°)' },
+      { value: 'semi', displayName: 'Semi Circle (180°)' },
+      { value: 'threeQuarter', displayName: 'Three Quarter (270°)' },
+    ],
+    value: { value: 'full', displayName: 'Full Circle (360°)' },
   });
 
   showCenter = new formattingSettings.ToggleSwitch({
@@ -71,7 +126,7 @@ class DonutSettings extends formattingSettings.SimpleCard {
 
   name = 'donutSettings';
   displayName = 'Donut Settings';
-  slices = [this.innerRadius, this.showCenter, this.showLabels, this.segmentStrokeColor, this.segmentStrokeWidth, this.labelColor, this.labelFontSize];
+  slices = [this.innerRadius, this.arcShape, this.showCenter, this.showLabels, this.segmentStrokeColor, this.segmentStrokeWidth, this.labelColor, this.labelFontSize];
 }
 
 // ── Value Settings (center display) ─────────────────────────────────
@@ -173,6 +228,7 @@ export class AnimatedDonutProSettings extends formattingSettings.Model {
   valueSettings = new ValueSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettingsCard();
+  topNSettings = new TopNSettingsCard();
 
   legendFormattingCard = new LegendFormattingCard();
 
@@ -186,6 +242,7 @@ export class AnimatedDonutProSettings extends formattingSettings.Model {
     this.valueSettings,
     this.cardSettings,
     this.animationSettings,
+    this.topNSettings,
     this.legendFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,

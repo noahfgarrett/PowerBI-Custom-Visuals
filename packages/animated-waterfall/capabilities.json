@@ -7,6 +7,12 @@
       "description": "Step labels (e.g., Revenue, +Sales, -Costs, =Profit)"
     },
     {
+      "displayName": "Sub-Category",
+      "name": "subCategory",
+      "kind": "Grouping",
+      "description": "Drill-down sub-category for category breakdown (optional)"
+    },
+    {
       "displayName": "Measure",
       "name": "measure",
       "kind": "Measure",
@@ -26,6 +32,9 @@
           "category": {
             "max": 1
           },
+          "subCategory": {
+            "max": 1
+          },
           "measure": {
             "max": 1
           },
@@ -40,6 +49,11 @@
             {
               "for": {
                 "in": "category"
+              }
+            },
+            {
+              "for": {
+                "in": "subCategory"
               }
             }
           ],
@@ -366,6 +380,39 @@
         }
       }
     },
+    "subtotalSettings": {
+      "displayName": "Subtotals",
+      "properties": {
+        "enabled": {
+          "displayName": "Enable Subtotals",
+          "type": {
+            "bool": true
+          }
+        },
+        "subtotalColor": {
+          "displayName": "Subtotal Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "subtotalLabel": {
+          "displayName": "Subtotal Label",
+          "type": {
+            "text": true
+          }
+        },
+        "indices": {
+          "displayName": "Subtotal After Positions",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
     "connectorFormatting": {
       "displayName": "Connectors",
       "properties": {
@@ -393,6 +440,39 @@
         }
       }
     },
+    "drillDownSettings": {
+      "displayName": "Drill-Down",
+      "properties": {
+        "enabled": {
+          "displayName": "Enable Drill-Down",
+          "type": {
+            "bool": true
+          }
+        },
+        "showBreadcrumb": {
+          "displayName": "Show Breadcrumb",
+          "type": {
+            "bool": true
+          }
+        },
+        "breadcrumbFontSize": {
+          "displayName": "Breadcrumb Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "breadcrumbColor": {
+          "displayName": "Breadcrumb Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
     "cardSettings": {
       "displayName": "Card Style",
       "properties": {
@@ -416,6 +496,73 @@
           "displayName": "Border Radius",
           "type": {
             "numeric": true
+          }
+        }
+      }
+    },
+    "scrollFormatting": {
+      "displayName": "Scroll",
+      "properties": {
+        "enableScroll": {
+          "displayName": "Enable Scroll",
+          "type": {
+            "bool": true
+          }
+        },
+        "minCategoryWidth": {
+          "displayName": "Min Category Width (px)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "numberFormatting": {
+      "displayName": "Number Format",
+      "properties": {
+        "displayUnits": {
+          "displayName": "Display Units",
+          "type": {
+            "enumeration": [
+              {
+                "value": "auto",
+                "displayName": "Auto"
+              },
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "thousands",
+                "displayName": "Thousands (K)"
+              },
+              {
+                "value": "millions",
+                "displayName": "Millions (M)"
+              },
+              {
+                "value": "billions",
+                "displayName": "Billions (B)"
+              }
+            ]
+          }
+        },
+        "decimalPlaces": {
+          "displayName": "Decimal Places",
+          "type": {
+            "numeric": true
+          }
+        },
+        "valuePrefix": {
+          "displayName": "Prefix",
+          "type": {
+            "text": true
+          }
+        },
+        "valueSuffix": {
+          "displayName": "Suffix",
+          "type": {
+            "text": true
           }
         }
       }

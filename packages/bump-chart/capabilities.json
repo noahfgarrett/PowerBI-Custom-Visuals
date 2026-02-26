@@ -407,6 +407,54 @@
         }
       }
     },
+    "crosshairSettings": {
+      "displayName": "Crosshair",
+      "properties": {
+        "show": {
+          "displayName": "Show Crosshair",
+          "type": {
+            "bool": true
+          }
+        },
+        "lineColor": {
+          "displayName": "Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "lineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "lineStyle": {
+          "displayName": "Line Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "solid",
+                "displayName": "Solid"
+              },
+              {
+                "value": "dashed",
+                "displayName": "Dashed"
+              }
+            ]
+          }
+        },
+        "showValues": {
+          "displayName": "Show Values",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
     "cardSettings": {
       "displayName": "Card Style",
       "properties": {
@@ -428,6 +476,23 @@
         },
         "borderRadius": {
           "displayName": "Border Radius",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "scrollFormatting": {
+      "displayName": "Scroll",
+      "properties": {
+        "enableScroll": {
+          "displayName": "Enable Scroll",
+          "type": {
+            "bool": true
+          }
+        },
+        "minCategoryWidth": {
+          "displayName": "Min Category Width (px)",
           "type": {
             "numeric": true
           }

@@ -132,6 +132,63 @@
               }
             }
           }
+        },
+        "showMidColor": {
+          "displayName": "Use 3-Stop Gradient",
+          "type": {
+            "bool": true
+          }
+        },
+        "midColor": {
+          "displayName": "Mid Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "midPoint": {
+          "displayName": "Mid Point (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "emptyColor": {
+          "displayName": "Empty Cell Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "showLegend": {
+          "displayName": "Show Color Legend",
+          "type": {
+            "bool": true
+          }
+        },
+        "legendPosition": {
+          "displayName": "Legend Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "bottom",
+                "displayName": "Bottom"
+              },
+              {
+                "value": "top",
+                "displayName": "Top"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
         }
       }
     },

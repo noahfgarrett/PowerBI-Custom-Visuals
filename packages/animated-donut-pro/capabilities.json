@@ -62,6 +62,25 @@
             "numeric": true
           }
         },
+        "arcShape": {
+          "displayName": "Arc Shape",
+          "type": {
+            "enumeration": [
+              {
+                "value": "full",
+                "displayName": "Full Circle (360°)"
+              },
+              {
+                "value": "semi",
+                "displayName": "Semi Circle (180°)"
+              },
+              {
+                "value": "threeQuarter",
+                "displayName": "Three Quarter (270°)"
+              }
+            ]
+          }
+        },
         "showCenter": {
           "displayName": "Show Center Value",
           "type": {
@@ -302,6 +321,54 @@
               {
                 "value": "right",
                 "displayName": "Right"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "topNSettings": {
+      "displayName": "Top N / Others",
+      "properties": {
+        "enabled": {
+          "displayName": "Enable Top N",
+          "type": {
+            "bool": true
+          }
+        },
+        "topN": {
+          "displayName": "Top N",
+          "type": {
+            "numeric": true
+          }
+        },
+        "othersLabel": {
+          "displayName": "Others Label",
+          "type": {
+            "text": true
+          }
+        },
+        "othersColor": {
+          "displayName": "Others Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "sortBy": {
+          "displayName": "Sort By",
+          "type": {
+            "enumeration": [
+              {
+                "value": "value",
+                "displayName": "Value"
+              },
+              {
+                "value": "name",
+                "displayName": "Name"
               }
             ]
           }

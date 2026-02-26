@@ -271,6 +271,110 @@
         }
       }
     },
+    "legendFormatting": {
+      "displayName": "Legend",
+      "properties": {
+        "showLegend": {
+          "displayName": "Show Legend",
+          "type": {
+            "bool": true
+          }
+        },
+        "legendPosition": {
+          "displayName": "Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "bottom",
+                "displayName": "Bottom"
+              },
+              {
+                "value": "top",
+                "displayName": "Top"
+              },
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        },
+        "legendFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "legendFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "pictogramSettings": {
+      "displayName": "Pictogram",
+      "properties": {
+        "enabled": {
+          "displayName": "Enable Pictogram Mode",
+          "type": {
+            "bool": true
+          }
+        },
+        "iconShape": {
+          "displayName": "Icon Shape",
+          "type": {
+            "enumeration": [
+              {
+                "value": "circle",
+                "displayName": "Circle"
+              },
+              {
+                "value": "person",
+                "displayName": "Person"
+              },
+              {
+                "value": "star",
+                "displayName": "Star"
+              },
+              {
+                "value": "heart",
+                "displayName": "Heart"
+              },
+              {
+                "value": "square",
+                "displayName": "Square"
+              },
+              {
+                "value": "checkmark",
+                "displayName": "Checkmark"
+              }
+            ]
+          }
+        },
+        "iconSize": {
+          "displayName": "Icon Size (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "outlineOpacity": {
+          "displayName": "Outline Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
     "cardSettings": {
       "displayName": "Card Style",
       "properties": {

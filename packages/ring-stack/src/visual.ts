@@ -17,6 +17,7 @@ import {
   withOpacity,
   renderChartTitle,
   applyDataLabelFormatting,
+  applySortOrder,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -61,6 +62,22 @@ interface RingDatum {
   index: number;
   /** Display name from the measure column. */
   name: string;
+  /** Max value used for this ring (may differ per ring when per-ring scale is enabled). */
+  ringMax: number;
+}
+
+/**
+ * Parse a comma-separated string of numbers into an array.
+ * Non-numeric or empty entries are treated as NaN (caller should fall back).
+ */
+function parseMaxValues(raw: string): number[] {
+  if (raw.trim().length === 0) return [];
+  return raw.split(',').map((s) => {
+    const trimmed = s.trim();
+    if (trimmed.length === 0) return NaN;
+    const n = Number(trimmed);
+    return Number.isFinite(n) ? n : NaN;
+  });
 }
 
 // ── Visual Class ─────────────────────────────────────────────────────
@@ -94,8 +111,11 @@ export class RingStackVisual implements IVisual {
       );
     }
 
-    // Extract ring data
-    const rings = this.extractData(dataView);
+    // Extract ring data and apply user-configured sort order
+    const rings = applySortOrder(
+      this.extractData(dataView),
+      this.settings.sortFormattingCard,
+    );
 
     this.notifyRenderStarted();
     try {
@@ -114,7 +134,13 @@ export class RingStackVisual implements IVisual {
 
     const values = dataView.categorical.values;
     const s = this.settings;
-    const maxValue = Math.max(1, s.ringSettings.maxValue.value);
+    const globalMax = Math.max(1, s.ringSettings.maxValue.value);
+
+    // Per-ring max support
+    const perRingEnabled = s.perRingMaxSettings.enabled.value;
+    const parsedMaxValues = perRingEnabled
+      ? parseMaxValues(s.perRingMaxSettings.maxValues.value)
+      : [];
 
     // Color array from settings, indexed by measure slot
     const colors = [
@@ -149,7 +175,13 @@ export class RingStackVisual implements IVisual {
       const numVal = typeof rawVal === 'number' ? rawVal : null;
       if (numVal === null || Number.isNaN(numVal)) continue;
 
-      const percentage = Math.max(0, Math.min(1, numVal / maxValue));
+      // Determine the max for this ring: use per-ring value if valid, otherwise global max
+      const perRingVal = parsedMaxValues[ringIndex];
+      const ringMax = perRingEnabled && Number.isFinite(perRingVal) && perRingVal > 0
+        ? perRingVal
+        : globalMax;
+
+      const percentage = Math.max(0, Math.min(1, numVal / ringMax));
       const endAngle = START_ANGLE + TWO_PI * percentage;
 
       rings.push({
@@ -159,6 +191,7 @@ export class RingStackVisual implements IVisual {
         color: colors[slotIndex],
         index: ringIndex,
         name: col.source.displayName ?? `Ring ${ringIndex + 1}`,
+        ringMax,
       });
 
       ringIndex++;
@@ -252,11 +285,11 @@ export class RingStackVisual implements IVisual {
       // Guard against negative radii
       if (ringInner < 0 || ringOuter < 0) return;
 
-      // Arc generator with rounded ends
+      // Arc generator (optionally with rounded ends)
       const arcGen = d3.arc<{ startAngle: number; endAngle: number }>()
         .innerRadius(ringInner)
         .outerRadius(ringOuter)
-        .cornerRadius(thickness / 2);
+        .cornerRadius(s.ringSettings.roundedCaps.value ? thickness / 2 : 0);
 
       // Background track: full circle at low opacity
       const trackColorSetting = s.ringSettings.trackColor.value?.value;
@@ -329,10 +362,95 @@ export class RingStackVisual implements IVisual {
       }
     });
 
+    // ── Center Content (total/KPI display) ────────────────────────
+    const cc = s.centerContentSettings;
+    if (cc.show.value && rings.length > 0) {
+      const modeRaw = cc.displayMode.value;
+      const mode: string = (typeof modeRaw === 'string' ? modeRaw : (modeRaw as { value?: string })?.value) ?? 'total';
+
+      const total = rings.reduce((sum, r) => sum + r.value, 0);
+      const count = rings.length;
+      const average = count > 0 ? total / count : 0;
+
+      const ccFontColor = cc.fontColor.value?.value || '';
+
+      if (mode === 'custom') {
+        // Custom mode: show customText as the main text, no label below
+        const centerText = g.append('text')
+          .attr('class', 'ring-stack-center-value')
+          .attr('x', 0)
+          .attr('y', 0)
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'central')
+          .attr('font-size', `${cc.fontSize.value}px`)
+          .attr('font-weight', '600')
+          .attr('pointer-events', 'none')
+          .text(cc.customText.value || '');
+        if (ccFontColor) {
+          centerText.attr('fill', ccFontColor);
+        }
+      } else {
+        let displayValue: number;
+        let labelText: string;
+        if (mode === 'count') {
+          displayValue = count;
+          labelText = 'Count';
+        } else if (mode === 'average') {
+          displayValue = average;
+          labelText = 'Average';
+        } else {
+          displayValue = total;
+          labelText = 'Total';
+        }
+
+        const locale = this.getHostLocale();
+        const formattedValue = formatNumber(displayValue, { abbreviate: true, locale });
+
+        // Value text (slightly above center when label is shown)
+        const valueY = cc.showLabel.value ? -cc.labelFontSize.value * 0.6 : 0;
+        const valueText = g.append('text')
+          .attr('class', 'ring-stack-center-value')
+          .attr('x', 0)
+          .attr('y', valueY)
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'central')
+          .attr('font-size', `${cc.fontSize.value}px`)
+          .attr('font-weight', '600')
+          .attr('pointer-events', 'none')
+          .text(formattedValue);
+        if (ccFontColor) {
+          valueText.attr('fill', ccFontColor);
+        }
+
+        // Label text below value
+        if (cc.showLabel.value) {
+          const labelY = valueY + cc.fontSize.value * 0.6 + cc.labelFontSize.value * 0.6;
+          const labelEl = g.append('text')
+            .attr('class', 'ring-stack-center-label')
+            .attr('x', 0)
+            .attr('y', labelY)
+            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'central')
+            .attr('font-size', `${cc.labelFontSize.value}px`)
+            .attr('font-weight', '400')
+            .attr('opacity', 0.7)
+            .attr('pointer-events', 'none')
+            .text(labelText);
+          if (ccFontColor) {
+            labelEl.attr('fill', ccFontColor);
+          }
+        }
+      }
+    }
+
     // ── Center / Side Labels ────────────────────────────────────
     if (showLabels) {
       const labelContainer = document.createElement('div');
       labelContainer.className = 'ring-stack-labels';
+
+      // Determine whether labels should show percentage or raw value
+      const perRingEnabled = s.perRingMaxSettings.enabled.value;
+      const showPct = !perRingEnabled || s.perRingMaxSettings.showPercentage.value;
 
       rings.forEach((ring, i) => {
         const labelRow = document.createElement('div');
@@ -344,7 +462,7 @@ export class RingStackVisual implements IVisual {
         dot.style.backgroundColor = ring.color;
         labelRow.appendChild(dot);
 
-        // Percentage text
+        // Label value text (percentage or raw value)
         const pctSpan = document.createElement('span');
         pctSpan.className = 'ring-label-pct';
         pctSpan.style.color = ring.color;
@@ -352,39 +470,76 @@ export class RingStackVisual implements IVisual {
 
         labelContainer.appendChild(labelRow);
 
-        if (animEnabled) {
-          const displayPct = ring.percentage * 100;
-          const delay = i * staggerDelay;
-          let timeoutId: ReturnType<typeof setTimeout> | null = null;
-          let cancelCount: (() => void) | null = null;
+        if (showPct) {
+          // Show percentage
+          if (animEnabled) {
+            const displayPct = ring.percentage * 100;
+            const delay = i * staggerDelay;
+            let timeoutId: ReturnType<typeof setTimeout> | null = null;
+            let cancelCount: (() => void) | null = null;
 
-          pctSpan.textContent = '0%';
+            pctSpan.textContent = '0%';
 
-          timeoutId = setTimeout(() => {
-            cancelCount = countUp(
-              0,
-              displayPct,
-              animDuration,
-              (v) => {
-                pctSpan.textContent = formatNumber(v, {
-                  decimals: 0,
-                  suffix: '%',
-                  abbreviate: false,
-                });
-              }
-            );
-          }, delay);
+            timeoutId = setTimeout(() => {
+              cancelCount = countUp(
+                0,
+                displayPct,
+                animDuration,
+                (v) => {
+                  pctSpan.textContent = formatNumber(v, {
+                    decimals: 0,
+                    suffix: '%',
+                    abbreviate: false,
+                  });
+                }
+              );
+            }, delay);
 
-          this.cancelAnimations.push(() => {
-            if (timeoutId !== null) clearTimeout(timeoutId);
-            cancelCount?.();
-          });
+            this.cancelAnimations.push(() => {
+              if (timeoutId !== null) clearTimeout(timeoutId);
+              cancelCount?.();
+            });
+          } else {
+            pctSpan.textContent = formatNumber(ring.percentage * 100, {
+              decimals: 0,
+              suffix: '%',
+              abbreviate: false,
+            });
+          }
         } else {
-          pctSpan.textContent = formatNumber(ring.percentage * 100, {
-            decimals: 0,
-            suffix: '%',
-            abbreviate: false,
-          });
+          // Show raw value (per-ring scale enabled, showPercentage off)
+          const locale = this.getHostLocale();
+          if (animEnabled) {
+            const delay = i * staggerDelay;
+            let timeoutId: ReturnType<typeof setTimeout> | null = null;
+            let cancelCount: (() => void) | null = null;
+
+            pctSpan.textContent = '0';
+
+            timeoutId = setTimeout(() => {
+              cancelCount = countUp(
+                0,
+                ring.value,
+                animDuration,
+                (v) => {
+                  pctSpan.textContent = formatNumber(v, {
+                    abbreviate: true,
+                    locale,
+                  });
+                }
+              );
+            }, delay);
+
+            this.cancelAnimations.push(() => {
+              if (timeoutId !== null) clearTimeout(timeoutId);
+              cancelCount?.();
+            });
+          } else {
+            pctSpan.textContent = formatNumber(ring.value, {
+              abbreviate: true,
+              locale,
+            });
+          }
         }
       });
 
@@ -488,6 +643,15 @@ export class RingStackVisual implements IVisual {
       { displayName: 'Value', value: formatNumber(ring.value, { abbreviate: false, locale }) },
       { displayName: 'Percent', value: formatNumber(ring.percentage * 100, { decimals: 0, suffix: '%', abbreviate: false, locale }) },
     ];
+
+    // Show the per-ring max in the tooltip when per-ring scale is active
+    const perRingEnabled = this.settings.perRingMaxSettings.enabled.value;
+    if (perRingEnabled) {
+      tooltipData.push({
+        displayName: 'Max',
+        value: formatNumber(ring.ringMax, { abbreviate: false, locale }),
+      });
+    }
 
     this.host.tooltipService.show({
       dataItems: tooltipData,

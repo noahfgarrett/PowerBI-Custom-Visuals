@@ -95,6 +95,9 @@ export class StatusIndicatorVisual implements IVisual {
     if (!categories || !values) return rows;
 
     const direction = this.settings.thresholdSettings.direction.value?.value ?? 'higherIsBetter';
+    const useCustom = this.settings.thresholdSettings.useCustomThresholds.value;
+    const customThreshold1 = this.settings.thresholdSettings.threshold1.value;
+    const customThreshold2 = this.settings.thresholdSettings.threshold2.value;
     const count = categories.values.length;
 
     // Find columns by role
@@ -113,13 +116,26 @@ export class StatusIndicatorVisual implements IVisual {
     for (let i = 0; i < count; i++) {
       const label = String(categories.values[i] ?? '');
       const value = typeof measureCol?.values[i] === 'number' ? measureCol.values[i] as number : null;
-      const warnThresh = typeof warnCol?.values[i] === 'number' ? warnCol.values[i] as number : null;
-      const critThresh = typeof critCol?.values[i] === 'number' ? critCol.values[i] as number : null;
+
+      let warnThresh: number | null;
+      let critThresh: number | null;
+
+      if (useCustom) {
+        // Custom thresholds: threshold1 is the warning breakpoint, threshold2 is the critical breakpoint
+        warnThresh = customThreshold1;
+        critThresh = customThreshold2;
+      } else {
+        warnThresh = typeof warnCol?.values[i] === 'number' ? warnCol.values[i] as number : null;
+        critThresh = typeof critCol?.values[i] === 'number' ? critCol.values[i] as number : null;
+      }
+
       const selectionId = this.host.createSelectionIdBuilder()
         .withCategory(categories, i)
         .createSelectionId();
 
-      const status = this.computeStatus(value, warnThresh, critThresh, String(direction));
+      const status = useCustom
+        ? this.computeCustomStatus(value, customThreshold1, customThreshold2, String(direction))
+        : this.computeStatus(value, warnThresh, critThresh, String(direction));
 
       rows.push({
         label,
@@ -156,6 +172,31 @@ export class StatusIndicatorVisual implements IVisual {
     }
   }
 
+  /**
+   * Compute status using user-configured custom threshold breakpoints.
+   * ascending (higherIsBetter): value < t1 = critical, t1 <= value < t2 = warning, value >= t2 = good
+   * descending (lowerIsBetter): value < t1 = good, t1 <= value < t2 = warning, value >= t2 = critical
+   */
+  private computeCustomStatus(
+    value: number | null,
+    threshold1: number,
+    threshold2: number,
+    direction: string
+  ): StatusLevel {
+    if (value === null) return 'warning';
+
+    if (direction === 'higherIsBetter') {
+      if (value >= threshold2) return 'good';
+      if (value >= threshold1) return 'warning';
+      return 'critical';
+    } else {
+      // lowerIsBetter: low values are good
+      if (value < threshold1) return 'good';
+      if (value < threshold2) return 'warning';
+      return 'critical';
+    }
+  }
+
   private render(rows: StatusRow[]): void {
     // Clear container
     while (this.container.firstChild) {
@@ -174,6 +215,8 @@ export class StatusIndicatorVisual implements IVisual {
     const warningColor = s.thresholdSettings.warningColor.value?.value ?? '#FBBF24';
     const criticalColor = s.thresholdSettings.criticalColor.value?.value ?? '#EF4444';
     const enablePulse = s.pulseSettings.enablePulse.value;
+    const showValue = s.thresholdSettings.showValue.value;
+    const valueFontSize = Math.max(6, s.thresholdSettings.valueFontSize.value);
     const animEnabled = s.animationSettings.enabled.value;
     const animDuration = s.animationSettings.duration.value;
 
@@ -278,12 +321,14 @@ export class StatusIndicatorVisual implements IVisual {
       labelEl.textContent = row.label;
       rowEl.appendChild(labelEl);
 
-      // Value
-      const valueEl = document.createElement('div');
-      valueEl.className = 'status-value';
-      valueEl.style.fontSize = `${size}px`;
-      valueEl.textContent = formatNumber(row.value);
-      rowEl.appendChild(valueEl);
+      // Value (only rendered when showValue is enabled)
+      if (showValue) {
+        const valueEl = document.createElement('div');
+        valueEl.className = 'status-value';
+        valueEl.style.fontSize = `${valueFontSize}px`;
+        valueEl.textContent = formatNumber(row.value);
+        rowEl.appendChild(valueEl);
+      }
 
       layoutEl.appendChild(rowEl);
 

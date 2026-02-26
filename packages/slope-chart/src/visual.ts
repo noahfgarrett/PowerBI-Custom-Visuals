@@ -373,9 +373,11 @@ export class SlopeChartVisual implements IVisual {
 
         areaGroup.append('polygon')
           .attr('class', 'slope-area')
+          .attr('data-series', String(i))
           .attr('points', polygonPoints)
           .attr('fill', `url(#${gradientId})`)
-          .attr('stroke', 'none');
+          .attr('stroke', 'none')
+          .style('transition', 'opacity 0.15s ease');
       });
     }
 
@@ -388,11 +390,13 @@ export class SlopeChartVisual implements IVisual {
 
       const path = lineGroup.append('path')
         .attr('class', 'slope-line')
+        .attr('data-series', String(i))
         .attr('d', `M ${leftX} ${y1} L ${rightX} ${y2}`)
         .attr('stroke', color)
         .attr('stroke-width', lineWidth)
         .attr('fill', 'none')
-        .attr('stroke-linecap', 'round');
+        .attr('stroke-linecap', 'round')
+        .style('transition', 'opacity 0.15s ease');
 
       // Apply line style from lineStrokeFormattingCard
       if (lineStyle === 'dashed') {
@@ -417,7 +421,7 @@ export class SlopeChartVisual implements IVisual {
     const dotGroup = g.append('g').attr('class', 'slope-dots');
     const dots: SVGElement[] = [];
 
-    data.forEach((item) => {
+    data.forEach((item, i) => {
       const y1 = yScale(item.startValue);
       const y2 = yScale(item.endValue);
       const color = getLineColor(item);
@@ -425,12 +429,14 @@ export class SlopeChartVisual implements IVisual {
       // Start dot
       const startDot = dotGroup.append('circle')
         .attr('class', 'slope-dot')
+        .attr('data-series', String(i))
         .attr('cx', leftX)
         .attr('cy', y1)
         .attr('r', dotRadius)
         .attr('fill', color)
         .attr('stroke', dotStrokeColor)
-        .attr('stroke-width', 1.5);
+        .attr('stroke-width', 1.5)
+        .style('transition', 'opacity 0.15s ease');
       this.attachSelection(startDot, item.selectionId);
 
       const startDotNode = startDot.node();
@@ -439,12 +445,14 @@ export class SlopeChartVisual implements IVisual {
       // End dot
       const endDot = dotGroup.append('circle')
         .attr('class', 'slope-dot')
+        .attr('data-series', String(i))
         .attr('cx', rightX)
         .attr('cy', y2)
         .attr('r', dotRadius)
         .attr('fill', color)
         .attr('stroke', dotStrokeColor)
-        .attr('stroke-width', 1.5);
+        .attr('stroke-width', 1.5)
+        .style('transition', 'opacity 0.15s ease');
       this.attachSelection(endDot, item.selectionId);
 
       const endDotNode = endDot.node();
@@ -456,19 +464,21 @@ export class SlopeChartVisual implements IVisual {
     const labelGroup = g.append('g').attr('class', 'slope-labels');
     const labels: SVGElement[] = [];
 
-    data.forEach((item) => {
+    data.forEach((item, i) => {
       const y1 = yScale(item.startValue);
       const y2 = yScale(item.endValue);
 
       // Start label (left side, right-aligned before the axis)
       const startLabel = labelGroup.append('text')
         .attr('class', 'slope-label')
+        .attr('data-series', String(i))
         .attr('x', leftX - dotRadius - 6)
         .attr('y', y1)
         .attr('dy', '0.35em')
         .attr('text-anchor', 'end')
         .attr('font-size', axisLabelSize)
-        .attr('fill', labelColor);
+        .attr('fill', labelColor)
+        .style('transition', 'opacity 0.15s ease');
 
       startLabel.append('tspan')
         .attr('font-weight', '500')
@@ -486,12 +496,14 @@ export class SlopeChartVisual implements IVisual {
       // End label (right side, left-aligned after the axis)
       const endLabel = labelGroup.append('text')
         .attr('class', 'slope-label')
+        .attr('data-series', String(i))
         .attr('x', rightX + dotRadius + 6)
         .attr('y', y2)
         .attr('dy', '0.35em')
         .attr('text-anchor', 'start')
         .attr('font-size', axisLabelSize)
-        .attr('fill', labelColor);
+        .attr('fill', labelColor)
+        .style('transition', 'opacity 0.15s ease');
 
       endLabel.append('tspan')
         .attr('font-weight', '500')
@@ -507,10 +519,136 @@ export class SlopeChartVisual implements IVisual {
       if (endLabelNode) labels.push(endLabelNode);
     });
 
+    // ── Change Labels (percentage / absolute change on each line) ──
+
+    const changeLabelElements: SVGElement[] = [];
+
+    if (s.changeLabelSettings.show.value) {
+      const changeLabelGroup = g.append('g').attr('class', 'slope-change-labels');
+      const clFontSize = s.changeLabelSettings.fontSize.value;
+      const clFontColorValue = s.changeLabelSettings.fontColor.value?.value;
+      const clHasCustomColor = clFontColorValue != null && clFontColorValue.length > 0;
+
+      const clFormatValue = s.changeLabelSettings.format.value;
+      const clFormat: string = typeof clFormatValue === 'string'
+        ? clFormatValue
+        : (clFormatValue as { value?: string } | undefined)?.value ?? 'percent';
+
+      const clPositionValue = s.changeLabelSettings.position.value;
+      const clPosition: string = typeof clPositionValue === 'string'
+        ? clPositionValue
+        : (clPositionValue as { value?: string } | undefined)?.value ?? 'center';
+
+      data.forEach((item, i) => {
+        const y1 = yScale(item.startValue);
+        const y2 = yScale(item.endValue);
+        const midX = (leftX + rightX) / 2;
+        const midY = (y1 + y2) / 2;
+
+        // Position offset based on setting
+        const posOffset = clPosition === 'above' ? -10 : clPosition === 'below' ? 14 : 0;
+
+        const startVal = item.startValue;
+        const endVal = item.endValue;
+        const absDelta = endVal - startVal;
+
+        // Build the label text based on format
+        let labelText: string;
+
+        if (startVal === 0) {
+          // Edge case: start is zero, percent change is undefined
+          if (clFormat === 'percent') {
+            labelText = 'N/A';
+          } else if (clFormat === 'absolute') {
+            const sign = absDelta >= 0 ? '+' : '';
+            labelText = `${sign}${formatNumber(absDelta)}`;
+          } else {
+            // 'both'
+            const sign = absDelta >= 0 ? '+' : '';
+            labelText = `${sign}${formatNumber(absDelta)} (N/A)`;
+          }
+        } else if (absDelta === 0) {
+          // Edge case: identical values
+          if (clFormat === 'percent') {
+            labelText = '0%';
+          } else if (clFormat === 'absolute') {
+            labelText = '+0';
+          } else {
+            labelText = '+0 (0%)';
+          }
+        } else {
+          const pctChange = ((endVal - startVal) / Math.abs(startVal)) * 100;
+          const pctSign = pctChange >= 0 ? '+' : '';
+          const pctStr = `${pctSign}${pctChange.toFixed(1)}%`;
+          const absSign = absDelta >= 0 ? '+' : '';
+          const absStr = `${absSign}${formatNumber(absDelta)}`;
+
+          if (clFormat === 'percent') {
+            labelText = pctStr;
+          } else if (clFormat === 'absolute') {
+            labelText = absStr;
+          } else {
+            // 'both'
+            labelText = `${absStr} (${pctStr})`;
+          }
+        }
+
+        // Determine color: custom > direction-based (green/red)
+        let textColor: string;
+        if (clHasCustomColor) {
+          textColor = clFontColorValue;
+        } else if (absDelta > 0) {
+          textColor = positiveColor;
+        } else if (absDelta < 0) {
+          textColor = negativeColor;
+        } else {
+          textColor = neutralColor;
+        }
+
+        const changeLabel = changeLabelGroup.append('text')
+          .attr('class', 'slope-change-label')
+          .attr('data-series', String(i))
+          .attr('x', midX)
+          .attr('y', midY + posOffset)
+          .attr('dy', '0.35em')
+          .attr('text-anchor', 'middle')
+          .attr('font-size', clFontSize)
+          .attr('font-weight', '600')
+          .attr('fill', textColor)
+          .style('transition', 'opacity 0.15s ease')
+          .text(labelText);
+
+        this.attachSelection(changeLabel, item.selectionId);
+
+        const changeLabelNode = changeLabel.node();
+        if (changeLabelNode) changeLabelElements.push(changeLabelNode);
+      });
+    }
+
+    // ── Series Hover Highlight/Dim ──────────────────────────────
+
+    const svgNode = svg.node();
+    if (svgNode) {
+      const seriesElements = svgNode.querySelectorAll('[data-series]');
+      seriesElements.forEach((el) => {
+        el.addEventListener('mouseenter', () => {
+          const seriesIdx = el.getAttribute('data-series');
+          seriesElements.forEach((other) => {
+            (other as SVGElement).style.opacity = other.getAttribute('data-series') === seriesIdx ? '1' : '0.2';
+          });
+        });
+        el.addEventListener('mouseleave', () => {
+          seriesElements.forEach((other) => {
+            (other as SVGElement).style.opacity = '1';
+          });
+        });
+      });
+    }
+
     // ── Entrance Animations ─────────────────────────────────────
 
     if (animEnabled) {
-      this.animateEntrance(paths, dots, labels, animDuration);
+      this.animateEntrance(paths, dots, labels, animDuration, changeLabelElements);
     }
     // Apply shared formatting settings
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.slope-label');
@@ -534,6 +672,7 @@ export class SlopeChartVisual implements IVisual {
     dots: SVGElement[],
     labels: SVGElement[],
     duration: number,
+    changeLabels: SVGElement[] = [],
   ): void {
     const stagger = DURATION.stagger;
 
@@ -559,6 +698,14 @@ export class SlopeChartVisual implements IVisual {
       // SVG elements need cast for fadeSlideIn
       const direction: 'left' | 'right' = i % 2 === 0 ? 'right' : 'left';
       const cancel = fadeSlideIn(labelEl as unknown as HTMLElement, direction, duration, delay);
+      this.cancelAnimations.push(cancel);
+    });
+
+    // Change labels via popIn with stagger (after regular labels)
+    const changeLabelBaseDelay = labelBaseDelay + stagger;
+    changeLabels.forEach((el, i) => {
+      const delay = changeLabelBaseDelay + i * (stagger / 2);
+      const cancel = popIn(el, delay, duration);
       this.cancelAnimations.push(cancel);
     });
   }

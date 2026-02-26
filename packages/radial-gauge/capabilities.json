@@ -105,11 +105,11 @@
             "enumeration": [
               {
                 "value": "half",
-                "displayName": "Half Circle (180°)"
+                "displayName": "Half Circle (180\u00b0)"
               },
               {
                 "value": "full",
-                "displayName": "Three-Quarter (270°)"
+                "displayName": "Three-Quarter (270\u00b0)"
               }
             ]
           }
@@ -130,6 +130,12 @@
           "displayName": "Zone Border Opacity (%)",
           "type": {
             "numeric": true
+          }
+        },
+        "roundedCaps": {
+          "displayName": "Rounded Caps",
+          "type": {
+            "bool": true
           }
         }
       }
@@ -237,6 +243,45 @@
                 "color": true
               }
             }
+          }
+        }
+      }
+    },
+    "needleSettings": {
+      "displayName": "Needle",
+      "properties": {
+        "show": {
+          "displayName": "Show Needle",
+          "type": {
+            "bool": true
+          }
+        },
+        "color": {
+          "displayName": "Needle Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "width": {
+          "displayName": "Width (px)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "showHub": {
+          "displayName": "Show Hub",
+          "type": {
+            "bool": true
+          }
+        },
+        "hubRadius": {
+          "displayName": "Hub Radius",
+          "type": {
+            "numeric": true
           }
         }
       }
@@ -375,6 +420,56 @@
           "displayName": "Border Radius",
           "type": {
             "numeric": true
+          }
+        }
+      }
+    },
+    "numberFormatting": {
+      "displayName": "Number Format",
+      "properties": {
+        "displayUnits": {
+          "displayName": "Display Units",
+          "type": {
+            "enumeration": [
+              {
+                "value": "auto",
+                "displayName": "Auto"
+              },
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "thousands",
+                "displayName": "Thousands (K)"
+              },
+              {
+                "value": "millions",
+                "displayName": "Millions (M)"
+              },
+              {
+                "value": "billions",
+                "displayName": "Billions (B)"
+              }
+            ]
+          }
+        },
+        "decimalPlaces": {
+          "displayName": "Decimal Places",
+          "type": {
+            "numeric": true
+          }
+        },
+        "valuePrefix": {
+          "displayName": "Prefix",
+          "type": {
+            "text": true
+          }
+        },
+        "valueSuffix": {
+          "displayName": "Suffix",
+          "type": {
+            "text": true
           }
         }
       }

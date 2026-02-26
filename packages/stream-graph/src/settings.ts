@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, LineStrokeFormattingCard } from '../../core/src';
+import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, LineStrokeFormattingCard, SortFormattingCard} from '../../core/src';
 class StreamSettings extends formattingSettings.SimpleCard {
   offset = new formattingSettings.ItemDropdown({
     name: 'offset',
@@ -139,6 +139,48 @@ class AnimationSettings extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
+// ── Crosshair Settings ──────────────────────────────────────────────
+
+class CrosshairSettingsCard extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Crosshair',
+    value: true,
+  });
+
+  lineColor = new formattingSettings.ColorPicker({
+    name: 'lineColor',
+    displayName: 'Line Color',
+    value: { value: '#94A3B8' },
+  });
+
+  lineWidth = new formattingSettings.NumUpDown({
+    name: 'lineWidth',
+    displayName: 'Line Width',
+    value: 1,
+  });
+
+  lineStyle = new formattingSettings.ItemDropdown({
+    name: 'lineStyle',
+    displayName: 'Line Style',
+    items: [
+      { value: 'solid', displayName: 'Solid' },
+      { value: 'dashed', displayName: 'Dashed' },
+    ],
+    value: { value: 'dashed', displayName: 'Dashed' },
+  });
+
+  showValues = new formattingSettings.ToggleSwitch({
+    name: 'showValues',
+    displayName: 'Show Values',
+    value: true,
+  });
+
+  name = 'crosshairSettings';
+  displayName = 'Crosshair';
+  slices = [this.show, this.lineColor, this.lineWidth, this.lineStyle, this.showValues];
+}
+
 export class StreamGraphSettings extends formattingSettings.Model {
   streamSettings = new StreamSettings();
   colorSettings = new ColorSettings();
@@ -157,6 +199,10 @@ export class StreamGraphSettings extends formattingSettings.Model {
   lineStrokeFormattingCard = new LineStrokeFormattingCard();
 
 
+  sortFormattingCard = new SortFormattingCard();
+
+  crosshairSettings = new CrosshairSettingsCard();
+
   cards = [
     this.streamSettings,
     this.colorSettings,
@@ -168,6 +214,7 @@ export class StreamGraphSettings extends formattingSettings.Model {
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.lineStrokeFormattingCard,
-
+    this.sortFormattingCard,
+    this.crosshairSettings,
   ];
 }

@@ -86,8 +86,8 @@ export class TreemapProVisual implements IVisual {
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
 
-  /** Currently drilled-into level1 name, or null for top-level view */
-  private drilledCategory: string | null = null;
+  /** Chain of category values the user has drilled into */
+  private drillPath: string[] = [];
   /** Full extracted data, kept for drill-down without re-parsing */
   private currentData: TreemapData | null = null;
   /** Last known viewport for re-renders on drill navigation */
@@ -126,7 +126,7 @@ export class TreemapProVisual implements IVisual {
 
     // Reset drill if data changed structurally
     if (data.isEmpty || !data.hasLevel2) {
-      this.drilledCategory = null;
+      this.drillPath = [];
     }
 
     // Render
@@ -311,44 +311,35 @@ export class TreemapProVisual implements IVisual {
     }
 
     // Determine which sub-tree to render (drill-down support)
+    const drillEnabled = this.settings.drillDownSettings.enabled.value;
     let renderRoot: TreeNode;
-    let showBackButton = false;
 
-    if (this.drilledCategory !== null && data.hasLevel2 && data.root.children) {
-      const found = data.root.children.find((c) => c.name === this.drilledCategory);
-      if (found && found.children && found.children.length > 0) {
-        renderRoot = { name: found.name, children: found.children };
-        showBackButton = true;
+    if (drillEnabled && this.drillPath.length > 0 && data.hasLevel2 && data.root.children) {
+      // Walk the drill path to find the target sub-tree
+      let current: TreeNode = data.root;
+      let pathValid = true;
+      for (const segment of this.drillPath) {
+        const found = current.children?.find((c) => c.name === segment);
+        if (found && found.children && found.children.length > 0) {
+          current = found;
+        } else {
+          pathValid = false;
+          break;
+        }
+      }
+      if (pathValid && current !== data.root) {
+        renderRoot = { name: current.name, children: current.children ?? [] };
       } else {
-        // Drilled category no longer exists in data
-        this.drilledCategory = null;
+        this.drillPath = [];
         renderRoot = data.root;
       }
     } else {
       renderRoot = data.root;
     }
 
-    // Back button for drill-up
-    if (showBackButton) {
-      const backBtn = document.createElement('div');
-      backBtn.className = 'treemap-back-btn';
-      backBtn.textContent = `\u2190 ${this.drilledCategory}`;
-      backBtn.addEventListener('click', (event: MouseEvent) => {
-        event.stopPropagation();
-        this.drilledCategory = null;
-        if (this.currentData) {
-          for (const cancel of this.cancelAnimations) cancel();
-          this.cancelAnimations = [];
-          this.renderTreemap(this.currentData, this.currentViewport);
-        }
-      });
-      this.container.appendChild(backBtn);
-
-      // Animate back button entrance
-      if (this.settings.animationSettings.enabled.value) {
-        const cancelBtn = fadeSlideIn(backBtn, 'left', DURATION.fast);
-        this.cancelAnimations.push(cancelBtn);
-      }
+    // Breadcrumb trail for drill-up navigation
+    if (drillEnabled && this.drillPath.length > 0 && this.settings.drillDownSettings.showBreadcrumb.value) {
+      this.renderBreadcrumb(data, viewport);
     }
 
     // Build d3 hierarchy
@@ -454,15 +445,23 @@ export class TreemapProVisual implements IVisual {
       this.attachCellTooltip(g, parentName, leafName, leafValue);
 
       const selectionId = leaf.data.selectionId;
-      const canDrill = data.hasLevel2 && this.drilledCategory === null && leaf.parent !== null;
+      const canDrill = drillEnabled && data.hasLevel2 && leaf.parent !== null;
       const drillTarget = canDrill ? leaf.parent?.data.name : null;
-      if ((selectionId !== undefined) || (canDrill && drillTarget !== 'root')) {
+      // Determine if the drill target has children (i.e., can we drill deeper?)
+      const drillTargetHasChildren = canDrill && drillTarget && drillTarget !== 'root' && (() => {
+        const parentNode = data.root.children?.find((c) => c.name === drillTarget);
+        return parentNode !== undefined && parentNode.children !== undefined && parentNode.children.length > 0;
+      })();
+      if ((selectionId !== undefined) || drillTargetHasChildren) {
         g.style.cursor = 'pointer';
         g.addEventListener('click', (event: MouseEvent) => {
           event.stopPropagation();
 
-          if (canDrill && drillTarget && drillTarget !== 'root' && !event.ctrlKey && !event.metaKey) {
-            this.drilledCategory = drillTarget;
+          if (drillTargetHasChildren && drillTarget && !event.ctrlKey && !event.metaKey) {
+            // Only drill if this category isn't already in the path
+            if (!this.drillPath.includes(drillTarget)) {
+              this.drillPath.push(drillTarget);
+            }
             if (this.currentData) {
               for (const cancel of this.cancelAnimations) cancel();
               this.cancelAnimations = [];
@@ -521,6 +520,81 @@ export class TreemapProVisual implements IVisual {
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.treemap-value');
 
     this.container.addEventListener('click', this.handleBackgroundClick);
+  }
+
+  // -- Breadcrumb -------------------------------------------------------------
+
+  private renderBreadcrumb(_data: TreemapData, _viewport: powerbi.IViewport): void {
+    const ds = this.settings.drillDownSettings;
+    const fontSize = ds.breadcrumbFontSize.value;
+    const color = ds.breadcrumbColor.value?.value || '#64748B';
+
+    const breadcrumb = document.createElement('div');
+    breadcrumb.className = 'treemap-breadcrumb';
+    breadcrumb.style.display = 'flex';
+    breadcrumb.style.alignItems = 'center';
+    breadcrumb.style.gap = '4px';
+    breadcrumb.style.padding = '4px 8px';
+    breadcrumb.style.fontSize = `${fontSize}px`;
+    breadcrumb.style.color = color;
+    breadcrumb.style.flexWrap = 'wrap';
+
+    // "All" root segment
+    const allSpan = document.createElement('span');
+    allSpan.textContent = 'All';
+    allSpan.style.cursor = 'pointer';
+    allSpan.style.textDecoration = 'underline';
+    allSpan.style.color = color;
+    allSpan.addEventListener('click', (event: MouseEvent) => {
+      event.stopPropagation();
+      this.drillPath = [];
+      if (this.currentData) {
+        for (const cancel of this.cancelAnimations) cancel();
+        this.cancelAnimations = [];
+        this.renderTreemap(this.currentData, this.currentViewport);
+      }
+    });
+    breadcrumb.appendChild(allSpan);
+
+    // Each segment in the drill path
+    for (let i = 0; i < this.drillPath.length; i++) {
+      const sep = document.createElement('span');
+      sep.textContent = ' > ';
+      sep.style.color = color;
+      breadcrumb.appendChild(sep);
+
+      const segment = document.createElement('span');
+      segment.textContent = this.drillPath[i];
+      segment.style.color = color;
+
+      // All segments except the last one are clickable to navigate back
+      if (i < this.drillPath.length - 1) {
+        segment.style.cursor = 'pointer';
+        segment.style.textDecoration = 'underline';
+        const targetIndex = i;
+        segment.addEventListener('click', (event: MouseEvent) => {
+          event.stopPropagation();
+          this.drillPath = this.drillPath.slice(0, targetIndex + 1);
+          if (this.currentData) {
+            for (const cancel of this.cancelAnimations) cancel();
+            this.cancelAnimations = [];
+            this.renderTreemap(this.currentData, this.currentViewport);
+          }
+        });
+      } else {
+        segment.style.fontWeight = '600';
+      }
+
+      breadcrumb.appendChild(segment);
+    }
+
+    this.container.appendChild(breadcrumb);
+
+    // Animate breadcrumb entrance
+    if (this.settings.animationSettings.enabled.value) {
+      const cancelBtn = fadeSlideIn(breadcrumb, 'left', DURATION.fast);
+      this.cancelAnimations.push(cancelBtn);
+    }
   }
 
   // -- Tooltip ----------------------------------------------------------------

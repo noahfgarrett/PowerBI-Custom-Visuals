@@ -204,6 +204,88 @@ export class TitleFormattingCard extends formattingSettings.SimpleCard {
   ];
 }
 
+// ── Scroll Formatting ────────────────────────────────────────────────
+
+export class ScrollFormattingCard extends formattingSettings.SimpleCard {
+  enableScroll = new formattingSettings.ToggleSwitch({
+    name: 'enableScroll',
+    displayName: 'Enable Scroll',
+    value: true,
+  });
+
+  minCategoryWidth = new formattingSettings.NumUpDown({
+    name: 'minCategoryWidth',
+    displayName: 'Min Category Width (px)',
+    value: 40,
+  });
+
+  name = 'scrollFormatting';
+  displayName = 'Scroll';
+  slices = [this.enableScroll, this.minCategoryWidth];
+}
+
+// ── Number Formatting ────────────────────────────────────────────────
+
+export class NumberFormattingCard extends formattingSettings.SimpleCard {
+  displayUnits = new formattingSettings.ItemDropdown({
+    name: 'displayUnits',
+    displayName: 'Display Units',
+    items: [
+      { value: 'auto', displayName: 'Auto' },
+      { value: 'none', displayName: 'None' },
+      { value: 'thousands', displayName: 'Thousands (K)' },
+      { value: 'millions', displayName: 'Millions (M)' },
+      { value: 'billions', displayName: 'Billions (B)' },
+    ],
+    value: { value: 'auto', displayName: 'Auto' },
+  });
+
+  decimalPlaces = new formattingSettings.NumUpDown({
+    name: 'decimalPlaces',
+    displayName: 'Decimal Places',
+    value: -1,
+  });
+
+  valuePrefix = new formattingSettings.TextInput({
+    name: 'valuePrefix',
+    displayName: 'Prefix',
+    value: '',
+    placeholder: 'e.g. $',
+  });
+
+  valueSuffix = new formattingSettings.TextInput({
+    name: 'valueSuffix',
+    displayName: 'Suffix',
+    value: '',
+    placeholder: 'e.g. %',
+  });
+
+  name = 'numberFormatting';
+  displayName = 'Number Format';
+  slices = [this.displayUnits, this.decimalPlaces, this.valuePrefix, this.valueSuffix];
+}
+
+// ── Sort Order ──────────────────────────────────────────────────────
+
+export class SortFormattingCard extends formattingSettings.SimpleCard {
+  sortBy = new formattingSettings.ItemDropdown({
+    name: 'sortBy',
+    displayName: 'Sort By',
+    items: [
+      { value: 'dataOrder', displayName: 'Data Order' },
+      { value: 'valueAsc', displayName: 'Value (Ascending)' },
+      { value: 'valueDesc', displayName: 'Value (Descending)' },
+      { value: 'nameAsc', displayName: 'Name (A-Z)' },
+      { value: 'nameDesc', displayName: 'Name (Z-A)' },
+    ],
+    value: { value: 'dataOrder', displayName: 'Data Order' },
+  });
+
+  name = 'sortFormatting';
+  displayName = 'Sort Order';
+  slices = [this.sortBy];
+}
+
 // ── Line Stroke Formatting ───────────────────────────────────────────
 
 export class LineStrokeFormattingCard extends formattingSettings.SimpleCard {
@@ -273,11 +355,33 @@ export const CAPABILITIES_TEMPLATES: Record<string, Record<string, unknown>> = {
       titleAlignment: { displayName: 'Alignment', type: { enumeration: [{ value: 'left', displayName: 'Left' }, { value: 'center', displayName: 'Center' }, { value: 'right', displayName: 'Right' }] } },
     },
   },
+  numberFormatting: {
+    displayName: 'Number Format',
+    properties: {
+      displayUnits: { displayName: 'Display Units', type: { enumeration: [{ value: 'auto', displayName: 'Auto' }, { value: 'none', displayName: 'None' }, { value: 'thousands', displayName: 'Thousands (K)' }, { value: 'millions', displayName: 'Millions (M)' }, { value: 'billions', displayName: 'Billions (B)' }] } },
+      decimalPlaces: { displayName: 'Decimal Places', type: { numeric: true } },
+      valuePrefix: { displayName: 'Prefix', type: { text: true } },
+      valueSuffix: { displayName: 'Suffix', type: { text: true } },
+    },
+  },
   lineStrokeFormatting: {
     displayName: 'Line Stroke',
     properties: {
       lineWidth: { displayName: 'Line Width', type: { numeric: true } },
       lineStyle: { displayName: 'Line Style', type: { enumeration: [{ value: 'solid', displayName: 'Solid' }, { value: 'dashed', displayName: 'Dashed' }, { value: 'dotted', displayName: 'Dotted' }] } },
+    },
+  },
+  scrollFormatting: {
+    displayName: 'Scroll',
+    properties: {
+      enableScroll: { displayName: 'Enable Scroll', type: { bool: true } },
+      minCategoryWidth: { displayName: 'Min Category Width (px)', type: { numeric: true } },
+    },
+  },
+  sortFormatting: {
+    displayName: 'Sort Order',
+    properties: {
+      sortBy: { displayName: 'Sort By', type: { enumeration: [{ value: 'dataOrder', displayName: 'Data Order' }, { value: 'valueAsc', displayName: 'Value (Ascending)' }, { value: 'valueDesc', displayName: 'Value (Descending)' }, { value: 'nameAsc', displayName: 'Name (A-Z)' }, { value: 'nameDesc', displayName: 'Name (Z-A)' }] } },
     },
   },
 };

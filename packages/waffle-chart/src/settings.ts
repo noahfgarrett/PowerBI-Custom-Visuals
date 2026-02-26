@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { DataLabelFormattingCard, TitleFormattingCard } from '../../core/src';
+import { DataLabelFormattingCard, LegendFormattingCard, TitleFormattingCard } from '../../core/src';
 // ── Grid Settings ────────────────────────────────────────────────────
 
 class GridSettings extends formattingSettings.SimpleCard {
@@ -172,6 +172,46 @@ class AnimationSettings extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
+// ── Pictogram Settings ──────────────────────────────────────────────
+
+class PictogramSettingsCard extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Pictogram Mode',
+    value: false,
+  });
+
+  iconShape = new formattingSettings.ItemDropdown({
+    name: 'iconShape',
+    displayName: 'Icon Shape',
+    items: [
+      { value: 'circle', displayName: 'Circle' },
+      { value: 'person', displayName: 'Person' },
+      { value: 'star', displayName: 'Star' },
+      { value: 'heart', displayName: 'Heart' },
+      { value: 'square', displayName: 'Square' },
+      { value: 'checkmark', displayName: 'Checkmark' },
+    ],
+    value: { value: 'person', displayName: 'Person' },
+  });
+
+  iconSize = new formattingSettings.NumUpDown({
+    name: 'iconSize',
+    displayName: 'Icon Size (%)',
+    value: 90,
+  });
+
+  outlineOpacity = new formattingSettings.NumUpDown({
+    name: 'outlineOpacity',
+    displayName: 'Outline Opacity (%)',
+    value: 20,
+  });
+
+  name = 'pictogramSettings';
+  displayName = 'Pictogram';
+  slices = [this.enabled, this.iconShape, this.iconSize, this.outlineOpacity];
+}
+
 // ── Top-level Model ──────────────────────────────────────────────────
 
 export class WaffleChartSettings extends formattingSettings.Model {
@@ -180,11 +220,13 @@ export class WaffleChartSettings extends formattingSettings.Model {
   valueSettings = new ValueSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
+  pictogramSettings = new PictogramSettingsCard();
 
   dataLabelFormattingCard = new DataLabelFormattingCard();
 
   titleFormattingCard = new TitleFormattingCard();
 
+  legendFormattingCard = new LegendFormattingCard();
 
   cards = [
     this.gridSettings,
@@ -192,8 +234,9 @@ export class WaffleChartSettings extends formattingSettings.Model {
     this.valueSettings,
     this.cardSettings,
     this.animationSettings,
+    this.pictogramSettings,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
-
+    this.legendFormattingCard,
   ];
 }

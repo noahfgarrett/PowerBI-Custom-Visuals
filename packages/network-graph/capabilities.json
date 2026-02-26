@@ -190,6 +190,29 @@
         }
       }
     },
+    "zoomSettings": {
+      "displayName": "Zoom & Pan",
+      "properties": {
+        "enabled": {
+          "displayName": "Enable Zoom & Pan",
+          "type": {
+            "bool": true
+          }
+        },
+        "minZoom": {
+          "displayName": "Min Zoom",
+          "type": {
+            "numeric": true
+          }
+        },
+        "maxZoom": {
+          "displayName": "Max Zoom",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
     "dataLabelFormatting": {
       "displayName": "Data Labels",
       "properties": {

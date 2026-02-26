@@ -3,7 +3,9 @@
  * Used by all visuals to apply axis, grid, data label, and title formatting.
  */
 
-import type { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard } from './shared-settings';
+import type { AxisFormattingCard, DataLabelFormattingCard, NumberFormattingCard, ScrollFormattingCard, SortFormattingCard, TitleFormattingCard } from './shared-settings';
+import { formatNumber } from './format';
+import type { DisplayUnits } from './format';
 
 // ── Default colors (used when user hasn't picked a color) ────────────
 
@@ -25,7 +27,7 @@ function resolveColor(
 }
 
 /** Resolve an ItemDropdown value to its inner string value. */
-function resolveDropdown(
+export function resolveDropdown(
   dropdown: { value?: unknown } | undefined,
 ): string | undefined {
   const val = dropdown?.value;
@@ -205,4 +207,214 @@ export function applyAllAxisFormatting(
       applyGridFormatting(el, settings);
     });
   }
+}
+
+// ── Sort Order Helper ───────────────────────────────────────────────
+
+/** A sortable item with a name and a numeric value. */
+export interface SortableItem {
+  name: string;
+  value: number;
+}
+
+/**
+ * Applies the user's sort order to an array of items.
+ * Returns a new sorted array (does not mutate the original).
+ *
+ * @param items    - The array of items to sort. Each must have `name` and `value`.
+ * @param settings - SortFormattingCard instance.
+ * @returns A new array in the requested sort order.
+ */
+export function applySortOrder<T extends SortableItem>(
+  items: T[],
+  settings: SortFormattingCard,
+): T[] {
+  const sortBy = resolveDropdown(settings.sortBy) ?? 'dataOrder';
+
+  if (sortBy === 'dataOrder') return items;
+
+  const sorted = [...items];
+  switch (sortBy) {
+    case 'valueAsc':
+      sorted.sort((a, b) => a.value - b.value);
+      break;
+    case 'valueDesc':
+      sorted.sort((a, b) => b.value - a.value);
+      break;
+    case 'nameAsc':
+      sorted.sort((a, b) => a.name.localeCompare(b.name));
+      break;
+    case 'nameDesc':
+      sorted.sort((a, b) => b.name.localeCompare(a.name));
+      break;
+  }
+
+  return sorted;
+}
+
+// ── Number Format Helper ────────────────────────────────────────────
+
+/**
+ * Formats a number using the user's NumberFormattingCard settings.
+ * Reads displayUnits, decimalPlaces, prefix, and suffix from the card.
+ *
+ * @param value    - The number to format.
+ * @param settings - NumberFormattingCard instance.
+ * @returns The formatted string (e.g. "$1.2M", "42K%").
+ */
+export function formatWithSettings(
+  value: number | null | undefined,
+  settings: NumberFormattingCard,
+): string {
+  const units = resolveDropdown(settings.displayUnits) as DisplayUnits | undefined;
+  const decimals = settings.decimalPlaces.value;
+  const prefix = settings.valuePrefix.value ?? '';
+  const suffix = settings.valueSuffix.value ?? '';
+
+  return formatNumber(value, {
+    displayUnits: units ?? 'auto',
+    decimals: decimals >= 0 ? decimals : undefined, // -1 = auto
+    prefix,
+    suffix,
+    abbreviate: true,
+  });
+}
+
+// ── Scrollable Chart Helper ─────────────────────────────────────────
+
+export interface ScrollableChartOptions {
+  container: HTMLElement;
+  viewportWidth: number;
+  viewportHeight: number;
+  categoryCount: number;
+  scrollSettings: ScrollFormattingCard;
+  availableChartWidth: number;
+  availableChartHeight: number;
+  direction: 'horizontal' | 'vertical';
+}
+
+export interface ScrollableChartResult {
+  svgParent: HTMLElement;
+  svgWidth: number;
+  svgHeight: number;
+  chartWidth: number;
+  chartHeight: number;
+  isScrolling: boolean;
+}
+
+/** CSS class name for the scroll wrapper (used to detect duplicates). */
+const SCROLL_WRAPPER_CLASS = 'pbi-scroll-wrapper';
+
+/** Unique ID to ensure scrollbar styles are injected only once. */
+const SCROLL_STYLE_ID = 'pbi-scroll-styles';
+
+/**
+ * Injects thin-scrollbar CSS into `document.head` if not already present.
+ */
+function ensureScrollStyles(): void {
+  if (document.getElementById(SCROLL_STYLE_ID)) return;
+  const style = document.createElement('style');
+  style.id = SCROLL_STYLE_ID;
+  style.textContent = `
+    .${SCROLL_WRAPPER_CLASS} {
+      scroll-behavior: smooth;
+      scrollbar-width: thin;
+    }
+    .${SCROLL_WRAPPER_CLASS}::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .${SCROLL_WRAPPER_CLASS}::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .${SCROLL_WRAPPER_CLASS}::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.4);
+      border-radius: 3px;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+/**
+ * Creates a scrollable wrapper around a chart when categories exceed available
+ * space at the configured minimum width per category.
+ *
+ * If scroll is not needed (few categories or disabled), returns the container
+ * as-is with the original dimensions — zero overhead.
+ */
+export function createScrollableChart(options: ScrollableChartOptions): ScrollableChartResult {
+  const {
+    container,
+    viewportWidth,
+    viewportHeight,
+    categoryCount,
+    scrollSettings,
+    availableChartWidth,
+    availableChartHeight,
+    direction,
+  } = options;
+
+  const enabled = scrollSettings.enableScroll.value;
+  const minWidth = scrollSettings.minCategoryWidth.value;
+
+  const isHorizontal = direction === 'horizontal';
+  const availableSize = isHorizontal ? availableChartWidth : availableChartHeight;
+  const needsScroll = enabled && categoryCount > 0 && (availableSize / categoryCount) < minWidth;
+
+  if (!needsScroll) {
+    return {
+      svgParent: container,
+      svgWidth: viewportWidth,
+      svgHeight: viewportHeight,
+      chartWidth: availableChartWidth,
+      chartHeight: availableChartHeight,
+      isScrolling: false,
+    };
+  }
+
+  ensureScrollStyles();
+
+  const expandedSize = categoryCount * minWidth;
+
+  const wrapper = document.createElement('div');
+  wrapper.className = SCROLL_WRAPPER_CLASS;
+
+  if (isHorizontal) {
+    wrapper.style.overflowX = 'auto';
+    wrapper.style.overflowY = 'hidden';
+    wrapper.style.width = '100%';
+    wrapper.style.height = `${viewportHeight}px`;
+
+    const expandedSvgWidth = viewportWidth - availableChartWidth + expandedSize;
+
+    container.appendChild(wrapper);
+
+    return {
+      svgParent: wrapper,
+      svgWidth: expandedSvgWidth,
+      svgHeight: viewportHeight,
+      chartWidth: expandedSize,
+      chartHeight: availableChartHeight,
+      isScrolling: true,
+    };
+  }
+
+  // Vertical scroll
+  wrapper.style.overflowX = 'hidden';
+  wrapper.style.overflowY = 'auto';
+  wrapper.style.width = `${viewportWidth}px`;
+  wrapper.style.height = '100%';
+
+  const expandedSvgHeight = viewportHeight - availableChartHeight + expandedSize;
+
+  container.appendChild(wrapper);
+
+  return {
+    svgParent: wrapper,
+    svgWidth: viewportWidth,
+    svgHeight: expandedSvgHeight,
+    chartWidth: availableChartWidth,
+    chartHeight: expandedSize,
+    isScrolling: true,
+  };
 }

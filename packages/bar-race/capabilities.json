@@ -163,6 +163,58 @@
         }
       }
     },
+    "timestampSettings": {
+      "displayName": "Timestamp Display",
+      "properties": {
+        "show": {
+          "displayName": "Show Timestamp",
+          "type": {
+            "bool": true
+          }
+        },
+        "fontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "fontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "opacity": {
+          "displayName": "Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "position": {
+          "displayName": "Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "bottomRight",
+                "displayName": "Bottom Right"
+              },
+              {
+                "value": "center",
+                "displayName": "Center"
+              },
+              {
+                "value": "topRight",
+                "displayName": "Top Right"
+              }
+            ]
+          }
+        }
+      }
+    },
     "dataLabelFormatting": {
       "displayName": "Data Labels",
       "properties": {
@@ -319,6 +371,71 @@
               {
                 "value": "dashed",
                 "displayName": "Dashed"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "playbackSettings": {
+      "displayName": "Playback",
+      "properties": {
+        "autoPlay": {
+          "displayName": "Auto-Play on Load",
+          "type": {
+            "bool": true
+          }
+        },
+        "showControls": {
+          "displayName": "Show Controls",
+          "type": {
+            "bool": true
+          }
+        },
+        "speed": {
+          "displayName": "Playback Speed",
+          "type": {
+            "enumeration": [
+              {
+                "value": "0.5x",
+                "displayName": "0.5x"
+              },
+              {
+                "value": "1x",
+                "displayName": "1x"
+              },
+              {
+                "value": "1.5x",
+                "displayName": "1.5x"
+              },
+              {
+                "value": "2x",
+                "displayName": "2x"
+              },
+              {
+                "value": "3x",
+                "displayName": "3x"
+              }
+            ]
+          }
+        },
+        "loop": {
+          "displayName": "Loop Animation",
+          "type": {
+            "bool": true
+          }
+        },
+        "controlPosition": {
+          "displayName": "Control Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "bottom",
+                "displayName": "Bottom"
+              },
+              {
+                "value": "top",
+                "displayName": "Top"
               }
             ]
           }

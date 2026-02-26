@@ -25,6 +25,9 @@ import {
   applyDataLabelFormatting,
   applyAxisFormatting,
   applyGridFormatting,
+  createScrollableChart,
+  applySortOrder,
+  resolveDropdown,
 } from '../../core/src';
 
 import { HealthBarSettings } from './settings';
@@ -42,7 +45,8 @@ const Y_TICKS = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
 interface HealthBarItem {
   label: string;
   value: number;
-  pct: number; // clamped 0–1
+  pct: number; // clamped 0-1
+  target: number | null;
   selectionId: ISelectionId;
 }
 
@@ -79,37 +83,60 @@ export class HealthBarVisual implements IVisual {
       dataView,
     );
 
-    const items = this.extractData(dataView);
+    // Extract data and apply user-configured sort order
+    const items = applySortOrder(
+      this.extractData(dataView).map((d) => ({ ...d, name: d.label })),
+      this.settings.sortFormattingCard,
+    );
     this.render(items, options.viewport);
   }
 
   // ── Data Extraction ─────────────────────────────────────────────────
 
   private extractData(dataView: DataView | undefined): HealthBarItem[] {
-    if (!dataView?.categorical?.categories?.[0] || !dataView.categorical.values?.[0]) {
+    if (!dataView?.categorical?.categories?.[0] || !dataView.categorical.values) {
       return [];
     }
 
     const categories = dataView.categorical.categories[0];
-    const values = dataView.categorical.values[0];
+    const allValues = dataView.categorical.values;
     const maxVal = this.settings.healthBarSettings.maxValue.value || 100;
     const items: HealthBarItem[] = [];
 
+    // Find measure and target columns by role
+    let measureColumn: powerbi.DataViewValueColumn | null = null;
+    let targetColumn: powerbi.DataViewValueColumn | null = null;
+
+    for (const col of allValues) {
+      const role = col.source.roles;
+      if (!role) continue;
+      if (role['measure']) measureColumn = col;
+      if (role['target']) targetColumn = col;
+    }
+
+    if (!measureColumn) return items;
+
     for (let i = 0; i < categories.values.length; i++) {
       const label = String(categories.values[i] ?? '');
-      const rawValue = Number(values.values[i] ?? 0);
+      const rawValue = Number(measureColumn.values[i] ?? 0);
 
       if (!Number.isFinite(rawValue)) continue;
 
       const clamped = Math.max(0, Math.min(rawValue, maxVal));
       const pct = maxVal > 0 ? clamped / maxVal : 0;
 
+      let target: number | null = null;
+      if (targetColumn && i < targetColumn.values.length) {
+        const raw = targetColumn.values[i];
+        target = typeof raw === 'number' ? raw : null;
+      }
+
       const selectionId = this.host
         .createSelectionIdBuilder()
         .withCategory(categories, i)
         .createSelectionId();
 
-      items.push({ label, value: clamped, pct, selectionId });
+      items.push({ label, value: clamped, pct, target, selectionId });
     }
 
     return items;
@@ -179,9 +206,25 @@ export class HealthBarVisual implements IVisual {
     const barCount = items.length;
     const totalGap = Math.max(0, barCount - 1) * gap;
     const availWidth = barAreaWidth - totalGap;
-    const barWidth = Math.max(4, Math.min(maxBarWidth, availWidth / barCount));
+
+    // Scroll support — expand chart if bars would be too compressed
+    const scroll = createScrollableChart({
+      container: this.container,
+      viewportWidth: svgWidth,
+      viewportHeight: svgHeight,
+      categoryCount: barCount,
+      scrollSettings: s.scrollFormattingCard,
+      availableChartWidth: barAreaWidth,
+      availableChartHeight: chartHeight,
+      direction: 'horizontal',
+    });
+
+    const effectiveBarAreaWidth = scroll.isScrolling ? scroll.chartWidth : barAreaWidth;
+    const effectiveAvailWidth = effectiveBarAreaWidth - totalGap;
+    const barWidth = Math.max(4, Math.min(maxBarWidth, effectiveAvailWidth / barCount));
     const totalBarsWidth = barCount * barWidth + totalGap;
-    const offsetX = leftMargin + (barAreaWidth - totalBarsWidth) / 2;
+    const effectiveSvgWidth = scroll.isScrolling ? scroll.svgWidth : svgWidth;
+    const offsetX = leftMargin + (effectiveBarAreaWidth - totalBarsWidth) / 2;
 
     // Settings
     const cornerRadius = s.healthBarSettings.barCornerRadius.value;
@@ -205,9 +248,9 @@ export class HealthBarVisual implements IVisual {
     // Create SVG
     const svg = document.createElementNS(SVG_NS, 'svg');
     svg.setAttribute('class', 'health-bar-svg');
-    svg.setAttribute('width', String(svgWidth));
+    svg.setAttribute('width', String(effectiveSvgWidth));
     svg.setAttribute('height', String(svgHeight));
-    this.container.appendChild(svg);
+    scroll.svgParent.appendChild(svg);
 
     // Chart group
     const chartGroup = document.createElementNS(SVG_NS, 'g');
@@ -344,6 +387,49 @@ export class HealthBarVisual implements IVisual {
         const delay = i * staggerDelay;
         const cancel = growBar(fill, delay, animDuration, 'vertical');
         this.cancelAnimations.push(cancel);
+      }
+
+      // ── Target Marker ─────────────────────────────────────────
+      if (s.targetSettings.show.value && item.target !== null) {
+        const maxValue = s.healthBarSettings.maxValue.value || 100;
+        const targetPct = maxValue > 0 ? Math.max(0, Math.min(item.target, maxValue)) / maxValue : 0;
+        const targetX = barX + barWidth * targetPct;
+        const targetColor = s.targetSettings.color.value?.value ?? '#0F172A';
+        const targetLineWidth = s.targetSettings.lineWidth.value;
+        const markerStyle = resolveDropdown(s.targetSettings.markerStyle) ?? 'line';
+
+        if (markerStyle === 'line') {
+          const line = document.createElementNS(SVG_NS, 'line');
+          line.setAttribute('class', 'health-bar-target');
+          line.setAttribute('x1', String(targetX));
+          line.setAttribute('y1', String(-2));
+          line.setAttribute('x2', String(targetX));
+          line.setAttribute('y2', String(chartHeight + 2));
+          line.setAttribute('stroke', targetColor);
+          line.setAttribute('stroke-width', String(targetLineWidth));
+          line.setAttribute('stroke-linecap', 'round');
+          chartGroup.appendChild(line);
+        } else if (markerStyle === 'triangle') {
+          const markerSize = barWidth * 0.15;
+          const triY = fillY - markerSize - 1;
+          const triangle = document.createElementNS(SVG_NS, 'polygon');
+          triangle.setAttribute('class', 'health-bar-target');
+          triangle.setAttribute('points',
+            `${targetX},${triY + markerSize} ${targetX - markerSize / 2},${triY} ${targetX + markerSize / 2},${triY}`
+          );
+          triangle.setAttribute('fill', targetColor);
+          chartGroup.appendChild(triangle);
+        } else if (markerStyle === 'diamond') {
+          const markerSize = barWidth * 0.12;
+          const diaY = chartHeight / 2;
+          const diamond = document.createElementNS(SVG_NS, 'polygon');
+          diamond.setAttribute('class', 'health-bar-target');
+          diamond.setAttribute('points',
+            `${targetX},${diaY - markerSize} ${targetX + markerSize},${diaY} ${targetX},${diaY + markerSize} ${targetX - markerSize},${diaY}`
+          );
+          diamond.setAttribute('fill', targetColor);
+          chartGroup.appendChild(diamond);
+        }
       }
 
       // Value label

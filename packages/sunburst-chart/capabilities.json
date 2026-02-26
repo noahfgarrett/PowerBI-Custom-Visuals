@@ -140,6 +140,74 @@
         }
       }
     },
+    "centerContentSettings": {
+      "displayName": "Center Content",
+      "properties": {
+        "show": {
+          "displayName": "Show Center Content",
+          "type": {
+            "bool": true
+          }
+        },
+        "displayMode": {
+          "displayName": "Display Mode",
+          "type": {
+            "enumeration": [
+              {
+                "value": "total",
+                "displayName": "Total"
+              },
+              {
+                "value": "count",
+                "displayName": "Count"
+              },
+              {
+                "value": "average",
+                "displayName": "Average"
+              },
+              {
+                "value": "custom",
+                "displayName": "Custom"
+              }
+            ]
+          }
+        },
+        "customText": {
+          "displayName": "Custom Text",
+          "type": {
+            "text": true
+          }
+        },
+        "fontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "fontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "showLabel": {
+          "displayName": "Show Label",
+          "type": {
+            "bool": true
+          }
+        },
+        "labelFontSize": {
+          "displayName": "Label Font Size",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
     "animationSettings": {
       "displayName": "Animation",
       "properties": {
@@ -297,6 +365,39 @@
                 "displayName": "Right"
               }
             ]
+          }
+        }
+      }
+    },
+    "drillDownSettings": {
+      "displayName": "Drill-Down",
+      "properties": {
+        "enabled": {
+          "displayName": "Enable Drill-Down",
+          "type": {
+            "bool": true
+          }
+        },
+        "showBreadcrumb": {
+          "displayName": "Show Breadcrumb",
+          "type": {
+            "bool": true
+          }
+        },
+        "breadcrumbFontSize": {
+          "displayName": "Breadcrumb Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "breadcrumbColor": {
+          "displayName": "Breadcrumb Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
           }
         }
       }

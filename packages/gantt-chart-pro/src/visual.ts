@@ -32,6 +32,12 @@ import '../style/visual.less';
 
 interface GanttTask {
   name: string;
+  taskId: string;
+  dependencyId: string | null;
+  parentId: string | null;
+  depth: number;
+  isCollapsed: boolean;
+  hasChildren: boolean;
   startDate: Date | null;
   endDate: Date | null;
   progress: number; // 0-100
@@ -64,6 +70,9 @@ export class GanttChartProVisual implements IVisual {
   private settings: GanttChartProSettings;
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
+  private collapsedTasks: Set<string> = new Set();
+  private collapseDefaultApplied = false;
+  private lastUpdateOptions: VisualUpdateOptions | null = null;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
@@ -75,6 +84,8 @@ export class GanttChartProVisual implements IVisual {
   }
 
   public update(options: VisualUpdateOptions): void {
+    this.lastUpdateOptions = options;
+
     // Cancel running animations
     this.cancelAnimations.forEach((cancel) => cancel());
     this.cancelAnimations = [];
@@ -89,11 +100,14 @@ export class GanttChartProVisual implements IVisual {
     }
 
     // Extract data
-    const tasks = this.extractData(dataView);
+    const allTasks = this.extractData(dataView);
+
+    // Build visible task list: skip tasks whose any ancestor is collapsed
+    const visibleTasks = this.filterVisibleTasks(allTasks);
 
     this.notifyRenderStarted();
     try {
-      this.render(tasks, options.viewport);
+      this.render(visibleTasks, options.viewport, allTasks);
       this.notifyRenderFinished();
     } catch (error) {
       this.notifyRenderFailed(error);
@@ -117,6 +131,8 @@ export class GanttChartProVisual implements IVisual {
     let endCol: powerbi.DataViewValueColumn | undefined;
     let progressCol: powerbi.DataViewValueColumn | undefined;
     let catCol: powerbi.DataViewValueColumn | undefined;
+    let depCol: powerbi.DataViewValueColumn | undefined;
+    let parentCol: powerbi.DataViewValueColumn | undefined;
 
     if (values) {
       for (const col of values) {
@@ -126,6 +142,8 @@ export class GanttChartProVisual implements IVisual {
         if (role['endDate']) endCol = col;
         if (role['progress']) progressCol = col;
         if (role['category']) catCol = col;
+        if (role['dependency']) depCol = col;
+        if (role['parentTask']) parentCol = col;
       }
     }
 
@@ -142,11 +160,27 @@ export class GanttChartProVisual implements IVisual {
       const category = catCol && i < catCol.values.length
         ? String(catCol.values[i] ?? '')
         : '';
+
+      const dependencyRaw = depCol && i < depCol.values.length ? depCol.values[i] : null;
+      const dependencyId = dependencyRaw != null ? String(dependencyRaw) : null;
+
+      const parentRaw = parentCol && i < parentCol.values.length ? parentCol.values[i] : null;
+      const parentId = parentRaw != null && String(parentRaw).trim().length > 0
+        ? String(parentRaw)
+        : null;
+
       const selectionId = this.host.createSelectionIdBuilder()
         .withCategory(categories, i)
         .createSelectionId();
 
-      tasks.push({ name, startDate, endDate, progress, category, selectionId });
+      // Use name as the task ID; if a category column exists, concatenate for uniqueness
+      const taskId = category ? `${category}::${name}` : name;
+
+      tasks.push({
+        name, taskId, dependencyId, parentId,
+        depth: 0, isCollapsed: false, hasChildren: false,
+        startDate, endDate, progress, category, selectionId,
+      });
     }
 
     // Sort by start date
@@ -157,10 +191,147 @@ export class GanttChartProVisual implements IVisual {
       return a.startDate.getTime() - b.startDate.getTime();
     });
 
-    return tasks;
+    // Compute hierarchy: depth, hasChildren, isCollapsed
+    // Build lookup from task name to task (for parent resolution)
+    const taskByName = new Map<string, GanttTask>();
+    for (const t of tasks) {
+      if (!taskByName.has(t.name)) {
+        taskByName.set(t.name, t);
+      }
+    }
+
+    // Mark hasChildren
+    for (const t of tasks) {
+      if (t.parentId != null) {
+        const parent = taskByName.get(t.parentId);
+        if (parent) {
+          parent.hasChildren = true;
+        }
+      }
+    }
+
+    // Compute depth by walking up the parent chain (with cycle guard)
+    const depthCache = new Map<string, number>();
+    const computeDepth = (task: GanttTask): number => {
+      const cached = depthCache.get(task.name);
+      if (cached !== undefined) return cached;
+
+      if (task.parentId == null) {
+        depthCache.set(task.name, 0);
+        return 0;
+      }
+
+      const parent = taskByName.get(task.parentId);
+      if (!parent || parent.name === task.name) {
+        // No parent found or self-reference — treat as root
+        depthCache.set(task.name, 0);
+        return 0;
+      }
+
+      // Cycle guard: temporarily mark with -1
+      depthCache.set(task.name, -1);
+      const parentDepth = computeDepth(parent);
+      if (parentDepth < 0) {
+        // Cycle detected — treat as root
+        depthCache.set(task.name, 0);
+        return 0;
+      }
+
+      const depth = parentDepth + 1;
+      depthCache.set(task.name, depth);
+      return depth;
+    };
+
+    for (const t of tasks) {
+      t.depth = computeDepth(t);
+    }
+
+    // Apply collapse-by-default on first render (or when setting changes)
+    const collapseByDefault = this.settings.hierarchySettings.collapseByDefault.value;
+    if (collapseByDefault && !this.collapseDefaultApplied) {
+      this.collapseDefaultApplied = true;
+      for (const t of tasks) {
+        if (t.hasChildren) {
+          this.collapsedTasks.add(t.name);
+        }
+      }
+    } else if (!collapseByDefault && this.collapseDefaultApplied) {
+      // Setting turned off — clear defaults (user toggles are preserved only if they re-toggle)
+      this.collapseDefaultApplied = false;
+      this.collapsedTasks.clear();
+    }
+
+    // Set isCollapsed from the persisted set
+    for (const t of tasks) {
+      t.isCollapsed = this.collapsedTasks.has(t.name);
+    }
+
+    // Re-order tasks: children grouped under their parent (hierarchical sort)
+    // Build children map
+    const childrenMap = new Map<string, GanttTask[]>();
+    const roots: GanttTask[] = [];
+    for (const t of tasks) {
+      if (t.parentId != null && taskByName.has(t.parentId) && t.parentId !== t.name) {
+        const siblings = childrenMap.get(t.parentId);
+        if (siblings) {
+          siblings.push(t);
+        } else {
+          childrenMap.set(t.parentId, [t]);
+        }
+      } else {
+        roots.push(t);
+      }
+    }
+
+    // Flatten tree in DFS order
+    const ordered: GanttTask[] = [];
+    const visit = (node: GanttTask): void => {
+      ordered.push(node);
+      const children = childrenMap.get(node.name);
+      if (children) {
+        for (const child of children) {
+          visit(child);
+        }
+      }
+    };
+    for (const root of roots) {
+      visit(root);
+    }
+
+    return ordered;
   }
 
-  private render(tasks: GanttTask[], viewport: powerbi.IViewport): void {
+  /**
+   * Filter out tasks whose any ancestor is collapsed.
+   * The task list is already in DFS order from extractData.
+   */
+  private filterVisibleTasks(allTasks: GanttTask[]): GanttTask[] {
+    // Build a lookup from name to task for ancestor walking
+    const taskByName = new Map<string, GanttTask>();
+    for (const t of allTasks) {
+      if (!taskByName.has(t.name)) {
+        taskByName.set(t.name, t);
+      }
+    }
+
+    return allTasks.filter((task) => {
+      // Walk up the parent chain; if any ancestor is collapsed, hide this task
+      let current = task;
+      const visited = new Set<string>();
+      while (current.parentId != null) {
+        if (visited.has(current.name)) break; // cycle guard
+        visited.add(current.name);
+
+        const parent = taskByName.get(current.parentId);
+        if (!parent) break;
+        if (this.collapsedTasks.has(parent.name)) return false;
+        current = parent;
+      }
+      return true;
+    });
+  }
+
+  private render(tasks: GanttTask[], viewport: powerbi.IViewport, allTasks?: GanttTask[]): void {
     // Clear container
     while (this.container.firstChild) {
       this.container.removeChild(this.container.firstChild);
@@ -179,6 +350,8 @@ export class GanttChartProVisual implements IVisual {
     const animEnabled = s.animationSettings.enabled.value;
     const animDuration = s.animationSettings.duration.value;
     const showDataLabels = s.dataLabelFormattingCard.showDataLabels.value;
+    const indentWidth = s.hierarchySettings.indentWidth.value;
+    const showToggle = s.hierarchySettings.showToggle.value;
 
     // Apply glass style
     if (s.cardSettings.enableGlass.value) {
@@ -300,12 +473,58 @@ export class GanttChartProVisual implements IVisual {
         });
       });
 
-      // Label
+      // Label with hierarchy indentation
       if (showLabels) {
         const label = document.createElement('div');
         label.className = 'gantt-task-label';
         label.style.width = `${labelWidth}px`;
-        label.textContent = task.name;
+        label.style.display = 'flex';
+        label.style.alignItems = 'center';
+        label.style.overflow = 'hidden';
+
+        // Indent spacer based on depth
+        const indent = task.depth * indentWidth;
+        if (indent > 0) {
+          const spacer = document.createElement('span');
+          spacer.style.display = 'inline-block';
+          spacer.style.flexShrink = '0';
+          spacer.style.width = `${indent}px`;
+          label.appendChild(spacer);
+        }
+
+        // Toggle icon for parent tasks
+        if (showToggle && task.hasChildren) {
+          const toggle = document.createElement('span');
+          toggle.className = 'gantt-hierarchy-toggle';
+          toggle.style.cursor = 'pointer';
+          toggle.style.flexShrink = '0';
+          toggle.style.width = '16px';
+          toggle.style.textAlign = 'center';
+          toggle.style.userSelect = 'none';
+          toggle.style.fontSize = '10px';
+          toggle.style.lineHeight = `${barHeight}px`;
+          toggle.textContent = task.isCollapsed ? '\u25B6' : '\u25BC';
+          toggle.addEventListener('click', (event) => {
+            event.stopPropagation();
+            this.toggleCollapse(task.name);
+          });
+          label.appendChild(toggle);
+        } else if (showToggle) {
+          // Placeholder to keep alignment consistent
+          const placeholder = document.createElement('span');
+          placeholder.style.display = 'inline-block';
+          placeholder.style.flexShrink = '0';
+          placeholder.style.width = '16px';
+          label.appendChild(placeholder);
+        }
+
+        const nameSpan = document.createElement('span');
+        nameSpan.style.overflow = 'hidden';
+        nameSpan.style.textOverflow = 'ellipsis';
+        nameSpan.style.whiteSpace = 'nowrap';
+        nameSpan.textContent = task.name;
+        label.appendChild(nameSpan);
+
         row.appendChild(label);
       }
 
@@ -425,6 +644,13 @@ export class GanttChartProVisual implements IVisual {
       }
     }
 
+    // Dependency arrows
+    if (this.settings.dependencySettings.show.value) {
+      this.renderDependencyArrows(
+        rowsContainer, validTasks, labelWidth, chartWidth, barHeight, rowHeight, range, minTime,
+      );
+    }
+
     wrapper.appendChild(rowsContainer);
     this.container.appendChild(wrapper);
 
@@ -437,6 +663,185 @@ export class GanttChartProVisual implements IVisual {
     this.applyAxisCardFormatting(header, rowsContainer, validTasks.length, rowHeight, labelWidth, chartWidth, tickCount);
 
     this.container.addEventListener('click', this.handleBackgroundClick);
+  }
+
+  /** Toggle the collapsed state of a parent task and re-render. */
+  private toggleCollapse(taskName: string): void {
+    if (this.collapsedTasks.has(taskName)) {
+      this.collapsedTasks.delete(taskName);
+    } else {
+      this.collapsedTasks.add(taskName);
+    }
+    // Re-render using the last update options
+    if (this.lastUpdateOptions) {
+      this.update(this.lastUpdateOptions);
+    }
+  }
+
+  /**
+   * Render finish-to-start dependency arrows between Gantt bars as an SVG overlay.
+   */
+  private renderDependencyArrows(
+    rowsContainer: HTMLElement,
+    tasks: GanttTask[],
+    labelWidth: number,
+    chartWidth: number,
+    barHeight: number,
+    rowHeight: number,
+    range: number,
+    minTime: number,
+  ): void {
+    const depSettings = this.settings.dependencySettings;
+    const lineColor = this.resolveColorValue(depSettings.lineColor, '#94A3B8');
+    const lineWidth = depSettings.lineWidth.value;
+    const arrowSize = depSettings.arrowSize.value;
+    const lineStyleValue = depSettings.lineStyle.value;
+    const lineStyle = typeof lineStyleValue === 'string'
+      ? lineStyleValue
+      : (lineStyleValue as { value?: string } | undefined)?.value ?? 'solid';
+
+    // Build a lookup from taskId to row index
+    const taskIndexMap = new Map<string, number>();
+    for (let i = 0; i < tasks.length; i++) {
+      taskIndexMap.set(tasks[i].taskId, i);
+    }
+
+    // Also build a lookup by task name alone (for when dependency values reference just the name)
+    const taskNameIndexMap = new Map<string, number>();
+    for (let i = 0; i < tasks.length; i++) {
+      // Only store the first occurrence to avoid ambiguity
+      if (!taskNameIndexMap.has(tasks[i].name)) {
+        taskNameIndexMap.set(tasks[i].name, i);
+      }
+    }
+
+    // Collect dependency edges: { fromIdx, toIdx }
+    interface DepEdge { fromIdx: number; toIdx: number }
+    const edges: DepEdge[] = [];
+
+    for (let i = 0; i < tasks.length; i++) {
+      const depId = tasks[i].dependencyId;
+      if (depId == null) continue;
+
+      // Look up predecessor by taskId first, then by name
+      let predIdx = taskIndexMap.get(depId);
+      if (predIdx === undefined) {
+        predIdx = taskNameIndexMap.get(depId);
+      }
+      if (predIdx === undefined) continue; // predecessor not found — skip
+      if (predIdx === i) continue; // self-dependency — skip
+
+      edges.push({ fromIdx: predIdx, toIdx: i });
+    }
+
+    if (edges.length === 0) return;
+
+    // Create SVG overlay
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const totalHeight = tasks.length * rowHeight;
+    const totalWidth = labelWidth + chartWidth;
+
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('width', String(totalWidth));
+    svg.setAttribute('height', String(totalHeight));
+    svg.style.position = 'absolute';
+    svg.style.top = '0';
+    svg.style.left = '0';
+    svg.style.pointerEvents = 'none';
+    svg.style.overflow = 'visible';
+
+    // Define arrowhead marker
+    const defs = document.createElementNS(svgNS, 'defs');
+    const marker = document.createElementNS(svgNS, 'marker');
+    marker.setAttribute('id', 'gantt-dep-arrowhead');
+    marker.setAttribute('markerWidth', String(arrowSize));
+    marker.setAttribute('markerHeight', String(arrowSize));
+    marker.setAttribute('refX', String(arrowSize));
+    marker.setAttribute('refY', String(arrowSize / 2));
+    marker.setAttribute('orient', 'auto');
+    marker.setAttribute('markerUnits', 'userSpaceOnUse');
+
+    const arrowPath = document.createElementNS(svgNS, 'path');
+    arrowPath.setAttribute('d', `M0,0 L${arrowSize},${arrowSize / 2} L0,${arrowSize} Z`);
+    arrowPath.setAttribute('fill', lineColor);
+    marker.appendChild(arrowPath);
+    defs.appendChild(marker);
+    svg.appendChild(defs);
+
+    // Horizontal offset for routing (gap between bar end and connector start)
+    const hGap = 8;
+    const cornerRadius = 4;
+
+    for (const edge of edges) {
+      const fromTask = tasks[edge.fromIdx];
+      const toTask = tasks[edge.toIdx];
+
+      // Both tasks must have valid dates to compute bar positions
+      if (!fromTask.startDate || !fromTask.endDate || !toTask.startDate || !toTask.endDate) continue;
+
+      // From bar: right edge
+      const fromEndFrac = (fromTask.endDate.getTime() - minTime) / range;
+      const fromBarRight = labelWidth + fromEndFrac * chartWidth;
+      const fromRowCenterY = edge.fromIdx * rowHeight + barHeight / 2;
+
+      // To bar: left edge
+      const toStartFrac = (toTask.startDate.getTime() - minTime) / range;
+      const toBarLeft = labelWidth + toStartFrac * chartWidth;
+      const toRowCenterY = edge.toIdx * rowHeight + barHeight / 2;
+
+      // Build a right-angle path with rounded corners:
+      // From right edge of predecessor → horizontal gap → vertical to target row → horizontal to target left edge
+      const midX = fromBarRight + hGap;
+      const goingDown = toRowCenterY > fromRowCenterY;
+      const goingUp = toRowCenterY < fromRowCenterY;
+      const r = Math.min(cornerRadius, Math.abs(toRowCenterY - fromRowCenterY) / 2, hGap);
+
+      let d: string;
+      if (!goingDown && !goingUp) {
+        // Same row — straight horizontal line
+        d = `M${fromBarRight},${fromRowCenterY} L${toBarLeft - arrowSize},${toRowCenterY}`;
+      } else {
+        const vertDir = goingDown ? 1 : -1;
+        // Start: horizontal from predecessor right edge
+        // Corner 1: turn from horizontal to vertical
+        const c1x = midX - r;
+        const c1y = fromRowCenterY;
+        const c1ex = midX;
+        const c1ey = fromRowCenterY + vertDir * r;
+
+        // Corner 2: turn from vertical to horizontal (towards target)
+        const c2x = midX;
+        const c2y = toRowCenterY - vertDir * r;
+        const c2ex = midX + r;
+        const c2ey = toRowCenterY;
+
+        const endX = toBarLeft - arrowSize;
+
+        d = [
+          `M${fromBarRight},${fromRowCenterY}`,
+          `L${c1x},${c1y}`,
+          `Q${midX},${fromRowCenterY} ${c1ex},${c1ey}`,
+          `L${c2x},${c2y}`,
+          `Q${midX},${toRowCenterY} ${c2ex},${c2ey}`,
+          `L${endX},${toRowCenterY}`,
+        ].join(' ');
+      }
+
+      const pathEl = document.createElementNS(svgNS, 'path');
+      pathEl.setAttribute('d', d);
+      pathEl.setAttribute('fill', 'none');
+      pathEl.setAttribute('stroke', lineColor);
+      pathEl.setAttribute('stroke-width', String(lineWidth));
+      pathEl.setAttribute('marker-end', 'url(#gantt-dep-arrowhead)');
+
+      if (lineStyle === 'dashed') {
+        pathEl.setAttribute('stroke-dasharray', '6 3');
+      }
+
+      svg.appendChild(pathEl);
+    }
+
+    rowsContainer.appendChild(svg);
   }
 
   /**

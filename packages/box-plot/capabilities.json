@@ -10,7 +10,7 @@
       "displayName": "Values",
       "name": "values",
       "kind": "Measure",
-      "description": "Raw values — the visual computes min/Q1/median/Q3/max internally"
+      "description": "Raw values \u2014 the visual computes min/Q1/median/Q3/max internally"
     }
   ],
   "dataViewMappings": [
@@ -181,6 +181,85 @@
           "displayName": "Stagger Delay (ms)",
           "type": {
             "numeric": true
+          }
+        }
+      }
+    },
+    "meanMarkerSettings": {
+      "displayName": "Mean Marker",
+      "properties": {
+        "show": {
+          "displayName": "Show Mean Marker",
+          "type": {
+            "bool": true
+          }
+        },
+        "shape": {
+          "displayName": "Shape",
+          "type": {
+            "enumeration": [
+              {
+                "value": "diamond",
+                "displayName": "Diamond"
+              },
+              {
+                "value": "cross",
+                "displayName": "Cross"
+              },
+              {
+                "value": "circle",
+                "displayName": "Circle"
+              }
+            ]
+          }
+        },
+        "color": {
+          "displayName": "Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "size": {
+          "displayName": "Size",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "jitterSettings": {
+      "displayName": "Data Points",
+      "properties": {
+        "show": {
+          "displayName": "Show Data Points",
+          "type": {
+            "bool": true
+          }
+        },
+        "opacity": {
+          "displayName": "Point Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "radius": {
+          "displayName": "Radius",
+          "type": {
+            "numeric": true
+          }
+        },
+        "color": {
+          "displayName": "Point Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
           }
         }
       }
@@ -397,6 +476,88 @@
         }
       }
     },
+    "referenceLineSettings": {
+      "displayName": "Reference Line",
+      "properties": {
+        "show": {
+          "displayName": "Show Reference Line",
+          "type": {
+            "bool": true
+          }
+        },
+        "value": {
+          "displayName": "Value",
+          "type": {
+            "numeric": true
+          }
+        },
+        "lineColor": {
+          "displayName": "Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "lineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "lineStyle": {
+          "displayName": "Line Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "solid",
+                "displayName": "Solid"
+              },
+              {
+                "value": "dashed",
+                "displayName": "Dashed"
+              },
+              {
+                "value": "dotted",
+                "displayName": "Dotted"
+              }
+            ]
+          }
+        },
+        "showLabel": {
+          "displayName": "Show Label",
+          "type": {
+            "bool": true
+          }
+        },
+        "labelText": {
+          "displayName": "Label Text",
+          "type": {
+            "text": true
+          }
+        },
+        "showBand": {
+          "displayName": "Show Band",
+          "type": {
+            "bool": true
+          }
+        },
+        "bandUpperValue": {
+          "displayName": "Band Upper Value",
+          "type": {
+            "numeric": true
+          }
+        },
+        "bandOpacity": {
+          "displayName": "Band Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
     "cardSettings": {
       "displayName": "Card Style",
       "properties": {
@@ -420,6 +581,73 @@
           "displayName": "Border Radius",
           "type": {
             "numeric": true
+          }
+        }
+      }
+    },
+    "scrollFormatting": {
+      "displayName": "Scroll",
+      "properties": {
+        "enableScroll": {
+          "displayName": "Enable Scroll",
+          "type": {
+            "bool": true
+          }
+        },
+        "minCategoryWidth": {
+          "displayName": "Min Category Width (px)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "numberFormatting": {
+      "displayName": "Number Format",
+      "properties": {
+        "displayUnits": {
+          "displayName": "Display Units",
+          "type": {
+            "enumeration": [
+              {
+                "value": "auto",
+                "displayName": "Auto"
+              },
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "thousands",
+                "displayName": "Thousands (K)"
+              },
+              {
+                "value": "millions",
+                "displayName": "Millions (M)"
+              },
+              {
+                "value": "billions",
+                "displayName": "Billions (B)"
+              }
+            ]
+          }
+        },
+        "decimalPlaces": {
+          "displayName": "Decimal Places",
+          "type": {
+            "numeric": true
+          }
+        },
+        "valuePrefix": {
+          "displayName": "Prefix",
+          "type": {
+            "text": true
+          }
+        },
+        "valueSuffix": {
+          "displayName": "Suffix",
+          "type": {
+            "text": true
           }
         }
       }

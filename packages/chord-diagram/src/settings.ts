@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { DataLabelFormattingCard, TitleFormattingCard } from '../../core/src';
+import { DataLabelFormattingCard, LegendFormattingCard, TitleFormattingCard, SortFormattingCard} from '../../core/src';
 class ChordSettings extends formattingSettings.SimpleCard {
   padding = new formattingSettings.NumUpDown({
     name: 'padding',
@@ -116,6 +116,9 @@ export class ChordDiagramSettings extends formattingSettings.Model {
 
   titleFormattingCard = new TitleFormattingCard();
 
+  legendFormattingCard = new LegendFormattingCard();
+
+  sortFormattingCard = new SortFormattingCard();
 
   cards = [
     this.chordSettings,
@@ -124,6 +127,7 @@ export class ChordDiagramSettings extends formattingSettings.Model {
     this.animationSettings,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
-
+    this.legendFormattingCard,
+    this.sortFormattingCard,
   ];
 }

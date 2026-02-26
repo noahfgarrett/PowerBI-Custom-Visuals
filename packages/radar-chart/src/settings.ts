@@ -8,6 +8,16 @@ class RadarSettings extends formattingSettings.SimpleCard {
   showDots = new formattingSettings.ToggleSwitch({ name: 'showDots', displayName: 'Show Dots', value: true });
   dotRadius = new formattingSettings.NumUpDown({ name: 'dotRadius', displayName: 'Dot Radius', value: 4 });
 
+  gridShape = new formattingSettings.ItemDropdown({
+    name: 'gridShape',
+    displayName: 'Grid Shape',
+    items: [
+      { value: 'polygon', displayName: 'Polygon' },
+      { value: 'circle', displayName: 'Circle' },
+    ],
+    value: { value: 'polygon', displayName: 'Polygon' },
+  });
+
   webStrokeColor = new formattingSettings.ColorPicker({
     name: 'webStrokeColor',
     displayName: 'Web Stroke Color',
@@ -31,7 +41,7 @@ class RadarSettings extends formattingSettings.SimpleCard {
 
   name = 'radarSettings';
   displayName = 'Radar';
-  slices = [this.showGrid, this.gridLevels, this.fillOpacity, this.showDots, this.dotRadius, this.webStrokeColor, this.webStrokeWidth, this.webFillOpacity, this.areaOpacity];
+  slices = [this.showGrid, this.gridLevels, this.gridShape, this.fillOpacity, this.showDots, this.dotRadius, this.webStrokeColor, this.webStrokeWidth, this.webFillOpacity, this.areaOpacity];
 }
 
 class LegendSettings extends formattingSettings.SimpleCard {

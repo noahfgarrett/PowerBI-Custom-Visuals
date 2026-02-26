@@ -399,6 +399,54 @@
         }
       }
     },
+    "crosshairSettings": {
+      "displayName": "Crosshair",
+      "properties": {
+        "show": {
+          "displayName": "Show Crosshair",
+          "type": {
+            "bool": true
+          }
+        },
+        "lineColor": {
+          "displayName": "Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "lineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "lineStyle": {
+          "displayName": "Line Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "solid",
+                "displayName": "Solid"
+              },
+              {
+                "value": "dashed",
+                "displayName": "Dashed"
+              }
+            ]
+          }
+        },
+        "showValues": {
+          "displayName": "Show Values",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
     "cardSettings": {
       "displayName": "Card Style",
       "properties": {
@@ -422,6 +470,38 @@
           "displayName": "Border Radius",
           "type": {
             "numeric": true
+          }
+        }
+      }
+    },
+    "sortFormatting": {
+      "displayName": "Sort Order",
+      "properties": {
+        "sortBy": {
+          "displayName": "Sort By",
+          "type": {
+            "enumeration": [
+              {
+                "value": "dataOrder",
+                "displayName": "Data Order"
+              },
+              {
+                "value": "valueAsc",
+                "displayName": "Value (Ascending)"
+              },
+              {
+                "value": "valueDesc",
+                "displayName": "Value (Descending)"
+              },
+              {
+                "value": "nameAsc",
+                "displayName": "Name (A-Z)"
+              },
+              {
+                "value": "nameDesc",
+                "displayName": "Name (Z-A)"
+              }
+            ]
           }
         }
       }

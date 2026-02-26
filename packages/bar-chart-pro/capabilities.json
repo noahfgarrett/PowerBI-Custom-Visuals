@@ -7,10 +7,16 @@
       "description": "X-axis categories (e.g., Work Week)"
     },
     {
+      "displayName": "Sub-Category",
+      "name": "subCategory",
+      "kind": "Grouping",
+      "description": "Drill-down sub-category (optional)"
+    },
+    {
       "displayName": "Values",
       "name": "values",
       "kind": "Measure",
-      "description": "Bar values — supports multiple for grouped/stacked"
+      "description": "Bar values \u2014 supports multiple for grouped/stacked"
     },
     {
       "displayName": "Line Values",
@@ -32,6 +38,9 @@
           "category": {
             "max": 1
           },
+          "subCategory": {
+            "max": 1
+          },
           "values": {
             "max": 10
           },
@@ -49,6 +58,11 @@
             {
               "for": {
                 "in": "category"
+              }
+            },
+            {
+              "for": {
+                "in": "subCategory"
               }
             }
           ],
@@ -95,6 +109,10 @@
               {
                 "value": "stacked",
                 "displayName": "Stacked"
+              },
+              {
+                "value": "stacked100",
+                "displayName": "100% Stacked"
               },
               {
                 "value": "combo",
@@ -545,6 +563,169 @@
         }
       }
     },
+    "topNSettings": {
+      "displayName": "Top N / Others",
+      "properties": {
+        "enabled": {
+          "displayName": "Enable Top N",
+          "type": {
+            "bool": true
+          }
+        },
+        "topN": {
+          "displayName": "Top N",
+          "type": {
+            "numeric": true
+          }
+        },
+        "othersLabel": {
+          "displayName": "Others Label",
+          "type": {
+            "text": true
+          }
+        },
+        "othersColor": {
+          "displayName": "Others Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "sortBy": {
+          "displayName": "Sort By",
+          "type": {
+            "enumeration": [
+              {
+                "value": "value",
+                "displayName": "Value"
+              },
+              {
+                "value": "name",
+                "displayName": "Name"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "referenceLineSettings": {
+      "displayName": "Reference Line",
+      "properties": {
+        "show": {
+          "displayName": "Show Reference Line",
+          "type": {
+            "bool": true
+          }
+        },
+        "value": {
+          "displayName": "Value",
+          "type": {
+            "numeric": true
+          }
+        },
+        "lineColor": {
+          "displayName": "Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "lineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "lineStyle": {
+          "displayName": "Line Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "solid",
+                "displayName": "Solid"
+              },
+              {
+                "value": "dashed",
+                "displayName": "Dashed"
+              },
+              {
+                "value": "dotted",
+                "displayName": "Dotted"
+              }
+            ]
+          }
+        },
+        "showLabel": {
+          "displayName": "Show Label",
+          "type": {
+            "bool": true
+          }
+        },
+        "labelText": {
+          "displayName": "Label Text",
+          "type": {
+            "text": true
+          }
+        },
+        "showBand": {
+          "displayName": "Show Band",
+          "type": {
+            "bool": true
+          }
+        },
+        "bandUpperValue": {
+          "displayName": "Band Upper Value",
+          "type": {
+            "numeric": true
+          }
+        },
+        "bandOpacity": {
+          "displayName": "Band Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "drillDownSettings": {
+      "displayName": "Drill-Down",
+      "properties": {
+        "enabled": {
+          "displayName": "Enable Drill-Down",
+          "type": {
+            "bool": true
+          }
+        },
+        "showBreadcrumb": {
+          "displayName": "Show Breadcrumb",
+          "type": {
+            "bool": true
+          }
+        },
+        "breadcrumbFontSize": {
+          "displayName": "Breadcrumb Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "breadcrumbColor": {
+          "displayName": "Breadcrumb Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
     "cardSettings": {
       "displayName": "Card Style",
       "properties": {
@@ -568,6 +749,73 @@
           "displayName": "Border Radius",
           "type": {
             "numeric": true
+          }
+        }
+      }
+    },
+    "scrollFormatting": {
+      "displayName": "Scroll",
+      "properties": {
+        "enableScroll": {
+          "displayName": "Enable Scroll",
+          "type": {
+            "bool": true
+          }
+        },
+        "minCategoryWidth": {
+          "displayName": "Min Category Width (px)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "numberFormatting": {
+      "displayName": "Number Format",
+      "properties": {
+        "displayUnits": {
+          "displayName": "Display Units",
+          "type": {
+            "enumeration": [
+              {
+                "value": "auto",
+                "displayName": "Auto"
+              },
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "thousands",
+                "displayName": "Thousands (K)"
+              },
+              {
+                "value": "millions",
+                "displayName": "Millions (M)"
+              },
+              {
+                "value": "billions",
+                "displayName": "Billions (B)"
+              }
+            ]
+          }
+        },
+        "decimalPlaces": {
+          "displayName": "Decimal Places",
+          "type": {
+            "numeric": true
+          }
+        },
+        "valuePrefix": {
+          "displayName": "Prefix",
+          "type": {
+            "text": true
+          }
+        },
+        "valueSuffix": {
+          "displayName": "Suffix",
+          "type": {
+            "text": true
           }
         }
       }

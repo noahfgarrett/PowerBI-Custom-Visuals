@@ -5,7 +5,93 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, LineStrokeFormattingCard } from '../../core/src';
+import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, LineStrokeFormattingCard, ScrollFormattingCard, NumberFormattingCard} from '../../core/src';
+
+// ── Reference Line Settings ─────────────────────────────────────────
+
+class ReferenceLineSettingsCard extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Reference Line',
+    value: false,
+  });
+
+  value = new formattingSettings.NumUpDown({
+    name: 'value',
+    displayName: 'Value',
+    value: 0,
+  });
+
+  lineColor = new formattingSettings.ColorPicker({
+    name: 'lineColor',
+    displayName: 'Line Color',
+    value: { value: '#EF4444' },
+  });
+
+  lineWidth = new formattingSettings.NumUpDown({
+    name: 'lineWidth',
+    displayName: 'Line Width',
+    value: 2,
+  });
+
+  lineStyle = new formattingSettings.ItemDropdown({
+    name: 'lineStyle',
+    displayName: 'Line Style',
+    items: [
+      { value: 'solid', displayName: 'Solid' },
+      { value: 'dashed', displayName: 'Dashed' },
+      { value: 'dotted', displayName: 'Dotted' },
+    ],
+    value: { value: 'dashed', displayName: 'Dashed' },
+  });
+
+  showLabel = new formattingSettings.ToggleSwitch({
+    name: 'showLabel',
+    displayName: 'Show Label',
+    value: true,
+  });
+
+  labelText = new formattingSettings.TextInput({
+    name: 'labelText',
+    displayName: 'Label Text',
+    value: '',
+    placeholder: 'Custom label (blank = value)',
+  });
+
+  showBand = new formattingSettings.ToggleSwitch({
+    name: 'showBand',
+    displayName: 'Show Band',
+    value: false,
+  });
+
+  bandUpperValue = new formattingSettings.NumUpDown({
+    name: 'bandUpperValue',
+    displayName: 'Band Upper Value',
+    value: 0,
+  });
+
+  bandOpacity = new formattingSettings.NumUpDown({
+    name: 'bandOpacity',
+    displayName: 'Band Opacity (%)',
+    value: 15,
+  });
+
+  name = 'referenceLineSettings';
+  displayName = 'Reference Line';
+  slices = [
+    this.show,
+    this.value,
+    this.lineColor,
+    this.lineWidth,
+    this.lineStyle,
+    this.showLabel,
+    this.labelText,
+    this.showBand,
+    this.bandUpperValue,
+    this.bandOpacity,
+  ];
+}
+
 // ── Line Settings ────────────────────────────────────────────────────
 
 class LineSettingsCard extends formattingSettings.SimpleCard {
@@ -199,6 +285,48 @@ class AnimationSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
+// ── Crosshair Settings ──────────────────────────────────────────────
+
+class CrosshairSettingsCard extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Crosshair',
+    value: true,
+  });
+
+  lineColor = new formattingSettings.ColorPicker({
+    name: 'lineColor',
+    displayName: 'Line Color',
+    value: { value: '#94A3B8' },
+  });
+
+  lineWidth = new formattingSettings.NumUpDown({
+    name: 'lineWidth',
+    displayName: 'Line Width',
+    value: 1,
+  });
+
+  lineStyle = new formattingSettings.ItemDropdown({
+    name: 'lineStyle',
+    displayName: 'Line Style',
+    items: [
+      { value: 'solid', displayName: 'Solid' },
+      { value: 'dashed', displayName: 'Dashed' },
+    ],
+    value: { value: 'dashed', displayName: 'Dashed' },
+  });
+
+  showValues = new formattingSettings.ToggleSwitch({
+    name: 'showValues',
+    displayName: 'Show Values',
+    value: true,
+  });
+
+  name = 'crosshairSettings';
+  displayName = 'Crosshair';
+  slices = [this.show, this.lineColor, this.lineWidth, this.lineStyle, this.showValues];
+}
+
 // ── Root Model ───────────────────────────────────────────────────────
 
 export class MorphingAreaChartSettings extends formattingSettings.Model {
@@ -219,6 +347,17 @@ export class MorphingAreaChartSettings extends formattingSettings.Model {
 
   lineStrokeFormattingCard = new LineStrokeFormattingCard();
 
+  scrollFormattingCard = new ScrollFormattingCard();
+
+  constructor() {
+    super();
+    this.scrollFormattingCard.minCategoryWidth.value = 20;
+  }
+
+  numberFormattingCard = new NumberFormattingCard();
+
+  crosshairSettings = new CrosshairSettingsCard();
+  referenceLineSettings = new ReferenceLineSettingsCard();
 
   cards = [
     this.lineSettings,
@@ -232,6 +371,9 @@ export class MorphingAreaChartSettings extends formattingSettings.Model {
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.lineStrokeFormattingCard,
-
+    this.scrollFormattingCard,
+    this.numberFormattingCard,
+    this.crosshairSettings,
+    this.referenceLineSettings,
   ];
 }

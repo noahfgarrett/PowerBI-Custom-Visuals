@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, LineStrokeFormattingCard } from '../../core/src';
+import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, LineStrokeFormattingCard, ScrollFormattingCard } from '../../core/src';
 // ── Bump Settings ──────────────────────────────────────────────────
 
 class BumpSettings extends formattingSettings.SimpleCard {
@@ -142,6 +142,48 @@ class AnimationSettings extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
+// ── Crosshair Settings ──────────────────────────────────────────────
+
+class CrosshairSettingsCard extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Crosshair',
+    value: true,
+  });
+
+  lineColor = new formattingSettings.ColorPicker({
+    name: 'lineColor',
+    displayName: 'Line Color',
+    value: { value: '#94A3B8' },
+  });
+
+  lineWidth = new formattingSettings.NumUpDown({
+    name: 'lineWidth',
+    displayName: 'Line Width',
+    value: 1,
+  });
+
+  lineStyle = new formattingSettings.ItemDropdown({
+    name: 'lineStyle',
+    displayName: 'Line Style',
+    items: [
+      { value: 'solid', displayName: 'Solid' },
+      { value: 'dashed', displayName: 'Dashed' },
+    ],
+    value: { value: 'dashed', displayName: 'Dashed' },
+  });
+
+  showValues = new formattingSettings.ToggleSwitch({
+    name: 'showValues',
+    displayName: 'Show Values',
+    value: true,
+  });
+
+  name = 'crosshairSettings';
+  displayName = 'Crosshair';
+  slices = [this.show, this.lineColor, this.lineWidth, this.lineStyle, this.showValues];
+}
+
 // ── Root Model ──────────────────────────────────────────────────────
 
 export class BumpChartSettings extends formattingSettings.Model {
@@ -162,6 +204,14 @@ export class BumpChartSettings extends formattingSettings.Model {
 
   lineStrokeFormattingCard = new LineStrokeFormattingCard();
 
+  scrollFormattingCard = new ScrollFormattingCard();
+
+  crosshairSettings = new CrosshairSettingsCard();
+
+  constructor() {
+    super();
+    this.scrollFormattingCard.minCategoryWidth.value = 20;
+  }
 
   cards = [
     this.bumpSettings,
@@ -175,6 +225,7 @@ export class BumpChartSettings extends formattingSettings.Model {
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.lineStrokeFormattingCard,
-
+    this.scrollFormattingCard,
+    this.crosshairSettings,
   ];
 }

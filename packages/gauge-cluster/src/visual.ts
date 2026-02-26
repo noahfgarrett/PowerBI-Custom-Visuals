@@ -13,6 +13,7 @@ import {
   countUp,
   fadeSlideIn,
   formatNumber,
+  formatWithSettings,
   getGlassStyle,
   renderChartTitle,
   applyDataLabelFormatting,
@@ -228,11 +229,11 @@ export class GaugeClusterVisual implements IVisual {
     const arcWidth = outerRadius * ARC_THICKNESS;
     const innerRadius = outerRadius - arcWidth;
 
-    // D3 arc generator
+    // D3 arc generator (optionally with rounded ends)
     const arcGen = d3.arc<{ startAngle: number; endAngle: number }>()
       .innerRadius(innerRadius)
       .outerRadius(outerRadius)
-      .cornerRadius(arcWidth / 2);
+      .cornerRadius(s.clusterSettings.roundedCaps.value ? arcWidth / 2 : 0);
 
     // ── Render Each Gauge ────────────────────────────────────────
     const newValues = new Map<string, number>();
@@ -338,13 +339,15 @@ export class GaugeClusterVisual implements IVisual {
       }
 
       // ── Target Marker ────────────────────────────────────────
-      if (item.target !== null) {
+      if (s.targetSettings.show.value && item.target !== null) {
         const clampedTarget = Math.max(minVal, Math.min(maxVal, item.target));
         const normalizedTarget = (clampedTarget - minVal) / totalRange;
         const targetAngle = startAngleRad + totalSweepRad * normalizedTarget;
 
         const tickLength = arcWidth * 0.8;
         const midRadius = (innerRadius + outerRadius) / 2;
+        const targetColor = s.targetSettings.color.value?.value ?? '#0F172A';
+        const targetLineWidth = s.targetSettings.lineWidth.value;
 
         // d3.arc uses 12-o'clock origin, rotate by -PI/2 for Math.cos/sin
         const cosA = Math.cos(targetAngle - Math.PI / 2);
@@ -356,8 +359,8 @@ export class GaugeClusterVisual implements IVisual {
           .attr('y1', (midRadius - tickLength) * sinA)
           .attr('x2', (midRadius + tickLength) * cosA)
           .attr('y2', (midRadius + tickLength) * sinA)
-          .attr('stroke', '#333333')
-          .attr('stroke-width', 2)
+          .attr('stroke', targetColor)
+          .attr('stroke-width', targetLineWidth)
           .attr('stroke-linecap', 'round');
       }
 
@@ -371,7 +374,7 @@ export class GaugeClusterVisual implements IVisual {
           .attr('x', 0)
           .attr('y', textY);
 
-        const fmt = (v: number): string => formatNumber(v, { abbreviate: false, decimals: 0 });
+        const fmt = (v: number): string => formatWithSettings(v, this.settings.numberFormattingCard);
 
         if (animEnabled) {
           const prevVal = this.previousValues.get(item.label) ?? minVal;
@@ -448,14 +451,15 @@ export class GaugeClusterVisual implements IVisual {
 
   private showGaugeTooltip(item: GaugeItem, event: MouseEvent): void {
     const locale = this.getHostLocale();
+    const numberSettings = this.settings.numberFormattingCard;
     const tooltipData: VisualTooltipDataItem[] = [
       { displayName: 'Label', value: item.label },
-      { displayName: 'Value', value: formatNumber(item.value, { abbreviate: false, locale }) },
+      { displayName: 'Value', value: formatWithSettings(item.value, numberSettings) },
     ];
     if (item.target !== null) {
       tooltipData.push({
         displayName: 'Target',
-        value: formatNumber(item.target, { abbreviate: false, locale }),
+        value: formatWithSettings(item.target, numberSettings),
       });
     }
 

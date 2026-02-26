@@ -53,6 +53,7 @@ export {
   formatPercent,
   formatCurrency,
   type FormatOptions,
+  type DisplayUnits,
 } from './format';
 
 // Responsive breakpoints
@@ -81,6 +82,9 @@ export {
   DataLabelFormattingCard,
   TitleFormattingCard,
   LineStrokeFormattingCard,
+  ScrollFormattingCard,
+  NumberFormattingCard,
+  SortFormattingCard,
   CAPABILITIES_TEMPLATES,
 } from './shared-settings';
 
@@ -91,4 +95,11 @@ export {
   applyAxisFormatting,
   applyGridFormatting,
   applyAllAxisFormatting,
+  applySortOrder,
+  formatWithSettings,
+  createScrollableChart,
+  resolveDropdown,
+  type SortableItem,
+  type ScrollableChartOptions,
+  type ScrollableChartResult,
 } from './shared-helpers';

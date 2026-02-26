@@ -376,6 +376,71 @@
         }
       }
     },
+    "deltaLabelSettings": {
+      "displayName": "Delta Labels",
+      "properties": {
+        "show": {
+          "displayName": "Show Delta Labels",
+          "type": {
+            "bool": true
+          }
+        },
+        "fontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "fontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "format": {
+          "displayName": "Format",
+          "type": {
+            "enumeration": [
+              {
+                "value": "absolute",
+                "displayName": "Absolute"
+              },
+              {
+                "value": "percent",
+                "displayName": "Percent"
+              },
+              {
+                "value": "both",
+                "displayName": "Both"
+              }
+            ]
+          }
+        },
+        "position": {
+          "displayName": "Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "above",
+                "displayName": "Above"
+              },
+              {
+                "value": "center",
+                "displayName": "Center"
+              },
+              {
+                "value": "below",
+                "displayName": "Below"
+              }
+            ]
+          }
+        }
+      }
+    },
     "cardSettings": {
       "displayName": "Card Style",
       "properties": {
@@ -399,6 +464,55 @@
           "displayName": "Border Radius",
           "type": {
             "numeric": true
+          }
+        }
+      }
+    },
+    "scrollFormatting": {
+      "displayName": "Scroll",
+      "properties": {
+        "enableScroll": {
+          "displayName": "Enable Scroll",
+          "type": {
+            "bool": true
+          }
+        },
+        "minCategoryWidth": {
+          "displayName": "Min Category Width (px)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "sortFormatting": {
+      "displayName": "Sort Order",
+      "properties": {
+        "sortBy": {
+          "displayName": "Sort By",
+          "type": {
+            "enumeration": [
+              {
+                "value": "dataOrder",
+                "displayName": "Data Order"
+              },
+              {
+                "value": "valueAsc",
+                "displayName": "Value (Ascending)"
+              },
+              {
+                "value": "valueDesc",
+                "displayName": "Value (Descending)"
+              },
+              {
+                "value": "nameAsc",
+                "displayName": "Name (A-Z)"
+              },
+              {
+                "value": "nameDesc",
+                "displayName": "Name (Z-A)"
+              }
+            ]
           }
         }
       }

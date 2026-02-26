@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard } from '../../core/src';
+import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, SortFormattingCard} from '../../core/src';
 // -- Dumbbell Settings --------------------------------------------------------
 
 class DumbbellSettings extends formattingSettings.SimpleCard {
@@ -122,6 +122,54 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
   slices = [this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
+// -- Delta Label Settings -----------------------------------------------------
+
+class DeltaLabelSettings extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Delta Labels',
+    value: true,
+  });
+
+  fontSize = new formattingSettings.NumUpDown({
+    name: 'fontSize',
+    displayName: 'Font Size',
+    value: 10,
+  });
+
+  fontColor = new formattingSettings.ColorPicker({
+    name: 'fontColor',
+    displayName: 'Font Color',
+    value: { value: '' },
+  });
+
+  format = new formattingSettings.ItemDropdown({
+    name: 'format',
+    displayName: 'Format',
+    items: [
+      { value: 'absolute', displayName: 'Absolute' },
+      { value: 'percent', displayName: 'Percent' },
+      { value: 'both', displayName: 'Both' },
+    ],
+    value: { value: 'absolute', displayName: 'Absolute' },
+  });
+
+  position = new formattingSettings.ItemDropdown({
+    name: 'position',
+    displayName: 'Position',
+    items: [
+      { value: 'above', displayName: 'Above' },
+      { value: 'center', displayName: 'Center' },
+      { value: 'below', displayName: 'Below' },
+    ],
+    value: { value: 'above', displayName: 'Above' },
+  });
+
+  name = 'deltaLabelSettings';
+  displayName = 'Delta Labels';
+  slices = [this.show, this.fontSize, this.fontColor, this.format, this.position];
+}
+
 // -- Animation Settings -------------------------------------------------------
 
 class AnimationSettingsCard extends formattingSettings.SimpleCard {
@@ -149,6 +197,7 @@ export class DumbbellChartSettings extends formattingSettings.Model {
   axisSettings = new AxisSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettingsCard();
+  deltaLabelSettings = new DeltaLabelSettings();
 
   axisFormattingCard = new AxisFormattingCard();
 
@@ -158,16 +207,26 @@ export class DumbbellChartSettings extends formattingSettings.Model {
 
   titleFormattingCard = new TitleFormattingCard();
 
+  scrollFormattingCard = new ScrollFormattingCard();
+
+  constructor() {
+    super();
+    this.scrollFormattingCard.minCategoryWidth.value = 30;
+  }
+
+  sortFormattingCard = new SortFormattingCard();
 
   cards = [
     this.dumbbellSettings,
     this.axisSettings,
     this.cardSettings,
     this.animationSettings,
+    this.deltaLabelSettings,
     this.axisFormattingCard,
     this.legendFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
-
+    this.scrollFormattingCard,
+    this.sortFormattingCard,
   ];
 }

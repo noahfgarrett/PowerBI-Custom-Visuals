@@ -18,6 +18,7 @@ import {
   cubicOut,
   DURATION,
   formatNumber,
+  formatWithSettings,
   getGlassStyle,
   withOpacity,
   renderChartTitle,
@@ -25,6 +26,7 @@ import {
   applyGridFormatting,
   applyDataLabelFormatting,
   applyAllAxisFormatting,
+  createScrollableChart,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -47,6 +49,7 @@ interface WaterfallStep {
   previousRunningTotal: number;
   isPositive: boolean;
   isTotal: boolean;
+  isSubtotal: boolean;
   selectionId: ISelectionId;
 }
 
@@ -55,6 +58,10 @@ interface WaterfallData {
   maxValue: number;
   minValue: number;
   isEmpty: boolean;
+  /** Whether sub-category data is available for drill-down */
+  hasSubCategory: boolean;
+  /** Map from category label to its sub-category WaterfallData */
+  subCategoryMap: Map<string, WaterfallData>;
 }
 
 interface Margin {
@@ -79,6 +86,13 @@ export class AnimatedWaterfallVisual implements IVisual {
   private settings: AnimatedWaterfallSettings;
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
+
+  /** Chain of category values the user has drilled into */
+  private drillPath: string[] = [];
+  /** Full extracted data, kept for drill-down without re-parsing */
+  private currentData: WaterfallData | null = null;
+  /** Last known viewport for re-renders on drill navigation */
+  private currentViewport: powerbi.IViewport = { width: 300, height: 300 };
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
@@ -105,15 +119,25 @@ export class AnimatedWaterfallVisual implements IVisual {
 
     // Extract data
     const data = this.extractData(dataView);
+    this.currentData = data;
+    this.currentViewport = options.viewport;
+
+    // Reset drill if data changed structurally
+    if (data.isEmpty || !data.hasSubCategory) {
+      this.drillPath = [];
+    }
 
     // Apply glass effect
     this.applyCardStyle();
 
+    // Resolve drill path to get the effective data
+    const effectiveData = this.resolveDrillData(data);
+
     // Render
-    if (data.isEmpty) {
+    if (effectiveData.isEmpty) {
       this.renderEmpty();
     } else {
-      this.render(data, options.viewport);
+      this.render(effectiveData, options.viewport);
     }
   }
 
@@ -125,15 +149,22 @@ export class AnimatedWaterfallVisual implements IVisual {
       maxValue: 0,
       minValue: 0,
       isEmpty: true,
+      hasSubCategory: false,
+      subCategoryMap: new Map<string, WaterfallData>(),
     };
 
     if (!dataView?.categorical) return empty;
 
     const categorical = dataView.categorical;
     const categoryColumn = categorical.categories?.[0];
+    const subCategoryColumn = categorical.categories && categorical.categories.length > 1
+      ? categorical.categories[1]
+      : null;
     const valuesColumns = categorical.values;
 
     if (!categoryColumn || !valuesColumns || valuesColumns.length === 0) return empty;
+
+    const hasSubCategory = subCategoryColumn !== null;
 
     // Extract category labels
     const categories = categoryColumn.values.map((v) =>
@@ -209,22 +240,64 @@ export class AnimatedWaterfallVisual implements IVisual {
         previousRunningTotal,
         isPositive: val >= 0,
         isTotal,
+        isSubtotal: false,
         selectionId: this.host.createSelectionIdBuilder()
           .withCategory(categoryColumn, i)
           .createSelectionId(),
       });
     }
 
+    // Insert subtotal bars at the specified positions (before appending synthetic total)
+    const subtotalS = this.settings.subtotalSettings;
+    if (subtotalS.enabled.value && subtotalS.indices.value.trim().length > 0) {
+      const subtotalLabel = subtotalS.subtotalLabel.value || 'Subtotal';
+
+      // Parse 1-based indices, convert to 0-based, sort descending so inserts don't shift earlier indices
+      const parsedIndices = subtotalS.indices.value
+        .split(',')
+        .map((s) => parseInt(s.trim(), 10))
+        .filter((n) => !isNaN(n) && n >= 1)
+        .map((n) => n - 1) // convert to 0-based
+        .filter((idx) => idx < steps.length) // only valid positions
+        .filter((v, i, arr) => arr.indexOf(v) === i) // deduplicate
+        .sort((a, b) => b - a); // descending so inserts don't shift
+
+      for (const idx of parsedIndices) {
+        // The subtotal value is the running total at the step at position idx
+        const targetStep = steps[idx];
+        const subtotalValue = targetStep.runningTotal;
+
+        const subtotalEntry: WaterfallStep = {
+          key: `subtotal::${idx}::${subtotalLabel}`,
+          label: subtotalLabel,
+          value: subtotalValue,
+          runningTotal: subtotalValue,
+          previousRunningTotal: subtotalValue, // same as runningTotal for connector alignment
+          isPositive: subtotalValue >= 0,
+          isTotal: false,
+          isSubtotal: true,
+          selectionId: this.host.createSelectionIdBuilder().createSelectionId(),
+        };
+
+        // Insert after the target position (idx + 1)
+        steps.splice(idx + 1, 0, subtotalEntry);
+      }
+    }
+
     // Append a synthetic total bar when showTotal is on and no explicit isTotal field
     if (showTotal && !hasIsTotalField && steps.length > 0) {
+      // Recalculate running total from the last non-subtotal step
+      const lastNonSubtotal = [...steps].reverse().find((s) => !s.isSubtotal);
+      const finalRunningTotal = lastNonSubtotal ? lastNonSubtotal.runningTotal : runningTotal;
       steps.push({
         key: `${rowCount}::Total`,
         label: 'Total',
-        value: runningTotal,
-        runningTotal,
+        value: finalRunningTotal,
+        runningTotal: finalRunningTotal,
         previousRunningTotal: 0,
-        isPositive: runningTotal >= 0,
+        isPositive: finalRunningTotal >= 0,
         isTotal: true,
+        isSubtotal: false,
         selectionId: this.host.createSelectionIdBuilder().createSelectionId(),
       });
     }
@@ -238,12 +311,192 @@ export class AnimatedWaterfallVisual implements IVisual {
     const maxValue = d3.max(allValues) ?? 0;
     const minValue = d3.min(allValues) ?? 0;
 
+    // Build sub-category map for drill-down
+    const subCategoryMap = new Map<string, WaterfallData>();
+
+    if (hasSubCategory && subCategoryColumn) {
+      // Group rows by parent category
+      const catGroups = new Map<string, number[]>();
+      for (let i = 0; i < categories.length; i++) {
+        const catLabel = categories[i];
+        const existing = catGroups.get(catLabel);
+        if (existing) {
+          existing.push(i);
+        } else {
+          catGroups.set(catLabel, [i]);
+        }
+      }
+
+      for (const [catLabel, rowIndices] of catGroups) {
+        const subSteps: WaterfallStep[] = [];
+        let subRunningTotal = 0;
+
+        for (const ri of rowIndices) {
+          const val = measureValues[ri];
+          if (val === null || val === undefined || !Number.isFinite(val)) continue;
+
+          const subRaw = subCategoryColumn.values[ri];
+          const subLabel = subRaw !== null && subRaw !== undefined ? String(subRaw) : '';
+
+          const previousSubRunning = subRunningTotal;
+          subRunningTotal += val;
+
+          subSteps.push({
+            key: `${subSteps.length}::${subLabel}`,
+            label: subLabel,
+            value: val,
+            runningTotal: subRunningTotal,
+            previousRunningTotal: previousSubRunning,
+            isPositive: val >= 0,
+            isTotal: false,
+            isSubtotal: false,
+            selectionId: this.host.createSelectionIdBuilder()
+              .withCategory(categoryColumn, ri)
+              .withCategory(subCategoryColumn, ri)
+              .createSelectionId(),
+          });
+        }
+
+        if (subSteps.length > 0) {
+          // Add a total bar for the sub-category view
+          subSteps.push({
+            key: `${subSteps.length}::Total`,
+            label: 'Total',
+            value: subRunningTotal,
+            runningTotal: subRunningTotal,
+            previousRunningTotal: 0,
+            isPositive: subRunningTotal >= 0,
+            isTotal: true,
+            isSubtotal: false,
+            selectionId: this.host.createSelectionIdBuilder().createSelectionId(),
+          });
+
+          const subAllTotals = subSteps.map((s) => s.runningTotal);
+          const subAllPrev = subSteps.map((s) => s.previousRunningTotal);
+          const subAllVals = [...subAllTotals, ...subAllPrev, 0];
+
+          subCategoryMap.set(catLabel, {
+            steps: subSteps,
+            maxValue: d3.max(subAllVals) ?? 0,
+            minValue: d3.min(subAllVals) ?? 0,
+            isEmpty: false,
+            hasSubCategory: false,
+            subCategoryMap: new Map<string, WaterfallData>(),
+          });
+        }
+      }
+    }
+
     return {
       steps,
       maxValue,
       minValue,
       isEmpty: false,
+      hasSubCategory,
+      subCategoryMap,
     };
+  }
+
+  // -- Drill-Down Resolution --------------------------------------------------
+
+  private resolveDrillData(data: WaterfallData): WaterfallData {
+    if (!this.settings.drillDownSettings.enabled.value || this.drillPath.length === 0) {
+      return data;
+    }
+
+    let current = data;
+    for (const segment of this.drillPath) {
+      const sub = current.subCategoryMap.get(segment);
+      if (sub) {
+        current = sub;
+      } else {
+        this.drillPath = [];
+        return data;
+      }
+    }
+    return current;
+  }
+
+  // -- Breadcrumb ------------------------------------------------------------
+
+  private renderBreadcrumb(): void {
+    const ds = this.settings.drillDownSettings;
+    if (!ds.showBreadcrumb.value || this.drillPath.length === 0) return;
+
+    const fontSize = ds.breadcrumbFontSize.value;
+    const color = ds.breadcrumbColor.value?.value || '#64748B';
+
+    const breadcrumb = document.createElement('div');
+    breadcrumb.className = 'waterfall-breadcrumb';
+    breadcrumb.style.display = 'flex';
+    breadcrumb.style.alignItems = 'center';
+    breadcrumb.style.gap = '4px';
+    breadcrumb.style.padding = '4px 8px';
+    breadcrumb.style.fontSize = `${fontSize}px`;
+    breadcrumb.style.color = color;
+    breadcrumb.style.flexWrap = 'wrap';
+
+    // "All" root segment
+    const allSpan = document.createElement('span');
+    allSpan.textContent = 'All';
+    allSpan.style.cursor = 'pointer';
+    allSpan.style.textDecoration = 'underline';
+    allSpan.style.color = color;
+    allSpan.addEventListener('click', (event: MouseEvent) => {
+      event.stopPropagation();
+      this.drillPath = [];
+      this.reRenderWithDrill();
+    });
+    breadcrumb.appendChild(allSpan);
+
+    for (let i = 0; i < this.drillPath.length; i++) {
+      const sep = document.createElement('span');
+      sep.textContent = ' > ';
+      sep.style.color = color;
+      breadcrumb.appendChild(sep);
+
+      const segment = document.createElement('span');
+      segment.textContent = this.drillPath[i];
+      segment.style.color = color;
+
+      if (i < this.drillPath.length - 1) {
+        segment.style.cursor = 'pointer';
+        segment.style.textDecoration = 'underline';
+        const targetIndex = i;
+        segment.addEventListener('click', (event: MouseEvent) => {
+          event.stopPropagation();
+          this.drillPath = this.drillPath.slice(0, targetIndex + 1);
+          this.reRenderWithDrill();
+        });
+      } else {
+        segment.style.fontWeight = '600';
+      }
+
+      breadcrumb.appendChild(segment);
+    }
+
+    this.container.appendChild(breadcrumb);
+
+    if (this.settings.animationSettings.enabled.value) {
+      const cancel = fadeSlideIn(
+        breadcrumb as unknown as HTMLElement,
+        'left',
+        DURATION.fast,
+      );
+      this.cancelAnimations.push(cancel);
+    }
+  }
+
+  private reRenderWithDrill(): void {
+    if (!this.currentData) return;
+    this.cancelAnimations.forEach((cancel) => cancel());
+    this.cancelAnimations = [];
+    const effectiveData = this.resolveDrillData(this.currentData);
+    if (effectiveData.isEmpty) {
+      this.renderEmpty();
+    } else {
+      this.render(effectiveData, this.currentViewport);
+    }
   }
 
   // -- Card Style -------------------------------------------------------------
@@ -287,26 +540,48 @@ export class AnimatedWaterfallVisual implements IVisual {
       this.container.removeChild(this.container.firstChild);
     }
     renderChartTitle(this.container, this.settings.titleFormattingCard);
+
+    // Render breadcrumb if drilled
+    if (this.settings.drillDownSettings.enabled.value && this.drillPath.length > 0) {
+      this.renderBreadcrumb();
+    }
+
     this.container.removeEventListener('click', this.handleBackgroundClick);
 
     const s = this.settings;
     const padding = 8;
-    const svgWidth = viewport.width - padding * 2;
-    const svgHeight = viewport.height - padding * 2;
-    const chartWidth = Math.max(0, svgWidth - MARGIN.left - MARGIN.right);
-    const chartHeight = Math.max(0, svgHeight - MARGIN.top - MARGIN.bottom);
+    const baseSvgWidth = viewport.width - padding * 2;
+    const baseSvgHeight = viewport.height - padding * 2;
+    const baseChartWidth = Math.max(0, baseSvgWidth - MARGIN.left - MARGIN.right);
+    const baseChartHeight = Math.max(0, baseSvgHeight - MARGIN.top - MARGIN.bottom);
 
-    if (chartWidth <= 0 || chartHeight <= 0) {
+    if (baseChartWidth <= 0 || baseChartHeight <= 0) {
       this.renderEmpty();
       return;
     }
+
+    // Scroll support
+    const scroll = createScrollableChart({
+      container: this.container,
+      viewportWidth: baseSvgWidth,
+      viewportHeight: baseSvgHeight,
+      categoryCount: data.steps.length,
+      scrollSettings: s.scrollFormattingCard,
+      availableChartWidth: baseChartWidth,
+      availableChartHeight: baseChartHeight,
+      direction: 'horizontal',
+    });
+    const svgWidth = scroll.svgWidth;
+    const svgHeight = scroll.svgHeight;
+    const chartWidth = scroll.chartWidth;
+    const chartHeight = scroll.chartHeight;
 
     // Create SVG
     const svg = document.createElementNS(SVG_NS, 'svg');
     svg.setAttribute('class', 'waterfall-svg');
     svg.setAttribute('width', String(svgWidth));
     svg.setAttribute('height', String(svgHeight));
-    this.container.appendChild(svg);
+    scroll.svgParent.appendChild(svg);
 
     // Chart group with margins
     const chartGroup = document.createElementNS(SVG_NS, 'g');
@@ -340,6 +615,7 @@ export class AnimatedWaterfallVisual implements IVisual {
     const positiveColor = s.colorSettings.positiveColor.value?.value ?? '#34D399';
     const negativeColor = s.colorSettings.negativeColor.value?.value ?? '#F87171';
     const totalColor = s.colorSettings.totalColor.value?.value ?? '#3B82F6';
+    const subtotalColor = s.subtotalSettings.subtotalColor.value?.value ?? '#6366F1';
 
     // Animation settings
     const animEnabled = s.animationSettings.enabled.value;
@@ -364,7 +640,12 @@ export class AnimatedWaterfallVisual implements IVisual {
       let barBottom: number;
       let barColor: string;
 
-      if (step.isTotal) {
+      if (step.isSubtotal) {
+        // Subtotal bar: from 0 to runningTotal (same geometry as total)
+        barTop = yScale(Math.max(0, step.runningTotal));
+        barBottom = yScale(Math.min(0, step.runningTotal));
+        barColor = subtotalColor;
+      } else if (step.isTotal) {
         // Total bar: from 0 to runningTotal
         barTop = yScale(Math.max(0, step.runningTotal));
         barBottom = yScale(Math.min(0, step.runningTotal));
@@ -406,6 +687,24 @@ export class AnimatedWaterfallVisual implements IVisual {
       rect.style.cursor = 'pointer';
       rect.addEventListener('click', (event: MouseEvent) => {
         event.stopPropagation();
+
+        // Drill-down: if enabled and this step has sub-categories, drill into it
+        if (
+          this.settings.drillDownSettings.enabled.value &&
+          !step.isTotal &&
+          !step.isSubtotal &&
+          !event.ctrlKey &&
+          !event.metaKey &&
+          this.currentData
+        ) {
+          const resolved = this.resolveDrillData(this.currentData);
+          if (resolved.subCategoryMap.has(step.label)) {
+            this.drillPath.push(step.label);
+            this.reRenderWithDrill();
+            return;
+          }
+        }
+
         void this.selectionManager.select(step.selectionId, event.ctrlKey || event.metaKey);
       });
       rect.addEventListener('contextmenu', (event: MouseEvent) => {
@@ -430,6 +729,7 @@ export class AnimatedWaterfallVisual implements IVisual {
       }
 
       // Connector line from previous bar to current bar
+      // Subtotal bars get connectors (unlike total bars which don't)
       if (showConnectors && i > 0 && !step.isTotal) {
         const prevStep = data.steps[i - 1];
         const prevBandX = xScale(prevStep.key) ?? 0;
@@ -493,13 +793,13 @@ export class AnimatedWaterfallVisual implements IVisual {
 
       // Value label
       if (showValues) {
-        const labelValue = step.isTotal ? step.runningTotal : step.value;
-        const formattedValue = formatNumber(labelValue, { abbreviate: true, showSign: !step.isTotal });
+        const labelValue = (step.isTotal || step.isSubtotal) ? step.runningTotal : step.value;
+        const formattedValue = formatWithSettings(labelValue, this.settings.numberFormattingCard);
         const labelX = barX + barWidth / 2;
 
         // Position label above positive bars, below negative bars
         let labelY: number;
-        if (step.isTotal) {
+        if (step.isTotal || step.isSubtotal) {
           labelY = barTop - 6;
         } else if (step.isPositive) {
           labelY = barTop - 6;
@@ -621,7 +921,7 @@ export class AnimatedWaterfallVisual implements IVisual {
         text.setAttribute('x', '-8');
         text.setAttribute('y', String(y + 4));
         text.setAttribute('text-anchor', 'end');
-        text.textContent = formatNumber(tick, { abbreviate: true });
+        text.textContent = formatWithSettings(tick, this.settings.numberFormattingCard);
         yAxisGroup.appendChild(text);
       }
 
@@ -644,12 +944,12 @@ export class AnimatedWaterfallVisual implements IVisual {
       const tooltipItems: VisualTooltipDataItem[] = [
         { displayName: 'Step', value: step.label },
         {
-          displayName: step.isTotal ? 'Total' : 'Change',
-          value: formatNumber(step.value, { abbreviate: false, showSign: !step.isTotal }),
+          displayName: step.isTotal ? 'Total' : step.isSubtotal ? 'Subtotal' : 'Change',
+          value: formatWithSettings(step.value, this.settings.numberFormattingCard),
         },
         {
           displayName: 'Running Total',
-          value: formatNumber(step.runningTotal, { abbreviate: false }),
+          value: formatWithSettings(step.runningTotal, this.settings.numberFormattingCard),
         },
       ];
 

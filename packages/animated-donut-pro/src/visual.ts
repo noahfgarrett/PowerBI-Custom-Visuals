@@ -21,6 +21,7 @@ import {
   withOpacity,
   renderChartTitle,
   applyDataLabelFormatting,
+  resolveDropdown,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -39,7 +40,7 @@ interface DonutSegment {
   label: string;
   value: number;
   color: string;
-  selectionId: ISelectionId;
+  selectionId: ISelectionId | null;
 }
 
 interface SegmentArc {
@@ -95,7 +96,8 @@ export class AnimatedDonutProVisual implements IVisual {
     }
 
     // Extract data
-    const segments = this.extractData(dataView);
+    const rawSegments = this.extractData(dataView);
+    const segments = this.applyTopN(rawSegments);
 
     // Apply glass effect
     this.applyCardStyle();
@@ -147,6 +149,44 @@ export class AnimatedDonutProVisual implements IVisual {
     }
 
     return segments;
+  }
+
+  // ── Top N Grouping ──────────────────────────────────────────
+
+  private applyTopN(segments: DonutSegment[]): DonutSegment[] {
+    const topNSettings = this.settings.topNSettings;
+    if (!topNSettings.enabled.value || segments.length === 0) return segments;
+
+    const n = Math.max(1, topNSettings.topN.value);
+    if (segments.length <= n) return segments;
+
+    const sortBy = resolveDropdown(topNSettings.sortBy) ?? 'value';
+
+    // Sort a copy to determine the top N
+    const sorted = [...segments].sort((a, b) => {
+      if (sortBy === 'name') {
+        return a.label.localeCompare(b.label);
+      }
+      return b.value - a.value;
+    });
+
+    const topSegments = sorted.slice(0, n);
+    const remaining = sorted.slice(n);
+
+    if (remaining.length === 0) return topSegments;
+
+    const othersValue = remaining.reduce((sum, seg) => sum + seg.value, 0);
+    const othersLabel = topNSettings.othersLabel.value || 'Others';
+    const othersColor = topNSettings.othersColor.value?.value ?? '#94A3B8';
+
+    const othersSegment: DonutSegment = {
+      label: othersLabel,
+      value: othersValue,
+      color: othersColor,
+      selectionId: null,
+    };
+
+    return [...topSegments, othersSegment];
   }
 
   // ── Card Style ────────────────────────────────────────────────
@@ -246,8 +286,33 @@ export class AnimatedDonutProVisual implements IVisual {
       return;
     }
 
+    // Resolve arc shape setting
+    const arcShapeRaw = s.donutSettings.arcShape.value;
+    const arcShape: string = (typeof arcShapeRaw === 'string'
+      ? arcShapeRaw
+      : (arcShapeRaw as { value?: string } | undefined)?.value) ?? 'full';
+
+    // Determine arc angular range based on shape
+    let layoutStartAngle: number;
+    let layoutEndAngle: number;
+
+    switch (arcShape) {
+      case 'semi':
+        layoutStartAngle = -Math.PI / 2;
+        layoutEndAngle = Math.PI / 2;
+        break;
+      case 'threeQuarter':
+        layoutStartAngle = -3 * Math.PI / 4;
+        layoutEndAngle = 3 * Math.PI / 4;
+        break;
+      default: // 'full'
+        layoutStartAngle = -Math.PI / 2;
+        layoutEndAngle = 3 * Math.PI / 2;
+        break;
+    }
+
     // Build arc layout: compute start/end angles for each segment
-    const arcs = this.computeArcs(segments, total);
+    const arcs = this.computeArcs(segments, total, layoutStartAngle, layoutEndAngle);
 
     // D3 arc generator
     const arcGen = d3.arc<SegmentArc>()
@@ -256,9 +321,22 @@ export class AnimatedDonutProVisual implements IVisual {
       .startAngle((d) => d.startAngle)
       .endAngle((d) => d.endAngle);
 
+    // Adjust vertical center offset for partial arcs so the visible arc
+    // is centered in the viewport. For a semi circle (top half), the arc
+    // spans from -R (top) to 0 (center), so shift down by R/2.
+    // For three-quarter, the arc extends from the top and wraps past the
+    // bottom by R*sin(3PI/4), leaving a gap at the bottom; shift down a
+    // small amount to visually balance.
+    let cyOffset = 0;
+    if (arcShape === 'semi') {
+      cyOffset = outerRadius * 0.35;
+    } else if (arcShape === 'threeQuarter') {
+      cyOffset = outerRadius * 0.15;
+    }
+
     // Chart group centered
     const g = svg.append('g')
-      .attr('transform', `translate(${cx},${cy})`);
+      .attr('transform', `translate(${cx},${cy + cyOffset})`);
 
     // Animation config
     const animEnabled = s.animationSettings.enabled.value;
@@ -318,20 +396,23 @@ export class AnimatedDonutProVisual implements IVisual {
       // Hover: spring-scale explode
       this.attachHoverEffect(pathNode, index);
 
-      path
-        .style('cursor', 'pointer')
-        .on('click', (event: MouseEvent) => {
-          event.stopPropagation();
-          void this.selectionManager.select(arc.segment.selectionId, event.ctrlKey || event.metaKey);
-        })
-        .on('contextmenu', (event: MouseEvent) => {
-          event.preventDefault();
-          event.stopPropagation();
-          void this.selectionManager.showContextMenu(arc.segment.selectionId, {
-            x: event.clientX,
-            y: event.clientY,
+      if (arc.segment.selectionId) {
+        const selId = arc.segment.selectionId;
+        path
+          .style('cursor', 'pointer')
+          .on('click', (event: MouseEvent) => {
+            event.stopPropagation();
+            void this.selectionManager.select(selId, event.ctrlKey || event.metaKey);
+          })
+          .on('contextmenu', (event: MouseEvent) => {
+            event.preventDefault();
+            event.stopPropagation();
+            void this.selectionManager.showContextMenu(selId, {
+              x: event.clientX,
+              y: event.clientY,
+            });
           });
-        });
+      }
     });
 
     // Labels at arc centroids (gated by both donut showLabels and shared showDataLabels)
@@ -357,13 +438,19 @@ export class AnimatedDonutProVisual implements IVisual {
 
   // ── Arc Computation ───────────────────────────────────────────
 
-  private computeArcs(segments: DonutSegment[], total: number): SegmentArc[] {
+  private computeArcs(
+    segments: DonutSegment[],
+    total: number,
+    layoutStartAngle: number,
+    layoutEndAngle: number,
+  ): SegmentArc[] {
     const arcs: SegmentArc[] = [];
-    let currentAngle = -Math.PI / 2; // Start at top (12 o'clock)
+    const totalArcSpan = layoutEndAngle - layoutStartAngle;
+    let currentAngle = layoutStartAngle;
 
     for (const segment of segments) {
       const fraction = segment.value / total;
-      const arcAngle = fraction * Math.PI * 2;
+      const arcAngle = fraction * totalArcSpan;
       const endAngle = currentAngle + arcAngle;
 
       arcs.push({

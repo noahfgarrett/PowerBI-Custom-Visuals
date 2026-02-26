@@ -16,12 +16,15 @@ import {
   cubicOut,
   DURATION,
   formatNumber,
+  formatWithSettings,
   getGlassStyle,
   withOpacity,
   renderChartTitle,
   applyAxisFormatting,
   applyGridFormatting,
   applyDataLabelFormatting,
+  createScrollableChart,
+  resolveDropdown,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -43,7 +46,9 @@ interface BoxStats {
   median: number;
   q3: number;
   max: number;
+  mean: number;
   outliers: number[];
+  rawValues: number[];
   selectionId: ISelectionId;
 }
 
@@ -62,6 +67,16 @@ interface Margin {
 }
 
 type LegendPosition = 'bottom' | 'top' | 'left' | 'right';
+
+// -- Seeded random --------------------------------------------------------
+
+/** Simple seeded PRNG (mulberry32) for consistent jitter positioning. */
+function seededRandom(seed: number): number {
+  let t = (seed + 0x6D2B79F5) | 0;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
 
 // -- Constants ------------------------------------------------------------
 
@@ -90,6 +105,8 @@ function computeStats(category: string, values: number[]): Omit<BoxStats, 'selec
 
   const outliers = sorted.filter((v) => v < lowerFence || v > upperFence);
 
+  const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
+
   return {
     category,
     min: whiskerMin,
@@ -97,7 +114,9 @@ function computeStats(category: string, values: number[]): Omit<BoxStats, 'selec
     median,
     q3,
     max: whiskerMax,
+    mean,
     outliers,
+    rawValues: values,
   };
 }
 
@@ -210,12 +229,12 @@ export class BoxPlotVisual implements IVisual {
 
     if (boxes.length === 0) return empty;
 
-    // Global min/max including outliers for y-scale
+    // Global min/max including outliers and raw values for y-scale
     let globalMin = Infinity;
     let globalMax = -Infinity;
     for (const box of boxes) {
-      globalMin = Math.min(globalMin, box.min, ...box.outliers);
-      globalMax = Math.max(globalMax, box.max, ...box.outliers);
+      globalMin = Math.min(globalMin, box.min, ...box.outliers, ...box.rawValues);
+      globalMax = Math.max(globalMax, box.max, ...box.outliers, ...box.rawValues);
     }
 
     // Handle edge case: all values identical
@@ -290,15 +309,31 @@ export class BoxPlotVisual implements IVisual {
     if (legendPos === 'right') margin.right += 80;
 
     const padding = 12;
-    const svgWidth = viewport.width - padding * 2;
-    const svgHeight = viewport.height - padding * 2 - (legendPos === 'bottom' || legendPos === 'top' ? legendReserve : 0);
-    const chartWidth = Math.max(0, svgWidth - margin.left - margin.right);
-    const chartHeight = Math.max(0, svgHeight - margin.top - margin.bottom);
+    const baseSvgWidth = viewport.width - padding * 2;
+    const baseSvgHeight = viewport.height - padding * 2 - (legendPos === 'bottom' || legendPos === 'top' ? legendReserve : 0);
+    const baseChartWidth = Math.max(0, baseSvgWidth - margin.left - margin.right);
+    const baseChartHeight = Math.max(0, baseSvgHeight - margin.top - margin.bottom);
 
-    if (chartWidth <= 0 || chartHeight <= 0) {
+    if (baseChartWidth <= 0 || baseChartHeight <= 0) {
       this.renderEmpty();
       return;
     }
+
+    // Scroll support
+    const scroll = createScrollableChart({
+      container: this.container,
+      viewportWidth: baseSvgWidth,
+      viewportHeight: baseSvgHeight,
+      categoryCount: data.boxes.length,
+      scrollSettings: s.scrollFormattingCard,
+      availableChartWidth: baseChartWidth,
+      availableChartHeight: baseChartHeight,
+      direction: 'horizontal',
+    });
+    const svgWidth = scroll.svgWidth;
+    const svgHeight = scroll.svgHeight;
+    const chartWidth = scroll.chartWidth;
+    const chartHeight = scroll.chartHeight;
 
     // Legend (top)
     if (showLegend && legendPos === 'top') {
@@ -306,7 +341,7 @@ export class BoxPlotVisual implements IVisual {
     }
 
     // SVG
-    const svg = d3.select(this.container)
+    const svg = d3.select(scroll.svgParent)
       .append('svg')
       .attr('class', 'box-plot-svg')
       .attr('width', svgWidth)
@@ -357,10 +392,13 @@ export class BoxPlotVisual implements IVisual {
         .call(
           d3.axisLeft(yScale)
             .ticks(6)
-            .tickFormat((d) => formatNumber(d as number, { abbreviate: true })),
+            .tickFormat((d) => formatWithSettings(d as number, this.settings.numberFormattingCard)),
         )
         .select('.domain').remove();
     }
+
+    // Reference line (rendered after axes/grid but before data elements)
+    this.renderReferenceLine(chartGroup, yScale, chartWidth);
 
     // Settings
     const boxColor = s.colorSettings.boxColor.value?.value ?? '#3B82F6';
@@ -378,6 +416,19 @@ export class BoxPlotVisual implements IVisual {
     const animDuration = s.animationSettings.duration.value;
     const staggerDelay = s.animationSettings.staggerDelay.value;
 
+    // Mean marker settings
+    const showMeanMarker = s.meanMarkerSettings.show.value;
+    const meanShape = s.meanMarkerSettings.shape.value?.value ?? 'diamond';
+    const meanColor = s.meanMarkerSettings.color.value?.value ?? '#F59E0B';
+    const meanSize = s.meanMarkerSettings.size.value;
+
+    // Jitter settings
+    const showJitter = s.jitterSettings.show.value;
+    const jitterOpacity = Math.max(0, Math.min(100, s.jitterSettings.opacity.value)) / 100;
+    const jitterRadius = s.jitterSettings.radius.value;
+    const jitterColorRaw = s.jitterSettings.color.value?.value ?? '';
+    const jitterColor = jitterColorRaw.length > 0 ? jitterColorRaw : boxColor;
+
     // Render each box
     data.boxes.forEach((box, idx) => {
       const bandCenter = (xScale(box.category) ?? 0) + xScale.bandwidth() / 2;
@@ -392,6 +443,35 @@ export class BoxPlotVisual implements IVisual {
 
       const capHalf = (effectiveBoxWidth * WHISKER_CAP_WIDTH) / 2;
       const delay = idx * staggerDelay;
+
+      // -- Jittered data points (rendered first so they appear behind) ----
+      if (showJitter && box.rawValues.length > 0) {
+        box.rawValues.forEach((val, pIdx) => {
+          // Seeded random based on value + index for consistent positioning
+          const seed = Math.round(val * 1000) + pIdx * 7919 + idx * 104729;
+          const jitterOffset = (seededRandom(seed) - 0.5) * effectiveBoxWidth * 0.6;
+          const cx = bandCenter + jitterOffset;
+          const cy = yScale(val);
+
+          const dot = chartGroup.append('circle')
+            .attr('class', 'box-plot-jitter-point')
+            .attr('cx', cx)
+            .attr('cy', cy)
+            .attr('r', jitterRadius)
+            .attr('fill', jitterColor)
+            .attr('fill-opacity', jitterOpacity)
+            .attr('stroke', 'none');
+
+          if (animEnabled) {
+            const dotNode = dot.node();
+            if (dotNode) {
+              const jitterDelay = delay + 50 + pIdx * 10;
+              const cancel = popIn(dotNode, jitterDelay, DURATION.fast);
+              this.cancelAnimations.push(cancel);
+            }
+          }
+        });
+      }
 
       // -- Lower whisker line (min to Q1) --------------------------------
       const lowerWhiskerPath = chartGroup.append('path')
@@ -532,6 +612,80 @@ export class BoxPlotVisual implements IVisual {
         }
       }
 
+      // -- Mean marker ---------------------------------------------------
+      if (showMeanMarker) {
+        const yMean = yScale(box.mean);
+
+        if (meanShape === 'diamond') {
+          // Diamond: rotated square (4-point path)
+          const half = meanSize / 2;
+          const diamondPath = `M${bandCenter},${yMean - half}`
+            + ` L${bandCenter + half},${yMean}`
+            + ` L${bandCenter},${yMean + half}`
+            + ` L${bandCenter - half},${yMean}`
+            + ' Z';
+          const marker = chartGroup.append('path')
+            .attr('class', 'box-plot-mean-marker')
+            .attr('d', diamondPath)
+            .attr('fill', meanColor)
+            .attr('stroke', 'none');
+
+          if (animEnabled) {
+            const markerNode = marker.node();
+            if (markerNode) {
+              const cancel = popIn(markerNode, delay + 150, DURATION.fast);
+              this.cancelAnimations.push(cancel);
+            }
+          }
+        } else if (meanShape === 'cross') {
+          // Cross: two crossing lines (horizontal + vertical)
+          const half = meanSize / 2;
+          const crossGroup = chartGroup.append('g')
+            .attr('class', 'box-plot-mean-marker');
+
+          crossGroup.append('line')
+            .attr('x1', bandCenter - half)
+            .attr('x2', bandCenter + half)
+            .attr('y1', yMean)
+            .attr('y2', yMean)
+            .attr('stroke', meanColor)
+            .attr('stroke-width', 2);
+
+          crossGroup.append('line')
+            .attr('x1', bandCenter)
+            .attr('x2', bandCenter)
+            .attr('y1', yMean - half)
+            .attr('y2', yMean + half)
+            .attr('stroke', meanColor)
+            .attr('stroke-width', 2);
+
+          if (animEnabled) {
+            const groupNode = crossGroup.node();
+            if (groupNode) {
+              const cancel = popIn(groupNode, delay + 150, DURATION.fast);
+              this.cancelAnimations.push(cancel);
+            }
+          }
+        } else {
+          // Circle
+          const marker = chartGroup.append('circle')
+            .attr('class', 'box-plot-mean-marker')
+            .attr('cx', bandCenter)
+            .attr('cy', yMean)
+            .attr('r', meanSize / 2)
+            .attr('fill', meanColor)
+            .attr('stroke', 'none');
+
+          if (animEnabled) {
+            const markerNode = marker.node();
+            if (markerNode) {
+              const cancel = popIn(markerNode, delay + 150, DURATION.fast);
+              this.cancelAnimations.push(cancel);
+            }
+          }
+        }
+      }
+
       // -- Outlier dots --------------------------------------------------
       if (showOutliers && box.outliers.length > 0) {
         box.outliers.forEach((outlierVal, oIdx) => {
@@ -580,7 +734,7 @@ export class BoxPlotVisual implements IVisual {
           .attr('class', 'box-plot-label')
           .attr('x', bandCenter)
           .attr('y', labelY)
-          .text(formatNumber(box.median, { abbreviate: true }));
+          .text(formatWithSettings(box.median, this.settings.numberFormattingCard));
 
         if (animEnabled) {
           const labelNode = dataLabel.node();
@@ -623,13 +777,14 @@ export class BoxPlotVisual implements IVisual {
     const host = this.host;
 
     rect.on('mouseover', (event: MouseEvent) => {
+      const numberSettings = this.settings.numberFormattingCard;
       const tooltipData: VisualTooltipDataItem[] = [
         { displayName: 'Category', value: box.category },
-        { displayName: 'Max', value: formatNumber(box.max, { abbreviate: false }) },
-        { displayName: 'Q3', value: formatNumber(box.q3, { abbreviate: false }) },
-        { displayName: 'Median', value: formatNumber(box.median, { abbreviate: false }) },
-        { displayName: 'Q1', value: formatNumber(box.q1, { abbreviate: false }) },
-        { displayName: 'Min', value: formatNumber(box.min, { abbreviate: false }) },
+        { displayName: 'Max', value: formatWithSettings(box.max, numberSettings) },
+        { displayName: 'Q3', value: formatWithSettings(box.q3, numberSettings) },
+        { displayName: 'Median', value: formatWithSettings(box.median, numberSettings) },
+        { displayName: 'Q1', value: formatWithSettings(box.q1, numberSettings) },
+        { displayName: 'Min', value: formatWithSettings(box.min, numberSettings) },
       ];
 
       if (box.outliers.length > 0) {
@@ -671,7 +826,7 @@ export class BoxPlotVisual implements IVisual {
     circle.on('mouseover', (event: MouseEvent) => {
       const tooltipData: VisualTooltipDataItem[] = [
         { displayName: 'Category', value: category },
-        { displayName: 'Outlier Value', value: formatNumber(value, { abbreviate: false }) },
+        { displayName: 'Outlier Value', value: formatWithSettings(value, this.settings.numberFormattingCard) },
       ];
 
       host.tooltipService.show({
@@ -694,6 +849,75 @@ export class BoxPlotVisual implements IVisual {
     circle.on('mouseout', () => {
       host.tooltipService.hide({ immediately: true, isTouchEvent: false });
     });
+  }
+
+  // -- Reference Line -----------------------------------------------------
+
+  /**
+   * Renders a user-configured reference line (and optional band) on the chart.
+   */
+  private renderReferenceLine(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    yScale: d3.ScaleLinear<number, number>,
+    width: number,
+  ): void {
+    const ref = this.settings.referenceLineSettings;
+    if (!ref.show.value) return;
+
+    const refValue = ref.value.value;
+    const refY = yScale(refValue);
+    const refColor = ref.lineColor.value?.value ?? '#EF4444';
+    const refWidth = ref.lineWidth.value;
+    const refStyleVal = resolveDropdown(ref.lineStyle) ?? 'dashed';
+    const refDash = refStyleVal === 'dashed' ? '6 3' : refStyleVal === 'dotted' ? '2 2' : 'none';
+
+    // Band (rendered first so the line draws on top)
+    if (ref.showBand.value) {
+      const bandUpperY = yScale(ref.bandUpperValue.value);
+      const bandTop = Math.min(refY, bandUpperY);
+      const bandHeight = Math.abs(bandUpperY - refY);
+      const bandOp = Math.max(0, Math.min(100, ref.bandOpacity.value)) / 100;
+
+      g.append('rect')
+        .attr('class', 'box-plot-ref-band')
+        .attr('x', 0)
+        .attr('y', bandTop)
+        .attr('width', width)
+        .attr('height', bandHeight)
+        .attr('fill', refColor)
+        .attr('fill-opacity', bandOp)
+        .style('pointer-events', 'none');
+    }
+
+    // Line
+    g.append('line')
+      .attr('class', 'box-plot-ref-line')
+      .attr('x1', 0)
+      .attr('x2', width)
+      .attr('y1', refY)
+      .attr('y2', refY)
+      .attr('stroke', refColor)
+      .attr('stroke-width', refWidth)
+      .attr('stroke-dasharray', refDash)
+      .style('pointer-events', 'none');
+
+    // Label
+    if (ref.showLabel.value) {
+      const labelText = ref.labelText.value.length > 0
+        ? ref.labelText.value
+        : formatWithSettings(refValue, this.settings.numberFormattingCard);
+
+      g.append('text')
+        .attr('class', 'box-plot-ref-label')
+        .attr('x', width - 4)
+        .attr('y', refY - 6)
+        .attr('text-anchor', 'end')
+        .attr('fill', refColor)
+        .attr('font-size', '11px')
+        .attr('font-weight', '600')
+        .style('pointer-events', 'none')
+        .text(labelText);
+    }
   }
 
   // -- Legend -------------------------------------------------------------

@@ -62,6 +62,33 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
   slices = [this.backgroundOpacity, this.borderRadius];
 }
 
+class HierarchySettingsCard extends formattingSettings.SimpleCard {
+  indentWidth = new formattingSettings.NumUpDown({ name: 'indentWidth', displayName: 'Indent Width', value: 20 });
+  showToggle = new formattingSettings.ToggleSwitch({ name: 'showToggle', displayName: 'Show Toggle', value: true });
+  collapseByDefault = new formattingSettings.ToggleSwitch({ name: 'collapseByDefault', displayName: 'Collapse By Default', value: false });
+
+  name = 'hierarchySettings';
+  displayName = 'Hierarchy';
+  slices = [this.indentWidth, this.showToggle, this.collapseByDefault];
+}
+
+class DependencySettingsCard extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({ name: 'show', displayName: 'Show Dependencies', value: true });
+  lineColor = new formattingSettings.ColorPicker({ name: 'lineColor', displayName: 'Arrow Color', value: { value: '#94A3B8' } });
+  lineWidth = new formattingSettings.NumUpDown({ name: 'lineWidth', displayName: 'Line Width', value: 1.5 });
+  arrowSize = new formattingSettings.NumUpDown({ name: 'arrowSize', displayName: 'Arrow Size', value: 6 });
+  lineStyle = new formattingSettings.ItemDropdown({
+    name: 'lineStyle',
+    displayName: 'Line Style',
+    items: [{ value: 'solid', displayName: 'Solid' }, { value: 'dashed', displayName: 'Dashed' }],
+    value: { value: 'solid', displayName: 'Solid' },
+  });
+
+  name = 'dependencySettings';
+  displayName = 'Dependencies';
+  slices = [this.show, this.lineColor, this.lineWidth, this.arrowSize, this.lineStyle];
+}
+
 class AnimationSettings extends formattingSettings.SimpleCard {
   enabled = new formattingSettings.ToggleSwitch({ name: 'enabled', displayName: 'Enable Animations', value: true });
   duration = new formattingSettings.NumUpDown({ name: 'duration', displayName: 'Duration (ms)', value: 600 });
@@ -75,11 +102,13 @@ export class GanttChartProSettings extends formattingSettings.Model {
   colorSettings = new ColorSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
+  dependencySettings = new DependencySettingsCard();
+  hierarchySettings = new HierarchySettingsCard();
   dataLabelFormattingCard = new DataLabelFormattingCard();
   titleFormattingCard = new TitleFormattingCard();
   axisFormattingCard = new AxisFormattingCard();
 
   cards = [this.ganttSettings, this.colorSettings,
  this.cardSettings,
-    this.animationSettings, this.dataLabelFormattingCard, this.titleFormattingCard, this.axisFormattingCard];
+    this.animationSettings, this.dependencySettings, this.hierarchySettings, this.dataLabelFormattingCard, this.titleFormattingCard, this.axisFormattingCard];
 }

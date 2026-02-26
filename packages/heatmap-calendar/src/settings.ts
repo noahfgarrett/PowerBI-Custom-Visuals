@@ -86,9 +86,59 @@ class ColorSettings extends formattingSettings.SimpleCard {
     value: { value: '#3B82F6' },
   });
 
+  showMidColor = new formattingSettings.ToggleSwitch({
+    name: 'showMidColor',
+    displayName: 'Use 3-Stop Gradient',
+    value: false,
+  });
+
+  midColor = new formattingSettings.ColorPicker({
+    name: 'midColor',
+    displayName: 'Mid Color',
+    value: { value: '#FBBF24' },
+  });
+
+  midPoint = new formattingSettings.NumUpDown({
+    name: 'midPoint',
+    displayName: 'Mid Point (%)',
+    value: 50,
+  });
+
+  emptyColor = new formattingSettings.ColorPicker({
+    name: 'emptyColor',
+    displayName: 'Empty Cell Color',
+    value: { value: '#F1F5F9' },
+  });
+
+  showLegend = new formattingSettings.ToggleSwitch({
+    name: 'showLegend',
+    displayName: 'Show Color Legend',
+    value: true,
+  });
+
+  legendPosition = new formattingSettings.ItemDropdown({
+    name: 'legendPosition',
+    displayName: 'Legend Position',
+    items: [
+      { value: 'bottom', displayName: 'Bottom' },
+      { value: 'top', displayName: 'Top' },
+      { value: 'right', displayName: 'Right' },
+    ],
+    value: { value: 'bottom', displayName: 'Bottom' },
+  });
+
   name = 'colorSettings';
   displayName = 'Colors';
-  slices = [this.lowColor, this.highColor];
+  slices = [
+    this.lowColor,
+    this.highColor,
+    this.showMidColor,
+    this.midColor,
+    this.midPoint,
+    this.emptyColor,
+    this.showLegend,
+    this.legendPosition,
+  ];
 }
 
 class CardStyleSettings extends formattingSettings.SimpleCard {

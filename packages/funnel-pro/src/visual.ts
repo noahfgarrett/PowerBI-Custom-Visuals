@@ -184,6 +184,7 @@ export class FunnelProVisual implements IVisual {
     const s = this.settings;
     const funnelStyle = String(s.funnelSettings.style.value?.value ?? 'symmetric');
     const showConversion = s.funnelSettings.showConversionRate.value;
+    const pyramidMode = s.funnelSettings.pyramidMode.value;
     const gap = Math.max(0, s.funnelSettings.gap.value);
     const showValues = s.funnelSettings.showValues.value;
     const useGradient = s.colorSettings.useGradient.value;
@@ -237,6 +238,11 @@ export class FunnelProVisual implements IVisual {
       const clampedRatio = Math.max(MIN_WIDTH_RATIO, Math.min(1, ratio));
       return clampedRatio * maxFunnelWidth;
     });
+
+    // Pyramid mode: reverse the width mapping so widest segment is at the bottom
+    if (pyramidMode) {
+      widths.reverse();
+    }
 
     // ── Grid lines (horizontal reference lines at stage boundaries) ───
     if (showGridLines) {

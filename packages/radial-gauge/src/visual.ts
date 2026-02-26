@@ -9,6 +9,7 @@ import { FormattingSettingsService } from 'powerbi-visuals-utils-formattingmodel
 import { RadialGaugeSettings } from './settings';
 import {
   formatNumber,
+  formatWithSettings,
   countUp,
   sweepArc,
   fadeSlideIn,
@@ -215,11 +216,11 @@ export class RadialGaugeVisual implements IVisual {
     const g = svg.append('g')
       .attr('transform', `translate(${cx}, ${cy})`);
 
-    // ── D3 Arc Generator ────────────────────────────────────────
+    // ── D3 Arc Generator (optionally with rounded ends) ─────────
     const arcGen = d3.arc<{ startAngle: number; endAngle: number }>()
       .innerRadius(innerRadius)
       .outerRadius(outerRadius)
-      .cornerRadius(arcWidth / 2);
+      .cornerRadius(s.arcSettings.roundedCaps.value ? arcWidth / 2 : 0);
 
     // ── Background Track ────────────────────────────────────────
     g.append('path')
@@ -340,14 +341,60 @@ export class RadialGaugeVisual implements IVisual {
         .attr('stroke-width', 3);
     }
 
+    // ── Needle ───────────────────────────────────────────────────
+    if (s.needleSettings.show.value) {
+      const needleColor = s.needleSettings.color.value?.value ?? '#0F172A';
+      const needleWidth = s.needleSettings.width.value;
+      const needleLength = outerRadius * 0.85;
+
+      // Needle group centered at gauge origin
+      const needleGroup = g.append('g')
+        .attr('class', 'radial-gauge-needle');
+
+      // Draw tapered needle as a triangle path:
+      // base at center (half-width each side, perpendicular), tip at needleLength
+      const halfBase = needleWidth * 1.5;
+      needleGroup.append('path')
+        .attr('d', `M ${-halfBase},0 L 0,${-needleLength} L ${halfBase},0 Z`)
+        .attr('fill', needleColor);
+
+      // Optional hub circle at the center
+      if (s.needleSettings.showHub.value) {
+        const hubRadius = s.needleSettings.hubRadius.value;
+        needleGroup.append('circle')
+          .attr('cx', 0)
+          .attr('cy', 0)
+          .attr('r', hubRadius)
+          .attr('fill', needleColor);
+      }
+
+      // Needle angle: d3.arc uses 12-o'clock origin (0 = up), so rotation
+      // in degrees is just the angle in degrees (no -90 offset needed since
+      // we drew the needle pointing up along -Y axis).
+      const startAngleDeg = range.start;
+      const valueAngleDeg = startAngleDeg + (normalizedValue * (range.end - range.start));
+
+      if (s.animationSettings.enabled.value) {
+        // Start at the arc's start angle, animate to the value angle
+        needleGroup.attr('transform', `rotate(${startAngleDeg})`);
+
+        const cancelNeedle = sweepArc(
+          startAngleDeg,
+          valueAngleDeg,
+          s.animationSettings.duration.value,
+          (currentDeg) => {
+            needleGroup.attr('transform', `rotate(${currentDeg})`);
+          }
+        );
+        this.cancelAnimations.push(cancelNeedle);
+      } else {
+        needleGroup.attr('transform', `rotate(${valueAngleDeg})`);
+      }
+    }
+
     // ── Center Value Text ───────────────────────────────────────
     const fmt = (v: number | null | undefined): string => {
-      return formatNumber(v, {
-        prefix: s.valueSettings.prefix.value,
-        suffix: s.valueSettings.suffix.value,
-        decimals: s.valueSettings.decimalPlaces.value,
-        abbreviate: false,
-      });
+      return formatWithSettings(v as number, this.settings.numberFormattingCard);
     };
 
     const fontSize = s.valueSettings.fontSize.value;
@@ -400,11 +447,12 @@ export class RadialGaugeVisual implements IVisual {
 
   private showGaugeTooltip(data: RadialGaugeData, event: MouseEvent): void {
     const locale = this.getHostLocale();
+    const numberSettings = this.settings.numberFormattingCard;
     const tooltipData: VisualTooltipDataItem[] = [
-      { displayName: 'Value', value: formatNumber(data.value, { abbreviate: false, locale }) },
+      { displayName: 'Value', value: formatWithSettings(data.value as number, numberSettings) },
     ];
     if (data.target !== null) {
-      tooltipData.push({ displayName: 'Target', value: formatNumber(data.target, { abbreviate: false, locale }) });
+      tooltipData.push({ displayName: 'Target', value: formatWithSettings(data.target, numberSettings) });
     }
 
     this.host.tooltipService.show({

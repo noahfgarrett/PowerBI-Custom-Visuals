@@ -366,6 +366,71 @@
         }
       }
     },
+    "changeLabelSettings": {
+      "displayName": "Change Labels",
+      "properties": {
+        "show": {
+          "displayName": "Show Change Labels",
+          "type": {
+            "bool": true
+          }
+        },
+        "fontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "fontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "format": {
+          "displayName": "Format",
+          "type": {
+            "enumeration": [
+              {
+                "value": "percent",
+                "displayName": "Percent"
+              },
+              {
+                "value": "absolute",
+                "displayName": "Absolute"
+              },
+              {
+                "value": "both",
+                "displayName": "Both"
+              }
+            ]
+          }
+        },
+        "position": {
+          "displayName": "Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "center",
+                "displayName": "Center"
+              },
+              {
+                "value": "above",
+                "displayName": "Above"
+              },
+              {
+                "value": "below",
+                "displayName": "Below"
+              }
+            ]
+          }
+        }
+      }
+    },
     "cardSettings": {
       "displayName": "Card Style",
       "properties": {

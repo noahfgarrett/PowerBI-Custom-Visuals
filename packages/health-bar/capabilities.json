@@ -11,6 +11,12 @@
       "kind": "Measure",
       "displayName": "Health Value",
       "displayNameKey": "Visual_Measure"
+    },
+    {
+      "name": "target",
+      "kind": "Measure",
+      "displayName": "Target",
+      "description": "Optional target value for each bar"
     }
   ],
   "dataViewMappings": [
@@ -21,6 +27,9 @@
             "max": 1
           },
           "measure": {
+            "max": 1
+          },
+          "target": {
             "max": 1
           }
         }
@@ -45,6 +54,11 @@
             {
               "bind": {
                 "to": "measure"
+              }
+            },
+            {
+              "bind": {
+                "to": "target"
               }
             }
           ]
@@ -138,6 +152,52 @@
         "trackOpacity": {
           "type": {
             "numeric": true
+          }
+        }
+      }
+    },
+    "targetSettings": {
+      "displayName": "Target",
+      "properties": {
+        "show": {
+          "displayName": "Show Target",
+          "type": {
+            "bool": true
+          }
+        },
+        "color": {
+          "displayName": "Target Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "lineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "markerStyle": {
+          "displayName": "Marker Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "line",
+                "displayName": "Line"
+              },
+              {
+                "value": "triangle",
+                "displayName": "Triangle"
+              },
+              {
+                "value": "diamond",
+                "displayName": "Diamond"
+              }
+            ]
           }
         }
       }
@@ -350,6 +410,55 @@
           "displayName": "Border Radius",
           "type": {
             "numeric": true
+          }
+        }
+      }
+    },
+    "scrollFormatting": {
+      "displayName": "Scroll",
+      "properties": {
+        "enableScroll": {
+          "displayName": "Enable Scroll",
+          "type": {
+            "bool": true
+          }
+        },
+        "minCategoryWidth": {
+          "displayName": "Min Category Width (px)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "sortFormatting": {
+      "displayName": "Sort Order",
+      "properties": {
+        "sortBy": {
+          "displayName": "Sort By",
+          "type": {
+            "enumeration": [
+              {
+                "value": "dataOrder",
+                "displayName": "Data Order"
+              },
+              {
+                "value": "valueAsc",
+                "displayName": "Value (Ascending)"
+              },
+              {
+                "value": "valueDesc",
+                "displayName": "Value (Descending)"
+              },
+              {
+                "value": "nameAsc",
+                "displayName": "Name (A-Z)"
+              },
+              {
+                "value": "nameDesc",
+                "displayName": "Name (Z-A)"
+              }
+            ]
           }
         }
       }

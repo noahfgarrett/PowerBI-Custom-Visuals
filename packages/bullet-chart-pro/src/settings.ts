@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard } from '../../core/src';
+import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard } from '../../core/src';
 // ── Bullet Settings ─────────────────────────────────────────────────
 
 class BulletSettings extends formattingSettings.SimpleCard {
@@ -152,6 +152,12 @@ export class BulletChartProSettings extends formattingSettings.Model {
 
   titleFormattingCard = new TitleFormattingCard();
 
+  scrollFormattingCard = new ScrollFormattingCard();
+
+  constructor() {
+    super();
+    this.scrollFormattingCard.minCategoryWidth.value = 30;
+  }
 
   cards = [
     this.bulletSettings,
@@ -161,6 +167,6 @@ export class BulletChartProSettings extends formattingSettings.Model {
     this.axisFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
-
+    this.scrollFormattingCard,
   ];
 }

@@ -20,6 +20,7 @@ import {
   formatNumber,
   renderChartTitle,
   applyDataLabelFormatting,
+  resolveDropdown,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -190,6 +191,7 @@ export class RadarChartVisual implements IVisual {
     const fillOpacity = Math.max(0, Math.min(100, s.radarSettings.fillOpacity.value)) / 100;
     const showDots = s.radarSettings.showDots.value;
     const dotRadius = Math.max(1, s.radarSettings.dotRadius.value);
+    const gridShape = resolveDropdown(s.radarSettings.gridShape) ?? 'polygon';
     const webStrokeColor = s.radarSettings.webStrokeColor.value?.value || '#CBD5E1';
     const webStrokeWidth = Math.max(0.5, s.radarSettings.webStrokeWidth.value);
     const webFillOpacity = Math.max(0, Math.min(100, s.radarSettings.webFillOpacity.value)) / 100;
@@ -263,14 +265,26 @@ export class RadarChartVisual implements IVisual {
     if (showGrid && showGridLines) {
       for (let level = 1; level <= gridLevels; level++) {
         const r = (radius / gridLevels) * level;
-        const points = this.buildPolygonPoints(numAxes, angleSlice, r);
-        g.append('polygon')
-          .attr('class', 'radar-grid-line')
-          .attr('points', points)
-          .attr('stroke', gridLineColor)
-          .attr('stroke-width', webStrokeWidth)
-          .attr('stroke-dasharray', gridDashArray)
-          .attr('fill', withOpacity(webStrokeColor, webFillOpacity));
+        if (gridShape === 'circle') {
+          g.append('circle')
+            .attr('class', 'radar-grid-line')
+            .attr('cx', 0)
+            .attr('cy', 0)
+            .attr('r', r)
+            .attr('stroke', gridLineColor)
+            .attr('stroke-width', webStrokeWidth)
+            .attr('stroke-dasharray', gridDashArray)
+            .attr('fill', withOpacity(webStrokeColor, webFillOpacity));
+        } else {
+          const points = this.buildPolygonPoints(numAxes, angleSlice, r);
+          g.append('polygon')
+            .attr('class', 'radar-grid-line')
+            .attr('points', points)
+            .attr('stroke', gridLineColor)
+            .attr('stroke-width', webStrokeWidth)
+            .attr('stroke-dasharray', gridDashArray)
+            .attr('fill', withOpacity(webStrokeColor, webFillOpacity));
+        }
       }
     }
 

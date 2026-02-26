@@ -171,6 +171,199 @@
         }
       }
     },
+    "quadrantSettings": {
+      "displayName": "Quadrant Lines",
+      "properties": {
+        "show": {
+          "displayName": "Show Quadrants",
+          "type": {
+            "bool": true
+          }
+        },
+        "xValue": {
+          "displayName": "X Divider Value",
+          "type": {
+            "numeric": true
+          }
+        },
+        "yValue": {
+          "displayName": "Y Divider Value",
+          "type": {
+            "numeric": true
+          }
+        },
+        "lineColor": {
+          "displayName": "Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "lineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "lineStyle": {
+          "displayName": "Line Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "solid",
+                "displayName": "Solid"
+              },
+              {
+                "value": "dashed",
+                "displayName": "Dashed"
+              },
+              {
+                "value": "dotted",
+                "displayName": "Dotted"
+              }
+            ]
+          }
+        },
+        "showLabels": {
+          "displayName": "Show Labels",
+          "type": {
+            "bool": true
+          }
+        },
+        "topRightLabel": {
+          "displayName": "Top-Right Label",
+          "type": {
+            "text": true
+          }
+        },
+        "topLeftLabel": {
+          "displayName": "Top-Left Label",
+          "type": {
+            "text": true
+          }
+        },
+        "bottomRightLabel": {
+          "displayName": "Bottom-Right Label",
+          "type": {
+            "text": true
+          }
+        },
+        "bottomLeftLabel": {
+          "displayName": "Bottom-Left Label",
+          "type": {
+            "text": true
+          }
+        },
+        "labelFontSize": {
+          "displayName": "Label Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "zoneFillOpacity": {
+          "displayName": "Zone Fill Opacity",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "trendlineSettings": {
+      "displayName": "Trendline",
+      "properties": {
+        "show": {
+          "displayName": "Show Trendline",
+          "type": {
+            "bool": true
+          }
+        },
+        "type": {
+          "displayName": "Regression Type",
+          "type": {
+            "enumeration": [
+              {
+                "value": "linear",
+                "displayName": "Linear"
+              },
+              {
+                "value": "polynomial",
+                "displayName": "Polynomial"
+              },
+              {
+                "value": "exponential",
+                "displayName": "Exponential"
+              },
+              {
+                "value": "logarithmic",
+                "displayName": "Logarithmic"
+              },
+              {
+                "value": "power",
+                "displayName": "Power"
+              }
+            ]
+          }
+        },
+        "polynomialOrder": {
+          "displayName": "Polynomial Order",
+          "type": {
+            "numeric": true
+          }
+        },
+        "lineColor": {
+          "displayName": "Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "lineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "lineStyle": {
+          "displayName": "Line Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "solid",
+                "displayName": "Solid"
+              },
+              {
+                "value": "dashed",
+                "displayName": "Dashed"
+              }
+            ]
+          }
+        },
+        "showEquation": {
+          "displayName": "Show Equation",
+          "type": {
+            "bool": true
+          }
+        },
+        "showR2": {
+          "displayName": "Show R²",
+          "type": {
+            "bool": true
+          }
+        },
+        "labelFontSize": {
+          "displayName": "Label Font Size",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
     "axisFormatting": {
       "displayName": "Axis Formatting",
       "properties": {
@@ -406,6 +599,56 @@
           "displayName": "Border Radius",
           "type": {
             "numeric": true
+          }
+        }
+      }
+    },
+    "numberFormatting": {
+      "displayName": "Number Format",
+      "properties": {
+        "displayUnits": {
+          "displayName": "Display Units",
+          "type": {
+            "enumeration": [
+              {
+                "value": "auto",
+                "displayName": "Auto"
+              },
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "thousands",
+                "displayName": "Thousands (K)"
+              },
+              {
+                "value": "millions",
+                "displayName": "Millions (M)"
+              },
+              {
+                "value": "billions",
+                "displayName": "Billions (B)"
+              }
+            ]
+          }
+        },
+        "decimalPlaces": {
+          "displayName": "Decimal Places",
+          "type": {
+            "numeric": true
+          }
+        },
+        "valuePrefix": {
+          "displayName": "Prefix",
+          "type": {
+            "text": true
+          }
+        },
+        "valueSuffix": {
+          "displayName": "Suffix",
+          "type": {
+            "text": true
           }
         }
       }

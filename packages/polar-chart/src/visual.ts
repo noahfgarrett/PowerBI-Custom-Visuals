@@ -21,6 +21,7 @@ import {
   withOpacity,
   renderChartTitle,
   applyDataLabelFormatting,
+  applySortOrder,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -80,8 +81,11 @@ export class PolarChartVisual implements IVisual {
       );
     }
 
-    // Extract data
-    const data = this.extractData(dataView);
+    // Extract data and apply user-configured sort order
+    const data = applySortOrder(
+      this.extractData(dataView).map((d) => ({ ...d, name: d.label })),
+      this.settings.sortFormattingCard,
+    );
 
     this.notifyRenderStarted();
     try {
@@ -475,11 +479,82 @@ export class PolarChartVisual implements IVisual {
     // Apply shared formatting settings
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.polar-value-label');
 
+    // ── Legend ────────────────────────────────────────────────────
+    if (s.legendFormattingCard.showLegend.value) {
+      this.renderLegend(data);
+    }
+
     this.container.addEventListener('click', this.handleBackgroundClick);
   }
 
   public getFormattingModel(): powerbi.visuals.FormattingModel {
     return this.formattingSettingsService.buildFormattingModel(this.settings);
+  }
+
+  // ── Legend Rendering ────────────────────────────────────────
+
+  private renderLegend(data: PetalDatum[]): void {
+    const legendFmtCard = this.settings.legendFormattingCard;
+    const rawFontColor = legendFmtCard.legendFontColor.value?.value;
+    const legendFontColor = rawFontColor != null && rawFontColor.length > 0 ? rawFontColor : '';
+    const legendFontSize = legendFmtCard.legendFontSize.value;
+    const position = this.getLegendPosition();
+
+    const legendDiv = document.createElement('div');
+    legendDiv.style.display = 'flex';
+    legendDiv.style.flexWrap = 'wrap';
+    legendDiv.style.gap = '12px';
+    legendDiv.style.padding = '6px 0';
+    legendDiv.style.justifyContent = 'center';
+
+    if (position === 'left' || position === 'right') {
+      legendDiv.style.flexDirection = 'column';
+      legendDiv.style.justifyContent = 'flex-start';
+    }
+
+    data.forEach((item) => {
+      const itemEl = document.createElement('div');
+      itemEl.style.display = 'flex';
+      itemEl.style.alignItems = 'center';
+      itemEl.style.gap = '5px';
+
+      const swatch = document.createElement('div');
+      swatch.style.width = '10px';
+      swatch.style.height = '10px';
+      swatch.style.borderRadius = '2px';
+      swatch.style.backgroundColor = item.color;
+      swatch.style.flexShrink = '0';
+
+      const label = document.createElement('span');
+      label.textContent = item.label;
+      if (legendFontColor.length > 0) label.style.color = legendFontColor;
+      if (legendFontSize !== 11) label.style.fontSize = `${legendFontSize}px`;
+
+      itemEl.appendChild(swatch);
+      itemEl.appendChild(label);
+      legendDiv.appendChild(itemEl);
+    });
+
+    if (position === 'top') {
+      // Insert after title but before SVG
+      const svg = this.container.querySelector('.polar-svg');
+      if (svg) {
+        this.container.insertBefore(legendDiv, svg);
+      } else {
+        this.container.appendChild(legendDiv);
+      }
+    } else {
+      this.container.appendChild(legendDiv);
+    }
+  }
+
+  private getLegendPosition(): string {
+    const val = this.settings.legendFormattingCard.legendPosition.value?.value;
+    const validPositions = ['bottom', 'top', 'left', 'right'];
+    if (typeof val === 'string' && validPositions.includes(val)) {
+      return val;
+    }
+    return 'bottom';
   }
 
   private handleBackgroundClick = (): void => {

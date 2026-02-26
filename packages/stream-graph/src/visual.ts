@@ -20,6 +20,7 @@ import {
   applyGridFormatting,
   applyAllAxisFormatting,
   applyDataLabelFormatting,
+  applySortOrder,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -108,8 +109,8 @@ export class StreamGraphVisual implements IVisual {
       );
     }
 
-    // Extract data
-    const data = this.extractData(dataView);
+    // Extract data and apply user-configured sort order to series
+    const data = this.sortStreamSeries(this.extractData(dataView));
 
     // Render
     this.render(data, options.viewport);
@@ -179,6 +180,30 @@ export class StreamGraphVisual implements IVisual {
     }
 
     return { rows, seriesNames, categoryLabels, categorySelectionIds };
+  }
+
+  // ── Sort Series ──────────────────────────────────────────────
+
+  /** Sort stream series by total value across all rows. */
+  private sortStreamSeries(data: StreamData | null): StreamData | null {
+    if (!data || data.seriesNames.length <= 1) return data;
+
+    // Compute total value per series across all rows
+    const seriesTotals = data.seriesNames.map((seriesName) => {
+      let total = 0;
+      for (const row of data.rows) {
+        const val = row[seriesName];
+        if (typeof val === 'number') total += val;
+      }
+      return { name: seriesName, value: total };
+    });
+
+    const sorted = applySortOrder(seriesTotals, this.settings.sortFormattingCard);
+
+    return {
+      ...data,
+      seriesNames: sorted.map((s) => s.name),
+    };
   }
 
   // ── Rendering ────────────────────────────────────────────────
@@ -358,11 +383,13 @@ export class StreamGraphVisual implements IVisual {
       .data(stackedData)
       .join('path')
       .attr('class', 'stream-layer')
+      .attr('data-series', (_d, i) => String(i))
       .attr('fill', (_d, i) => withOpacity(getHostChartColor(this.host.colorPalette, i), streamOpacity))
       .attr('stroke', effectiveStrokeColor)
       .attr('stroke-width', effectiveStrokeWidth)
       .attr('stroke-dasharray', effectiveStrokeColor !== 'none' ? strokeDash : 'none')
-      .attr('d', (d) => areaGenerator(d) ?? '');
+      .attr('d', (d) => areaGenerator(d) ?? '')
+      .style('transition', 'opacity 0.15s ease');
 
     // Tooltips
     layers.append('title')
@@ -426,7 +453,7 @@ export class StreamGraphVisual implements IVisual {
     if (s.dataLabelFormattingCard.showDataLabels.value) {
       const labelGroup = g.append('g').attr('class', 'stream-data-labels');
 
-      stackedData.forEach((layer) => {
+      stackedData.forEach((layer, layerIdx) => {
         // Find the midpoint index of the layer
         const midIdx = Math.floor(layer.length / 2);
         const midPoint = layer[midIdx];
@@ -441,11 +468,119 @@ export class StreamGraphVisual implements IVisual {
 
         labelGroup.append('text')
           .attr('class', 'stream-data-label')
+          .attr('data-series', String(layerIdx))
           .attr('x', midX)
           .attr('y', midY)
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', 'central')
+          .style('transition', 'opacity 0.15s ease')
           .text(layer.key);
+      });
+    }
+
+    // ── Crosshair ──────────────────────────────────────────────
+
+    const crosshairEnabled = s.crosshairSettings.show.value;
+    if (crosshairEnabled) {
+      const chColor = s.crosshairSettings.lineColor.value?.value || '#94A3B8';
+      const chWidth = s.crosshairSettings.lineWidth.value;
+      const chStyleVal = (s.crosshairSettings.lineStyle.value as { value?: string } | undefined)?.value;
+      const chDash = chStyleVal === 'dashed' ? '6 4' : 'none';
+      const chShowValues = s.crosshairSettings.showValues.value;
+
+      const crosshairGroup = g.append('g')
+        .attr('class', 'crosshair-group')
+        .style('display', 'none')
+        .style('pointer-events', 'none');
+
+      crosshairGroup.append('line')
+        .attr('class', 'crosshair-line')
+        .attr('y1', 0)
+        .attr('y2', innerHeight)
+        .attr('stroke', chColor)
+        .attr('stroke-width', chWidth)
+        .attr('stroke-dasharray', chDash);
+
+      const rowCount = data.rows.length;
+
+      const svgEl2 = svg.node();
+      if (svgEl2) {
+        svgEl2.addEventListener('mousemove', (event: MouseEvent) => {
+          const [mouseX] = d3.pointer(event, g.node());
+
+          if (mouseX < 0 || mouseX > innerWidth) {
+            crosshairGroup.style('display', 'none');
+            return;
+          }
+
+          crosshairGroup.style('display', null);
+
+          // Find nearest data index
+          const rawIdx = xScale.invert(mouseX);
+          const nearestIdx = Math.max(0, Math.min(rowCount - 1, Math.round(rawIdx)));
+          const snapX = xScale(nearestIdx);
+
+          crosshairGroup.select('.crosshair-line')
+            .attr('x1', snapX)
+            .attr('x2', snapX);
+
+          // Remove previous markers and labels
+          crosshairGroup.selectAll('.crosshair-marker').remove();
+          crosshairGroup.selectAll('.crosshair-label').remove();
+
+          if (chShowValues) {
+            stackedData.forEach((layer, layerIdx) => {
+              const point = layer[nearestIdx];
+              if (!point) return;
+
+              const val = (point.data[layer.key] as number) ?? 0;
+              const midY = yScale((point[0] + point[1]) / 2);
+              const color = getHostChartColor(this.host.colorPalette, layerIdx);
+
+              crosshairGroup.append('circle')
+                .attr('class', 'crosshair-marker')
+                .attr('cx', snapX)
+                .attr('cy', midY)
+                .attr('r', 4)
+                .attr('fill', color)
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 1.5);
+
+              crosshairGroup.append('text')
+                .attr('class', 'crosshair-label')
+                .attr('x', snapX + 8)
+                .attr('y', midY - 4)
+                .attr('font-size', '11px')
+                .attr('fill', color)
+                .attr('font-weight', '600')
+                .text(String(Math.round(val * 100) / 100));
+            });
+          }
+        });
+
+        svgEl2.addEventListener('mouseleave', () => {
+          crosshairGroup.style('display', 'none');
+        });
+      }
+    }
+
+    // ── Series Hover Highlight/Dim ──────────────────────────────
+
+    const svgNode = svg.node();
+    if (svgNode) {
+      const seriesElements = svgNode.querySelectorAll('[data-series]');
+      seriesElements.forEach((el) => {
+        el.addEventListener('mouseenter', () => {
+          const seriesIdx = el.getAttribute('data-series');
+          seriesElements.forEach((other) => {
+            (other as SVGElement).style.opacity = other.getAttribute('data-series') === seriesIdx ? '1' : '0.2';
+          });
+        });
+        el.addEventListener('mouseleave', () => {
+          seriesElements.forEach((other) => {
+            (other as SVGElement).style.opacity = '1';
+          });
+        });
       });
     }
 

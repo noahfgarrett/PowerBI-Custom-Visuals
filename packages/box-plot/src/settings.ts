@@ -5,7 +5,93 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard } from '../../core/src';
+import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, NumberFormattingCard} from '../../core/src';
+
+// -- Reference Line Settings -----------------------------------------------
+
+class ReferenceLineSettingsCard extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Reference Line',
+    value: false,
+  });
+
+  value = new formattingSettings.NumUpDown({
+    name: 'value',
+    displayName: 'Value',
+    value: 0,
+  });
+
+  lineColor = new formattingSettings.ColorPicker({
+    name: 'lineColor',
+    displayName: 'Line Color',
+    value: { value: '#EF4444' },
+  });
+
+  lineWidth = new formattingSettings.NumUpDown({
+    name: 'lineWidth',
+    displayName: 'Line Width',
+    value: 2,
+  });
+
+  lineStyle = new formattingSettings.ItemDropdown({
+    name: 'lineStyle',
+    displayName: 'Line Style',
+    items: [
+      { value: 'solid', displayName: 'Solid' },
+      { value: 'dashed', displayName: 'Dashed' },
+      { value: 'dotted', displayName: 'Dotted' },
+    ],
+    value: { value: 'dashed', displayName: 'Dashed' },
+  });
+
+  showLabel = new formattingSettings.ToggleSwitch({
+    name: 'showLabel',
+    displayName: 'Show Label',
+    value: true,
+  });
+
+  labelText = new formattingSettings.TextInput({
+    name: 'labelText',
+    displayName: 'Label Text',
+    value: '',
+    placeholder: 'Custom label (blank = value)',
+  });
+
+  showBand = new formattingSettings.ToggleSwitch({
+    name: 'showBand',
+    displayName: 'Show Band',
+    value: false,
+  });
+
+  bandUpperValue = new formattingSettings.NumUpDown({
+    name: 'bandUpperValue',
+    displayName: 'Band Upper Value',
+    value: 0,
+  });
+
+  bandOpacity = new formattingSettings.NumUpDown({
+    name: 'bandOpacity',
+    displayName: 'Band Opacity (%)',
+    value: 15,
+  });
+
+  name = 'referenceLineSettings';
+  displayName = 'Reference Line';
+  slices = [
+    this.show,
+    this.value,
+    this.lineColor,
+    this.lineWidth,
+    this.lineStyle,
+    this.showLabel,
+    this.labelText,
+    this.showBand,
+    this.bandUpperValue,
+    this.bandOpacity,
+  ];
+}
+
 // -- Box Settings ----------------------------------------------------------
 
 class BoxSettingsCard extends formattingSettings.SimpleCard {
@@ -184,6 +270,75 @@ class AnimationSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration, this.staggerDelay];
 }
 
+// -- Mean Marker Settings --------------------------------------------------
+
+class MeanMarkerSettingsCard extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Mean Marker',
+    value: true,
+  });
+
+  shape = new formattingSettings.ItemDropdown({
+    name: 'shape',
+    displayName: 'Shape',
+    items: [
+      { value: 'diamond', displayName: 'Diamond' },
+      { value: 'cross', displayName: 'Cross' },
+      { value: 'circle', displayName: 'Circle' },
+    ],
+    value: { value: 'diamond', displayName: 'Diamond' },
+  });
+
+  color = new formattingSettings.ColorPicker({
+    name: 'color',
+    displayName: 'Color',
+    value: { value: '#F59E0B' },
+  });
+
+  size = new formattingSettings.NumUpDown({
+    name: 'size',
+    displayName: 'Size',
+    value: 8,
+  });
+
+  name = 'meanMarkerSettings';
+  displayName = 'Mean Marker';
+  slices = [this.show, this.shape, this.color, this.size];
+}
+
+// -- Jitter (Data Points) Settings -----------------------------------------
+
+class JitterSettingsCard extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Data Points',
+    value: false,
+  });
+
+  opacity = new formattingSettings.NumUpDown({
+    name: 'opacity',
+    displayName: 'Point Opacity (%)',
+    value: 40,
+  });
+
+  radius = new formattingSettings.NumUpDown({
+    name: 'radius',
+    displayName: 'Radius',
+    value: 3,
+  });
+
+  color = new formattingSettings.ColorPicker({
+    name: 'color',
+    displayName: 'Point Color',
+    value: { value: '' },
+  });
+
+  name = 'jitterSettings';
+  displayName = 'Data Points';
+  slices = [this.show, this.opacity, this.radius, this.color];
+}
+
 // -- Root Model ------------------------------------------------------------
 
 export class BoxPlotSettings extends formattingSettings.Model {
@@ -192,6 +347,9 @@ export class BoxPlotSettings extends formattingSettings.Model {
   axisSettings = new AxisSettingsCard();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettingsCard();
+  meanMarkerSettings = new MeanMarkerSettingsCard();
+  jitterSettings = new JitterSettingsCard();
+  referenceLineSettings = new ReferenceLineSettingsCard();
 
   axisFormattingCard = new AxisFormattingCard();
 
@@ -201,6 +359,14 @@ export class BoxPlotSettings extends formattingSettings.Model {
 
   titleFormattingCard = new TitleFormattingCard();
 
+  scrollFormattingCard = new ScrollFormattingCard();
+
+  constructor() {
+    super();
+    this.scrollFormattingCard.minCategoryWidth.value = 60;
+  }
+
+  numberFormattingCard = new NumberFormattingCard();
 
   cards = [
     this.boxSettings,
@@ -208,10 +374,14 @@ export class BoxPlotSettings extends formattingSettings.Model {
     this.axisSettings,
     this.cardSettings,
     this.animationSettings,
+    this.meanMarkerSettings,
+    this.jitterSettings,
+    this.referenceLineSettings,
     this.axisFormattingCard,
     this.legendFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
-
+    this.scrollFormattingCard,
+    this.numberFormattingCard,
   ];
 }

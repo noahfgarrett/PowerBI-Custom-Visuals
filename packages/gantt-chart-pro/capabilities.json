@@ -29,6 +29,18 @@
       "name": "category",
       "kind": "Grouping",
       "description": "Optional category for color grouping"
+    },
+    {
+      "displayName": "Dependency (Predecessor ID)",
+      "name": "dependency",
+      "kind": "Grouping",
+      "description": "ID of the predecessor task (finish-to-start)"
+    },
+    {
+      "displayName": "Parent Task",
+      "name": "parentTask",
+      "kind": "Grouping",
+      "description": "Name of the parent task for hierarchy grouping"
     }
   ],
   "dataViewMappings": [
@@ -48,6 +60,12 @@
             "max": 1
           },
           "category": {
+            "max": 1
+          },
+          "dependency": {
+            "max": 1
+          },
+          "parentTask": {
             "max": 1
           }
         }
@@ -83,6 +101,16 @@
             {
               "bind": {
                 "to": "category"
+              }
+            },
+            {
+              "bind": {
+                "to": "dependency"
+              }
+            },
+            {
+              "bind": {
+                "to": "parentTask"
               }
             }
           ]
@@ -366,6 +394,77 @@
                 "displayName": "Dashed"
               }
             ]
+          }
+        }
+      }
+    },
+    "dependencySettings": {
+      "displayName": "Dependencies",
+      "properties": {
+        "show": {
+          "displayName": "Show Dependencies",
+          "type": {
+            "bool": true
+          }
+        },
+        "lineColor": {
+          "displayName": "Arrow Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "lineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "arrowSize": {
+          "displayName": "Arrow Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "lineStyle": {
+          "displayName": "Line Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "solid",
+                "displayName": "Solid"
+              },
+              {
+                "value": "dashed",
+                "displayName": "Dashed"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "hierarchySettings": {
+      "displayName": "Hierarchy",
+      "properties": {
+        "indentWidth": {
+          "displayName": "Indent Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "showToggle": {
+          "displayName": "Show Toggle",
+          "type": {
+            "bool": true
+          }
+        },
+        "collapseByDefault": {
+          "displayName": "Collapse By Default",
+          "type": {
+            "bool": true
           }
         }
       }

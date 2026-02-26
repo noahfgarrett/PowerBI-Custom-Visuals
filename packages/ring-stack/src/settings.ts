@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard } from '../../core/src';
+import { LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, SortFormattingCard} from '../../core/src';
 class RingSettings extends formattingSettings.SimpleCard {
   thickness = new formattingSettings.NumUpDown({
     name: 'thickness',
@@ -62,10 +62,15 @@ class RingSettings extends formattingSettings.SimpleCard {
 
   });
 
+  roundedCaps = new formattingSettings.ToggleSwitch({
+    name: 'roundedCaps',
+    displayName: 'Rounded Caps',
+    value: true,
+  });
 
   name = 'ringSettings';
   displayName = 'Ring';
-  slices = [this.thickness, this.gap, this.maxValue, this.showLabels, this.trackColor, this.trackOpacity, this.ringStrokeColor];
+  slices = [this.thickness, this.gap, this.maxValue, this.showLabels, this.trackColor, this.trackOpacity, this.ringStrokeColor, this.roundedCaps];
 }
 
 class ColorSettings extends formattingSettings.SimpleCard {
@@ -147,6 +152,94 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
   slices = [this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
+class CenterContentSettings extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Center Content',
+    value: true,
+  });
+
+  displayMode = new formattingSettings.ItemDropdown({
+    name: 'displayMode',
+    displayName: 'Display Mode',
+    items: [
+      { value: 'total', displayName: 'Total' },
+      { value: 'count', displayName: 'Count' },
+      { value: 'average', displayName: 'Average' },
+      { value: 'custom', displayName: 'Custom' },
+    ],
+    value: { value: 'total', displayName: 'Total' },
+  });
+
+  customText = new formattingSettings.TextInput({
+    name: 'customText',
+    displayName: 'Custom Text',
+    value: '',
+    placeholder: 'Custom label',
+  });
+
+  fontSize = new formattingSettings.NumUpDown({
+    name: 'fontSize',
+    displayName: 'Font Size',
+    value: 24,
+  });
+
+  fontColor = new formattingSettings.ColorPicker({
+    name: 'fontColor',
+    displayName: 'Font Color',
+    value: { value: '' },
+  });
+
+  showLabel = new formattingSettings.ToggleSwitch({
+    name: 'showLabel',
+    displayName: 'Show Label',
+    value: true,
+  });
+
+  labelFontSize = new formattingSettings.NumUpDown({
+    name: 'labelFontSize',
+    displayName: 'Label Font Size',
+    value: 11,
+  });
+
+  name = 'centerContentSettings';
+  displayName = 'Center Content';
+  slices = [
+    this.show,
+    this.displayMode,
+    this.customText,
+    this.fontSize,
+    this.fontColor,
+    this.showLabel,
+    this.labelFontSize,
+  ];
+}
+
+class PerRingMaxSettingsCard extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Per-Ring Scale',
+    value: false,
+  });
+
+  maxValues = new formattingSettings.TextInput({
+    name: 'maxValues',
+    displayName: 'Max Values (comma-separated)',
+    value: '',
+    placeholder: '100,500,1000',
+  });
+
+  showPercentage = new formattingSettings.ToggleSwitch({
+    name: 'showPercentage',
+    displayName: 'Show Percentage',
+    value: true,
+  });
+
+  name = 'perRingMaxSettings';
+  displayName = 'Per-Ring Scale';
+  slices = [this.enabled, this.maxValues, this.showPercentage];
+}
+
 class AnimationSettings extends formattingSettings.SimpleCard {
   enabled = new formattingSettings.ToggleSwitch({
     name: 'enabled',
@@ -168,8 +261,10 @@ class AnimationSettings extends formattingSettings.SimpleCard {
 export class RingStackSettings extends formattingSettings.Model {
   ringSettings = new RingSettings();
   colorSettings = new ColorSettings();
+  centerContentSettings = new CenterContentSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
+  perRingMaxSettings = new PerRingMaxSettingsCard();
 
   legendFormattingCard = new LegendFormattingCard();
 
@@ -178,14 +273,18 @@ export class RingStackSettings extends formattingSettings.Model {
   titleFormattingCard = new TitleFormattingCard();
 
 
+  sortFormattingCard = new SortFormattingCard();
+
   cards = [
     this.ringSettings,
     this.colorSettings,
+    this.centerContentSettings,
     this.cardSettings,
     this.animationSettings,
+    this.perRingMaxSettings,
     this.legendFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
-
+    this.sortFormattingCard,
   ];
 }

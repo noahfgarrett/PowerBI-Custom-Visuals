@@ -3,6 +3,9 @@
  * Locale-aware, smart abbreviation, prefix/suffix support.
  */
 
+/** Display unit modes for number formatting. */
+export type DisplayUnits = 'auto' | 'none' | 'thousands' | 'millions' | 'billions';
+
 export interface FormatOptions {
   /** Locale string (e.g., 'en-US'). Default: browser locale. */
   locale?: string;
@@ -14,6 +17,15 @@ export interface FormatOptions {
   suffix?: string;
   /** Whether to abbreviate large numbers (1.2K, 3.4M, etc.). Default: true. */
   abbreviate?: boolean;
+  /**
+   * Force a specific display unit. Overrides `abbreviate` when set.
+   *   'auto'      — smart abbreviation (same as abbreviate: true)
+   *   'none'      — no abbreviation
+   *   'thousands' — always divide by 1K and append "K"
+   *   'millions'  — always divide by 1M and append "M"
+   *   'billions'  — always divide by 1B and append "B"
+   */
+  displayUnits?: DisplayUnits;
   /** Fallback string for null/undefined/NaN. Default: '--'. */
   fallback?: string;
   /** Force sign display (+/-). Default: false. */
@@ -52,6 +64,7 @@ export function formatNumber(
     prefix = '',
     suffix = '',
     abbreviate = true,
+    displayUnits,
     fallback = '--',
     showSign = false,
   } = options;
@@ -64,8 +77,22 @@ export function formatNumber(
   let displayValue = value;
   let abbrevSuffix = '';
 
-  // Apply abbreviation
-  if (abbreviate) {
+  // Apply display units (overrides abbreviate when set)
+  if (displayUnits && displayUnits !== 'auto' && displayUnits !== 'none') {
+    const unitMap: Record<string, AbbreviationTier> = {
+      thousands: ABBREVIATION_TIERS[3],
+      millions: ABBREVIATION_TIERS[2],
+      billions: ABBREVIATION_TIERS[1],
+    };
+    const tier = unitMap[displayUnits];
+    if (tier) {
+      displayValue = value / tier.divisor;
+      abbrevSuffix = tier.suffix;
+    }
+  } else if (displayUnits === 'none') {
+    // No abbreviation — values stay as-is
+  } else if (displayUnits === 'auto' || abbreviate) {
+    // Auto abbreviation
     for (const tier of ABBREVIATION_TIERS) {
       if (absValue >= tier.threshold) {
         displayValue = value / tier.divisor;

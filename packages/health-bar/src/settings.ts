@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard } from '../../core/src';
+import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, SortFormattingCard} from '../../core/src';
 
 // -- Health Bar Settings ------------------------------------------------------
 
@@ -114,6 +114,43 @@ class ColorSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.lowColor, this.midColor, this.highColor, this.trackColor, this.trackOpacity];
 }
 
+// -- Target Settings ----------------------------------------------------------
+
+class TargetSettings extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Target',
+    value: true,
+  });
+
+  color = new formattingSettings.ColorPicker({
+    name: 'color',
+    displayName: 'Target Color',
+    value: { value: '#0F172A' },
+  });
+
+  lineWidth = new formattingSettings.NumUpDown({
+    name: 'lineWidth',
+    displayName: 'Line Width',
+    value: 2,
+  });
+
+  markerStyle = new formattingSettings.ItemDropdown({
+    name: 'markerStyle',
+    displayName: 'Marker Style',
+    items: [
+      { value: 'line', displayName: 'Line' },
+      { value: 'triangle', displayName: 'Triangle' },
+      { value: 'diamond', displayName: 'Diamond' },
+    ],
+    value: { value: 'line', displayName: 'Line' },
+  });
+
+  name = 'targetSettings';
+  displayName = 'Target';
+  slices = [this.show, this.color, this.lineWidth, this.markerStyle];
+}
+
 // -- Card Style ---------------------------------------------------------------
 
 class CardStyleSettings extends formattingSettings.SimpleCard {
@@ -203,6 +240,7 @@ class CategoryLabelSettingsCard extends formattingSettings.SimpleCard {
 export class HealthBarSettings extends formattingSettings.Model {
   healthBarSettings = new HealthBarSettingsCard();
   colorSettings = new ColorSettingsCard();
+  targetSettings = new TargetSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettingsCard();
 
@@ -210,15 +248,21 @@ export class HealthBarSettings extends formattingSettings.Model {
   axisFormattingCard = new AxisFormattingCard();
   dataLabelFormattingCard = new DataLabelFormattingCard();
   titleFormattingCard = new TitleFormattingCard();
+  scrollFormattingCard = new ScrollFormattingCard();
+
+  sortFormattingCard = new SortFormattingCard();
 
   cards = [
     this.healthBarSettings,
     this.colorSettings,
+    this.targetSettings,
     this.cardSettings,
     this.animationSettings,
     this.categoryLabelSettings,
     this.axisFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
+    this.scrollFormattingCard,
+    this.sortFormattingCard,
   ];
 }

@@ -10,7 +10,7 @@
       "displayName": "Value",
       "name": "measure",
       "kind": "Measure",
-      "description": "Actual value — the main bar"
+      "description": "Actual value \u2014 the main bar"
     },
     {
       "displayName": "Target",
@@ -389,6 +389,23 @@
         },
         "borderRadius": {
           "displayName": "Border Radius",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "scrollFormatting": {
+      "displayName": "Scroll",
+      "properties": {
+        "enableScroll": {
+          "displayName": "Enable Scroll",
+          "type": {
+            "bool": true
+          }
+        },
+        "minCategoryWidth": {
+          "displayName": "Min Category Width (px)",
           "type": {
             "numeric": true
           }

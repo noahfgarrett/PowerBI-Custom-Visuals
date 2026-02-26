@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { DataLabelFormattingCard, TitleFormattingCard } from '../../core/src';
+import { DataLabelFormattingCard, TitleFormattingCard, NumberFormattingCard} from '../../core/src';
 class ClusterSettings extends formattingSettings.SimpleCard {
   gaugesPerRow = new formattingSettings.NumUpDown({
     name: 'gaugesPerRow',
@@ -54,6 +54,11 @@ class ClusterSettings extends formattingSettings.SimpleCard {
 
   });
 
+  roundedCaps = new formattingSettings.ToggleSwitch({
+    name: 'roundedCaps',
+    displayName: 'Rounded Caps',
+    value: true,
+  });
 
   name = 'clusterSettings';
   displayName = 'Cluster Layout';
@@ -65,7 +70,7 @@ class ClusterSettings extends formattingSettings.SimpleCard {
     this.showLabels,
     this.showValues,
     this.trackOpacity,
-
+    this.roundedCaps,
   ];
 }
 
@@ -141,6 +146,30 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
   slices = [this.bgColor, this.bgOpacity, this.borderRadius];
 }
 
+class TargetSettings extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Target',
+    value: true,
+  });
+
+  color = new formattingSettings.ColorPicker({
+    name: 'color',
+    displayName: 'Target Color',
+    value: { value: '#0F172A' },
+  });
+
+  lineWidth = new formattingSettings.NumUpDown({
+    name: 'lineWidth',
+    displayName: 'Line Width',
+    value: 2,
+  });
+
+  name = 'targetSettings';
+  displayName = 'Target';
+  slices = [this.show, this.color, this.lineWidth];
+}
+
 class AnimationSettings extends formattingSettings.SimpleCard {
   enabled = new formattingSettings.ToggleSwitch({
     name: 'enabled',
@@ -162,6 +191,7 @@ class AnimationSettings extends formattingSettings.SimpleCard {
 export class GaugeClusterSettings extends formattingSettings.Model {
   clusterSettings = new ClusterSettings();
   zoneSettings = new ZoneSettings();
+  targetSettings = new TargetSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
 
@@ -170,13 +200,16 @@ export class GaugeClusterSettings extends formattingSettings.Model {
   titleFormattingCard = new TitleFormattingCard();
 
 
+  numberFormattingCard = new NumberFormattingCard();
+
   cards = [
     this.clusterSettings,
     this.zoneSettings,
+    this.targetSettings,
     this.cardSettings,
     this.animationSettings,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
-
+    this.numberFormattingCard,
   ];
 }

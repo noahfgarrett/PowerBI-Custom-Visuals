@@ -252,6 +252,31 @@ export class ProgressBarStackVisual implements IVisual {
       });
 
       trackEl.appendChild(fillEl);
+
+      // ── Target Marker ─────────────────────────────────────────
+      // Renders a vertical target line at the target value's position
+      // within the track. Since the track represents 0..target, the
+      // marker sits at the right edge (100%) as a goal-line indicator.
+      if (s.targetSettings.show.value && row.target > 0) {
+        const targetColor = s.targetSettings.color.value?.value ?? '#0F172A';
+        const targetLineWidth = s.targetSettings.lineWidth.value;
+
+        trackEl.style.position = 'relative';
+        trackEl.style.overflow = 'visible';
+
+        const marker = document.createElement('div');
+        marker.className = 'progress-target-marker';
+        marker.style.position = 'absolute';
+        marker.style.top = '-3px';
+        marker.style.bottom = '-3px';
+        marker.style.right = '0';
+        marker.style.width = `${targetLineWidth}px`;
+        marker.style.backgroundColor = targetColor;
+        marker.style.borderRadius = `${targetLineWidth}px`;
+        marker.style.pointerEvents = 'none';
+        trackEl.appendChild(marker);
+      }
+
       rowEl.appendChild(trackEl);
 
       // Value label

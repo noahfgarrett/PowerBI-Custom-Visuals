@@ -17,6 +17,7 @@ import {
   getGlassStyle,
   renderChartTitle,
   applyDataLabelFormatting,
+  createScrollableChart,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -249,7 +250,7 @@ export class BulletChartProVisual implements IVisual {
     const svgWidth = viewport.width - CONTAINER_PADDING * 2;
     const totalRows = data.items.length;
     const rowHeight = barHeight + ROW_GAP;
-    const svgHeight = Math.max(totalRows * rowHeight, barHeight);
+    const baseSvgHeight = Math.max(totalRows * rowHeight, barHeight);
 
     // Compute label width: measure text or use default
     const labelWidth = showLabels
@@ -265,6 +266,21 @@ export class BulletChartProVisual implements IVisual {
       return;
     }
 
+    // Scroll support (vertical — stacked bullet rows)
+    const scroll = createScrollableChart({
+      container: this.container,
+      viewportWidth: svgWidth,
+      viewportHeight: viewport.height - CONTAINER_PADDING * 2,
+      categoryCount: totalRows,
+      scrollSettings: s.scrollFormattingCard,
+      availableChartWidth: chartWidth,
+      availableChartHeight: viewport.height - CONTAINER_PADDING * 2,
+      direction: 'vertical',
+    });
+    const svgHeight = scroll.isScrolling
+      ? Math.max(totalRows * rowHeight, barHeight)
+      : baseSvgHeight;
+
     // Find the global max across all "good" values for consistent scale
     const globalMax = d3.max(data.items, (d) =>
       Math.max(d.good, d.value, d.target ?? 0),
@@ -277,7 +293,7 @@ export class BulletChartProVisual implements IVisual {
       .nice();
 
     // Create SVG
-    const svg = d3.select(this.container)
+    const svg = d3.select(scroll.svgParent)
       .append('svg')
       .attr('class', 'bullet-svg')
       .attr('width', svgWidth)

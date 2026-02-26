@@ -22,6 +22,7 @@ import {
   applyGridFormatting,
   applyDataLabelFormatting,
   applyAllAxisFormatting,
+  createScrollableChart,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -307,20 +308,34 @@ export class BumpChartVisual implements IVisual {
 
     const width = viewport.width;
     const height = viewport.height;
-    const innerWidth = width - margin.left - margin.right;
-    const innerHeight = height - margin.top - margin.bottom;
+    const baseInnerWidth = width - margin.left - margin.right;
+    const baseInnerHeight = height - margin.top - margin.bottom;
 
-    if (innerWidth < MIN_INNER_SIZE || innerHeight < MIN_INNER_SIZE) return;
+    if (baseInnerWidth < MIN_INNER_SIZE || baseInnerHeight < MIN_INNER_SIZE) return;
 
     // Collect unique time periods (from the first item's points — all should share them)
     const timePeriods = data[0].points.map((p) => p.time);
     const maxRank = data.length;
 
+    // Scroll support
+    const scroll = createScrollableChart({
+      container: this.container,
+      viewportWidth: width,
+      viewportHeight: height,
+      categoryCount: timePeriods.length,
+      scrollSettings: s.scrollFormattingCard,
+      availableChartWidth: baseInnerWidth,
+      availableChartHeight: baseInnerHeight,
+      direction: 'horizontal',
+    });
+    const innerWidth = scroll.chartWidth;
+    const innerHeight = scroll.chartHeight;
+
     // Create SVG
-    const svg = d3.select(this.container)
+    const svg = d3.select(scroll.svgParent)
       .append('svg')
-      .attr('width', width)
-      .attr('height', height);
+      .attr('width', scroll.svgWidth)
+      .attr('height', scroll.svgHeight);
 
     this.svg = svg;
 
@@ -389,17 +404,19 @@ export class BumpChartVisual implements IVisual {
       .y((d) => yScale(d.rank))
       .curve(d3.curveMonotoneX);
 
-    data.forEach((item) => {
+    data.forEach((item, itemIdx) => {
       const pathD = lineGenerator(item.points);
       if (!pathD) return;
 
       const path = lineGroup.append('path')
         .attr('class', 'bump-line')
+        .attr('data-series', String(itemIdx))
         .attr('d', pathD)
         .attr('stroke', item.color)
         .attr('stroke-width', lineWidth)
         .attr('fill', 'none')
-        .attr('stroke-linecap', 'round');
+        .attr('stroke-linecap', 'round')
+        .style('transition', 'opacity 0.15s ease');
 
       // Apply line style from lineStrokeFormattingCard
       if (lineStyle === 'dashed') {
@@ -437,7 +454,7 @@ export class BumpChartVisual implements IVisual {
     const dotGroup = g.append('g').attr('class', 'bump-dots');
     const dots: SVGElement[] = [];
 
-    data.forEach((item) => {
+    data.forEach((item, itemIdx) => {
       item.points.forEach((point) => {
         const cx = xScale(point.time);
         if (cx === undefined) return;
@@ -445,12 +462,14 @@ export class BumpChartVisual implements IVisual {
 
         const dot = dotGroup.append('circle')
           .attr('class', 'bump-dot')
+          .attr('data-series', String(itemIdx))
           .attr('cx', cx)
           .attr('cy', cy)
           .attr('r', dotRadius)
           .attr('fill', item.color)
           .attr('stroke', s.bumpSettings.dotStrokeColor.value?.value || '#FFFFFF')
           .attr('stroke-width', 2)
+          .style('transition', 'opacity 0.15s ease')
           .style('cursor', 'pointer')
           .on('click', (event: MouseEvent) => {
             event.stopPropagation();
@@ -480,7 +499,7 @@ export class BumpChartVisual implements IVisual {
     if (showRankNumbers) {
       const labelGroup = g.append('g').attr('class', 'bump-rank-labels');
 
-      data.forEach((item) => {
+      data.forEach((item, itemIdx) => {
         item.points.forEach((point) => {
           const cx = xScale(point.time);
           if (cx === undefined) return;
@@ -488,8 +507,10 @@ export class BumpChartVisual implements IVisual {
 
           const label = labelGroup.append('text')
             .attr('class', 'bump-rank-label')
+            .attr('data-series', String(itemIdx))
             .attr('x', cx)
             .attr('y', cy)
+            .style('transition', 'opacity 0.15s ease')
             .text(point.rank);
 
           const labelNode = label.node();
@@ -502,6 +523,119 @@ export class BumpChartVisual implements IVisual {
 
     if (showLegend) {
       this.renderLegend(svg, data, isLegendBottom, width, height, margin, innerWidth, innerHeight, legendFontSize, legendFontColor);
+    }
+
+    // ── Crosshair ──────────────────────────────────────────────
+
+    const crosshairEnabled = s.crosshairSettings.show.value;
+    if (crosshairEnabled) {
+      const chColor = s.crosshairSettings.lineColor.value?.value || '#94A3B8';
+      const chWidth = s.crosshairSettings.lineWidth.value;
+      const chStyleVal = (s.crosshairSettings.lineStyle.value as { value?: string } | undefined)?.value;
+      const chDash = chStyleVal === 'dashed' ? '6 4' : 'none';
+      const chShowValues = s.crosshairSettings.showValues.value;
+
+      const crosshairGroup = g.append('g')
+        .attr('class', 'crosshair-group')
+        .style('display', 'none')
+        .style('pointer-events', 'none');
+
+      crosshairGroup.append('line')
+        .attr('class', 'crosshair-line')
+        .attr('y1', 0)
+        .attr('y2', innerHeight)
+        .attr('stroke', chColor)
+        .attr('stroke-width', chWidth)
+        .attr('stroke-dasharray', chDash);
+
+      const svgEl2 = svg.node();
+      if (svgEl2) {
+        svgEl2.addEventListener('mousemove', (event: MouseEvent) => {
+          const [mouseX] = d3.pointer(event, g.node());
+
+          if (mouseX < 0 || mouseX > innerWidth) {
+            crosshairGroup.style('display', 'none');
+            return;
+          }
+
+          crosshairGroup.style('display', null);
+
+          // Find nearest time period
+          let nearestIdx = 0;
+          let nearestDist = Infinity;
+          for (let i = 0; i < timePeriods.length; i++) {
+            const xPos = xScale(timePeriods[i]);
+            if (xPos === undefined) continue;
+            const dist = Math.abs(xPos - mouseX);
+            if (dist < nearestDist) {
+              nearestDist = dist;
+              nearestIdx = i;
+            }
+          }
+
+          const snapX = xScale(timePeriods[nearestIdx]) ?? mouseX;
+          const nearestTime = timePeriods[nearestIdx];
+
+          crosshairGroup.select('.crosshair-line')
+            .attr('x1', snapX)
+            .attr('x2', snapX);
+
+          // Remove previous markers and labels
+          crosshairGroup.selectAll('.crosshair-marker').remove();
+          crosshairGroup.selectAll('.crosshair-label').remove();
+
+          if (chShowValues) {
+            data.forEach((item) => {
+              const point = item.points.find((p) => p.time === nearestTime);
+              if (!point) return;
+
+              const cy = yScale(point.rank);
+
+              crosshairGroup.append('circle')
+                .attr('class', 'crosshair-marker')
+                .attr('cx', snapX)
+                .attr('cy', cy)
+                .attr('r', 4)
+                .attr('fill', item.color)
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 1.5);
+
+              crosshairGroup.append('text')
+                .attr('class', 'crosshair-label')
+                .attr('x', snapX + 8)
+                .attr('y', cy - 4)
+                .attr('font-size', '11px')
+                .attr('fill', item.color)
+                .attr('font-weight', '600')
+                .text(`#${point.rank}`);
+            });
+          }
+        });
+
+        svgEl2.addEventListener('mouseleave', () => {
+          crosshairGroup.style('display', 'none');
+        });
+      }
+    }
+
+    // ── Series Hover Highlight/Dim ──────────────────────────────
+
+    const svgNode = svg.node();
+    if (svgNode) {
+      const seriesElements = svgNode.querySelectorAll('[data-series]');
+      seriesElements.forEach((el) => {
+        el.addEventListener('mouseenter', () => {
+          const seriesIdx = el.getAttribute('data-series');
+          seriesElements.forEach((other) => {
+            (other as SVGElement).style.opacity = other.getAttribute('data-series') === seriesIdx ? '1' : '0.2';
+          });
+        });
+        el.addEventListener('mouseleave', () => {
+          seriesElements.forEach((other) => {
+            (other as SVGElement).style.opacity = '1';
+          });
+        });
+      });
     }
 
     // ── Entrance Animations ─────────────────────────────────────

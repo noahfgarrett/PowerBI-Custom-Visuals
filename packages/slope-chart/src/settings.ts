@@ -144,6 +144,52 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
   slices = [this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
+class ChangeLabelSettings extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Change Labels',
+    value: true,
+  });
+
+  fontSize = new formattingSettings.NumUpDown({
+    name: 'fontSize',
+    displayName: 'Font Size',
+    value: 10,
+  });
+
+  fontColor = new formattingSettings.ColorPicker({
+    name: 'fontColor',
+    displayName: 'Font Color',
+    value: { value: '' },
+  });
+
+  format = new formattingSettings.ItemDropdown({
+    name: 'format',
+    displayName: 'Format',
+    items: [
+      { value: 'percent', displayName: 'Percent' },
+      { value: 'absolute', displayName: 'Absolute' },
+      { value: 'both', displayName: 'Both' },
+    ],
+    value: { value: 'percent', displayName: 'Percent' },
+  });
+
+  position = new formattingSettings.ItemDropdown({
+    name: 'position',
+    displayName: 'Position',
+    items: [
+      { value: 'center', displayName: 'Center' },
+      { value: 'above', displayName: 'Above' },
+      { value: 'below', displayName: 'Below' },
+    ],
+    value: { value: 'center', displayName: 'Center' },
+  });
+
+  name = 'changeLabelSettings';
+  displayName = 'Change Labels';
+  slices = [this.show, this.fontSize, this.fontColor, this.format, this.position];
+}
+
 class AnimationSettings extends formattingSettings.SimpleCard {
   enabled = new formattingSettings.ToggleSwitch({
     name: 'enabled',
@@ -166,6 +212,7 @@ export class SlopeChartSettings extends formattingSettings.Model {
   slopeSettings = new SlopeSettings();
   columnSettings = new ColumnSettings();
   cardSettings = new CardStyleSettings();
+  changeLabelSettings = new ChangeLabelSettings();
   animationSettings = new AnimationSettings();
 
   dataLabelFormattingCard = new DataLabelFormattingCard();
@@ -179,6 +226,7 @@ export class SlopeChartSettings extends formattingSettings.Model {
   cards = [
     this.slopeSettings,
     this.columnSettings,
+    this.changeLabelSettings,
     this.cardSettings,
     this.animationSettings,
     this.dataLabelFormattingCard,

@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { DataLabelFormattingCard, TitleFormattingCard } from '../../core/src';
+import { DataLabelFormattingCard, TitleFormattingCard, NumberFormattingCard} from '../../core/src';
 class ArcSettings extends formattingSettings.SimpleCard {
   thickness = new formattingSettings.ItemDropdown({
     name: 'thickness',
@@ -59,10 +59,15 @@ class ArcSettings extends formattingSettings.SimpleCard {
 
   });
 
+  roundedCaps = new formattingSettings.ToggleSwitch({
+    name: 'roundedCaps',
+    displayName: 'Rounded Caps',
+    value: true,
+  });
 
   name = 'arcSettings';
   displayName = 'Arc';
-  slices = [this.thickness, this.startAngle, this.trackOpacity, this.zoneBorderWidth, this.zoneBorderOpacity];
+  slices = [this.thickness, this.startAngle, this.trackOpacity, this.zoneBorderWidth, this.zoneBorderOpacity, this.roundedCaps];
 }
 
 class ZoneSettings extends formattingSettings.SimpleCard {
@@ -193,6 +198,42 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
   slices = [this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
+class NeedleSettings extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Needle',
+    value: false,
+  });
+
+  color = new formattingSettings.ColorPicker({
+    name: 'color',
+    displayName: 'Needle Color',
+    value: { value: '#0F172A' },
+  });
+
+  width = new formattingSettings.NumUpDown({
+    name: 'width',
+    displayName: 'Width (px)',
+    value: 3,
+  });
+
+  showHub = new formattingSettings.ToggleSwitch({
+    name: 'showHub',
+    displayName: 'Show Hub',
+    value: true,
+  });
+
+  hubRadius = new formattingSettings.NumUpDown({
+    name: 'hubRadius',
+    displayName: 'Hub Radius',
+    value: 8,
+  });
+
+  name = 'needleSettings';
+  displayName = 'Needle';
+  slices = [this.show, this.color, this.width, this.showHub, this.hubRadius];
+}
+
 class AnimationSettings extends formattingSettings.SimpleCard {
   enabled = new formattingSettings.ToggleSwitch({
     name: 'enabled',
@@ -216,6 +257,7 @@ export class RadialGaugeSettings extends formattingSettings.Model {
   zoneSettings = new ZoneSettings();
   valueSettings = new ValueSettings();
   targetSettings = new TargetSettings();
+  needleSettings = new NeedleSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
 
@@ -224,15 +266,18 @@ export class RadialGaugeSettings extends formattingSettings.Model {
   titleFormattingCard = new TitleFormattingCard();
 
 
+  numberFormattingCard = new NumberFormattingCard();
+
   cards = [
     this.arcSettings,
     this.zoneSettings,
     this.valueSettings,
     this.targetSettings,
+    this.needleSettings,
     this.cardSettings,
     this.animationSettings,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
-
+    this.numberFormattingCard,
   ];
 }

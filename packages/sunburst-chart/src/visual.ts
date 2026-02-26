@@ -71,6 +71,12 @@ export class SunburstChartVisual implements IVisual {
   /** Cached layout dimensions for zoom re-renders. */
   private lastViewport: powerbi.IViewport = { width: 0, height: 0 };
 
+  /** Chain of category names the user has drilled into */
+  private drillPath: string[] = [];
+
+  /** Cached root data for drill re-renders */
+  private lastRootData: SunburstNode | null = null;
+
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
     this.selectionManager = options.host.createSelectionManager();
@@ -85,8 +91,9 @@ export class SunburstChartVisual implements IVisual {
     this.cancelAnimations.forEach((cancel) => cancel());
     this.cancelAnimations = [];
 
-    // Reset zoom on new data
+    // Reset zoom and drill on new data
     this.zoomedNode = null;
+    this.drillPath = [];
 
     // Parse settings from dataView
     const dataView = options.dataViews?.[0];
@@ -101,8 +108,9 @@ export class SunburstChartVisual implements IVisual {
     const useChartPalette = this.settings.colorSettings.useChartPalette.value;
     const root = this.extractData(dataView, useChartPalette);
 
-    // Store viewport
+    // Store viewport and root data for drill re-renders
     this.lastViewport = options.viewport;
+    this.lastRootData = root;
 
     this.notifyRenderStarted();
     try {
@@ -220,6 +228,40 @@ export class SunburstChartVisual implements IVisual {
     renderChartTitle(this.container, this.settings.titleFormattingCard);
 
     const s = this.settings;
+    const drillEnabled = s.drillDownSettings.enabled.value;
+
+    // Resolve drill path to a sub-tree
+    let effectiveRoot = rootData;
+    if (drillEnabled && this.drillPath.length > 0) {
+      let current = rootData;
+      let pathValid = true;
+      for (const segment of this.drillPath) {
+        const found = current.children.find((c) => c.name === segment);
+        if (found && found.children.length > 0) {
+          current = found;
+        } else {
+          pathValid = false;
+          break;
+        }
+      }
+      if (pathValid && current !== rootData) {
+        // Create a virtual root wrapping the drilled-into node's children
+        effectiveRoot = {
+          name: current.name,
+          value: current.value,
+          children: current.children,
+          depth: 0,
+          color: current.color,
+        };
+      } else {
+        this.drillPath = [];
+      }
+    }
+
+    // Render breadcrumb
+    if (drillEnabled && this.drillPath.length > 0 && s.drillDownSettings.showBreadcrumb.value) {
+      this.renderBreadcrumb(rootData);
+    }
 
     // Apply glass card background
     if (s.cardSettings.enableGlass.value) {
@@ -249,11 +291,11 @@ export class SunburstChartVisual implements IVisual {
 
     // Render legend at top position
     if (showLegend && legendPos === 'top') {
-      this.renderLegend(rootData.children);
+      this.renderLegend(effectiveRoot.children);
     }
 
     // Empty state: no children means no data
-    if (rootData.children.length === 0) {
+    if (effectiveRoot.children.length === 0) {
       const emptyEl = document.createElement('div');
       emptyEl.className = 'sunburst-empty';
       emptyEl.textContent = 'Add hierarchy levels and a measure';
@@ -271,7 +313,7 @@ export class SunburstChartVisual implements IVisual {
     const radius = (size / 2) - padding;
 
     // ── D3 Hierarchy + Partition ────────────────────────────────
-    const hierarchy = d3.hierarchy<SunburstNode>(rootData)
+    const hierarchy = d3.hierarchy<SunburstNode>(effectiveRoot)
       .sum((d) => (d.children.length === 0 ? d.value : 0))
       .sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
 
@@ -391,13 +433,32 @@ export class SunburstChartVisual implements IVisual {
         }));
       }
 
-      // ── Click to zoom ──────────────────────────────────────
+      // ── Click to zoom / drill ──────────────────────────────
       const segNode = segPath.node();
       if (segNode) {
         segNode.addEventListener('click', (event: MouseEvent) => {
           event.stopPropagation();
           if ((event.ctrlKey || event.metaKey) && nodeData.selectionId) {
             void this.selectionManager.select(nodeData.selectionId, true);
+            return;
+          }
+
+          // Drill-down: push node name onto drill path if it has children
+          if (drillEnabled && nodeData.children.length > 0) {
+            this.drillPath.push(nodeData.name);
+            this.zoomedNode = null;
+
+            this.cancelAnimations.forEach((cancel) => cancel());
+            this.cancelAnimations = [];
+
+            this.notifyRenderStarted();
+            try {
+              this.render(rootData, this.lastViewport, false);
+              this.notifyRenderFinished();
+            } catch (error) {
+              this.notifyRenderFailed(error);
+              throw error;
+            }
             return;
           }
 
@@ -507,8 +568,90 @@ export class SunburstChartVisual implements IVisual {
       }
     }
 
-    // ── Center circle (clickable to zoom out) ──────────────────
-    if (this.zoomedNode !== null) {
+    // ── Center Content (total/KPI display) ──────────────────────
+    const cc = s.centerContentSettings;
+    if (cc.show.value && effectiveRoot.children.length > 0) {
+      const modeRaw = cc.displayMode.value;
+      const mode: string = (typeof modeRaw === 'string' ? modeRaw : (modeRaw as { value?: string })?.value) ?? 'total';
+
+      // Sum of root-level children values
+      const total = effectiveRoot.children.reduce((sum, child) => sum + child.value, 0);
+      const count = effectiveRoot.children.length;
+      const average = count > 0 ? total / count : 0;
+
+      const ccFontColor = cc.fontColor.value?.value || '';
+
+      if (mode === 'custom') {
+        // Custom mode: show customText as the main text, no label below
+        const centerText = g.append('text')
+          .attr('class', 'sunburst-center-value')
+          .attr('x', 0)
+          .attr('y', 0)
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'central')
+          .attr('font-size', `${cc.fontSize.value}px`)
+          .attr('font-weight', '600')
+          .attr('pointer-events', 'none')
+          .text(cc.customText.value || '');
+        if (ccFontColor) {
+          centerText.attr('fill', ccFontColor);
+        }
+      } else {
+        let displayValue: number;
+        let labelText: string;
+        if (mode === 'count') {
+          displayValue = count;
+          labelText = 'Count';
+        } else if (mode === 'average') {
+          displayValue = average;
+          labelText = 'Average';
+        } else {
+          displayValue = total;
+          labelText = 'Total';
+        }
+
+        const locale = this.getHostLocale();
+        const formattedValue = formatNumber(displayValue, { abbreviate: true, locale });
+
+        // Value text (slightly above center when label is shown)
+        const valueY = cc.showLabel.value ? -cc.labelFontSize.value * 0.6 : 0;
+        const valueText = g.append('text')
+          .attr('class', 'sunburst-center-value')
+          .attr('x', 0)
+          .attr('y', valueY)
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'central')
+          .attr('font-size', `${cc.fontSize.value}px`)
+          .attr('font-weight', '600')
+          .attr('pointer-events', 'none')
+          .text(formattedValue);
+        if (ccFontColor) {
+          valueText.attr('fill', ccFontColor);
+        }
+
+        // Label text below value
+        if (cc.showLabel.value) {
+          const labelY = valueY + cc.fontSize.value * 0.6 + cc.labelFontSize.value * 0.6;
+          const labelEl = g.append('text')
+            .attr('class', 'sunburst-center-label')
+            .attr('x', 0)
+            .attr('y', labelY)
+            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'central')
+            .attr('font-size', `${cc.labelFontSize.value}px`)
+            .attr('font-weight', '400')
+            .attr('opacity', 0.7)
+            .attr('pointer-events', 'none')
+            .text(labelText);
+          if (ccFontColor) {
+            labelEl.attr('fill', ccFontColor);
+          }
+        }
+      }
+    }
+
+    // ── Center circle (clickable to zoom out or drill up) ──────
+    if (this.zoomedNode !== null || (drillEnabled && this.drillPath.length > 0)) {
       const centerCircle = g.append('circle')
         .attr('cx', 0)
         .attr('cy', 0)
@@ -522,7 +665,13 @@ export class SunburstChartVisual implements IVisual {
       if (centerNode) {
         centerNode.addEventListener('click', (event: MouseEvent) => {
           event.stopPropagation();
-          this.zoomedNode = null;
+          // If drilled, pop one level; otherwise zoom out
+          if (drillEnabled && this.drillPath.length > 0) {
+            this.drillPath.pop();
+            this.zoomedNode = null;
+          } else {
+            this.zoomedNode = null;
+          }
           this.cancelAnimations.forEach((cancel) => cancel());
           this.cancelAnimations = [];
           this.notifyRenderStarted();
@@ -553,7 +702,7 @@ export class SunburstChartVisual implements IVisual {
 
     // Render legend at bottom (or left/right — fallback to bottom)
     if (showLegend && legendPos !== 'top') {
-      this.renderLegend(rootData.children);
+      this.renderLegend(effectiveRoot.children);
     }
 
     this.container.addEventListener('click', this.handleBackgroundClick);
@@ -566,6 +715,86 @@ export class SunburstChartVisual implements IVisual {
   private handleBackgroundClick = (): void => {
     void this.selectionManager.clear();
   };
+
+  private renderBreadcrumb(fullRootData: SunburstNode): void {
+    const ds = this.settings.drillDownSettings;
+    const fontSize = ds.breadcrumbFontSize.value;
+    const color = ds.breadcrumbColor.value?.value || '#64748B';
+
+    const breadcrumb = document.createElement('div');
+    breadcrumb.className = 'sunburst-breadcrumb';
+    breadcrumb.style.display = 'flex';
+    breadcrumb.style.alignItems = 'center';
+    breadcrumb.style.gap = '4px';
+    breadcrumb.style.padding = '4px 8px';
+    breadcrumb.style.fontSize = `${fontSize}px`;
+    breadcrumb.style.color = color;
+    breadcrumb.style.flexWrap = 'wrap';
+
+    // "All" root segment
+    const allSpan = document.createElement('span');
+    allSpan.textContent = 'All';
+    allSpan.style.cursor = 'pointer';
+    allSpan.style.textDecoration = 'underline';
+    allSpan.style.color = color;
+    allSpan.addEventListener('click', (event: MouseEvent) => {
+      event.stopPropagation();
+      this.drillPath = [];
+      this.zoomedNode = null;
+      this.cancelAnimations.forEach((cancel) => cancel());
+      this.cancelAnimations = [];
+      this.notifyRenderStarted();
+      try {
+        this.render(fullRootData, this.lastViewport, false);
+        this.notifyRenderFinished();
+      } catch (_error) {
+        this.notifyRenderFailed(_error);
+      }
+    });
+    breadcrumb.appendChild(allSpan);
+
+    for (let i = 0; i < this.drillPath.length; i++) {
+      const sep = document.createElement('span');
+      sep.textContent = ' > ';
+      sep.style.color = color;
+      breadcrumb.appendChild(sep);
+
+      const segment = document.createElement('span');
+      segment.textContent = this.drillPath[i];
+      segment.style.color = color;
+
+      if (i < this.drillPath.length - 1) {
+        segment.style.cursor = 'pointer';
+        segment.style.textDecoration = 'underline';
+        const targetIndex = i;
+        segment.addEventListener('click', (event: MouseEvent) => {
+          event.stopPropagation();
+          this.drillPath = this.drillPath.slice(0, targetIndex + 1);
+          this.zoomedNode = null;
+          this.cancelAnimations.forEach((cancel) => cancel());
+          this.cancelAnimations = [];
+          this.notifyRenderStarted();
+          try {
+            this.render(fullRootData, this.lastViewport, false);
+            this.notifyRenderFinished();
+          } catch (_error) {
+            this.notifyRenderFailed(_error);
+          }
+        });
+      } else {
+        segment.style.fontWeight = '600';
+      }
+
+      breadcrumb.appendChild(segment);
+    }
+
+    this.container.appendChild(breadcrumb);
+
+    if (this.settings.animationSettings.enabled.value) {
+      const cancel = fadeSlideIn(breadcrumb, 'left', DURATION.fast);
+      this.cancelAnimations.push(cancel);
+    }
+  }
 
   private renderLegend(level1Nodes: SunburstNode[]): void {
     const legendFmtCard = this.settings.legendFormattingCard;

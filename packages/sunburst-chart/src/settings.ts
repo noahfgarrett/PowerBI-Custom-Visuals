@@ -92,6 +92,69 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
   slices = [this.backgroundOpacity, this.borderRadius];
 }
 
+class CenterContentSettings extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Center Content',
+    value: true,
+  });
+
+  displayMode = new formattingSettings.ItemDropdown({
+    name: 'displayMode',
+    displayName: 'Display Mode',
+    items: [
+      { value: 'total', displayName: 'Total' },
+      { value: 'count', displayName: 'Count' },
+      { value: 'average', displayName: 'Average' },
+      { value: 'custom', displayName: 'Custom' },
+    ],
+    value: { value: 'total', displayName: 'Total' },
+  });
+
+  customText = new formattingSettings.TextInput({
+    name: 'customText',
+    displayName: 'Custom Text',
+    value: '',
+    placeholder: 'Custom label',
+  });
+
+  fontSize = new formattingSettings.NumUpDown({
+    name: 'fontSize',
+    displayName: 'Font Size',
+    value: 24,
+  });
+
+  fontColor = new formattingSettings.ColorPicker({
+    name: 'fontColor',
+    displayName: 'Font Color',
+    value: { value: '' },
+  });
+
+  showLabel = new formattingSettings.ToggleSwitch({
+    name: 'showLabel',
+    displayName: 'Show Label',
+    value: true,
+  });
+
+  labelFontSize = new formattingSettings.NumUpDown({
+    name: 'labelFontSize',
+    displayName: 'Label Font Size',
+    value: 11,
+  });
+
+  name = 'centerContentSettings';
+  displayName = 'Center Content';
+  slices = [
+    this.show,
+    this.displayMode,
+    this.customText,
+    this.fontSize,
+    this.fontColor,
+    this.showLabel,
+    this.labelFontSize,
+  ];
+}
+
 class AnimationSettings extends formattingSettings.SimpleCard {
   enabled = new formattingSettings.ToggleSwitch({
     name: 'enabled',
@@ -110,11 +173,43 @@ class AnimationSettings extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
+class DrillDownSettingsCard extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Drill-Down',
+    value: true,
+  });
+
+  showBreadcrumb = new formattingSettings.ToggleSwitch({
+    name: 'showBreadcrumb',
+    displayName: 'Show Breadcrumb',
+    value: true,
+  });
+
+  breadcrumbFontSize = new formattingSettings.NumUpDown({
+    name: 'breadcrumbFontSize',
+    displayName: 'Breadcrumb Font Size',
+    value: 11,
+  });
+
+  breadcrumbColor = new formattingSettings.ColorPicker({
+    name: 'breadcrumbColor',
+    displayName: 'Breadcrumb Color',
+    value: { value: '#64748B' },
+  });
+
+  name = 'drillDownSettings';
+  displayName = 'Drill-Down';
+  slices = [this.enabled, this.showBreadcrumb, this.breadcrumbFontSize, this.breadcrumbColor];
+}
+
 export class SunburstChartSettings extends formattingSettings.Model {
   sunburstSettings = new SunburstSettings();
   colorSettings = new ColorSettings();
+  centerContentSettings = new CenterContentSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
+  drillDownSettings = new DrillDownSettingsCard();
 
   legendFormattingCard = new LegendFormattingCard();
 
@@ -126,11 +221,12 @@ export class SunburstChartSettings extends formattingSettings.Model {
   cards = [
     this.sunburstSettings,
     this.colorSettings,
+    this.centerContentSettings,
     this.cardSettings,
     this.animationSettings,
+    this.drillDownSettings,
     this.legendFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
-
   ];
 }

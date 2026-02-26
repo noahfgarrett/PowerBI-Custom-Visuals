@@ -14,6 +14,7 @@ import {
   getGlassStyle,
   renderChartTitle,
   applyDataLabelFormatting,
+  resolveDropdown,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -165,6 +166,12 @@ export class HeatmapCalendarVisual implements IVisual {
     const showDayLabels = s.calendarSettings.showDayLabels.value;
     const lowColor = s.colorSettings.lowColor.value?.value ?? '#E2E8F0';
     const highColor = s.colorSettings.highColor.value?.value ?? '#3B82F6';
+    const showMidColor = s.colorSettings.showMidColor.value;
+    const midColor = s.colorSettings.midColor.value?.value ?? '#FBBF24';
+    const midPointPct = Math.max(0, Math.min(100, s.colorSettings.midPoint.value));
+    const emptyColor = s.colorSettings.emptyColor.value?.value ?? '#F1F5F9';
+    const showLegend = s.colorSettings.showLegend.value;
+    const legendPosition = resolveDropdown(s.colorSettings.legendPosition) ?? 'bottom';
     const cellStrokeColor = s.calendarSettings.cellStrokeColor.value?.value || '';
     const cellStrokeWidth = s.calendarSettings.cellStrokeWidth.value;
     const cellCornerRadius = s.calendarSettings.cellCornerRadius.value;
@@ -203,9 +210,10 @@ export class HeatmapCalendarVisual implements IVisual {
     }
     const sortedYears = Array.from(years).sort((a, b) => a - b);
 
-    // Parse colors for interpolation
-    const lowRgb = this.hexToRgb(lowColor);
-    const highRgb = this.hexToRgb(highColor);
+    // Build multi-stop color interpolation function
+    const interpolateColor = this.buildColorInterpolator(
+      lowColor, highColor, showMidColor, midColor, midPointPct,
+    );
 
     const allCells: HTMLElement[] = [];
 
@@ -299,10 +307,7 @@ export class HeatmapCalendarVisual implements IVisual {
 
             if (val !== undefined) {
               const t = maxVal !== minVal ? (val - minVal) / (maxVal - minVal) : 0.5;
-              const r = Math.round(lowRgb.r + (highRgb.r - lowRgb.r) * t);
-              const g = Math.round(lowRgb.g + (highRgb.g - lowRgb.g) * t);
-              const b = Math.round(lowRgb.b + (highRgb.b - lowRgb.b) * t);
-              cell.style.backgroundColor = `rgb(${r},${g},${b})`;
+              cell.style.backgroundColor = interpolateColor(t);
               cell.title = `${this.formatDateStr(currentDate)}: ${formatNumber(val)}`;
               if (showDataLabels) {
                 const labelSpan = document.createElement('span');
@@ -327,8 +332,7 @@ export class HeatmapCalendarVisual implements IVisual {
                 });
               }
             } else {
-              cell.style.backgroundColor = lowColor;
-              cell.style.opacity = '0.3';
+              cell.style.backgroundColor = emptyColor;
             }
           } else {
             cell.style.backgroundColor = 'transparent';
@@ -351,6 +355,14 @@ export class HeatmapCalendarVisual implements IVisual {
       }
       gridWrapper.appendChild(weeksContainer);
       this.container.appendChild(gridWrapper);
+    }
+
+    // Color legend
+    if (showLegend) {
+      this.renderColorLegend(
+        lowColor, highColor, showMidColor, midColor, midPointPct,
+        minVal, maxVal, legendPosition,
+      );
     }
 
     // Animation
@@ -415,6 +427,197 @@ export class HeatmapCalendarVisual implements IVisual {
       g: parseInt(clean.slice(2, 4), 16),
       b: parseInt(clean.slice(4, 6), 16),
     };
+  }
+
+  /**
+   * Build a color interpolator that maps t in [0, 1] to an RGB color string.
+   * Supports 2-stop (low → high) and 3-stop (low → mid → high) gradients.
+   */
+  private buildColorInterpolator(
+    lowColor: string,
+    highColor: string,
+    useMid: boolean,
+    midColor: string,
+    midPointPct: number,
+  ): (t: number) => string {
+    const lowRgb = this.hexToRgb(lowColor);
+    const highRgb = this.hexToRgb(highColor);
+
+    if (!useMid) {
+      return (t: number): string => {
+        const clamped = Math.max(0, Math.min(1, t));
+        const r = Math.round(lowRgb.r + (highRgb.r - lowRgb.r) * clamped);
+        const g = Math.round(lowRgb.g + (highRgb.g - lowRgb.g) * clamped);
+        const b = Math.round(lowRgb.b + (highRgb.b - lowRgb.b) * clamped);
+        return `rgb(${r},${g},${b})`;
+      };
+    }
+
+    const midRgb = this.hexToRgb(midColor);
+    const midT = midPointPct / 100;
+
+    return (t: number): string => {
+      const clamped = Math.max(0, Math.min(1, t));
+      let fromRgb: { r: number; g: number; b: number };
+      let toRgb: { r: number; g: number; b: number };
+      let segmentT: number;
+
+      if (clamped <= midT) {
+        fromRgb = lowRgb;
+        toRgb = midRgb;
+        segmentT = midT > 0 ? clamped / midT : 0;
+      } else {
+        fromRgb = midRgb;
+        toRgb = highRgb;
+        segmentT = midT < 1 ? (clamped - midT) / (1 - midT) : 1;
+      }
+
+      const r = Math.round(fromRgb.r + (toRgb.r - fromRgb.r) * segmentT);
+      const g = Math.round(fromRgb.g + (toRgb.g - fromRgb.g) * segmentT);
+      const b = Math.round(fromRgb.b + (toRgb.b - fromRgb.b) * segmentT);
+      return `rgb(${r},${g},${b})`;
+    };
+  }
+
+  // ── Color Legend ──────────────────────────────────────────────────
+
+  /**
+   * Renders a gradient color legend showing the color scale and value range.
+   */
+  private renderColorLegend(
+    lowColor: string,
+    highColor: string,
+    useMid: boolean,
+    midColor: string,
+    midPointPct: number,
+    minVal: number,
+    maxVal: number,
+    position: string,
+  ): void {
+    const isVertical = position === 'right';
+
+    // Build CSS gradient string
+    let gradientStops: string;
+    if (useMid) {
+      const direction = isVertical ? 'to top' : 'to right';
+      gradientStops = `linear-gradient(${direction}, ${lowColor} 0%, ${midColor} ${midPointPct}%, ${highColor} 100%)`;
+    } else {
+      const direction = isVertical ? 'to top' : 'to right';
+      gradientStops = `linear-gradient(${direction}, ${lowColor}, ${highColor})`;
+    }
+
+    // Container
+    const legendContainer = document.createElement('div');
+    legendContainer.className = 'heatmap-legend';
+
+    if (isVertical) {
+      legendContainer.style.display = 'flex';
+      legendContainer.style.flexDirection = 'row';
+      legendContainer.style.alignItems = 'stretch';
+      legendContainer.style.marginLeft = '12px';
+      legendContainer.style.position = 'absolute';
+      legendContainer.style.right = '8px';
+      legendContainer.style.top = '0';
+      legendContainer.style.bottom = '0';
+    } else {
+      legendContainer.style.display = 'flex';
+      legendContainer.style.flexDirection = 'column';
+      legendContainer.style.alignItems = 'center';
+      legendContainer.style.marginTop = '8px';
+      legendContainer.style.width = '100%';
+    }
+
+    // Gradient bar
+    const gradientBar = document.createElement('div');
+    gradientBar.className = 'heatmap-legend-bar';
+    gradientBar.style.background = gradientStops;
+    gradientBar.style.borderRadius = '3px';
+
+    if (isVertical) {
+      gradientBar.style.width = '12px';
+      gradientBar.style.height = '100%';
+      gradientBar.style.minHeight = '60px';
+    } else {
+      gradientBar.style.width = '200px';
+      gradientBar.style.height = '12px';
+    }
+
+    // Labels container
+    const labelsContainer = document.createElement('div');
+    labelsContainer.className = 'heatmap-legend-labels';
+
+    if (isVertical) {
+      labelsContainer.style.display = 'flex';
+      labelsContainer.style.flexDirection = 'column';
+      labelsContainer.style.justifyContent = useMid ? 'space-between' : 'space-between';
+      labelsContainer.style.marginLeft = '4px';
+      labelsContainer.style.fontSize = '10px';
+      labelsContainer.style.color = '#64748B';
+    } else {
+      labelsContainer.style.display = 'flex';
+      labelsContainer.style.justifyContent = 'space-between';
+      labelsContainer.style.width = '200px';
+      labelsContainer.style.marginTop = '2px';
+      labelsContainer.style.fontSize = '10px';
+      labelsContainer.style.color = '#64748B';
+    }
+
+    // Create label elements
+    const minLabel = document.createElement('span');
+    minLabel.textContent = formatNumber(minVal);
+
+    const maxLabel = document.createElement('span');
+    maxLabel.textContent = formatNumber(maxVal);
+
+    if (isVertical) {
+      // Vertical: top = max, bottom = min
+      labelsContainer.appendChild(maxLabel);
+      if (useMid) {
+        const midLabel = document.createElement('span');
+        const midVal = minVal + (maxVal - minVal) * (midPointPct / 100);
+        midLabel.textContent = formatNumber(midVal);
+        labelsContainer.appendChild(midLabel);
+      }
+      labelsContainer.appendChild(minLabel);
+    } else {
+      // Horizontal: left = min, right = max
+      labelsContainer.appendChild(minLabel);
+      if (useMid) {
+        const midLabel = document.createElement('span');
+        const midVal = minVal + (maxVal - minVal) * (midPointPct / 100);
+        midLabel.textContent = formatNumber(midVal);
+        labelsContainer.appendChild(midLabel);
+      }
+      labelsContainer.appendChild(maxLabel);
+    }
+
+    if (isVertical) {
+      legendContainer.appendChild(gradientBar);
+      legendContainer.appendChild(labelsContainer);
+    } else {
+      legendContainer.appendChild(gradientBar);
+      legendContainer.appendChild(labelsContainer);
+    }
+
+    // Insert based on position
+    if (position === 'top') {
+      // Insert after the title (if present) but before the grid
+      const firstGrid = this.container.querySelector('.heatmap-year-label');
+      if (firstGrid) {
+        this.container.insertBefore(legendContainer, firstGrid);
+      } else {
+        this.container.appendChild(legendContainer);
+      }
+    } else {
+      // 'bottom' or 'right' — append at end
+      this.container.appendChild(legendContainer);
+    }
+
+    // For 'right' position, set the container to relative so legend can position absolutely
+    if (isVertical) {
+      this.container.style.position = 'relative';
+      this.container.style.paddingRight = '40px';
+    }
   }
 
   // ── Formatting Model ───────────────────────────────────────────

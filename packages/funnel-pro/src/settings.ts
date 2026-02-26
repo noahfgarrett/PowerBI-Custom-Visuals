@@ -68,10 +68,15 @@ class FunnelSettingsCard extends formattingSettings.SimpleCard {
 
   });
 
+  pyramidMode = new formattingSettings.ToggleSwitch({
+    name: 'pyramidMode',
+    displayName: 'Pyramid Mode',
+    value: false,
+  });
 
   name = 'funnelSettings';
   displayName = 'Funnel Settings';
-  slices = [this.style, this.showConversionRate, this.gap, this.showValues, this.segmentStrokeColor, this.segmentStrokeWidth, this.labelColor];
+  slices = [this.style, this.showConversionRate, this.gap, this.showValues, this.segmentStrokeColor, this.segmentStrokeWidth, this.labelColor, this.pyramidMode];
 }
 
 // ── Color Settings ───────────────────────────────────────────────────

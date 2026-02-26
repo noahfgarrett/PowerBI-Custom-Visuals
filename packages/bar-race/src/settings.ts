@@ -150,6 +150,98 @@ class AnimationSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
+// ── Timestamp Settings ─────────────────────────────────────────────
+
+class TimestampSettings extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Timestamp',
+    value: true,
+  });
+
+  fontSize = new formattingSettings.NumUpDown({
+    name: 'fontSize',
+    displayName: 'Font Size',
+    value: 48,
+  });
+
+  fontColor = new formattingSettings.ColorPicker({
+    name: 'fontColor',
+    displayName: 'Font Color',
+    value: { value: '' },
+  });
+
+  opacity = new formattingSettings.NumUpDown({
+    name: 'opacity',
+    displayName: 'Opacity (%)',
+    value: 20,
+  });
+
+  position = new formattingSettings.ItemDropdown({
+    name: 'position',
+    displayName: 'Position',
+    items: [
+      { value: 'bottomRight', displayName: 'Bottom Right' },
+      { value: 'center', displayName: 'Center' },
+      { value: 'topRight', displayName: 'Top Right' },
+    ],
+    value: { value: 'bottomRight', displayName: 'Bottom Right' },
+  });
+
+  name = 'timestampSettings';
+  displayName = 'Timestamp Display';
+  slices = [this.show, this.fontSize, this.fontColor, this.opacity, this.position];
+}
+
+// ── Playback Settings ───────────────────────────────────────────────
+
+class PlaybackSettingsCard extends formattingSettings.SimpleCard {
+  autoPlay = new formattingSettings.ToggleSwitch({
+    name: 'autoPlay',
+    displayName: 'Auto-Play on Load',
+    value: true,
+  });
+
+  showControls = new formattingSettings.ToggleSwitch({
+    name: 'showControls',
+    displayName: 'Show Controls',
+    value: true,
+  });
+
+  speed = new formattingSettings.ItemDropdown({
+    name: 'speed',
+    displayName: 'Playback Speed',
+    items: [
+      { value: '0.5x', displayName: '0.5x' },
+      { value: '1x', displayName: '1x' },
+      { value: '1.5x', displayName: '1.5x' },
+      { value: '2x', displayName: '2x' },
+      { value: '3x', displayName: '3x' },
+    ],
+    value: { value: '1x', displayName: '1x' },
+  });
+
+  loop = new formattingSettings.ToggleSwitch({
+    name: 'loop',
+    displayName: 'Loop Animation',
+    value: true,
+  });
+
+  controlPosition = new formattingSettings.ItemDropdown({
+    name: 'controlPosition',
+    displayName: 'Control Position',
+    items: [
+      { value: 'bottom', displayName: 'Bottom' },
+      { value: 'top', displayName: 'Top' },
+    ],
+    value: { value: 'bottom', displayName: 'Bottom' },
+  });
+
+  name = 'playbackSettings';
+  displayName = 'Playback';
+  slices = [this.autoPlay, this.showControls, this.speed, this.loop, this.controlPosition];
+}
+
 // ── Root Model ─────────────────────────────────────────────────────
 
 export class BarRaceSettings extends formattingSettings.Model {
@@ -158,6 +250,8 @@ export class BarRaceSettings extends formattingSettings.Model {
   valueSettings = new ValueSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettingsCard();
+  timestampSettings = new TimestampSettings();
+  playbackSettings = new PlaybackSettingsCard();
 
   dataLabelFormattingCard = new DataLabelFormattingCard();
 
@@ -171,6 +265,8 @@ export class BarRaceSettings extends formattingSettings.Model {
     this.valueSettings,
     this.cardSettings,
     this.animationSettings,
+    this.timestampSettings,
+    this.playbackSettings,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.axisFormattingCard,

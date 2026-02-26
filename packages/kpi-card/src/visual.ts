@@ -9,6 +9,7 @@ import { FormattingSettingsService } from 'powerbi-visuals-utils-formattingmodel
 import { KpiCardSettings } from './settings';
 import {
   formatNumber,
+  formatWithSettings,
   countUp,
   drawPath,
   fadeSlideIn,
@@ -207,14 +208,31 @@ export class KpiCardVisual implements IVisual {
     valueEl.style.fontSize = `${s.valueSettings.fontSize.value}px`;
     valueEl.style.color = s.valueSettings.fontColor.value?.value || '#0F172A';
 
+    // Conditional value coloring — override fontColor based on thresholds
+    if (s.conditionalColorSettings.enabled.value && data.value !== null) {
+      const cc = s.conditionalColorSettings;
+      const low = cc.threshold1.value;
+      const high = cc.threshold2.value;
+      const isAscending = cc.direction.value?.value !== 'descending';
+
+      let resolvedColor: string;
+      if (data.value < low) {
+        resolvedColor = isAscending
+          ? (cc.color1.value?.value ?? '#F87171')
+          : (cc.color3.value?.value ?? '#34D399');
+      } else if (data.value < high) {
+        resolvedColor = cc.color2.value?.value ?? '#FBBF24';
+      } else {
+        resolvedColor = isAscending
+          ? (cc.color3.value?.value ?? '#34D399')
+          : (cc.color1.value?.value ?? '#F87171');
+      }
+      valueEl.style.color = resolvedColor;
+    }
+
     // Format function
     const fmt = (v: number | null | undefined): string => {
-      return formatNumber(v, {
-        prefix: s.valueSettings.prefix.value,
-        suffix: s.valueSettings.suffix.value,
-        decimals: s.valueSettings.decimalPlaces.value,
-        abbreviate: true,
-      });
+      return formatWithSettings(v as number, this.settings.numberFormattingCard);
     };
     // Count-up animation
     if (data.value !== null && s.animationSettings.enabled.value) {
@@ -254,7 +272,7 @@ export class KpiCardVisual implements IVisual {
       arrowSpan.textContent = arrow;
       trendEl.appendChild(arrowSpan);
       const deltaSpan = document.createElement('span');
-      deltaSpan.textContent = formatNumber(Math.abs(delta), { abbreviate: false });
+      deltaSpan.textContent = formatWithSettings(Math.abs(delta), this.settings.numberFormattingCard);
       trendEl.appendChild(deltaSpan);
       valueRow.appendChild(trendEl);
     }
@@ -373,17 +391,18 @@ export class KpiCardVisual implements IVisual {
   private showKpiTooltip(data: KpiCardData, event: MouseEvent): void {
     if (data.value === null) return;
     const locale = this.getHostLocale();
+    const numberSettings = this.settings.numberFormattingCard;
     const tooltipData: VisualTooltipDataItem[] = [
-      { displayName: data.label || 'KPI', value: formatNumber(data.value, { abbreviate: false, locale }) },
+      { displayName: data.label || 'KPI', value: formatWithSettings(data.value as number, numberSettings) },
     ];
     if (data.target !== null) {
       tooltipData.push({
         displayName: 'Target',
-        value: formatNumber(data.target, { abbreviate: false, locale }),
+        value: formatWithSettings(data.target, numberSettings),
       });
       tooltipData.push({
         displayName: 'Delta',
-        value: formatNumber(data.value - data.target, { abbreviate: false, locale }),
+        value: formatWithSettings(data.value - data.target, numberSettings),
       });
     }
 

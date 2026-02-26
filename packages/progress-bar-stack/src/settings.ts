@@ -92,6 +92,30 @@ class ColorSettings extends formattingSettings.SimpleCard {
   slices = [this.barColor, this.trackColor];
 }
 
+class TargetSettings extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Target',
+    value: true,
+  });
+
+  color = new formattingSettings.ColorPicker({
+    name: 'color',
+    displayName: 'Target Color',
+    value: { value: '#0F172A' },
+  });
+
+  lineWidth = new formattingSettings.NumUpDown({
+    name: 'lineWidth',
+    displayName: 'Line Width',
+    value: 2,
+  });
+
+  name = 'targetSettings';
+  displayName = 'Target';
+  slices = [this.show, this.color, this.lineWidth];
+}
+
 class CardStyleSettings extends formattingSettings.SimpleCard {
   enableGlass = new formattingSettings.ToggleSwitch({
     name: 'enableGlass',
@@ -143,6 +167,7 @@ class AnimationSettings extends formattingSettings.SimpleCard {
 export class ProgressBarStackSettings extends formattingSettings.Model {
   barSettings = new BarSettings();
   colorSettings = new ColorSettings();
+  targetSettings = new TargetSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
 
@@ -155,6 +180,7 @@ export class ProgressBarStackSettings extends formattingSettings.Model {
   cards = [
     this.barSettings,
     this.colorSettings,
+    this.targetSettings,
     this.cardSettings,
     this.animationSettings,
     this.dataLabelFormattingCard,

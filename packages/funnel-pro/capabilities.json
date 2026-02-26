@@ -114,6 +114,12 @@
               }
             }
           }
+        },
+        "pyramidMode": {
+          "displayName": "Pyramid Mode",
+          "type": {
+            "bool": true
+          }
         }
       }
     },

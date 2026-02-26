@@ -261,6 +261,39 @@
         }
       }
     },
+    "drillDownSettings": {
+      "displayName": "Drill-Down",
+      "properties": {
+        "enabled": {
+          "displayName": "Enable Drill-Down",
+          "type": {
+            "bool": true
+          }
+        },
+        "showBreadcrumb": {
+          "displayName": "Show Breadcrumb",
+          "type": {
+            "bool": true
+          }
+        },
+        "breadcrumbFontSize": {
+          "displayName": "Breadcrumb Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "breadcrumbColor": {
+          "displayName": "Breadcrumb Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
     "cardSettings": {
       "displayName": "Card Style",
       "properties": {

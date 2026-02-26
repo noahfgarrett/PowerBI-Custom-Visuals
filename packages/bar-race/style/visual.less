@@ -46,7 +46,145 @@
 
 .bar-race-time {
   position: absolute;
-  bottom: 16px;
-  right: 16px;
   pointer-events: none;
+  white-space: nowrap;
+  user-select: none;
+  line-height: 1;
+}
+
+// ── Playback Controls ────────────────────────────────────────────────
+
+.bar-race-controls {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(4px);
+  z-index: 10;
+  user-select: none;
+  height: 28px;
+  box-sizing: border-box;
+
+  &.bar-race-controls--top {
+    top: 0;
+  }
+
+  &.bar-race-controls--bottom {
+    bottom: 0;
+  }
+}
+
+.bar-race-ctrl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: #444;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: #111;
+  }
+
+  &:active {
+    background: rgba(0, 0, 0, 0.18);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #0078d4;
+    outline-offset: 1px;
+  }
+}
+
+.bar-race-scrub {
+  flex: 1;
+  min-width: 40px;
+  height: 4px;
+  margin: 0 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #0078d4;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.1s ease;
+  }
+
+  &::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #0078d4;
+    border: none;
+    cursor: pointer;
+  }
+
+  &:hover::-webkit-slider-thumb {
+    transform: scale(1.3);
+  }
+
+  &:hover::-moz-range-thumb {
+    transform: scale(1.3);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #0078d4;
+    outline-offset: 2px;
+  }
+}
+
+.bar-race-speed-select {
+  height: 20px;
+  padding: 0 2px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 3px;
+  background: transparent;
+  color: #444;
+  font-size: 10px;
+  font-family: inherit;
+  cursor: pointer;
+  flex-shrink: 0;
+
+  &:hover {
+    border-color: rgba(0, 0, 0, 0.25);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #0078d4;
+    outline-offset: 1px;
+  }
+}
+
+.bar-race-frame-counter {
+  font-size: 10px;
+  color: #555;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 32px;
+  text-align: right;
 }

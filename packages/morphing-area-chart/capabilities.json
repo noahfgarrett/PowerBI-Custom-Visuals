@@ -10,7 +10,7 @@
       "displayName": "Measure",
       "name": "measure",
       "kind": "Measure",
-      "description": "Y-axis values — each measure is one line/area series"
+      "description": "Y-axis values \u2014 each measure is one line/area series"
     }
   ],
   "dataViewMappings": [
@@ -450,6 +450,169 @@
         }
       }
     },
+    "crosshairSettings": {
+      "displayName": "Crosshair",
+      "properties": {
+        "show": {
+          "displayName": "Show Crosshair",
+          "type": {
+            "bool": true
+          }
+        },
+        "lineColor": {
+          "displayName": "Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "lineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "lineStyle": {
+          "displayName": "Line Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "solid",
+                "displayName": "Solid"
+              },
+              {
+                "value": "dashed",
+                "displayName": "Dashed"
+              }
+            ]
+          }
+        },
+        "showValues": {
+          "displayName": "Show Values",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "referenceLineSettings": {
+      "displayName": "Reference Line",
+      "properties": {
+        "show": {
+          "displayName": "Show Reference Line",
+          "type": {
+            "bool": true
+          }
+        },
+        "value": {
+          "displayName": "Value",
+          "type": {
+            "numeric": true
+          }
+        },
+        "lineColor": {
+          "displayName": "Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "lineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "lineStyle": {
+          "displayName": "Line Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "solid",
+                "displayName": "Solid"
+              },
+              {
+                "value": "dashed",
+                "displayName": "Dashed"
+              },
+              {
+                "value": "dotted",
+                "displayName": "Dotted"
+              }
+            ]
+          }
+        },
+        "showLabel": {
+          "displayName": "Show Label",
+          "type": {
+            "bool": true
+          }
+        },
+        "labelText": {
+          "displayName": "Label Text",
+          "type": {
+            "text": true
+          }
+        },
+        "showBand": {
+          "displayName": "Show Band",
+          "type": {
+            "bool": true
+          }
+        },
+        "bandUpperValue": {
+          "displayName": "Band Upper Value",
+          "type": {
+            "numeric": true
+          }
+        },
+        "bandOpacity": {
+          "displayName": "Band Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "brushSettings": {
+      "displayName": "Brush / Zoom",
+      "properties": {
+        "enabled": {
+          "displayName": "Enable Brush / Zoom",
+          "type": {
+            "bool": true
+          }
+        },
+        "contextHeight": {
+          "displayName": "Context Chart Height (px)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "brushColor": {
+          "displayName": "Brush Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "brushOpacity": {
+          "displayName": "Brush Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
     "cardSettings": {
       "displayName": "Card Style",
       "properties": {
@@ -473,6 +636,73 @@
           "displayName": "Border Radius",
           "type": {
             "numeric": true
+          }
+        }
+      }
+    },
+    "scrollFormatting": {
+      "displayName": "Scroll",
+      "properties": {
+        "enableScroll": {
+          "displayName": "Enable Scroll",
+          "type": {
+            "bool": true
+          }
+        },
+        "minCategoryWidth": {
+          "displayName": "Min Category Width (px)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "numberFormatting": {
+      "displayName": "Number Format",
+      "properties": {
+        "displayUnits": {
+          "displayName": "Display Units",
+          "type": {
+            "enumeration": [
+              {
+                "value": "auto",
+                "displayName": "Auto"
+              },
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "thousands",
+                "displayName": "Thousands (K)"
+              },
+              {
+                "value": "millions",
+                "displayName": "Millions (M)"
+              },
+              {
+                "value": "billions",
+                "displayName": "Billions (B)"
+              }
+            ]
+          }
+        },
+        "decimalPlaces": {
+          "displayName": "Decimal Places",
+          "type": {
+            "numeric": true
+          }
+        },
+        "valuePrefix": {
+          "displayName": "Prefix",
+          "type": {
+            "text": true
+          }
+        },
+        "valueSuffix": {
+          "displayName": "Suffix",
+          "type": {
+            "text": true
           }
         }
       }

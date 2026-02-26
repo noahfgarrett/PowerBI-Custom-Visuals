@@ -25,6 +25,28 @@ import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 
 import '../style/visual.less';
 
+// ── Pictogram SVG icon paths ────────────────────────────────────────
+// All paths are designed for a 100x100 viewBox.
+
+const PICTOGRAM_ICON_PATHS: Record<string, string> = {
+  circle:
+    'M 50 5 A 45 45 0 1 0 50 95 A 45 45 0 1 0 50 5 Z',
+  person:
+    'M 50 10 A 15 15 0 1 0 50 40 A 15 15 0 1 0 50 10 Z ' +
+    'M 25 50 Q 25 42 50 42 Q 75 42 75 50 L 75 80 Q 75 90 50 90 Q 25 90 25 80 Z',
+  star:
+    'M 50 5 L 61 38 L 97 38 L 68 60 L 79 93 L 50 72 L 21 93 L 32 60 L 3 38 L 39 38 Z',
+  heart:
+    'M 50 88 C 20 65 5 50 5 35 C 5 20 18 8 32 8 C 40 8 47 13 50 20 ' +
+    'C 53 13 60 8 68 8 C 82 8 95 20 95 35 C 95 50 80 65 50 88 Z',
+  square:
+    'M 12 5 L 88 5 Q 95 5 95 12 L 95 88 Q 95 95 88 95 L 12 95 Q 5 95 5 88 L 5 12 Q 5 5 12 5 Z',
+  checkmark:
+    'M 15 50 L 40 75 L 85 20 L 78 13 L 40 58 L 22 43 Z',
+};
+
+type PictogramIconShape = 'circle' | 'person' | 'star' | 'heart' | 'square' | 'checkmark';
+
 // ── Data interface ───────────────────────────────────────────────────
 
 interface WaffleChartData {
@@ -138,6 +160,14 @@ export class WaffleChartVisual implements IVisual {
     const animEnabled = s.animationSettings.enabled.value;
     const animDuration = s.animationSettings.duration.value;
 
+    // Pictogram settings
+    const pictogramEnabled = s.pictogramSettings.enabled.value;
+    const iconShapeRaw = s.pictogramSettings.iconShape.value?.value ?? 'person';
+    const iconShape: PictogramIconShape =
+      iconShapeRaw in PICTOGRAM_ICON_PATHS ? (iconShapeRaw as PictogramIconShape) : 'person';
+    const iconSizePct = Math.max(80, Math.min(100, s.pictogramSettings.iconSize.value)) / 100;
+    const outlineOpacity = Math.max(0, Math.min(100, s.pictogramSettings.outlineOpacity.value)) / 100;
+
     // Apply glass effect if enabled
     if (s.cardSettings.enableGlass.value) {
       const glass = getGlassStyle({
@@ -208,26 +238,45 @@ export class WaffleChartVisual implements IVisual {
         const fillIndex = (rows - 1 - gridRow) * cols + gridCol;
         const isFilled = fillIndex < filledCells;
 
-        const cell = document.createElement('div');
-        cell.className = 'waffle-cell';
-        cell.style.width = `${cellSize}px`;
-        cell.style.height = `${cellSize}px`;
-        cell.style.backgroundColor = isFilled ? fillColor : emptyColor;
+        if (pictogramEnabled) {
+          // Pictogram mode: render SVG icon per cell
+          const cellEl = this.createPictogramCell(
+            cellSize,
+            iconShape,
+            iconSizePct,
+            isFilled,
+            fillColor,
+            emptyColor,
+            outlineOpacity
+          );
+          grid.appendChild(cellEl);
 
-        if (cellStrokeColor) {
-          cell.style.border = `1px solid ${cellStrokeColor}`;
-        }
+          if (isFilled) {
+            filledElements.push(cellEl);
+          }
+        } else {
+          // Standard mode: render colored div per cell
+          const cell = document.createElement('div');
+          cell.className = 'waffle-cell';
+          cell.style.width = `${cellSize}px`;
+          cell.style.height = `${cellSize}px`;
+          cell.style.backgroundColor = isFilled ? fillColor : emptyColor;
 
-        if (shapeValue === 'circle') {
-          cell.style.borderRadius = '50%';
-        } else if (cellCornerRadius > 0) {
-          cell.style.borderRadius = `${cellCornerRadius}px`;
-        }
+          if (cellStrokeColor) {
+            cell.style.border = `1px solid ${cellStrokeColor}`;
+          }
 
-        grid.appendChild(cell);
+          if (shapeValue === 'circle') {
+            cell.style.borderRadius = '50%';
+          } else if (cellCornerRadius > 0) {
+            cell.style.borderRadius = `${cellCornerRadius}px`;
+          }
 
-        if (isFilled) {
-          filledElements.push(cell);
+          grid.appendChild(cell);
+
+          if (isFilled) {
+            filledElements.push(cell);
+          }
         }
       }
     }
@@ -325,9 +374,133 @@ export class WaffleChartVisual implements IVisual {
       this.cancelAnimations.push(cancel);
     }
 
+    // ── Legend ────────────────────────────────────────────────────
+    if (s.legendFormattingCard.showLegend.value) {
+      this.renderLegend(fillColor, emptyColor);
+    }
+
     // Apply shared formatting settings
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.waffle-value');
 
+  }
+
+  // ── Legend Rendering ────────────────────────────────────────
+
+  private renderLegend(fillColor: string, emptyColor: string): void {
+    const legendFmtCard = this.settings.legendFormattingCard;
+    const rawFontColor = legendFmtCard.legendFontColor.value?.value;
+    const legendFontColor = rawFontColor != null && rawFontColor.length > 0 ? rawFontColor : '';
+    const legendFontSize = legendFmtCard.legendFontSize.value;
+    const position = this.getLegendPosition();
+
+    const legendDiv = document.createElement('div');
+    legendDiv.style.display = 'flex';
+    legendDiv.style.flexWrap = 'wrap';
+    legendDiv.style.gap = '12px';
+    legendDiv.style.padding = '6px 0';
+    legendDiv.style.justifyContent = 'center';
+
+    if (position === 'left' || position === 'right') {
+      legendDiv.style.flexDirection = 'column';
+      legendDiv.style.justifyContent = 'flex-start';
+    }
+
+    const items = [
+      { name: 'Filled', color: fillColor },
+      { name: 'Empty', color: emptyColor },
+    ];
+
+    items.forEach((item) => {
+      const itemEl = document.createElement('div');
+      itemEl.style.display = 'flex';
+      itemEl.style.alignItems = 'center';
+      itemEl.style.gap = '5px';
+
+      const swatch = document.createElement('div');
+      swatch.style.width = '10px';
+      swatch.style.height = '10px';
+      swatch.style.borderRadius = '2px';
+      swatch.style.backgroundColor = item.color;
+      swatch.style.flexShrink = '0';
+
+      const label = document.createElement('span');
+      label.textContent = item.name;
+      if (legendFontColor.length > 0) label.style.color = legendFontColor;
+      if (legendFontSize !== 11) label.style.fontSize = `${legendFontSize}px`;
+
+      itemEl.appendChild(swatch);
+      itemEl.appendChild(label);
+      legendDiv.appendChild(itemEl);
+    });
+
+    if (position === 'top') {
+      // Insert after title but before wrapper
+      const wrapper = this.container.querySelector('.waffle-container > div');
+      if (wrapper) {
+        this.container.insertBefore(legendDiv, wrapper);
+      } else {
+        this.container.appendChild(legendDiv);
+      }
+    } else {
+      this.container.appendChild(legendDiv);
+    }
+  }
+
+  private getLegendPosition(): string {
+    const val = this.settings.legendFormattingCard.legendPosition.value?.value;
+    const validPositions = ['bottom', 'top', 'left', 'right'];
+    if (typeof val === 'string' && validPositions.includes(val)) {
+      return val;
+    }
+    return 'bottom';
+  }
+
+  // ── Pictogram Cell Rendering ──────────────────────────────────
+
+  private createPictogramCell(
+    cellSize: number,
+    iconShape: PictogramIconShape,
+    iconSizePct: number,
+    isFilled: boolean,
+    fillColor: string,
+    emptyColor: string,
+    outlineOpacity: number
+  ): HTMLElement {
+    const NS = 'http://www.w3.org/2000/svg';
+    const wrapper = document.createElement('div');
+    wrapper.className = 'waffle-cell';
+    wrapper.style.width = `${cellSize}px`;
+    wrapper.style.height = `${cellSize}px`;
+    wrapper.style.display = 'flex';
+    wrapper.style.alignItems = 'center';
+    wrapper.style.justifyContent = 'center';
+
+    const svgSize = Math.round(cellSize * iconSizePct);
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('width', String(svgSize));
+    svg.setAttribute('height', String(svgSize));
+    svg.setAttribute('viewBox', '0 0 100 100');
+    svg.style.display = 'block';
+
+    const pathData = PICTOGRAM_ICON_PATHS[iconShape];
+    const pathEl = document.createElementNS(NS, 'path');
+    pathEl.setAttribute('d', pathData);
+
+    if (isFilled) {
+      // Solid fill for filled cells
+      pathEl.setAttribute('fill', fillColor);
+      pathEl.setAttribute('stroke', 'none');
+    } else {
+      // Outline-only for remaining/unfilled cells
+      pathEl.setAttribute('fill', 'none');
+      pathEl.setAttribute('stroke', emptyColor);
+      pathEl.setAttribute('stroke-width', '4');
+      pathEl.style.opacity = String(outlineOpacity);
+    }
+
+    svg.appendChild(pathEl);
+    wrapper.appendChild(svg);
+    return wrapper;
   }
 
   public getFormattingModel(): powerbi.visuals.FormattingModel {

@@ -64,6 +64,21 @@
             "numeric": true
           }
         },
+        "gridShape": {
+          "displayName": "Grid Shape",
+          "type": {
+            "enumeration": [
+              {
+                "value": "polygon",
+                "displayName": "Polygon"
+              },
+              {
+                "value": "circle",
+                "displayName": "Circle"
+              }
+            ]
+          }
+        },
         "fillOpacity": {
           "displayName": "Fill Opacity (%)",
           "type": {

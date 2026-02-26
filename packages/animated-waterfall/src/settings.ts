@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard } from '../../core/src';
+import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, NumberFormattingCard} from '../../core/src';
 // -- Waterfall Settings -------------------------------------------------------
 
 class WaterfallSettingsCard extends formattingSettings.SimpleCard {
@@ -188,6 +188,72 @@ class AnimationSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration, this.staggerDelay];
 }
 
+// -- Subtotal Settings --------------------------------------------------------
+
+class SubtotalSettingsCard extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Subtotals',
+    value: false,
+  });
+
+  subtotalColor = new formattingSettings.ColorPicker({
+    name: 'subtotalColor',
+    displayName: 'Subtotal Color',
+    value: { value: '#6366F1' },
+  });
+
+  subtotalLabel = new formattingSettings.TextInput({
+    name: 'subtotalLabel',
+    displayName: 'Subtotal Label',
+    value: 'Subtotal',
+    placeholder: 'Subtotal',
+  });
+
+  indices = new formattingSettings.TextInput({
+    name: 'indices',
+    displayName: 'Subtotal After Positions',
+    value: '',
+    placeholder: 'e.g. 3,7,12',
+  });
+
+  name = 'subtotalSettings';
+  displayName = 'Subtotals';
+  slices = [this.enabled, this.subtotalColor, this.subtotalLabel, this.indices];
+}
+
+// -- Drill-Down Settings ------------------------------------------------------
+
+class DrillDownSettingsCard extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Drill-Down',
+    value: true,
+  });
+
+  showBreadcrumb = new formattingSettings.ToggleSwitch({
+    name: 'showBreadcrumb',
+    displayName: 'Show Breadcrumb',
+    value: true,
+  });
+
+  breadcrumbFontSize = new formattingSettings.NumUpDown({
+    name: 'breadcrumbFontSize',
+    displayName: 'Breadcrumb Font Size',
+    value: 11,
+  });
+
+  breadcrumbColor = new formattingSettings.ColorPicker({
+    name: 'breadcrumbColor',
+    displayName: 'Breadcrumb Color',
+    value: { value: '#64748B' },
+  });
+
+  name = 'drillDownSettings';
+  displayName = 'Drill-Down';
+  slices = [this.enabled, this.showBreadcrumb, this.breadcrumbFontSize, this.breadcrumbColor];
+}
+
 // -- Root Model ---------------------------------------------------------------
 
 
@@ -223,6 +289,7 @@ export class AnimatedWaterfallSettings extends formattingSettings.Model {
   axisSettings = new AxisSettingsCard();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettingsCard();
+  drillDownSettings = new DrillDownSettingsCard();
 
   axisFormattingCard = new AxisFormattingCard();
 
@@ -232,6 +299,16 @@ export class AnimatedWaterfallSettings extends formattingSettings.Model {
 
   connectorSettings = new ConnectorSettings();
 
+  subtotalSettings = new SubtotalSettingsCard();
+
+  scrollFormattingCard = new ScrollFormattingCard();
+
+  constructor() {
+    super();
+    this.scrollFormattingCard.minCategoryWidth.value = 50;
+  }
+
+  numberFormattingCard = new NumberFormattingCard();
 
   cards = [
     this.waterfallSettings,
@@ -240,10 +317,13 @@ export class AnimatedWaterfallSettings extends formattingSettings.Model {
     this.axisSettings,
     this.cardSettings,
     this.animationSettings,
+    this.drillDownSettings,
     this.axisFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.connectorSettings,
-
+    this.subtotalSettings,
+    this.scrollFormattingCard,
+    this.numberFormattingCard,
   ];
 }

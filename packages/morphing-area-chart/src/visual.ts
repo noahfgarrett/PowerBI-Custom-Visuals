@@ -10,6 +10,7 @@ import { FormattingSettingsService } from 'powerbi-visuals-utils-formattingmodel
 import { MorphingAreaChartSettings } from './settings';
 import {
   formatNumber,
+  formatWithSettings,
   animate,
   drawPath,
   popIn,
@@ -22,6 +23,8 @@ import {
   applyAxisFormatting,
   applyGridFormatting,
   applyDataLabelFormatting,
+  createScrollableChart,
+  resolveDropdown,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -231,12 +234,12 @@ export class MorphingAreaChartVisual implements IVisual {
 
     // Compute chart dimensions
     const padding = 8;
-    const svgWidth = viewport.width - padding * 2 - legendReserveH;
-    const svgHeight = viewport.height - padding * 2 - legendReserveV;
-    const chartWidth = Math.max(0, svgWidth - margin.left - margin.right);
-    const chartHeight = Math.max(0, svgHeight - margin.top - margin.bottom);
+    const baseSvgWidth = viewport.width - padding * 2 - legendReserveH;
+    const baseSvgHeight = viewport.height - padding * 2 - legendReserveV;
+    const baseChartWidth = Math.max(0, baseSvgWidth - margin.left - margin.right);
+    const baseChartHeight = Math.max(0, baseSvgHeight - margin.top - margin.bottom);
 
-    if (chartWidth <= 0 || chartHeight <= 0) {
+    if (baseChartWidth <= 0 || baseChartHeight <= 0) {
       this.renderEmpty();
       return;
     }
@@ -262,14 +265,29 @@ export class MorphingAreaChartVisual implements IVisual {
       this.renderLegend(data, wrapper, legendPos);
     }
 
-    // SVG
+    // SVG container with scroll support
     const svgContainer = document.createElement('div');
     svgContainer.style.flex = '1';
     svgContainer.style.minWidth = '0';
     svgContainer.style.minHeight = '0';
     wrapper.appendChild(svgContainer);
 
-    const svg = d3.select(svgContainer)
+    const scroll = createScrollableChart({
+      container: svgContainer,
+      viewportWidth: baseSvgWidth,
+      viewportHeight: baseSvgHeight,
+      categoryCount: data.categories.length,
+      scrollSettings: s.scrollFormattingCard,
+      availableChartWidth: baseChartWidth,
+      availableChartHeight: baseChartHeight,
+      direction: 'horizontal',
+    });
+    const svgWidth = scroll.svgWidth;
+    const svgHeight = scroll.svgHeight;
+    const chartWidth = scroll.chartWidth;
+    const chartHeight = scroll.chartHeight;
+
+    const svg = d3.select(scroll.svgParent)
       .append('svg')
       .attr('class', 'area-chart-svg')
       .attr('width', svgWidth)
@@ -336,10 +354,13 @@ export class MorphingAreaChartVisual implements IVisual {
         .call(
           d3.axisLeft(y)
             .ticks(6)
-            .tickFormat((d) => formatNumber(d as number, { abbreviate: true })),
+            .tickFormat((d) => formatWithSettings(d as number, this.settings.numberFormattingCard)),
         )
         .select('.domain').remove();
     }
+
+    // Reference line (rendered after axes/grid but before data series)
+    this.renderReferenceLine(chartGroup, y, chartWidth);
 
     // Curve function
     const curveFn = this.getCurveFunction();
@@ -434,8 +455,10 @@ export class MorphingAreaChartVisual implements IVisual {
         const areaPath = chartGroup.append('path')
           .datum(validPoints)
           .attr('class', 'area-fill')
+          .attr('data-series', String(seriesIdx))
           .attr('d', areaGen)
-          .attr('fill', useGradient ? `url(#${gradientId})` : withOpacity(series.color, fillOpacity));
+          .attr('fill', useGradient ? `url(#${gradientId})` : withOpacity(series.color, fillOpacity))
+          .style('transition', 'opacity 0.15s ease');
 
         // Animate area fade-in
         if (animEnabled) {
@@ -474,10 +497,12 @@ export class MorphingAreaChartVisual implements IVisual {
         const linePath = chartGroup.append('path')
           .datum(validPoints)
           .attr('class', 'area-line')
+          .attr('data-series', String(seriesIdx))
           .attr('d', lineGen)
           .attr('stroke', series.color)
           .attr('stroke-width', lineWidth)
-          .attr('stroke-dasharray', strokeDash);
+          .attr('stroke-dasharray', strokeDash)
+          .style('transition', 'opacity 0.15s ease');
 
         // Animate line draw
         if (animEnabled) {
@@ -496,12 +521,14 @@ export class MorphingAreaChartVisual implements IVisual {
         validPoints.forEach((pt, ptIdx) => {
           const dot = chartGroup.append('circle')
             .attr('class', 'area-dot')
+            .attr('data-series', String(seriesIdx))
             .attr('cx', pt.x)
             .attr('cy', pt.y)
             .attr('r', dotRadius)
             .attr('fill', series.color)
             .attr('stroke', this.settings.lineSettings.dotStrokeColor.value?.value || '#FFFFFF')
-            .attr('stroke-width', this.settings.lineSettings.dotStrokeWidth.value);
+            .attr('stroke-width', this.settings.lineSettings.dotStrokeWidth.value)
+            .style('transition', 'opacity 0.15s ease');
 
           // Tooltip
           this.attachDotTooltip(dot, pt.cat, series.name, pt.val);
@@ -546,13 +573,128 @@ export class MorphingAreaChartVisual implements IVisual {
         validPoints.forEach((pt) => {
           chartGroup.append('text')
             .attr('class', 'area-data-label')
+            .attr('data-series', String(seriesIdx))
             .attr('x', pt.x)
             .attr('y', pt.y - dotRadius - 4)
             .attr('text-anchor', 'middle')
-            .text(formatNumber(pt.val, { abbreviate: true }));
+            .style('transition', 'opacity 0.15s ease')
+            .text(formatWithSettings(pt.val, this.settings.numberFormattingCard));
         });
       }
     });
+
+    // ── Crosshair ──────────────────────────────────────────────
+
+    const crosshairEnabled = s.crosshairSettings.show.value;
+    if (crosshairEnabled) {
+      const chColor = s.crosshairSettings.lineColor.value?.value || '#94A3B8';
+      const chWidth = s.crosshairSettings.lineWidth.value;
+      const chStyleVal = (s.crosshairSettings.lineStyle.value as { value?: string } | undefined)?.value;
+      const chDash = chStyleVal === 'dashed' ? '6 4' : 'none';
+      const chShowValues = s.crosshairSettings.showValues.value;
+
+      const crosshairGroup = chartGroup.append('g')
+        .attr('class', 'crosshair-group')
+        .style('display', 'none')
+        .style('pointer-events', 'none');
+
+      crosshairGroup.append('line')
+        .attr('class', 'crosshair-line')
+        .attr('y1', 0)
+        .attr('y2', chartHeight)
+        .attr('stroke', chColor)
+        .attr('stroke-width', chWidth)
+        .attr('stroke-dasharray', chDash);
+
+      const domain = x.domain();
+
+      const svgEl2 = svg.node();
+      if (svgEl2) {
+        svgEl2.addEventListener('mousemove', (event: MouseEvent) => {
+          const [mouseX] = d3.pointer(event, chartGroup.node());
+
+          if (mouseX < 0 || mouseX > chartWidth) {
+            crosshairGroup.style('display', 'none');
+            return;
+          }
+
+          crosshairGroup.style('display', null);
+
+          // Find nearest category
+          let nearestIdx = 0;
+          let nearestDist = Infinity;
+          for (let i = 0; i < domain.length; i++) {
+            const xPos = x(domain[i]);
+            if (xPos === undefined) continue;
+            const dist = Math.abs(xPos - mouseX);
+            if (dist < nearestDist) {
+              nearestDist = dist;
+              nearestIdx = i;
+            }
+          }
+
+          const snapX = x(domain[nearestIdx]) ?? mouseX;
+
+          crosshairGroup.select('.crosshair-line')
+            .attr('x1', snapX)
+            .attr('x2', snapX);
+
+          // Remove previous markers and labels
+          crosshairGroup.selectAll('.crosshair-marker').remove();
+          crosshairGroup.selectAll('.crosshair-label').remove();
+
+          if (chShowValues) {
+            data.series.forEach((series) => {
+              const val = series.values[nearestIdx];
+              if (val === null) return;
+
+              const cy = y(val);
+              crosshairGroup.append('circle')
+                .attr('class', 'crosshair-marker')
+                .attr('cx', snapX)
+                .attr('cy', cy)
+                .attr('r', 4)
+                .attr('fill', series.color)
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 1.5);
+
+              crosshairGroup.append('text')
+                .attr('class', 'crosshair-label')
+                .attr('x', snapX + 8)
+                .attr('y', cy - 4)
+                .attr('font-size', '11px')
+                .attr('fill', series.color)
+                .attr('font-weight', '600')
+                .text(formatWithSettings(val, this.settings.numberFormattingCard));
+            });
+          }
+        });
+
+        svgEl2.addEventListener('mouseleave', () => {
+          crosshairGroup.style('display', 'none');
+        });
+      }
+    }
+
+    // ── Series Hover Highlight/Dim ──────────────────────────────
+
+    const svgNode = svg.node();
+    if (svgNode) {
+      const seriesElements = svgNode.querySelectorAll('[data-series]');
+      seriesElements.forEach((el) => {
+        el.addEventListener('mouseenter', () => {
+          const seriesIdx = el.getAttribute('data-series');
+          seriesElements.forEach((other) => {
+            (other as SVGElement).style.opacity = other.getAttribute('data-series') === seriesIdx ? '1' : '0.2';
+          });
+        });
+        el.addEventListener('mouseleave', () => {
+          seriesElements.forEach((other) => {
+            (other as SVGElement).style.opacity = '1';
+          });
+        });
+      });
+    }
 
     // Apply data label formatting from settings
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.area-data-label');
@@ -573,6 +715,75 @@ export class MorphingAreaChartVisual implements IVisual {
       this.renderLegend(data, wrapper, legendPos);
     }
     this.container.addEventListener('click', this.handleBackgroundClick);
+  }
+
+  // ── Reference Line ──────────────────────────────────────────────────
+
+  /**
+   * Renders a user-configured reference line (and optional band) on the chart.
+   */
+  private renderReferenceLine(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    yScale: d3.ScaleLinear<number, number>,
+    width: number,
+  ): void {
+    const ref = this.settings.referenceLineSettings;
+    if (!ref.show.value) return;
+
+    const refValue = ref.value.value;
+    const refY = yScale(refValue);
+    const refColor = ref.lineColor.value?.value ?? '#EF4444';
+    const refWidth = ref.lineWidth.value;
+    const refStyleVal = resolveDropdown(ref.lineStyle) ?? 'dashed';
+    const refDash = refStyleVal === 'dashed' ? '6 3' : refStyleVal === 'dotted' ? '2 2' : 'none';
+
+    // Band (rendered first so the line draws on top)
+    if (ref.showBand.value) {
+      const bandUpperY = yScale(ref.bandUpperValue.value);
+      const bandTop = Math.min(refY, bandUpperY);
+      const bandHeight = Math.abs(bandUpperY - refY);
+      const bandOp = Math.max(0, Math.min(100, ref.bandOpacity.value)) / 100;
+
+      g.append('rect')
+        .attr('class', 'area-ref-band')
+        .attr('x', 0)
+        .attr('y', bandTop)
+        .attr('width', width)
+        .attr('height', bandHeight)
+        .attr('fill', refColor)
+        .attr('fill-opacity', bandOp)
+        .style('pointer-events', 'none');
+    }
+
+    // Line
+    g.append('line')
+      .attr('class', 'area-ref-line')
+      .attr('x1', 0)
+      .attr('x2', width)
+      .attr('y1', refY)
+      .attr('y2', refY)
+      .attr('stroke', refColor)
+      .attr('stroke-width', refWidth)
+      .attr('stroke-dasharray', refDash)
+      .style('pointer-events', 'none');
+
+    // Label
+    if (ref.showLabel.value) {
+      const labelText = ref.labelText.value.length > 0
+        ? ref.labelText.value
+        : formatWithSettings(refValue, this.settings.numberFormattingCard);
+
+      g.append('text')
+        .attr('class', 'area-ref-label')
+        .attr('x', width - 4)
+        .attr('y', refY - 6)
+        .attr('text-anchor', 'end')
+        .attr('fill', refColor)
+        .attr('font-size', '11px')
+        .attr('font-weight', '600')
+        .style('pointer-events', 'none')
+        .text(labelText);
+    }
   }
 
   // ── Legend ─────────────────────────────────────────────────────────
@@ -658,11 +869,12 @@ export class MorphingAreaChartVisual implements IVisual {
     value: number,
   ): void {
     const host = this.host;
+    const numberSettings = this.settings.numberFormattingCard;
 
     circle.on('mouseover', (event: MouseEvent) => {
       const tooltipData: VisualTooltipDataItem[] = [
         { displayName: 'Category', value: category },
-        { displayName: seriesName, value: formatNumber(value, { abbreviate: false }) },
+        { displayName: seriesName, value: formatWithSettings(value, numberSettings) },
       ];
 
       host.tooltipService.show({
