@@ -1,0 +1,345 @@
+{
+  "dataRoles": [
+    {
+      "displayName": "Stage",
+      "name": "category",
+      "kind": "Grouping",
+      "description": "Funnel stage names (e.g., Leads, Qualified, Proposal, Won)"
+    },
+    {
+      "displayName": "Value",
+      "name": "measure",
+      "kind": "Measure",
+      "description": "Numeric value per funnel stage"
+    }
+  ],
+  "dataViewMappings": [
+    {
+      "conditions": [
+        {
+          "category": {
+            "max": 1
+          },
+          "measure": {
+            "max": 1
+          }
+        }
+      ],
+      "categorical": {
+        "categories": {
+          "select": [
+            {
+              "for": {
+                "in": "category"
+              }
+            }
+          ],
+          "dataReductionAlgorithm": {
+            "top": {
+              "count": 12
+            }
+          }
+        },
+        "values": {
+          "select": [
+            {
+              "bind": {
+                "to": "measure"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "objects": {
+    "funnelSettings": {
+      "displayName": "Funnel Settings",
+      "properties": {
+        "style": {
+          "displayName": "Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "symmetric",
+                "displayName": "Symmetric"
+              },
+              {
+                "value": "leftAligned",
+                "displayName": "Left Aligned"
+              }
+            ]
+          }
+        },
+        "showConversionRate": {
+          "displayName": "Show Conversion Rate",
+          "type": {
+            "bool": true
+          }
+        },
+        "gap": {
+          "displayName": "Gap",
+          "type": {
+            "numeric": true
+          }
+        },
+        "showValues": {
+          "displayName": "Show Values",
+          "type": {
+            "bool": true
+          }
+        },
+        "segmentStrokeColor": {
+          "displayName": "Segment Stroke Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "segmentStrokeWidth": {
+          "displayName": "Segment Stroke Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "labelColor": {
+          "displayName": "Label Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "colorSettings": {
+      "displayName": "Color",
+      "properties": {
+        "baseColor": {
+          "displayName": "Base Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "useGradient": {
+          "displayName": "Use Gradient",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "animationSettings": {
+      "displayName": "Animation",
+      "properties": {
+        "enabled": {
+          "displayName": "Enable Animations",
+          "type": {
+            "bool": true
+          }
+        },
+        "duration": {
+          "displayName": "Duration (ms)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "dataLabelFormatting": {
+      "displayName": "Data Labels",
+      "properties": {
+        "showDataLabels": {
+          "displayName": "Show Data Labels",
+          "type": {
+            "bool": true
+          }
+        },
+        "dataLabelFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "dataLabelFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "dataLabelFontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "titleFormatting": {
+      "displayName": "Chart Title",
+      "properties": {
+        "showTitle": {
+          "displayName": "Show Title",
+          "type": {
+            "bool": true
+          }
+        },
+        "titleText": {
+          "displayName": "Title Text",
+          "type": {
+            "text": true
+          }
+        },
+        "titleFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "titleFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "titleAlignment": {
+          "displayName": "Alignment",
+          "type": {
+            "enumeration": [
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "center",
+                "displayName": "Center"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "axisFormatting": {
+      "properties": {
+        "axisLabelColor": {
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "axisLabelSize": {
+          "type": {
+            "numeric": true
+          }
+        },
+        "axisLineColor": {
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "axisLineWidth": {
+          "type": {
+            "numeric": true
+          }
+        },
+        "showGridLines": {
+          "type": {
+            "bool": true
+          }
+        },
+        "gridLineColor": {
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "gridLineStyle": {
+          "type": {
+            "enumeration": [
+              {
+                "value": "solid",
+                "displayName": "Solid"
+              },
+              {
+                "value": "dashed",
+                "displayName": "Dashed"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "cardSettings": {
+      "displayName": "Card Style",
+      "properties": {
+        "backgroundColor": {
+          "displayName": "Background Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "backgroundOpacity": {
+          "displayName": "Background Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "borderRadius": {
+          "displayName": "Border Radius",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    }
+  },
+  "supportsKeyboardFocus": true,
+  "supportsHighlight": true,
+  "supportsMultiVisualSelection": true,
+  "privileges": [],
+  "suppressDefaultTitle": true
+}

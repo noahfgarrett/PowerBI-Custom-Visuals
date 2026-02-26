@@ -1,0 +1,368 @@
+{
+  "dataRoles": [
+    {
+      "displayName": "Category",
+      "name": "category",
+      "kind": "Grouping",
+      "description": "Bar labels (e.g., department names)"
+    },
+    {
+      "displayName": "Value",
+      "name": "measure",
+      "kind": "Measure",
+      "description": "Current value for each bar"
+    },
+    {
+      "displayName": "Target",
+      "name": "target",
+      "kind": "Measure",
+      "description": "Optional max/target value (defaults to max of all values)"
+    }
+  ],
+  "dataViewMappings": [
+    {
+      "conditions": [
+        {
+          "category": {
+            "max": 1
+          },
+          "measure": {
+            "max": 1
+          },
+          "target": {
+            "max": 1
+          }
+        }
+      ],
+      "categorical": {
+        "categories": {
+          "select": [
+            {
+              "for": {
+                "in": "category"
+              }
+            }
+          ],
+          "dataReductionAlgorithm": {
+            "top": {
+              "count": 20
+            }
+          }
+        },
+        "values": {
+          "select": [
+            {
+              "bind": {
+                "to": "measure"
+              }
+            },
+            {
+              "bind": {
+                "to": "target"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "objects": {
+    "barSettings": {
+      "displayName": "Bar Settings",
+      "properties": {
+        "barHeight": {
+          "displayName": "Bar Height",
+          "type": {
+            "numeric": true
+          }
+        },
+        "gap": {
+          "displayName": "Row Gap",
+          "type": {
+            "numeric": true
+          }
+        },
+        "cornerRadius": {
+          "displayName": "Corner Radius",
+          "type": {
+            "numeric": true
+          }
+        },
+        "showValue": {
+          "displayName": "Show Value",
+          "type": {
+            "bool": true
+          }
+        },
+        "showPercent": {
+          "displayName": "Show Percentage",
+          "type": {
+            "bool": true
+          }
+        },
+        "barCornerRadius": {
+          "displayName": "Bar Corner Radius",
+          "type": {
+            "numeric": true
+          }
+        },
+        "trackColor": {
+          "displayName": "Track Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "labelColor": {
+          "displayName": "Label Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "colorSettings": {
+      "displayName": "Colors",
+      "properties": {
+        "barColor": {
+          "displayName": "Bar Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "trackColor": {
+          "displayName": "Track Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "animationSettings": {
+      "displayName": "Animation",
+      "properties": {
+        "enabled": {
+          "displayName": "Enable Animations",
+          "type": {
+            "bool": true
+          }
+        },
+        "duration": {
+          "displayName": "Duration (ms)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "dataLabelFormatting": {
+      "displayName": "Data Labels",
+      "properties": {
+        "showDataLabels": {
+          "displayName": "Show Data Labels",
+          "type": {
+            "bool": true
+          }
+        },
+        "dataLabelFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "dataLabelFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "dataLabelFontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "titleFormatting": {
+      "displayName": "Chart Title",
+      "properties": {
+        "showTitle": {
+          "displayName": "Show Title",
+          "type": {
+            "bool": true
+          }
+        },
+        "titleText": {
+          "displayName": "Title Text",
+          "type": {
+            "text": true
+          }
+        },
+        "titleFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "titleFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "titleAlignment": {
+          "displayName": "Alignment",
+          "type": {
+            "enumeration": [
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "center",
+                "displayName": "Center"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "axisFormatting": {
+      "displayName": "Axis Formatting",
+      "properties": {
+        "axisLabelColor": {
+          "displayName": "Label Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "axisLabelSize": {
+          "displayName": "Label Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "axisLineColor": {
+          "displayName": "Axis Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "axisLineWidth": {
+          "displayName": "Axis Line Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "showGridLines": {
+          "displayName": "Show Grid Lines",
+          "type": {
+            "bool": true
+          }
+        },
+        "gridLineColor": {
+          "displayName": "Grid Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "gridLineStyle": {
+          "displayName": "Grid Line Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "solid",
+                "displayName": "Solid"
+              },
+              {
+                "value": "dashed",
+                "displayName": "Dashed"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "cardSettings": {
+      "displayName": "Card Style",
+      "properties": {
+        "backgroundColor": {
+          "displayName": "Background Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "backgroundOpacity": {
+          "displayName": "Background Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "borderRadius": {
+          "displayName": "Border Radius",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    }
+  },
+  "supportsKeyboardFocus": true,
+  "supportsHighlight": true,
+  "supportsMultiVisualSelection": true,
+  "privileges": [],
+  "suppressDefaultTitle": true
+}

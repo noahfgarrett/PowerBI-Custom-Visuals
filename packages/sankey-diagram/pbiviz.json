@@ -1,0 +1,22 @@
+{
+  "visual": {
+    "name": "sankeyDiagramPro",
+    "displayName": "Sankey Diagram Pro",
+    "guid": "sankeyDiagramPro_2D5F8A3B1C7E",
+    "visualClassName": "SankeyDiagramVisual",
+    "version": "1.0.0.0",
+    "description": "Interactive Sankey diagram with gradient links, staggered animations, and glassmorphic styling.",
+    "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
+    "gitHubUrl": "https://github.com/noahgarrett/PowerBI"
+  },
+  "apiVersion": "5.3.0",
+  "author": {
+    "name": "Visualize Build",
+    "email": "contact@visualizebuild.com"
+  },
+  "assets": {
+    "icon": "assets/icon.png"
+  },
+  "style": "style/visual.less",
+  "capabilities": "capabilities.json"
+}

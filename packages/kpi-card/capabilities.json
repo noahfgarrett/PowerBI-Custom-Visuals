@@ -1,0 +1,375 @@
+{
+  "dataRoles": [
+    {
+      "displayName": "Value",
+      "name": "measure",
+      "kind": "Measure",
+      "description": "The main KPI value to display"
+    },
+    {
+      "displayName": "Target",
+      "name": "target",
+      "kind": "Measure",
+      "description": "Target or comparison value for trend calculation"
+    },
+    {
+      "displayName": "Trend Axis",
+      "name": "trendAxis",
+      "kind": "Grouping",
+      "description": "Category axis for the sparkline (e.g., date, week)"
+    },
+    {
+      "displayName": "Trend Values",
+      "name": "trendValues",
+      "kind": "Measure",
+      "description": "Values for the sparkline trend line"
+    }
+  ],
+  "dataViewMappings": [
+    {
+      "conditions": [
+        {
+          "measure": {
+            "max": 1
+          },
+          "target": {
+            "max": 1
+          },
+          "trendAxis": {
+            "max": 1
+          },
+          "trendValues": {
+            "max": 1
+          }
+        }
+      ],
+      "table": {
+        "rows": {
+          "select": [
+            {
+              "for": {
+                "in": "trendAxis"
+              }
+            },
+            {
+              "for": {
+                "in": "measure"
+              }
+            },
+            {
+              "for": {
+                "in": "target"
+              }
+            },
+            {
+              "for": {
+                "in": "trendValues"
+              }
+            }
+          ],
+          "dataReductionAlgorithm": {
+            "top": {
+              "count": 100
+            }
+          }
+        }
+      }
+    }
+  ],
+  "objects": {
+    "valueSettings": {
+      "displayName": "Value",
+      "properties": {
+        "fontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "fontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "displayUnits": {
+          "displayName": "Display Units",
+          "type": {
+            "enumeration": [
+              {
+                "value": "auto",
+                "displayName": "Auto"
+              },
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "thousands",
+                "displayName": "Thousands"
+              },
+              {
+                "value": "millions",
+                "displayName": "Millions"
+              },
+              {
+                "value": "billions",
+                "displayName": "Billions"
+              }
+            ]
+          }
+        },
+        "decimalPlaces": {
+          "displayName": "Decimal Places",
+          "type": {
+            "numeric": true
+          }
+        },
+        "prefix": {
+          "displayName": "Prefix",
+          "type": {
+            "text": true
+          }
+        },
+        "suffix": {
+          "displayName": "Suffix",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "labelSettings": {
+      "displayName": "Label",
+      "properties": {
+        "show": {
+          "displayName": "Show Label",
+          "type": {
+            "bool": true
+          }
+        },
+        "fontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "fontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "text": {
+          "displayName": "Custom Text",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "trendSettings": {
+      "displayName": "Trend Arrow",
+      "properties": {
+        "show": {
+          "displayName": "Show Trend",
+          "type": {
+            "bool": true
+          }
+        },
+        "positiveColor": {
+          "displayName": "Positive Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "negativeColor": {
+          "displayName": "Negative Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "neutralColor": {
+          "displayName": "Neutral Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "sparklineSettings": {
+      "displayName": "Sparkline",
+      "properties": {
+        "show": {
+          "displayName": "Show Sparkline",
+          "type": {
+            "bool": true
+          }
+        },
+        "lineColor": {
+          "displayName": "Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "fillOpacity": {
+          "displayName": "Fill Opacity",
+          "type": {
+            "numeric": true
+          }
+        },
+        "sparklineColor": {
+          "displayName": "Sparkline Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "sparklineWidth": {
+          "displayName": "Sparkline Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "dividerColor": {
+          "displayName": "Divider Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "animationSettings": {
+      "displayName": "Animation",
+      "properties": {
+        "enabled": {
+          "displayName": "Enable Animations",
+          "type": {
+            "bool": true
+          }
+        },
+        "duration": {
+          "displayName": "Duration (ms)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "titleFormatting": {
+      "displayName": "Chart Title",
+      "properties": {
+        "showTitle": {
+          "displayName": "Show Title",
+          "type": {
+            "bool": true
+          }
+        },
+        "titleText": {
+          "displayName": "Title Text",
+          "type": {
+            "text": true
+          }
+        },
+        "titleFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "titleFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "titleAlignment": {
+          "displayName": "Alignment",
+          "type": {
+            "enumeration": [
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "center",
+                "displayName": "Center"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "cardSettings": {
+      "displayName": "Card Style",
+      "properties": {
+        "backgroundColor": {
+          "displayName": "Background Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "backgroundOpacity": {
+          "displayName": "Background Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "borderRadius": {
+          "displayName": "Border Radius",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    }
+  },
+  "supportsKeyboardFocus": true,
+  "supportsHighlight": true,
+  "supportsMultiVisualSelection": true,
+  "privileges": [],
+  "suppressDefaultTitle": true
+}

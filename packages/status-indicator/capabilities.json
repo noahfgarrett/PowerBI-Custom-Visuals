@@ -1,0 +1,308 @@
+{
+  "dataRoles": [
+    {
+      "displayName": "Category",
+      "name": "category",
+      "kind": "Grouping",
+      "description": "KPI names"
+    },
+    {
+      "displayName": "Value",
+      "name": "measure",
+      "kind": "Measure",
+      "description": "Current value"
+    },
+    {
+      "displayName": "Warning Threshold",
+      "name": "warningThreshold",
+      "kind": "Measure",
+      "description": "Warning threshold"
+    },
+    {
+      "displayName": "Critical Threshold",
+      "name": "criticalThreshold",
+      "kind": "Measure",
+      "description": "Critical threshold"
+    }
+  ],
+  "dataViewMappings": [
+    {
+      "conditions": [
+        {
+          "category": {
+            "max": 1
+          },
+          "measure": {
+            "max": 1
+          },
+          "warningThreshold": {
+            "max": 1
+          },
+          "criticalThreshold": {
+            "max": 1
+          }
+        }
+      ],
+      "categorical": {
+        "categories": {
+          "for": {
+            "in": "category"
+          },
+          "dataReductionAlgorithm": {
+            "top": {
+              "count": 100
+            }
+          }
+        },
+        "values": {
+          "select": [
+            {
+              "bind": {
+                "to": "measure"
+              }
+            },
+            {
+              "bind": {
+                "to": "warningThreshold"
+              }
+            },
+            {
+              "bind": {
+                "to": "criticalThreshold"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "objects": {
+    "indicatorSettings": {
+      "displayName": "Indicator",
+      "properties": {
+        "shape": {
+          "displayName": "Shape",
+          "type": {
+            "enumeration": [
+              {
+                "value": "circle",
+                "displayName": "Circle"
+              },
+              {
+                "value": "square",
+                "displayName": "Square"
+              },
+              {
+                "value": "diamond",
+                "displayName": "Diamond"
+              }
+            ]
+          }
+        },
+        "size": {
+          "displayName": "Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "layout": {
+          "displayName": "Layout",
+          "type": {
+            "enumeration": [
+              {
+                "value": "vertical",
+                "displayName": "Vertical"
+              },
+              {
+                "value": "horizontal",
+                "displayName": "Horizontal"
+              },
+              {
+                "value": "grid",
+                "displayName": "Grid"
+              }
+            ]
+          }
+        },
+        "iconSize": {
+          "displayName": "Icon Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "labelColor": {
+          "displayName": "Label Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "thresholdSettings": {
+      "displayName": "Thresholds",
+      "properties": {
+        "goodColor": {
+          "displayName": "Good Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "warningColor": {
+          "displayName": "Warning Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "criticalColor": {
+          "displayName": "Critical Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "direction": {
+          "displayName": "Direction",
+          "type": {
+            "enumeration": [
+              {
+                "value": "higherIsBetter",
+                "displayName": "Higher is Better"
+              },
+              {
+                "value": "lowerIsBetter",
+                "displayName": "Lower is Better"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "pulseSettings": {
+      "displayName": "Pulse",
+      "properties": {
+        "enablePulse": {
+          "displayName": "Pulse Critical",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "animationSettings": {
+      "displayName": "Animation",
+      "properties": {
+        "enabled": {
+          "displayName": "Enable Animations",
+          "type": {
+            "bool": true
+          }
+        },
+        "duration": {
+          "displayName": "Duration (ms)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "titleFormatting": {
+      "displayName": "Chart Title",
+      "properties": {
+        "showTitle": {
+          "displayName": "Show Title",
+          "type": {
+            "bool": true
+          }
+        },
+        "titleText": {
+          "displayName": "Title Text",
+          "type": {
+            "text": true
+          }
+        },
+        "titleFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "titleFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "titleAlignment": {
+          "displayName": "Alignment",
+          "type": {
+            "enumeration": [
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "center",
+                "displayName": "Center"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "cardSettings": {
+      "displayName": "Card Style",
+      "properties": {
+        "backgroundColor": {
+          "displayName": "Background Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "backgroundOpacity": {
+          "displayName": "Background Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "borderRadius": {
+          "displayName": "Border Radius",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    }
+  },
+  "supportsKeyboardFocus": true,
+  "supportsHighlight": true,
+  "supportsMultiVisualSelection": true,
+  "privileges": [],
+  "suppressDefaultTitle": true
+}

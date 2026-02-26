@@ -1,0 +1,429 @@
+{
+  "dataRoles": [
+    {
+      "displayName": "Category",
+      "name": "category",
+      "kind": "Grouping",
+      "description": "Step labels (e.g., Revenue, +Sales, -Costs, =Profit)"
+    },
+    {
+      "displayName": "Measure",
+      "name": "measure",
+      "kind": "Measure",
+      "description": "Step values (positive = increase, negative = decrease)"
+    },
+    {
+      "displayName": "Is Total",
+      "name": "isTotal",
+      "kind": "Measure",
+      "description": "Optional flag (1 = total bar, 0 = incremental). If not provided, last bar auto-detected as total."
+    }
+  ],
+  "dataViewMappings": [
+    {
+      "conditions": [
+        {
+          "category": {
+            "max": 1
+          },
+          "measure": {
+            "max": 1
+          },
+          "isTotal": {
+            "max": 1
+          }
+        }
+      ],
+      "categorical": {
+        "categories": {
+          "select": [
+            {
+              "for": {
+                "in": "category"
+              }
+            }
+          ],
+          "dataReductionAlgorithm": {
+            "top": {
+              "count": 500
+            }
+          }
+        },
+        "values": {
+          "select": [
+            {
+              "bind": {
+                "to": "measure"
+              }
+            },
+            {
+              "bind": {
+                "to": "isTotal"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "objects": {
+    "waterfallSettings": {
+      "displayName": "Waterfall Settings",
+      "properties": {
+        "showConnectors": {
+          "displayName": "Show Connectors",
+          "type": {
+            "bool": true
+          }
+        },
+        "showTotal": {
+          "displayName": "Show Total",
+          "type": {
+            "bool": true
+          }
+        },
+        "barWidth": {
+          "displayName": "Bar Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "barCornerRadius": {
+          "displayName": "Bar Corner Radius",
+          "type": {
+            "numeric": true
+          }
+        },
+        "barBorderColor": {
+          "displayName": "Bar Border Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "barBorderWidth": {
+          "displayName": "Bar Border Width",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "colorSettings": {
+      "displayName": "Colors",
+      "properties": {
+        "positiveColor": {
+          "displayName": "Positive Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "negativeColor": {
+          "displayName": "Negative Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "totalColor": {
+          "displayName": "Total Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "valueSettings": {
+      "displayName": "Value Labels",
+      "properties": {
+        "show": {
+          "displayName": "Show Values",
+          "type": {
+            "bool": true
+          }
+        },
+        "fontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "axisSettings": {
+      "displayName": "Axes",
+      "properties": {
+        "showXAxis": {
+          "displayName": "Show X-Axis",
+          "type": {
+            "bool": true
+          }
+        },
+        "showYAxis": {
+          "displayName": "Show Y-Axis",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "animationSettings": {
+      "displayName": "Animation",
+      "properties": {
+        "enabled": {
+          "displayName": "Enable Animations",
+          "type": {
+            "bool": true
+          }
+        },
+        "duration": {
+          "displayName": "Duration (ms)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "staggerDelay": {
+          "displayName": "Stagger Delay (ms)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "axisFormatting": {
+      "displayName": "Axis Formatting",
+      "properties": {
+        "axisLabelColor": {
+          "displayName": "Label Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "axisLabelSize": {
+          "displayName": "Label Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "axisLineColor": {
+          "displayName": "Axis Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "axisLineWidth": {
+          "displayName": "Axis Line Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "showGridLines": {
+          "displayName": "Show Grid Lines",
+          "type": {
+            "bool": true
+          }
+        },
+        "gridLineColor": {
+          "displayName": "Grid Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "gridLineStyle": {
+          "displayName": "Grid Line Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "solid",
+                "displayName": "Solid"
+              },
+              {
+                "value": "dashed",
+                "displayName": "Dashed"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "dataLabelFormatting": {
+      "displayName": "Data Labels",
+      "properties": {
+        "showDataLabels": {
+          "displayName": "Show Data Labels",
+          "type": {
+            "bool": true
+          }
+        },
+        "dataLabelFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "dataLabelFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "dataLabelFontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "titleFormatting": {
+      "displayName": "Chart Title",
+      "properties": {
+        "showTitle": {
+          "displayName": "Show Title",
+          "type": {
+            "bool": true
+          }
+        },
+        "titleText": {
+          "displayName": "Title Text",
+          "type": {
+            "text": true
+          }
+        },
+        "titleFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "titleFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "titleAlignment": {
+          "displayName": "Alignment",
+          "type": {
+            "enumeration": [
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "center",
+                "displayName": "Center"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "connectorFormatting": {
+      "displayName": "Connectors",
+      "properties": {
+        "connectorColor": {
+          "displayName": "Connector Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "connectorWidth": {
+          "displayName": "Connector Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "connectorStyle": {
+          "displayName": "Connector Style",
+          "type": {
+            "enumeration": []
+          }
+        }
+      }
+    },
+    "cardSettings": {
+      "displayName": "Card Style",
+      "properties": {
+        "backgroundColor": {
+          "displayName": "Background Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "backgroundOpacity": {
+          "displayName": "Background Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "borderRadius": {
+          "displayName": "Border Radius",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    }
+  },
+  "supportsKeyboardFocus": true,
+  "supportsHighlight": true,
+  "supportsMultiVisualSelection": true,
+  "privileges": [],
+  "suppressDefaultTitle": true
+}

@@ -1,0 +1,111 @@
+/* Bar Chart Pro — styles injected via pbiviz build */
+
+.bar-chart-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* SVG chart area */
+.bar-chart-svg {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+}
+
+/* Axis styles */
+.bar-chart-axis {
+
+  .domain {
+  }
+
+  .tick line {
+  }
+
+  .tick text {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+}
+
+.bar-chart-axis-x .tick text {
+  text-anchor: end;
+}
+
+/* Grid lines */
+
+.bar-chart-grid .domain {
+  display: none;
+}
+
+/* Bar elements */
+.bar-chart-bar {
+  transition: opacity 0.15s ease;
+  cursor: pointer;
+
+  &:hover {
+    filter: brightness(1.12);
+  }
+}
+
+/* Data labels */
+.bar-chart-label {
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  text-anchor: middle;
+}
+
+/* Line overlay for combo mode */
+.bar-chart-line {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.bar-chart-line-dot {
+  cursor: pointer;
+}
+
+/* Target / reference line */
+
+/* Legend */
+.bar-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.bar-chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.bar-chart-legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.bar-chart-legend-line-swatch {
+  width: 16px;
+  height: 2px;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+/* Empty state */
+.bar-chart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-style: italic;
+}

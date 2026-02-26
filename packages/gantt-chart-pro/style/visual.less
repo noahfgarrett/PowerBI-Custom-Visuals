@@ -1,0 +1,67 @@
+.gantt-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.gantt-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.gantt-header-row {
+  display: flex;
+  align-items: flex-end;
+  height: 24px;
+  border-bottom: 1px solid #E2E8F0;
+  margin-bottom: 4px;
+}
+
+.gantt-task-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.gantt-task-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+}
+
+.gantt-bar-track {
+  position: relative;
+  flex: 1;
+  min-height: 8px;
+}
+
+.gantt-bar {
+  position: absolute;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.gantt-bar-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 4px;
+}
+
+.gantt-today-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  z-index: 5;
+}

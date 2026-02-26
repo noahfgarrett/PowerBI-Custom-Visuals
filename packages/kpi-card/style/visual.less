@@ -1,0 +1,59 @@
+/* KPI Card Pro — styles injected via pbiviz build */
+
+.kpi-card-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 12px;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  box-sizing: border-box;
+}
+
+.kpi-label {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.kpi-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.kpi-value {
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi-trend {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.kpi-divider {
+  width: 100%;
+  border: none;
+  border-top: 1px solid;
+  margin: 4px 0;
+}
+
+.kpi-sparkline {
+  width: 100%;
+  height: 32px;
+  margin-top: 4px;
+}
+
+/* Empty state */
+.kpi-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 13px;
+  color: #94A3B8;
+  font-style: italic;
+}

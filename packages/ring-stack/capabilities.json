@@ -1,0 +1,444 @@
+{
+  "dataRoles": [
+    {
+      "displayName": "Ring 1 Value",
+      "name": "measure1",
+      "kind": "Measure",
+      "description": "Value for the outermost ring",
+      "requiredTypes": [
+        {
+          "numeric": true
+        }
+      ]
+    },
+    {
+      "displayName": "Ring 2 Value",
+      "name": "measure2",
+      "kind": "Measure",
+      "description": "Value for the second ring",
+      "requiredTypes": [
+        {
+          "numeric": true
+        }
+      ]
+    },
+    {
+      "displayName": "Ring 3 Value",
+      "name": "measure3",
+      "kind": "Measure",
+      "description": "Value for the third ring",
+      "requiredTypes": [
+        {
+          "numeric": true
+        }
+      ]
+    },
+    {
+      "displayName": "Ring 4 Value",
+      "name": "measure4",
+      "kind": "Measure",
+      "description": "Value for the fourth ring",
+      "requiredTypes": [
+        {
+          "numeric": true
+        }
+      ]
+    },
+    {
+      "displayName": "Ring 5 Value",
+      "name": "measure5",
+      "kind": "Measure",
+      "description": "Value for the fifth ring",
+      "requiredTypes": [
+        {
+          "numeric": true
+        }
+      ]
+    },
+    {
+      "displayName": "Ring 6 Value",
+      "name": "measure6",
+      "kind": "Measure",
+      "description": "Value for the innermost ring",
+      "requiredTypes": [
+        {
+          "numeric": true
+        }
+      ]
+    }
+  ],
+  "dataViewMappings": [
+    {
+      "conditions": [
+        {
+          "measure1": {
+            "max": 1
+          },
+          "measure2": {
+            "max": 1
+          },
+          "measure3": {
+            "max": 1
+          },
+          "measure4": {
+            "max": 1
+          },
+          "measure5": {
+            "max": 1
+          },
+          "measure6": {
+            "max": 1
+          }
+        }
+      ],
+      "categorical": {
+        "values": {
+          "select": [
+            {
+              "bind": {
+                "to": "measure1"
+              }
+            },
+            {
+              "bind": {
+                "to": "measure2"
+              }
+            },
+            {
+              "bind": {
+                "to": "measure3"
+              }
+            },
+            {
+              "bind": {
+                "to": "measure4"
+              }
+            },
+            {
+              "bind": {
+                "to": "measure5"
+              }
+            },
+            {
+              "bind": {
+                "to": "measure6"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "objects": {
+    "ringSettings": {
+      "displayName": "Ring",
+      "properties": {
+        "thickness": {
+          "displayName": "Thickness (px)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "gap": {
+          "displayName": "Gap (px)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "maxValue": {
+          "displayName": "Max Value",
+          "type": {
+            "numeric": true
+          }
+        },
+        "showLabels": {
+          "displayName": "Show Labels",
+          "type": {
+            "bool": true
+          }
+        },
+        "trackColor": {
+          "displayName": "Track Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "trackOpacity": {
+          "displayName": "Track Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "ringStrokeColor": {
+          "displayName": "Ring Stroke Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "colorSettings": {
+      "displayName": "Ring Colors",
+      "properties": {
+        "ring1Color": {
+          "displayName": "Ring 1 Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "ring2Color": {
+          "displayName": "Ring 2 Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "ring3Color": {
+          "displayName": "Ring 3 Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "ring4Color": {
+          "displayName": "Ring 4 Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "ring5Color": {
+          "displayName": "Ring 5 Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "ring6Color": {
+          "displayName": "Ring 6 Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "animationSettings": {
+      "displayName": "Animation",
+      "properties": {
+        "enabled": {
+          "displayName": "Enable Animations",
+          "type": {
+            "bool": true
+          }
+        },
+        "duration": {
+          "displayName": "Duration (ms)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "legendFormatting": {
+      "displayName": "Legend",
+      "properties": {
+        "showLegend": {
+          "displayName": "Show Legend",
+          "type": {
+            "bool": true
+          }
+        },
+        "legendPosition": {
+          "displayName": "Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "bottom",
+                "displayName": "Bottom"
+              },
+              {
+                "value": "top",
+                "displayName": "Top"
+              },
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        },
+        "legendFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "legendFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "dataLabelFormatting": {
+      "displayName": "Data Labels",
+      "properties": {
+        "showDataLabels": {
+          "displayName": "Show Data Labels",
+          "type": {
+            "bool": true
+          }
+        },
+        "dataLabelFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "dataLabelFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "dataLabelFontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "titleFormatting": {
+      "displayName": "Chart Title",
+      "properties": {
+        "showTitle": {
+          "displayName": "Show Title",
+          "type": {
+            "bool": true
+          }
+        },
+        "titleText": {
+          "displayName": "Title Text",
+          "type": {
+            "text": true
+          }
+        },
+        "titleFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "titleFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "titleAlignment": {
+          "displayName": "Alignment",
+          "type": {
+            "enumeration": [
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "center",
+                "displayName": "Center"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "cardSettings": {
+      "displayName": "Card Style",
+      "properties": {
+        "backgroundColor": {
+          "displayName": "Background Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "backgroundOpacity": {
+          "displayName": "Background Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "borderRadius": {
+          "displayName": "Border Radius",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    }
+  },
+  "privileges": [],
+  "suppressDefaultTitle": true
+}

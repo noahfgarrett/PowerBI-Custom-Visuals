@@ -1,0 +1,17 @@
+{
+  "visual": {
+    "name": "ganttChartPro",
+    "displayName": "Gantt Chart Pro",
+    "guid": "ganttChartPro_2F3A4B5C6D7E",
+    "visualClassName": "GanttChartProVisual",
+    "version": "1.0.0.0",
+    "description": "Gantt chart with animated task bars, progress fill, and today marker.",
+    "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
+    "gitHubUrl": "https://github.com/noahgarrett/PowerBI"
+  },
+  "apiVersion": "5.3.0",
+  "author": { "name": "Visualize Build", "email": "contact@visualizebuild.com" },
+  "assets": { "icon": "assets/icon.png" },
+  "style": "style/visual.less",
+  "capabilities": "capabilities.json"
+}

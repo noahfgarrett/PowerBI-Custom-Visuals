@@ -1,0 +1,28 @@
+/* Waffle Chart — styles injected via pbiviz build */
+
+.waffle-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  box-sizing: border-box;
+}
+
+.waffle-grid {
+  display: grid;
+}
+
+.waffle-cell {
+  transition: opacity 0.15s ease;
+}
+
+.waffle-value {
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  margin-top: 8px;
+}

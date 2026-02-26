@@ -1,0 +1,46 @@
+/* Funnel Pro — styles injected via pbiviz build */
+
+.funnel-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  box-sizing: border-box;
+}
+
+.funnel-stage-label {
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.funnel-value-label {
+  text-anchor: middle;
+  font-variant-numeric: tabular-nums;
+}
+
+.funnel-conversion {
+  text-anchor: middle;
+}
+
+/* Stage hover cursor + brightness */
+.funnel-stage {
+  cursor: pointer;
+  transition: filter 0.15s ease;
+
+  &:hover {
+    filter: brightness(1.1);
+  }
+}
+
+/* Empty state */
+.funnel-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-style: italic;
+}

@@ -1,0 +1,61 @@
+/* Gauge Cluster — styles injected via pbiviz build */
+
+.gauge-cluster-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  padding: 8px;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  box-sizing: border-box;
+}
+
+.gauge-grid {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+}
+
+.gauge-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.gauge-svg {
+  max-height: 100%;
+}
+
+.gauge-track {
+  fill: none;
+}
+
+.gauge-fill {
+  fill: none;
+}
+
+.gauge-value {
+  font-variant-numeric: tabular-nums;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.gauge-label {
+  text-anchor: middle;
+}
+
+.gauge-target-tick {
+  stroke-linecap: round;
+}
+
+.gauge-cluster-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-style: italic;
+  text-align: center;
+  padding: 16px;
+}

@@ -1,0 +1,22 @@
+{
+  "visual": {
+    "name": "heatmapCalendar",
+    "displayName": "Heatmap Calendar",
+    "guid": "heatmapCalendar_7B8C9D1E2F3A",
+    "visualClassName": "HeatmapCalendarVisual",
+    "version": "1.0.0.0",
+    "description": "Calendar heatmap with ripple-fill animation showing date-based intensity.",
+    "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
+    "gitHubUrl": "https://github.com/noahgarrett/PowerBI"
+  },
+  "apiVersion": "5.3.0",
+  "author": {
+    "name": "Visualize Build",
+    "email": "contact@visualizebuild.com"
+  },
+  "assets": {
+    "icon": "assets/icon.png"
+  },
+  "style": "style/visual.less",
+  "capabilities": "capabilities.json"
+}

@@ -1,0 +1,54 @@
+.treemap-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  box-sizing: border-box;
+  padding: 8px;
+  position: relative;
+  flex-direction: column;
+}
+
+.treemap-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.treemap-svg {
+  flex: 1;
+  min-height: 0;
+}
+
+.treemap-cell {
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+  &:hover {
+  }
+}
+
+.treemap-label {
+  pointer-events: none;
+}
+
+.treemap-value {
+  pointer-events: none;
+}
+
+.treemap-back-btn {
+  align-self: flex-start;
+  padding: 4px 10px;
+  margin-bottom: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+
+  &:hover {
+  }
+}

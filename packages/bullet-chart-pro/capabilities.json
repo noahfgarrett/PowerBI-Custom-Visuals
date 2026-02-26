@@ -1,0 +1,404 @@
+{
+  "dataRoles": [
+    {
+      "displayName": "Category",
+      "name": "category",
+      "kind": "Grouping",
+      "description": "Bullet chart labels (e.g., KPI names)"
+    },
+    {
+      "displayName": "Value",
+      "name": "measure",
+      "kind": "Measure",
+      "description": "Actual value — the main bar"
+    },
+    {
+      "displayName": "Target",
+      "name": "target",
+      "kind": "Measure",
+      "description": "Target marker value"
+    },
+    {
+      "displayName": "Poor Range",
+      "name": "poor",
+      "kind": "Measure",
+      "description": "Upper bound of the poor range"
+    },
+    {
+      "displayName": "Satisfactory Range",
+      "name": "satisfactory",
+      "kind": "Measure",
+      "description": "Upper bound of the satisfactory range"
+    },
+    {
+      "displayName": "Good Range",
+      "name": "good",
+      "kind": "Measure",
+      "description": "Upper bound of the good range (also serves as max)"
+    }
+  ],
+  "dataViewMappings": [
+    {
+      "conditions": [
+        {
+          "category": {
+            "max": 1
+          },
+          "measure": {
+            "max": 1
+          },
+          "target": {
+            "max": 1
+          },
+          "poor": {
+            "max": 1
+          },
+          "satisfactory": {
+            "max": 1
+          },
+          "good": {
+            "max": 1
+          }
+        }
+      ],
+      "categorical": {
+        "categories": {
+          "select": [
+            {
+              "for": {
+                "in": "category"
+              }
+            }
+          ],
+          "dataReductionAlgorithm": {
+            "top": {
+              "count": 10
+            }
+          }
+        },
+        "values": {
+          "select": [
+            {
+              "bind": {
+                "to": "measure"
+              }
+            },
+            {
+              "bind": {
+                "to": "target"
+              }
+            },
+            {
+              "bind": {
+                "to": "poor"
+              }
+            },
+            {
+              "bind": {
+                "to": "satisfactory"
+              }
+            },
+            {
+              "bind": {
+                "to": "good"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "objects": {
+    "bulletSettings": {
+      "displayName": "Bullet Settings",
+      "properties": {
+        "barHeight": {
+          "displayName": "Bar Height",
+          "type": {
+            "numeric": true
+          }
+        },
+        "showTarget": {
+          "displayName": "Show Target",
+          "type": {
+            "bool": true
+          }
+        },
+        "showLabels": {
+          "displayName": "Show Labels",
+          "type": {
+            "bool": true
+          }
+        },
+        "barCornerRadius": {
+          "displayName": "Bar Corner Radius",
+          "type": {
+            "numeric": true
+          }
+        },
+        "rangeOpacity": {
+          "displayName": "Range Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "rangeSettings": {
+      "displayName": "Range Colors",
+      "properties": {
+        "poorColor": {
+          "displayName": "Poor Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "satisfactoryColor": {
+          "displayName": "Satisfactory Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "goodColor": {
+          "displayName": "Good Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "barColor": {
+          "displayName": "Bar Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "animationSettings": {
+      "displayName": "Animation",
+      "properties": {
+        "enabled": {
+          "displayName": "Enable Animations",
+          "type": {
+            "bool": true
+          }
+        },
+        "duration": {
+          "displayName": "Duration (ms)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "axisFormatting": {
+      "displayName": "Axis Formatting",
+      "properties": {
+        "axisLabelColor": {
+          "displayName": "Label Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "axisLabelSize": {
+          "displayName": "Label Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "axisLineColor": {
+          "displayName": "Axis Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "axisLineWidth": {
+          "displayName": "Axis Line Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "showGridLines": {
+          "displayName": "Show Grid Lines",
+          "type": {
+            "bool": true
+          }
+        },
+        "gridLineColor": {
+          "displayName": "Grid Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "gridLineStyle": {
+          "displayName": "Grid Line Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "solid",
+                "displayName": "Solid"
+              },
+              {
+                "value": "dashed",
+                "displayName": "Dashed"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "dataLabelFormatting": {
+      "displayName": "Data Labels",
+      "properties": {
+        "showDataLabels": {
+          "displayName": "Show Data Labels",
+          "type": {
+            "bool": true
+          }
+        },
+        "dataLabelFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "dataLabelFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "dataLabelFontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "titleFormatting": {
+      "displayName": "Chart Title",
+      "properties": {
+        "showTitle": {
+          "displayName": "Show Title",
+          "type": {
+            "bool": true
+          }
+        },
+        "titleText": {
+          "displayName": "Title Text",
+          "type": {
+            "text": true
+          }
+        },
+        "titleFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "titleFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "titleAlignment": {
+          "displayName": "Alignment",
+          "type": {
+            "enumeration": [
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "center",
+                "displayName": "Center"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "cardSettings": {
+      "displayName": "Card Style",
+      "properties": {
+        "backgroundColor": {
+          "displayName": "Background Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "backgroundOpacity": {
+          "displayName": "Background Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "borderRadius": {
+          "displayName": "Border Radius",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    }
+  },
+  "supportsKeyboardFocus": true,
+  "supportsHighlight": true,
+  "supportsMultiVisualSelection": true,
+  "privileges": [],
+  "suppressDefaultTitle": true
+}

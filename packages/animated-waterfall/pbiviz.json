@@ -1,0 +1,22 @@
+{
+  "visual": {
+    "name": "animatedWaterfall",
+    "displayName": "Animated Waterfall Chart",
+    "guid": "animWaterfall_7A8B9C1D2E3F",
+    "visualClassName": "AnimatedWaterfallVisual",
+    "version": "1.0.0.0",
+    "description": "Waterfall chart with Tetris-style drop animations, bounceOut easing, dashed connectors, and glassmorphic styling.",
+    "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
+    "gitHubUrl": "https://github.com/noahgarrett/PowerBI"
+  },
+  "apiVersion": "5.3.0",
+  "author": {
+    "name": "Visualize Build",
+    "email": "contact@visualizebuild.com"
+  },
+  "assets": {
+    "icon": "assets/icon.png"
+  },
+  "style": "style/visual.less",
+  "capabilities": "capabilities.json"
+}

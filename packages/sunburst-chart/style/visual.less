@@ -1,0 +1,30 @@
+.sunburst-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.sunburst-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.sunburst-segment {
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+  &:hover {
+  }
+}
+
+.sunburst-label {
+  text-anchor: middle;
+  dominant-baseline: middle;
+  pointer-events: none;
+}

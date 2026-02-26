@@ -1,0 +1,22 @@
+{
+  "visual": {
+    "name": "kpiCardPro",
+    "displayName": "KPI Card Pro",
+    "guid": "kpiCardPro_9F2B4A1C3D5E",
+    "visualClassName": "KpiCardVisual",
+    "version": "1.0.0.0",
+    "description": "Advanced KPI card with count-up animation, trend arrow, sparkline, and glassmorphic styling.",
+    "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
+    "gitHubUrl": "https://github.com/noahgarrett/PowerBI"
+  },
+  "apiVersion": "5.3.0",
+  "author": {
+    "name": "Visualize Build",
+    "email": "contact@visualizebuild.com"
+  },
+  "assets": {
+    "icon": "assets/icon.png"
+  },
+  "style": "style/visual.less",
+  "capabilities": "capabilities.json"
+}

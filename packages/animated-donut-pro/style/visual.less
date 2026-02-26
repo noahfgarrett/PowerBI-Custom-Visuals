@@ -1,0 +1,43 @@
+/* Animated Donut Pro — styles injected via pbiviz build */
+
+.donut-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  box-sizing: border-box;
+}
+
+.donut-center-value {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.donut-label {
+  text-anchor: middle;
+}
+
+/* Segment hover cursor */
+.donut-segment {
+  cursor: pointer;
+  transition: filter 0.15s ease;
+
+  &:hover {
+    filter: brightness(1.1);
+  }
+}
+
+/* Empty state */
+.donut-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-style: italic;
+}

@@ -1,0 +1,22 @@
+{
+  "name": "pbi-custom-visuals",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "preview": "cd preview && npx vite",
+    "preview:build": "cd preview && npx vite build",
+    "build:all": "npm run build --workspaces --if-present",
+    "typecheck": "tsc --noEmit -p tsconfig.base.json",
+    "review:business": "node scripts/review-business-package.mjs",
+    "sync:business": "node scripts/sync-business-package.mjs",
+    "sync:lotusworks": "node scripts/sync-lotusworks-package.mjs",
+    "package:business": "npm run build:all && npm run sync:business && npm run sync:lotusworks",
+    "qa:business": "npm run typecheck && npm run review:business"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

@@ -1,0 +1,387 @@
+{
+  "dataRoles": [
+    {
+      "displayName": "Date",
+      "name": "date",
+      "kind": "Grouping",
+      "description": "Milestone date"
+    },
+    {
+      "displayName": "Label",
+      "name": "label",
+      "kind": "Grouping",
+      "description": "Milestone label"
+    },
+    {
+      "displayName": "Category",
+      "name": "category",
+      "kind": "Grouping",
+      "description": "Optional grouping for color"
+    }
+  ],
+  "dataViewMappings": [
+    {
+      "conditions": [
+        {
+          "date": {
+            "max": 1
+          },
+          "label": {
+            "max": 1
+          },
+          "category": {
+            "max": 1
+          }
+        }
+      ],
+      "categorical": {
+        "categories": {
+          "for": {
+            "in": "date"
+          },
+          "dataReductionAlgorithm": {
+            "top": {
+              "count": 200
+            }
+          }
+        },
+        "values": {
+          "select": [
+            {
+              "bind": {
+                "to": "label"
+              }
+            },
+            {
+              "bind": {
+                "to": "category"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "objects": {
+    "timelineSettings": {
+      "displayName": "Timeline",
+      "properties": {
+        "orientation": {
+          "displayName": "Orientation",
+          "type": {
+            "enumeration": [
+              {
+                "value": "horizontal",
+                "displayName": "Horizontal"
+              },
+              {
+                "value": "vertical",
+                "displayName": "Vertical"
+              }
+            ]
+          }
+        },
+        "showDates": {
+          "displayName": "Show Dates",
+          "type": {
+            "bool": true
+          }
+        },
+        "dateFormat": {
+          "displayName": "Date Format",
+          "type": {
+            "enumeration": [
+              {
+                "value": "short",
+                "displayName": "Short (MM/DD)"
+              },
+              {
+                "value": "medium",
+                "displayName": "Medium (Mon DD)"
+              },
+              {
+                "value": "long",
+                "displayName": "Long (Month DD, YYYY)"
+              }
+            ]
+          }
+        },
+        "lineColor": {
+          "displayName": "Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "lineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "markerStrokeColor": {
+          "displayName": "Marker Stroke Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "labelColor": {
+          "displayName": "Label Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "markerSettings": {
+      "displayName": "Markers",
+      "properties": {
+        "shape": {
+          "displayName": "Shape",
+          "type": {
+            "enumeration": [
+              {
+                "value": "circle",
+                "displayName": "Circle"
+              },
+              {
+                "value": "diamond",
+                "displayName": "Diamond"
+              },
+              {
+                "value": "square",
+                "displayName": "Square"
+              }
+            ]
+          }
+        },
+        "size": {
+          "displayName": "Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "colorByCategory": {
+          "displayName": "Color by Category",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "animationSettings": {
+      "displayName": "Animation",
+      "properties": {
+        "enabled": {
+          "displayName": "Enable Animations",
+          "type": {
+            "bool": true
+          }
+        },
+        "duration": {
+          "displayName": "Duration (ms)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "dataLabelFormatting": {
+      "displayName": "Data Labels",
+      "properties": {
+        "showDataLabels": {
+          "displayName": "Show Data Labels",
+          "type": {
+            "bool": true
+          }
+        },
+        "dataLabelFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "dataLabelFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "dataLabelFontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "titleFormatting": {
+      "displayName": "Chart Title",
+      "properties": {
+        "showTitle": {
+          "displayName": "Show Title",
+          "type": {
+            "bool": true
+          }
+        },
+        "titleText": {
+          "displayName": "Title Text",
+          "type": {
+            "text": true
+          }
+        },
+        "titleFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "titleFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "titleAlignment": {
+          "displayName": "Alignment",
+          "type": {
+            "enumeration": [
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "center",
+                "displayName": "Center"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "axisFormatting": {
+      "properties": {
+        "axisLabelColor": {
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "axisLabelSize": {
+          "type": {
+            "numeric": true
+          }
+        },
+        "axisLineColor": {
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "axisLineWidth": {
+          "type": {
+            "numeric": true
+          }
+        },
+        "showGridLines": {
+          "type": {
+            "bool": true
+          }
+        },
+        "gridLineColor": {
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "gridLineStyle": {
+          "type": {
+            "enumeration": [
+              {
+                "value": "solid",
+                "displayName": "Solid"
+              },
+              {
+                "value": "dashed",
+                "displayName": "Dashed"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "cardSettings": {
+      "displayName": "Card Style",
+      "properties": {
+        "backgroundColor": {
+          "displayName": "Background Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "backgroundOpacity": {
+          "displayName": "Background Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "borderRadius": {
+          "displayName": "Border Radius",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    }
+  },
+  "supportsKeyboardFocus": true,
+  "supportsHighlight": true,
+  "supportsMultiVisualSelection": true,
+  "privileges": [],
+  "suppressDefaultTitle": true
+}

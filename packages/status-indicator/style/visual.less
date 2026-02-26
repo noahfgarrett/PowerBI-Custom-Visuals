@@ -1,0 +1,35 @@
+.status-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.status-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.status-layout-vertical { display: flex; flex-direction: column; gap: 8px; }
+.status-layout-horizontal { display: flex; flex-direction: row; flex-wrap: wrap; gap: 12px; }
+.status-layout-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+  &:hover { background: rgba(0,0,0,0.03); }
+}
+
+.status-shape { flex-shrink: 0; }
+.status-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.status-value { margin-left: auto; white-space: nowrap; }

@@ -1,0 +1,362 @@
+{
+  "dataRoles": [
+    {
+      "name": "category",
+      "kind": "Grouping",
+      "displayName": "Category",
+      "displayNameKey": "Visual_Category"
+    },
+    {
+      "name": "measure",
+      "kind": "Measure",
+      "displayName": "Health Value",
+      "displayNameKey": "Visual_Measure"
+    }
+  ],
+  "dataViewMappings": [
+    {
+      "conditions": [
+        {
+          "category": {
+            "max": 1
+          },
+          "measure": {
+            "max": 1
+          }
+        }
+      ],
+      "categorical": {
+        "categories": {
+          "select": [
+            {
+              "for": {
+                "in": "category"
+              }
+            }
+          ],
+          "dataReductionAlgorithm": {
+            "top": {
+              "count": 100
+            }
+          }
+        },
+        "values": {
+          "select": [
+            {
+              "bind": {
+                "to": "measure"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "objects": {
+    "healthBarSettings": {
+      "properties": {
+        "barWidth": {
+          "type": {
+            "numeric": true
+          }
+        },
+        "barCornerRadius": {
+          "type": {
+            "numeric": true
+          }
+        },
+        "showValue": {
+          "type": {
+            "bool": true
+          }
+        },
+        "showPercent": {
+          "type": {
+            "bool": true
+          }
+        },
+        "gap": {
+          "type": {
+            "numeric": true
+          }
+        },
+        "maxValue": {
+          "type": {
+            "numeric": true
+          }
+        },
+        "fillMode": {
+          "type": {
+            "enumeration": []
+          }
+        },
+        "showYAxis": {
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "colorSettings": {
+      "properties": {
+        "lowColor": {
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "midColor": {
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "highColor": {
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "trackColor": {
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "trackOpacity": {
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "animationSettings": {
+      "properties": {
+        "enabled": {
+          "type": {
+            "bool": true
+          }
+        },
+        "duration": {
+          "type": {
+            "numeric": true
+          }
+        },
+        "staggerDelay": {
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "categoryLabelSettings": {
+      "properties": {
+        "show": {
+          "type": {
+            "bool": true
+          }
+        },
+        "fontSize": {
+          "type": {
+            "numeric": true
+          }
+        },
+        "fontColor": {
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "axisFormatting": {
+      "properties": {
+        "axisLabelColor": {
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "axisLabelSize": {
+          "type": {
+            "numeric": true
+          }
+        },
+        "axisLineColor": {
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "axisLineWidth": {
+          "type": {
+            "numeric": true
+          }
+        },
+        "showGridLines": {
+          "type": {
+            "bool": true
+          }
+        },
+        "gridLineColor": {
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "gridLineStyle": {
+          "type": {
+            "enumeration": [
+              {
+                "value": "solid",
+                "displayName": "Solid"
+              },
+              {
+                "value": "dashed",
+                "displayName": "Dashed"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "dataLabelFormatting": {
+      "properties": {
+        "showDataLabels": {
+          "type": {
+            "bool": true
+          }
+        },
+        "dataLabelFontSize": {
+          "type": {
+            "numeric": true
+          }
+        },
+        "dataLabelFontColor": {
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "dataLabelFontWeight": {
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "titleFormatting": {
+      "properties": {
+        "showTitle": {
+          "type": {
+            "bool": true
+          }
+        },
+        "titleText": {
+          "type": {
+            "text": true
+          }
+        },
+        "titleFontSize": {
+          "type": {
+            "numeric": true
+          }
+        },
+        "titleFontColor": {
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "titleAlignment": {
+          "type": {
+            "enumeration": [
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "center",
+                "displayName": "Center"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "cardSettings": {
+      "displayName": "Card Style",
+      "properties": {
+        "backgroundColor": {
+          "displayName": "Background Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "backgroundOpacity": {
+          "displayName": "Background Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "borderRadius": {
+          "displayName": "Border Radius",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    }
+  },
+  "privileges": [],
+  "supportsKeyboardFocus": true,
+  "supportsHighlight": true,
+  "suppressDefaultTitle": true
+}

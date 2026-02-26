@@ -1,0 +1,385 @@
+{
+  "dataRoles": [
+    {
+      "displayName": "Value",
+      "name": "value",
+      "kind": "Measure",
+      "description": "The current gauge value",
+      "requiredTypes": [
+        {
+          "numeric": true
+        }
+      ]
+    },
+    {
+      "displayName": "Target",
+      "name": "target",
+      "kind": "Measure",
+      "description": "Target value (tick mark on arc)"
+    },
+    {
+      "displayName": "Min Value",
+      "name": "minValue",
+      "kind": "Measure",
+      "description": "Minimum value (default 0)"
+    },
+    {
+      "displayName": "Max Value",
+      "name": "maxValue",
+      "kind": "Measure",
+      "description": "Maximum value (default 100)"
+    }
+  ],
+  "dataViewMappings": [
+    {
+      "conditions": [
+        {
+          "value": {
+            "max": 1
+          },
+          "target": {
+            "max": 1
+          },
+          "minValue": {
+            "max": 1
+          },
+          "maxValue": {
+            "max": 1
+          }
+        }
+      ],
+      "categorical": {
+        "values": {
+          "select": [
+            {
+              "bind": {
+                "to": "value"
+              }
+            },
+            {
+              "bind": {
+                "to": "target"
+              }
+            },
+            {
+              "bind": {
+                "to": "minValue"
+              }
+            },
+            {
+              "bind": {
+                "to": "maxValue"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "objects": {
+    "arcSettings": {
+      "displayName": "Arc",
+      "properties": {
+        "thickness": {
+          "displayName": "Thickness",
+          "type": {
+            "enumeration": [
+              {
+                "value": "thin",
+                "displayName": "Thin"
+              },
+              {
+                "value": "medium",
+                "displayName": "Medium"
+              },
+              {
+                "value": "thick",
+                "displayName": "Thick"
+              }
+            ]
+          }
+        },
+        "startAngle": {
+          "displayName": "Arc Range",
+          "type": {
+            "enumeration": [
+              {
+                "value": "half",
+                "displayName": "Half Circle (180°)"
+              },
+              {
+                "value": "full",
+                "displayName": "Three-Quarter (270°)"
+              }
+            ]
+          }
+        },
+        "trackOpacity": {
+          "displayName": "Track Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "zoneBorderWidth": {
+          "displayName": "Zone Border Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "zoneBorderOpacity": {
+          "displayName": "Zone Border Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "zoneSettings": {
+      "displayName": "Color Zones",
+      "properties": {
+        "zone1Threshold": {
+          "displayName": "Zone 1 Threshold (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "zone1Color": {
+          "displayName": "Zone 1 Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "zone2Threshold": {
+          "displayName": "Zone 2 Threshold (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "zone2Color": {
+          "displayName": "Zone 2 Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "zone3Color": {
+          "displayName": "Zone 3 Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "valueSettings": {
+      "displayName": "Value",
+      "properties": {
+        "fontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "fontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "prefix": {
+          "displayName": "Prefix",
+          "type": {
+            "text": true
+          }
+        },
+        "suffix": {
+          "displayName": "Suffix",
+          "type": {
+            "text": true
+          }
+        },
+        "decimalPlaces": {
+          "displayName": "Decimal Places",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "targetSettings": {
+      "displayName": "Target",
+      "properties": {
+        "show": {
+          "displayName": "Show Target",
+          "type": {
+            "bool": true
+          }
+        },
+        "color": {
+          "displayName": "Target Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "animationSettings": {
+      "displayName": "Animation",
+      "properties": {
+        "enabled": {
+          "displayName": "Enable Animations",
+          "type": {
+            "bool": true
+          }
+        },
+        "duration": {
+          "displayName": "Duration (ms)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "dataLabelFormatting": {
+      "displayName": "Data Labels",
+      "properties": {
+        "showDataLabels": {
+          "displayName": "Show Data Labels",
+          "type": {
+            "bool": true
+          }
+        },
+        "dataLabelFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "dataLabelFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "dataLabelFontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "titleFormatting": {
+      "displayName": "Chart Title",
+      "properties": {
+        "showTitle": {
+          "displayName": "Show Title",
+          "type": {
+            "bool": true
+          }
+        },
+        "titleText": {
+          "displayName": "Title Text",
+          "type": {
+            "text": true
+          }
+        },
+        "titleFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "titleFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "titleAlignment": {
+          "displayName": "Alignment",
+          "type": {
+            "enumeration": [
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "center",
+                "displayName": "Center"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "cardSettings": {
+      "displayName": "Card Style",
+      "properties": {
+        "backgroundColor": {
+          "displayName": "Background Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "backgroundOpacity": {
+          "displayName": "Background Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "borderRadius": {
+          "displayName": "Border Radius",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    }
+  },
+  "privileges": [],
+  "suppressDefaultTitle": true
+}

@@ -1,0 +1,2084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Business Package — Visual Showcase</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 25%, #0f172a 50%, #1a2640 75%, #0f172a 100%);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+    min-height: 100vh;
+    padding: 32px;
+    color: #f1f5f9;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle 1px, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 24px 24px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 2.4rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #ffffff 0%, #7DD3FC 50%, #ffffff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    position: relative;
+    z-index: 1;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #b0bec5;
+    font-size: 1rem;
+    margin-bottom: 40px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .scroll-hint {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: #64748b;
+    font-size: 11px;
+    z-index: 100;
+    transition: opacity 0.6s ease;
+    pointer-events: none;
+  }
+  .scroll-hint.hidden { opacity: 0; }
+  @keyframes bounceDown {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(6px); }
+  }
+  .scroll-hint svg { animation: bounceDown 1.5s ease-in-out infinite; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    max-width: 1800px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  .card.span-2 { grid-column: span 2; }
+  .card.span-3 { grid-column: span 3; }
+  .card.tall { min-height: 420px; }
+  .card.span-2 .chart-area { min-height: 300px; }
+  .card.span-3 .chart-area { min-height: 340px; }
+
+  @media (max-width: 1200px) {
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    .card.span-3 { grid-column: span 2; }
+  }
+  @media (max-width: 800px) {
+    .grid { grid-template-columns: 1fr; }
+    .card.span-2, .card.span-3 { grid-column: span 1; }
+  }
+
+  .card {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    min-height: 340px;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.4s ease;
+    opacity: 0;
+    transform: translateY(30px);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card.visible {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.6s cubic-bezier(0.22,1,0.36,1), transform 0.6s cubic-bezier(0.22,1,0.36,1), box-shadow 0.25s ease, border-color 0.4s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    border-color: rgba(125, 211, 252, 0.2);
+  }
+
+  .card h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    margin-bottom: 16px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    opacity: 0.85;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h3::before {
+    content: '\25A2';
+    font-size: 0.7rem;
+    opacity: 0.4;
+    color: #7DD3FC;
+  }
+
+  .interact-hint {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    font-size: 9px;
+    color: #64748b;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .card:hover .interact-hint { opacity: 1; }
+  .card.interacted .interact-hint { display: none; }
+
+  .chart-area {
+    flex: 1;
+    position: relative;
+    min-height: 260px;
+  }
+
+  .chart-area svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-left: 3px solid #7DD3FC;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 12px;
+    color: #e2e8f0;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+    min-width: 80px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 12px rgba(125,211,252,0.08);
+  }
+
+  /* Drill panel */
+  .drill-panel {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(125,211,252,0.15);
+    border-radius: 0 0 16px 16px;
+    padding: 16px 20px;
+    z-index: 10;
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.22,1,0.36,1);
+    max-height: 70%;
+    overflow-y: auto;
+  }
+  .drill-panel.open { transform: translateY(0); }
+  .drill-panel .drill-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .drill-panel .breadcrumb {
+    font-size: 11px;
+    color: #94a3b8;
+  }
+  .drill-panel .breadcrumb span { color: #7DD3FC; }
+  .drill-panel .drill-close {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.05);
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    line-height: 1;
+  }
+  .drill-panel .drill-close:hover {
+    background: rgba(255,255,255,0.1);
+    color: #f1f5f9;
+    transform: rotate(90deg);
+  }
+  .drill-table {
+    width: 100%;
+    font-size: 11px;
+    border-collapse: collapse;
+  }
+  .drill-table td, .drill-table th {
+    padding: 6px 10px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .drill-table th { color: #94a3b8; font-weight: 500; }
+  .drill-table td { color: #cbd5e1; }
+  .drill-sub-bar-track {
+    height: 8px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 4px;
+    overflow: hidden;
+    min-width: 80px;
+  }
+  .drill-sub-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s cubic-bezier(0.22,1,0.36,1);
+  }
+
+  /* Clickable cursor */
+  .clickable, [data-clickable] { cursor: pointer; }
+  .clickable:active, [data-clickable]:active { transform: scale(0.97); }
+
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    height: 100%;
+  }
+  .kpi-item {
+    background: rgba(255,255,255,0.04);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid rgba(255,255,255,0.05);
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    cursor: pointer;
+    perspective: 400px;
+    position: relative;
+  }
+  .kpi-item.show {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  .kpi-item:active { transform: scale(0.97); }
+  .kpi-front, .kpi-back {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transition: transform 0.6s ease;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .kpi-back {
+    position: absolute;
+    inset: 0;
+    transform: rotateY(180deg);
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .kpi-item.flipped .kpi-front { transform: rotateY(180deg); }
+  .kpi-item.flipped .kpi-back { transform: rotateY(0deg); }
+  .kpi-value { font-size: 1.8rem; font-weight: 700; }
+  .kpi-label { font-size: 0.75rem; color: #94a3b8; margin-top: 4px; }
+  .kpi-delta { font-size: 0.8rem; margin-top: 4px; }
+  .kpi-delta.pos { color: #34d399; }
+  .kpi-delta.neg { color: #f87171; }
+
+  .status-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    height: 100%;
+  }
+  .status-item {
+    background: rgba(255,255,255,0.04);
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid rgba(255,255,255,0.05);
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: all 0.4s ease;
+    cursor: pointer;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .status-item.show {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  .status-top { display: flex; align-items: center; gap: 10px; width: 100%; }
+  .status-item.expanded { transform: scale(1.03); background: rgba(255,255,255,0.07); }
+  .status-sparkline { width: 100%; height: 30px; margin-top: 6px; display: none; }
+  .status-item.expanded .status-sparkline { display: block; }
+  .status-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 6px currentColor; }
+    50% { box-shadow: 0 0 16px currentColor; }
+  }
+  .status-dot.pulse { animation: pulse-glow 2s ease-in-out infinite; }
+  .status-info { display: flex; flex-direction: column; }
+  .status-name { font-size: 0.8rem; color: #cbd5e1; }
+  .status-val { font-size: 0.7rem; color: #94a3b8; margin-top: 2px; }
+
+  .gantt-row {
+    display: flex; align-items: center; margin-bottom: 6px;
+  }
+  .gantt-label {
+    width: 80px; font-size: 0.7rem; color: #94a3b8; text-align: right; padding-right: 8px; flex-shrink: 0;
+  }
+  .gantt-track {
+    flex: 1; height: 18px; background: rgba(255,255,255,0.04); border-radius: 4px; position: relative; overflow: hidden;
+  }
+  .gantt-bar {
+    position: absolute; top: 2px; height: 14px; border-radius: 3px; opacity: 0.85;
+    transform-origin: left;
+    transform: scaleX(0);
+    transition: transform 0.8s cubic-bezier(0.22,1,0.36,1);
+    cursor: pointer;
+  }
+  .gantt-bar.show { transform: scaleX(1); }
+  .gantt-bar:hover { filter: brightness(1.2); }
+
+  /* Floating detail card (used by timeline, heatmap, scatter, gantt) */
+  .float-card {
+    position: absolute;
+    background: rgba(15,23,42,0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(125,211,252,0.15);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 11px;
+    color: #cbd5e1;
+    z-index: 20;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    pointer-events: auto;
+    min-width: 120px;
+  }
+  .float-card .fc-title { font-weight: 600; color: #f1f5f9; margin-bottom: 6px; font-size: 12px; }
+  .float-card .fc-row { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 3px; }
+  .float-card .fc-label { color: #94a3b8; }
+  .float-card .fc-val { color: #e2e8f0; font-weight: 600; }
+  .float-card .fc-close {
+    position: absolute; top: 6px; right: 8px;
+    cursor: pointer; color: #64748b; font-size: 12px;
+  }
+  .float-card .fc-close:hover { color: #f1f5f9; }
+
+  @keyframes pulseRing {
+    0% { r: 12; opacity: 0.6; }
+    100% { r: 24; opacity: 0; }
+  }
+
+  text { font-family: 'Segoe UI', -apple-system, sans-serif; }
+
+  .reset-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, background 0.2s ease, color 0.2s ease;
+    z-index: 10;
+    backdrop-filter: blur(8px);
+  }
+  .card.has-drillstate .reset-btn {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .reset-btn:hover {
+    background: rgba(125, 211, 252, 0.2);
+    color: #7DD3FC;
+    border-color: rgba(125, 211, 252, 0.3);
+  }
+</style>
+</head>
+<body>
+
+<h1>Business Package</h1>
+<p class="subtitle">30 Premium Power BI Custom Visuals — Showcase with Mock Data</p>
+
+<div class="scroll-hint" id="scroll-hint">
+  <span>Scroll to explore</span>
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 4v10M6 10l4 4 4-4" stroke="#64748b" stroke-width="1.5" stroke-linecap="round"/></svg>
+</div>
+
+<div class="grid">
+  <div class="card" data-chart="kpi-card"><h3>KPI Card</h3><div class="chart-area" id="kpi-card"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card" data-chart="radial-gauge"><h3>Radial Gauge</h3><div class="chart-area" id="radial-gauge"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card" data-chart="bar-chart"><h3>Bar Chart</h3><div class="chart-area" id="bar-chart"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card" data-chart="donut-chart"><h3>Animated Donut</h3><div class="chart-area" id="donut-chart"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card" data-chart="polar-chart"><h3>Polar Chart</h3><div class="chart-area" id="polar-chart"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card" data-chart="ring-stack"><h3>Ring Stack</h3><div class="chart-area" id="ring-stack"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card" data-chart="gauge-cluster"><h3>Gauge Cluster</h3><div class="chart-area" id="gauge-cluster"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card span-2" data-chart="progress-bar"><h3>Progress Bar Stack</h3><div class="chart-area" id="progress-bar"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card span-2" data-chart="bullet-chart"><h3>Bullet Chart</h3><div class="chart-area" id="bullet-chart"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card" data-chart="funnel-chart"><h3>Funnel Chart</h3><div class="chart-area" id="funnel-chart"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card" data-chart="waffle-chart"><h3>Waffle Chart</h3><div class="chart-area" id="waffle-chart"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card span-2" data-chart="area-chart"><h3>Area Chart</h3><div class="chart-area" id="area-chart"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card span-2" data-chart="stream-graph"><h3>Stream Graph</h3><div class="chart-area" id="stream-graph"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card" data-chart="dumbbell-chart"><h3>Dumbbell Chart</h3><div class="chart-area" id="dumbbell-chart"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card" data-chart="slope-chart"><h3>Slope Chart</h3><div class="chart-area" id="slope-chart"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card" data-chart="scatter-bubble"><h3>Scatter Bubble Plot</h3><div class="chart-area" id="scatter-bubble"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card" data-chart="box-plot"><h3>Box Plot</h3><div class="chart-area" id="box-plot"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card" data-chart="waterfall-chart"><h3>Waterfall Chart</h3><div class="chart-area" id="waterfall-chart"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card" data-chart="sunburst-chart"><h3>Sunburst Chart</h3><div class="chart-area" id="sunburst-chart"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card span-2" data-chart="treemap-chart"><h3>Treemap</h3><div class="chart-area" id="treemap-chart"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card tall" data-chart="chord-diagram"><h3>Chord Diagram</h3><div class="chart-area" id="chord-diagram"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card tall" data-chart="network-graph"><h3>Network Graph</h3><div class="chart-area" id="network-graph"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card span-2" data-chart="bump-chart"><h3>Bump Chart</h3><div class="chart-area" id="bump-chart"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card" data-chart="bar-race"><h3>Bar Race</h3><div class="chart-area" id="bar-race"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card span-2" data-chart="heatmap-calendar"><h3>Heatmap Calendar</h3><div class="chart-area" id="heatmap-calendar"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card" data-chart="radar-chart"><h3>Radar Chart</h3><div class="chart-area" id="radar-chart"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card" data-chart="status-indicator"><h3>Status Indicator</h3><div class="chart-area" id="status-indicator"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card span-2" data-chart="timeline-chart"><h3>Timeline</h3><div class="chart-area" id="timeline-chart"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card span-2" data-chart="gantt-chart"><h3>Gantt Chart</h3><div class="chart-area" id="gantt-chart"></div><div class="interact-hint">Click to interact</div></div>
+  <div class="card span-3" data-chart="sankey-diagram"><h3>Sankey Diagram</h3><div class="chart-area" id="sankey-diagram"></div><div class="interact-hint">Click to interact</div></div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://unpkg.com/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+<script>
+// ── Shared ──────────────────────────────────────────────────────────
+const PALETTE = ['#64748B','#7DD3FC','#94A3B8','#5EEAD4','#A78BFA','#6366F1','#FB923C','#818CF8','#2DD4BF','#E879F9','#FCA5A5','#A3E635'];
+const color = (i) => PALETTE[i % PALETTE.length];
+const tt = d3.select('#tooltip');
+const DUR = 900;
+const EASE = d3.easeCubicOut;
+
+function showTip(ev, html) {
+  tt.html(html).style('opacity',1).style('left',(ev.clientX+12)+'px').style('top',(ev.clientY-10)+'px');
+}
+function hideTip() { tt.style('opacity',0); }
+
+function svgIn(sel, m) {
+  const el = document.querySelector(sel);
+  const w = el.clientWidth, h = el.clientHeight;
+  const mg = m || {top:24,right:16,bottom:28,left:40};
+  const svg = d3.select(sel).append('svg').attr('viewBox',`0 0 ${w} ${h}`);
+  const iw = w - mg.left - mg.right, ih = h - mg.top - mg.bottom;
+  const g = svg.append('g').attr('transform',`translate(${mg.left},${mg.top})`);
+  return {svg,g,w,h,iw,ih,mg};
+}
+
+function axisStyle(g) {
+  g.selectAll('line,path').attr('stroke','rgba(255,255,255,0.1)');
+  g.selectAll('text').attr('fill','#94a3b8').attr('font-size','10px');
+}
+
+function markInteracted(chartId) {
+  const card = document.querySelector(`[data-chart="${chartId}"]`);
+  if (card) card.classList.add('interacted');
+}
+
+function markDrillState(chartId) {
+  const card = document.querySelector(`[data-chart="${chartId}"]`);
+  if (card) { card.classList.add('interacted'); card.classList.add('has-drillstate'); }
+}
+
+function clearDrillState(chartId) {
+  const card = document.querySelector(`[data-chart="${chartId}"]`);
+  if (card) { card.classList.remove('has-drillstate'); card.classList.remove('interacted'); }
+}
+
+function addResetBtn(cardEl, resetFn) {
+  const btn = document.createElement('button');
+  btn.className = 'reset-btn';
+  btn.innerHTML = '\u21BB';
+  btn.title = 'Reset view';
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    cardEl.classList.remove('has-drillstate');
+    cardEl.classList.remove('interacted');
+    resetFn();
+  });
+  cardEl.appendChild(btn);
+  return btn;
+}
+
+function makeDrillPanel(chartArea, breadcrumbText, contentHTML) {
+  let panel = chartArea.querySelector('.drill-panel');
+  if (panel) { panel.remove(); }
+  panel = document.createElement('div');
+  panel.className = 'drill-panel';
+  panel.innerHTML = `<div class="drill-header"><div class="breadcrumb">${breadcrumbText}</div><div class="drill-close" onclick="this.closest('.drill-panel').classList.remove('open');setTimeout(()=>this.closest('.drill-panel').remove(),400)">&#10005;</div></div><div class="drill-body">${contentHTML}</div>`;
+  chartArea.closest('.card').appendChild(panel);
+  requestAnimationFrame(() => requestAnimationFrame(() => panel.classList.add('open')));
+  return panel;
+}
+
+function closeDrillPanel(chartArea) {
+  const card = chartArea.closest ? chartArea.closest('.card') : chartArea;
+  const panel = card.querySelector('.drill-panel');
+  if (panel) {
+    panel.classList.remove('open');
+    setTimeout(() => panel.remove(), 400);
+  }
+}
+
+// Scroll hint
+window.addEventListener('scroll', function onFirstScroll() {
+  document.getElementById('scroll-hint').classList.add('hidden');
+  window.removeEventListener('scroll', onFirstScroll);
+}, { once: true });
+
+// Chart registry
+const charts = {};
+// ── 1. KPI Card ─────────────────────────────────────────────────────
+charts['kpi-card'] = {
+  build() {
+    const data = [
+      {label:'Revenue',value:'$2.4M',numVal:2400000,delta:'+12.3%',pos:true,spark:[40,55,48,62,58,70,65,80,72,88]},
+      {label:'Orders',value:'18,429',numVal:18429,delta:'+8.1%',pos:true,spark:[100,120,115,140,138,150,145,160,155,170]},
+      {label:'Returns',value:'2.1%',numVal:2.1,delta:'-0.4%',pos:true,spark:[3.2,2.9,3.0,2.8,2.6,2.5,2.3,2.2,2.1,2.0]},
+      {label:'Avg Order',value:'$128',numVal:128,delta:'-2.7%',pos:false,spark:[140,138,135,132,130,129,128,127,126,128]},
+    ];
+    const el = document.getElementById('kpi-card');
+    const grid = document.createElement('div');
+    grid.className = 'kpi-grid';
+    data.forEach((d, idx) => {
+      const item = document.createElement('div');
+      item.className = 'kpi-item';
+      item.innerHTML = `
+        <div class="kpi-front">
+          <div class="kpi-value" style="color:${d.pos?'#7DD3FC':'#A78BFA'}">${d.value}</div>
+          <div class="kpi-label">${d.label}</div>
+          <div class="kpi-delta ${d.pos?'pos':'neg'}">${d.delta}</div>
+        </div>
+        <div class="kpi-back"><svg class="kpi-spark" data-idx="${idx}"></svg></div>`;
+      item.addEventListener('click', () => {
+        markInteracted('kpi-card');
+        item.classList.toggle('flipped');
+        if (item.classList.contains('flipped')) {
+          const svgEl = item.querySelector('.kpi-spark');
+          const sw = item.clientWidth - 24, sh = 50;
+          const spark = d3.select(svgEl).attr('viewBox', `0 0 ${sw} ${sh}`).attr('width', sw).attr('height', sh);
+          spark.selectAll('*').remove();
+          const xS = d3.scaleLinear().domain([0, d.spark.length-1]).range([4, sw-4]);
+          const yS = d3.scaleLinear().domain(d3.extent(d.spark)).range([sh-4, 4]);
+          const line = d3.line().x((v,i) => xS(i)).y(v => yS(v)).curve(d3.curveCatmullRom);
+          spark.append('path').datum(d.spark).attr('d', line).attr('fill','none').attr('stroke', d.pos?'#7DD3FC':'#A78BFA').attr('stroke-width',2);
+          spark.selectAll('circle').data(d.spark).join('circle').attr('cx',(v,i)=>xS(i)).attr('cy',v=>yS(v)).attr('r',2).attr('fill',d.pos?'#7DD3FC':'#A78BFA');
+          spark.append('text').attr('x',sw/2).attr('y',sh+2).attr('text-anchor','middle').attr('fill','#94a3b8').attr('font-size','8px').text(`${d.label} trend`);
+        }
+      });
+      grid.appendChild(item);
+    });
+    el.appendChild(grid);
+  },
+  animate() {
+    document.querySelectorAll('#kpi-card .kpi-item').forEach((item, i) => {
+      setTimeout(() => item.classList.add('show'), i * 120);
+    });
+  }
+};
+
+// ── 2. Radial Gauge ─────────────────────────────────────────────────
+charts['radial-gauge'] = {
+  build() {
+    const metrics = [{label:'Efficiency',value:0.73,color:color(1)},{label:'Quality',value:0.88,color:color(3)},{label:'Safety',value:0.95,color:color(4)}];
+    this._metricIdx = 0;
+    this._metrics = metrics;
+    const el = document.querySelector('#radial-gauge');
+    const w = el.clientWidth, h = el.clientHeight;
+    const svg = d3.select('#radial-gauge').append('svg').attr('viewBox',`0 0 ${w} ${h}`);
+    const cx = w/2, cy = h/2+10, r = Math.min(cx,cy)-20;
+
+    const arc = d3.arc().innerRadius(r-18).outerRadius(r).startAngle(-Math.PI*0.75);
+    svg.append('path').attr('d',arc({endAngle:Math.PI*0.75}))
+      .attr('transform',`translate(${cx},${cy})`).attr('fill','rgba(255,255,255,0.06)');
+
+    const valueArc = svg.append('path')
+      .attr('transform',`translate(${cx},${cy})`).attr('fill',metrics[0].color)
+      .attr('d', arc({endAngle: -Math.PI*0.75}));
+
+    const valueText = svg.append('text').attr('x',cx).attr('y',cy-8)
+      .attr('text-anchor','middle').attr('fill','#f1f5f9')
+      .attr('font-size','32px').attr('font-weight','700').text('0%');
+    const labelText = svg.append('text').attr('x',cx).attr('y',cy+16)
+      .attr('text-anchor','middle').attr('fill','#94a3b8')
+      .attr('font-size','12px').text(metrics[0].label).attr('opacity',0);
+    svg.append('text').attr('x',cx-r+10).attr('y',cy+30).attr('fill','#64748b').attr('font-size','10px').text('0');
+    svg.append('text').attr('x',cx+r-16).attr('y',cy+30).attr('fill','#64748b').attr('font-size','10px').text('100');
+
+    svg.append('rect').attr('x',0).attr('y',0).attr('width',w).attr('height',h).attr('fill','transparent').attr('cursor','pointer')
+      .on('click', () => {
+        markInteracted('radial-gauge');
+        this._metricIdx = (this._metricIdx + 1) % metrics.length;
+        const m = metrics[this._metricIdx];
+        const startAngle = -Math.PI*0.75;
+        valueArc.transition().duration(700).ease(d3.easeCubicOut)
+          .attr('fill', m.color)
+          .attrTween('d', function() {
+            const current = d3.select(this).attr('d');
+            const interp = d3.interpolate(startAngle, startAngle + m.value*Math.PI*1.5);
+            return t => arc({endAngle: interp(t)});
+          });
+        const currentVal = parseInt(valueText.text());
+        valueText.transition().duration(700).ease(d3.easeCubicOut)
+          .tween('text', () => {
+            const interp = d3.interpolate(currentVal, Math.round(m.value*100));
+            return t => valueText.text(Math.round(interp(t)) + '%');
+          });
+        labelText.text(m.label);
+      });
+
+    this._arc = arc; this._valueArc = valueArc; this._valueText = valueText;
+    this._targetVal = metrics[0].value; this._svg = svg; this._labelText = labelText;
+  },
+  animate() {
+    const {_arc, _valueArc, _valueText, _targetVal, _svg, _labelText} = this;
+    const startAngle = -Math.PI*0.75;
+    _valueArc.transition().duration(DUR*1.4).ease(d3.easeCubicOut)
+      .attrTween('d', () => {
+        const interp = d3.interpolate(startAngle, startAngle + _targetVal*Math.PI*1.5);
+        return t => _arc({endAngle: interp(t)});
+      });
+    _valueText.transition().duration(DUR*1.4).ease(d3.easeCubicOut)
+      .tween('text', () => {
+        const interp = d3.interpolate(0, _targetVal*100);
+        return t => _valueText.text(Math.round(interp(t)) + '%');
+      });
+    _labelText.transition().delay(400).duration(500).attr('opacity',1);
+  }
+};
+
+// ── 3. Bar Chart ────────────────────────────────────────────────────
+charts['bar-chart'] = {
+  build() {
+    const data = [{l:'Line A',v:42},{l:'Line B',v:67},{l:'Line C',v:55},{l:'Line D',v:89},{l:'Line E',v:78},{l:'Line F',v:34},{l:'Line G',v:51}];
+    const subData = {
+      'Line A':{'Shift 1':18,'Shift 2':14,'Shift 3':10}, 'Line B':{'Shift 1':22,'Shift 2':28,'Shift 3':17},
+      'Line C':{'Shift 1':20,'Shift 2':20,'Shift 3':15}, 'Line D':{'Shift 1':32,'Shift 2':35,'Shift 3':22},
+      'Line E':{'Shift 1':28,'Shift 2':30,'Shift 3':20}, 'Line F':{'Shift 1':10,'Shift 2':14,'Shift 3':10},
+      'Line G':{'Shift 1':15,'Shift 2':20,'Shift 3':16}
+    };
+    const mg = {top:24,right:16,bottom:36,left:55};
+    const {g,iw,ih,svg} = svgIn('#bar-chart', mg);
+    const x = d3.scaleBand().domain(data.map(d=>d.l)).range([0,iw]).padding(0.3);
+    const y = d3.scaleLinear().domain([0,100]).range([ih,0]);
+    this._drillState = null;
+    const resetBar = () => { this._drillState=null; g.selectAll('.sub-bar,.sub-label,.breadcrumb-text').remove(); this._bars.transition().duration(400).ease(d3.easeCubicOut).attr('opacity',0.85).attr('x',dd=>x(dd.l)).attr('width',x.bandwidth()); clearDrillState('bar-chart'); };
+    addResetBtn(document.querySelector('[data-chart="bar-chart"]'), resetBar);
+
+    this._bars = g.selectAll('.main-bar').data(data).join('rect').attr('class','main-bar')
+      .attr('x',d=>x(d.l)).attr('y',ih).attr('width',x.bandwidth()).attr('height',0)
+      .attr('rx',4).attr('fill',(d,i)=>color(i)).attr('opacity',0.85).attr('cursor','pointer')
+      .on('mouseover',function(ev,d){d3.select(this).attr('opacity',1);showTip(ev,`${d.l}: <b>${d.v}</b>`)})
+      .on('mouseout',function(){d3.select(this).attr('opacity',0.85);hideTip()})
+      .on('click', (ev, d) => {
+        ev.stopPropagation();
+        if (this._drillState === d.l) { resetBar(); return; }
+        markDrillState('bar-chart');
+        this._drillState = d.l;
+        g.selectAll('.sub-bar,.sub-label,.breadcrumb-text').remove();
+        this._bars.transition().duration(300).attr('opacity', dd => dd.l===d.l ? 0 : 0.15);
+        const sub = subData[d.l]; const keys = Object.keys(sub);
+        const subX = d3.scaleBand().domain(keys).range([x(d.l), x(d.l)+x.bandwidth()]).padding(0.1);
+        const subColors = [color(1), color(3), color(6)];
+        keys.forEach((k, ki) => {
+          g.append('rect').attr('class','sub-bar').attr('x', subX(k)).attr('y', ih).attr('width', subX.bandwidth()).attr('height', 0)
+            .attr('rx', 2).attr('fill', subColors[ki]).attr('opacity', 0.9)
+            .transition().duration(500).ease(d3.easeBackOut).delay(ki * 80)
+            .attr('y', y(sub[k])).attr('height', ih - y(sub[k]));
+          g.append('text').attr('class','sub-label').attr('x', subX(k) + subX.bandwidth()/2).attr('y', y(sub[k]) - 4)
+            .attr('text-anchor','middle').attr('fill','#cbd5e1').attr('font-size','8px').text(sub[k]).attr('opacity',0)
+            .transition().delay(ki*80+300).duration(200).attr('opacity',1);
+        });
+        g.append('text').attr('class','breadcrumb-text').attr('x',0).attr('y',-6).attr('fill','#7DD3FC').attr('font-size','10px').text(`Bar Chart > ${d.l}`);
+      });
+    svg.on('click', () => { if (this._drillState) resetBar(); });
+    this._y = y; this._ih = ih;
+    axisStyle(g.append('g').attr('transform',`translate(0,${ih})`).call(d3.axisBottom(x).tickSize(0)));
+    axisStyle(g.append('g').call(d3.axisLeft(y).ticks(5).tickSize(-iw)).selectAll('.domain').remove());
+    g.append('text').attr('transform','rotate(-90)').attr('x',-ih/2).attr('y',-mg.left+14).attr('text-anchor','middle').attr('fill','#64748b').attr('font-size','10px').text('Units Produced');
+    g.append('text').attr('x',iw/2).attr('y',ih+mg.bottom-4).attr('text-anchor','middle').attr('fill','#64748b').attr('font-size','10px').text('Production Line');
+  },
+  animate() {
+    this._bars.transition().duration(DUR).ease(d3.easeCubicOut).delay((d,i) => i * 80)
+      .attr('y', d => this._y(d.v)).attr('height', d => this._ih - this._y(d.v));
+  }
+};
+
+// ── 4. Animated Donut ───────────────────────────────────────────────
+charts['donut-chart'] = {
+  build() {
+    const data = [{l:'Assembly',v:35},{l:'Welding',v:25},{l:'Paint',v:20},{l:'Electrical',v:15},{l:'Other',v:5}];
+    const el = document.querySelector('#donut-chart');
+    const w = el.clientWidth, h = el.clientHeight;
+    const svg = d3.select('#donut-chart').append('svg').attr('viewBox',`0 0 ${w} ${h}`);
+    const cx = w/2, cy = h/2, r = Math.min(cx,cy)-12;
+    const pie = d3.pie().value(d=>d.v).sort(null).padAngle(0.02);
+    const arcGen = d3.arc().innerRadius(r*0.55).outerRadius(r);
+    const pieData = pie(data);
+    this._explodedIdx = -1;
+    const resetDonut = () => { this._explodedIdx=-1; this._paths.transition().duration(400).ease(d3.easeCubicOut).attr('transform','translate(0,0)'); this._centerVal.text('100'); this._centerLabel.text('Defects by Type'); clearDrillState('donut-chart'); };
+    addResetBtn(document.querySelector('[data-chart="donut-chart"]'), resetDonut);
+
+    const gDonut = svg.append('g').attr('transform',`translate(${cx},${cy})`);
+    this._paths = gDonut.selectAll('path').data(pieData).join('path')
+      .attr('d', d => { const a = {...d, endAngle: d.startAngle}; return arcGen(a); })
+      .attr('fill',(d,i)=>color(i)).attr('stroke','rgba(0,0,0,0.2)').attr('stroke-width',1).attr('cursor','pointer')
+      .on('mouseover',function(ev,d){showTip(ev,`${d.data.l}: <b>${d.data.v}%</b>`)})
+      .on('mouseout',function(){hideTip()})
+      .on('click', (ev, d) => {
+        const idx = pieData.indexOf(d);
+        if (this._explodedIdx === idx) { resetDonut(); } else {
+          markDrillState('donut-chart'); this._explodedIdx = idx;
+          this._paths.each(function(dd, ii) {
+            const midAngle = (dd.startAngle + dd.endAngle) / 2;
+            const offset = ii === idx ? 15 : 0;
+            d3.select(this).transition().duration(400).ease(d3.easeBackOut).attr('transform', `translate(${Math.sin(midAngle)*offset},${-Math.cos(midAngle)*offset})`);
+          });
+          this._centerVal.text(d.data.v + '%'); this._centerLabel.text(d.data.l);
+        }
+      });
+    this._arcGen = arcGen;
+    this._centerVal = svg.append('text').attr('x',cx).attr('y',cy-4).attr('text-anchor','middle').attr('fill','#f1f5f9').attr('font-size','24px').attr('font-weight','700').text('0').attr('opacity',0);
+    this._centerLabel = svg.append('text').attr('x',cx).attr('y',cy+14).attr('text-anchor','middle').attr('fill','#94a3b8').attr('font-size','11px').text('Defects by Type').attr('opacity',0).attr('class','donut-label');
+    this._svg = svg;
+  },
+  animate() {
+    const arcGen = this._arcGen;
+    this._paths.transition().duration(DUR*1.2).ease(d3.easeCubicOut).delay((d,i) => i * 100)
+      .attrTween('d', function(d) { const interp = d3.interpolate(d.startAngle, d.endAngle); return t => arcGen({...d, endAngle: interp(t)}); });
+    this._centerVal.transition().delay(300).duration(DUR).attr('opacity',1)
+      .tween('text', () => { const interp = d3.interpolate(0, 100); return t => this._centerVal.text(Math.round(interp(t))); });
+    this._svg.selectAll('.donut-label').transition().delay(500).duration(400).attr('opacity',1);
+  }
+};
+
+// ── 5. Polar Chart ──────────────────────────────────────────────────
+charts['polar-chart'] = {
+  build() {
+    const data = [{l:'Austin',v:80},{l:'Detroit',v:65},{l:'Munich',v:90},{l:'Shanghai',v:45},{l:'Pune',v:70},{l:'S\u00e3o Paulo',v:55}];
+    const el = document.querySelector('#polar-chart');
+    const w = el.clientWidth, h = el.clientHeight;
+    const svg = d3.select('#polar-chart').append('svg').attr('viewBox',`0 0 ${w} ${h}`);
+    const cx = w/2, cy = h/2, maxR = Math.min(cx,cy)-16;
+    const g = svg.append('g').attr('transform',`translate(${cx},${cy})`);
+    const angleStep = (Math.PI*2)/data.length;
+    this._selectedIdx = -1;
+    const resetPolar = () => { this._selectedIdx=-1; this._paths.transition().duration(300).attr('opacity',0.7); g.selectAll('.polar-annotation').remove(); clearDrillState('polar-chart'); };
+    addResetBtn(document.querySelector('[data-chart="polar-chart"]'), resetPolar);
+
+    [0.25,0.5,0.75,1].forEach(f => { g.append('circle').attr('r',maxR*f).attr('fill','none').attr('stroke','rgba(255,255,255,0.06)'); });
+
+    this._paths = g.selectAll('.polar-seg').data(data).join('path').attr('class','polar-seg')
+      .attr('d',(d,i) => d3.arc().innerRadius(0).startAngle(i*angleStep-Math.PI/2).endAngle(i*angleStep+angleStep-Math.PI/2).outerRadius(0)())
+      .attr('fill',(d,i)=>color(i)).attr('opacity',0.7).attr('stroke','rgba(0,0,0,0.15)').attr('cursor','pointer')
+      .on('click', (ev, d) => {
+        const idx = data.indexOf(d);
+        if (this._selectedIdx === idx) { resetPolar(); } else {
+          markDrillState('polar-chart'); this._selectedIdx = idx;
+          this._paths.transition().duration(300).attr('opacity', (dd, ii) => ii === idx ? 1 : 0.2);
+          g.selectAll('.polar-annotation').remove();
+          const midAngle = idx*angleStep + angleStep/2 - Math.PI/2;
+          const annoR = maxR*(d.v/100) + 14;
+          g.append('text').attr('class','polar-annotation').attr('x', Math.cos(midAngle)*annoR).attr('y', Math.sin(midAngle)*annoR)
+            .attr('text-anchor','middle').attr('dominant-baseline','middle').attr('fill','#f1f5f9').attr('font-size','13px').attr('font-weight','700')
+            .text(d.v).attr('opacity',0).transition().duration(300).attr('opacity',1);
+        }
+      });
+    this._data = data; this._maxR = maxR; this._angleStep = angleStep;
+    data.forEach((d,i) => {
+      const angle = i*angleStep - Math.PI/2 + angleStep/2;
+      g.append('text').attr('x',Math.cos(angle)*(maxR+12)).attr('y',Math.sin(angle)*(maxR+12)).attr('text-anchor','middle')
+        .attr('dominant-baseline','middle').attr('fill','#94a3b8').attr('font-size','10px').text(d.l).attr('opacity',0).attr('class','polar-lbl');
+    });
+    this._g = g;
+  },
+  animate() {
+    const {_data, _maxR, _angleStep} = this;
+    this._paths.transition().duration(DUR).ease(d3.easeCubicOut).delay((d,i) => i * 80)
+      .attrTween('d', (d,i) => { const interp = d3.interpolate(0, _maxR*(d.v/100)); return t => d3.arc().innerRadius(0).startAngle(i*_angleStep-Math.PI/2).endAngle(i*_angleStep+_angleStep-Math.PI/2).outerRadius(interp(t))(); });
+    this._g.selectAll('.polar-lbl').transition().delay(600).duration(400).attr('opacity',1);
+  }
+};
+
+// ── 6. Ring Stack ───────────────────────────────────────────────────
+charts['ring-stack'] = {
+  build() {
+    const data = [{l:'Availability',v:0.82},{l:'Performance',v:0.65},{l:'Quality',v:0.91},{l:'Uptime',v:0.74}];
+    const el = document.querySelector('#ring-stack');
+    const w = el.clientWidth, h = el.clientHeight;
+    const svg = d3.select('#ring-stack').append('svg').attr('viewBox',`0 0 ${w} ${h}`);
+    const cx = w/2, cy = h/2, maxR = Math.min(cx,cy)-16;
+    const g = svg.append('g').attr('transform',`translate(${cx},${cy})`);
+    const ringW = 14, gap = 6;
+    this._expandedIdx = -1; this._valuePaths = []; this._arcs = []; this._bgPaths = []; this._ringData = data;
+    const resetRing = () => {
+      this._expandedIdx=-1;
+      this._valuePaths.forEach((vpp,ii) => { const rr=maxR-ii*(ringW+gap); const na=d3.arc().innerRadius(rr-ringW).outerRadius(rr).startAngle(0); this._arcs[ii]=na; vpp.transition().duration(400).ease(d3.easeCubicOut).attr('opacity',0.85).attrTween('d',()=>{const ip=d3.interpolate(0,data[ii].v*Math.PI*2);return t=>na({endAngle:ip(t)});}); });
+      g.selectAll('.ring-label-expanded').remove(); clearDrillState('ring-stack');
+    };
+    addResetBtn(document.querySelector('[data-chart="ring-stack"]'), resetRing);
+
+    data.forEach((d,i) => {
+      const r = maxR - i*(ringW+gap);
+      const arc = d3.arc().innerRadius(r-ringW).outerRadius(r).startAngle(0);
+      g.append('path').attr('d',arc({endAngle:Math.PI*2})).attr('fill','rgba(255,255,255,0.06)');
+      const vp = g.append('path').attr('d',arc({endAngle:0})).attr('fill',color(i)).attr('opacity',0.85).attr('cursor','pointer');
+      this._valuePaths.push(vp); this._arcs.push(arc); this._bgPaths.push(null);
+      g.append('text').attr('x',0).attr('y',-r+ringW/2+3).attr('text-anchor','middle').attr('fill','#cbd5e1').attr('font-size','8px').text(`${Math.round(d.v*100)}%`).attr('opacity',0).attr('class','ring-pct');
+      vp.on('click', () => {
+        if (this._expandedIdx === i) { resetRing(); } else {
+          markDrillState('ring-stack'); this._expandedIdx = i; g.selectAll('.ring-label-expanded').remove();
+          this._valuePaths.forEach((vpp,ii) => { const expanded=ii===i; const rr=maxR-ii*(ringW+gap); const outerR=expanded?rr+ringW*0.4:rr; const na=d3.arc().innerRadius(rr-ringW).outerRadius(outerR).startAngle(0); this._arcs[ii]=na;
+            vpp.transition().duration(400).ease(d3.easeBackOut).attr('opacity',expanded?1:0.25).attrTween('d',()=>{const ip=d3.interpolate(0,data[ii].v*Math.PI*2);return t=>na({endAngle:ip(t)});}); });
+          g.append('text').attr('class','ring-label-expanded').attr('x',0).attr('y',6).attr('text-anchor','middle').attr('fill','#f1f5f9').attr('font-size','14px').attr('font-weight','700')
+            .text(`${d.l}: ${Math.round(d.v*100)}%`).attr('opacity',0).transition().duration(300).attr('opacity',1);
+        }
+      });
+    });
+    this._centerVal = g.append('text').attr('y',-4).attr('text-anchor','middle').attr('fill','#f1f5f9').attr('font-size','16px').attr('font-weight','700').text('0%');
+    g.append('text').attr('y',12).attr('text-anchor','middle').attr('fill','#94a3b8').attr('font-size','9px').text('Average');
+    this._data = data; this._g = g;
+  },
+  animate() {
+    this._data.forEach((d,i) => { const arc=this._arcs[i]; this._valuePaths[i].transition().duration(DUR*1.2).ease(d3.easeCubicOut).delay(i*120).attrTween('d',()=>{const ip=d3.interpolate(0,d.v*Math.PI*2);return t=>arc({endAngle:ip(t)});}); });
+    this._centerVal.transition().duration(DUR*1.2).ease(d3.easeCubicOut).tween('text',()=>{const ip=d3.interpolate(0,78);return t=>this._centerVal.text(Math.round(ip(t))+'%');});
+    this._g.selectAll('.ring-pct').transition().delay(800).duration(400).attr('opacity',1);
+  }
+};
+
+// ── 7. Gauge Cluster ────────────────────────────────────────────────
+charts['gauge-cluster'] = {
+  build() {
+    const data = [{l:'CPU',v:0.72},{l:'Memory',v:0.58},{l:'Disk',v:0.89},{l:'Network',v:0.34}];
+    const el = document.querySelector('#gauge-cluster');
+    const w = el.clientWidth, h = el.clientHeight;
+    const svg = d3.select('#gauge-cluster').append('svg').attr('viewBox',`0 0 ${w} ${h}`);
+    const cols = 2, rows = 2, cw = w/cols, ch = h/rows;
+    this._expandedIdx = -1; this._arcPaths = []; this._arcGens = []; this._texts = []; this._groups = [];
+    const resetGauge = () => { this._expandedIdx=-1; this._groups.forEach(gg=>{gg.g.transition().duration(500).ease(d3.easeCubicOut).attr('transform',`translate(${gg.gcx},${gg.gcy}) scale(1)`).attr('opacity',1);gg.g.selectAll('.tick-mark').remove();}); clearDrillState('gauge-cluster'); };
+    addResetBtn(document.querySelector('[data-chart="gauge-cluster"]'), resetGauge);
+
+    data.forEach((d,i) => {
+      const col = i%cols, row = Math.floor(i/cols);
+      const gcx = col*cw+cw/2, gcy = row*ch+ch/2+8, r = Math.min(cw,ch)/2-20;
+      const g = svg.append('g').attr('transform',`translate(${gcx},${gcy})`).attr('cursor','pointer');
+      const arc = d3.arc().innerRadius(r-10).outerRadius(r).startAngle(-Math.PI*0.75);
+      g.append('path').attr('d',arc({endAngle:Math.PI*0.75})).attr('fill','rgba(255,255,255,0.06)');
+      const vp = g.append('path').attr('d',arc({endAngle:-Math.PI*0.75})).attr('fill',color(i));
+      const txt = g.append('text').attr('y',-2).attr('text-anchor','middle').attr('fill','#f1f5f9').attr('font-size','16px').attr('font-weight','700').text('0%');
+      g.append('text').attr('y',14).attr('text-anchor','middle').attr('fill','#94a3b8').attr('font-size','9px').text(d.l);
+      this._arcPaths.push(vp); this._arcGens.push(arc); this._texts.push(txt); this._groups.push({g, gcx, gcy, r, col, row});
+      g.on('click', () => {
+        if (this._expandedIdx === i) { resetGauge(); } else {
+          markDrillState('gauge-cluster'); this._expandedIdx = i;
+          this._groups.forEach((gg,ii) => { if(ii===i){gg.g.transition().duration(500).ease(d3.easeBackOut).attr('transform',`translate(${w/2},${h/2}) scale(1.8)`).attr('opacity',1);}else{gg.g.transition().duration(400).attr('opacity',0.1);} });
+          for (let t=0;t<=10;t++){const angle=-Math.PI*0.75+(t/10)*Math.PI*1.5; g.append('line').attr('class','tick-mark').attr('x1',Math.cos(angle-Math.PI/2)*(r+2)).attr('y1',Math.sin(angle-Math.PI/2)*(r+2)).attr('x2',Math.cos(angle-Math.PI/2)*(r+6)).attr('y2',Math.sin(angle-Math.PI/2)*(r+6)).attr('stroke','rgba(255,255,255,0.3)').attr('stroke-width',1);}
+        }
+      });
+    });
+    this._data = data; this._w = w; this._h = h;
+  },
+  animate() {
+    this._data.forEach((d,i) => {
+      const arc=this._arcGens[i]; const startA=-Math.PI*0.75;
+      this._arcPaths[i].transition().duration(DUR*1.2).ease(d3.easeCubicOut).delay(i*150).attrTween('d',()=>{const ip=d3.interpolate(startA,startA+d.v*Math.PI*1.5);return t=>arc({endAngle:ip(t)});});
+      this._texts[i].transition().duration(DUR*1.2).ease(d3.easeCubicOut).delay(i*150).tween('text',function(){const ip=d3.interpolate(0,Math.round(d.v*100));return t=>d3.select(this).text(Math.round(ip(t))+'%');});
+    });
+  }
+};
+
+// ── 8. Progress Bar Stack ───────────────────────────────────────────
+charts['progress-bar'] = {
+  build() {
+    const data = [{l:'Documentation',v:100},{l:'Floor Inspection',v:85},{l:'Lab Testing',v:62},{l:'Corrective Action',v:30},{l:'Sign-Off',v:10}];
+    const subTasks = {
+      'Documentation': [{l:'SOPs',v:100},{l:'Records',v:100},{l:'Certificates',v:100}],
+      'Floor Inspection': [{l:'Safety Check',v:100},{l:'Equipment Audit',v:80},{l:'Line Review',v:60}],
+      'Lab Testing': [{l:'Material Test',v:75},{l:'Stress Test',v:60},{l:'Chemical',v:50}],
+      'Corrective Action': [{l:'Root Cause',v:45},{l:'Containment',v:25},{l:'Verification',v:10}],
+      'Sign-Off': [{l:'QA Manager',v:20},{l:'Plant Dir.',v:5},{l:'Registrar',v:0}]
+    };
+    const {g,iw,ih} = svgIn('#progress-bar',{top:12,right:60,bottom:12,left:110});
+    const y = d3.scaleBand().domain(data.map(d=>d.l)).range([0,ih]).padding(0.35);
+    const x = d3.scaleLinear().domain([0,100]).range([0,iw]);
+    this._valueBars = []; this._valueTexts = [];
+    const resetProgress = () => { closeDrillPanel(document.getElementById('progress-bar')); clearDrillState('progress-bar'); };
+    addResetBtn(document.querySelector('[data-chart="progress-bar"]'), resetProgress);
+
+    data.forEach((d,i) => {
+      g.append('rect').attr('x',0).attr('y',y(d.l)).attr('width',iw).attr('height',y.bandwidth()).attr('rx',y.bandwidth()/2).attr('fill','rgba(255,255,255,0.06)');
+      const bar = g.append('rect').attr('x',0).attr('y',y(d.l)).attr('width',0).attr('height',y.bandwidth()).attr('rx',y.bandwidth()/2).attr('fill',color(i)).attr('opacity',0.8).attr('cursor','pointer');
+      g.append('text').attr('x',-8).attr('y',y(d.l)+y.bandwidth()/2).attr('text-anchor','end').attr('dominant-baseline','middle').attr('fill','#94a3b8').attr('font-size','10px').text(d.l);
+      const txt = g.append('text').attr('x',8).attr('y',y(d.l)+y.bandwidth()/2).attr('dominant-baseline','middle').attr('fill','#cbd5e1').attr('font-size','10px').attr('font-weight','600').text('0%').attr('opacity',0);
+      this._valueBars.push(bar); this._valueTexts.push(txt);
+      bar.on('click', (ev) => {
+        markDrillState('progress-bar'); ev.stopPropagation();
+        const subs = subTasks[d.l];
+        let rows = subs.map(s => `<tr><td>${s.l}</td><td>${s.v}%</td><td><div class="drill-sub-bar-track"><div class="drill-sub-bar" style="width:0%;background:${color(i)}"></div></div></td></tr>`).join('');
+        const panel = makeDrillPanel(document.getElementById('progress-bar'), `<span>Progress</span> > ${d.l}`, `<table class="drill-table"><tr><th>Sub-task</th><th>%</th><th>Progress</th></tr>${rows}</table>`);
+        setTimeout(() => { panel.querySelectorAll('.drill-sub-bar').forEach((b, bi) => { b.style.width = subs[bi].v + '%'; }); }, 100);
+      });
+    });
+    this._data = data; this._x = x;
+  },
+  animate() {
+    this._data.forEach((d,i) => {
+      this._valueBars[i].transition().duration(DUR).ease(d3.easeCubicOut).delay(i*100).attr('width', this._x(d.v));
+      this._valueTexts[i].transition().duration(DUR).ease(d3.easeCubicOut).delay(i*100).attr('x', this._x(d.v)+8).attr('opacity',1)
+        .tween('text', function(){const ip=d3.interpolate(0,d.v);return t=>d3.select(this).text(Math.round(ip(t))+'%');});
+    });
+  }
+};
+
+// ── 9. Bullet Chart ─────────────────────────────────────────────────
+charts['bullet-chart'] = {
+  build() {
+    const data = [{l:'Yield Rate',actual:270,target:250,ranges:[200,250,300]},{l:'Cycle Time',actual:22,target:25,ranges:[15,25,30]},{l:'Customer Score',actual:4.2,target:4.5,ranges:[3,4,5]},{l:'Fill Rate',actual:1800,target:2000,ranges:[1500,2000,2500]}];
+    const {g,iw,ih} = svgIn('#bullet-chart',{top:12,right:16,bottom:12,left:100});
+    const y = d3.scaleBand().domain(data.map(d=>d.l)).range([0,ih]).padding(0.3);
+    const bh = y.bandwidth();
+    this._actualBars = [];
+    const resetBullet = () => { closeDrillPanel(document.getElementById('bullet-chart')); clearDrillState('bullet-chart'); };
+    addResetBtn(document.querySelector('[data-chart="bullet-chart"]'), resetBullet);
+
+    data.forEach((d,i) => {
+      const x = d3.scaleLinear().domain([0,d.ranges[2]]).range([0,iw]);
+      const shades = ['rgba(255,255,255,0.03)','rgba(255,255,255,0.06)','rgba(255,255,255,0.1)'];
+      d.ranges.forEach((r,ri) => { g.append('rect').attr('x',0).attr('y',y(d.l)).attr('width',x(r)).attr('height',bh).attr('fill',shades[ri]); });
+      const bar = g.append('rect').attr('x',0).attr('y',y(d.l)+bh*0.25).attr('width',0).attr('height',bh*0.5).attr('fill',color(i)).attr('rx',3).attr('opacity',0.85).attr('cursor','pointer');
+      this._actualBars.push({bar, targetW: x(d.actual)});
+      g.append('line').attr('x1',x(d.target)).attr('x2',x(d.target)).attr('y1',y(d.l)+4).attr('y2',y(d.l)+bh-4).attr('stroke','#f1f5f9').attr('stroke-width',2).attr('opacity',0);
+      g.append('text').attr('x',-8).attr('y',y(d.l)+bh/2).attr('text-anchor','end').attr('dominant-baseline','middle').attr('fill','#94a3b8').attr('font-size','10px').text(d.l);
+      bar.on('click', (ev) => {
+        markDrillState('bullet-chart'); ev.stopPropagation();
+        const pct = ((d.actual/d.target)*100).toFixed(1);
+        makeDrillPanel(document.getElementById('bullet-chart'), `<span>Bullet</span> > ${d.l}`,
+          `<table class="drill-table"><tr><th>Metric</th><th>Value</th></tr><tr><td>Actual</td><td style="color:#7DD3FC;font-weight:600">${d.actual}</td></tr><tr><td>Target</td><td>${d.target}</td></tr><tr><td>Achievement</td><td>${pct}%</td></tr></table>`);
+      });
+    });
+    this._g = g;
+  },
+  animate() {
+    this._actualBars.forEach((item,i) => { item.bar.transition().duration(DUR).ease(d3.easeCubicOut).delay(i*120).attr('width', item.targetW); });
+    this._g.selectAll('line').transition().delay(DUR*0.7).duration(400).attr('opacity',1);
+  }
+};
+
+// ── 10. Funnel Chart ────────────────────────────────────────────────
+charts['funnel-chart'] = {
+  build() {
+    const data = [{l:'Raw Material',v:1000},{l:'Machining',v:720},{l:'Assembly',v:450},{l:'QC Check',v:280},{l:'Shipped',v:150}];
+    const subData = {
+      'Raw Material': [{l:'Steel',v:400},{l:'Aluminum',v:350},{l:'Copper',v:250}],
+      'Machining': [{l:'CNC',v:280},{l:'Lathe',v:240},{l:'Grinding',v:200}],
+      'Assembly': [{l:'Spot Weld',v:200},{l:'Riveting',v:150},{l:'Adhesive',v:100}],
+      'QC Check': [{l:'Visual',v:130},{l:'Dimensional',v:90},{l:'Functional',v:60}],
+      'Shipped': [{l:'Domestic',v:70},{l:'Export',v:50},{l:'Express',v:30}]
+    };
+    const {g,iw,ih} = svgIn('#funnel-chart',{top:12,right:16,bottom:12,left:16});
+    const maxV = data[0].v; const stepH = ih / data.length; const cx = iw / 2;
+    this._funnelParts = [];
+    const resetFunnel = () => { closeDrillPanel(document.getElementById('funnel-chart')); clearDrillState('funnel-chart'); };
+    addResetBtn(document.querySelector('[data-chart="funnel-chart"]'), resetFunnel);
+
+    data.forEach((d,i) => {
+      const w1 = i === 0 ? iw : iw * (data[i-1].v / maxV) * 0.85;
+      const w2 = iw * (d.v / maxV) * 0.85;
+      const y1 = i * stepH, y2 = (i+1) * stepH;
+      const pathStr = `M${cx-w1/2},${y1} L${cx+w1/2},${y1} L${cx+w2/2},${y2} L${cx-w2/2},${y2} Z`;
+      const p = g.append('path').attr('d',pathStr).attr('fill',color(i)).attr('opacity',0).attr('stroke','rgba(0,0,0,0.15)').attr('cursor','pointer');
+      const t = g.append('text').attr('x',cx).attr('y',y1+stepH/2).attr('text-anchor','middle').attr('dominant-baseline','middle')
+        .attr('fill','#f1f5f9').attr('font-size','11px').attr('font-weight','600').text(`${d.l} (${d.v})`).attr('opacity',0).attr('pointer-events','none');
+      this._funnelParts.push({path:p, text:t});
+      p.on('click', (ev) => {
+        markDrillState('funnel-chart'); ev.stopPropagation();
+        const subs = subData[d.l]; const maxSub = Math.max(...subs.map(s=>s.v));
+        let rows = subs.map(s => `<tr><td>${s.l}</td><td>${s.v}</td><td><div class="drill-sub-bar-track"><div class="drill-sub-bar" style="width:0%;background:${color(i)}"></div></div></td></tr>`).join('');
+        const panel = makeDrillPanel(document.getElementById('funnel-chart'), `<span>Funnel</span> > ${d.l} (${d.v})`, `<table class="drill-table"><tr><th>Segment</th><th>Count</th><th>Distribution</th></tr>${rows}</table>`);
+        setTimeout(() => { panel.querySelectorAll('.drill-sub-bar').forEach((b, bi) => { b.style.width = ((subs[bi].v / maxSub) * 100) + '%'; }); }, 100);
+      });
+    });
+  },
+  animate() {
+    this._funnelParts.forEach((part,i) => { part.path.transition().duration(500).ease(d3.easeCubicOut).delay(i*120).attr('opacity',0.8); part.text.transition().duration(400).ease(d3.easeCubicOut).delay(i*120+200).attr('opacity',1); });
+  }
+};
+// ── 11. Waffle Chart ────────────────────────────────────────────────
+charts['waffle-chart'] = {
+  build() {
+    const value = 73;
+    const el = document.querySelector('#waffle-chart');
+    const w = el.clientWidth, h = el.clientHeight;
+    const svg = d3.select('#waffle-chart').append('svg').attr('viewBox',`0 0 ${w} ${h}`);
+    const grid = 10, pad = 3;
+    const cellW = (w - pad*(grid+1)) / grid;
+    const cellH = (h - 40 - pad*(grid+1)) / grid;
+    this._cells = [];
+    let count = 0;
+    for (let row = grid-1; row >= 0; row--) {
+      for (let col = 0; col < grid; col++) {
+        count++;
+        const isFilled = count <= value;
+        const cell = svg.append('rect').attr('x', pad + col*(cellW+pad)).attr('y', pad + row*(cellH+pad))
+          .attr('width', cellW).attr('height', cellH).attr('rx', 3)
+          .attr('fill', isFilled ? color(1) : 'rgba(255,255,255,0.06)').attr('opacity', 0);
+        this._cells.push({cell, isFilled, idx: count});
+      }
+    }
+    this._label = svg.append('text').attr('x',w/2).attr('y',h-8).attr('text-anchor','middle')
+      .attr('fill','#f1f5f9').attr('font-size','14px').attr('font-weight','600').text('ISO Compliance: 0%');
+    this._value = value; this._svg = svg;
+    svg.attr('cursor','pointer').on('click', () => {
+      markInteracted('waffle-chart');
+      this._cells.forEach(({cell}) => cell.attr('opacity',0));
+      this._label.text('ISO Compliance: 0%');
+      this._cells.forEach(({cell, isFilled, idx}) => {
+        cell.transition().duration(150).delay(idx * 8).attr('opacity', isFilled ? 0.85 : 1).attr('fill', isFilled ? color(1) : 'rgba(255,255,255,0.06)');
+        if (isFilled) { cell.transition().duration(150).delay(idx * 8).attr('opacity', 1).attr('fill', '#7DD3FC').transition().duration(200).attr('fill', color(1)).attr('opacity', 0.85); }
+      });
+      this._label.transition().duration(DUR*1.5).ease(d3.easeCubicOut).tween('text', () => { const ip=d3.interpolate(0,this._value); return t=>this._label.text('ISO Compliance: '+Math.round(ip(t))+'%'); });
+    });
+  },
+  animate() {
+    this._cells.forEach(({cell, isFilled, idx}) => { cell.transition().duration(200).delay(idx * 12).attr('opacity', isFilled ? 0.85 : 1); });
+    this._label.transition().duration(DUR*1.5).ease(d3.easeCubicOut).tween('text', () => { const ip=d3.interpolate(0,this._value); return t=>this._label.text('ISO Compliance: '+Math.round(ip(t))+'%'); });
+  }
+};
+
+// ── 12. Area Chart ──────────────────────────────────────────────────
+charts['area-chart'] = {
+  build() {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const d1 = [20,35,28,45,42,55,48,62,58,70,65,80];
+    const d2 = [10,18,22,30,25,38,35,42,40,50,48,58];
+    const seriesNames = ['Throughput','Capacity'];
+    const mg = {top:24,right:16,bottom:36,left:55};
+    const {g,iw,ih,svg} = svgIn('#area-chart', mg);
+    const x = d3.scalePoint().domain(months).range([0,iw]);
+    const y = d3.scaleLinear().domain([0,90]).range([ih,0]);
+    this._pinnedDots = []; this._lines = []; this._areas = [];
+    [d1,d2].forEach((vals,si) => {
+      const area = d3.area().x((d,i)=>x(months[i])).y0(ih).y1(d=>y(d)).curve(d3.curveCatmullRom);
+      const line = d3.line().x((d,i)=>x(months[i])).y(d=>y(d)).curve(d3.curveCatmullRom);
+      const gradId = `area-grad-${si}`;
+      const defs = g.append('defs');
+      const grad = defs.append('linearGradient').attr('id',gradId).attr('x1',0).attr('y1',0).attr('x2',0).attr('y2',1);
+      grad.append('stop').attr('offset','0%').attr('stop-color',color(si)).attr('stop-opacity',0.4);
+      grad.append('stop').attr('offset','100%').attr('stop-color',color(si)).attr('stop-opacity',0.02);
+      const clipId = `area-clip-${si}`;
+      const clip = defs.append('clipPath').attr('id', clipId);
+      const clipRect = clip.append('rect').attr('x',0).attr('y',0).attr('width',0).attr('height',ih+10);
+      g.append('path').datum(vals).attr('d',area).attr('fill',`url(#${gradId})`).attr('clip-path',`url(#${clipId})`);
+      g.append('path').datum(vals).attr('d',line).attr('fill','none').attr('stroke',color(si)).attr('stroke-width',2).attr('clip-path',`url(#${clipId})`);
+      this._areas.push({clipRect, targetW: iw});
+    });
+    const crosshair = g.append('line').attr('x1',0).attr('x2',0).attr('y1',0).attr('y2',ih).attr('stroke','rgba(125,211,252,0.3)').attr('stroke-width',1).attr('stroke-dasharray','4,3').attr('opacity',0).attr('pointer-events','none');
+    const overlay = g.append('rect').attr('width',iw).attr('height',ih).attr('fill','transparent').attr('cursor','crosshair');
+    overlay.on('mousemove', (ev) => { const [mx]=d3.pointer(ev); crosshair.attr('x1',mx).attr('x2',mx).attr('opacity',1); })
+      .on('mouseleave', () => { crosshair.attr('opacity',0); })
+      .on('click', (ev) => {
+        markInteracted('area-chart');
+        if (this._pinnedDots.length >= 3) return;
+        const [mx]=d3.pointer(ev); let nearestIdx=0, nearestDist=Infinity;
+        months.forEach((m,i) => { const dist=Math.abs(x(m)-mx); if(dist<nearestDist){nearestDist=dist;nearestIdx=i;} });
+        const px=x(months[nearestIdx]), py1=y(d1[nearestIdx]), py2=y(d2[nearestIdx]);
+        const dotG = g.append('g').attr('class','pinned-dot');
+        dotG.append('circle').attr('cx',px).attr('cy',py1).attr('r',5).attr('fill',color(0)).attr('stroke','#fff').attr('stroke-width',1.5);
+        dotG.append('circle').attr('cx',px).attr('cy',py2).attr('r',5).attr('fill',color(1)).attr('stroke','#fff').attr('stroke-width',1.5);
+        dotG.append('rect').attr('x',px-40).attr('y',Math.min(py1,py2)-30).attr('width',80).attr('height',22).attr('rx',4).attr('fill','rgba(15,23,42,0.9)').attr('stroke','rgba(125,211,252,0.2)');
+        dotG.append('text').attr('x',px).attr('y',Math.min(py1,py2)-16).attr('text-anchor','middle').attr('fill','#e2e8f0').attr('font-size','9px').text(`${d1[nearestIdx]} / ${d2[nearestIdx]}`);
+        dotG.attr('cursor','pointer').on('click', function(ev) { ev.stopPropagation(); charts['area-chart']._pinnedDots = charts['area-chart']._pinnedDots.filter(dd => dd.node() !== this); d3.select(this).remove(); });
+        this._pinnedDots.push(dotG);
+      });
+    axisStyle(g.append('g').attr('transform',`translate(0,${ih})`).call(d3.axisBottom(x).tickSize(0)));
+    axisStyle(g.append('g').call(d3.axisLeft(y).ticks(5).tickSize(-iw)).selectAll('.domain').remove());
+    g.append('text').attr('transform','rotate(-90)').attr('x',-ih/2).attr('y',-mg.left+14).attr('text-anchor','middle').attr('fill','#64748b').attr('font-size','10px').text('Units / Hour');
+    g.append('text').attr('x',iw/2).attr('y',ih+mg.bottom-4).attr('text-anchor','middle').attr('fill','#64748b').attr('font-size','10px').text('Month');
+    // Legend
+    seriesNames.forEach((nm,si) => { g.append('circle').attr('cx',iw-80+si*70).attr('cy',-10).attr('r',4).attr('fill',color(si)); g.append('text').attr('x',iw-72+si*70).attr('y',-7).attr('fill','#94a3b8').attr('font-size','9px').text(nm); });
+  },
+  animate() { this._areas.forEach((a,i) => { a.clipRect.transition().duration(DUR*1.5).ease(d3.easeCubicOut).delay(i*200).attr('width', a.targetW); }); }
+};
+
+// ── 13. Stream Graph ────────────────────────────────────────────────
+charts['stream-graph'] = {
+  build() {
+    const n = 20, layers = 5;
+    const layerNames = ['Widget X1','Bracket M3','Valve V7','Gear G2','Seal S4'];
+    const raw = Array.from({length:layers},(_,li)=>Array.from({length:n},(_,i)=>Math.max(0,30+20*Math.sin(i*0.4+li*1.2)+10*Math.random())));
+    const stackData = d3.range(n).map(i=>{const o={x:i};raw.forEach((r,li)=>o[`s${li}`]=r[i]);return o;});
+    const keys = raw.map((_,i)=>`s${i}`);
+    const {g,iw,ih,svg} = svgIn('#stream-graph',{top:8,right:8,bottom:8,left:8});
+    const x = d3.scaleLinear().domain([0,n-1]).range([0,iw]);
+    const stacked = d3.stack().keys(keys).offset(d3.stackOffsetWiggle)(stackData);
+    const yMax = d3.max(stacked,l=>d3.max(l,d=>d[1]));
+    const yMin = d3.min(stacked,l=>d3.min(l,d=>d[0]));
+    const y = d3.scaleLinear().domain([yMin,yMax]).range([ih,0]);
+    const area = d3.area().x((d,i)=>x(i)).y0(d=>y(d[0])).y1(d=>y(d[1])).curve(d3.curveBasis);
+    const mid = (yMin+yMax)/2;
+    const flatArea = d3.area().x((d,i)=>x(i)).y0(y(mid)).y1(y(mid)).curve(d3.curveBasis);
+    this._selectedLayer = -1;
+    const resetStream = () => { this._selectedLayer=-1; this._streamPaths.forEach(pp=>pp.transition().duration(300).attr('opacity',0.75).attr('filter','none')); clearDrillState('stream-graph'); };
+    addResetBtn(document.querySelector('[data-chart="stream-graph"]'), resetStream);
+
+    this._streamPaths = stacked.map((layer,i) => {
+      const p = g.append('path').datum(layer).attr('d',flatArea).attr('fill',color(i)).attr('opacity',0.75).attr('cursor','pointer');
+      p.on('mouseover',function(ev){showTip(ev,`<b>${layerNames[i]}</b>`)}).on('mouseout',function(){hideTip()});
+      p.on('click', (ev) => {
+        ev.stopPropagation();
+        if (this._selectedLayer === i) { resetStream(); } else {
+          markDrillState('stream-graph'); this._selectedLayer = i;
+          this._streamPaths.forEach((pp,ii) => { pp.transition().duration(300).attr('opacity',ii===i?1:0.12).attr('filter',ii===i?'drop-shadow(0 0 8px '+color(i)+')':'none'); });
+        }
+      });
+      return p;
+    });
+    svg.on('click', () => { if (this._selectedLayer >= 0) resetStream(); });
+    this._area = area;
+  },
+  animate() { this._streamPaths.forEach((p,i) => { p.transition().duration(DUR*1.5).ease(d3.easeCubicOut).delay(i*80).attr('d', this._area); }); }
+};
+
+// ── 14. Dumbbell Chart ──────────────────────────────────────────────
+charts['dumbbell-chart'] = {
+  build() {
+    const data = [{l:'Machining',a:45,b:72},{l:'Welding',a:38,b:55},{l:'Assembly',a:60,b:82},{l:'Packaging',a:50,b:48},{l:'Shipping',a:30,b:45}];
+    const mg = {top:12,right:20,bottom:36,left:72};
+    const {g,iw,ih} = svgIn('#dumbbell-chart', mg);
+    const y = d3.scaleBand().domain(data.map(d=>d.l)).range([0,ih]).padding(0.4);
+    const x = d3.scaleLinear().domain([0,100]).range([0,iw]);
+    this._selectedRow = -1;
+    const resetDumb = () => { this._selectedRow=-1; g.selectAll('.delta-label').remove(); this._items.forEach(item=>{item.line.transition().duration(300).attr('opacity',1);item.c1.transition().duration(300).attr('opacity',1);item.c2.transition().duration(300).attr('opacity',1);}); clearDrillState('dumbbell-chart'); };
+    addResetBtn(document.querySelector('[data-chart="dumbbell-chart"]'), resetDumb);
+
+    this._items = [];
+    data.forEach((d,i) => {
+      const yy = y(d.l)+y.bandwidth()/2; const mid = x((d.a+d.b)/2);
+      const line = g.append('line').attr('x1',mid).attr('x2',mid).attr('y1',yy).attr('y2',yy).attr('stroke','rgba(255,255,255,0.15)').attr('stroke-width',2);
+      const c1 = g.append('circle').attr('cx',mid).attr('cy',yy).attr('r',0).attr('fill',color(0)).attr('cursor','pointer');
+      const c2 = g.append('circle').attr('cx',mid).attr('cy',yy).attr('r',0).attr('fill',color(3)).attr('cursor','pointer');
+      g.append('text').attr('x',-8).attr('y',yy).attr('text-anchor','end').attr('dominant-baseline','middle').attr('fill','#94a3b8').attr('font-size','10px').text(d.l);
+      this._items.push({line, c1, c2, x1:x(d.a), x2:x(d.b), d, yy});
+      const clickHandler = (ev) => {
+        ev.stopPropagation();
+        if (this._selectedRow === i) { resetDumb(); } else {
+          markDrillState('dumbbell-chart'); this._selectedRow = i; g.selectAll('.delta-label').remove();
+          this._items.forEach((item,ii) => { const op=ii===i?1:0.15; item.line.transition().duration(300).attr('opacity',op); item.c1.transition().duration(300).attr('opacity',op); item.c2.transition().duration(300).attr('opacity',op); });
+          const delta=d.b-d.a; const midX=(x(d.a)+x(d.b))/2; const arrowColor=delta>=0?'#34d399':'#f87171'; const arrow=delta>=0?'\u2191':'\u2193';
+          g.append('text').attr('class','delta-label').attr('x',midX).attr('y',yy-14).attr('text-anchor','middle').attr('fill',arrowColor).attr('font-size','12px').attr('font-weight','700')
+            .text(`${arrow} ${delta>0?'+':''}${delta}`).attr('opacity',0).transition().duration(300).attr('opacity',1);
+        }
+      };
+      c1.on('click', clickHandler); c2.on('click', clickHandler); line.on('click', clickHandler).attr('cursor','pointer');
+    });
+    axisStyle(g.append('g').attr('transform',`translate(0,${ih})`).call(d3.axisBottom(x).ticks(5).tickSize(-ih)));
+    g.append('text').attr('x',iw/2).attr('y',ih+mg.bottom-4).attr('text-anchor','middle').attr('fill','#64748b').attr('font-size','10px').text('Defects per 1000 Units');
+    // Legend for dots
+    g.append('circle').attr('cx',iw-80).attr('cy',-4).attr('r',4).attr('fill',color(0)); g.append('text').attr('x',iw-72).attr('y',-1).attr('fill','#94a3b8').attr('font-size','9px').text('2024');
+    g.append('circle').attr('cx',iw-35).attr('cy',-4).attr('r',4).attr('fill',color(3)); g.append('text').attr('x',iw-27).attr('y',-1).attr('fill','#94a3b8').attr('font-size','9px').text('2025');
+  },
+  animate() {
+    this._items.forEach((item,i) => {
+      item.line.transition().duration(DUR).ease(d3.easeCubicOut).delay(i*100).attr('x1',item.x1).attr('x2',item.x2);
+      item.c1.transition().duration(DUR).ease(d3.easeBackOut.overshoot(2)).delay(i*100+200).attr('cx',item.x1).attr('r',6);
+      item.c2.transition().duration(DUR).ease(d3.easeBackOut.overshoot(2)).delay(i*100+200).attr('cx',item.x2).attr('r',6);
+    });
+  }
+};
+
+// ── 15. Slope Chart ─────────────────────────────────────────────────
+charts['slope-chart'] = {
+  build() {
+    const data = [{l:'Acme Corp',a:80,b:65},{l:'Bolt Industries',a:45,b:72},{l:'CastPro',a:60,b:58},{l:'Delta Metals',a:30,b:50},{l:'Elton Plastics',a:70,b:40}];
+    const {g,iw,ih} = svgIn('#slope-chart',{top:20,right:50,bottom:20,left:50});
+    const y = d3.scaleLinear().domain([20,90]).range([ih,0]);
+    this._selectedLine = -1;
+    const resetSlope = () => { this._selectedLine=-1; g.selectAll('.slope-delta').remove(); this._slopeItems.forEach(item=>{item.line.transition().duration(300).attr('stroke-width',2).attr('opacity',0.7);item.c1.transition().duration(300).attr('opacity',1);item.c2.transition().duration(300).attr('opacity',1);}); clearDrillState('slope-chart'); };
+    addResetBtn(document.querySelector('[data-chart="slope-chart"]'), resetSlope);
+
+    g.append('line').attr('x1',0).attr('x2',0).attr('y1',0).attr('y2',ih).attr('stroke','rgba(255,255,255,0.1)');
+    g.append('line').attr('x1',iw).attr('x2',iw).attr('y1',0).attr('y2',ih).attr('stroke','rgba(255,255,255,0.1)');
+    g.append('text').attr('x',0).attr('y',-8).attr('text-anchor','middle').attr('fill','#94a3b8').attr('font-size','10px').text('On-Time %');
+    g.append('text').attr('x',iw).attr('y',-8).attr('text-anchor','middle').attr('fill','#94a3b8').attr('font-size','10px').text('On-Time %');
+    this._slopeItems = [];
+    data.forEach((d,i) => {
+      const line = g.append('line').attr('x1',0).attr('x2',0).attr('y1',y(d.a)).attr('y2',y(d.a)).attr('stroke',color(i)).attr('stroke-width',2).attr('opacity',0.7).attr('cursor','pointer');
+      const c1 = g.append('circle').attr('cx',0).attr('cy',y(d.a)).attr('r',0).attr('fill',color(i)).attr('cursor','pointer');
+      const c2 = g.append('circle').attr('cx',0).attr('cy',y(d.a)).attr('r',0).attr('fill',color(i)).attr('cursor','pointer');
+      g.append('text').attr('x',-8).attr('y',y(d.a)).attr('text-anchor','end').attr('dominant-baseline','middle').attr('fill','#94a3b8').attr('font-size','9px').text(`${d.l} ${d.a}%`);
+      g.append('text').attr('x',iw+8).attr('y',y(d.b)).attr('dominant-baseline','middle').attr('fill','#94a3b8').attr('font-size','9px').text(`${d.b}% ${d.l}`).attr('opacity',0).attr('class','slope-right');
+      this._slopeItems.push({line, c1, c2, endX: iw, endY: y(d.b), d});
+      const clickHandler = (ev) => {
+        ev.stopPropagation();
+        if (this._selectedLine === i) { resetSlope(); } else {
+          markDrillState('slope-chart'); this._selectedLine = i; g.selectAll('.slope-delta').remove();
+          this._slopeItems.forEach((item,ii) => { if(ii===i){item.line.transition().duration(300).attr('stroke-width',4).attr('opacity',1);}else{item.line.transition().duration(300).attr('opacity',0.12);item.c1.transition().duration(300).attr('opacity',0.12);item.c2.transition().duration(300).attr('opacity',0.12);} });
+          const delta=d.b-d.a; const badge=g.append('g').attr('class','slope-delta');
+          const bx=iw/2, by=(y(d.a)+y(d.b))/2;
+          badge.append('rect').attr('x',bx-22).attr('y',by-10).attr('width',44).attr('height',20).attr('rx',10).attr('fill',delta>=0?'rgba(52,211,153,0.2)':'rgba(248,113,113,0.2)').attr('stroke',delta>=0?'#34d399':'#f87171');
+          badge.append('text').attr('x',bx).attr('y',by+4).attr('text-anchor','middle').attr('fill',delta>=0?'#34d399':'#f87171').attr('font-size','10px').attr('font-weight','700').text(`${delta>0?'+':''}${delta}`);
+          badge.attr('opacity',0).transition().duration(300).attr('opacity',1);
+        }
+      };
+      line.on('click', clickHandler); c1.on('click', clickHandler); c2.on('click', clickHandler);
+    });
+    this._g = g;
+  },
+  animate() {
+    this._slopeItems.forEach((item,i) => {
+      item.line.transition().duration(DUR).ease(d3.easeCubicOut).delay(i*100).attr('x2',item.endX).attr('y2',item.endY);
+      item.c1.transition().duration(400).ease(d3.easeBackOut).delay(i*100).attr('r',5);
+      item.c2.transition().duration(400).ease(d3.easeBackOut).delay(i*100+DUR*0.7).attr('cx',item.endX).attr('cy',item.endY).attr('r',5);
+    });
+    this._g.selectAll('.slope-right').transition().delay(DUR).duration(400).attr('opacity',1);
+  }
+};
+
+// ── 16. Scatter Bubble Plot ─────────────────────────────────────────
+charts['scatter-bubble'] = {
+  build() {
+    const groups = ['Plant A','Plant B','Plant C','Plant D','Plant E'];
+    const data = [{x:15,y:72,r:12,g:0},{x:82,y:45,r:18,g:1},{x:35,y:88,r:8,g:2},{x:68,y:22,r:15,g:3},{x:50,y:55,r:22,g:4},
+      {x:25,y:38,r:10,g:0},{x:75,y:68,r:14,g:1},{x:42,y:12,r:9,g:2},{x:90,y:82,r:16,g:3},{x:8,y:50,r:11,g:4},
+      {x:60,y:35,r:7,g:0},{x:30,y:78,r:13,g:1},{x:88,y:55,r:20,g:2},{x:18,y:25,r:6,g:3},{x:72,y:92,r:17,g:4},
+      {x:45,y:65,r:9,g:0},{x:55,y:15,r:12,g:1},{x:22,y:90,r:8,g:2},{x:78,y:40,r:15,g:3},{x:95,y:70,r:10,g:4},
+      {x:38,y:48,r:14,g:0},{x:62,y:82,r:11,g:1},{x:12,y:30,r:7,g:2},{x:85,y:18,r:19,g:3},{x:48,y:75,r:13,g:4}];
+    const mg = {top:24,right:16,bottom:36,left:55};
+    const {g,iw,ih} = svgIn('#scatter-bubble', mg);
+    const xS = d3.scaleLinear().domain([0,100]).range([0,iw]);
+    const yS = d3.scaleLinear().domain([0,100]).range([ih,0]);
+    this._selectedBubble = -1;
+    const resetScatter = () => { this._selectedBubble=-1; g.selectAll('.bubble-detail').remove(); this._bubbles.transition().duration(300).attr('opacity',0.55).attr('r',d=>d.r); clearDrillState('scatter-bubble'); };
+    addResetBtn(document.querySelector('[data-chart="scatter-bubble"]'), resetScatter);
+
+    this._bubbles = g.selectAll('circle').data(data).join('circle')
+      .attr('cx',d=>xS(d.x)).attr('cy',d=>yS(d.y)).attr('r',0)
+      .attr('fill',d=>color(d.g)).attr('opacity',0.55).attr('stroke',d=>color(d.g)).attr('stroke-width',1).attr('stroke-opacity',0.8).attr('cursor','pointer')
+      .on('mouseover',function(ev,d){if(charts['scatter-bubble']._selectedBubble<0){d3.select(this).transition().duration(150).attr('opacity',0.8).attr('r',d.r+3);}showTip(ev,`${groups[d.g]}: (${d.x}, ${d.y}) Vol: ${d.r}`)})
+      .on('mouseout',function(ev,d){if(charts['scatter-bubble']._selectedBubble<0){d3.select(this).transition().duration(150).attr('opacity',0.55).attr('r',d.r);}hideTip()})
+      .on('click', (ev, d) => {
+        ev.stopPropagation(); const idx=data.indexOf(d);
+        if (this._selectedBubble === idx) { resetScatter(); } else {
+          markDrillState('scatter-bubble'); this._selectedBubble = idx; g.selectAll('.bubble-detail').remove();
+          this._bubbles.transition().duration(300).attr('opacity',(dd,ii)=>ii===idx?0.9:0.12).attr('r',(dd,ii)=>ii===idx?dd.r*2:dd.r);
+          const cardG=g.append('g').attr('class','bubble-detail');
+          const cxx=xS(d.x)+d.r*2+8, cyy=yS(d.y)-30;
+          cardG.append('rect').attr('x',cxx).attr('y',cyy).attr('width',110).attr('height',50).attr('rx',6).attr('fill','rgba(15,23,42,0.92)').attr('stroke','rgba(125,211,252,0.2)');
+          cardG.append('text').attr('x',cxx+8).attr('y',cyy+16).attr('fill','#f1f5f9').attr('font-size','10px').attr('font-weight','600').text(`${groups[d.g]}`);
+          cardG.append('text').attr('x',cxx+8).attr('y',cyy+32).attr('fill','#94a3b8').attr('font-size','9px').text(`Cycle: ${d.x}  Yield: ${d.y}%`);
+          cardG.append('text').attr('x',cxx+8).attr('y',cyy+44).attr('fill','#94a3b8').attr('font-size','9px').text(`Volume: ${d.r}`);
+          cardG.attr('opacity',0).transition().duration(300).attr('opacity',1);
+        }
+      });
+    g.append('rect').attr('width',iw).attr('height',ih).attr('fill','transparent').lower().on('click', () => resetScatter());
+    axisStyle(g.append('g').attr('transform',`translate(0,${ih})`).call(d3.axisBottom(xS).ticks(5).tickSize(-ih)));
+    axisStyle(g.append('g').call(d3.axisLeft(yS).ticks(5).tickSize(-iw)).selectAll('.domain').remove());
+    g.append('text').attr('transform','rotate(-90)').attr('x',-ih/2).attr('y',-mg.left+14).attr('text-anchor','middle').attr('fill','#64748b').attr('font-size','10px').text('Yield Rate (%)');
+    g.append('text').attr('x',iw/2).attr('y',ih+mg.bottom-4).attr('text-anchor','middle').attr('fill','#64748b').attr('font-size','10px').text('Cycle Time (min)');
+  },
+  animate() { this._bubbles.transition().duration(600).ease(d3.easeBackOut.overshoot(2)).delay((d,i)=>i*30).attr('r',d=>d.r); }
+};
+
+// ── 17. Box Plot ────────────────────────────────────────────────────
+charts['box-plot'] = {
+  build() {
+    const data = [{l:'Torque',min:10,q1:25,med:42,q3:58,max:75},{l:'Pressure',min:20,q1:35,med:50,q3:62,max:80},{l:'Temperature',min:5,q1:20,med:35,q3:55,max:90},{l:'Vibration',min:30,q1:40,med:55,q3:65,max:78},{l:'Humidity',min:15,q1:30,med:48,q3:60,max:72}];
+    const mg = {top:24,right:16,bottom:36,left:55};
+    const {g,iw,ih} = svgIn('#box-plot', mg);
+    const x = d3.scaleBand().domain(data.map(d=>d.l)).range([0,iw]).padding(0.4);
+    const y = d3.scaleLinear().domain([0,100]).range([ih,0]);
+    const bw = x.bandwidth();
+    this._boxItems = [];
+    const resetBox = () => { closeDrillPanel(document.getElementById('box-plot')); clearDrillState('box-plot'); };
+    addResetBtn(document.querySelector('[data-chart="box-plot"]'), resetBox);
+
+    data.forEach((d,i) => {
+      const cx = x(d.l)+bw/2; const medY = y(d.med);
+      const wh = g.append('line').attr('x1',cx).attr('x2',cx).attr('y1',medY).attr('y2',medY).attr('stroke','rgba(255,255,255,0.2)').attr('stroke-width',1);
+      const wt = g.append('line').attr('x1',cx-bw/4).attr('x2',cx+bw/4).attr('y1',medY).attr('y2',medY).attr('stroke','rgba(255,255,255,0.3)').attr('opacity',0);
+      const wb = g.append('line').attr('x1',cx-bw/4).attr('x2',cx+bw/4).attr('y1',medY).attr('y2',medY).attr('stroke','rgba(255,255,255,0.3)').attr('opacity',0);
+      const box = g.append('rect').attr('x',x(d.l)).attr('y',medY).attr('width',bw).attr('height',0).attr('fill',color(i)).attr('opacity',0.6).attr('rx',3).attr('stroke',color(i)).attr('stroke-opacity',0.8).attr('cursor','pointer');
+      const medLine = g.append('line').attr('x1',x(d.l)).attr('x2',x(d.l)+bw).attr('y1',medY).attr('y2',medY).attr('stroke','#f1f5f9').attr('stroke-width',2);
+      this._boxItems.push({wh, wt, wb, box, medLine, d, y});
+      box.on('click', (ev) => {
+        markDrillState('box-plot'); ev.stopPropagation();
+        const points = Array.from({length:18}, () => d.min + Math.random() * (d.max - d.min));
+        const dotStrip = points.map(p => `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${color(i)};margin:1px;opacity:0.7"></span>`).join('');
+        makeDrillPanel(document.getElementById('box-plot'), `<span>Box Plot</span> > ${d.l}`,
+          `<table class="drill-table"><tr><th>Statistic</th><th>Value</th></tr><tr><td>Maximum</td><td style="color:#7DD3FC">${d.max}</td></tr><tr><td>Q3 (75th)</td><td>${d.q3}</td></tr><tr><td>Median</td><td style="color:#f1f5f9;font-weight:600">${d.med}</td></tr><tr><td>Q1 (25th)</td><td>${d.q1}</td></tr><tr><td>Minimum</td><td style="color:#7DD3FC">${d.min}</td></tr></table><div style="margin-top:8px;font-size:10px;color:#64748b">Raw data points:</div><div style="margin-top:4px;line-height:1.8">${dotStrip}</div>`);
+      });
+    });
+    axisStyle(g.append('g').attr('transform',`translate(0,${ih})`).call(d3.axisBottom(x).tickSize(0)));
+    axisStyle(g.append('g').call(d3.axisLeft(y).ticks(5).tickSize(-iw)).selectAll('.domain').remove());
+    g.append('text').attr('transform','rotate(-90)').attr('x',-ih/2).attr('y',-mg.left+14).attr('text-anchor','middle').attr('fill','#64748b').attr('font-size','10px').text('Reading');
+    g.append('text').attr('x',iw/2).attr('y',ih+mg.bottom-4).attr('text-anchor','middle').attr('fill','#64748b').attr('font-size','10px').text('Measurement Type');
+  },
+  animate() {
+    this._boxItems.forEach((item,i) => {
+      const {wh,wt,wb,box,d,y}=item; const delay=i*120;
+      wh.transition().duration(DUR).ease(d3.easeCubicOut).delay(delay).attr('y1',y(d.max)).attr('y2',y(d.min));
+      wt.transition().duration(300).delay(delay+DUR*0.7).attr('y1',y(d.max)).attr('y2',y(d.max)).attr('opacity',1);
+      wb.transition().duration(300).delay(delay+DUR*0.7).attr('y1',y(d.min)).attr('y2',y(d.min)).attr('opacity',1);
+      box.transition().duration(DUR).ease(d3.easeCubicOut).delay(delay).attr('y',y(d.q3)).attr('height',y(d.q1)-y(d.q3));
+    });
+  }
+};
+
+// ── 18. Waterfall Chart ─────────────────────────────────────────────
+charts['waterfall-chart'] = {
+  build() {
+    const data = [{l:'Revenue',v:500,type:'total'},{l:'COGS',v:-180,type:'neg'},{l:'Gross Profit',v:320,type:'total'},{l:'OpEx',v:-120,type:'neg'},{l:'Depreciation',v:-40,type:'neg'},{l:'EBITDA',v:160,type:'total'}];
+    const subItems = {
+      'COGS': [{l:'Raw Material',v:-80},{l:'Labor',v:-60},{l:'Freight',v:-40}],
+      'OpEx': [{l:'Salaries',v:-55},{l:'Rent',v:-35},{l:'Utilities',v:-30}],
+      'Depreciation': [{l:'Equipment',v:-22},{l:'Building',v:-12},{l:'Vehicles',v:-6}]
+    };
+    let running = 0;
+    data.forEach(d => {
+      if (d.type === 'total') { d.start = 0; d.end = d.v; running = d.v; }
+      else { d.start = running; running += d.v; d.end = running; }
+    });
+    const mg = {top:12,right:12,bottom:28,left:55};
+    const {g,iw,ih,svg} = svgIn('#waterfall-chart', mg);
+    const x = d3.scaleBand().domain(data.map(d=>d.l)).range([0,iw]).padding(0.25);
+    const y = d3.scaleLinear().domain([0,600]).range([ih,0]);
+    this._waterBars = [];
+    const resetWater = () => { closeDrillPanel(document.getElementById('waterfall-chart')); clearDrillState('waterfall-chart'); };
+    addResetBtn(document.querySelector('[data-chart="waterfall-chart"]'), resetWater);
+
+    data.forEach((d,i) => {
+      const top = Math.max(d.start,d.end), bot = Math.min(d.start,d.end);
+      const c = d.type==='total'?color(1):d.type==='pos'?'#34d399':'#f87171';
+      const bar = g.append('rect').attr('x',x(d.l)).attr('y',y(top)).attr('width',x.bandwidth()).attr('height',0).attr('fill',c).attr('opacity',0.8).attr('rx',3).attr('cursor','pointer');
+      this._waterBars.push({bar, targetH: y(bot)-y(top)});
+      // Value label on top
+      const labelVal = d.type==='total' ? `$${d.v}K` : `${d.v>0?'+':''}$${d.v}K`;
+      g.append('text').attr('class','wf-val-label').attr('x',x(d.l)+x.bandwidth()/2).attr('y',y(top)-4)
+        .attr('text-anchor','middle').attr('fill','#e2e8f0').attr('font-size','9px').attr('font-weight','600').text(labelVal).attr('opacity',0);
+      // Connector lines
+      if (i < data.length-1 && d.type !== 'total') {
+        g.append('line').attr('x1',x(d.l)+x.bandwidth()).attr('x2',x(data[i+1].l)).attr('y1',y(d.end)).attr('y2',y(d.end))
+          .attr('stroke','rgba(255,255,255,0.25)').attr('stroke-dasharray','5,3').attr('stroke-width',1.5).attr('opacity',0).attr('class','wf-conn');
+      }
+      bar.on('click', (ev) => {
+        markDrillState('waterfall-chart'); ev.stopPropagation();
+        if (d.type === 'total') return;
+        const subs = subItems[d.l]; if (!subs) return;
+        const rows = subs.map(s => { const sColor=s.v>=0?'#34d399':'#f87171'; return `<tr><td>${s.l}</td><td style="color:${sColor};font-weight:600">${s.v>0?'+':''}$${s.v}K</td></tr>`; }).join('');
+        makeDrillPanel(document.getElementById('waterfall-chart'), `<span>Waterfall</span> > ${d.l} (${d.v>0?'+':''}$${d.v}K)`, `<table class="drill-table"><tr><th>Line Item</th><th>Amount</th></tr>${rows}</table>`);
+      });
+    });
+    // SVG background click to dismiss drill panel
+    svg.on('click', (ev) => { if (ev.target === svg.node()) resetWater(); });
+    this._g = g;
+    axisStyle(g.append('g').attr('transform',`translate(0,${ih})`).call(d3.axisBottom(x).tickSize(0)));
+    axisStyle(g.append('g').call(d3.axisLeft(y).ticks(5).tickSize(-iw)).selectAll('.domain').remove());
+    g.append('text').attr('transform','rotate(-90)').attr('x',-ih/2).attr('y',-mg.left+14).attr('text-anchor','middle').attr('fill','#64748b').attr('font-size','10px').text('Amount ($K)');
+  },
+  animate() {
+    this._waterBars.forEach((item,i) => { item.bar.transition().duration(500).ease(d3.easeCubicOut).delay(i*100).attr('height', item.targetH); });
+    this._g.selectAll('.wf-conn').transition().delay(DUR).duration(300).attr('opacity',1);
+    this._g.selectAll('.wf-val-label').transition().delay(DUR*0.8).duration(300).attr('opacity',1);
+  }
+};
+
+// ── 19. Sunburst Chart ──────────────────────────────────────────────
+charts['sunburst-chart'] = {
+  build() {
+    const rootData = {name:'Manufacturing',children:[
+      {name:'Machining',children:[{name:'CNC Milling',value:30},{name:'Lathe Ops',value:20},{name:'Grinding',value:15}]},
+      {name:'Assembly',children:[{name:'Spot Welding',value:25},{name:'Riveting',value:10},{name:'Adhesive Bond',value:12}]},
+      {name:'Finishing',children:[{name:'Paint Coat',value:18},{name:'Anodizing',value:12},{name:'Polish',value:8}]},
+    ]};
+    const el = document.querySelector('#sunburst-chart');
+    const w = el.clientWidth, h = el.clientHeight;
+    const svg = d3.select('#sunburst-chart').append('svg').attr('viewBox',`0 0 ${w} ${h}`);
+    const r = Math.min(w,h)/2-8;
+    const gSun = svg.append('g').attr('transform',`translate(${w/2},${h/2})`);
+    const hierarchy = d3.hierarchy(rootData).sum(d=>d.value);
+    const partition = d3.partition().size([Math.PI*2,r]);
+    partition(hierarchy);
+    const arc = d3.arc().startAngle(d=>d.x0).endAngle(d=>d.x1).innerRadius(d=>d.y0).outerRadius(d=>d.y1).padAngle(0.01);
+    const nodes = hierarchy.descendants().filter(d=>d.depth>0);
+    this._currentRoot = hierarchy;
+    const resetSunburst = () => {
+      if (this._currentRoot !== hierarchy) {
+        this._currentRoot = hierarchy;
+        const t = gSun.transition().duration(600);
+        this._sunPaths.transition(t).attrTween('d', function(d) {
+          const xi=d3.interpolate(d._current?d._current.x0:d.x0,d.x0); const xf=d3.interpolate(d._current?d._current.x1:d.x1,d.x1);
+          const yi=d3.interpolate(d._current?d._current.y0:d.y0,d.y0); const yf=d3.interpolate(d._current?d._current.y1:d.y1,d.y1);
+          return t=>{d._current={x0:xi(t),x1:xf(t),y0:yi(t),y1:yf(t)};return arc(d._current);};
+        }).attr('opacity', d => 1 - d.depth*0.15);
+        gSun.selectAll('.sun-breadcrumb,.sun-back-label').remove();
+        centerText.text('Manufacturing').attr('font-size','9px');
+        // Reset padAngle and outerRadius
+        arc.padAngle(0.01);
+      }
+      clearDrillState('sunburst-chart');
+    };
+    addResetBtn(document.querySelector('[data-chart="sunburst-chart"]'), resetSunburst);
+
+    // Center clickable circle -- appended first, will be raised on zoom
+    this._centerCircle = gSun.append('circle').attr('r', hierarchy.children[0].y0 - 2).attr('fill','rgba(255,255,255,0.03)').attr('cursor','pointer')
+      .on('click', () => { resetSunburst(); });
+    const centerText = gSun.append('text').attr('class','sun-center-text').attr('text-anchor','middle').attr('fill','#64748b').attr('font-size','9px').attr('dy',3).text('Manufacturing').attr('pointer-events','none');
+    this._centerText = centerText;
+
+    this._sunPaths = gSun.selectAll('path.sun-seg').data(nodes).join('path').attr('class','sun-seg')
+      .attr('d', d => { const a = {...d, x1: d.x0}; return arc(a); })
+      .attr('fill',(d)=>{ let node=d; while(node.depth>1) node=node.parent; return color(hierarchy.children.indexOf(node)); })
+      .attr('opacity',d=>1-d.depth*0.15).attr('stroke','rgba(0,0,0,0.2)').attr('stroke-width',0.5).attr('cursor','pointer')
+      .on('click', (ev, d) => {
+        ev.stopPropagation();
+        if (d.depth === 1 && d.children) {
+          markDrillState('sunburst-chart');
+          this._currentRoot = d;
+          const t = gSun.transition().duration(600);
+          const xd = d3.scaleLinear().domain([d.x0, d.x1]).range([0, 2*Math.PI]);
+          const yd = d3.scaleLinear().domain([d.y0, r]).range([0, r]);
+          // Burst effect: increase padAngle during zoom
+          this._sunPaths.transition(t).attrTween('d', function(dd) {
+            const inside = dd.x0 >= d.x0 && dd.x1 <= d.x1;
+            const target = {
+              x0: inside ? xd(dd.x0) : 0, x1: inside ? xd(dd.x1) : 0,
+              y0: inside ? yd(dd.y0) : 0, y1: inside ? yd(dd.y1)*1.08 : 0
+            };
+            const current = dd._current || {x0:dd.x0,x1:dd.x1,y0:dd.y0,y1:dd.y1};
+            const xi=d3.interpolate(current.x0,target.x0); const xf=d3.interpolate(current.x1,target.x1);
+            const yi=d3.interpolate(current.y0,target.y0); const yf=d3.interpolate(current.y1,target.y1);
+            const padInterp = d3.interpolate(0.01, inside ? 0.04 : 0);
+            return t=>{dd._current={x0:xi(t),x1:xf(t),y0:yi(t),y1:yf(t)};return d3.arc().startAngle(dd._current.x0).endAngle(dd._current.x1).innerRadius(dd._current.y0).outerRadius(dd._current.y1).padAngle(padInterp(t))();};
+          }).attr('opacity', dd => dd.x0 >= d.x0 && dd.x1 <= d.x1 ? 0.85 : 0);
+          gSun.selectAll('.sun-breadcrumb,.sun-back-label').remove();
+          gSun.append('text').attr('class','sun-breadcrumb').attr('y', -r + 14).attr('text-anchor','middle').attr('fill','#7DD3FC').attr('font-size','10px').text(`Manufacturing > ${d.data.name}`);
+          // Raise center circle + text above arcs for click-back
+          this._centerCircle.raise();
+          centerText.raise();
+          centerText.text('\u21A9 Back').attr('font-size','11px');
+          gSun.append('text').attr('class','sun-back-label').attr('text-anchor','middle').attr('fill','#94a3b8').attr('font-size','8px').attr('dy',16).text('click center').attr('pointer-events','none');
+        }
+      });
+    nodes.forEach(d => { d._current = {x0:d.x0,x1:d.x0,y0:d.y0,y1:d.y1}; });
+    this._arc = arc;
+  },
+  animate() {
+    const arc = this._arc;
+    this._sunPaths.transition().duration(DUR*1.3).ease(d3.easeCubicOut).delay(d=>d.depth*200)
+      .attrTween('d', function(d) { const ip=d3.interpolate(d.x0,d.x1); return t=>{d._current={x0:d.x0,x1:ip(t),y0:d.y0,y1:d.y1};return arc(d._current);}; });
+  }
+};
+
+// ── 20. Treemap ─────────────────────────────────────────────────────
+charts['treemap-chart'] = {
+  build() {
+    const rootData = {name:'Root',children:[
+      {name:'Raw Steel',value:45,subs:[{name:'Coil',value:20},{name:'Plate',value:15},{name:'Bar',value:10}]},
+      {name:'Aluminum',value:32,subs:[{name:'Sheet',value:18},{name:'Extrusion',value:14}]},
+      {name:'Copper',value:28,subs:[{name:'Wire',value:16},{name:'Pipe',value:12}]},
+      {name:'Plastics',value:22,subs:[{name:'ABS',value:12},{name:'Nylon',value:10}]},
+      {name:'Electronics',value:18,subs:[{name:'PCB',value:10},{name:'Sensor',value:8}]},
+      {name:'Bearings',value:15,subs:[{name:'Ball',value:8},{name:'Roller',value:7}]},
+      {name:'Fasteners',value:12,subs:[{name:'Bolts',value:7},{name:'Rivets',value:5}]},
+      {name:'Lubricants',value:8,subs:[{name:'Oil',value:5},{name:'Grease',value:3}]},
+      {name:'Packaging',value:6,subs:[{name:'Carton',value:4},{name:'Foam',value:2}]},
+    ]};
+    const {g,iw,ih} = svgIn('#treemap-chart',{top:4,right:4,bottom:4,left:4});
+    const hierarchy = d3.hierarchy(rootData).sum(d=>d.value);
+    d3.treemap().size([iw,ih]).padding(3).round(true)(hierarchy);
+    this._zoomedTile = null;
+    const resetTreemap = () => {
+      this._zoomedTile=null; g.selectAll('.tree-breadcrumb,.tree-sub').remove();
+      this._treeItems.forEach(item=>{
+        item.rect.transition().duration(500).ease(d3.easeCubicOut).attr('x',item.origX).attr('y',item.origY).attr('width',item.w).attr('height',item.h).attr('opacity',0.7);
+        if(item.nameEl) item.nameEl.transition().duration(300).attr('opacity',1);
+        if(item.valEl) item.valEl.transition().duration(300).attr('opacity',1);
+      });
+      clearDrillState('treemap-chart');
+    };
+    addResetBtn(document.querySelector('[data-chart="treemap-chart"]'), resetTreemap);
+
+    this._treeItems = [];
+    hierarchy.leaves().forEach((d,i) => {
+      const parentData = rootData.children.find(c => c.name === d.data.name);
+      const rect = g.append('rect').attr('x',d.x0).attr('y',d.y0).attr('width',0).attr('height',0).attr('fill',color(i)).attr('opacity',0.7).attr('rx',4).attr('cursor','pointer');
+      let nameEl = null, valEl = null;
+      if (d.x1-d.x0 > 40 && d.y1-d.y0 > 20) {
+        nameEl = g.append('text').attr('x',d.x0+6).attr('y',d.y0+14).attr('fill','#f1f5f9').attr('font-size','10px').attr('font-weight','600').text(d.data.name).attr('opacity',0).attr('pointer-events','none');
+        valEl = g.append('text').attr('x',d.x0+6).attr('y',d.y0+26).attr('fill','rgba(255,255,255,0.6)').attr('font-size','9px').text(d.data.value).attr('opacity',0).attr('pointer-events','none');
+      }
+      this._treeItems.push({rect, nameEl, valEl, w:d.x1-d.x0, h:d.y1-d.y0, d, origX:d.x0, origY:d.y0, idx:i, parentData});
+      rect.on('click', (ev) => {
+        ev.stopPropagation();
+        if (this._zoomedTile === i) { resetTreemap(); } else {
+          markDrillState('treemap-chart'); this._zoomedTile = i; g.selectAll('.tree-breadcrumb,.tree-sub').remove();
+          this._treeItems.forEach((item,ii) => {
+            if(ii===i){item.rect.transition().duration(500).ease(d3.easeCubicOut).attr('x',0).attr('y',0).attr('width',iw).attr('height',ih).attr('opacity',0.5);}else{item.rect.transition().duration(300).attr('opacity',0);}
+            if(item.nameEl) item.nameEl.transition().duration(200).attr('opacity',0);
+            if(item.valEl) item.valEl.transition().duration(200).attr('opacity',0);
+          });
+          if (parentData && parentData.subs) {
+            const subH = d3.hierarchy({name:'s',children:parentData.subs}).sum(dd=>dd.value);
+            d3.treemap().size([iw-8,ih-28]).padding(3).round(true)(subH);
+            subH.leaves().forEach((sd,si) => {
+              g.append('rect').attr('class','tree-sub').attr('x',sd.x0+4).attr('y',sd.y0+24).attr('width',sd.x1-sd.x0).attr('height',sd.y1-sd.y0)
+                .attr('fill',color(i)).attr('opacity',0).attr('rx',3).attr('stroke','rgba(255,255,255,0.15)')
+                .transition().delay(si*80+300).duration(400).attr('opacity',0.8);
+              if (sd.x1-sd.x0 > 30) {
+                g.append('text').attr('class','tree-sub').attr('x',sd.x0+10).attr('y',sd.y0+38).attr('fill','#f1f5f9').attr('font-size','10px').attr('font-weight','600').text(sd.data.name)
+                  .attr('opacity',0).attr('pointer-events','none').transition().delay(si*80+500).duration(300).attr('opacity',1);
+                g.append('text').attr('class','tree-sub').attr('x',sd.x0+10).attr('y',sd.y0+50).attr('fill','rgba(255,255,255,0.6)').attr('font-size','9px').text(sd.data.value)
+                  .attr('opacity',0).attr('pointer-events','none').transition().delay(si*80+500).duration(300).attr('opacity',1);
+              }
+            });
+          }
+          g.append('text').attr('class','tree-breadcrumb').attr('x',6).attr('y',16).attr('fill','#7DD3FC').attr('font-size','11px').attr('cursor','pointer').text(`Inventory > ${d.data.name}`)
+            .on('click', () => rect.dispatch('click'));
+        }
+      });
+    });
+  },
+  animate() {
+    this._treeItems.forEach((item,i) => {
+      item.rect.transition().duration(600).ease(d3.easeBackOut.overshoot(1)).delay(i*60).attr('width',item.w).attr('height',item.h);
+      if(item.nameEl){item.nameEl.transition().delay(i*60+400).duration(300).attr('opacity',1);item.valEl.transition().delay(i*60+500).duration(300).attr('opacity',1);}
+    });
+  }
+};
+// ── 21. Chord Diagram ───────────────────────────────────────────────
+charts['chord-diagram'] = {
+  build() {
+    const matrix = [[0,20,15,10,5],[20,0,25,8,12],[15,25,0,18,10],[10,8,18,0,22],[5,12,10,22,0]];
+    const labels = ['Engineering','Production','Quality','Logistics','Sales'];
+    const el = document.querySelector('#chord-diagram');
+    const w = el.clientWidth, h = el.clientHeight;
+    const svg = d3.select('#chord-diagram').append('svg').attr('viewBox',`0 0 ${w} ${h}`);
+    const r = Math.min(w,h)/2-20;
+    const g = svg.append('g').attr('transform',`translate(${w/2},${h/2})`);
+    this._selectedArc = -1;
+    const resetChord = () => { this._selectedArc=-1; this._ribbonPaths.transition().duration(300).attr('stroke-opacity',0.25); this._groupPaths.transition().duration(300).attr('opacity',0.85); clearDrillState('chord-diagram'); };
+    addResetBtn(document.querySelector('[data-chart="chord-diagram"]'), resetChord);
+
+    const chord = d3.chord().padAngle(0.05).sortSubgroups(d3.descending);
+    const chords = chord(matrix);
+    const arcGen = d3.arc().innerRadius(r).outerRadius(r+12);
+    const ribbon = d3.ribbon().radius(r);
+    this._groupPaths = g.selectAll('.cg').data(chords.groups).join('path').attr('class','cg')
+      .attr('d',arcGen).attr('fill',d=>color(d.index)).attr('opacity',0).attr('cursor','pointer')
+      .on('click', (ev, d) => {
+        ev.stopPropagation();
+        if (this._selectedArc === d.index) { resetChord(); } else {
+          markDrillState('chord-diagram'); this._selectedArc = d.index;
+          this._groupPaths.transition().duration(300).attr('opacity', dd => dd.index===d.index?1:0.3);
+          this._ribbonPaths.transition().duration(300).attr('stroke-opacity', dd => (dd.source.index===d.index||dd.target.index===d.index)?0.6:0.03);
+        }
+      });
+    this._ribbonPaths = g.selectAll('.cr').data(chords).join('path').attr('class','cr')
+      .attr('d',ribbon).attr('fill',d=>color(d.source.index)).attr('opacity',0).attr('stroke','none');
+    svg.on('click', () => { if (this._selectedArc >= 0) resetChord(); });
+    this._labels = [];
+    chords.groups.forEach((d,i) => {
+      const angle = (d.startAngle+d.endAngle)/2;
+      const lx = Math.cos(angle-Math.PI/2)*(r+24), ly = Math.sin(angle-Math.PI/2)*(r+24);
+      this._labels.push(g.append('text').attr('x',lx).attr('y',ly).attr('text-anchor','middle').attr('dominant-baseline','middle').attr('fill','#94a3b8').attr('font-size','9px').text(labels[i]).attr('opacity',0));
+    });
+  },
+  animate() {
+    this._groupPaths.transition().duration(600).ease(d3.easeCubicOut).delay((d,i)=>i*80).attr('opacity',0.85);
+    this._ribbonPaths.transition().duration(800).ease(d3.easeCubicOut).delay(400).attr('opacity',0.25);
+    this._labels.forEach((t,i) => t.transition().delay(i*80+300).duration(400).attr('opacity',1));
+  }
+};
+
+// ── 22. Network Graph ───────────────────────────────────────────────
+charts['network-graph'] = {
+  build() {
+    const nodes = [{id:'ERP',g:0},{id:'MES',g:1},{id:'SCADA',g:1},{id:'PLM',g:2},{id:'QMS',g:2},{id:'CRM',g:3},{id:'WMS',g:3},{id:'IoT GW',g:4}];
+    const links = [{s:'ERP',t:'MES'},{s:'ERP',t:'SCADA'},{s:'ERP',t:'PLM'},{s:'ERP',t:'QMS'},{s:'MES',t:'CRM'},{s:'SCADA',t:'WMS'},{s:'PLM',t:'IoT GW'},{s:'QMS',t:'CRM'},{s:'CRM',t:'WMS'},{s:'WMS',t:'IoT GW'}];
+    const el = document.querySelector('#network-graph');
+    const w = el.clientWidth, h = el.clientHeight;
+    const svg = d3.select('#network-graph').append('svg').attr('viewBox',`0 0 ${w} ${h}`);
+    const cx = w/2, cy = h/2;
+    this._selectedNode = -1;
+    const resetNetwork = () => { this._selectedNode=-1; svg.selectAll('.pulse-ring').remove(); this._netNodes.forEach(nn=>{nn.circle.transition().duration(300).attr('opacity',0.8).attr('stroke-width',2);}); this._netLines.forEach(ll=>ll.transition().duration(300).attr('stroke','rgba(255,255,255,0.1)').attr('stroke-width',1.5)); clearDrillState('network-graph'); };
+    addResetBtn(document.querySelector('[data-chart="network-graph"]'), resetNetwork);
+
+    const positions = [[cx,cy],[cx-70,cy-60],[cx+70,cy-60],[cx-80,cy+40],[cx+80,cy+40],[cx-40,cy+80],[cx+40,cy+80],[cx,cy-90]];
+    nodes.forEach((n,i) => {n.x=positions[i][0];n.y=positions[i][1];});
+    const nodeMap = Object.fromEntries(nodes.map(n=>[n.id,n]));
+    const adj = {}; nodes.forEach(n => adj[n.id] = new Set()); links.forEach(l => { adj[l.s].add(l.t); adj[l.t].add(l.s); });
+
+    this._netLines = links.map(l => svg.append('line').attr('x1',cx).attr('x2',cx).attr('y1',cy).attr('y2',cy).attr('stroke','rgba(255,255,255,0.1)').attr('stroke-width',1.5).datum({sx:nodeMap[l.s].x,sy:nodeMap[l.s].y,tx:nodeMap[l.t].x,ty:nodeMap[l.t].y,s:l.s,t:l.t}));
+    this._netNodes = nodes.map((n,i) => {
+      const r = n.id === 'ERP' ? 14 : 9;
+      const circle = svg.append('circle').attr('cx',cx).attr('cy',cy).attr('r',0).attr('fill',color(n.g)).attr('opacity',0.8).attr('stroke',color(n.g)).attr('stroke-width',2).attr('stroke-opacity',0.4).attr('cursor','pointer');
+      const text = svg.append('text').attr('x',cx).attr('y',cy+r+12).attr('text-anchor','middle').attr('fill','#94a3b8').attr('font-size','9px').text(n.id).attr('opacity',0);
+      circle.on('click', (ev) => {
+        ev.stopPropagation();
+        if (this._selectedNode === i) { resetNetwork(); } else {
+          markDrillState('network-graph'); this._selectedNode = i; svg.selectAll('.pulse-ring').remove();
+          const connected = adj[n.id];
+          this._netNodes.forEach((nn,ii) => { const isConn=connected.has(nodes[ii].id)||ii===i; nn.circle.transition().duration(300).attr('opacity',isConn?1:0.08).attr('stroke-width',ii===i?4:2); });
+          this._netLines.forEach(ll => { const d=ll.datum(); const isConn=(d.s===n.id||d.t===n.id); ll.transition().duration(300).attr('stroke',isConn?'rgba(125,211,252,0.4)':'rgba(255,255,255,0.03)').attr('stroke-width',isConn?2.5:1); });
+          const pulseCircle = svg.append('circle').attr('class','pulse-ring').attr('cx',n.x).attr('cy',n.y).attr('r',r+4).attr('fill','none').attr('stroke',color(n.g)).attr('stroke-width',2);
+          (function pulse(){pulseCircle.attr('r',r+4).attr('opacity',0.6).transition().duration(1200).ease(d3.easeCubicOut).attr('r',r+20).attr('opacity',0).on('end',pulse);})();
+        }
+      });
+      return {circle, text, targetX:n.x, targetY:n.y, r};
+    });
+    svg.on('click', () => { if (this._selectedNode >= 0) resetNetwork(); });
+  },
+  animate() {
+    this._netNodes.forEach((n,i) => {
+      n.circle.transition().duration(800).ease(d3.easeBackOut.overshoot(1.5)).delay(i*60).attr('cx',n.targetX).attr('cy',n.targetY).attr('r',n.r);
+      n.text.transition().duration(400).delay(i*60+500).attr('x',n.targetX).attr('y',n.targetY+n.r+12).attr('opacity',1);
+    });
+    this._netLines.forEach((l,i) => { const d=l.datum(); l.transition().duration(600).ease(d3.easeCubicOut).delay(300+i*40).attr('x1',d.sx).attr('y1',d.sy).attr('x2',d.tx).attr('y2',d.ty); });
+  }
+};
+
+// ── 23. Bump Chart ──────────────────────────────────────────────────
+charts['bump-chart'] = {
+  build() {
+    const teams = ['Acme','BoltCo','CastPro','Delta','Elton'];
+    const periods = ['Q1','Q2','Q3','Q4'];
+    const ranks = [[1,2,3,4,5],[2,1,4,3,5],[1,3,2,5,4],[3,1,2,4,5]];
+    const {g,iw,ih,svg} = svgIn('#bump-chart',{top:16,right:50,bottom:28,left:50});
+    const x = d3.scalePoint().domain(periods).range([0,iw]);
+    const y = d3.scaleLinear().domain([1,5]).range([0,ih]);
+    const lineGen = d3.line().x(d=>d.x).y(d=>d.y).curve(d3.curveBumpX);
+    this._selectedTeam = -1;
+    const resetBump = () => { this._selectedTeam=-1; g.selectAll('.rank-badge').remove(); this._bumpLines.forEach(p=>p.transition().duration(300).attr('stroke-width',2.5).attr('opacity',0.7)); this._bumpDots.forEach(dd=>dd.forEach(d=>d.transition().duration(300).attr('opacity',1))); clearDrillState('bump-chart'); };
+    addResetBtn(document.querySelector('[data-chart="bump-chart"]'), resetBump);
+
+    this._bumpLines = []; this._bumpDots = [];
+    teams.forEach((team,ti) => {
+      const points = periods.map((p,pi) => ({x:x(p),y:y(ranks[pi][ti])}));
+      const path = g.append('path').datum(points).attr('d',lineGen).attr('fill','none').attr('stroke',color(ti)).attr('stroke-width',2.5).attr('opacity',0.7).attr('cursor','pointer');
+      const len = path.node().getTotalLength();
+      path.attr('stroke-dasharray',len).attr('stroke-dashoffset',len);
+      this._bumpLines.push(path);
+      const dots = points.map(p => g.append('circle').attr('cx',p.x).attr('cy',p.y).attr('r',0).attr('fill',color(ti)).attr('cursor','pointer'));
+      this._bumpDots.push(dots);
+      g.append('text').attr('x',iw+8).attr('y',y(ranks[3][ti])).attr('dominant-baseline','middle').attr('fill',color(ti)).attr('font-size','10px').text(team).attr('opacity',0).attr('class','bump-lbl');
+      g.append('text').attr('x',-8).attr('y',y(ranks[0][ti])).attr('text-anchor','end').attr('dominant-baseline','middle').attr('fill',color(ti)).attr('font-size','10px').text(team).attr('opacity',0).attr('class','bump-lbl');
+      const clickHandler = (ev) => {
+        ev.stopPropagation();
+        if (this._selectedTeam === ti) { resetBump(); } else {
+          markDrillState('bump-chart'); this._selectedTeam = ti; g.selectAll('.rank-badge').remove();
+          this._bumpLines.forEach((p,ii) => { p.transition().duration(300).attr('stroke-width',ii===ti?4:2.5).attr('opacity',ii===ti?1:0.08); });
+          this._bumpDots.forEach((dd,ii) => dd.forEach(d => d.transition().duration(300).attr('opacity',ii===ti?1:0.08)));
+          points.forEach((p,pi) => { g.append('text').attr('class','rank-badge').attr('x',p.x).attr('y',p.y-12).attr('text-anchor','middle').attr('fill','#f1f5f9').attr('font-size','10px').attr('font-weight','700').text(`#${ranks[pi][ti]}`).attr('opacity',0).transition().duration(300).attr('opacity',1); });
+        }
+      };
+      path.on('click', clickHandler); dots.forEach(d => d.on('click', clickHandler));
+    });
+    svg.on('click', () => { if (this._selectedTeam >= 0) resetBump(); });
+    axisStyle(g.append('g').attr('transform',`translate(0,${ih+8})`).call(d3.axisBottom(x).tickSize(0)));
+    this._g = g;
+  },
+  animate() {
+    this._bumpLines.forEach((path,i) => { path.transition().duration(DUR*1.5).ease(d3.easeCubicOut).delay(i*100).attr('stroke-dashoffset',0); });
+    this._bumpDots.forEach((dots,i) => { dots.forEach((dot,j) => { dot.transition().duration(300).ease(d3.easeBackOut).delay(i*100+j*200+200).attr('r',5); }); });
+    this._g.selectAll('.bump-lbl').transition().delay(DUR*1.2).duration(400).attr('opacity',1);
+  }
+};
+
+// ── 24. Bar Race ────────────────────────────────────────────────────
+charts['bar-race'] = {
+  build() {
+    const data = [{l:'Widget X1',v:420},{l:'Bracket M3',v:380},{l:'Valve V7',v:310},{l:'Gear G2',v:275},{l:'Seal S4',v:220},{l:'Pin P1',v:180},{l:'Rod R5',v:140}];
+    data.sort((a,b)=>b.v-a.v);
+    const {g,iw,ih,svg} = svgIn('#bar-race',{top:8,right:50,bottom:8,left:80});
+    const y = d3.scaleBand().domain(data.map(d=>d.l)).range([0,ih]).padding(0.25);
+    const x = d3.scaleLinear().domain([0,500]).range([0,iw]);
+    this._raceData = data; this._raceBars = [];
+    data.forEach((d,i) => {
+      const bar = g.append('rect').attr('x',0).attr('y',y(d.l)).attr('width',0).attr('height',y.bandwidth()).attr('fill',color(i)).attr('opacity',0.8).attr('rx',4).attr('cursor','pointer');
+      const label = g.append('text').attr('x',-8).attr('y',y(d.l)+y.bandwidth()/2).attr('text-anchor','end').attr('dominant-baseline','middle').attr('fill','#94a3b8').attr('font-size','10px').text(d.l).attr('class','race-label');
+      const valTxt = g.append('text').attr('x',6).attr('y',y(d.l)+y.bandwidth()/2).attr('dominant-baseline','middle').attr('fill','#cbd5e1').attr('font-size','10px').attr('font-weight','600').text('0').attr('opacity',0).attr('class','race-val');
+      this._raceBars.push({bar, valTxt, label, targetW:x(d.v), val:d.v});
+    });
+    svg.attr('cursor','pointer').on('click', () => {
+      markInteracted('bar-race');
+      data.forEach(d => d.v = 100 + Math.floor(Math.random()*400));
+      data.sort((a,b) => b.v - a.v);
+      const newY = d3.scaleBand().domain(data.map(d=>d.l)).range([0,ih]).padding(0.25);
+      const newX = d3.scaleLinear().domain([0, Math.max(...data.map(d=>d.v))+50]).range([0,iw]);
+      this._raceBars.forEach((item,i) => {
+        const d = data[i];
+        item.bar.transition().duration(600).ease(d3.easeCubicOut).attr('y', newY(d.l)).attr('width', newX(d.v)).attr('fill', color(data.indexOf(d)));
+        item.label.transition().duration(600).ease(d3.easeCubicOut).attr('y', newY(d.l)+newY.bandwidth()/2).text(d.l);
+        item.valTxt.transition().duration(600).ease(d3.easeCubicOut).attr('y', newY(d.l)+newY.bandwidth()/2).attr('x', newX(d.v)+6).attr('opacity',1)
+          .tween('text', function(){const prev=parseInt(d3.select(this).text())||0;const ip=d3.interpolate(prev,d.v);return t=>d3.select(this).text(Math.round(ip(t)));});
+      });
+    });
+  },
+  animate() {
+    this._raceBars.forEach((item,i) => {
+      item.bar.transition().duration(DUR*1.2).ease(d3.easeCubicOut).delay(i*80).attr('width', item.targetW);
+      item.valTxt.transition().duration(DUR*1.2).ease(d3.easeCubicOut).delay(i*80).attr('x', item.targetW+6).attr('opacity',1)
+        .tween('text', function(){const ip=d3.interpolate(0,item.val);return t=>d3.select(this).text(Math.round(ip(t)));});
+    });
+  }
+};
+
+// ── 25. Heatmap Calendar ────────────────────────────────────────────
+charts['heatmap-calendar'] = {
+  build() {
+    const el = document.querySelector('#heatmap-calendar');
+    const w = el.clientWidth, h = el.clientHeight;
+    const svg = d3.select('#heatmap-calendar').append('svg').attr('viewBox',`0 0 ${w} ${h}`);
+    const weeks = 20, days = 7, pad = 2;
+    const cellW = (w - 30 - pad*(weeks+1)) / weeks;
+    const cellH = (h - 20 - pad*(days+1)) / days;
+    const colorScale = d3.scaleSequential(d3.interpolateBlues).domain([0,10]);
+    const dayLabels = ['M','T','W','T','F','S','S'];
+    const resetHeat = () => { svg.selectAll('.heat-highlight,.heat-detail').remove(); clearDrillState('heatmap-calendar'); };
+    addResetBtn(document.querySelector('[data-chart="heatmap-calendar"]'), resetHeat);
+
+    dayLabels.forEach((d,i) => { svg.append('text').attr('x',18).attr('y',20+i*(cellH+pad)+cellH/2).attr('text-anchor','end').attr('dominant-baseline','middle').attr('fill','#64748b').attr('font-size','9px').text(d); });
+    // Title context
+    svg.append('text').attr('x',w/2).attr('y',h-2).attr('text-anchor','middle').attr('fill','#64748b').attr('font-size','9px').text('Incidents per Day');
+
+    const seed = [7,3,0,8,5,2,9,1,6,4,8,3,7,2,5,9,1,6,4,8,0,7,3,9,5,2,8,1,6,4,7,3,0,9,5,2,8,1,6,4,7,3,0,8,5,2,9,1,6,4,8,3,7,2,5,9,1,6,4,8,0,7,3,9,5,2,8,1,6,4,7,3,0,9,5,2,8,1,6,4,7,3,0,8,5,2,9,1,6,4,8,3,7,2,5,9,1,6,4,8,0,7,3,9,5,2,8,1,6,4,7,3,0,9,5,2,8,1,6,4,7,3,0,8,5,2,9,1,6,4,8,3,7,2,5,9,1,6,4,8];
+    this._heatCells = []; let idx = 0;
+    for (let wk=0;wk<weeks;wk++){
+      for(let dy=0;dy<days;dy++){
+        const v = seed[idx++ % seed.length];
+        const cellX = 30+wk*(cellW+pad), cellY = 16+dy*(cellH+pad);
+        const cell = svg.append('rect').attr('x',cellX).attr('y',cellY).attr('width',cellW).attr('height',cellH).attr('rx',2)
+          .attr('fill',v<1?'rgba(255,255,255,0.04)':colorScale(v)).attr('opacity',0).attr('cursor','pointer').datum({wk,dy,v});
+        cell.on('click', (ev, d) => {
+          markDrillState('heatmap-calendar'); ev.stopPropagation();
+          svg.selectAll('.heat-highlight,.heat-detail').remove();
+          svg.append('rect').attr('class','heat-highlight').attr('x',cellX-1).attr('y',cellY-1).attr('width',cellW+2).attr('height',cellH+2).attr('rx',3).attr('fill','none').attr('stroke','#f1f5f9').attr('stroke-width',2);
+          const cardG = svg.append('g').attr('class','heat-detail');
+          const cxp = Math.min(cellX+cellW+8, w-130), cyp = Math.max(cellY-10, 4);
+          cardG.append('rect').attr('x',cxp).attr('y',cyp).attr('width',120).attr('height',50).attr('rx',6).attr('fill','rgba(15,23,42,0.92)').attr('stroke','rgba(125,211,252,0.2)');
+          cardG.append('text').attr('x',cxp+8).attr('y',cyp+16).attr('fill','#f1f5f9').attr('font-size','10px').attr('font-weight','600').text(`Week ${d.wk+1}, ${dayLabels[d.dy]}`);
+          cardG.append('text').attr('x',cxp+8).attr('y',cyp+30).attr('fill','#94a3b8').attr('font-size','9px').text(`Incidents: ${d.v}`);
+          cardG.append('rect').attr('x',cxp+8).attr('y',cyp+36).attr('width',100).attr('height',6).attr('rx',3).attr('fill','rgba(255,255,255,0.06)');
+          cardG.append('rect').attr('x',cxp+8).attr('y',cyp+36).attr('width',d.v*10).attr('height',6).attr('rx',3).attr('fill',color(1));
+          cardG.attr('opacity',0).transition().duration(200).attr('opacity',1);
+        });
+        this._heatCells.push({cell, wk, dy});
+      }
+    }
+    svg.on('click', (ev) => { if (ev.target === svg.node()) resetHeat(); });
+  },
+  animate() { this._heatCells.forEach(({cell, wk}) => { cell.transition().duration(300).delay(wk*30).attr('opacity',0.8); }); }
+};
+
+// ── 26. Radar Chart ─────────────────────────────────────────────────
+charts['radar-chart'] = {
+  build() {
+    const dims = ['Accuracy','Durability','Finish','Strength','Flexibility','Weight'];
+    const series = [[0.8,0.6,0.9,0.7,0.5,0.75],[0.5,0.85,0.6,0.8,0.9,0.55]];
+    const seriesLabels = ['Product A','Product B'];
+    const el = document.querySelector('#radar-chart');
+    const w = el.clientWidth, h = el.clientHeight;
+    const svg = d3.select('#radar-chart').append('svg').attr('viewBox',`0 0 ${w} ${h}`);
+    const cx = w/2, cy = h/2, maxR = Math.min(cx,cy)-24;
+    const g = svg.append('g').attr('transform',`translate(${cx},${cy})`);
+    const n = dims.length, angleStep = (Math.PI*2)/n;
+    this._hiddenSeries = new Set();
+    [0.25,0.5,0.75,1].forEach(f => { const pts=dims.map((_,i)=>{const a=i*angleStep-Math.PI/2;return[Math.cos(a)*maxR*f,Math.sin(a)*maxR*f];}); g.append('polygon').attr('points',pts.map(p=>p.join(',')).join(' ')).attr('fill','none').attr('stroke','rgba(255,255,255,0.06)'); });
+    dims.forEach((d,i) => { const a=i*angleStep-Math.PI/2; g.append('line').attr('x1',0).attr('y1',0).attr('x2',Math.cos(a)*maxR).attr('y2',Math.sin(a)*maxR).attr('stroke','rgba(255,255,255,0.06)'); g.append('text').attr('x',Math.cos(a)*(maxR+14)).attr('y',Math.sin(a)*(maxR+14)).attr('text-anchor','middle').attr('dominant-baseline','middle').attr('fill','#94a3b8').attr('font-size','9px').text(d); });
+    this._radarPolys = []; this._radarDots = [];
+    const seriesColors = [color(1), color(3)];
+    series.forEach((vals,si) => {
+      const c = seriesColors[si];
+      const targetPts = vals.map((v,i)=>{const a=i*angleStep-Math.PI/2;return[Math.cos(a)*maxR*v,Math.sin(a)*maxR*v];});
+      const zeroPts = vals.map(()=>[0,0]);
+      const poly = g.append('polygon').attr('points',zeroPts.map(p=>p.join(',')).join(' ')).attr('fill',c).attr('fill-opacity',0.15).attr('stroke',c).attr('stroke-width',2).attr('stroke-opacity',0.7);
+      const dots = targetPts.map(p => g.append('circle').attr('cx',0).attr('cy',0).attr('r',0).attr('fill',c));
+      this._radarPolys.push({poly, targetPts, color: c}); this._radarDots.push(dots);
+    });
+    seriesLabels.forEach((label, si) => {
+      const lx = cx - 40 + si * 80, ly = 14;
+      const dot = svg.append('circle').attr('cx',lx-8).attr('cy',ly).attr('r',5).attr('fill',seriesColors[si]).attr('cursor','pointer');
+      svg.append('text').attr('x',lx).attr('y',ly+3).attr('fill','#94a3b8').attr('font-size','9px').text(label);
+      dot.on('click', () => {
+        markInteracted('radar-chart');
+        if (this._hiddenSeries.has(si)) { this._hiddenSeries.delete(si); this._radarPolys[si].poly.transition().duration(400).attr('fill-opacity',0.15).attr('stroke-opacity',0.7); this._radarDots[si].forEach(d=>d.transition().duration(400).attr('opacity',1)); dot.transition().duration(300).attr('opacity',1);
+        } else { this._hiddenSeries.add(si); this._radarPolys[si].poly.transition().duration(400).attr('fill-opacity',0).attr('stroke-opacity',0); this._radarDots[si].forEach(d=>d.transition().duration(400).attr('opacity',0)); dot.transition().duration(300).attr('opacity',0.3); }
+        this._radarPolys.forEach((item,ii) => { if(!this._hiddenSeries.has(ii)){item.poly.transition().duration(300).attr('stroke-width',this._hiddenSeries.size>0?3:2);} });
+      });
+    });
+  },
+  animate() {
+    this._radarPolys.forEach((item,si) => { item.poly.transition().duration(DUR*1.2).ease(d3.easeCubicOut).delay(si*200).attr('points',item.targetPts.map(p=>p.join(',')).join(' ')); this._radarDots[si].forEach((dot,i)=>{dot.transition().duration(DUR*1.2).ease(d3.easeCubicOut).delay(si*200).attr('cx',item.targetPts[i][0]).attr('cy',item.targetPts[i][1]).attr('r',3);}); });
+  }
+};
+
+// ── 27. Status Indicator ────────────────────────────────────────────
+charts['status-indicator'] = {
+  build() {
+    const data = [
+      {name:'Server 1',status:'Online',color:'#34d399',val:'99.9%',spark:[98,99,99.5,99.8,99.9,99.9,99.9]},
+      {name:'Server 2',status:'Online',color:'#34d399',val:'99.7%',spark:[99,98,99.2,99.5,99.7,99.8,99.7]},
+      {name:'Database',status:'Warning',color:'#FBBF24',val:'85.2%',spark:[95,92,88,86,84,85,85.2]},
+      {name:'API Gateway',status:'Online',color:'#34d399',val:'99.5%',spark:[98.5,99,99.2,99.4,99.5,99.3,99.5]},
+      {name:'Cache',status:'Critical',color:'#f87171',val:'42.1%',spark:[90,78,65,55,48,45,42.1]},
+      {name:'CDN',status:'Online',color:'#34d399',val:'99.9%',spark:[99.5,99.8,99.9,99.9,99.8,99.9,99.9]},
+    ];
+    const el = document.getElementById('status-indicator');
+    const grid = document.createElement('div'); grid.className = 'status-grid';
+    data.forEach((d, idx) => {
+      const item = document.createElement('div'); item.className = 'status-item';
+      item.innerHTML = `<div class="status-top"><div class="status-dot" style="background:${d.color};color:${d.color}"></div><div class="status-info"><span class="status-name">${d.name}</span><span class="status-val">${d.status} \u2014 ${d.val}</span></div></div><div class="status-sparkline"><svg class="status-spark-svg" data-idx="${idx}"></svg></div>`;
+      item.addEventListener('click', () => {
+        markInteracted('status-indicator');
+        if (item.classList.contains('expanded')) { item.classList.remove('expanded'); } else {
+          grid.querySelectorAll('.status-item.expanded').forEach(it => it.classList.remove('expanded'));
+          item.classList.add('expanded');
+          const svgEl = item.querySelector('.status-spark-svg');
+          const sw = item.clientWidth - 10, sh = 30;
+          const spark = d3.select(svgEl).attr('viewBox', `0 0 ${sw} ${sh}`).attr('width', sw).attr('height', sh);
+          spark.selectAll('*').remove();
+          const xS = d3.scaleLinear().domain([0, d.spark.length-1]).range([4, sw-4]);
+          const yS = d3.scaleLinear().domain(d3.extent(d.spark)).nice().range([sh-2, 2]);
+          spark.append('path').datum(d.spark).attr('d',d3.line().x((v,i)=>xS(i)).y(v=>yS(v)).curve(d3.curveCatmullRom)).attr('fill','none').attr('stroke',d.color).attr('stroke-width',1.5);
+          spark.selectAll('circle').data(d.spark).join('circle').attr('cx',(v,i)=>xS(i)).attr('cy',v=>yS(v)).attr('r',2).attr('fill',d.color);
+        }
+      });
+      grid.appendChild(item);
+    });
+    el.appendChild(grid);
+  },
+  animate() { document.querySelectorAll('#status-indicator .status-item').forEach((item, i) => { setTimeout(() => { item.classList.add('show'); item.querySelector('.status-dot').classList.add('pulse'); }, i * 100); }); }
+};
+
+// ── 28. Timeline ────────────────────────────────────────────────────
+charts['timeline-chart'] = {
+  build() {
+    const events = [
+      {l:'Concept',m:0,phase:'Ideation',duration:'1 month',status:'Complete',team:3},
+      {l:'Prototype',m:1.5,phase:'Design',duration:'1.5 months',status:'Complete',team:4},
+      {l:'Tooling',m:3,phase:'Engineering',duration:'2 months',status:'Complete',team:8},
+      {l:'Pilot Run',m:5,phase:'Validation',duration:'1.5 months',status:'In Progress',team:5},
+      {l:'Mass Production',m:6.5,phase:'Manufacturing',duration:'0.5 months',status:'Planned',team:3},
+      {l:'Ship',m:8,phase:'Delivery',duration:'1 month',status:'Planned',team:4}
+    ];
+    const {g,iw,ih,svg} = svgIn('#timeline-chart',{top:20,right:16,bottom:20,left:16});
+    const x = d3.scaleLinear().domain([0,9]).range([0,iw]);
+    const cy = ih/2;
+    const resetTimeline = () => { g.selectAll('.tl-detail').remove(); clearDrillState('timeline-chart'); };
+    addResetBtn(document.querySelector('[data-chart="timeline-chart"]'), resetTimeline);
+
+    this._timeline = g.append('line').attr('x1',0).attr('x2',0).attr('y1',cy).attr('y2',cy).attr('stroke','rgba(255,255,255,0.1)').attr('stroke-width',2);
+    this._timelineTargetX = iw;
+    this._timeEvents = [];
+    events.forEach((e,i) => {
+      const ex = x(e.m); const above = i%2===0; const dy = above ? -30 : 30;
+      const stem = g.append('line').attr('x1',ex).attr('x2',ex).attr('y1',cy).attr('y2',cy).attr('stroke','rgba(255,255,255,0.15)');
+      const dot = g.append('circle').attr('cx',ex).attr('cy',cy).attr('r',0).attr('fill',color(i)).attr('stroke','rgba(0,0,0,0.2)').attr('cursor','pointer');
+      const label = g.append('text').attr('x',ex).attr('y',cy+dy+(above?-8:14)).attr('text-anchor','middle').attr('fill','#cbd5e1').attr('font-size','10px').attr('font-weight','600').text(e.l).attr('opacity',0);
+      this._timeEvents.push({stem, dot, label, stemTargetY: cy+dy});
+      dot.on('click', (ev) => {
+        markDrillState('timeline-chart'); ev.stopPropagation(); g.selectAll('.tl-detail').remove();
+        const cardG = g.append('g').attr('class','tl-detail');
+        const cardY = above ? cy - 90 : cy + 40; const cardX = Math.max(0, Math.min(ex - 70, iw - 145));
+        cardG.append('rect').attr('x',cardX).attr('y',cardY).attr('width',145).attr('height',68).attr('rx',8).attr('fill','rgba(15,23,42,0.92)').attr('stroke','rgba(125,211,252,0.2)').attr('stroke-width',1);
+        const statusColor = e.status==='Complete'?'#34d399':e.status==='In Progress'?'#FBBF24':'#94a3b8';
+        cardG.append('text').attr('x',cardX+8).attr('y',cardY+16).attr('fill','#f1f5f9').attr('font-size','10px').attr('font-weight','600').text(e.l);
+        cardG.append('text').attr('x',cardX+8).attr('y',cardY+30).attr('fill','#94a3b8').attr('font-size','9px').text(`Phase: ${e.phase}`);
+        cardG.append('text').attr('x',cardX+8).attr('y',cardY+42).attr('fill','#94a3b8').attr('font-size','9px').text(`Duration: ${e.duration}`);
+        cardG.append('text').attr('x',cardX+8).attr('y',cardY+54).attr('fill',statusColor).attr('font-size','9px').attr('font-weight','600').text(`${e.status} \u2014 Team: ${e.team}`);
+        cardG.append('text').attr('x',cardX+132).attr('y',cardY+14).attr('fill','#64748b').attr('font-size','11px').attr('cursor','pointer').text('x').on('click',(ev)=>{ev.stopPropagation();cardG.remove();});
+        cardG.attr('opacity',0).transition().duration(300).attr('opacity',1);
+      });
+    });
+  },
+  animate() {
+    this._timeline.transition().duration(DUR).ease(d3.easeCubicOut).attr('x2',this._timelineTargetX);
+    this._timeEvents.forEach((ev,i) => { const delay=200+i*150; ev.dot.transition().duration(400).ease(d3.easeBackOut).delay(delay).attr('r',6); ev.stem.transition().duration(400).ease(d3.easeCubicOut).delay(delay).attr('y2',ev.stemTargetY); ev.label.transition().duration(300).delay(delay+200).attr('opacity',1); });
+  }
+};
+
+// ── 29. Gantt Chart ─────────────────────────────────────────────────
+charts['gantt-chart'] = {
+  build() {
+    const data = [
+      {l:'Design Validation',start:0,end:3,c:0,pct:100},{l:'Tool Fabrication',start:2,end:5,c:1,pct:85},
+      {l:'Process Qual.',start:4,end:8,c:2,pct:60},{l:'Pilot Batch',start:4,end:9,c:3,pct:55},
+      {l:'Line Setup',start:7,end:10,c:4,pct:20},{l:'Full Production',start:9,end:11,c:5,pct:0},
+    ];
+    const el = document.getElementById('gantt-chart');
+    const totalWeeks = 12;
+    const resetGantt = () => { el.querySelectorAll('.float-card').forEach(fc=>fc.remove()); clearDrillState('gantt-chart'); };
+    addResetBtn(document.querySelector('[data-chart="gantt-chart"]'), resetGantt);
+
+    data.forEach(d => {
+      const row = document.createElement('div'); row.className = 'gantt-row';
+      const leftPct = (d.start/totalWeeks)*100; const widthPct = ((d.end-d.start)/totalWeeks)*100;
+      row.innerHTML = `<div class="gantt-label">${d.l}</div><div class="gantt-track"><div class="gantt-bar" data-task="${d.l}" style="left:${leftPct}%;width:${widthPct}%;background:${color(d.c)}"></div></div>`;
+      el.appendChild(row);
+      row.querySelector('.gantt-bar').addEventListener('click', function(ev) {
+        markDrillState('gantt-chart'); ev.stopPropagation();
+        el.querySelectorAll('.float-card').forEach(fc => fc.remove());
+        const fc = document.createElement('div'); fc.className = 'float-card';
+        const dur = d.end - d.start;
+        fc.innerHTML = `<div class="fc-close" onclick="this.parentElement.remove()">x</div><div class="fc-title">${d.l}</div><div class="fc-row"><span class="fc-label">Start</span><span class="fc-val">Week ${d.start}</span></div><div class="fc-row"><span class="fc-label">End</span><span class="fc-val">Week ${d.end}</span></div><div class="fc-row"><span class="fc-label">Duration</span><span class="fc-val">${dur} weeks</span></div><div class="fc-row"><span class="fc-label">Complete</span><span class="fc-val">${d.pct}%</span></div><div style="margin-top:6px;height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden"><div style="height:100%;width:${d.pct}%;background:${color(d.c)};border-radius:3px;transition:width 0.5s ease"></div></div>`;
+        fc.style.position = 'absolute'; fc.style.right = '20px';
+        fc.style.top = this.getBoundingClientRect().top - el.getBoundingClientRect().top - 30 + 'px';
+        el.style.position = 'relative'; el.appendChild(fc);
+      });
+    });
+    const labelRow = document.createElement('div'); labelRow.className = 'gantt-row';
+    labelRow.innerHTML = `<div class="gantt-label"></div><div style="flex:1;display:flex;justify-content:space-between;padding:4px 0">${Array.from({length:7},(_,i)=>`<span style="font-size:9px;color:#64748b">W${i*2}</span>`).join('')}</div>`;
+    el.appendChild(labelRow);
+  },
+  animate() { document.querySelectorAll('#gantt-chart .gantt-bar').forEach((bar, i) => { setTimeout(() => bar.classList.add('show'), i * 120); }); }
+};
+
+// ── 30. Sankey Diagram ──────────────────────────────────────────────
+charts['sankey-diagram'] = {
+  build() {
+    const nodes = [{name:'Total Cost'},{name:'Material'},{name:'Labor'},{name:'Overhead'},{name:'Raw Stock'},{name:'Components'},{name:'Direct'},{name:'Indirect'},{name:'Facilities'},{name:'Utilities'}];
+    const links = [
+      {source:0,target:1,value:45},{source:0,target:2,value:35},{source:0,target:3,value:20},
+      {source:1,target:4,value:25},{source:1,target:5,value:20},
+      {source:2,target:6,value:22},{source:2,target:7,value:13},
+      {source:3,target:8,value:12},{source:3,target:9,value:8},
+    ];
+    const el = document.querySelector('#sankey-diagram');
+    const w = el.clientWidth, h = el.clientHeight;
+    const svg = d3.select('#sankey-diagram').append('svg').attr('viewBox',`0 0 ${w} ${h}`);
+    const mgn = {top:8,right:8,bottom:8,left:8};
+    const g = svg.append('g').attr('transform',`translate(${mgn.left},${mgn.top})`);
+    const iw = w-mgn.left-mgn.right, ih = h-mgn.top-mgn.bottom;
+    this._selectedNode = -1;
+    const resetSankey = () => { this._selectedNode=-1; this._sankeyLinks.transition().duration(300).attr('stroke-opacity',0.25); this._sankeyNodes.transition().duration(300).attr('opacity',0.85).attr('stroke','none'); clearDrillState('sankey-diagram'); };
+    addResetBtn(document.querySelector('[data-chart="sankey-diagram"]'), resetSankey);
+
+    const sankey = d3.sankey().nodeWidth(12).nodePadding(16).extent([[0,0],[iw,ih]]);
+    const graph = sankey({nodes: nodes.map(d=>({...d})), links: links.map(d=>({...d}))});
+    this._sankeyLinks = g.selectAll('.sl').data(graph.links).join('path').attr('class','sl').attr('d',d3.sankeyLinkHorizontal()).attr('fill','none').attr('stroke',d=>color(d.source.index)).attr('stroke-width',d=>Math.max(1,d.width)).attr('stroke-opacity',0);
+    this._sankeyNodes = g.selectAll('.sn').data(graph.nodes).join('rect').attr('class','sn').attr('x',d=>d.x0).attr('y',d=>d.y0).attr('width',d=>d.x1-d.x0).attr('height',d=>d.y1-d.y0).attr('fill',d=>color(d.index)).attr('opacity',0).attr('rx',3).attr('cursor','pointer')
+      .on('click', (ev, d) => {
+        ev.stopPropagation();
+        if (this._selectedNode === d.index) { resetSankey(); } else {
+          markDrillState('sankey-diagram'); this._selectedNode = d.index;
+          this._sankeyNodes.transition().duration(300).attr('opacity',dd=>dd.index===d.index?1:0.4).attr('stroke',dd=>dd.index===d.index?'#7DD3FC':'none').attr('stroke-width',dd=>dd.index===d.index?2:0);
+          this._sankeyLinks.transition().duration(300).attr('stroke-opacity',dd=>(dd.source.index===d.index||dd.target.index===d.index)?0.5:0.03);
+        }
+      });
+    svg.on('click', () => { if (this._selectedNode >= 0) resetSankey(); });
+    this._sankeyLabels = [];
+    graph.nodes.forEach(d => {
+      const isLeft = d.x0 < iw/2;
+      this._sankeyLabels.push(g.append('text').attr('x',isLeft?d.x1+6:d.x0-6).attr('y',(d.y0+d.y1)/2).attr('text-anchor',isLeft?'start':'end').attr('dominant-baseline','middle').attr('fill','#94a3b8').attr('font-size','10px').text(d.name).attr('opacity',0));
+    });
+  },
+  animate() {
+    this._sankeyNodes.transition().duration(500).ease(d3.easeCubicOut).delay((d,i)=>i*60).attr('opacity',0.85);
+    this._sankeyLinks.transition().duration(800).ease(d3.easeCubicOut).delay(300).attr('stroke-opacity',0.25);
+    this._sankeyLabels.forEach((t,i) => t.transition().delay(i*60+200).duration(400).attr('opacity',1));
+  }
+};
+// ── Build All Charts ────────────────────────────────────────────────
+Object.values(charts).forEach(c => c.build());
+
+// ── Intersection Observer — Trigger Animations on Scroll ────────────
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const card = entry.target;
+      card.classList.add('visible');
+      const chartId = card.dataset.chart;
+      if (charts[chartId] && !charts[chartId]._animated) {
+        charts[chartId]._animated = true;
+        setTimeout(() => charts[chartId].animate(), 200);
+      }
+      observer.unobserve(card);
+    }
+  });
+}, { threshold: 0.15 });
+
+document.querySelectorAll('.card').forEach(card => observer.observe(card));
+
+// ── Global Escape key to close drill panels ─────────────────────────
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.drill-panel.open').forEach(p => {
+      p.classList.remove('open');
+      setTimeout(() => p.remove(), 400);
+    });
+    document.querySelectorAll('.float-card').forEach(fc => fc.remove());
+    // Also clear all drill states on Escape
+    document.querySelectorAll('.card.has-drillstate').forEach(c => {
+      c.classList.remove('has-drillstate');
+      c.classList.remove('interacted');
+    });
+  }
+});
+</script>
+</body>
+</html>

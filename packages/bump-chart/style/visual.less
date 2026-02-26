@@ -1,0 +1,41 @@
+/* Bump Chart — styles injected via pbiviz build */
+
+.bump-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.bump-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.bump-line {
+  fill: none;
+  stroke-linecap: round;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.bump-dot {
+  cursor: pointer;
+  transition: r 0.15s ease, filter 0.15s ease;
+}
+
+.bump-dot:hover {
+  filter: brightness(1.15);
+}
+
+.bump-rank-label {
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+

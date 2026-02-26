@@ -35,28 +35,60 @@
     {
       "conditions": [
         {
-          "source": { "max": 1 },
-          "step2": { "max": 1 },
-          "step3": { "max": 1 },
-          "target": { "max": 1 },
-          "weight": { "max": 1 }
+          "source": {
+            "max": 1
+          },
+          "step2": {
+            "max": 1
+          },
+          "step3": {
+            "max": 1
+          },
+          "target": {
+            "max": 1
+          },
+          "weight": {
+            "max": 1
+          }
         }
       ],
       "categorical": {
         "categories": {
           "select": [
-            { "for": { "in": "source" } },
-            { "for": { "in": "step2" } },
-            { "for": { "in": "step3" } },
-            { "for": { "in": "target" } }
+            {
+              "for": {
+                "in": "source"
+              }
+            },
+            {
+              "for": {
+                "in": "step2"
+              }
+            },
+            {
+              "for": {
+                "in": "step3"
+              }
+            },
+            {
+              "for": {
+                "in": "target"
+              }
+            }
           ],
           "dataReductionAlgorithm": {
-            "top": { "count": 1000 }
+            "top": {
+              "count": 1000
+            }
           }
         },
         "values": {
           "select": [
-            { "bind": { "to": "weight" } }
+            {
+              "bind": {
+                "to": "weight"
+              }
+            }
           ]
         }
       }
@@ -68,60 +100,113 @@
       "properties": {
         "width": {
           "displayName": "Node Width",
-          "type": { "numeric": true }
+          "type": {
+            "numeric": true
+          }
         },
         "padding": {
           "displayName": "Node Padding",
-          "type": { "numeric": true }
+          "type": {
+            "numeric": true
+          }
         },
         "labelPosition": {
           "displayName": "Label Position",
           "type": {
             "enumeration": [
-              { "value": "inside", "displayName": "Inside" },
-              { "value": "beside", "displayName": "Beside" },
-              { "value": "above", "displayName": "Above" },
-              { "value": "below", "displayName": "Below" }
+              {
+                "value": "inside",
+                "displayName": "Inside"
+              },
+              {
+                "value": "beside",
+                "displayName": "Beside"
+              },
+              {
+                "value": "above",
+                "displayName": "Above"
+              },
+              {
+                "value": "below",
+                "displayName": "Below"
+              }
             ]
           }
         },
         "labelFontSize": {
           "displayName": "Label Font Size",
-          "type": { "numeric": true }
+          "type": {
+            "numeric": true
+          }
         },
         "labelColor": {
           "displayName": "Label Color",
-          "type": { "fill": { "solid": { "color": true } } }
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
         },
         "nodeBorderColor": {
           "displayName": "Node Border Color",
-          "type": { "fill": { "solid": { "color": true } } }
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
         },
         "nodeBorderWidth": {
           "displayName": "Node Border Width",
-          "type": { "numeric": true }
+          "type": {
+            "numeric": true
+          }
         },
         "cornerRadius": {
           "displayName": "Corner Radius",
-          "type": { "numeric": true }
+          "type": {
+            "numeric": true
+          }
         },
         "opacity": {
           "displayName": "Node Opacity (%)",
-          "type": { "numeric": true }
+          "type": {
+            "numeric": true
+          }
         },
         "minHeight": {
           "displayName": "Minimum Height",
-          "type": { "numeric": true }
+          "type": {
+            "numeric": true
+          }
         },
         "labelFontFamily": {
           "displayName": "Label Font Family",
           "type": {
             "enumeration": [
-              { "value": "Segoe UI", "displayName": "Segoe UI" },
-              { "value": "Arial", "displayName": "Arial" },
-              { "value": "Helvetica", "displayName": "Helvetica" },
-              { "value": "Verdana", "displayName": "Verdana" },
-              { "value": "Trebuchet MS", "displayName": "Trebuchet MS" }
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Helvetica",
+                "displayName": "Helvetica"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS"
+              }
             ]
           }
         },
@@ -129,8 +214,14 @@
           "displayName": "Label Font Weight",
           "type": {
             "enumeration": [
-              { "value": "normal", "displayName": "Normal" },
-              { "value": "bold", "displayName": "Bold" }
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
             ]
           }
         },
@@ -138,8 +229,14 @@
           "displayName": "Label Font Style",
           "type": {
             "enumeration": [
-              { "value": "normal", "displayName": "Normal" },
-              { "value": "italic", "displayName": "Italic" }
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "italic",
+                "displayName": "Italic"
+              }
             ]
           }
         }
@@ -150,34 +247,60 @@
       "properties": {
         "opacity": {
           "displayName": "Opacity (%)",
-          "type": { "numeric": true }
+          "type": {
+            "numeric": true
+          }
         },
         "hoverOpacity": {
           "displayName": "Hover Opacity (%)",
-          "type": { "numeric": true }
+          "type": {
+            "numeric": true
+          }
         },
         "colorMode": {
           "displayName": "Color Mode",
           "type": {
             "enumeration": [
-              { "value": "source", "displayName": "Source" },
-              { "value": "target", "displayName": "Target" },
-              { "value": "gradient", "displayName": "Gradient" },
-              { "value": "custom", "displayName": "Custom" }
+              {
+                "value": "source",
+                "displayName": "Source"
+              },
+              {
+                "value": "target",
+                "displayName": "Target"
+              },
+              {
+                "value": "gradient",
+                "displayName": "Gradient"
+              },
+              {
+                "value": "custom",
+                "displayName": "Custom"
+              }
             ]
           }
         },
         "dimOpacity": {
           "displayName": "Dim Opacity (%)",
-          "type": { "numeric": true }
+          "type": {
+            "numeric": true
+          }
         },
         "customColor": {
           "displayName": "Custom Color",
-          "type": { "fill": { "solid": { "color": true } } }
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
         },
         "curvature": {
           "displayName": "Curvature",
-          "type": { "numeric": true }
+          "type": {
+            "numeric": true
+          }
         }
       }
     },
@@ -186,22 +309,38 @@
       "properties": {
         "showLinkLabels": {
           "displayName": "Show Link Labels",
-          "type": { "bool": true }
+          "type": {
+            "bool": true
+          }
         },
         "linkLabelFontSize": {
           "displayName": "Font Size",
-          "type": { "numeric": true }
+          "type": {
+            "numeric": true
+          }
         },
         "linkLabelFontColor": {
           "displayName": "Font Color",
-          "type": { "fill": { "solid": { "color": true } } }
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
         },
         "linkLabelFontWeight": {
           "displayName": "Font Weight",
           "type": {
             "enumeration": [
-              { "value": "normal", "displayName": "Normal" },
-              { "value": "bold", "displayName": "Bold" }
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
             ]
           }
         },
@@ -209,9 +348,18 @@
           "displayName": "Label Format",
           "type": {
             "enumeration": [
-              { "value": "value", "displayName": "Value" },
-              { "value": "percent", "displayName": "Percent" },
-              { "value": "both", "displayName": "Both" }
+              {
+                "value": "value",
+                "displayName": "Value"
+              },
+              {
+                "value": "percent",
+                "displayName": "Percent"
+              },
+              {
+                "value": "both",
+                "displayName": "Both"
+              }
             ]
           }
         }
@@ -224,10 +372,22 @@
           "displayName": "Node Alignment",
           "type": {
             "enumeration": [
-              { "value": "justify", "displayName": "Justify" },
-              { "value": "left", "displayName": "Left" },
-              { "value": "right", "displayName": "Right" },
-              { "value": "center", "displayName": "Center" }
+              {
+                "value": "justify",
+                "displayName": "Justify"
+              },
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              },
+              {
+                "value": "center",
+                "displayName": "Center"
+              }
             ]
           }
         },
@@ -235,16 +395,30 @@
           "displayName": "Sort Order",
           "type": {
             "enumeration": [
-              { "value": "auto", "displayName": "Automatic" },
-              { "value": "ascending", "displayName": "Ascending" },
-              { "value": "descending", "displayName": "Descending" },
-              { "value": "none", "displayName": "None" }
+              {
+                "value": "auto",
+                "displayName": "Automatic"
+              },
+              {
+                "value": "ascending",
+                "displayName": "Ascending"
+              },
+              {
+                "value": "descending",
+                "displayName": "Descending"
+              },
+              {
+                "value": "none",
+                "displayName": "None"
+              }
             ]
           }
         },
         "iterations": {
           "displayName": "Layout Iterations",
-          "type": { "numeric": true }
+          "type": {
+            "numeric": true
+          }
         }
       }
     },
@@ -253,42 +427,34 @@
       "properties": {
         "showTooltips": {
           "displayName": "Show Tooltips",
-          "type": { "bool": true }
+          "type": {
+            "bool": true
+          }
         },
         "showPercentage": {
           "displayName": "Show Percentage",
-          "type": { "bool": true }
+          "type": {
+            "bool": true
+          }
         },
         "valueFormat": {
           "displayName": "Value Format",
           "type": {
             "enumeration": [
-              { "value": "auto", "displayName": "Auto" },
-              { "value": "full", "displayName": "Full" },
-              { "value": "abbreviated", "displayName": "Abbreviated" }
+              {
+                "value": "auto",
+                "displayName": "Auto"
+              },
+              {
+                "value": "full",
+                "displayName": "Full"
+              },
+              {
+                "value": "abbreviated",
+                "displayName": "Abbreviated"
+              }
             ]
           }
-        }
-      }
-    },
-    "cardSettings": {
-      "displayName": "Card Style",
-      "properties": {
-        "enableGlass": {
-          "displayName": "Glass Effect",
-          "type": { "bool": true }
-        },
-        "backgroundColor": {
-          "displayName": "Background Color",
-          "type": { "fill": { "solid": { "color": true } } }
-        },
-        "backgroundOpacity": {
-          "displayName": "Background Opacity (%)",
-          "type": { "numeric": true }
-        },
-        "borderRadius": {
-          "displayName": "Border Radius",
-          "type": { "numeric": true }
         }
       }
     },
@@ -297,11 +463,15 @@
       "properties": {
         "enabled": {
           "displayName": "Enable Animations",
-          "type": { "bool": true }
+          "type": {
+            "bool": true
+          }
         },
         "duration": {
           "displayName": "Duration (ms)",
-          "type": { "numeric": true }
+          "type": {
+            "numeric": true
+          }
         }
       }
     },
@@ -310,19 +480,40 @@
       "properties": {
         "showDataLabels": {
           "displayName": "Show Data Labels",
-          "type": { "bool": true }
+          "type": {
+            "bool": true
+          }
         },
         "dataLabelFontSize": {
           "displayName": "Font Size",
-          "type": { "numeric": true }
+          "type": {
+            "numeric": true
+          }
         },
         "dataLabelFontColor": {
           "displayName": "Font Color",
-          "type": { "fill": { "solid": { "color": true } } }
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
         },
         "dataLabelFontWeight": {
           "displayName": "Font Weight",
-          "type": { "enumeration": [] }
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
+            ]
+          }
         }
       }
     },
@@ -331,23 +522,77 @@
       "properties": {
         "showTitle": {
           "displayName": "Show Title",
-          "type": { "bool": true }
+          "type": {
+            "bool": true
+          }
         },
         "titleText": {
           "displayName": "Title Text",
-          "type": { "text": true }
+          "type": {
+            "text": true
+          }
         },
         "titleFontSize": {
           "displayName": "Font Size",
-          "type": { "numeric": true }
+          "type": {
+            "numeric": true
+          }
         },
         "titleFontColor": {
           "displayName": "Font Color",
-          "type": { "fill": { "solid": { "color": true } } }
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
         },
         "titleAlignment": {
           "displayName": "Alignment",
-          "type": { "enumeration": [] }
+          "type": {
+            "enumeration": [
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "center",
+                "displayName": "Center"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "cardSettings": {
+      "displayName": "Card Style",
+      "properties": {
+        "backgroundColor": {
+          "displayName": "Background Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "backgroundOpacity": {
+          "displayName": "Background Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "borderRadius": {
+          "displayName": "Border Radius",
+          "type": {
+            "numeric": true
+          }
         }
       }
     }

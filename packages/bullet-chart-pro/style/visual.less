@@ -1,0 +1,57 @@
+/* Bullet Chart Pro — styles injected via pbiviz build */
+
+.bullet-container {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  box-sizing: border-box;
+}
+
+/* SVG chart area */
+.bullet-svg {
+  width: 100%;
+  display: block;
+}
+
+/* Category label on the left */
+.bullet-label {
+  fill: currentColor;
+}
+
+/* Value label on the right */
+.bullet-value-label {
+  font-variant-numeric: tabular-nums;
+  fill: currentColor;
+}
+
+/* Qualitative range rectangles */
+.bullet-range {
+  pointer-events: none;
+}
+
+/* Actual value bar */
+.bullet-value-bar {
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+
+  &:hover {
+    filter: brightness(1.12);
+  }
+}
+
+/* Target marker line */
+.bullet-target {
+  pointer-events: none;
+}
+
+/* Empty state */
+.bullet-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-style: italic;
+}
