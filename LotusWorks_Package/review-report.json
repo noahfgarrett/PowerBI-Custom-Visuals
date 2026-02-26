@@ -1,0 +1,340 @@
+{
+  "generatedAt": "2026-02-23T19:15:36.118Z",
+  "summary": {
+    "packageCount": 30,
+    "warningCount": 0,
+    "errorCount": 0
+  },
+  "packages": [
+    {
+      "package": "animated-donut-pro",
+      "files": {
+        "pbiviz": "packages/animated-donut-pro/pbiviz.json",
+        "capabilities": "packages/animated-donut-pro/capabilities.json",
+        "visual": "packages/animated-donut-pro/src/visual.ts",
+        "settings": "packages/animated-donut-pro/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "animated-waterfall",
+      "files": {
+        "pbiviz": "packages/animated-waterfall/pbiviz.json",
+        "capabilities": "packages/animated-waterfall/capabilities.json",
+        "visual": "packages/animated-waterfall/src/visual.ts",
+        "settings": "packages/animated-waterfall/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "bar-chart-pro",
+      "files": {
+        "pbiviz": "packages/bar-chart-pro/pbiviz.json",
+        "capabilities": "packages/bar-chart-pro/capabilities.json",
+        "visual": "packages/bar-chart-pro/src/visual.ts",
+        "settings": "packages/bar-chart-pro/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "bar-race",
+      "files": {
+        "pbiviz": "packages/bar-race/pbiviz.json",
+        "capabilities": "packages/bar-race/capabilities.json",
+        "visual": "packages/bar-race/src/visual.ts",
+        "settings": "packages/bar-race/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "box-plot",
+      "files": {
+        "pbiviz": "packages/box-plot/pbiviz.json",
+        "capabilities": "packages/box-plot/capabilities.json",
+        "visual": "packages/box-plot/src/visual.ts",
+        "settings": "packages/box-plot/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "bullet-chart-pro",
+      "files": {
+        "pbiviz": "packages/bullet-chart-pro/pbiviz.json",
+        "capabilities": "packages/bullet-chart-pro/capabilities.json",
+        "visual": "packages/bullet-chart-pro/src/visual.ts",
+        "settings": "packages/bullet-chart-pro/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "bump-chart",
+      "files": {
+        "pbiviz": "packages/bump-chart/pbiviz.json",
+        "capabilities": "packages/bump-chart/capabilities.json",
+        "visual": "packages/bump-chart/src/visual.ts",
+        "settings": "packages/bump-chart/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "chord-diagram",
+      "files": {
+        "pbiviz": "packages/chord-diagram/pbiviz.json",
+        "capabilities": "packages/chord-diagram/capabilities.json",
+        "visual": "packages/chord-diagram/src/visual.ts",
+        "settings": "packages/chord-diagram/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "dumbbell-chart",
+      "files": {
+        "pbiviz": "packages/dumbbell-chart/pbiviz.json",
+        "capabilities": "packages/dumbbell-chart/capabilities.json",
+        "visual": "packages/dumbbell-chart/src/visual.ts",
+        "settings": "packages/dumbbell-chart/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "funnel-pro",
+      "files": {
+        "pbiviz": "packages/funnel-pro/pbiviz.json",
+        "capabilities": "packages/funnel-pro/capabilities.json",
+        "visual": "packages/funnel-pro/src/visual.ts",
+        "settings": "packages/funnel-pro/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "gantt-chart-pro",
+      "files": {
+        "pbiviz": "packages/gantt-chart-pro/pbiviz.json",
+        "capabilities": "packages/gantt-chart-pro/capabilities.json",
+        "visual": "packages/gantt-chart-pro/src/visual.ts",
+        "settings": "packages/gantt-chart-pro/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "gauge-cluster",
+      "files": {
+        "pbiviz": "packages/gauge-cluster/pbiviz.json",
+        "capabilities": "packages/gauge-cluster/capabilities.json",
+        "visual": "packages/gauge-cluster/src/visual.ts",
+        "settings": "packages/gauge-cluster/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "heatmap-calendar",
+      "files": {
+        "pbiviz": "packages/heatmap-calendar/pbiviz.json",
+        "capabilities": "packages/heatmap-calendar/capabilities.json",
+        "visual": "packages/heatmap-calendar/src/visual.ts",
+        "settings": "packages/heatmap-calendar/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "kpi-card",
+      "files": {
+        "pbiviz": "packages/kpi-card/pbiviz.json",
+        "capabilities": "packages/kpi-card/capabilities.json",
+        "visual": "packages/kpi-card/src/visual.ts",
+        "settings": "packages/kpi-card/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "morphing-area-chart",
+      "files": {
+        "pbiviz": "packages/morphing-area-chart/pbiviz.json",
+        "capabilities": "packages/morphing-area-chart/capabilities.json",
+        "visual": "packages/morphing-area-chart/src/visual.ts",
+        "settings": "packages/morphing-area-chart/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "network-graph",
+      "files": {
+        "pbiviz": "packages/network-graph/pbiviz.json",
+        "capabilities": "packages/network-graph/capabilities.json",
+        "visual": "packages/network-graph/src/visual.ts",
+        "settings": "packages/network-graph/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "polar-chart",
+      "files": {
+        "pbiviz": "packages/polar-chart/pbiviz.json",
+        "capabilities": "packages/polar-chart/capabilities.json",
+        "visual": "packages/polar-chart/src/visual.ts",
+        "settings": "packages/polar-chart/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "progress-bar-stack",
+      "files": {
+        "pbiviz": "packages/progress-bar-stack/pbiviz.json",
+        "capabilities": "packages/progress-bar-stack/capabilities.json",
+        "visual": "packages/progress-bar-stack/src/visual.ts",
+        "settings": "packages/progress-bar-stack/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "radar-chart",
+      "files": {
+        "pbiviz": "packages/radar-chart/pbiviz.json",
+        "capabilities": "packages/radar-chart/capabilities.json",
+        "visual": "packages/radar-chart/src/visual.ts",
+        "settings": "packages/radar-chart/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "radial-gauge",
+      "files": {
+        "pbiviz": "packages/radial-gauge/pbiviz.json",
+        "capabilities": "packages/radial-gauge/capabilities.json",
+        "visual": "packages/radial-gauge/src/visual.ts",
+        "settings": "packages/radial-gauge/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "ring-stack",
+      "files": {
+        "pbiviz": "packages/ring-stack/pbiviz.json",
+        "capabilities": "packages/ring-stack/capabilities.json",
+        "visual": "packages/ring-stack/src/visual.ts",
+        "settings": "packages/ring-stack/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "sankey-diagram",
+      "files": {
+        "pbiviz": "packages/sankey-diagram/pbiviz.json",
+        "capabilities": "packages/sankey-diagram/capabilities.json",
+        "visual": "packages/sankey-diagram/src/visual.ts",
+        "settings": "packages/sankey-diagram/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "scatter-bubble",
+      "files": {
+        "pbiviz": "packages/scatter-bubble/pbiviz.json",
+        "capabilities": "packages/scatter-bubble/capabilities.json",
+        "visual": "packages/scatter-bubble/src/visual.ts",
+        "settings": "packages/scatter-bubble/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "slope-chart",
+      "files": {
+        "pbiviz": "packages/slope-chart/pbiviz.json",
+        "capabilities": "packages/slope-chart/capabilities.json",
+        "visual": "packages/slope-chart/src/visual.ts",
+        "settings": "packages/slope-chart/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "status-indicator",
+      "files": {
+        "pbiviz": "packages/status-indicator/pbiviz.json",
+        "capabilities": "packages/status-indicator/capabilities.json",
+        "visual": "packages/status-indicator/src/visual.ts",
+        "settings": "packages/status-indicator/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "stream-graph",
+      "files": {
+        "pbiviz": "packages/stream-graph/pbiviz.json",
+        "capabilities": "packages/stream-graph/capabilities.json",
+        "visual": "packages/stream-graph/src/visual.ts",
+        "settings": "packages/stream-graph/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "sunburst-chart",
+      "files": {
+        "pbiviz": "packages/sunburst-chart/pbiviz.json",
+        "capabilities": "packages/sunburst-chart/capabilities.json",
+        "visual": "packages/sunburst-chart/src/visual.ts",
+        "settings": "packages/sunburst-chart/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "timeline-milestone",
+      "files": {
+        "pbiviz": "packages/timeline-milestone/pbiviz.json",
+        "capabilities": "packages/timeline-milestone/capabilities.json",
+        "visual": "packages/timeline-milestone/src/visual.ts",
+        "settings": "packages/timeline-milestone/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "treemap-pro",
+      "files": {
+        "pbiviz": "packages/treemap-pro/pbiviz.json",
+        "capabilities": "packages/treemap-pro/capabilities.json",
+        "visual": "packages/treemap-pro/src/visual.ts",
+        "settings": "packages/treemap-pro/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "waffle-chart",
+      "files": {
+        "pbiviz": "packages/waffle-chart/pbiviz.json",
+        "capabilities": "packages/waffle-chart/capabilities.json",
+        "visual": "packages/waffle-chart/src/visual.ts",
+        "settings": "packages/waffle-chart/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    }
+  ]
+}
