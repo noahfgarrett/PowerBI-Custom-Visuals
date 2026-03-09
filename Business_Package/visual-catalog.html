@@ -359,6 +359,95 @@
     color: var(--text-muted);
   }
 
+  /* ── Shared Features Section ──────────── */
+  .shared-features-section {
+    margin: 48px 0 56px;
+    padding: 36px;
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--border-color);
+  }
+  .shared-features-section h2 {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--brand-dark);
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+  .shared-features-section > p {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin-bottom: 28px;
+    line-height: 1.6;
+  }
+  .shared-features-section h3 {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin: 28px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .shared-features-section h3:first-of-type {
+    margin-top: 0;
+  }
+  .shared-features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 900px) {
+    .shared-features-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 560px) {
+    .shared-features-grid { grid-template-columns: 1fr; }
+  }
+  .sf-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: var(--bg-alt-row);
+    border: 1px solid var(--border-color);
+    transition: box-shadow 0.2s;
+  }
+  .sf-card:hover {
+    box-shadow: var(--shadow-card);
+  }
+  .sf-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 5px;
+  }
+  .sf-dot.green { background: var(--brand-accent); }
+  .sf-dot.blue { background: #0ea5e9; }
+  .sf-dot.purple { background: #6366f1; }
+  .sf-dot.amber { background: #f59e0b; }
+  .sf-dot.rose { background: #f43f5e; }
+  .sf-dot.teal { background: #14b8a6; }
+  .sf-dot.slate { background: #64748b; }
+  .sf-dot.indigo { background: #4f46e5; }
+  .sf-info {
+    flex: 1;
+  }
+  .sf-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+  }
+  .sf-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
   /* ── Print ─────────────────────────────── */
   @media print {
     body { background: white; }
@@ -395,6 +484,146 @@
 </nav>
 
 <main class="main">
+
+<!-- ═══════════════════════════════════════ SHARED FEATURES ═══════════════════════════════════════ -->
+<div class="shared-features-section">
+  <h2>Shared Formatting Features</h2>
+  <p>Every visual in this collection includes these formatting pane options. Configure them once and know they work consistently across all 31 visuals.</p>
+
+  <h3>Available on All Visuals</h3>
+  <div class="shared-features-grid">
+    <div class="sf-card">
+      <div class="sf-dot green"></div>
+      <div class="sf-info">
+        <div class="sf-name">Color Themes</div>
+        <div class="sf-desc">7 built-in themes (Default, Ocean, Sunset, Forest, Berry, Monochrome, Earth) selectable from a dropdown</div>
+      </div>
+    </div>
+    <div class="sf-card">
+      <div class="sf-dot blue"></div>
+      <div class="sf-info">
+        <div class="sf-name">Chart Title &amp; Subtitle</div>
+        <div class="sf-desc">Configurable title text, subtitle, font family, font size, color, and alignment</div>
+      </div>
+    </div>
+    <div class="sf-card">
+      <div class="sf-dot purple"></div>
+      <div class="sf-info">
+        <div class="sf-name">Data Labels</div>
+        <div class="sf-desc">Font family, font size, color, weight, and position (above/below/auto)</div>
+      </div>
+    </div>
+    <div class="sf-card">
+      <div class="sf-dot rose"></div>
+      <div class="sf-info">
+        <div class="sf-name">Conditional Formatting</div>
+        <div class="sf-desc">Color data points based on value thresholds (3-color gradient with configurable breakpoints)</div>
+      </div>
+    </div>
+    <div class="sf-card">
+      <div class="sf-dot teal"></div>
+      <div class="sf-info">
+        <div class="sf-name">Accessibility</div>
+        <div class="sf-desc">Keyboard nav with arrow keys, ARIA labels, high-contrast mode override, focus ring indicators</div>
+      </div>
+    </div>
+    <div class="sf-card">
+      <div class="sf-dot indigo"></div>
+      <div class="sf-info">
+        <div class="sf-name">Glass Effect</div>
+        <div class="sf-desc">Togglable glassmorphic card styling with configurable background color, opacity, and border radius</div>
+      </div>
+    </div>
+    <div class="sf-card">
+      <div class="sf-dot amber"></div>
+      <div class="sf-info">
+        <div class="sf-name">Number Formatting</div>
+        <div class="sf-desc">Display units (auto/thousands/millions/billions), decimal places, prefix, suffix</div>
+      </div>
+    </div>
+    <div class="sf-card">
+      <div class="sf-dot slate"></div>
+      <div class="sf-info">
+        <div class="sf-name">Animation</div>
+        <div class="sf-desc">Configurable entrance animations with adjustable duration</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Available on Most Chart-Type Visuals</h3>
+  <div class="shared-features-grid">
+    <div class="sf-card">
+      <div class="sf-dot green"></div>
+      <div class="sf-info">
+        <div class="sf-name">Axis Formatting</div>
+        <div class="sf-desc">Label font family/size/color, axis line color/width, X-label rotation, Y-axis min/max range, show/hide</div>
+      </div>
+    </div>
+    <div class="sf-card">
+      <div class="sf-dot blue"></div>
+      <div class="sf-info">
+        <div class="sf-name">Grid Lines</div>
+        <div class="sf-desc">Show/hide, color, style (solid/dashed/dotted), width, opacity</div>
+      </div>
+    </div>
+    <div class="sf-card">
+      <div class="sf-dot purple"></div>
+      <div class="sf-info">
+        <div class="sf-name">Legend</div>
+        <div class="sf-desc">Show/hide, position (top/bottom/left/right), font family/size/color, click-to-filter</div>
+      </div>
+    </div>
+    <div class="sf-card">
+      <div class="sf-dot rose"></div>
+      <div class="sf-info">
+        <div class="sf-name">Reference Lines</div>
+        <div class="sf-desc">Custom or statistical (mean/median/min/max/percentile), with optional reference band</div>
+      </div>
+    </div>
+    <div class="sf-card">
+      <div class="sf-dot teal"></div>
+      <div class="sf-info">
+        <div class="sf-name">Trend Lines</div>
+        <div class="sf-desc">Linear, polynomial, exponential, logarithmic, power regression overlays</div>
+      </div>
+    </div>
+    <div class="sf-card">
+      <div class="sf-dot indigo"></div>
+      <div class="sf-info">
+        <div class="sf-name">Annotations</div>
+        <div class="sf-desc">Text callout annotations pinned to data points with connectors</div>
+      </div>
+    </div>
+    <div class="sf-card">
+      <div class="sf-dot amber"></div>
+      <div class="sf-info">
+        <div class="sf-name">Crosshairs</div>
+        <div class="sf-desc">Snap-to-nearest crosshair on hover showing exact values</div>
+      </div>
+    </div>
+    <div class="sf-card">
+      <div class="sf-dot slate"></div>
+      <div class="sf-info">
+        <div class="sf-name">Scrolling</div>
+        <div class="sf-desc">Horizontal/vertical scroll when categories exceed space, with configurable min category width</div>
+      </div>
+    </div>
+    <div class="sf-card">
+      <div class="sf-dot green"></div>
+      <div class="sf-info">
+        <div class="sf-name">Sort Order</div>
+        <div class="sf-desc">Data order, value ascending/descending, name ascending/descending</div>
+      </div>
+    </div>
+    <div class="sf-card">
+      <div class="sf-dot blue"></div>
+      <div class="sf-info">
+        <div class="sf-name">Series Formatting</div>
+        <div class="sf-desc">Per-series color, line style (solid/dashed/dotted), line width, and opacity for multi-series charts</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ╔═══════════════════════════════════════════════════════════════════════════════════╗ -->
 <!-- ║  KPI & CARDS                                                                     ║ -->
@@ -469,7 +698,7 @@
     <h3>Radial Gauge Pro</h3>
     <span class="card-badge">KPI &amp; Cards</span>
   </div>
-  <p class="card-desc">Radial gauge with three color zones (red/yellow/green), target tick marker, count-up animation, and glassmorphic card styling.</p>
+  <p class="card-desc">Radial gauge with three color zones (red/yellow/green), target tick marker, count-up animation, and glassmorphic card styling. Half/Full arc presets plus fine-tuned arc range control.</p>
   <div class="card-body">
     <div class="fields-section">
       <h4>Data Fields</h4>
@@ -511,7 +740,7 @@
       </ul>
     </div>
   </div>
-  <div class="pro-tip"><strong>Tip:</strong> Configure the three color zone thresholds in the Format pane to set breakpoints (e.g., 0-60% red, 60-85% yellow, 85-100% green). The arc range can be half-circle or three-quarter.</div>
+  <div class="pro-tip"><strong>Tip:</strong> Configure the three color zone thresholds in the Format pane to set breakpoints (e.g., 0-60% red, 60-85% yellow, 85-100% green). Use the Half/Full arc presets for quick setup, or fine-tune the exact arc start and end angles for a custom sweep range.</div>
 </div>
 
 <!-- Ring Stack -->
@@ -520,7 +749,7 @@
     <h3>Ring Stack</h3>
     <span class="card-badge">KPI &amp; Cards</span>
   </div>
-  <p class="card-desc">Apple Watch-inspired concentric ring stack with sweep animations and percentage labels. Up to 6 independent metrics shown as nested rings.</p>
+  <p class="card-desc">Apple Watch-inspired concentric ring stack with sweep animations and percentage labels. Up to 6 independent metrics shown as nested rings. Linear gradient fills for ring segments.</p>
   <div class="card-body">
     <div class="fields-section">
       <h4>Data Fields</h4>
@@ -548,7 +777,7 @@
       </ul>
     </div>
   </div>
-  <div class="pro-tip"><strong>Tip:</strong> Each ring has independent color settings in the Format pane. The label beside each ring shows its percentage &mdash; keep the visual square-shaped for the best appearance.</div>
+  <div class="pro-tip"><strong>Tip:</strong> Each ring has independent color settings in the Format pane with optional linear gradient fills. The label beside each ring shows its percentage &mdash; keep the visual square-shaped for the best appearance.</div>
 </div>
 
 <!-- Waffle Chart -->
@@ -655,7 +884,7 @@
     <h3>Health Bar</h3>
     <span class="card-badge">Bar &amp; Column</span>
   </div>
-  <p class="card-desc">Vertical bar chart with red-to-green gradient showing health percentages. Each bar fills proportionally and color-codes from red (low) through amber to green (high).</p>
+  <p class="card-desc">Vertical bar chart with red-to-green gradient showing health percentages. Each bar fills proportionally and color-codes from red (low) through amber to green (high). Value label position control (above/inside/right) and mini sparklines.</p>
   <div class="card-body">
     <div class="fields-section">
       <h4>Data Fields</h4>
@@ -683,7 +912,7 @@
       </ul>
     </div>
   </div>
-  <div class="pro-tip"><strong>Tip:</strong> Toggle between Gradient and Solid fill modes in the Format pane. Gradient shows the full red-to-green spectrum; Solid picks a single interpolated color per bar. Adjust the Max Value setting to match your scale.</div>
+  <div class="pro-tip"><strong>Tip:</strong> Toggle between Gradient and Solid fill modes in the Format pane. Gradient shows the full red-to-green spectrum; Solid picks a single interpolated color per bar. Use the value label position setting (above/inside/right) to fit your layout, and enable mini sparklines for trend context.</div>
 </div>
 
 <!-- Bullet Chart Pro -->
@@ -841,7 +1070,7 @@
     <h3>Morphing Area Chart</h3>
     <span class="card-badge">Area &amp; Line</span>
   </div>
-  <p class="card-desc">Line chart with gradient fill beneath, animated path drawing, dot pop-in, and optional multi-series stacking. Each measure creates one line/area series.</p>
+  <p class="card-desc">Line chart with gradient fill beneath, animated path drawing, dot pop-in, and optional multi-series stacking. Each measure creates one line/area series. Supports Normal, Stacked, and 100% Stacked modes. Includes brush/zoom for time-range filtering.</p>
   <div class="card-body">
     <div class="fields-section">
       <h4>Data Fields</h4>
@@ -869,7 +1098,7 @@
       </ul>
     </div>
   </div>
-  <div class="pro-tip"><strong>Tip:</strong> The animated path-drawing effect creates a compelling reveal. Add multiple measures for stacked areas &mdash; each gets its own color and gradient fill.</div>
+  <div class="pro-tip"><strong>Tip:</strong> The animated path-drawing effect creates a compelling reveal. Switch between Normal, Stacked, and 100% Stacked modes in the Area Stacking setting. Enable Brush/Zoom to let users drag-select a time range for interactive filtering.</div>
 </div>
 
 <!-- Stream Graph -->
@@ -878,7 +1107,7 @@
     <h3>Stream Graph</h3>
     <span class="card-badge">Area &amp; Line</span>
   </div>
-  <p class="card-desc">Stacked area layers flowing around a central baseline with animated entrance. Shows composition changes over time in an organic, flowing layout.</p>
+  <p class="card-desc">Stacked area layers flowing around a central baseline with animated entrance. Shows composition changes over time in an organic, flowing layout. Value labels on stream layers and gradient fills.</p>
   <div class="card-body">
     <div class="fields-section">
       <h4>Data Fields</h4>
@@ -906,7 +1135,7 @@
       </ul>
     </div>
   </div>
-  <div class="pro-tip"><strong>Tip:</strong> Stream graphs work best with 3&ndash;8 series across many time points. The central baseline distributes layers evenly, making relative size changes more visible than traditional stacked areas.</div>
+  <div class="pro-tip"><strong>Tip:</strong> Stream graphs work best with 3&ndash;8 series across many time points. Enable value labels to see exact numbers on each layer, and use gradient fills for a polished look. The central baseline distributes layers evenly, making relative size changes more visible than traditional stacked areas.</div>
 </div>
 
 
@@ -1050,7 +1279,7 @@
     <h3>Bump Chart</h3>
     <span class="card-badge">Comparison</span>
   </div>
-  <p class="card-desc">Bump chart showing rank changes over time with animated lines and dots. Each item gets a line that moves up/down as its rank changes per period.</p>
+  <p class="card-desc">Bump chart showing rank changes over time with animated lines and dots. Each item gets a line that moves up/down as its rank changes per period. Rank change indicators (+/-N) and period comparison badges.</p>
   <div class="card-body">
     <div class="fields-section">
       <h4>Data Fields</h4>
@@ -1085,7 +1314,7 @@
       </ul>
     </div>
   </div>
-  <div class="pro-tip"><strong>Tip:</strong> Bump charts shine when items swap positions frequently. Works best with 5&ndash;10 items across 4+ time periods. The visual auto-computes ranks from your measure values.</div>
+  <div class="pro-tip"><strong>Tip:</strong> Bump charts shine when items swap positions frequently. Rank change indicators (+/-N) appear at each node showing movement, and period comparison badges highlight biggest movers. Works best with 5&ndash;10 items across 4+ time periods.</div>
 </div>
 
 
@@ -1141,7 +1370,7 @@
     <h3>Funnel Pro</h3>
     <span class="card-badge">Part-to-Whole</span>
   </div>
-  <p class="card-desc">Animated funnel chart with trapezoid segments, conversion rate labels between stages, and glassmorphic styling.</p>
+  <p class="card-desc">Animated funnel chart with trapezoid segments, conversion rate labels between stages, and glassmorphic styling. Stage annotations with conversion rates and rounded corners via border radius.</p>
   <div class="card-body">
     <div class="fields-section">
       <h4>Data Fields</h4>
@@ -1169,7 +1398,7 @@
       </ul>
     </div>
   </div>
-  <div class="pro-tip"><strong>Tip:</strong> Conversion rate labels between stages show the drop-off percentage automatically. Sort your data from largest to smallest for the classic funnel shape.</div>
+  <div class="pro-tip"><strong>Tip:</strong> Conversion rate labels between stages show the drop-off percentage automatically. Use stage annotations to add context at each level, and adjust border radius for softer rounded corners. Sort your data from largest to smallest for the classic funnel shape.</div>
 </div>
 
 <!-- Polar Nightingale -->
@@ -1178,7 +1407,7 @@
     <h3>Polar Nightingale Chart</h3>
     <span class="card-badge">Part-to-Whole</span>
   </div>
-  <p class="card-desc">Nightingale rose chart with sweeping petal animations and bloom hover effect. Petals extend radially &mdash; larger values produce longer petals.</p>
+  <p class="card-desc">Nightingale rose chart with sweeping petal animations and bloom hover effect. Petals extend radially &mdash; larger values produce longer petals. Configurable sweep angle and radial gradient fills.</p>
   <div class="card-body">
     <div class="fields-section">
       <h4>Data Fields</h4>
@@ -1357,7 +1586,7 @@
     <h3>Network Graph</h3>
     <span class="card-badge">Relationships</span>
   </div>
-  <p class="card-desc">Force-directed network graph with spring physics and drag interaction. Nodes cluster by connectivity; link thickness shows weight.</p>
+  <p class="card-desc">Force-directed network graph with spring physics and drag interaction. Nodes cluster by connectivity; link thickness shows weight. Configurable link force strength for layout tuning.</p>
   <div class="card-body">
     <div class="fields-section">
       <h4>Data Fields</h4>
@@ -1392,7 +1621,7 @@
       </ul>
     </div>
   </div>
-  <div class="pro-tip"><strong>Tip:</strong> Drag nodes to rearrange the layout interactively. The force simulation naturally clusters closely-connected nodes together. Works best with 20&ndash;100 connections.</div>
+  <div class="pro-tip"><strong>Tip:</strong> Drag nodes to rearrange the layout interactively. Adjust the link force strength in the Format pane to control how tightly connected nodes cluster. The force simulation naturally groups closely-connected nodes together. Works best with 20&ndash;100 connections.</div>
 </div>
 
 <!-- Scatter Bubble Plot -->
@@ -1462,7 +1691,7 @@
     <h3>Animated Waterfall Chart</h3>
     <span class="card-badge">Time &amp; Progress</span>
   </div>
-  <p class="card-desc">Waterfall chart with Tetris-style drop animations, bounce easing, and dashed connectors. Shows how values build up or break down step by step.</p>
+  <p class="card-desc">Waterfall chart with Tetris-style drop animations, bounce easing, and dashed connectors. Shows how values build up or break down step by step. Total bar with custom label/color, plus a summary banner showing increases, decreases, and net change.</p>
   <div class="card-body">
     <div class="fields-section">
       <h4>Data Fields</h4>
@@ -1497,7 +1726,7 @@
       </ul>
     </div>
   </div>
-  <div class="pro-tip"><strong>Tip:</strong> Use the Is Total field to mark summary bars (set to 1). These bars anchor to the baseline instead of floating, making it clear which bars represent running totals.</div>
+  <div class="pro-tip"><strong>Tip:</strong> Use the Is Total field to mark summary bars (set to 1). Customize the total bar label and color in the Format pane. The summary banner at the top shows total increases, decreases, and net change at a glance.</div>
 </div>
 
 <!-- Gantt Chart Pro -->
@@ -1655,7 +1884,7 @@
     <h3>Heatmap Calendar</h3>
     <span class="card-badge">Statistical</span>
   </div>
-  <p class="card-desc">Calendar heatmap with ripple-fill animation showing date-based intensity. Each day is a cell colored by its value &mdash; like GitHub&rsquo;s contribution graph.</p>
+  <p class="card-desc">Calendar heatmap with ripple-fill animation showing date-based intensity. Each day is a cell colored by its value &mdash; like GitHub&rsquo;s contribution graph. Streak highlighting for consecutive high-value days.</p>
   <div class="card-body">
     <div class="fields-section">
       <h4>Data Fields</h4>
@@ -1683,7 +1912,7 @@
       </ul>
     </div>
   </div>
-  <div class="pro-tip"><strong>Tip:</strong> The calendar auto-arranges dates into weeks and months. Color intensity scales automatically from your data range. Great for spotting seasonal patterns and anomalies.</div>
+  <div class="pro-tip"><strong>Tip:</strong> The calendar auto-arranges dates into weeks and months. Color intensity scales automatically from your data range. Enable streak highlighting to visually connect consecutive high-value days. Great for spotting seasonal patterns and anomalies.</div>
 </div>
 
 <!-- Status Indicator -->
@@ -1692,7 +1921,7 @@
     <h3>Status Indicator</h3>
     <span class="card-badge">Status</span>
   </div>
-  <p class="card-desc">Status indicator with threshold-based colored lights and pulse animation. Green/yellow/red lights based on how the value compares to warning and critical thresholds.</p>
+  <p class="card-desc">Status indicator with threshold-based colored lights and pulse animation. Green/yellow/red lights based on how the value compares to warning and critical thresholds. Multiple icon sets (circle, square, diamond, triangle, star, heart, flag, check).</p>
   <div class="card-body">
     <div class="fields-section">
       <h4>Data Fields</h4>
@@ -1734,7 +1963,7 @@
       </ul>
     </div>
   </div>
-  <div class="pro-tip"><strong>Tip:</strong> Set thresholds as measures from your data, or use static values in the Format pane. The pulse animation on red/critical status draws immediate attention to problems.</div>
+  <div class="pro-tip"><strong>Tip:</strong> Set thresholds as measures from your data, or use static values in the Format pane. Choose from 8 icon shapes (circle, square, diamond, triangle, star, heart, flag, check) to match your dashboard style. The pulse animation on red/critical status draws immediate attention to problems.</div>
 </div>
 
 
@@ -1753,7 +1982,7 @@
     <h3>Sunburst Chart</h3>
     <span class="card-badge">Hierarchy</span>
   </div>
-  <p class="card-desc">Hierarchical sunburst chart with sweepArc animation and drill-down zoom. Concentric rings show parent-child relationships across up to 3 levels.</p>
+  <p class="card-desc">Hierarchical sunburst chart with sweepArc animation and drill-down zoom. Concentric rings show parent-child relationships across up to 3 levels. Configurable inner radius and start angle rotation.</p>
   <div class="card-body">
     <div class="fields-section">
       <h4>Data Fields</h4>
@@ -1795,7 +2024,7 @@
       </ul>
     </div>
   </div>
-  <div class="pro-tip"><strong>Tip:</strong> Click any segment to drill down and zoom into its children. Start with Level 1 only, then add Level 2 and 3 for deeper hierarchy. The inner ring is always the top level.</div>
+  <div class="pro-tip"><strong>Tip:</strong> Click any segment to drill down and zoom into its children. Adjust the inner radius to control the center hole size, and rotate the start angle to reposition the chart. Start with Level 1 only, then add Level 2 and 3 for deeper hierarchy.</div>
 </div>
 
 <!-- Gauge Cluster -->

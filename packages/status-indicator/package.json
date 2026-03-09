@@ -2,7 +2,10 @@
   "name": "@pbi/status-indicator",
   "version": "1.0.0",
   "private": true,
-  "scripts": { "build": "pbiviz package", "start": "pbiviz start" },
+  "scripts": {
+    "build": "pbiviz package",
+    "start": "pbiviz start"
+  },
   "dependencies": {
     "d3": "^7.9.0",
     "powerbi-visuals-api": "~5.3.0",
