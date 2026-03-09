@@ -13,6 +13,7 @@ import {
   fadeSlideIn,
   DURATION,
   formatNumber,
+  formatWithSettings,
   getGlassStyle,
   withOpacity,
   renderChartTitle,
@@ -507,7 +508,7 @@ export class RingStackVisual implements IVisual {
         }
 
         const locale = this.getHostLocale();
-        const formattedValue = formatNumber(displayValue, { abbreviate: true, locale });
+        const formattedValue = formatWithSettings(displayValue, this.settings.numberFormattingCard);
 
         // Value text (slightly above center when label is shown)
         const valueY = cc.showLabel.value ? -cc.labelFontSize.value * 0.6 : 0;
@@ -625,10 +626,7 @@ export class RingStackVisual implements IVisual {
                 ring.value,
                 animDuration,
                 (v) => {
-                  pctSpan.textContent = formatNumber(v, {
-                    abbreviate: true,
-                    locale,
-                  });
+                  pctSpan.textContent = formatWithSettings(v, this.settings.numberFormattingCard);
                 }
               );
             }, delay);
@@ -638,10 +636,7 @@ export class RingStackVisual implements IVisual {
               cancelCount?.();
             });
           } else {
-            pctSpan.textContent = formatNumber(ring.value, {
-              abbreviate: true,
-              locale,
-            });
+            pctSpan.textContent = formatWithSettings(ring.value, this.settings.numberFormattingCard);
           }
         }
       });
@@ -752,7 +747,7 @@ export class RingStackVisual implements IVisual {
     const locale = this.getHostLocale();
     const tooltipData: VisualTooltipDataItem[] = [
       { displayName: 'Ring', value: ring.name },
-      { displayName: 'Value', value: formatNumber(ring.value, { abbreviate: false, locale }) },
+      { displayName: 'Value', value: formatWithSettings(ring.value, this.settings.numberFormattingCard) },
       { displayName: 'Percent', value: formatNumber(ring.percentage * 100, { decimals: 0, suffix: '%', abbreviate: false, locale }) },
     ];
 
@@ -761,7 +756,7 @@ export class RingStackVisual implements IVisual {
     if (perRingEnabled) {
       tooltipData.push({
         displayName: 'Max',
-        value: formatNumber(ring.ringMax, { abbreviate: false, locale }),
+        value: formatWithSettings(ring.ringMax, this.settings.numberFormattingCard),
       });
     }
 

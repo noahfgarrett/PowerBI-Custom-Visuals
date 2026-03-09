@@ -11,6 +11,7 @@ import {
   fadeSlideIn,
   DURATION,
   formatNumber,
+  formatWithSettings,
   getGlassStyle,
   renderChartTitle,
   applyDataLabelFormatting,
@@ -407,11 +408,11 @@ export class HeatmapCalendarVisual implements IVisual {
                 : interpolateColor(t);
               cell.style.backgroundColor = conditionalColor ?? baseColor;
               cell.dataset.dateKey = key;
-              cell.title = `${this.formatDateStr(currentDate)}: ${formatNumber(val)}`;
+              cell.title = `${this.formatDateStr(currentDate)}: ${formatWithSettings(val, this.settings.numberFormattingCard)}`;
               if (showDataLabels) {
                 const labelSpan = document.createElement('span');
                 labelSpan.className = 'heatmap-data-label';
-                labelSpan.textContent = formatNumber(val);
+                labelSpan.textContent = formatWithSettings(val, this.settings.numberFormattingCard);
                 cell.appendChild(labelSpan);
               }
               const selectionId = selectionMap.get(key);
@@ -673,10 +674,10 @@ export class HeatmapCalendarVisual implements IVisual {
 
     // Create label elements
     const minLabel = document.createElement('span');
-    minLabel.textContent = formatNumber(minVal);
+    minLabel.textContent = formatWithSettings(minVal, this.settings.numberFormattingCard);
 
     const maxLabel = document.createElement('span');
-    maxLabel.textContent = formatNumber(maxVal);
+    maxLabel.textContent = formatWithSettings(maxVal, this.settings.numberFormattingCard);
 
     if (isVertical) {
       // Vertical: top = max, bottom = min
@@ -684,7 +685,7 @@ export class HeatmapCalendarVisual implements IVisual {
       if (useMid) {
         const midLabel = document.createElement('span');
         const midVal = minVal + (maxVal - minVal) * (midPointPct / 100);
-        midLabel.textContent = formatNumber(midVal);
+        midLabel.textContent = formatWithSettings(midVal, this.settings.numberFormattingCard);
         labelsContainer.appendChild(midLabel);
       }
       labelsContainer.appendChild(minLabel);
@@ -694,7 +695,7 @@ export class HeatmapCalendarVisual implements IVisual {
       if (useMid) {
         const midLabel = document.createElement('span');
         const midVal = minVal + (maxVal - minVal) * (midPointPct / 100);
-        midLabel.textContent = formatNumber(midVal);
+        midLabel.textContent = formatWithSettings(midVal, this.settings.numberFormattingCard);
         labelsContainer.appendChild(midLabel);
       }
       labelsContainer.appendChild(maxLabel);

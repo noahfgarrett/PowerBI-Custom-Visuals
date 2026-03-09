@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard } from '../../core/src';
+import { LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard, NumberFormattingCard } from '../../core/src';
 class SunburstSettings extends formattingSettings.SimpleCard {
   showLabels = new formattingSettings.ToggleSwitch({
     name: 'showLabels',
@@ -272,6 +272,7 @@ export class SunburstChartSettings extends formattingSettings.Model {
   accessibilityFormattingCard = new AccessibilityFormattingCard();
 
   colorThemeFormattingCard = new ColorThemeFormattingCard();
+  numberFormattingCard = new NumberFormattingCard();
   cards = [
     this.sunburstSettings,
     this.colorSettings,
@@ -286,5 +287,6 @@ export class SunburstChartSettings extends formattingSettings.Model {
     this.conditionalFormattingCard,
     this.accessibilityFormattingCard,
     this.colorThemeFormattingCard,
+    this.numberFormattingCard,
   ];
 }

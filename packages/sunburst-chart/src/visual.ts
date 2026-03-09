@@ -19,7 +19,7 @@ import {
   getHostChartColor,
   getChartColor,
   withOpacity,
-  formatNumber,
+  formatWithSettings,
   renderChartTitle,
   applyDataLabelFormatting,
   renderLegend,
@@ -694,8 +694,7 @@ export class SunburstChartVisual implements IVisual {
           labelText = 'Total';
         }
 
-        const locale = this.getHostLocale();
-        const formattedValue = formatNumber(displayValue, { abbreviate: true, locale });
+        const formattedValue = formatWithSettings(displayValue, this.settings.numberFormattingCard);
 
         // Value text (slightly above center when label is shown)
         const valueY = cc.showLabel.value ? -cc.labelFontSize.value * 0.6 : 0;
@@ -960,10 +959,9 @@ export class SunburstChartVisual implements IVisual {
   }
 
   private showSegmentTooltip(node: SunburstNode, value: number, event: MouseEvent): void {
-    const locale = this.getHostLocale();
     const tooltipData: VisualTooltipDataItem[] = [
       { displayName: 'Node', value: node.name },
-      { displayName: 'Value', value: formatNumber(value, { abbreviate: false, locale }) },
+      { displayName: 'Value', value: formatWithSettings(value, this.settings.numberFormattingCard) },
     ];
 
     this.host.tooltipService.show({
@@ -985,11 +983,6 @@ export class SunburstChartVisual implements IVisual {
 
   private hideTooltip(): void {
     this.host.tooltipService.hide({ immediately: true, isTouchEvent: false });
-  }
-
-  private getHostLocale(): string | undefined {
-    const locale = (this.host as unknown as { locale?: unknown }).locale;
-    return typeof locale === 'string' && locale.length > 0 ? locale : undefined;
   }
 
   private notifyRenderStarted(): void {

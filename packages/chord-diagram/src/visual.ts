@@ -9,6 +9,7 @@ import { FormattingSettingsService } from 'powerbi-visuals-utils-formattingmodel
 import { ChordDiagramSettings } from './settings';
 import {
   formatNumber,
+  formatWithSettings,
   formatPercent,
   animate,
   cubicOut,
@@ -295,6 +296,7 @@ export class ChordDiagramVisual implements IVisual {
     this.svg = null;
 
     const s = this.settings;
+    const numFmtCard = s.numberFormattingCard;
 
     // Apply glass card style
     if (s.cardSettings.enableGlass.value) {
@@ -380,6 +382,17 @@ export class ChordDiagramVisual implements IVisual {
       ? ribbonArrowFactory().radius(innerRadius)
       : d3.ribbon<d3.Chord, d3.ChordSubgroup>().radius(innerRadius);
 
+    const ribbonOpacity = s.chordSettings.ribbonOpacity.value / 100;
+    const hoverOpacity = s.chordSettings.hoverOpacity.value / 100;
+    const dimOpacity = s.chordSettings.dimOpacity.value / 100;
+
+    // Color resolver: host palette when useChartPalette is on, built-in palette otherwise
+    const useChartPalette = s.colorSettings.useChartPalette.value;
+    const resolveColor = (index: number): string =>
+      useChartPalette
+        ? getHostChartColor(this.host.colorPalette, index, themeName)
+        : getChartColor(index, themeName);
+
     // Gradient ribbon defs
     const useGradientRibbons = s.chordRibbonSettings.gradientRibbons.value;
     if (useGradientRibbons) {
@@ -399,17 +412,6 @@ export class ChordDiagramVisual implements IVisual {
         grad.append('stop').attr('offset', '100%').attr('stop-color', tgtColor);
       });
     }
-
-    const ribbonOpacity = s.chordSettings.ribbonOpacity.value / 100;
-    const hoverOpacity = s.chordSettings.hoverOpacity.value / 100;
-    const dimOpacity = s.chordSettings.dimOpacity.value / 100;
-
-    // Color resolver: host palette when useChartPalette is on, built-in palette otherwise
-    const useChartPalette = s.colorSettings.useChartPalette.value;
-    const resolveColor = (index: number): string =>
-      useChartPalette
-        ? getHostChartColor(this.host.colorPalette, index, themeName)
-        : getChartColor(index, themeName);
 
     // Render outer group arcs
     const groupGroup = g.append('g').attr('class', 'chord-groups');
@@ -459,7 +461,7 @@ export class ChordDiagramVisual implements IVisual {
       const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
       const name = data.names[i] ?? '';
       const total = _d.value;
-      title.textContent = `${name}: ${formatNumber(total, { abbreviate: true })}`;
+      title.textContent = `${name}: ${formatWithSettings(total, numFmtCard)}`;
       this.appendChild(title);
     });
 
@@ -505,7 +507,7 @@ export class ChordDiagramVisual implements IVisual {
             .attr('text-anchor', angle > Math.PI ? 'end' : 'start')
             .attr('font-size', s.dataLabelFormattingCard.dataLabelFontSize.value)
             .attr('fill', s.dataLabelFormattingCard.dataLabelFontColor.value?.value || '#64748B')
-            .text(formatNumber(d.value, { abbreviate: true }));
+            .text(formatWithSettings(d.value, numFmtCard));
         });
     }
 
@@ -569,7 +571,7 @@ export class ChordDiagramVisual implements IVisual {
       const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
       const srcName = data.names[d.source.index] ?? '';
       const tgtName = data.names[d.target.index] ?? '';
-      const val = formatNumber(d.source.value, { abbreviate: true });
+      const val = formatWithSettings(d.source.value, numFmtCard);
       const pct = totalChordValue > 0 ? formatPercent(d.source.value / totalChordValue) : '';
       const srcTotal = chords.groups[d.source.index]?.value ?? 0;
       const srcPct = srcTotal > 0 ? formatPercent(d.source.value / srcTotal) : '';
@@ -596,7 +598,7 @@ export class ChordDiagramVisual implements IVisual {
             .attr('font-size', s.dataLabelFormattingCard.dataLabelFontSize.value)
             .attr('fill', s.dataLabelFormattingCard.dataLabelFontColor.value?.value || '#1E293B')
             .attr('pointer-events', 'none')
-            .text(formatNumber(d.source.value, { abbreviate: true }));
+            .text(formatWithSettings(d.source.value, numFmtCard));
         })
         .on('mouseleave.flowlabel', () => {
           flowLabelGroup.selectAll('*').remove();
@@ -653,7 +655,7 @@ export class ChordDiagramVisual implements IVisual {
           applyDataPointAria(
             el,
             name,
-            formatNumber(grp.value, { abbreviate: true }),
+            formatWithSettings(grp.value, numFmtCard),
             i,
             data.names.length,
           );

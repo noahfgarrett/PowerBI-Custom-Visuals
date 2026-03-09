@@ -16,6 +16,7 @@ import {
   animate,
   DURATION,
   formatNumber,
+  formatWithSettings,
   getGlassStyle,
   getHostChartColor,
   withOpacity,
@@ -541,7 +542,7 @@ export class PolarChartVisual implements IVisual {
             .attr('font-size', `${axisLabelSize}px`)
             .attr('font-weight', '600')
             .attr('fill', axisColor)
-            .text(formatNumber(datum.value));
+            .text(formatWithSettings(datum.value, this.settings.numberFormattingCard));
 
           if (animEnabled) {
             valLabel.attr('opacity', 0);
@@ -641,7 +642,7 @@ export class PolarChartVisual implements IVisual {
     const locale = this.getHostLocale();
     const tooltipData: VisualTooltipDataItem[] = [
       { displayName: 'Category', value: datum.label },
-      { displayName: 'Value', value: formatNumber(datum.value, { abbreviate: false, locale }) },
+      { displayName: 'Value', value: formatWithSettings(datum.value, this.settings.numberFormattingCard) },
     ];
 
     this.host.tooltipService.show({

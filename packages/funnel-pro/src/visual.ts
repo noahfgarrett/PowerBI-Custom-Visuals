@@ -16,6 +16,7 @@ import {
   cubicOut,
   DURATION,
   formatNumber,
+  formatWithSettings,
   getGlassStyle,
   getHostChartColor,
   withOpacity,
@@ -448,7 +449,7 @@ export class FunnelProVisual implements IVisual {
           .attr('class', 'funnel-value-label')
           .attr('x', labelX)
           .attr('y', labelY + 14)
-          .text(formatNumber(stage.value));
+          .text(formatWithSettings(stage.value, this.settings.numberFormattingCard));
 
         if (animEnabled && animDuration > 0) {
           const valueNode = valueText.node();
@@ -756,7 +757,7 @@ export class FunnelProVisual implements IVisual {
 
     polygon.on('mouseover', (event: MouseEvent) => {
       const tooltipData: VisualTooltipDataItem[] = [
-        { displayName: stage.label, value: formatNumber(stage.value, { abbreviate: false }) },
+        { displayName: stage.label, value: formatWithSettings(stage.value, this.settings.numberFormattingCard) },
       ];
 
       // Add conversion from previous stage if applicable
@@ -849,7 +850,7 @@ export class FunnelProVisual implements IVisual {
 
     const refColor = ref.referenceLineColor.value?.value ?? '#EF4444';
     const refStyle = (resolveDropdown(ref.referenceLineStyle) ?? 'dashed') as 'solid' | 'dashed' | 'dotted';
-    const labelText = ref.referenceLabelText.value || formatNumber(refValue);
+    const labelText = ref.referenceLabelText.value || formatWithSettings(refValue, this.settings.numberFormattingCard);
 
     renderHorizontalReferenceLine(g, {
       value: refValue,

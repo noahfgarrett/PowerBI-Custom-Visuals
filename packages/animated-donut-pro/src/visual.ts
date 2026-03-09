@@ -16,6 +16,7 @@ import {
   cubicOut,
   DURATION,
   formatNumber,
+  formatWithSettings,
   getGlassStyle,
   getHostChartColor,
   withOpacity,
@@ -607,7 +608,7 @@ export class AnimatedDonutProVisual implements IVisual {
 
       // Resolve label text based on format setting
       const pct = total > 0 ? ((arc.segment.value / total) * 100).toFixed(1) : '0.0';
-      const formattedValue = formatNumber(arc.segment.value, { abbreviate: true });
+      const formattedValue = formatWithSettings(arc.segment.value, this.settings.numberFormattingCard);
       let labelText: string;
       switch (labelFormatRaw) {
         case 'value':
@@ -933,7 +934,7 @@ export class AnimatedDonutProVisual implements IVisual {
 
     path.on('mouseover', (event: MouseEvent) => {
       const tooltipData: VisualTooltipDataItem[] = [
-        { displayName: segment.label, value: formatNumber(segment.value, { abbreviate: false }) },
+        { displayName: segment.label, value: formatWithSettings(segment.value, this.settings.numberFormattingCard) },
         { displayName: 'Percentage', value: `${pct}%` },
       ];
 

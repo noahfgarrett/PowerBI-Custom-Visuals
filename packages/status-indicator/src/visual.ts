@@ -10,7 +10,7 @@ import { StatusIndicatorSettings } from './settings';
 import {
   pulseGlow,
   fadeSlideIn,
-  formatNumber,
+  formatWithSettings,
   getGlassStyle,
   DURATION,
   renderChartTitle,
@@ -433,7 +433,7 @@ export class StatusIndicatorVisual implements IVisual {
         const valueEl = document.createElement('div');
         valueEl.className = 'status-value';
         valueEl.style.fontSize = `${valueFontSize}px`;
-        valueEl.textContent = formatNumber(row.value);
+        valueEl.textContent = formatWithSettings(row.value, this.settings.numberFormattingCard);
         rowEl.appendChild(valueEl);
       }
 
@@ -474,22 +474,21 @@ export class StatusIndicatorVisual implements IVisual {
   }
 
   private showStatusTooltip(row: StatusRow, event: MouseEvent): void {
-    const locale = this.getHostLocale();
     const tooltipData: VisualTooltipDataItem[] = [
       { displayName: 'Label', value: row.label },
-      { displayName: 'Value', value: formatNumber(row.value, { abbreviate: false, locale }) },
+      { displayName: 'Value', value: formatWithSettings(row.value, this.settings.numberFormattingCard) },
       { displayName: 'Status', value: row.status },
     ];
     if (row.warningThreshold !== null) {
       tooltipData.push({
         displayName: 'Warning Threshold',
-        value: formatNumber(row.warningThreshold, { abbreviate: false, locale }),
+        value: formatWithSettings(row.warningThreshold, this.settings.numberFormattingCard),
       });
     }
     if (row.criticalThreshold !== null) {
       tooltipData.push({
         displayName: 'Critical Threshold',
-        value: formatNumber(row.criticalThreshold, { abbreviate: false, locale }),
+        value: formatWithSettings(row.criticalThreshold, this.settings.numberFormattingCard),
       });
     }
 
@@ -512,11 +511,6 @@ export class StatusIndicatorVisual implements IVisual {
 
   private hideTooltip(): void {
     this.host.tooltipService.hide({ immediately: true, isTouchEvent: false });
-  }
-
-  private getHostLocale(): string | undefined {
-    const locale = (this.host as unknown as { locale?: unknown }).locale;
-    return typeof locale === 'string' && locale.length > 0 ? locale : undefined;
   }
 
   private notifyRenderStarted(): void {

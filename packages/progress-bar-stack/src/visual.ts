@@ -14,6 +14,7 @@ import {
   fadeSlideIn,
   DURATION,
   formatNumber,
+  formatWithSettings,
   getGlassStyle,
   getHostChartColor,
   renderChartTitle,
@@ -376,7 +377,7 @@ export class ProgressBarStackVisual implements IVisual {
         const parts: string[] = [];
 
         if (s.barSettings.showValue.value) {
-          parts.push(formatNumber(row.value));
+          parts.push(formatWithSettings(row.value, this.settings.numberFormattingCard));
         }
         if (s.barSettings.showPercent.value) {
           parts.push(`${Math.round(pct * 100)}%`);
@@ -386,7 +387,7 @@ export class ProgressBarStackVisual implements IVisual {
 
         if (animEnabled) {
           // countUp animation for the value
-          valueEl.textContent = s.barSettings.showValue.value ? formatNumber(0) : '0%';
+          valueEl.textContent = s.barSettings.showValue.value ? formatWithSettings(0, this.settings.numberFormattingCard) : '0%';
           const delay = i * DURATION.stagger;
 
           const cancelTimeout = this.delayedExec(() => {
@@ -398,7 +399,7 @@ export class ProgressBarStackVisual implements IVisual {
                 (v) => {
                   const animParts: string[] = [];
                   if (s.barSettings.showValue.value) {
-                    animParts.push(formatNumber(v));
+                    animParts.push(formatWithSettings(v, this.settings.numberFormattingCard));
                   }
                   if (s.barSettings.showPercent.value) {
                     const animPct = row.target > 0 ? Math.round((v / row.target) * 100) : 0;
@@ -673,7 +674,7 @@ export class ProgressBarStackVisual implements IVisual {
         const pct = Math.round(Math.min(row.value / row.target, 1) * 100);
         el.setAttribute(
           'aria-label',
-          `${row.label}: ${formatNumber(row.value)} of ${formatNumber(row.target)}, ${pct}%. Item ${i + 1} of ${rows.length}.`,
+          `${row.label}: ${formatWithSettings(row.value, this.settings.numberFormattingCard)} of ${formatWithSettings(row.target, this.settings.numberFormattingCard)}, ${pct}%. Item ${i + 1} of ${rows.length}.`,
         );
       }
       el.setAttribute('tabindex', '0');

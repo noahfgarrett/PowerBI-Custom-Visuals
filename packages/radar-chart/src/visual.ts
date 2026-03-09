@@ -18,6 +18,7 @@ import {
   getChartColor,
   withOpacity,
   formatNumber,
+  formatWithSettings,
   renderChartTitle,
   applyDataLabelFormatting,
   resolveDropdown,
@@ -527,7 +528,7 @@ export class RadarChartVisual implements IVisual {
             .attr('y', ly)
             .attr('dy', '0.35em')
             .attr('text-anchor', 'middle')
-            .text(formatNumber(ser.values[i], { abbreviate: false, locale }));
+            .text(formatWithSettings(ser.values[i], this.settings.numberFormattingCard));
 
           if (animEnabled) {
             dataLabel.attr('opacity', 0);
@@ -675,7 +676,7 @@ export class RadarChartVisual implements IVisual {
     const tooltipData: VisualTooltipDataItem[] = [
       { displayName: 'Category', value: category },
       { displayName: 'Series', value: seriesName },
-      { displayName: 'Value', value: formatNumber(value, { abbreviate: false, locale }) },
+      { displayName: 'Value', value: formatWithSettings(value, this.settings.numberFormattingCard) },
     ];
 
     this.host.tooltipService.show({
@@ -829,7 +830,7 @@ export class RadarChartVisual implements IVisual {
             .attr('y', r * Math.sin(angle))
             .attr('fill', axisColor)
             .style('font-size', fontSize)
-            .text(formatNumber(value));
+            .text(formatWithSettings(value, this.settings.numberFormattingCard));
         }
       }
     } else {
@@ -844,7 +845,7 @@ export class RadarChartVisual implements IVisual {
           .attr('y', r * Math.sin(baseAngle))
           .attr('fill', axisColor)
           .style('font-size', fontSize)
-          .text(formatNumber(value));
+          .text(formatWithSettings(value, this.settings.numberFormattingCard));
       }
     }
   }

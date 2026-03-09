@@ -14,7 +14,7 @@ import {
   springScale,
   fadeSlideIn,
   DURATION,
-  formatNumber,
+  formatWithSettings,
   getGlassStyle,
   getHostChartColor,
   withOpacity,
@@ -426,6 +426,11 @@ export class TreemapProVisual implements IVisual {
     // Compute total for percentage
     const totalValue = hierarchy.value ?? 1;
 
+    // Precompute leaf value range for heat coloring (O(N) once, not O(N²))
+    const allLeafValues = leaves.map((l) => l.value ?? 0);
+    const minLeafVal = Math.min(...allLeafValues);
+    const maxLeafVal = Math.max(...allLeafValues);
+
     leaves.forEach((leaf, idx) => {
       const x0 = leaf.x0 ?? 0;
       const y0 = leaf.y0 ?? 0;
@@ -456,9 +461,6 @@ export class TreemapProVisual implements IVisual {
       const fillColor = baseFillColor;
 
       // Heat coloring override (if enabled)
-      const allLeafValues = leaves.map((l) => l.value ?? 0);
-      const minLeafVal = Math.min(...allLeafValues);
-      const maxLeafVal = Math.max(...allLeafValues);
       const heatColor = this.getHeatColor(leaf.value ?? 0, minLeafVal, maxLeafVal);
       const effectiveFillColor = heatColor ?? fillColor;
 
@@ -505,7 +507,7 @@ export class TreemapProVisual implements IVisual {
         valueText.setAttribute('class', 'treemap-value');
         valueText.setAttribute('x', '6');
         valueText.setAttribute('y', String(valueYOffset));
-        valueText.textContent = formatNumber(leaf.value ?? 0);
+        valueText.textContent = formatWithSettings(leaf.value ?? 0, this.settings.numberFormattingCard);
         g.appendChild(valueText);
         valueYOffset += 14;
       }
@@ -608,6 +610,7 @@ export class TreemapProVisual implements IVisual {
     }
 
     // Apply shared formatting settings
+    applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.treemap-label');
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.treemap-value');
 
     // Legend
@@ -730,7 +733,7 @@ export class TreemapProVisual implements IVisual {
   ): void {
     const host = this.host;
 
-    element.addEventListener('mouseover', (event: MouseEvent) => {
+    element.addEventListener('mouseenter', (event: MouseEvent) => {
       const tooltipData: VisualTooltipDataItem[] = [];
       if (parentCategory && parentCategory !== 'root') {
         tooltipData.push({ displayName: 'Category', value: parentCategory });
@@ -738,7 +741,7 @@ export class TreemapProVisual implements IVisual {
       tooltipData.push({ displayName: 'Name', value: name });
       tooltipData.push({
         displayName: 'Value',
-        value: formatNumber(value, { abbreviate: false }),
+        value: formatWithSettings(value, this.settings.numberFormattingCard),
       });
 
       host.tooltipService.show({

@@ -16,6 +16,7 @@ import {
   cubicOut,
   DURATION,
   formatNumber,
+  formatWithSettings,
   getDeltaColor,
   getGlassStyle,
   withOpacity,
@@ -406,7 +407,7 @@ export class DumbbellChartVisual implements IVisual {
         .call(
           d3.axisBottom(xScale)
             .ticks(6)
-            .tickFormat((d) => formatNumber(d as number, { abbreviate: true })),
+            .tickFormat((d) => formatWithSettings(d as number, this.settings.numberFormattingCard)),
         )
         .select('.domain').remove();
     }
@@ -537,7 +538,7 @@ export class DumbbellChartVisual implements IVisual {
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', 'auto')
           .style('transition', 'opacity 0.15s ease')
-          .text(formatNumber(row.start, { abbreviate: true }));
+          .text(formatWithSettings(row.start, this.settings.numberFormattingCard));
 
         chartGroup.append('text')
           .attr('class', 'dumbbell-data-label')
@@ -547,7 +548,7 @@ export class DumbbellChartVisual implements IVisual {
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', 'auto')
           .style('transition', 'opacity 0.15s ease')
-          .text(formatNumber(row.end, { abbreviate: true }));
+          .text(formatWithSettings(row.end, this.settings.numberFormattingCard));
       }
 
       // Delta labels
@@ -725,7 +726,7 @@ export class DumbbellChartVisual implements IVisual {
     circle.on('mouseover', (event: MouseEvent) => {
       const tooltipData: VisualTooltipDataItem[] = [
         { displayName: 'Category', value: category },
-        { displayName: seriesName, value: formatNumber(value, { abbreviate: false }) },
+        { displayName: seriesName, value: formatWithSettings(value, this.settings.numberFormattingCard) },
       ];
 
       host.tooltipService.show({
@@ -902,7 +903,7 @@ export class DumbbellChartVisual implements IVisual {
       showLabel: ref.showReferenceLabel.value,
       labelText: ref.referenceLabelText.value.length > 0
         ? ref.referenceLabelText.value
-        : formatNumber(refValue, { abbreviate: true }),
+        : formatWithSettings(refValue, this.settings.numberFormattingCard),
     };
 
     renderVerticalReferenceLine(chartGroup, config);

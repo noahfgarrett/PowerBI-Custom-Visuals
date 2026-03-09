@@ -1367,11 +1367,11 @@ export class ScatterBubbleVisual implements IVisual {
 
   private applyZoomPan(
     svg: SVGSVGElement,
-    _chartGroup: SVGGElement,
+    chartGroup: SVGGElement,
     _xScale: d3.ScaleLinear<number, number>,
     _yScale: d3.ScaleLinear<number, number>,
-    _chartWidth: number,
-    _chartHeight: number,
+    chartWidth: number,
+    chartHeight: number,
   ): void {
     const zs = this.settings.scatterZoomSettings;
     const isZoomEnabled = zs.enableZoom.value;
@@ -1379,18 +1379,39 @@ export class ScatterBubbleVisual implements IVisual {
 
     if (!isZoomEnabled && !isPanEnabled) return;
 
+    // Add a clipPath so zoomed content doesn't overflow the chart area
+    const svgNs = 'http://www.w3.org/2000/svg';
+    let defs = svg.querySelector('defs');
+    if (!defs) {
+      defs = document.createElementNS(svgNs, 'defs');
+      svg.insertBefore(defs, svg.firstChild);
+    }
+    const clipId = 'scatter-bubble-zoom-clip';
+    // Remove any existing clip with this id to avoid duplicates
+    const existingClip = defs.querySelector(`#${clipId}`);
+    if (existingClip) existingClip.remove();
+
+    const clipPath = document.createElementNS(svgNs, 'clipPath');
+    clipPath.setAttribute('id', clipId);
+    const clipRect = document.createElementNS(svgNs, 'rect');
+    clipRect.setAttribute('x', '0');
+    clipRect.setAttribute('y', '0');
+    clipRect.setAttribute('width', String(chartWidth));
+    clipRect.setAttribute('height', String(chartHeight));
+    clipPath.appendChild(clipRect);
+    defs.appendChild(clipPath);
+
+    chartGroup.setAttribute('clip-path', `url(#${clipId})`);
+
     // Apply d3-zoom behavior for scroll-zoom and drag-pan
+    // Transform the entire chartGroup (axes, gridlines, quadrants, trendlines, bubbles)
     const svgSel = d3.select(svg);
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.5, 10])
       .on('zoom', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
-        const g = svg.querySelector('.scatter-bubble-points');
-        if (g) {
-          (g as SVGGElement).setAttribute(
-            'transform',
-            `translate(${event.transform.x},${event.transform.y}) scale(${event.transform.k})`,
-          );
-        }
+        const baseTranslate = `translate(${MARGIN.left}, ${MARGIN.top})`;
+        const zoomTransform = `translate(${event.transform.x},${event.transform.y}) scale(${event.transform.k})`;
+        chartGroup.setAttribute('transform', `${baseTranslate} ${zoomTransform}`);
       });
 
     // Single combined filter: AND-combine zoom/pan permissions.
@@ -1599,7 +1620,7 @@ export class ScatterBubbleVisual implements IVisual {
 
     const cleanup = attachKeyboardNav({
       container: this.container,
-      itemSelector: '.bubble, circle, [tabindex="0"]',
+      itemSelector: '.scatter-bubble-point, [tabindex="0"]',
       onActivate: (el) => {
         (el as HTMLElement).click?.();
       },

@@ -15,7 +15,7 @@ import {
   animate,
   cubicOut,
   DURATION,
-  formatNumber,
+  formatWithSettings,
   getGlassStyle,
   withOpacity,
   renderChartTitle,
@@ -489,7 +489,7 @@ export class SlopeChartVisual implements IVisual {
 
       // Add tooltip
       path.append('title')
-        .text(`${item.category}: ${formatNumber(item.startValue)} -> ${formatNumber(item.endValue)}`);
+        .text(`${item.category}: ${formatWithSettings(item.startValue, this.settings.numberFormattingCard)} -> ${formatWithSettings(item.endValue, this.settings.numberFormattingCard)}`);
       this.attachSelection(path, item.selectionId);
 
       const pathNode = path.node();
@@ -572,7 +572,7 @@ export class SlopeChartVisual implements IVisual {
       startLabel.append('tspan')
         .attr('dx', '4')
         .attr('fill', valueLabelColor)
-        .text(formatNumber(item.startValue));
+        .text(formatWithSettings(item.startValue, this.settings.numberFormattingCard));
       this.attachSelection(startLabel, item.selectionId);
 
       const startLabelNode = startLabel.node();
@@ -597,7 +597,7 @@ export class SlopeChartVisual implements IVisual {
       endLabel.append('tspan')
         .attr('dx', '4')
         .attr('fill', valueLabelColor)
-        .text(formatNumber(item.endValue));
+        .text(formatWithSettings(item.endValue, this.settings.numberFormattingCard));
       this.attachSelection(endLabel, item.selectionId);
 
       const endLabelNode = endLabel.node();
@@ -758,11 +758,11 @@ export class SlopeChartVisual implements IVisual {
             labelText = 'N/A';
           } else if (clFormat === 'absolute') {
             const sign = absDelta >= 0 ? '+' : '';
-            labelText = `${sign}${formatNumber(absDelta)}`;
+            labelText = `${sign}${formatWithSettings(absDelta, this.settings.numberFormattingCard)}`;
           } else {
             // 'both'
             const sign = absDelta >= 0 ? '+' : '';
-            labelText = `${sign}${formatNumber(absDelta)} (N/A)`;
+            labelText = `${sign}${formatWithSettings(absDelta, this.settings.numberFormattingCard)} (N/A)`;
           }
         } else if (absDelta === 0) {
           // Edge case: identical values
@@ -778,7 +778,7 @@ export class SlopeChartVisual implements IVisual {
           const pctSign = pctChange >= 0 ? '+' : '';
           const pctStr = `${pctSign}${pctChange.toFixed(1)}%`;
           const absSign = absDelta >= 0 ? '+' : '';
-          const absStr = `${absSign}${formatNumber(absDelta)}`;
+          const absStr = `${absSign}${formatWithSettings(absDelta, this.settings.numberFormattingCard)}`;
 
           if (clFormat === 'percent') {
             labelText = pctStr;
@@ -874,7 +874,7 @@ export class SlopeChartVisual implements IVisual {
           lineWidth: s.crosshairFormattingCard.crosshairLineWidth.value,
           lineStyle: chStyleVal,
           showValues: s.crosshairFormattingCard.showCrosshairValues.value,
-          formatValue: (val: number) => formatNumber(val),
+          formatValue: (val: number) => formatWithSettings(val, this.settings.numberFormattingCard),
         }));
         this.cancelAnimations.push(crosshairCleanup);
       }

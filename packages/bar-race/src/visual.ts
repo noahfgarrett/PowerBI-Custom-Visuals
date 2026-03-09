@@ -11,6 +11,7 @@ import { BarRaceSettings } from './settings';
 import * as d3 from 'd3';
 import {
   formatNumber,
+  formatWithSettings,
   getGlassStyle,
   getHostChartColor,
   renderChartTitle,
@@ -901,7 +902,7 @@ export class BarRaceVisual implements IVisual {
       }
 
       if (valueEl && showValues) {
-        valueEl.textContent = formatNumber(item.value);
+        valueEl.textContent = formatWithSettings(item.value, this.settings.numberFormattingCard);
         valueEl.style.display = '';
       } else if (valueEl) {
         valueEl.style.display = 'none';
@@ -1167,7 +1168,7 @@ export class BarRaceVisual implements IVisual {
     const refColor = ref.referenceLineColor.value?.value ?? '#EF4444';
     const refStyle = (resolveDropdown(ref.referenceLineStyle) ?? 'dashed') as 'solid' | 'dashed' | 'dotted';
     const labelText = ref.showReferenceLabel.value
-      ? (ref.referenceLabelText.value || formatNumber(refValue))
+      ? (ref.referenceLabelText.value || formatWithSettings(refValue, this.settings.numberFormattingCard))
       : '';
 
     renderVerticalReferenceLine(g, {
@@ -1333,7 +1334,7 @@ export class BarRaceVisual implements IVisual {
 
     const tooltipData: VisualTooltipDataItem[] = [
       { displayName: 'Category', value: categoryName },
-      { displayName: 'Value', value: formatNumber(rawValue, { abbreviate: false, locale }) },
+      { displayName: 'Value', value: formatWithSettings(rawValue, this.settings.numberFormattingCard) },
       { displayName: 'Period', value: period },
     ];
 

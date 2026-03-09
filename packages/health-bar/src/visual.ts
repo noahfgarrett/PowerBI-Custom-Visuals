@@ -17,6 +17,7 @@ import {
   getGlassStyle,
   formatPercent,
   formatNumber,
+  formatWithSettings,
   growBar,
   countUp,
   fadeSlideIn,
@@ -502,7 +503,7 @@ export class HealthBarVisual implements IVisual {
       if (showValue) {
         const pctText = showPercent
           ? formatPercent(item.pct, { decimals: 0 })
-          : formatNumber(item.value, { abbreviate: true });
+          : formatWithSettings(item.value, this.settings.numberFormattingCard);
 
         const valuePosition = resolveDropdown(s.healthBarValuePosition.position) ?? 'above';
 
@@ -688,7 +689,7 @@ export class HealthBarVisual implements IVisual {
     const refStyle = resolveDropdown(ref.referenceLineStyle) ?? 'dashed';
     const labelText = ref.referenceLabelText.value.length > 0
       ? ref.referenceLabelText.value
-      : formatNumber(refValue, { abbreviate: true });
+      : formatWithSettings(refValue, this.settings.numberFormattingCard);
 
     renderHorizontalReferenceLine(g, {
       value: refValue,

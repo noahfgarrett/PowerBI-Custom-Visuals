@@ -10,6 +10,7 @@ import { FormattingSettingsService } from 'powerbi-visuals-utils-formattingmodel
 import { BulletChartProSettings } from './settings';
 import {
   formatNumber,
+  formatWithSettings,
   DURATION,
   growBar,
   fadeSlideIn,
@@ -474,7 +475,7 @@ export class BulletChartProVisual implements IVisual {
             .attr('class', 'bullet-value-label')
             .attr('x', 0).attr('y', valBarTop - 4)
             .attr('text-anchor', 'middle')
-            .text(formatNumber(item.value, { abbreviate: true }));
+            .text(formatWithSettings(item.value, this.settings.numberFormattingCard));
         }
       });
 
@@ -743,7 +744,7 @@ export class BulletChartProVisual implements IVisual {
           .attr('y', barHeight / 2)
           .attr('dy', '0.35em')
           .attr('text-anchor', 'start')
-          .text(formatNumber(item.value, { abbreviate: true }));
+          .text(formatWithSettings(item.value, this.settings.numberFormattingCard));
       }
     });
 
@@ -808,20 +809,20 @@ export class BulletChartProVisual implements IVisual {
     rect.on('mouseover', (event: MouseEvent) => {
       const tooltipData: VisualTooltipDataItem[] = [
         { displayName: 'Category', value: item.label },
-        { displayName: 'Value', value: formatNumber(item.value, { abbreviate: false }) },
+        { displayName: 'Value', value: formatWithSettings(item.value, this.settings.numberFormattingCard) },
       ];
 
       if (item.target !== null) {
         tooltipData.push({
           displayName: 'Target',
-          value: formatNumber(item.target, { abbreviate: false }),
+          value: formatWithSettings(item.target, this.settings.numberFormattingCard),
         });
       }
 
       tooltipData.push(
-        { displayName: 'Poor', value: formatNumber(item.poor, { abbreviate: false }) },
-        { displayName: 'Satisfactory', value: formatNumber(item.satisfactory, { abbreviate: false }) },
-        { displayName: 'Good', value: formatNumber(item.good, { abbreviate: false }) },
+        { displayName: 'Poor', value: formatWithSettings(item.poor, this.settings.numberFormattingCard) },
+        { displayName: 'Satisfactory', value: formatWithSettings(item.satisfactory, this.settings.numberFormattingCard) },
+        { displayName: 'Good', value: formatWithSettings(item.good, this.settings.numberFormattingCard) },
       );
 
       host.tooltipService.show({
@@ -903,7 +904,7 @@ export class BulletChartProVisual implements IVisual {
     const refStyle = resolveDropdown(ref.referenceLineStyle) ?? 'dashed';
     const labelText = ref.referenceLabelText.value.length > 0
       ? ref.referenceLabelText.value
-      : formatNumber(refValue, { abbreviate: true });
+      : formatWithSettings(refValue, this.settings.numberFormattingCard);
 
     renderHorizontalReferenceLine(g, {
       value: refValue,
