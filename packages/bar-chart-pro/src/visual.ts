@@ -999,6 +999,7 @@ export class BarChartProVisual implements IVisual {
         const ry = isTopSegment ? Math.min(cornerRadius, barW / 2) : 0;
 
         const sf = barSeriesFormats[serIdx];
+        const conditionalFill = this.getConditionalBarColor(val);
         const rect = g.append('rect')
           .attr('class', 'bar-chart-bar')
           .attr('x', barX)
@@ -1007,7 +1008,7 @@ export class BarChartProVisual implements IVisual {
           .attr('height', Math.max(0, barH))
           .attr('rx', rx)
           .attr('ry', ry)
-          .attr('fill', this.getBarFill(defs, sf.color, 'vertical'))
+          .attr('fill', conditionalFill ?? this.getBarFill(defs, sf.color, 'vertical'))
           .attr('stroke', this.settings.barSettings.barBorderColor.value?.value || 'none')
           .attr('stroke-width', this.settings.barSettings.barBorderWidth.value)
           .attr('opacity', (this.settings.barSettings.barOpacity.value / 100) * (sf.opacity / 100));
@@ -1025,11 +1026,26 @@ export class BarChartProVisual implements IVisual {
       }
     });
 
+    // Compute stacked totals for trend line and variance indicators
+    const stackedTotals = data.categories.map((_, catIdx) => {
+      let total = 0;
+      for (const series of data.barSeries) {
+        const v = series.values[catIdx];
+        if (v !== null && v > 0) total += v;
+      }
+      return total;
+    });
+
     const stackedValues = data.barSeries.flatMap((ser) => ser.values.filter((v): v is number => v !== null));
     this.renderTargetLine(g, data.targetValue, y, width);
     this.renderReferenceLine(g, y, width, stackedValues);
     this.renderBenchmarkBand(g, y, width);
+    this.renderTrendLineOverlay(g, stackedTotals, (i) => (x(data.categories[i]) ?? 0) + x.bandwidth() / 2, y);
     this.renderAnnotationOverlay(g, data, x, y);
+
+    // Variance indicators — compare stacked totals per category against target
+    const xPositions = data.categories.map((cat) => (x(cat) ?? 0) + x.bandwidth() / 2);
+    this.renderVarianceIndicators(g, stackedTotals, data.targetValue, xPositions, y);
   }
 
   // ── 100% Stacked Mode ───────────────────────────────────────────
@@ -1097,6 +1113,7 @@ export class BarChartProVisual implements IVisual {
         const ry = isTopSegment ? Math.min(cornerRadius, barW / 2) : 0;
 
         const sf = barSeriesFormats[serIdx];
+        const conditionalFill = this.getConditionalBarColor(rawVal);
         const rect = g.append('rect')
           .attr('class', 'bar-chart-bar')
           .attr('x', barX)
@@ -1105,7 +1122,7 @@ export class BarChartProVisual implements IVisual {
           .attr('height', Math.max(0, barH))
           .attr('rx', rx)
           .attr('ry', ry)
-          .attr('fill', this.getBarFill(defs, sf.color, 'vertical'))
+          .attr('fill', conditionalFill ?? this.getBarFill(defs, sf.color, 'vertical'))
           .attr('stroke', this.settings.barSettings.barBorderColor.value?.value || 'none')
           .attr('stroke-width', this.settings.barSettings.barBorderWidth.value)
           .attr('opacity', (this.settings.barSettings.barOpacity.value / 100) * (sf.opacity / 100));
@@ -1123,9 +1140,15 @@ export class BarChartProVisual implements IVisual {
       }
     });
 
+    // Trend line on stacked totals (raw values, not percentages)
+    const rawTotals = data.categories.map((_, catIdx) => categoryTotals[catIdx]);
+    const percentY = d3.scaleLinear().domain([0, (d3.max(rawTotals) ?? 0) * 1.1]).nice().range([height, 0]);
+    this.renderTrendLineOverlay(g, rawTotals, (i) => (x(data.categories[i]) ?? 0) + x.bandwidth() / 2, percentY);
+
     this.renderTargetLine(g, data.targetValue, y, width);
     this.renderReferenceLine(g, y, width);
     this.renderBenchmarkBand(g, y, width);
+    this.renderAnnotationOverlay(g, data, x, y);
   }
 
   /**
@@ -1306,6 +1329,7 @@ export class BarChartProVisual implements IVisual {
         const barY = yBar(val);
         const barH = height - barY;
 
+        const conditionalFill = this.getConditionalBarColor(val);
         const rect = g.append('rect')
           .attr('class', 'bar-chart-bar')
           .attr('x', barX)
@@ -1314,7 +1338,7 @@ export class BarChartProVisual implements IVisual {
           .attr('height', barH)
           .attr('rx', Math.min(cornerRadius, barW / 2))
           .attr('ry', Math.min(cornerRadius, barW / 2))
-          .attr('fill', this.getBarFill(defs, sf.color, 'vertical'))
+          .attr('fill', conditionalFill ?? this.getBarFill(defs, sf.color, 'vertical'))
           .attr('stroke', this.settings.barSettings.barBorderColor.value?.value || 'none')
           .attr('stroke-width', this.settings.barSettings.barBorderWidth.value)
           .attr('opacity', (this.settings.barSettings.barOpacity.value / 100) * (sf.opacity / 100));
@@ -1440,6 +1464,13 @@ export class BarChartProVisual implements IVisual {
     this.renderBenchmarkBand(g, yBar, width);
     this.renderTrendLineOverlay(g, comboValues, (i) => (x(data.categories[i]) ?? 0) + x.bandwidth() / 2, yBar, hasSecondaryY ? yLine : undefined);
     this.renderAnnotationOverlay(g, data, x, yBar);
+
+    // Variance indicators (first bar series against target)
+    if (data.barSeries.length > 0) {
+      const firstVals = data.barSeries[0].values.filter((v): v is number => v !== null);
+      const comboXPositions = data.categories.map((cat) => (x(cat) ?? 0) + x.bandwidth() / 2);
+      this.renderVarianceIndicators(g, firstVals, data.targetValue, comboXPositions, yBar);
+    }
   }
 
   // ── Horizontal Mode ─────────────────────────────────────────────
@@ -1520,6 +1551,7 @@ export class BarChartProVisual implements IVisual {
         const barW = x(val);
 
         const sf = barSeriesFormats[serIdx];
+        const conditionalFill = this.getConditionalBarColor(val);
         const rect = g.append('rect')
           .attr('class', 'bar-chart-bar')
           .attr('x', 0)
@@ -1528,7 +1560,7 @@ export class BarChartProVisual implements IVisual {
           .attr('height', barH)
           .attr('rx', Math.min(cornerRadius, barH / 2))
           .attr('ry', Math.min(cornerRadius, barH / 2))
-          .attr('fill', this.getBarFill(defs, sf.color, 'horizontal'))
+          .attr('fill', conditionalFill ?? this.getBarFill(defs, sf.color, 'horizontal'))
           .attr('stroke', this.settings.barSettings.barBorderColor.value?.value || 'none')
           .attr('stroke-width', this.settings.barSettings.barBorderWidth.value)
           .attr('opacity', (this.settings.barSettings.barOpacity.value / 100) * (sf.opacity / 100));
@@ -1570,6 +1602,16 @@ export class BarChartProVisual implements IVisual {
     // Reference line (vertical in horizontal mode, using value axis = x)
     const horzValues = data.barSeries.flatMap((ser) => ser.values.filter((v): v is number => v !== null));
     this.renderReferenceLineHorizontal(g, x, height, horzValues);
+
+    // Benchmark band (vertical band in horizontal mode)
+    this.renderBenchmarkBandHorizontal(g, x, height);
+
+    // Variance indicators (horizontal — text to right of bar end)
+    if (data.barSeries.length > 0) {
+      const firstVals = data.barSeries[0].values.filter((v): v is number => v !== null);
+      const yPositions = data.categories.map((cat) => (y(cat) ?? 0) + y.bandwidth() / 2);
+      this.renderVarianceIndicatorsHorizontal(g, firstVals, data.targetValue, yPositions, x);
+    }
   }
 
   // ── Diverging Mode ──────────────────────────────────────────────
@@ -1643,7 +1685,8 @@ export class BarChartProVisual implements IVisual {
       const isPositive = val >= 0;
       const barY = isPositive ? y(val) : zeroY;
       const barH = Math.abs(y(val) - zeroY);
-      const color = isPositive ? theme.semantic.positive : theme.semantic.negative;
+      const defaultColor = isPositive ? theme.semantic.positive : theme.semantic.negative;
+      const conditionalFill = this.getConditionalBarColor(val);
 
       const rect = g.append('rect')
         .attr('class', 'bar-chart-bar')
@@ -1653,7 +1696,7 @@ export class BarChartProVisual implements IVisual {
         .attr('height', Math.max(0, barH))
         .attr('rx', Math.min(cornerRadius, barW / 2))
         .attr('ry', Math.min(cornerRadius, barW / 2))
-        .attr('fill', this.getBarFill(defs, color, 'vertical'))
+        .attr('fill', conditionalFill ?? this.getBarFill(defs, defaultColor, 'vertical'))
         .attr('stroke', this.settings.barSettings.barBorderColor.value?.value || 'none')
         .attr('stroke-width', this.settings.barSettings.barBorderWidth.value)
         .attr('opacity', (this.settings.barSettings.barOpacity.value / 100) * (sf.opacity / 100));
@@ -1673,6 +1716,12 @@ export class BarChartProVisual implements IVisual {
     this.renderReferenceLine(g, y, width, lollipopValues);
     this.renderBenchmarkBand(g, y, width);
     this.renderTrendLineOverlay(g, lollipopValues, (i) => (x(data.categories[i]) ?? 0) + x.bandwidth() / 2, y);
+    this.renderAnnotationOverlay(g, data, x, y);
+
+    // Variance indicators (first series values against target)
+    const divergingVals = series.values.filter((v): v is number => v !== null);
+    const divergingXPositions = data.categories.map((cat) => (x(cat) ?? 0) + x.bandwidth() / 2);
+    this.renderVarianceIndicators(g, divergingVals, data.targetValue, divergingXPositions, y);
   }
 
   // ── Shared Rendering Helpers ────────────────────────────────────
@@ -1909,6 +1958,43 @@ export class BarChartProVisual implements IVisual {
     }
   }
 
+  private renderBenchmarkBandHorizontal(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    xScale: d3.ScaleLinear<number, number>,
+    height: number,
+  ): void {
+    const bb = this.settings.benchmarkBandSettings;
+    if (!bb.show.value) return;
+
+    const x1 = xScale(bb.lowerBound.value);
+    const x2 = xScale(bb.upperBound.value);
+    const xLeft = Math.min(x1, x2);
+    const w = Math.abs(x2 - x1);
+    const color = bb.bandColor.value?.value ?? '#3B82F6';
+    const opacity = Math.max(0, Math.min(100, bb.bandOpacity.value)) / 100;
+
+    g.append('rect')
+      .attr('class', 'benchmark-band')
+      .attr('x', xLeft)
+      .attr('y', 0)
+      .attr('width', w)
+      .attr('height', height)
+      .attr('fill', color)
+      .attr('opacity', opacity)
+      .style('pointer-events', 'none');
+
+    if (bb.label.value) {
+      g.append('text')
+        .attr('class', 'benchmark-label')
+        .attr('x', xLeft + 4)
+        .attr('y', 12)
+        .attr('font-size', '9px')
+        .attr('fill', color)
+        .attr('opacity', Math.min(1, opacity * 5))
+        .text(bb.label.value);
+    }
+  }
+
   /**
    * Renders annotation callouts anchored to specific categories.
    */
@@ -1986,6 +2072,55 @@ export class BarChartProVisual implements IVisual {
           .attr('x', x)
           .attr('y', y - 4)
           .attr('text-anchor', 'middle')
+          .attr('fill', color)
+          .attr('font-size', '9px')
+          .attr('font-weight', '600')
+          .text(`${delta >= 0 ? '+' : '-'}${deltaText}`);
+      }
+    }
+  }
+
+  private renderVarianceIndicatorsHorizontal(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    values: number[],
+    targetValue: number | null,
+    yPositions: number[],
+    xScale: d3.ScaleLinear<number, number>,
+  ): void {
+    const vs = this.settings.varianceSettings;
+    if (!vs.show.value || targetValue === null) return;
+
+    const posColor = vs.positiveColor.value?.value ?? '#22C55E';
+    const negColor = vs.negativeColor.value?.value ?? '#EF4444';
+
+    for (let i = 0; i < values.length; i++) {
+      const val = values[i];
+      if (val == null) continue;
+      const delta = val - targetValue;
+      const color = delta >= 0 ? posColor : negColor;
+      const xPos = xScale(val);
+      const yPos = yPositions[i];
+
+      if (vs.showArrow.value) {
+        const arrowDir = delta >= 0 ? '▶' : '◀';
+        g.append('text')
+          .attr('class', 'variance-arrow')
+          .attr('x', xPos + 6)
+          .attr('y', yPos + 4)
+          .attr('text-anchor', 'start')
+          .attr('fill', color)
+          .attr('font-size', '10px')
+          .text(arrowDir);
+      }
+
+      if (vs.showDelta.value) {
+        const deltaText = formatWithSettings(Math.abs(delta), this.settings.numberFormattingCard);
+        const arrowOffset = vs.showArrow.value ? 18 : 6;
+        g.append('text')
+          .attr('class', 'variance-delta')
+          .attr('x', xPos + arrowOffset)
+          .attr('y', yPos + 4)
+          .attr('text-anchor', 'start')
           .attr('fill', color)
           .attr('font-size', '9px')
           .attr('font-weight', '600')

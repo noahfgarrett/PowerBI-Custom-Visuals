@@ -371,6 +371,9 @@ export class RadarChartVisual implements IVisual {
         .text(categories[i]);
     }
 
+    // ── Benchmark overlay (behind series, in front of grid) ──
+    this.renderBenchmarkOverlay(g, series, numAxes, angleSlice, radius, maxVal, startAngleOffset, getAxisMax);
+
     // ── Series polygons ──
 
     for (let si = 0; si < series.length; si++) {
@@ -586,8 +589,7 @@ export class RadarChartVisual implements IVisual {
     // Apply shared data label formatting
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.radar-data-label');
 
-    // Benchmark overlay, axis values, hover behavior
-    this.renderBenchmarkOverlay(g, series, numAxes, angleSlice, radius, maxVal, startAngleOffset, getAxisMax);
+    // Axis values, hover behavior
     this.renderAxisValues(g, gridLevels, radius, maxVal, axisLineColor, axisLabelSize, startAngleOffset, numAxes, angleSlice, getAxisMax);
     this.applyHoverDimBehavior();
     this.applyAccessibility();
@@ -725,8 +727,9 @@ export class RadarChartVisual implements IVisual {
   // -- Benchmark Overlay -------------------------------------------------------
 
   /**
-   * Renders a dashed benchmark polygon using the last series as reference data.
-   * Only renders if benchmark settings are enabled and there are 2+ series.
+   * Renders a benchmark polygon at the average value across all series per axis.
+   * Styled with the user-configured color and dash pattern from benchmark settings.
+   * Drawn behind data series but in front of the grid (inserted before series polygons).
    */
   private renderBenchmarkOverlay(
     g: d3.Selection<SVGGElement, unknown, null, undefined>,
@@ -739,18 +742,26 @@ export class RadarChartVisual implements IVisual {
     getAxisMax: (i: number) => number = () => _maxVal,
   ): void {
     const benchmarkSettings = this.settings.radarBenchmarkSettings;
-    if (!benchmarkSettings.show.value || series.length < 2) return;
+    if (!benchmarkSettings.show.value || series.length === 0 || numAxes < 3) return;
 
-    // Use the last series as the benchmark
-    const benchSeries = series[series.length - 1];
+    // Compute the average value per axis across all series
+    const avgValues: number[] = [];
+    for (let i = 0; i < numAxes; i++) {
+      let sum = 0;
+      for (const ser of series) {
+        sum += ser.values[i];
+      }
+      avgValues.push(sum / series.length);
+    }
+
     const color = benchmarkSettings.color.value?.value ?? '#94A3B8';
-    const dashRaw = resolveDropdown(benchmarkSettings.dashPattern) ?? 'dashed';
-    const dashArray = dashRaw === 'dotted' ? '2,3' : dashRaw === 'dashed' ? '6,4' : 'none';
+    const dashStyle = resolveDropdown(benchmarkSettings.dashPattern) ?? 'dashed';
+    const dashArray = lineStyleToDashArray(dashStyle);
 
     const points: Array<[number, number]> = [];
     for (let i = 0; i < numAxes; i++) {
       const angle = angleSlice * i - Math.PI / 2 + startAngleOffset;
-      const r = (benchSeries.values[i] / getAxisMax(i)) * radius;
+      const r = (avgValues[i] / getAxisMax(i)) * radius;
       points.push([r * Math.cos(angle), r * Math.sin(angle)]);
     }
 

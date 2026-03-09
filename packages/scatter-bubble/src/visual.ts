@@ -1298,7 +1298,10 @@ export class ScatterBubbleVisual implements IVisual {
     _chartHeight: number,
   ): void {
     const zs = this.settings.scatterZoomSettings;
-    if (!zs.enableZoom.value && !zs.enablePan.value) return;
+    const isZoomEnabled = zs.enableZoom.value;
+    const isPanEnabled = zs.enablePan.value;
+
+    if (!isZoomEnabled && !isPanEnabled) return;
 
     // Apply d3-zoom behavior for scroll-zoom and drag-pan
     const svgSel = d3.select(svg);
@@ -1314,17 +1317,16 @@ export class ScatterBubbleVisual implements IVisual {
         }
       });
 
-    if (!zs.enableZoom.value) {
+    // Single combined filter: AND-combine zoom/pan permissions.
+    // When both enabled, allow all events (default d3 behavior).
+    // When only zoom disabled, block wheel events.
+    // When only pan disabled, block non-wheel (drag) events.
+    if (!isZoomEnabled || !isPanEnabled) {
       zoom.filter((event: Event) => {
-        // Only allow drag (pan), not scroll-zoom
-        return (event as MouseEvent).type !== 'wheel';
-      });
-    }
-
-    if (!zs.enablePan.value) {
-      zoom.filter((event: Event) => {
-        // Only allow wheel zoom, not drag
-        return (event as MouseEvent).type === 'wheel';
+        const isWheel = event.type === 'wheel';
+        if (!isZoomEnabled && isWheel) return false;
+        if (!isPanEnabled && !isWheel) return false;
+        return true;
       });
     }
 

@@ -391,6 +391,7 @@ export class HeatmapCalendarVisual implements IVisual {
                 ? this.discretizeColor(t, discreteBins, interpolateColor)
                 : interpolateColor(t);
               cell.style.backgroundColor = conditionalColor ?? baseColor;
+              cell.dataset.dateKey = key;
               cell.title = `${this.formatDateStr(currentDate)}: ${formatNumber(val)}`;
               if (showDataLabels) {
                 const labelSpan = document.createElement('span');
@@ -738,36 +739,78 @@ export class HeatmapCalendarVisual implements IVisual {
   // -- Streak Highlighting -----------------------------------------------------
 
   /**
-   * Identifies consecutive days above the streak threshold and applies
-   * a CSS class for visual highlighting.
+   * Identifies runs of consecutive days where the value meets or exceeds the
+   * streak threshold (minimum 2 consecutive days) and applies a visual outline
+   * to those cells.
    */
   private applyStreakHighlighting(
     dateMap: Map<string, number>,
-    selectionMap: Map<string, ISelectionId>,
+    _selectionMap: Map<string, ISelectionId>,
   ): void {
     const streakSettings = this.settings.calendarStreakSettings;
     if (!streakSettings.show.value) return;
 
     const threshold = streakSettings.threshold.value;
-    const cells = this.container.querySelectorAll('.heatmap-cell');
-    for (const cell of cells) {
-      const cellEl = cell as HTMLElement;
-      const title = cellEl.title;
-      if (!title) continue;
-      // Cells with a value above the threshold get a streak border
-      const colonIdx = title.indexOf(':');
-      if (colonIdx < 0) continue;
-      const dateStr = title.slice(0, colonIdx).trim();
-      // We rely on the cell having a title like "Jan 5, 2024: 42"
-      // For simplicity, check all filled cells against their title
-      if (cellEl.style.backgroundColor && cellEl.style.backgroundColor !== this.settings.colorSettings.emptyColor.value?.value) {
-        // Parse value from the title text
-        const valStr = title.slice(colonIdx + 1).trim();
-        const val = parseFloat(valStr.replace(/,/g, ''));
-        if (!isNaN(val) && val > threshold) {
-          cellEl.style.outline = '2px solid #F59E0B';
-          cellEl.style.outlineOffset = '-1px';
+    const ONE_DAY_MS = 86400000;
+
+    // 1. Sort all date keys chronologically
+    const sortedKeys = Array.from(dateMap.keys()).sort();
+
+    // 2. Find runs of consecutive days where value >= threshold
+    const streakDateKeys = new Set<string>();
+    let currentRun: string[] = [];
+
+    const flushRun = (): void => {
+      if (currentRun.length >= 2) {
+        for (const k of currentRun) {
+          streakDateKeys.add(k);
         }
+      }
+      currentRun = [];
+    };
+
+    let prevDate: Date | null = null;
+
+    for (const key of sortedKeys) {
+      const val = dateMap.get(key);
+      if (val === undefined || val < threshold) {
+        flushRun();
+        prevDate = null;
+        continue;
+      }
+
+      const [y, m, d] = key.split('-').map(Number);
+      const date = new Date(y, m - 1, d);
+
+      if (prevDate !== null) {
+        const diff = date.getTime() - prevDate.getTime();
+        if (diff === ONE_DAY_MS) {
+          // Consecutive day — extend the run
+          currentRun.push(key);
+        } else {
+          // Gap — flush and start new run
+          flushRun();
+          currentRun.push(key);
+        }
+      } else {
+        currentRun.push(key);
+      }
+
+      prevDate = date;
+    }
+    flushRun();
+
+    // 3. Nothing to highlight
+    if (streakDateKeys.size === 0) return;
+
+    // 4. Apply outline styling to cells whose data-date-key is in the streak set
+    const cells = this.container.querySelectorAll<HTMLElement>('.heatmap-cell[data-date-key]');
+    for (const cell of cells) {
+      const key = cell.dataset.dateKey;
+      if (key !== undefined && streakDateKeys.has(key)) {
+        cell.style.outline = '2px solid #F59E0B';
+        cell.style.outlineOffset = '-1px';
+        cell.style.zIndex = '1';
       }
     }
   }

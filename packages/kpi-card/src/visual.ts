@@ -184,7 +184,117 @@ export class KpiCardVisual implements IVisual {
       return;
     }
 
-    // Build DOM
+    // Determine KPI count from layout settings
+    const kpiCount = Math.max(1, Math.min(4, parseInt(resolveDropdown(s.kpiLayoutSettings.kpiCount) ?? '1', 10)));
+
+    if (kpiCount === 1) {
+      // Single KPI — original behavior
+      const wrapper = this.renderSingleKpi(data, 0);
+      this.container.appendChild(wrapper);
+    } else {
+      // Multi-KPI grid layout
+      const grid = document.createElement('div');
+      grid.className = 'kpi-grid';
+      const gridRows = kpiCount <= 2 ? 1 : 2;
+      grid.style.cssText = `
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(${gridRows}, 1fr);
+        gap: 8px;
+        width: 100%;
+        height: 100%;
+      `;
+
+      // Build KPI data for each slot from trend data
+      const kpiDataSlots = this.buildMultiKpiData(data, kpiCount);
+      for (let i = 0; i < kpiCount; i++) {
+        const slotData = kpiDataSlots[i];
+        if (slotData !== undefined) {
+          const cell = this.renderSingleKpi(slotData, i);
+          cell.style.borderRadius = `${s.cardSettings.borderRadius.value}px`;
+          cell.style.border = '1px solid rgba(0,0,0,0.06)';
+          cell.style.padding = '8px';
+          cell.style.overflow = 'hidden';
+          grid.appendChild(cell);
+        } else {
+          // Placeholder for empty KPI slot
+          const placeholder = document.createElement('div');
+          placeholder.className = 'kpi-slot-empty';
+          placeholder.style.cssText = `
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: #94A3B8;
+            font-style: italic;
+            border-radius: ${s.cardSettings.borderRadius.value}px;
+            border: 1px dashed rgba(0,0,0,0.1);
+            padding: 8px;
+          `;
+          placeholder.textContent = 'No data';
+          grid.appendChild(placeholder);
+        }
+      }
+
+      this.container.appendChild(grid);
+    }
+
+    this.applyAccessibility();
+    this.container.addEventListener('click', this.handleBackgroundClick);
+  }
+
+  /**
+   * Build an array of KpiCardData for multi-KPI grid slots.
+   * The first slot always uses the primary data. Additional slots
+   * are derived from trend data points (using chunks of the trend array).
+   */
+  private buildMultiKpiData(primaryData: KpiCardData, count: number): Array<KpiCardData | undefined> {
+    const results: Array<KpiCardData | undefined> = [];
+
+    // First slot is always the primary KPI
+    results.push(primaryData);
+
+    if (count <= 1) return results;
+
+    // For additional slots, partition trend data to create secondary KPI values.
+    // Each additional slot gets a value from evenly-spaced trend data points.
+    const trend = primaryData.trend;
+    if (trend.length === 0) {
+      // No trend data — fill remaining slots as empty
+      for (let i = 1; i < count; i++) {
+        results.push(undefined);
+      }
+      return results;
+    }
+
+    // Pick evenly-spaced values from trend for additional KPIs
+    const additionalCount = count - 1;
+    for (let i = 0; i < additionalCount; i++) {
+      // Map slot index to a trend data point
+      const trendIdx = Math.round((i / additionalCount) * (trend.length - 1));
+      const val = trend[trendIdx];
+      if (val === undefined) {
+        results.push(undefined);
+      } else {
+        results.push({
+          value: val,
+          target: primaryData.target,
+          label: `${primaryData.label} (${trendIdx + 1})`,
+          trend: [], // secondary slots do not get their own sparkline data
+        });
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Render a single KPI cell (value, label, trend arrow, sparkline, progress bar, comparison).
+   * Used both for single-KPI mode and for each cell in the multi-KPI grid.
+   */
+  private renderSingleKpi(data: KpiCardData, slotIndex: number): HTMLElement {
+    const s = this.settings;
+
     const wrapper = document.createElement('div');
     wrapper.style.cssText = `
       display: flex;
@@ -228,8 +338,8 @@ export class KpiCardVisual implements IVisual {
     const fmt = (v: number | null | undefined): string => {
       return formatWithSettings(v as number, this.settings.numberFormattingCard);
     };
-    // Count-up animation
-    if (data.value !== null && s.animationSettings.enabled.value) {
+    // Count-up animation (only for the primary KPI slot)
+    if (data.value !== null && s.animationSettings.enabled.value && slotIndex === 0) {
       const from = this.previousValue ?? 0;
       valueEl.textContent = fmt(from);
       const cancel = countUp(
@@ -242,7 +352,9 @@ export class KpiCardVisual implements IVisual {
       this.previousValue = data.value;
     } else {
       valueEl.textContent = fmt(data.value);
-      this.previousValue = data.value;
+      if (slotIndex === 0) {
+        this.previousValue = data.value;
+      }
     }
 
     valueRow.appendChild(valueEl);
@@ -273,156 +385,9 @@ export class KpiCardVisual implements IVisual {
 
     wrapper.appendChild(valueRow);
 
-    // Additional KPI values (when kpiCount > 1 and trend data is available)
-    const kpiCount = parseInt(resolveDropdown(s.kpiLayoutSettings.kpiCount) ?? '1', 10);
-    if (kpiCount > 1 && data.trend.length >= kpiCount) {
-      const extraRow = document.createElement('div');
-      extraRow.className = 'kpi-extra-values';
-      extraRow.style.cssText = `
-        display: flex;
-        gap: 12px;
-        justify-content: center;
-        flex-wrap: wrap;
-      `;
-
-      // Show the last N values from trend (excluding the primary which is already shown)
-      const startIdx = Math.max(0, data.trend.length - kpiCount);
-      for (let i = startIdx; i < data.trend.length - 1; i++) {
-        const val = data.trend[i];
-        const extraEl = document.createElement('div');
-        extraEl.className = 'kpi-extra-value';
-        extraEl.style.cssText = `
-          font-size: ${Math.max(12, s.valueSettings.fontSize.value * 0.6)}px;
-          color: ${s.valueSettings.fontColor.value?.value || '#64748B'};
-          opacity: 0.75;
-        `;
-        extraEl.textContent = fmt(val);
-        extraRow.appendChild(extraEl);
-      }
-
-      if (extraRow.childElementCount > 0) {
-        wrapper.appendChild(extraRow);
-      }
-    }
-
     // Sparkline
     if (s.sparklineSettings.show.value && data.trend.length > 1) {
-      // Divider between value row and sparkline
-      const divColor = s.sparklineSettings.dividerColor.value?.value;
-      if (divColor) {
-        const divider = document.createElement('hr');
-        divider.className = 'kpi-divider';
-        divider.style.borderColor = divColor;
-        wrapper.appendChild(divider);
-      }
-
-      const sparkDiv = document.createElement('div');
-      sparkDiv.className = 'kpi-sparkline';
-
-      const themeName = resolveColorTheme(s.colorThemeFormattingCard);
-      const userLineColor = s.sparklineSettings.lineColor.value?.value;
-      const lineColor = (userLineColor && userLineColor.length > 0) ? userLineColor : getHostChartColor(this.host.colorPalette, 0, themeName);
-      const strokeColor = s.sparklineSettings.sparklineColor.value?.value || lineColor;
-      const strokeWidth = s.sparklineSettings.sparklineWidth.value ?? 2;
-      const fillOp = (s.sparklineSettings.fillOpacity.value ?? 45) / 100;
-
-      const sparklineType = resolveDropdown(s.kpiLayoutSettings.sparklineType) ?? 'line';
-
-      const svg = d3.select(sparkDiv)
-        .append('svg')
-        .attr('width', '100%')
-        .attr('height', '100%')
-        .attr('viewBox', '0 0 200 32')
-        .attr('preserveAspectRatio', 'none');
-
-      const x = d3.scaleLinear()
-        .domain([0, data.trend.length - 1])
-        .range([0, 200]);
-
-      const yMin = d3.min(data.trend) ?? 0;
-      const yMax = d3.max(data.trend) ?? 1;
-      const yPad = (yMax - yMin) * 0.15 || 1;
-      const yScale = d3.scaleLinear()
-        .domain([yMin - yPad, yMax + yPad])
-        .range([30, 2]);
-
-      let pathEl: d3.Selection<SVGPathElement, number[], null, undefined> | null = null;
-
-      if (sparklineType === 'bar') {
-        // Bar sparkline
-        const barWidth = Math.max(1, 200 / data.trend.length - 1);
-        svg.selectAll('rect')
-          .data(data.trend)
-          .enter()
-          .append('rect')
-          .attr('x', (_, i) => x(i) - barWidth / 2)
-          .attr('y', (d) => yScale(d))
-          .attr('width', barWidth)
-          .attr('height', (d) => 32 - yScale(d))
-          .attr('fill', strokeColor)
-          .attr('opacity', 0.85);
-      } else {
-        // Line or Area sparkline
-        // Gradient fill
-        const gradId = 'kpi-spark-grad';
-        const defs = svg.append('defs');
-        const grad = defs.append('linearGradient')
-          .attr('id', gradId)
-          .attr('x1', '0%').attr('y1', '0%')
-          .attr('x2', '0%').attr('y2', '100%');
-        grad.append('stop').attr('offset', '0%')
-          .attr('stop-color', lineColor).attr('stop-opacity', fillOp);
-        grad.append('stop').attr('offset', '100%')
-          .attr('stop-color', lineColor).attr('stop-opacity', 0.05);
-
-        if (sparklineType === 'area') {
-          const area = d3.area<number>()
-            .x((_, i) => x(i))
-            .y0(32)
-            .y1((d) => yScale(d))
-            .curve(d3.curveMonotoneX);
-
-          svg.append('path')
-            .datum(data.trend)
-            .attr('d', area)
-            .attr('fill', `url(#${gradId})`);
-        }
-
-        const line = d3.line<number>()
-          .x((_, i) => x(i))
-          .y((d) => yScale(d))
-          .curve(d3.curveMonotoneX);
-
-        pathEl = svg.append('path')
-          .datum(data.trend)
-          .attr('d', line)
-          .attr('fill', 'none')
-          .attr('stroke', strokeColor)
-          .attr('stroke-width', strokeWidth)
-          .attr('stroke-linecap', 'round');
-
-        // End dot
-        const lastIdx = data.trend.length - 1;
-        svg.append('circle')
-          .attr('cx', x(lastIdx))
-          .attr('cy', yScale(data.trend[lastIdx]))
-          .attr('r', 3)
-          .attr('fill', strokeColor);
-      }
-
-      wrapper.appendChild(sparkDiv);
-
-      // Draw animation (line/area only)
-      if (s.animationSettings.enabled.value && pathEl) {
-        const animPathEl = pathEl;
-        requestAnimationFrame(() => {
-          const node = animPathEl.node();
-          if (node) {
-            const cancel = drawPath(node, s.animationSettings.duration.value, 200);
-            this.cancelAnimations.push(cancel);
-          }
-        });
-      }
+      this.renderSparkline(wrapper, data.trend, slotIndex);
     }
 
     // Goal progress bar and comparison
@@ -431,14 +396,138 @@ export class KpiCardVisual implements IVisual {
     }
     this.renderComparison(wrapper, data);
 
-    this.container.appendChild(wrapper);
-    this.applyAccessibility();
-    this.container.addEventListener('click', this.handleBackgroundClick);
-
     // Entrance animation
     if (s.animationSettings.enabled.value) {
-      const cancel = fadeSlideIn(wrapper, 'up', DURATION.fast, 50);
+      const delay = slotIndex * 50;
+      const cancel = fadeSlideIn(wrapper, 'up', DURATION.fast, delay);
       this.cancelAnimations.push(cancel);
+    }
+
+    return wrapper;
+  }
+
+  /**
+   * Render a sparkline (line, area, or bar) into the given container.
+   */
+  private renderSparkline(container: HTMLElement, trend: number[], slotIndex: number): void {
+    const s = this.settings;
+
+    // Divider between value row and sparkline
+    const divColor = s.sparklineSettings.dividerColor.value?.value;
+    if (divColor) {
+      const divider = document.createElement('hr');
+      divider.className = 'kpi-divider';
+      divider.style.borderColor = divColor;
+      container.appendChild(divider);
+    }
+
+    const sparkDiv = document.createElement('div');
+    sparkDiv.className = 'kpi-sparkline';
+
+    const themeName = resolveColorTheme(s.colorThemeFormattingCard);
+    const userLineColor = s.sparklineSettings.lineColor.value?.value;
+    const lineColor = (userLineColor && userLineColor.length > 0) ? userLineColor : getHostChartColor(this.host.colorPalette, 0, themeName);
+    const strokeColor = s.sparklineSettings.sparklineColor.value?.value || lineColor;
+    const strokeWidth = s.sparklineSettings.sparklineWidth.value ?? 2;
+    const fillOp = (s.sparklineSettings.fillOpacity.value ?? 45) / 100;
+
+    const sparklineType = resolveDropdown(s.kpiLayoutSettings.sparklineType) ?? 'line';
+    // Use a unique gradient ID per slot to avoid SVG ID collisions in multi-KPI grid
+    const gradId = `kpi-spark-grad-${slotIndex}`;
+
+    const svg = d3.select(sparkDiv)
+      .append('svg')
+      .attr('width', '100%')
+      .attr('height', '100%')
+      .attr('viewBox', '0 0 200 32')
+      .attr('preserveAspectRatio', 'none');
+
+    const x = d3.scaleLinear()
+      .domain([0, trend.length - 1])
+      .range([0, 200]);
+
+    const yMin = d3.min(trend) ?? 0;
+    const yMax = d3.max(trend) ?? 1;
+    const yPad = (yMax - yMin) * 0.15 || 1;
+    const yScale = d3.scaleLinear()
+      .domain([yMin - yPad, yMax + yPad])
+      .range([30, 2]);
+
+    let pathEl: d3.Selection<SVGPathElement, number[], null, undefined> | null = null;
+
+    if (sparklineType === 'bar') {
+      // Bar sparkline
+      const barWidth = Math.max(1, 200 / trend.length - 1);
+      svg.selectAll('rect')
+        .data(trend)
+        .enter()
+        .append('rect')
+        .attr('x', (_, i) => x(i) - barWidth / 2)
+        .attr('y', (d) => yScale(d))
+        .attr('width', barWidth)
+        .attr('height', (d) => 32 - yScale(d))
+        .attr('fill', strokeColor)
+        .attr('opacity', 0.85);
+    } else {
+      // Line or Area sparkline
+      // Gradient fill
+      const defs = svg.append('defs');
+      const grad = defs.append('linearGradient')
+        .attr('id', gradId)
+        .attr('x1', '0%').attr('y1', '0%')
+        .attr('x2', '0%').attr('y2', '100%');
+      grad.append('stop').attr('offset', '0%')
+        .attr('stop-color', lineColor).attr('stop-opacity', fillOp);
+      grad.append('stop').attr('offset', '100%')
+        .attr('stop-color', lineColor).attr('stop-opacity', 0.05);
+
+      if (sparklineType === 'area') {
+        const area = d3.area<number>()
+          .x((_, i) => x(i))
+          .y0(32)
+          .y1((d) => yScale(d))
+          .curve(d3.curveMonotoneX);
+
+        svg.append('path')
+          .datum(trend)
+          .attr('d', area)
+          .attr('fill', `url(#${gradId})`);
+      }
+
+      const line = d3.line<number>()
+        .x((_, i) => x(i))
+        .y((d) => yScale(d))
+        .curve(d3.curveMonotoneX);
+
+      pathEl = svg.append('path')
+        .datum(trend)
+        .attr('d', line)
+        .attr('fill', 'none')
+        .attr('stroke', strokeColor)
+        .attr('stroke-width', strokeWidth)
+        .attr('stroke-linecap', 'round');
+
+      // End dot
+      const lastIdx = trend.length - 1;
+      svg.append('circle')
+        .attr('cx', x(lastIdx))
+        .attr('cy', yScale(trend[lastIdx]))
+        .attr('r', 3)
+        .attr('fill', strokeColor);
+    }
+
+    container.appendChild(sparkDiv);
+
+    // Draw animation (line/area only)
+    if (s.animationSettings.enabled.value && pathEl) {
+      const animPathEl = pathEl;
+      requestAnimationFrame(() => {
+        const node = animPathEl.node();
+        if (node) {
+          const cancel = drawPath(node, s.animationSettings.duration.value, 200);
+          this.cancelAnimations.push(cancel);
+        }
+      });
     }
   }
 
