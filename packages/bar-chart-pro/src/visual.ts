@@ -179,6 +179,8 @@ export class BarChartProVisual implements IVisual {
 
     // Hide shared card's showDataLabels toggle — bar-chart-pro uses barSettings.showDataLabels dropdown instead
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
+    // Hide shared card's dataLabelPosition — bar-chart-pro uses barSettings.showDataLabels (none/above/inside) for positioning
+    this.settings.dataLabelFormattingCard.dataLabelPosition.visible = false;
 
     // Reset drill if data changed structurally
     if (data.isEmpty || !data.hasSubCategory) {
@@ -2774,8 +2776,8 @@ export class BarChartProVisual implements IVisual {
     const userMin = ax.yAxisMin.value;
     const userMax = ax.yAxisMax.value;
     return [
-      userMin !== 0 ? userMin : domain[0],
-      userMax !== 0 ? userMax : domain[1],
+      userMin != null ? userMin : domain[0],
+      userMax != null ? userMax : domain[1],
     ];
   }
 
