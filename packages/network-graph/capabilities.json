@@ -120,12 +120,6 @@
           "type": {
             "numeric": true
           }
-        },
-        "nodeRadius": {
-          "displayName": "Node Radius",
-          "type": {
-            "numeric": true
-          }
         }
       }
     },

@@ -118,6 +118,7 @@ export class DumbbellChartVisual implements IVisual {
     this.settings.axisFormattingCard.yAxisTitle.visible = false;
     this.settings.axisFormattingCard.yAxisMin.visible = false;
     this.settings.axisFormattingCard.yAxisMax.visible = false;
+    this.settings.axisFormattingCard.axisLabelRotation.visible = false;
 
     // Apply glass effect
     this.applyCardStyle();

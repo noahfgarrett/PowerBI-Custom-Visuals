@@ -118,6 +118,10 @@ export class GanttChartProVisual implements IVisual {
     this.settings.axisFormattingCard.axisLineWidth.visible = false;
     this.settings.axisFormattingCard.showGridLines.visible = false;
     this.settings.axisFormattingCard.gridLineColor.visible = false;
+    this.settings.axisFormattingCard.showXAxis.visible = false;
+    this.settings.axisFormattingCard.showYAxis.visible = false;
+    this.settings.axisFormattingCard.gridLineWidth.visible = false;
+    this.settings.axisFormattingCard.gridLineOpacity.visible = false;
 
     // Extract data
     const allTasks = this.extractData(dataView);
