@@ -10,7 +10,7 @@
       "displayName": "Measure",
       "name": "measure",
       "kind": "Measure",
-      "description": "Y-axis values \u2014 each measure is one line/area series"
+      "description": "Y-axis values — each measure is one line/area series"
     }
   ],
   "dataViewMappings": [
@@ -292,6 +292,115 @@
               }
             ]
           }
+        },
+        "showXAxis": {
+          "displayName": "Show X-Axis",
+          "type": {
+            "bool": true
+          }
+        },
+        "showYAxis": {
+          "displayName": "Show Y-Axis",
+          "type": {
+            "bool": true
+          }
+        },
+        "xAxisTitle": {
+          "displayName": "X-Axis Title",
+          "type": {
+            "text": true
+          }
+        },
+        "yAxisTitle": {
+          "displayName": "Y-Axis Title",
+          "type": {
+            "text": true
+          }
+        },
+        "axisLabelFontFamily": {
+          "displayName": "Label Font",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              }
+            ]
+          }
+        },
+        "axisLabelRotation": {
+          "displayName": "X-Label Rotation (°)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "yAxisMin": {
+          "displayName": "Y-Axis Min",
+          "type": {
+            "numeric": true
+          }
+        },
+        "yAxisMax": {
+          "displayName": "Y-Axis Max",
+          "type": {
+            "numeric": true
+          }
+        },
+        "gridLineWidth": {
+          "displayName": "Grid Line Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "gridLineOpacity": {
+          "displayName": "Grid Line Opacity (%)",
+          "type": {
+            "numeric": true
+          }
         }
       }
     },
@@ -342,6 +451,61 @@
               }
             }
           }
+        },
+        "legendFontFamily": {
+          "displayName": "Font",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              }
+            ]
+          }
         }
       }
     },
@@ -381,6 +545,88 @@
               {
                 "value": "bold",
                 "displayName": "Bold"
+              }
+            ]
+          }
+        },
+        "dataLabelFontFamily": {
+          "displayName": "Font",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              }
+            ]
+          }
+        },
+        "dataLabelPosition": {
+          "displayName": "Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "auto",
+                "displayName": "Auto"
+              },
+              {
+                "value": "above",
+                "displayName": "Above"
+              },
+              {
+                "value": "below",
+                "displayName": "Below"
+              },
+              {
+                "value": "inside",
+                "displayName": "Inside"
+              },
+              {
+                "value": "outside",
+                "displayName": "Outside"
               }
             ]
           }
@@ -435,6 +681,83 @@
                 "displayName": "Right"
               }
             ]
+          }
+        },
+        "titleFontFamily": {
+          "displayName": "Font",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              }
+            ]
+          }
+        },
+        "subtitleText": {
+          "displayName": "Subtitle",
+          "type": {
+            "text": true
+          }
+        },
+        "subtitleFontSize": {
+          "displayName": "Subtitle Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "subtitleFontColor": {
+          "displayName": "Subtitle Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
           }
         }
       }
@@ -625,6 +948,21 @@
           "type": {
             "numeric": true
           }
+        },
+        "referenceLineAxis": {
+          "displayName": "Target Axis",
+          "type": {
+            "enumeration": [
+              {
+                "value": "primary",
+                "displayName": "Primary"
+              },
+              {
+                "value": "secondary",
+                "displayName": "Secondary"
+              }
+            ]
+          }
         }
       }
     },
@@ -693,9 +1031,24 @@
           }
         },
         "showR2": {
-          "displayName": "Show R\u00b2",
+          "displayName": "Show R²",
           "type": {
             "bool": true
+          }
+        },
+        "trendLineAxis": {
+          "displayName": "Target Axis",
+          "type": {
+            "enumeration": [
+              {
+                "value": "primary",
+                "displayName": "Primary"
+              },
+              {
+                "value": "secondary",
+                "displayName": "Secondary"
+              }
+            ]
           }
         }
       }
@@ -778,19 +1131,19 @@
           }
         },
         "annotation1Category": {
-          "displayName": "Annotation 1 \u2014 Category",
+          "displayName": "Annotation 1 — Category",
           "type": {
             "text": true
           }
         },
         "annotation1Text": {
-          "displayName": "Annotation 1 \u2014 Text",
+          "displayName": "Annotation 1 — Text",
           "type": {
             "text": true
           }
         },
         "annotation1Position": {
-          "displayName": "Annotation 1 \u2014 Position",
+          "displayName": "Annotation 1 — Position",
           "type": {
             "enumeration": [
               {
@@ -813,19 +1166,19 @@
           }
         },
         "annotation2Category": {
-          "displayName": "Annotation 2 \u2014 Category",
+          "displayName": "Annotation 2 — Category",
           "type": {
             "text": true
           }
         },
         "annotation2Text": {
-          "displayName": "Annotation 2 \u2014 Text",
+          "displayName": "Annotation 2 — Text",
           "type": {
             "text": true
           }
         },
         "annotation2Position": {
-          "displayName": "Annotation 2 \u2014 Position",
+          "displayName": "Annotation 2 — Position",
           "type": {
             "enumeration": [
               {
@@ -848,19 +1201,19 @@
           }
         },
         "annotation3Category": {
-          "displayName": "Annotation 3 \u2014 Category",
+          "displayName": "Annotation 3 — Category",
           "type": {
             "text": true
           }
         },
         "annotation3Text": {
-          "displayName": "Annotation 3 \u2014 Text",
+          "displayName": "Annotation 3 — Text",
           "type": {
             "text": true
           }
         },
         "annotation3Position": {
-          "displayName": "Annotation 3 \u2014 Position",
+          "displayName": "Annotation 3 — Position",
           "type": {
             "enumeration": [
               {

@@ -318,6 +318,94 @@
               }
             ]
           }
+        },
+        "showDataLabels": {
+          "displayName": "Show Data Labels",
+          "type": {
+            "bool": true
+          }
+        },
+        "dataLabelFontFamily": {
+          "displayName": "Font",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              }
+            ]
+          }
+        },
+        "dataLabelPosition": {
+          "displayName": "Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "auto",
+                "displayName": "Auto"
+              },
+              {
+                "value": "above",
+                "displayName": "Above"
+              },
+              {
+                "value": "below",
+                "displayName": "Below"
+              },
+              {
+                "value": "inside",
+                "displayName": "Inside"
+              },
+              {
+                "value": "outside",
+                "displayName": "Outside"
+              }
+            ]
+          }
         }
       }
     },
@@ -369,6 +457,83 @@
                 "displayName": "Right"
               }
             ]
+          }
+        },
+        "titleFontFamily": {
+          "displayName": "Font",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              }
+            ]
+          }
+        },
+        "subtitleText": {
+          "displayName": "Subtitle",
+          "type": {
+            "text": true
+          }
+        },
+        "subtitleFontSize": {
+          "displayName": "Subtitle Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "subtitleFontColor": {
+          "displayName": "Subtitle Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
           }
         }
       }

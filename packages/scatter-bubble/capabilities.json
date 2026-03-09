@@ -418,6 +418,115 @@
               }
             ]
           }
+        },
+        "showXAxis": {
+          "displayName": "Show X-Axis",
+          "type": {
+            "bool": true
+          }
+        },
+        "showYAxis": {
+          "displayName": "Show Y-Axis",
+          "type": {
+            "bool": true
+          }
+        },
+        "xAxisTitle": {
+          "displayName": "X-Axis Title",
+          "type": {
+            "text": true
+          }
+        },
+        "yAxisTitle": {
+          "displayName": "Y-Axis Title",
+          "type": {
+            "text": true
+          }
+        },
+        "axisLabelFontFamily": {
+          "displayName": "Label Font",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              }
+            ]
+          }
+        },
+        "axisLabelRotation": {
+          "displayName": "X-Label Rotation (°)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "yAxisMin": {
+          "displayName": "Y-Axis Min",
+          "type": {
+            "numeric": true
+          }
+        },
+        "yAxisMax": {
+          "displayName": "Y-Axis Max",
+          "type": {
+            "numeric": true
+          }
+        },
+        "gridLineWidth": {
+          "displayName": "Grid Line Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "gridLineOpacity": {
+          "displayName": "Grid Line Opacity (%)",
+          "type": {
+            "numeric": true
+          }
         }
       }
     },
@@ -468,6 +577,61 @@
               }
             }
           }
+        },
+        "legendFontFamily": {
+          "displayName": "Font",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              }
+            ]
+          }
         }
       }
     },
@@ -507,6 +671,88 @@
               {
                 "value": "bold",
                 "displayName": "Bold"
+              }
+            ]
+          }
+        },
+        "dataLabelFontFamily": {
+          "displayName": "Font",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              }
+            ]
+          }
+        },
+        "dataLabelPosition": {
+          "displayName": "Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "auto",
+                "displayName": "Auto"
+              },
+              {
+                "value": "above",
+                "displayName": "Above"
+              },
+              {
+                "value": "below",
+                "displayName": "Below"
+              },
+              {
+                "value": "inside",
+                "displayName": "Inside"
+              },
+              {
+                "value": "outside",
+                "displayName": "Outside"
               }
             ]
           }
@@ -561,6 +807,83 @@
                 "displayName": "Right"
               }
             ]
+          }
+        },
+        "titleFontFamily": {
+          "displayName": "Font",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              }
+            ]
+          }
+        },
+        "subtitleText": {
+          "displayName": "Subtitle",
+          "type": {
+            "text": true
+          }
+        },
+        "subtitleFontSize": {
+          "displayName": "Subtitle Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "subtitleFontColor": {
+          "displayName": "Subtitle Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
           }
         }
       }
@@ -772,6 +1095,21 @@
           "type": {
             "numeric": true
           }
+        },
+        "referenceLineAxis": {
+          "displayName": "Target Axis",
+          "type": {
+            "enumeration": [
+              {
+                "value": "primary",
+                "displayName": "Primary"
+              },
+              {
+                "value": "secondary",
+                "displayName": "Secondary"
+              }
+            ]
+          }
         }
       }
     },
@@ -843,6 +1181,21 @@
           "displayName": "Show R²",
           "type": {
             "bool": true
+          }
+        },
+        "trendLineAxis": {
+          "displayName": "Target Axis",
+          "type": {
+            "enumeration": [
+              {
+                "value": "primary",
+                "displayName": "Primary"
+              },
+              {
+                "value": "secondary",
+                "displayName": "Secondary"
+              }
+            ]
           }
         }
       }
@@ -1029,6 +1382,37 @@
           }
         },
         "seriesOpacity": {
+          "type": {
+            "numeric": true
+          }
+        },
+        "showDataLabels": {
+          "displayName": "Show Data Labels",
+          "type": {
+            "bool": true
+          }
+        },
+        "lineStyle": {
+          "displayName": "Line Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "solid",
+                "displayName": "Solid"
+              },
+              {
+                "value": "dashed",
+                "displayName": "Dashed"
+              },
+              {
+                "value": "dotted",
+                "displayName": "Dotted"
+              }
+            ]
+          }
+        },
+        "lineWidth": {
+          "displayName": "Line Width",
           "type": {
             "numeric": true
           }

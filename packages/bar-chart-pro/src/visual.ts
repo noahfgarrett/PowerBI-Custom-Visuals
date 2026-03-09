@@ -177,6 +177,9 @@ export class BarChartProVisual implements IVisual {
     // Hide secondary axis card when not in combo mode
     this.settings.secondaryAxisSettings.showSecondaryYAxis.visible = isCombo;
 
+    // Hide shared card's showDataLabels toggle — bar-chart-pro uses barSettings.showDataLabels dropdown instead
+    this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
+
     // Reset drill if data changed structurally
     if (data.isEmpty || !data.hasSubCategory) {
       this.drillPath = [];
@@ -729,9 +732,6 @@ export class BarChartProVisual implements IVisual {
       this.renderBreadcrumb();
     }
 
-    // Apply shared formatting settings
-    applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.bar-chart-label');
-
     this.container.addEventListener('click', this.handleBackgroundClick);
 
     const rawMode = this.getChartMode();
@@ -842,6 +842,9 @@ export class BarChartProVisual implements IVisual {
 
     // Pattern fill defs
     this.applyPatternFillDefs(d3.select(svgEl as SVGSVGElement));
+
+    // Apply data label formatting (must run after labels are rendered)
+    applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.bar-chart-label');
   }
 
   // Accessibility
