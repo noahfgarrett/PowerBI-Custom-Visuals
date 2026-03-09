@@ -880,7 +880,7 @@ export class BarChartProVisual implements IVisual {
     const allValues = data.barSeries.flatMap((ser) => ser.values.filter((v): v is number => v !== null));
     const yMax = d3.max(allValues) ?? 0;
     const y = d3.scaleLinear()
-      .domain([0, yMax * 1.1])
+      .domain(this.applyYAxisOverrides([0, yMax * 1.1]))
       .nice()
       .range([height, 0]);
 
@@ -972,7 +972,7 @@ export class BarChartProVisual implements IVisual {
 
     const yMax = d3.max(stackedMax) ?? 0;
     const y = d3.scaleLinear()
-      .domain([0, yMax * 1.1])
+      .domain(this.applyYAxisOverrides([0, yMax * 1.1]))
       .nice()
       .range([height, 0]);
 
@@ -1165,7 +1165,7 @@ export class BarChartProVisual implements IVisual {
     g: d3.Selection<SVGGElement, unknown, null, undefined>,
     xScale: d3.ScaleBand<string>,
     yScale: d3.ScaleLinear<number, number>,
-    _width: number,
+    width: number,
     height: number,
     categoryLabelsByKey: Record<string, string>,
   ): void {
@@ -1202,6 +1202,31 @@ export class BarChartProVisual implements IVisual {
             .tickFormat((d) => `${d}%`),
         )
         .select('.domain').remove();
+    }
+
+    // Axis titles
+    const xTitle = s.axisFormattingCard.xAxisTitle.value;
+    if (xTitle && s.axisFormattingCard.showXAxis.value) {
+      g.append('text')
+        .attr('class', 'bar-chart-axis-title')
+        .attr('x', width / 2)
+        .attr('y', height + 36)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '11px')
+        .attr('fill', '#64748B')
+        .text(xTitle);
+    }
+    const yTitle = s.axisFormattingCard.yAxisTitle.value;
+    if (yTitle && s.axisFormattingCard.showYAxis.value) {
+      g.append('text')
+        .attr('class', 'bar-chart-axis-title')
+        .attr('transform', 'rotate(-90)')
+        .attr('x', -height / 2)
+        .attr('y', -40)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '11px')
+        .attr('fill', '#64748B')
+        .text(yTitle);
     }
   }
 
@@ -1300,7 +1325,7 @@ export class BarChartProVisual implements IVisual {
     const barValues = data.barSeries.flatMap((ser) => ser.values.filter((v): v is number => v !== null));
     const yBarMax = d3.max(barValues) ?? 0;
     const yBar = d3.scaleLinear()
-      .domain([0, yBarMax * 1.1])
+      .domain(this.applyYAxisOverrides([0, yBarMax * 1.1]))
       .nice()
       .range([height, 0]);
 
@@ -1308,7 +1333,7 @@ export class BarChartProVisual implements IVisual {
     const lineValues = data.lineSeries.flatMap((ser) => ser.values.filter((v): v is number => v !== null));
     const yLineMax = d3.max(lineValues) ?? yBarMax;
     const yLine = hasSecondaryY
-      ? d3.scaleLinear().domain([0, yLineMax * 1.1]).nice().range([height, 0])
+      ? d3.scaleLinear().domain(this.applyYAxisOverrides([0, yLineMax * 1.1])).nice().range([height, 0])
       : yBar;
 
     this.renderGrid(g, yBar, width, height);
@@ -1508,7 +1533,7 @@ export class BarChartProVisual implements IVisual {
     const allValues = data.barSeries.flatMap((ser) => ser.values.filter((v): v is number => v !== null));
     const xMax = d3.max(allValues) ?? 0;
     const x = d3.scaleLinear()
-      .domain([0, xMax * 1.1])
+      .domain(this.applyYAxisOverrides([0, xMax * 1.1]))
       .nice()
       .range([0, width]);
 
@@ -1530,6 +1555,31 @@ export class BarChartProVisual implements IVisual {
         .attr('transform', `translate(0,${height})`)
         .call(d3.axisBottom(x).ticks(5).tickFormat((d) => formatWithSettings(d as number, this.settings.numberFormattingCard)))
         .select('.domain').remove();
+    }
+
+    // Axis titles (in horizontal mode, x-axis shows values, y-axis shows categories)
+    const xTitle = s.axisFormattingCard.xAxisTitle.value;
+    if (xTitle && s.axisFormattingCard.showXAxis.value) {
+      g.append('text')
+        .attr('class', 'bar-chart-axis-title')
+        .attr('x', width / 2)
+        .attr('y', height + 36)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '11px')
+        .attr('fill', '#64748B')
+        .text(xTitle);
+    }
+    const yTitle = s.axisFormattingCard.yAxisTitle.value;
+    if (yTitle && s.axisFormattingCard.showYAxis.value) {
+      g.append('text')
+        .attr('class', 'bar-chart-axis-title')
+        .attr('transform', 'rotate(-90)')
+        .attr('x', -height / 2)
+        .attr('y', -40)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '11px')
+        .attr('fill', '#64748B')
+        .text(yTitle);
     }
 
     // Horizontal grid
@@ -1646,7 +1696,7 @@ export class BarChartProVisual implements IVisual {
     const validValues = series.values.filter((v): v is number => v !== null);
     const absMax = d3.max(validValues.map(Math.abs)) ?? 0;
     const y = d3.scaleLinear()
-      .domain([-absMax * 1.1, absMax * 1.1])
+      .domain(this.applyYAxisOverrides([-absMax * 1.1, absMax * 1.1]))
       .nice()
       .range([height, 0]);
 
@@ -1677,6 +1727,31 @@ export class BarChartProVisual implements IVisual {
       g.append('g')
         .attr('class', 'bar-chart-axis')
         .call(d3.axisLeft(y).ticks(6).tickFormat((d) => formatWithSettings(d as number, this.settings.numberFormattingCard)));
+    }
+
+    // Axis titles
+    const xTitle = s.axisFormattingCard.xAxisTitle.value;
+    if (xTitle && s.axisFormattingCard.showXAxis.value) {
+      g.append('text')
+        .attr('class', 'bar-chart-axis-title')
+        .attr('x', width / 2)
+        .attr('y', height + 36)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '11px')
+        .attr('fill', '#64748B')
+        .text(xTitle);
+    }
+    const yTitle = s.axisFormattingCard.yAxisTitle.value;
+    if (yTitle && s.axisFormattingCard.showYAxis.value) {
+      g.append('text')
+        .attr('class', 'bar-chart-axis-title')
+        .attr('transform', 'rotate(-90)')
+        .attr('x', -height / 2)
+        .attr('y', -40)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '11px')
+        .attr('fill', '#64748B')
+        .text(yTitle);
     }
 
     const theme = getTheme('light');
@@ -1802,6 +1877,31 @@ export class BarChartProVisual implements IVisual {
             .tickFormat((d) => formatWithSettings(d as number, this.settings.numberFormattingCard)),
         )
         .select('.domain').remove();
+    }
+
+    // Axis titles
+    const xTitle = s.axisFormattingCard.xAxisTitle.value;
+    if (xTitle && s.axisFormattingCard.showXAxis.value) {
+      g.append('text')
+        .attr('class', 'bar-chart-axis-title')
+        .attr('x', width / 2)
+        .attr('y', height + 36)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '11px')
+        .attr('fill', '#64748B')
+        .text(xTitle);
+    }
+    const yTitle = s.axisFormattingCard.yAxisTitle.value;
+    if (yTitle && s.axisFormattingCard.showYAxis.value) {
+      g.append('text')
+        .attr('class', 'bar-chart-axis-title')
+        .attr('transform', 'rotate(-90)')
+        .attr('x', -height / 2)
+        .attr('y', -40)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '11px')
+        .attr('fill', '#64748B')
+        .text(yTitle);
     }
   }
 
@@ -2017,16 +2117,24 @@ export class BarChartProVisual implements IVisual {
       { category: ann.annotation2Category.value, text: ann.annotation2Text.value, position: resolveDropdown(ann.annotation2Position) ?? 'above' },
       { category: ann.annotation3Category.value, text: ann.annotation3Text.value, position: resolveDropdown(ann.annotation3Position) ?? 'above' },
     ];
+    // Build label → key lookup (user enters labels like "Week 5", scale uses keys like "4::Week 5")
+    const labelToKey: Record<string, string> = {};
+    for (const key of data.categories) {
+      const label = data.categoryLabelsByKey[key] ?? key;
+      if (!labelToKey[label]) labelToKey[label] = key;
+    }
+
     const config = buildAnnotationConfig(
       true, slots,
       ann.annotationFontSize.value,
       ann.annotationFontColor.value?.value || '#475569',
       ann.annotationConnectorColor.value?.value || '#94A3B8',
       (category) => {
-        const x = xScale(category);
+        // Resolve user-entered label to composite key
+        const key = labelToKey[category] ?? category;
+        const x = xScale(key);
         if (x == null) return null;
-        // Find the first bar series value for this category
-        const catIdx = data.categories.indexOf(category);
+        const catIdx = data.categories.indexOf(key);
         if (catIdx < 0) return null;
         const val = data.barSeries[0]?.values[catIdx] ?? 0;
         return { x: x + xScale.bandwidth() / 2, y: yScale(val ?? 0) };
@@ -2436,11 +2544,13 @@ export class BarChartProVisual implements IVisual {
       }),
     ];
 
+    const rawFontFamily = resolveDropdown(legendFmtCard.legendFontFamily) || undefined;
     renderLegend(this.container, {
       items,
       position: legendPos as 'top' | 'bottom' | 'left' | 'right',
       fontSize: legendFmtCard.legendFontSize.value,
       fontColor: rawFontColor && rawFontColor.length > 0 ? rawFontColor : '#64748B',
+      fontFamily: rawFontFamily,
     });
   }
 
@@ -2656,6 +2766,17 @@ export class BarChartProVisual implements IVisual {
       return val as ChartMode;
     }
     return 'grouped';
+  }
+
+  /** Applies user yAxisMin/yAxisMax overrides to a [min, max] domain. */
+  private applyYAxisOverrides(domain: [number, number]): [number, number] {
+    const ax = this.settings.axisFormattingCard;
+    const userMin = ax.yAxisMin.value;
+    const userMax = ax.yAxisMax.value;
+    return [
+      userMin !== 0 ? userMin : domain[0],
+      userMax !== 0 ? userMax : domain[1],
+    ];
   }
 
   private getDataLabelMode(): DataLabelMode {

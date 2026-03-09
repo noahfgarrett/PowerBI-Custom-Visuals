@@ -13,15 +13,17 @@ import { COLOR_THEMES, type ColorThemeName } from './colors';
 
 const FONT_FAMILY_ITEMS = [
   { value: '', displayName: 'Default' },
-  { value: 'Segoe UI', displayName: 'Segoe UI' },
   { value: 'Arial', displayName: 'Arial' },
   { value: 'Calibri', displayName: 'Calibri' },
-  { value: 'Helvetica', displayName: 'Helvetica' },
-  { value: 'Verdana', displayName: 'Verdana' },
-  { value: 'Tahoma', displayName: 'Tahoma' },
-  { value: 'Trebuchet MS', displayName: 'Trebuchet MS' },
+  { value: 'Cambria', displayName: 'Cambria' },
+  { value: 'Courier New', displayName: 'Courier New' },
   { value: 'Georgia', displayName: 'Georgia' },
-  { value: 'Consolas', displayName: 'Consolas' },
+  { value: 'Helvetica Neue', displayName: 'Helvetica Neue' },
+  { value: 'Segoe UI', displayName: 'Segoe UI' },
+  { value: 'Tahoma', displayName: 'Tahoma' },
+  { value: 'Times New Roman', displayName: 'Times New Roman' },
+  { value: 'Trebuchet MS', displayName: 'Trebuchet MS' },
+  { value: 'Verdana', displayName: 'Verdana' },
 ];
 
 // ── Axis Formatting ──────────────────────────────────────────────────

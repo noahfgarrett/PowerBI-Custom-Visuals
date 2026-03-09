@@ -18,6 +18,7 @@ const packagesRoot = path.resolve(__dirname, '..', 'packages');
 
 // ── Font families (must match FONT_FAMILY_ITEMS in shared-settings.ts) ──
 
+// Must match FONT_FAMILY_ITEMS in core/src/shared-settings.ts
 const FONT_FAMILY_ITEMS = [
   { value: '', displayName: 'Default' },
   { value: 'Arial', displayName: 'Arial' },
