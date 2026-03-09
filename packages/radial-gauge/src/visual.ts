@@ -87,6 +87,8 @@ export class RadialGaugeVisual implements IVisual {
       );
     }
 
+    this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
+
     // Extract data
     const data = this.extractData(dataView);
 

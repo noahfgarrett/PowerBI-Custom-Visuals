@@ -97,9 +97,12 @@ export class PolarChartVisual implements IVisual {
     this.settings.axisFormattingCard.showYAxis.visible = false;
     this.settings.axisFormattingCard.xAxisTitle.visible = false;
     this.settings.axisFormattingCard.yAxisTitle.visible = false;
+    this.settings.axisFormattingCard.axisLabelFontFamily.visible = false;
     this.settings.axisFormattingCard.axisLabelRotation.visible = false;
     this.settings.axisFormattingCard.yAxisMin.visible = false;
     this.settings.axisFormattingCard.yAxisMax.visible = false;
+    this.settings.axisFormattingCard.gridLineWidth.visible = false;
+    this.settings.axisFormattingCard.gridLineOpacity.visible = false;
 
     // Extract data and apply user-configured sort order
     const data = applySortOrder(
@@ -607,11 +610,14 @@ export class PolarChartVisual implements IVisual {
       return { label: d.label, color: sf.color };
     });
 
+    const rawLegendFontFamily = resolveDropdown(legendFmtCard.legendFontFamily) || undefined;
+
     renderLegend(this.container, {
       items,
       position,
       fontSize: legendFontSize,
       fontColor: legendFontColor,
+      fontFamily: rawLegendFontFamily,
     });
   }
 

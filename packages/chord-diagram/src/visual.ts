@@ -102,6 +102,8 @@ export class ChordDiagramVisual implements IVisual {
       );
     }
 
+    this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
+
     // Extract data and apply user-configured sort order to entities
     const data = this.sortChordData(this.extractData(dataView));
 
@@ -622,11 +624,14 @@ export class ChordDiagramVisual implements IVisual {
         color: resolveColor(i),
       }));
 
+      const rawLegendFontFamily = resolveDropdown(legendFmtCard.legendFontFamily) || undefined;
+
       renderLegend(this.container, {
         items: legendItems,
         position: position as 'top' | 'bottom' | 'left' | 'right',
         fontSize: legendFontSize,
         fontColor: legendFontColor,
+        fontFamily: rawLegendFontFamily,
       });
     }
 

@@ -1280,11 +1280,14 @@ export class MorphingAreaChartVisual implements IVisual {
       const sf = this.cachedSeriesFormats[i];
       return { label: ser.name, color: sf?.color ?? ser.color };
     });
+    const rawLegendFontFamily = resolveDropdown(legendFmtCard.legendFontFamily) || undefined;
+
     const legendEl = renderLegend(parent, {
       items,
       position,
       fontSize: legendFmtCard.legendFontSize.value,
       fontColor,
+      fontFamily: rawLegendFontFamily,
     });
 
     // Animate legend entrance

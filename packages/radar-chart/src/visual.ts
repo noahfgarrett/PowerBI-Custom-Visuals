@@ -86,9 +86,12 @@ export class RadarChartVisual implements IVisual {
     this.settings.axisFormattingCard.showYAxis.visible = false;
     this.settings.axisFormattingCard.xAxisTitle.visible = false;
     this.settings.axisFormattingCard.yAxisTitle.visible = false;
+    this.settings.axisFormattingCard.axisLabelFontFamily.visible = false;
     this.settings.axisFormattingCard.axisLabelRotation.visible = false;
     this.settings.axisFormattingCard.yAxisMin.visible = false;
     this.settings.axisFormattingCard.yAxisMax.visible = false;
+    this.settings.axisFormattingCard.gridLineWidth.visible = false;
+    this.settings.axisFormattingCard.gridLineOpacity.visible = false;
 
     this.applyCardStyle();
 
@@ -250,6 +253,7 @@ export class RadarChartVisual implements IVisual {
     // Legend formatting
     const legendFontColor = s.legendFormattingCard.legendFontColor.value?.value || '#1E293B';
     const legendFontSize = s.legendFormattingCard.legendFontSize.value;
+    const legendFontFamily = resolveDropdown(s.legendFormattingCard.legendFontFamily) || undefined;
     const legendPosRaw = s.legendFormattingCard.legendPosition.value;
     const legendPos: string = (typeof legendPosRaw === 'string'
       ? legendPosRaw
@@ -567,6 +571,7 @@ export class RadarChartVisual implements IVisual {
         const label = document.createElement('span');
         label.style.fontSize = `${legendFontSize}px`;
         label.style.color = legendFontColor;
+        if (legendFontFamily) label.style.fontFamily = legendFontFamily;
         label.textContent = ser.name;
 
         item.appendChild(swatch);

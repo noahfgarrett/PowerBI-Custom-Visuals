@@ -85,13 +85,20 @@ class NodeSettings extends formattingSettings.SimpleCard {
     name: 'labelFontFamily',
     displayName: 'Label Font Family',
     items: [
-      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: '', displayName: 'Default' },
       { value: 'Arial', displayName: 'Arial' },
-      { value: 'Helvetica', displayName: 'Helvetica' },
-      { value: 'Verdana', displayName: 'Verdana' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Cambria', displayName: 'Cambria' },
+      { value: 'Courier New', displayName: 'Courier New' },
+      { value: 'Georgia', displayName: 'Georgia' },
+      { value: 'Helvetica Neue', displayName: 'Helvetica Neue' },
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Tahoma', displayName: 'Tahoma' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
       { value: 'Trebuchet MS', displayName: 'Trebuchet MS' },
+      { value: 'Verdana', displayName: 'Verdana' },
     ],
-    value: { value: 'Segoe UI', displayName: 'Segoe UI' },
+    value: { value: '', displayName: 'Default' },
   });
 
   labelFontWeight = new formattingSettings.ItemDropdown({

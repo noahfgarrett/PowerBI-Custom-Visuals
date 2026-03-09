@@ -133,6 +133,10 @@ export class StreamGraphVisual implements IVisual {
     // Hide shared axis toggles that are shadowed by local settings
     this.settings.axisFormattingCard.showXAxis.visible = false;
     this.settings.axisFormattingCard.showYAxis.visible = false;
+    this.settings.axisFormattingCard.xAxisTitle.visible = false;
+    this.settings.axisFormattingCard.yAxisTitle.visible = false;
+    this.settings.axisFormattingCard.yAxisMin.visible = false;
+    this.settings.axisFormattingCard.yAxisMax.visible = false;
 
     // Extract data and apply user-configured sort order to series
     const data = this.sortStreamSeries(this.extractData(dataView));
@@ -787,11 +791,14 @@ export class StreamGraphVisual implements IVisual {
       label: name,
       color: getHostChartColor(this.host.colorPalette, i, themeName),
     }));
+    const rawLegendFontFamily = resolveDropdown(legendFmtCard.legendFontFamily) || undefined;
+
     const legendEl = renderLegend(parent, {
       items,
       position,
       fontSize: legendFmtCard.legendFontSize.value,
       fontColor,
+      fontFamily: rawLegendFontFamily,
     });
 
     // Animate legend entrance

@@ -111,6 +111,7 @@ export class FunnelProVisual implements IVisual {
     this.settings.axisFormattingCard.yAxisMax.visible = false;
     this.settings.axisFormattingCard.gridLineWidth.visible = false;
     this.settings.axisFormattingCard.gridLineOpacity.visible = false;
+    this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
 
     // Extract data
     const stages = this.extractData(dataView);

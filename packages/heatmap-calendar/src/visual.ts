@@ -84,6 +84,13 @@ export class HeatmapCalendarVisual implements IVisual {
     this.settings.axisFormattingCard.axisLabelRotation.visible = false;
     this.settings.axisFormattingCard.yAxisMin.visible = false;
     this.settings.axisFormattingCard.yAxisMax.visible = false;
+    this.settings.axisFormattingCard.axisLineColor.visible = false;
+    this.settings.axisFormattingCard.axisLineWidth.visible = false;
+    this.settings.axisFormattingCard.showGridLines.visible = false;
+    this.settings.axisFormattingCard.gridLineColor.visible = false;
+    this.settings.axisFormattingCard.gridLineStyle.visible = false;
+    this.settings.axisFormattingCard.gridLineWidth.visible = false;
+    this.settings.axisFormattingCard.gridLineOpacity.visible = false;
 
     const data = this.extractData(dataView);
     this.applyCardStyle();

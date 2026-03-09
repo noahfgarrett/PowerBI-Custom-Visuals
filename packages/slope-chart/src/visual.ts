@@ -99,6 +99,20 @@ export class SlopeChartVisual implements IVisual {
       );
     }
 
+    this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
+
+    // Hide dead axis/grid properties — slope-chart has its own axis rendering
+    this.settings.axisFormattingCard.xAxisTitle.visible = false;
+    this.settings.axisFormattingCard.yAxisTitle.visible = false;
+    this.settings.axisFormattingCard.yAxisMin.visible = false;
+    this.settings.axisFormattingCard.yAxisMax.visible = false;
+    this.settings.axisFormattingCard.axisLabelFontFamily.visible = false;
+    this.settings.axisFormattingCard.axisLabelRotation.visible = false;
+    this.settings.axisFormattingCard.axisLineColor.visible = false;
+    this.settings.axisFormattingCard.axisLineWidth.visible = false;
+    this.settings.axisFormattingCard.showGridLines.visible = false;
+    this.settings.axisFormattingCard.gridLineColor.visible = false;
+
     // Extract data
     let data = this.extractData(dataView);
 

@@ -119,6 +119,11 @@ export class BumpChartVisual implements IVisual {
     // Hide shared axis toggles that are shadowed by local settings
     this.settings.axisFormattingCard.showXAxis.visible = false;
     this.settings.axisFormattingCard.showYAxis.visible = false;
+    this.settings.axisFormattingCard.xAxisTitle.visible = false;
+    this.settings.axisFormattingCard.yAxisTitle.visible = false;
+    this.settings.axisFormattingCard.yAxisMin.visible = false;
+    this.settings.axisFormattingCard.yAxisMax.visible = false;
+    this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
 
     // Extract data
     const data = this.extractData(dataView);
@@ -877,11 +882,14 @@ export class BumpChartVisual implements IVisual {
       label: item.name,
       color: item.color,
     }));
+    const rawLegendFontFamily = resolveDropdown(legendFmtCard.legendFontFamily) || undefined;
+
     renderLegend(this.container, {
       items,
       position,
       fontSize: legendFmtCard.legendFontSize.value,
       fontColor,
+      fontFamily: rawLegendFontFamily,
     });
   }
 

@@ -113,6 +113,12 @@ export class DumbbellChartVisual implements IVisual {
       );
     }
 
+    // Hide dead axis properties — not wired to any axis rendering
+    this.settings.axisFormattingCard.xAxisTitle.visible = false;
+    this.settings.axisFormattingCard.yAxisTitle.visible = false;
+    this.settings.axisFormattingCard.yAxisMin.visible = false;
+    this.settings.axisFormattingCard.yAxisMax.visible = false;
+
     // Apply glass effect
     this.applyCardStyle();
 
@@ -769,11 +775,14 @@ export class DumbbellChartVisual implements IVisual {
       { label: 'End', color: endColor },
     ];
 
+    const rawLegendFontFamily = resolveDropdown(legendFmtCard.legendFontFamily) || undefined;
+
     renderLegend(this.container, {
       items,
       position: legendPos as 'top' | 'bottom' | 'left' | 'right',
       fontSize: legendFontSize,
       fontColor: legendFontColor,
+      fontFamily: rawLegendFontFamily,
     });
   }
 

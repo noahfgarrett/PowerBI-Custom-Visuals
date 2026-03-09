@@ -121,6 +121,8 @@ export class RingStackVisual implements IVisual {
       );
     }
 
+    this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
+
     // Extract ring data and apply user-configured sort order
     const rings = applySortOrder(
       this.extractData(dataView),
@@ -716,11 +718,14 @@ export class RingStackVisual implements IVisual {
       color: ring.color,
     }));
 
+    const rawLegendFontFamily = resolveDropdown(legendFmtCard.legendFontFamily) || undefined;
+
     const legendEl = renderLegend(this.container, {
       items,
       position: legendPosition,
       fontSize: legendFontSize,
       fontColor: legendFontColor,
+      fontFamily: rawLegendFontFamily,
     });
 
     // Entrance fade for legend

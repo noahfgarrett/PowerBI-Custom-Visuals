@@ -99,6 +99,7 @@ export class ProgressBarStackVisual implements IVisual {
     this.settings.axisFormattingCard.gridLineStyle.visible = false;
     this.settings.axisFormattingCard.gridLineWidth.visible = false;
     this.settings.axisFormattingCard.gridLineOpacity.visible = false;
+    this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
 
     // Extract data
     const rows = this.extractData(dataView);

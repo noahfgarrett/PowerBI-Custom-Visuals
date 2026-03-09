@@ -120,6 +120,8 @@ export class SankeyDiagramVisual implements IVisual {
       );
     }
 
+    this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
+
     // Extract data
     const data = this.extractData(dataView);
 

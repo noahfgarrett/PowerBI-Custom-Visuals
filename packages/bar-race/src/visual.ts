@@ -148,6 +148,16 @@ export class BarRaceVisual implements IVisual {
       );
     }
 
+    this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
+
+    // Hide dead axis properties — bar-race has its own axis rendering
+    this.settings.axisFormattingCard.xAxisTitle.visible = false;
+    this.settings.axisFormattingCard.yAxisTitle.visible = false;
+    this.settings.axisFormattingCard.yAxisMin.visible = false;
+    this.settings.axisFormattingCard.yAxisMax.visible = false;
+    this.settings.axisFormattingCard.axisLabelFontFamily.visible = false;
+    this.settings.axisFormattingCard.axisLabelRotation.visible = false;
+
     // Apply glass card style
     this.applyCardStyle();
 

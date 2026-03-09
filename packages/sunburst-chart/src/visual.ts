@@ -912,11 +912,14 @@ export class SunburstChartVisual implements IVisual {
     const animEnabled = this.settings.animationSettings.enabled.value;
     const animDuration = animEnabled ? this.settings.animationSettings.duration.value : 0;
 
+    const rawLegendFontFamily = resolveDropdown(legendFmtCard.legendFontFamily) || undefined;
+
     const legendEl = renderLegend(this.container, {
       items,
       position: legendPosition,
       fontSize: legendFontSize,
       fontColor: legendFontColor,
+      fontFamily: rawLegendFontFamily,
     });
 
     if (animEnabled && animDuration > 0) {

@@ -408,6 +408,10 @@ export class ScatterBubbleVisual implements IVisual {
     // Hide shared axis toggles that are shadowed by local settings
     this.settings.axisFormattingCard.showXAxis.visible = false;
     this.settings.axisFormattingCard.showYAxis.visible = false;
+    this.settings.axisFormattingCard.xAxisTitle.visible = false;
+    this.settings.axisFormattingCard.yAxisTitle.visible = false;
+    this.settings.axisFormattingCard.yAxisMin.visible = false;
+    this.settings.axisFormattingCard.yAxisMax.visible = false;
 
     // Extract data
     const data = this.extractData(dataView);
@@ -623,11 +627,14 @@ export class ScatterBubbleVisual implements IVisual {
         color: pt.color,
       }));
 
+      const rawLegendFontFamily = resolveDropdown(legendFmtCard.legendFontFamily) || undefined;
+
       const legendEl = renderLegend(this.container, {
         items: legendItems,
         position: legendPosition as 'top' | 'bottom' | 'left' | 'right',
         fontSize: legendFontSize,
         fontColor: legendFontColor,
+        fontFamily: rawLegendFontFamily,
       });
 
       if (s.animationSettings.enabled.value) {

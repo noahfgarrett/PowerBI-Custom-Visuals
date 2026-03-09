@@ -96,6 +96,8 @@ export class WaffleChartVisual implements IVisual {
       );
     }
 
+    this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
+
     // Extract data
     const data = this.extractData(dataView);
 
@@ -490,11 +492,14 @@ export class WaffleChartVisual implements IVisual {
       { label: 'Empty', color: emptyColor },
     ];
 
+    const rawLegendFontFamily = resolveDropdown(legendFmtCard.legendFontFamily) || undefined;
+
     renderLegend(this.container, {
       items,
       position,
       fontSize: legendFontSize,
       fontColor: legendFontColor,
+      fontFamily: rawLegendFontFamily,
     });
   }
 

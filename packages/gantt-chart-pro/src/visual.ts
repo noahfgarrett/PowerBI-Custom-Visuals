@@ -107,6 +107,18 @@ export class GanttChartProVisual implements IVisual {
       );
     }
 
+    // Hide dead axis/grid properties — gantt-chart-pro has its own axis rendering
+    this.settings.axisFormattingCard.xAxisTitle.visible = false;
+    this.settings.axisFormattingCard.yAxisTitle.visible = false;
+    this.settings.axisFormattingCard.yAxisMin.visible = false;
+    this.settings.axisFormattingCard.yAxisMax.visible = false;
+    this.settings.axisFormattingCard.axisLabelFontFamily.visible = false;
+    this.settings.axisFormattingCard.axisLabelRotation.visible = false;
+    this.settings.axisFormattingCard.axisLineColor.visible = false;
+    this.settings.axisFormattingCard.axisLineWidth.visible = false;
+    this.settings.axisFormattingCard.showGridLines.visible = false;
+    this.settings.axisFormattingCard.gridLineColor.visible = false;
+
     // Extract data
     const allTasks = this.extractData(dataView);
 

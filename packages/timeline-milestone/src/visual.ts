@@ -269,6 +269,8 @@ export class TimelineMilestoneVisual implements IVisual {
     s.axisFormattingCard.axisLabelRotation.visible = false;
     s.axisFormattingCard.yAxisMin.visible = false;
     s.axisFormattingCard.yAxisMax.visible = false;
+    s.axisFormattingCard.gridLineWidth.visible = false;
+    s.axisFormattingCard.gridLineOpacity.visible = false;
 
     // Apply glass style
     if (s.cardSettings.enableGlass.value) {

@@ -840,11 +840,14 @@ export class AnimatedDonutProVisual implements IVisual {
       color: seg.color,
     }));
 
+    const rawLegendFontFamily = resolveDropdown(legendFmtCard.legendFontFamily) || undefined;
+
     const legendEl = renderLegend(this.container, {
       items,
       position: legendPos,
       fontSize: legendFontSize,
       fontColor: legendFontColor,
+      fontFamily: rawLegendFontFamily,
     });
 
     const animEnabled = this.settings.animationSettings.enabled.value;
