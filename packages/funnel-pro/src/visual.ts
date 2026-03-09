@@ -517,8 +517,8 @@ export class FunnelProVisual implements IVisual {
             .attr('class', 'funnel-annotation-label')
             .attr('x', annotLabelX)
             .attr('y', annotLabelY)
-            .attr('fill', '#64748B')
-            .attr('font-size', '10px')
+            .attr('fill', axisColor)
+            .attr('font-size', `${axisLabelSize}px`)
             .attr('dominant-baseline', 'middle')
             .text(`${convPct}% conversion`);
         }

@@ -263,7 +263,12 @@ export class DumbbellChartVisual implements IVisual {
     const legendPos = (typeof legendPosRaw === 'string'
       ? legendPosRaw
       : (legendPosRaw as { value?: string })?.value) ?? 'bottom';
-    const legendReserve = showLegend ? LEGEND_HEIGHT : 0;
+    const isLegendVertical = legendPos === 'left' || legendPos === 'right';
+    const legendReserve = showLegend && !isLegendVertical ? LEGEND_HEIGHT : 0;
+
+    // Adjust margin for left/right legend positioning
+    if (showLegend && legendPos === 'left') margin.left += 80;
+    if (showLegend && legendPos === 'right') margin.right += 80;
 
     // Compute chart dimensions
     const padding = 8; // CSS padding on container
@@ -413,9 +418,9 @@ export class DumbbellChartVisual implements IVisual {
             .attr('y', cy)
             .attr('text-anchor', 'end')
             .attr('dominant-baseline', 'auto')
-            .attr('font-size', '10px')
+            .attr('font-size', `${s.axisFormattingCard.axisLabelSize.value}px`)
             .attr('font-weight', '700')
-            .attr('fill', '#64748B')
+            .attr('fill', s.axisFormattingCard.axisLabelColor.value?.value || '#64748B')
             .attr('letter-spacing', '0.05em')
             .text(groupKey);
 
@@ -813,8 +818,8 @@ export class DumbbellChartVisual implements IVisual {
         .attr('y', cy)
         .attr('text-anchor', 'start')
         .attr('dominant-baseline', 'central')
-        .attr('font-size', '10px')
-        .attr('fill', '#94A3B8')
+        .attr('font-size', `${this.settings.axisFormattingCard.axisLabelSize.value}px`)
+        .attr('fill', this.settings.axisFormattingCard.axisLabelColor.value?.value || '#94A3B8')
         .attr('font-weight', '600')
         .style('pointer-events', 'none')
         .text(`#${rank + 1}`);

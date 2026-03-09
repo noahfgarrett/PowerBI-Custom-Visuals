@@ -353,8 +353,12 @@ export class BumpChartVisual implements IVisual {
       : { ...MARGIN };
 
     // If legend is on the right, ensure right margin has room
-    if (showLegend && !isLegendBottom) {
+    if (showLegend && legendPosition === 'right') {
       margin.right = Math.max(margin.right, LEGEND_RIGHT_WIDTH + 40);
+    }
+    // If legend is on the left, ensure left margin has room
+    if (showLegend && legendPosition === 'left') {
+      margin.left += 80;
     }
 
     const width = viewport.width;
@@ -729,7 +733,7 @@ export class BumpChartVisual implements IVisual {
         if (cx === undefined) return;
         const cy = yScale(lastPoint.rank);
 
-        const color = delta < 0 ? '#22C55E' : delta > 0 ? '#EF4444' : '#64748B';
+        const color = delta < 0 ? '#22C55E' : delta > 0 ? '#EF4444' : (s.axisFormattingCard.axisLabelColor.value?.value || '#64748B');
         const label = delta === 0 ? '=' : delta > 0 ? `+${delta}` : String(delta);
 
         const badge = compGroup.append('text')
@@ -737,7 +741,7 @@ export class BumpChartVisual implements IVisual {
           .attr('data-series', String(origIdx))
           .attr('x', cx + dotRadius + 8)
           .attr('y', cy + 4)
-          .attr('font-size', '10px')
+          .attr('font-size', `${s.axisFormattingCard.axisLabelSize.value}px`)
           .attr('fill', color)
           .attr('font-weight', 'bold')
           .text(`[${label}]`);
@@ -789,7 +793,7 @@ export class BumpChartVisual implements IVisual {
     // ── Legend ───────────────────────────────────────────────────
 
     if (showLegend) {
-      this.renderBumpLegend(data, isLegendBottom);
+      this.renderBumpLegend(data, legendPosition);
     }
 
     // ── Crosshair (shared core) ──────────────────────────────
@@ -871,12 +875,16 @@ export class BumpChartVisual implements IVisual {
 
   private renderBumpLegend(
     data: BumpItem[],
-    isBottom: boolean,
+    legendPosition: string,
   ): void {
     const legendFmtCard = this.settings.legendFormattingCard;
     const rawFontColor = legendFmtCard.legendFontColor.value?.value;
     const fontColor = rawFontColor != null && rawFontColor.length > 0 ? rawFontColor : '#64748B';
-    const position = isBottom ? 'bottom' : 'right';
+    const validPositions = ['top', 'bottom', 'left', 'right'] as const;
+    const position: 'top' | 'bottom' | 'left' | 'right' =
+      (validPositions as readonly string[]).includes(legendPosition)
+        ? (legendPosition as 'top' | 'bottom' | 'left' | 'right')
+        : 'bottom';
 
     const items: LegendItem[] = data.map((item) => ({
       label: item.name,

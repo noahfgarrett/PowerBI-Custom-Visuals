@@ -640,7 +640,7 @@ export class SankeyDiagramVisual implements IVisual {
           .attr('dy', label.attr('dy'))
           .attr('text-anchor', label.attr('text-anchor'))
           .attr('font-size', nfs)
-          .attr('fill', theme.text.secondary)
+          .attr('fill', labelColor ?? theme.text.secondary)
           .text(formatNumber(nodeValue, { abbreviate: true }));
       });
     }
@@ -700,13 +700,15 @@ export class SankeyDiagramVisual implements IVisual {
           const midX = ((src.x1 ?? 0) + (tgt.x0 ?? 0)) / 2;
           const midY = ((d.y0 ?? 0) + (d.y1 ?? 0)) / 2;
           flowLabelGroup.selectAll('*').remove();
+          const flowFontSize = s.linkLabelSettings.linkLabelFontSize.value;
+          const flowFontColor = s.linkLabelSettings.linkLabelFontColor.value?.value || theme.text.primary;
           flowLabelGroup.append('text')
             .attr('x', midX)
             .attr('y', midY)
             .attr('dy', '-0.5em')
             .attr('text-anchor', 'middle')
-            .attr('font-size', 11)
-            .attr('fill', theme.text.primary)
+            .attr('font-size', flowFontSize)
+            .attr('fill', flowFontColor)
             .attr('pointer-events', 'none')
             .text(formatNumber(d.value, { abbreviate: true }));
         })

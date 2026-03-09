@@ -298,10 +298,12 @@ export class SunburstChartVisual implements IVisual {
     const legendPos: string = (typeof legendPosRaw === 'string'
       ? legendPosRaw
       : (legendPosRaw as { value?: string } | undefined)?.value) ?? 'bottom';
-    const legendHeight = showLegend ? 30 : 0;
+    const isLegendSide = legendPos === 'left' || legendPos === 'right';
+    const legendHeight = showLegend && !isLegendSide ? 30 : 0;
+    const legendWidth = showLegend && isLegendSide ? 80 : 0;
 
-    // Render legend at top position
-    if (showLegend && legendPos === 'top') {
+    // Render legend at top or left position
+    if (showLegend && (legendPos === 'top' || legendPos === 'left')) {
       this.renderSharedLegend(effectiveRoot.children);
     }
 
@@ -315,7 +317,7 @@ export class SunburstChartVisual implements IVisual {
     }
 
     // ── Layout Dimensions ──────────────────────────────────────
-    const width = viewport.width;
+    const width = viewport.width - legendWidth;
     const height = viewport.height - legendHeight;
     const size = Math.min(width, height);
     const cx = width / 2;
@@ -754,8 +756,8 @@ export class SunburstChartVisual implements IVisual {
       applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.sunburst-label');
     }
 
-    // Render legend at bottom (or left/right — fallback to bottom)
-    if (showLegend && legendPos !== 'top') {
+    // Render legend at bottom or right position
+    if (showLegend && legendPos !== 'top' && legendPos !== 'left') {
       this.renderSharedLegend(effectiveRoot.children);
     }
 

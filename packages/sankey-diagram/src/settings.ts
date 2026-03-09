@@ -6,6 +6,7 @@
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
 import {
+  LegendFormattingCard,
   DataLabelFormattingCard,
   ScrollFormattingCard,
   TitleFormattingCard,
@@ -472,6 +473,8 @@ export class SankeyDiagramSettings extends formattingSettings.Model {
   sankeyLinkSettings = new SankeyLinkSettings();
   sankeyNodeSettings = new SankeyNodeSettings();
 
+  legendFormattingCard = new LegendFormattingCard();
+
   dataLabelFormattingCard = new DataLabelFormattingCard();
 
   scrollFormattingCard = (() => {
@@ -497,6 +500,7 @@ export class SankeyDiagramSettings extends formattingSettings.Model {
     this.sankeyInteractionSettings,
     this.sankeyLinkSettings,
     this.sankeyNodeSettings,
+    this.legendFormattingCard,
     this.dataLabelFormattingCard,
     this.scrollFormattingCard,
     this.titleFormattingCard,

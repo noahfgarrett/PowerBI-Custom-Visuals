@@ -133,8 +133,7 @@ export class MorphingAreaChartVisual implements IVisual {
     this.settings.lineStrokeFormattingCard.lineWidth.visible = false;
     this.settings.axisFormattingCard.showXAxis.visible = false;
     this.settings.axisFormattingCard.showYAxis.visible = false;
-    this.settings.axisFormattingCard.xAxisTitle.visible = false;
-    this.settings.axisFormattingCard.yAxisTitle.visible = false;
+    // xAxisTitle and yAxisTitle are kept visible so users can set axis titles
     this.settings.axisFormattingCard.axisLabelFontFamily.visible = false;
     this.settings.axisFormattingCard.axisLabelRotation.visible = false;
     this.settings.axisFormattingCard.yAxisMin.visible = false;
@@ -288,6 +287,12 @@ export class MorphingAreaChartVisual implements IVisual {
     if (!s.axisSettings.showXAxis.value) margin.bottom = 8;
     if (!s.axisSettings.showYAxis.value) margin.left = 8;
     if (legendPos === 'top') margin.top += legendReserveV;
+
+    // Reserve space for axis titles when present
+    const xAxisTitle = s.axisFormattingCard.xAxisTitle.value;
+    const yAxisTitle = s.axisFormattingCard.yAxisTitle.value;
+    if (xAxisTitle && s.axisSettings.showXAxis.value) margin.bottom += 20;
+    if (yAxisTitle && s.axisSettings.showYAxis.value) margin.left += 18;
 
     // Compute chart dimensions
     const padding = 8;
@@ -448,6 +453,33 @@ export class MorphingAreaChartVisual implements IVisual {
             .tickFormat((d) => formatWithSettings(d as number, this.settings.numberFormattingCard)),
         )
         .select('.domain').remove();
+    }
+
+    // ── Axis titles ──────────────────────────────────────────────
+    const axisTitleFontSize = s.axisFormattingCard.axisLabelSize.value;
+    const axisTitleColor = s.axisFormattingCard.axisLabelColor.value?.value || '#888888';
+
+    if (xAxisTitle && s.axisSettings.showXAxis.value) {
+      chartGroup.append('text')
+        .attr('class', 'area-axis-title area-axis-title-x')
+        .attr('x', chartWidth / 2)
+        .attr('y', chartHeight + margin.bottom - 4)
+        .attr('text-anchor', 'middle')
+        .attr('fill', axisTitleColor)
+        .attr('font-size', `${axisTitleFontSize}px`)
+        .text(xAxisTitle);
+    }
+
+    if (yAxisTitle && s.axisSettings.showYAxis.value) {
+      chartGroup.append('text')
+        .attr('class', 'area-axis-title area-axis-title-y')
+        .attr('x', -(chartHeight / 2))
+        .attr('y', -margin.left + 14)
+        .attr('transform', 'rotate(-90)')
+        .attr('text-anchor', 'middle')
+        .attr('fill', axisTitleColor)
+        .attr('font-size', `${axisTitleFontSize}px`)
+        .text(yAxisTitle);
     }
 
     // Reference line (shared core — rendered after axes/grid but before data series)

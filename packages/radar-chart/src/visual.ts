@@ -297,10 +297,12 @@ export class RadarChartVisual implements IVisual {
       useIndependentScales ? axisMaxValues[axisIndex] : maxVal;
 
     const effectiveShowLegend = showLegend;
-    const isLegendVertical = legendPos === 'top' || legendPos === 'bottom';
-    const legendHeight = effectiveShowLegend && isLegendVertical ? 30 : 0;
+    const isLegendHorizontal = legendPos === 'top' || legendPos === 'bottom';
+    const isLegendSide = legendPos === 'left' || legendPos === 'right';
+    const legendHeight = effectiveShowLegend && isLegendHorizontal ? 30 : 0;
+    const legendWidth = effectiveShowLegend && isLegendSide ? 80 : 0;
     const margin = 40;
-    const svgWidth = viewport.width;
+    const svgWidth = viewport.width - legendWidth;
     const svgHeight = viewport.height - legendHeight;
     const radius = Math.max(20, Math.min(svgWidth, svgHeight) / 2 - margin);
     const cx = svgWidth / 2;
@@ -579,10 +581,15 @@ export class RadarChartVisual implements IVisual {
         legend.appendChild(item);
       }
 
-      if (legendPos === 'top') {
+      if (legendPos === 'top' || legendPos === 'left') {
         this.container.insertBefore(legend, this.container.firstChild);
       } else {
         this.container.appendChild(legend);
+      }
+
+      // Adjust container layout for side legends
+      if (legendPos === 'left' || legendPos === 'right') {
+        this.container.style.flexDirection = legendPos === 'left' ? 'row' : 'row-reverse';
       }
 
       if (animEnabled) {

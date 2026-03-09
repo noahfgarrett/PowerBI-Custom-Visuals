@@ -182,6 +182,63 @@
         }
       }
     },
+    "legendFormatting": {
+      "displayName": "Legend",
+      "properties": {
+        "showLegend": {
+          "displayName": "Show Legend",
+          "type": {
+            "bool": true
+          }
+        },
+        "legendPosition": {
+          "displayName": "Position",
+          "type": {
+            "enumeration": [
+              { "value": "bottom", "displayName": "Bottom" },
+              { "value": "top", "displayName": "Top" },
+              { "value": "left", "displayName": "Left" },
+              { "value": "right", "displayName": "Right" }
+            ]
+          }
+        },
+        "legendFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "legendFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "legendFontFamily": {
+          "displayName": "Font",
+          "type": {
+            "enumeration": [
+              { "value": "", "displayName": "Default" },
+              { "value": "Arial", "displayName": "Arial" },
+              { "value": "Calibri", "displayName": "Calibri" },
+              { "value": "Cambria", "displayName": "Cambria" },
+              { "value": "Courier New", "displayName": "Courier New" },
+              { "value": "Georgia", "displayName": "Georgia" },
+              { "value": "Helvetica Neue", "displayName": "Helvetica Neue" },
+              { "value": "Segoe UI", "displayName": "Segoe UI" },
+              { "value": "Tahoma", "displayName": "Tahoma" },
+              { "value": "Times New Roman", "displayName": "Times New Roman" },
+              { "value": "Trebuchet MS", "displayName": "Trebuchet MS" },
+              { "value": "Verdana", "displayName": "Verdana" }
+            ]
+          }
+        }
+      }
+    },
     "dataLabelFormatting": {
       "displayName": "Data Labels",
       "properties": {

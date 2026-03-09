@@ -258,14 +258,16 @@ export class AnimatedDonutProVisual implements IVisual {
     const legendPos: string = (typeof legendPosRaw === 'string'
       ? legendPosRaw
       : (legendPosRaw as { value?: string } | undefined)?.value) ?? 'bottom';
-    const legendHeight = showLegend ? 30 : 0;
+    const isLegendVertical = legendPos === 'left' || legendPos === 'right';
+    const legendHeight = showLegend && !isLegendVertical ? 30 : 0;
+    const legendWidth = showLegend && isLegendVertical ? 80 : 0;
 
-    // Render legend at top position
-    if (showLegend && legendPos === 'top') {
+    // Render legend at top or left position (before SVG)
+    if (showLegend && (legendPos === 'top' || legendPos === 'left')) {
       this.renderSharedLegend(segments);
     }
 
-    const svgWidth = viewport.width - padding * 2;
+    const svgWidth = viewport.width - padding * 2 - legendWidth;
     const svgHeight = viewport.height - padding * 2 - legendHeight;
 
     if (svgWidth <= 0 || svgHeight <= 0) {
@@ -477,8 +479,8 @@ export class AnimatedDonutProVisual implements IVisual {
       }
     }
 
-    // Render legend at bottom (or left/right — fallback to bottom)
-    if (showLegend && legendPos !== 'top') {
+    // Render legend at bottom or right position
+    if (showLegend && legendPos !== 'top' && legendPos !== 'left') {
       this.renderSharedLegend(segments);
     }
 

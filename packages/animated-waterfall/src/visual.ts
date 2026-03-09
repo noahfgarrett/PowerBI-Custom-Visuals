@@ -944,7 +944,7 @@ export class AnimatedWaterfallVisual implements IVisual {
       summaryEl.setAttribute('y', String(chartHeight + MARGIN.bottom - 4));
       summaryEl.setAttribute('text-anchor', 'middle');
       summaryEl.style.setProperty('font-size', `${summaryFontSize}px`);
-      summaryEl.style.setProperty('fill', '#64748B');
+      summaryEl.style.setProperty('fill', s.axisFormattingCard.axisLabelColor.value?.value || '#64748B');
       summaryEl.textContent = summaryText;
       chartGroup.appendChild(summaryEl);
     }

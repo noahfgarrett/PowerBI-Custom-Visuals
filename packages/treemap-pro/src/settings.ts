@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { DataLabelFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard } from '../../core/src';
+import { LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard } from '../../core/src';
 // -- Treemap Layout Settings --------------------------------------------------
 
 class TreemapSettings extends formattingSettings.SimpleCard {
@@ -255,6 +255,7 @@ export class TreemapProSettings extends formattingSettings.Model {
   treemapHeatSettings = new TreemapHeatSettings();
   treemapDisplaySettings = new TreemapDisplaySettings();
 
+  legendFormattingCard = new LegendFormattingCard();
   dataLabelFormattingCard = new DataLabelFormattingCard();
   titleFormattingCard = new TitleFormattingCard();
   conditionalFormattingCard = new ConditionalFormattingCard();
@@ -269,6 +270,7 @@ export class TreemapProSettings extends formattingSettings.Model {
     this.drillDownSettings,
     this.treemapHeatSettings,
     this.treemapDisplaySettings,
+    this.legendFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.conditionalFormattingCard,

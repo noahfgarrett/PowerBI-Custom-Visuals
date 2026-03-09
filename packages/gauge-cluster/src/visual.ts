@@ -479,8 +479,8 @@ export class GaugeClusterVisual implements IVisual {
             .attr('x', 0)
             .attr('y', subtitleY)
             .attr('text-anchor', 'middle')
-            .attr('font-size', '7px')
-            .attr('fill', '#64748B')
+            .attr('font-size', `${s.dataLabelFormattingCard.dataLabelFontSize.value}px`)
+            .attr('fill', s.dataLabelFormattingCard.dataLabelFontColor.value?.value || '#64748B')
             .attr('opacity', 0.8)
             .text(subtitleText);
         }

@@ -451,7 +451,7 @@ export class HealthBarVisual implements IVisual {
       if (s.targetSettings.show.value && item.target !== null) {
         const maxValue = s.healthBarSettings.maxValue.value || 100;
         const targetPct = maxValue > 0 ? Math.max(0, Math.min(item.target, maxValue)) / maxValue : 0;
-        const targetX = barX + barWidth * targetPct;
+        const targetY = chartHeight - chartHeight * targetPct;
         const targetColor = s.targetSettings.color.value?.value ?? '#0F172A';
         const targetLineWidth = s.targetSettings.lineWidth.value;
         const markerStyle = resolveDropdown(s.targetSettings.markerStyle) ?? 'line';
@@ -459,31 +459,31 @@ export class HealthBarVisual implements IVisual {
         if (markerStyle === 'line') {
           const line = document.createElementNS(SVG_NS, 'line');
           line.setAttribute('class', 'health-bar-target');
-          line.setAttribute('x1', String(targetX));
-          line.setAttribute('y1', String(-2));
-          line.setAttribute('x2', String(targetX));
-          line.setAttribute('y2', String(chartHeight + 2));
+          line.setAttribute('x1', String(barX - 2));
+          line.setAttribute('y1', String(targetY));
+          line.setAttribute('x2', String(barX + barWidth + 2));
+          line.setAttribute('y2', String(targetY));
           line.setAttribute('stroke', targetColor);
           line.setAttribute('stroke-width', String(targetLineWidth));
           line.setAttribute('stroke-linecap', 'round');
           chartGroup.appendChild(line);
         } else if (markerStyle === 'triangle') {
           const markerSize = barWidth * 0.15;
-          const triY = fillY - markerSize - 1;
+          const triX = barX - markerSize - 1;
           const triangle = document.createElementNS(SVG_NS, 'polygon');
           triangle.setAttribute('class', 'health-bar-target');
           triangle.setAttribute('points',
-            `${targetX},${triY + markerSize} ${targetX - markerSize / 2},${triY} ${targetX + markerSize / 2},${triY}`
+            `${triX + markerSize},${targetY} ${triX},${targetY - markerSize / 2} ${triX},${targetY + markerSize / 2}`
           );
           triangle.setAttribute('fill', targetColor);
           chartGroup.appendChild(triangle);
         } else if (markerStyle === 'diamond') {
           const markerSize = barWidth * 0.12;
-          const diaY = chartHeight / 2;
+          const diaX = barX + barWidth / 2;
           const diamond = document.createElementNS(SVG_NS, 'polygon');
           diamond.setAttribute('class', 'health-bar-target');
           diamond.setAttribute('points',
-            `${targetX},${diaY - markerSize} ${targetX + markerSize},${diaY} ${targetX},${diaY + markerSize} ${targetX - markerSize},${diaY}`
+            `${diaX},${targetY - markerSize} ${diaX + markerSize},${targetY} ${diaX},${targetY + markerSize} ${diaX - markerSize},${targetY}`
           );
           diamond.setAttribute('fill', targetColor);
           chartGroup.appendChild(diamond);

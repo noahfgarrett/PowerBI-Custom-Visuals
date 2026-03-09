@@ -513,8 +513,8 @@ export class RadialGaugeVisual implements IVisual {
             .attr('y', (outerRadius + 14) * sinA)
             .attr('text-anchor', 'middle')
             .attr('dominant-baseline', 'central')
-            .attr('font-size', '8px')
-            .attr('fill', '#64748B')
+            .attr('font-size', `${s.dataLabelFormattingCard.dataLabelFontSize.value}px`)
+            .attr('fill', s.dataLabelFormattingCard.dataLabelFontColor.value?.value || '#64748B')
             .text(formatWithSettings(labelVal, this.settings.numberFormattingCard));
         }
 

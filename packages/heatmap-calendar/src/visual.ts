@@ -644,20 +644,23 @@ export class HeatmapCalendarVisual implements IVisual {
     const labelsContainer = document.createElement('div');
     labelsContainer.className = 'heatmap-legend-labels';
 
+    const legendLabelColor = this.settings.axisFormattingCard.axisLabelColor.value?.value || '#64748B';
+    const legendLabelSize = `${this.settings.axisFormattingCard.axisLabelSize.value}px`;
+
     if (isVertical) {
       labelsContainer.style.display = 'flex';
       labelsContainer.style.flexDirection = 'column';
       labelsContainer.style.justifyContent = useMid ? 'space-between' : 'space-between';
       labelsContainer.style.marginLeft = '4px';
-      labelsContainer.style.fontSize = '10px';
-      labelsContainer.style.color = '#64748B';
+      labelsContainer.style.fontSize = legendLabelSize;
+      labelsContainer.style.color = legendLabelColor;
     } else {
       labelsContainer.style.display = 'flex';
       labelsContainer.style.justifyContent = 'space-between';
       labelsContainer.style.width = '200px';
       labelsContainer.style.marginTop = '2px';
-      labelsContainer.style.fontSize = '10px';
-      labelsContainer.style.color = '#64748B';
+      labelsContainer.style.fontSize = legendLabelSize;
+      labelsContainer.style.color = legendLabelColor;
     }
 
     // Create label elements

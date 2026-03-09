@@ -133,8 +133,6 @@ export class StreamGraphVisual implements IVisual {
     // Hide shared axis toggles that are shadowed by local settings
     this.settings.axisFormattingCard.showXAxis.visible = false;
     this.settings.axisFormattingCard.showYAxis.visible = false;
-    this.settings.axisFormattingCard.xAxisTitle.visible = false;
-    this.settings.axisFormattingCard.yAxisTitle.visible = false;
     this.settings.axisFormattingCard.yAxisMin.visible = false;
     this.settings.axisFormattingCard.yAxisMax.visible = false;
 
@@ -317,7 +315,17 @@ export class StreamGraphVisual implements IVisual {
     const width = viewport.width;
     const height = viewport.height;
     const showXAxis = s.axisVisibilitySettings.showXAxis.value;
-    const bottomMargin = showXAxis ? MARGIN.bottom : MARGIN.top;
+    const showYAxis = s.streamDisplaySettings.showYAxis.value;
+    const xAxisTitleText = s.axisFormattingCard.xAxisTitle.value;
+    const yAxisTitleText = s.axisFormattingCard.yAxisTitle.value;
+    const hasXTitle = showXAxis && xAxisTitleText.length > 0;
+    const hasYTitle = showYAxis && yAxisTitleText.length > 0;
+
+    // Dynamic margins: expand when axes/titles are visible
+    const leftMargin = showYAxis ? (hasYTitle ? 70 : 55) : MARGIN.left;
+    const bottomMargin = showXAxis
+      ? (hasXTitle ? MARGIN.bottom + 20 : MARGIN.bottom)
+      : MARGIN.top;
 
     // Wrapper for horizontal legend layout (left/right)
     const wrapper = document.createElement('div');
@@ -349,7 +357,7 @@ export class StreamGraphVisual implements IVisual {
 
     const svgWidth = width - legendReserveH;
     const svgHeight = height - legendReserveV;
-    const innerWidth = svgWidth - MARGIN.left - MARGIN.right;
+    const innerWidth = svgWidth - leftMargin - MARGIN.right;
     const innerHeight = svgHeight - MARGIN.top - bottomMargin;
 
     if (innerWidth <= 0 || innerHeight <= 0) return;
@@ -369,7 +377,7 @@ export class StreamGraphVisual implements IVisual {
     this.svg = svg;
 
     const g = svg.append('g')
-      .attr('transform', `translate(${MARGIN.left},${MARGIN.top})`);
+      .attr('transform', `translate(${leftMargin},${MARGIN.top})`);
 
     // Build stacked data
     const stack = d3.stack<StreamRow>()
@@ -608,8 +616,11 @@ export class StreamGraphVisual implements IVisual {
       applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.stream-value-label');
     }
 
+    // Axis title styling (shared axisFormattingCard)
+    const axisTitleSize = `${s.axisFormattingCard.axisLabelSize.value}px`;
+    const axisTitleColor = s.axisFormattingCard.axisLabelColor.value?.value || '#64748B';
+
     // Y-axis (when enabled via streamDisplaySettings)
-    const showYAxis = s.streamDisplaySettings.showYAxis.value;
     if (showYAxis) {
       const yAxisGroup = g.append('g')
         .attr('class', 'stream-axis stream-axis-y');
@@ -641,6 +652,29 @@ export class StreamGraphVisual implements IVisual {
           .attr('text-anchor', 'middle')
           .text(data.categoryLabels[i]);
       }
+    }
+
+    // Axis titles
+    if (hasXTitle) {
+      g.append('text')
+        .attr('class', 'stream-axis-title')
+        .attr('x', innerWidth / 2)
+        .attr('y', innerHeight + bottomMargin - 4)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', axisTitleSize)
+        .attr('fill', axisTitleColor)
+        .text(xAxisTitleText);
+    }
+    if (hasYTitle) {
+      g.append('text')
+        .attr('class', 'stream-axis-title')
+        .attr('transform', 'rotate(-90)')
+        .attr('x', -innerHeight / 2)
+        .attr('y', -leftMargin + 14)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', axisTitleSize)
+        .attr('fill', axisTitleColor)
+        .text(yAxisTitleText);
     }
 
     // Data labels — render series name centered on each layer
@@ -689,7 +723,7 @@ export class StreamGraphVisual implements IVisual {
         const crosshairCleanup = attachCrosshair(buildCrosshairConfig({
           svg: svgEl2,
           chartGroup: chartGroupNode,
-          marginLeft: MARGIN.left,
+          marginLeft: leftMargin,
           marginTop: MARGIN.top,
           chartWidth: innerWidth,
           chartHeight: innerHeight,

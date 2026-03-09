@@ -489,7 +489,7 @@ export class PolarChartVisual implements IVisual {
           .attr('y', rlY)
           .attr('dy', '0.35em')
           .attr('text-anchor', textAnchor)
-          .attr('font-size', '11px')
+          .attr('font-size', `${s.axisFormattingCard.axisLabelSize.value}px`)
           .attr('fill', s.polarSettings.labelColor.value?.value || '#475569')
           .text(datum.label);
 

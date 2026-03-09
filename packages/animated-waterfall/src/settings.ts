@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, NumberFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AnnotationFormattingCard, AccessibilityFormattingCard } from '../../core/src';
+import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, NumberFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AnnotationFormattingCard, AccessibilityFormattingCard } from '../../core/src';
 // -- Waterfall Settings -------------------------------------------------------
 
 class WaterfallSettingsCard extends formattingSettings.SimpleCard {
@@ -354,6 +354,8 @@ export class AnimatedWaterfallSettings extends formattingSettings.Model {
 
   axisFormattingCard = new AxisFormattingCard();
 
+  legendFormattingCard = new LegendFormattingCard();
+
   dataLabelFormattingCard = new DataLabelFormattingCard();
 
   titleFormattingCard = new TitleFormattingCard();
@@ -390,6 +392,7 @@ export class AnimatedWaterfallSettings extends formattingSettings.Model {
     this.animationSettings,
     this.drillDownSettings,
     this.axisFormattingCard,
+    this.legendFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.connectorSettings,

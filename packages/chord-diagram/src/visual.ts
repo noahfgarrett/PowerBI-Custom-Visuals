@@ -498,8 +498,8 @@ export class ChordDiagramVisual implements IVisual {
             .attr('y', y)
             .attr('dy', '0.35em')
             .attr('text-anchor', angle > Math.PI ? 'end' : 'start')
-            .attr('font-size', 10)
-            .attr('fill', '#64748B')
+            .attr('font-size', s.dataLabelFormattingCard.dataLabelFontSize.value)
+            .attr('fill', s.dataLabelFormattingCard.dataLabelFontColor.value?.value || '#64748B')
             .text(formatNumber(d.value, { abbreviate: true }));
         });
     }
@@ -590,8 +590,8 @@ export class ChordDiagramVisual implements IVisual {
             .attr('x', midX)
             .attr('y', midY)
             .attr('text-anchor', 'middle')
-            .attr('font-size', 11)
-            .attr('fill', '#1E293B')
+            .attr('font-size', s.dataLabelFormattingCard.dataLabelFontSize.value)
+            .attr('fill', s.dataLabelFormattingCard.dataLabelFontColor.value?.value || '#1E293B')
             .attr('pointer-events', 'none')
             .text(formatNumber(d.source.value, { abbreviate: true }));
         })

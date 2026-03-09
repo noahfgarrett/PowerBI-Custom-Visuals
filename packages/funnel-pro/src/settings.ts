@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard } from '../../core/src';
+import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard } from '../../core/src';
 // ── Funnel Settings ──────────────────────────────────────────────────
 
 class FunnelSettingsCard extends formattingSettings.SimpleCard {
@@ -235,6 +235,8 @@ export class FunnelProSettings extends formattingSettings.Model {
   funnelLayoutSettings = new FunnelLayoutSettingsCard();
   funnelAnnotationSettings = new FunnelAnnotationSettingsCard();
 
+  legendFormattingCard = new LegendFormattingCard();
+
   dataLabelFormattingCard = new DataLabelFormattingCard();
 
   titleFormattingCard = new TitleFormattingCard();
@@ -255,6 +257,7 @@ export class FunnelProSettings extends formattingSettings.Model {
     this.funnelComparisonSettings,
     this.funnelLayoutSettings,
     this.funnelAnnotationSettings,
+    this.legendFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.axisFormattingCard,

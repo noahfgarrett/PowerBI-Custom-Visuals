@@ -408,8 +408,6 @@ export class ScatterBubbleVisual implements IVisual {
     // Hide shared axis toggles that are shadowed by local settings
     this.settings.axisFormattingCard.showXAxis.visible = false;
     this.settings.axisFormattingCard.showYAxis.visible = false;
-    this.settings.axisFormattingCard.xAxisTitle.visible = false;
-    this.settings.axisFormattingCard.yAxisTitle.visible = false;
     this.settings.axisFormattingCard.yAxisMin.visible = false;
     this.settings.axisFormattingCard.yAxisMax.visible = false;
 
@@ -711,6 +709,39 @@ export class ScatterBubbleVisual implements IVisual {
 
     if (s.axisSettings.showYAxis.value) {
       this.renderYAxis(svg, yScale, chartHeight);
+    }
+
+    // ── Axis Titles ───────────────────────────────────────────
+    {
+      const axisTitleSize = `${s.axisFormattingCard.axisLabelSize.value}px`;
+      const axisTitleColor = s.axisFormattingCard.axisLabelColor.value?.value || '#64748B';
+
+      const xTitle = s.axisFormattingCard.xAxisTitle.value;
+      if (xTitle && s.axisSettings.showXAxis.value) {
+        const titleEl = document.createElementNS(svgNs, 'text');
+        titleEl.setAttribute('class', 'scatter-bubble-axis-title');
+        titleEl.setAttribute('x', String(MARGIN.left + chartWidth / 2));
+        titleEl.setAttribute('y', String(MARGIN.top + chartHeight + 36));
+        titleEl.setAttribute('text-anchor', 'middle');
+        titleEl.setAttribute('font-size', axisTitleSize);
+        titleEl.setAttribute('fill', axisTitleColor);
+        titleEl.textContent = xTitle;
+        svg.appendChild(titleEl);
+      }
+
+      const yTitle = s.axisFormattingCard.yAxisTitle.value;
+      if (yTitle && s.axisSettings.showYAxis.value) {
+        const titleEl = document.createElementNS(svgNs, 'text');
+        titleEl.setAttribute('class', 'scatter-bubble-axis-title');
+        titleEl.setAttribute('transform', `rotate(-90)`);
+        titleEl.setAttribute('x', String(-(MARGIN.top + chartHeight / 2)));
+        titleEl.setAttribute('y', String(MARGIN.left - 40));
+        titleEl.setAttribute('text-anchor', 'middle');
+        titleEl.setAttribute('font-size', axisTitleSize);
+        titleEl.setAttribute('fill', axisTitleColor);
+        titleEl.textContent = yTitle;
+        svg.appendChild(titleEl);
+      }
     }
 
     // ── Quadrant Lines & Zones ────────────────────────────────

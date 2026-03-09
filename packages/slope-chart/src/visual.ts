@@ -302,8 +302,8 @@ export class SlopeChartVisual implements IVisual {
     // Label color — apply setting if set, otherwise fall back to axisLabelColor
     const labelColorValue = s.slopeSettings.labelColor.value?.value;
     const labelColor = labelColorValue && labelColorValue.length > 0 ? labelColorValue : axisLabelColor;
-    // Value tspan uses a lighter variant; derive from label color with reduced opacity
-    const valueLabelColor = s.axisFormattingCard.axisLabelColor.value?.value || '#94A3B8';
+    // Value tspan uses the resolved axis label color (respects user setting)
+    const valueLabelColor = axisLabelColor;
 
     // ── Column Headers ──────────────────────────────────────────
 

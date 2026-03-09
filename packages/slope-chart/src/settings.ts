@@ -7,6 +7,7 @@ import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
 import {
   AxisFormattingCard,
+  LegendFormattingCard,
   DataLabelFormattingCard,
   TitleFormattingCard,
   LineStrokeFormattingCard,
@@ -285,6 +286,7 @@ export class SlopeChartSettings extends formattingSettings.Model {
   slopeThresholdSettings = new SlopeThresholdSettingsCard();
 
   // Shared formatting cards from core
+  legendFormattingCard = new LegendFormattingCard();
   seriesFormattingCard = new SeriesFormattingCard();
   dataLabelFormattingCard = new DataLabelFormattingCard();
   titleFormattingCard = new TitleFormattingCard();
@@ -305,6 +307,7 @@ export class SlopeChartSettings extends formattingSettings.Model {
     this.animationSettings,
     this.slopeDisplaySettings,
     this.slopeThresholdSettings,
+    this.legendFormattingCard,
     this.seriesFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
