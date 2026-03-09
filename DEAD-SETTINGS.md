@@ -48,17 +48,23 @@ Removed `highContrastOverride` and `verboseLabels` from `AccessibilityFormatting
 | `errorBarSettings.lineWidth` | Line Width | Dead — entire error bars feature unwired. | Removed with errorBarSettings. |
 | `errorBarSettings.capWidth` | Cap Width (px) | Dead — entire error bars feature unwired. | Removed with errorBarSettings. |
 
-### Partially Functional — Documented (not removed)
+### Previously Partially Functional — NOW FIXED
 
-`renderVarianceIndicators()` is only called from `renderGrouped()`. The variance settings card appears in the format pane for all chart modes but does nothing in stacked, stacked100, combo, horizontal, or diverging. Settings kept since the feature works in grouped mode.
+`renderVarianceIndicators()` was only called from `renderGrouped()`. Now wired into all applicable modes:
+- **Grouped**: first bar series values vs target (existing)
+- **Stacked**: stacked totals per category vs target
+- **Combo**: first bar series values vs target
+- **Horizontal**: first bar series values vs target (horizontal arrow/text variant)
+- **Diverging**: first series values vs target
+- **100% Stacked**: skipped — percentages don't compare meaningfully against a raw target value
 
 | Property | Display Name | Status |
 |---|---|---|
-| `varianceSettings.show` | Show Variance Indicators | Works in grouped mode only |
-| `varianceSettings.showDelta` | Show Delta Value | Works in grouped mode only |
-| `varianceSettings.showArrow` | Show Arrow | Works in grouped mode only |
-| `varianceSettings.positiveColor` | Positive Color | Works in grouped mode only |
-| `varianceSettings.negativeColor` | Negative Color | Works in grouped mode only |
+| `varianceSettings.show` | Show Variance Indicators | FIXED — works in all modes (except stacked100) |
+| `varianceSettings.showDelta` | Show Delta Value | FIXED |
+| `varianceSettings.showArrow` | Show Arrow | FIXED |
+| `varianceSettings.positiveColor` | Positive Color | FIXED |
+| `varianceSettings.negativeColor` | Negative Color | FIXED |
 
 ---
 
@@ -336,8 +342,23 @@ No package-specific dead settings. Global accessibility fixes applied.
 | Dead series line properties on non-line charts | **3 packages** (dumbbell-chart, polar-chart, scatter-bubble) | FIXED |
 | Hidden `lineStrokeFormatting.lineWidth` | **2 packages** (bump-chart, slope-chart) | FIXED |
 | Unwired error bars feature | **1 package** (bar-chart-pro) — 4 dead settings + dead code | FIXED |
-| Mode-specific variance indicators | **1 package** (bar-chart-pro) — 5 settings only work in grouped mode | KNOWN — kept as partially functional |
+| Mode-specific variance indicators | **1 package** (bar-chart-pro) — was only wired in grouped mode | FIXED — wired into all modes (except stacked100) |
 | Dead sparkline feature (no-op) | **1 package** (health-bar) — 2 dead settings + dead code | FIXED |
 | Superseded `colorSettings.todayColor` | **1 package** (gantt-chart-pro) | FIXED |
 | Name mismatch (`axisSettings` vs `axisVisibilitySettings`) | **1 package** (bump-chart) | FIXED |
 | Dead `lineSettings.lineWidth` + `lineStyle` | **1 package** (bar-chart-pro) — superseded by per-series + dead code | FIXED |
+
+### Additional Issues Found in Second Pass (Partially-Wired Features)
+
+| Category | Details | Status |
+|---|---|---|
+| Bar chart pro mode gaps — conditional formatting | `getConditionalBarColor()` only called in grouped mode, missing from 5 other modes | FIXED — wired into all 6 modes |
+| Bar chart pro mode gaps — trend line | `renderTrendLineOverlay()` missing from stacked and stacked100 | FIXED — wired into stacked (totals) and stacked100 (raw totals) |
+| Bar chart pro mode gaps — annotations | `renderAnnotationOverlay()` missing from stacked100, horizontal, diverging | FIXED — wired into all 6 modes |
+| Bar chart pro mode gaps — benchmark band | `renderBenchmarkBand()` missing from horizontal mode | FIXED — added `renderBenchmarkBandHorizontal()` variant |
+| Scatter-bubble zoom/pan filter bug | Sequential `.filter()` calls overwrite each other — both-disabled state still allows wheel zoom | FIXED — combined into single AND-logic filter |
+| Heatmap-calendar streak highlighting | `CalendarStreakSettings` (show + threshold) defined but zero implementation | FIXED — consecutive-day detection with visual outline |
+| KPI-card multi-KPI grid layout | `kpiCount` dropdown (1-4) defined but only single KPI rendered | FIXED — grid layout with reusable `renderSingleKpi()` |
+| Radar-chart benchmark overlay | `RadarBenchmarkSettings` (show, dash, color) defined but broken implementation | FIXED — average-per-axis polygon with proper z-ordering |
+| Timeline-milestone connectors | `showConnectors` toggle checked but gated method was a no-op stub | FIXED — toggle now gates actual connector lines inline |
+| Treemap-pro label overflow | `labelOverflow` setting read but condition was a tautology (both branches identical) | FIXED — `hide` skips labels that don't fit, `truncate` clips text |
