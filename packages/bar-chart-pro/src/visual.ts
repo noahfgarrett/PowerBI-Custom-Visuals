@@ -88,6 +88,8 @@ interface ChartData {
   lineSeries: LineSeries[];
   targetValue: number | null;
   isEmpty: boolean;
+  /** Color override for the "Others" category when Top N is enabled */
+  othersColor?: string;
   /** Whether the data has a sub-category level for drill-down */
   hasSubCategory: boolean;
   /** Map from category label to its sub-category ChartData */
@@ -573,6 +575,7 @@ export class BarChartProVisual implements IVisual {
       lineSeries: newLineSeries,
       targetValue: data.targetValue,
       isEmpty: false,
+      othersColor,
       hasSubCategory: data.hasSubCategory,
       subCategoryMap: data.subCategoryMap,
     };
@@ -906,7 +909,7 @@ export class BarChartProVisual implements IVisual {
           .attr('height', barH)
           .attr('rx', Math.min(cornerRadius, barW / 2))
           .attr('ry', Math.min(cornerRadius, barW / 2))
-          .attr('fill', conditionalFill ?? this.getBarFill(defs, sf.color, 'vertical'))
+          .attr('fill', conditionalFill ?? this.getBarFill(defs, sf.color, 'vertical', this.getOthersColor(data, catIdx)))
           .attr('stroke', this.settings.barSettings.barBorderColor.value?.value || 'none')
           .attr('stroke-width', this.settings.barSettings.barBorderWidth.value)
           .attr('opacity', (this.settings.barSettings.barOpacity.value / 100) * (sf.opacity / 100));
@@ -1008,7 +1011,7 @@ export class BarChartProVisual implements IVisual {
           .attr('height', Math.max(0, barH))
           .attr('rx', rx)
           .attr('ry', ry)
-          .attr('fill', conditionalFill ?? this.getBarFill(defs, sf.color, 'vertical'))
+          .attr('fill', conditionalFill ?? this.getBarFill(defs, sf.color, 'vertical', this.getOthersColor(data, catIdx)))
           .attr('stroke', this.settings.barSettings.barBorderColor.value?.value || 'none')
           .attr('stroke-width', this.settings.barSettings.barBorderWidth.value)
           .attr('opacity', (this.settings.barSettings.barOpacity.value / 100) * (sf.opacity / 100));
@@ -1122,7 +1125,7 @@ export class BarChartProVisual implements IVisual {
           .attr('height', Math.max(0, barH))
           .attr('rx', rx)
           .attr('ry', ry)
-          .attr('fill', conditionalFill ?? this.getBarFill(defs, sf.color, 'vertical'))
+          .attr('fill', conditionalFill ?? this.getBarFill(defs, sf.color, 'vertical', this.getOthersColor(data, catIdx)))
           .attr('stroke', this.settings.barSettings.barBorderColor.value?.value || 'none')
           .attr('stroke-width', this.settings.barSettings.barBorderWidth.value)
           .attr('opacity', (this.settings.barSettings.barOpacity.value / 100) * (sf.opacity / 100));
@@ -1338,7 +1341,7 @@ export class BarChartProVisual implements IVisual {
           .attr('height', barH)
           .attr('rx', Math.min(cornerRadius, barW / 2))
           .attr('ry', Math.min(cornerRadius, barW / 2))
-          .attr('fill', conditionalFill ?? this.getBarFill(defs, sf.color, 'vertical'))
+          .attr('fill', conditionalFill ?? this.getBarFill(defs, sf.color, 'vertical', this.getOthersColor(data, catIdx)))
           .attr('stroke', this.settings.barSettings.barBorderColor.value?.value || 'none')
           .attr('stroke-width', this.settings.barSettings.barBorderWidth.value)
           .attr('opacity', (this.settings.barSettings.barOpacity.value / 100) * (sf.opacity / 100));
@@ -1560,7 +1563,7 @@ export class BarChartProVisual implements IVisual {
           .attr('height', barH)
           .attr('rx', Math.min(cornerRadius, barH / 2))
           .attr('ry', Math.min(cornerRadius, barH / 2))
-          .attr('fill', conditionalFill ?? this.getBarFill(defs, sf.color, 'horizontal'))
+          .attr('fill', conditionalFill ?? this.getBarFill(defs, sf.color, 'horizontal', this.getOthersColor(data, catIdx)))
           .attr('stroke', this.settings.barSettings.barBorderColor.value?.value || 'none')
           .attr('stroke-width', this.settings.barSettings.barBorderWidth.value)
           .attr('opacity', (this.settings.barSettings.barOpacity.value / 100) * (sf.opacity / 100));
@@ -1696,7 +1699,7 @@ export class BarChartProVisual implements IVisual {
         .attr('height', Math.max(0, barH))
         .attr('rx', Math.min(cornerRadius, barW / 2))
         .attr('ry', Math.min(cornerRadius, barW / 2))
-        .attr('fill', conditionalFill ?? this.getBarFill(defs, defaultColor, 'vertical'))
+        .attr('fill', conditionalFill ?? this.getBarFill(defs, defaultColor, 'vertical', this.getOthersColor(data, catIdx)))
         .attr('stroke', this.settings.barSettings.barBorderColor.value?.value || 'none')
         .attr('stroke-width', this.settings.barSettings.barBorderWidth.value)
         .attr('opacity', (this.settings.barSettings.barOpacity.value / 100) * (sf.opacity / 100));
@@ -2163,47 +2166,137 @@ export class BarChartProVisual implements IVisual {
       defs = svg.append('defs');
     }
 
-    const patternId = 'bar-pattern-fill';
-    defs.select(`#${patternId}`).remove();
+    // Create one pattern per bar color so the pattern inherits that bar's color
+    const bars = svg.selectAll<SVGRectElement, unknown>('.bar-chart-bar');
+    const colorSet = new Set<string>();
+    bars.each(function () {
+      const fill = this.getAttribute('fill');
+      if (fill && !fill.startsWith('url(')) {
+        colorSet.add(fill);
+      }
+    });
 
-    const pattern = defs.append('pattern')
-      .attr('id', patternId)
+    // Create pattern defs for each unique bar color
+    for (const color of colorSet) {
+      const patternId = `bar-pattern-${color.replace(/[^a-zA-Z0-9]/g, '')}`;
+      defs.select(`#${patternId}`).remove();
+
+      const pattern = defs.append('pattern')
+        .attr('id', patternId)
+        .attr('width', 8)
+        .attr('height', 8)
+        .attr('patternUnits', 'userSpaceOnUse');
+
+      // Background rect with the bar's color
+      pattern.append('rect')
+        .attr('width', 8)
+        .attr('height', 8)
+        .attr('fill', color);
+
+      // Pattern overlay in darker shade
+      const patternColor = '#000';
+      switch (patternType) {
+        case 'diagonal':
+          pattern.append('path')
+            .attr('d', 'M0,8 L8,0')
+            .attr('stroke', patternColor)
+            .attr('stroke-width', 1.5)
+            .attr('opacity', opacity);
+          break;
+        case 'crosshatch':
+          pattern.append('path')
+            .attr('d', 'M0,8 L8,0 M0,0 L8,8')
+            .attr('stroke', patternColor)
+            .attr('stroke-width', 1)
+            .attr('opacity', opacity);
+          break;
+        case 'dots':
+          pattern.append('circle')
+            .attr('cx', 4).attr('cy', 4).attr('r', 1.5)
+            .attr('fill', patternColor)
+            .attr('opacity', opacity);
+          break;
+        case 'horizontal':
+          pattern.append('line')
+            .attr('x1', 0).attr('y1', 4).attr('x2', 8).attr('y2', 4)
+            .attr('stroke', patternColor)
+            .attr('stroke-width', 1)
+            .attr('opacity', opacity);
+          break;
+        case 'vertical':
+          pattern.append('line')
+            .attr('x1', 4).attr('y1', 0).attr('x2', 4).attr('y2', 8)
+            .attr('stroke', patternColor)
+            .attr('stroke-width', 1)
+            .attr('opacity', opacity);
+          break;
+      }
+    }
+
+    // Apply pattern fills to bars — replace flat color fills with pattern URLs
+    bars.each(function () {
+      const fill = this.getAttribute('fill');
+      if (fill && !fill.startsWith('url(')) {
+        const patternId = `bar-pattern-${fill.replace(/[^a-zA-Z0-9]/g, '')}`;
+        this.setAttribute('fill', `url(#${patternId})`);
+      }
+    });
+
+    // For gradient-filled bars, overlay the pattern by cloning each bar with pattern fill
+    bars.each(function () {
+      const fill = this.getAttribute('fill');
+      if (fill && fill.startsWith('url(') && !fill.includes('bar-pattern-')) {
+        const clone = this.cloneNode(false) as SVGRectElement;
+        // Use a generic dark pattern overlay on top of gradient
+        const genericId = 'bar-pattern-overlay';
+        clone.setAttribute('fill', `url(#${genericId})`);
+        clone.setAttribute('class', 'bar-chart-bar-pattern-overlay');
+        clone.style.pointerEvents = 'none';
+        this.parentNode?.insertBefore(clone, this.nextSibling);
+      }
+    });
+
+    // Create generic overlay pattern for gradient bars
+    const overlayId = 'bar-pattern-overlay';
+    defs.select(`#${overlayId}`).remove();
+    const overlayPattern = defs.append('pattern')
+      .attr('id', overlayId)
       .attr('width', 8)
       .attr('height', 8)
       .attr('patternUnits', 'userSpaceOnUse');
 
     switch (patternType) {
       case 'diagonal':
-        pattern.append('path')
+        overlayPattern.append('path')
           .attr('d', 'M0,8 L8,0')
-          .attr('stroke', 'currentColor')
+          .attr('stroke', '#000')
           .attr('stroke-width', 1.5)
           .attr('opacity', opacity);
         break;
       case 'crosshatch':
-        pattern.append('path')
+        overlayPattern.append('path')
           .attr('d', 'M0,8 L8,0 M0,0 L8,8')
-          .attr('stroke', 'currentColor')
+          .attr('stroke', '#000')
           .attr('stroke-width', 1)
           .attr('opacity', opacity);
         break;
       case 'dots':
-        pattern.append('circle')
+        overlayPattern.append('circle')
           .attr('cx', 4).attr('cy', 4).attr('r', 1.5)
-          .attr('fill', 'currentColor')
+          .attr('fill', '#000')
           .attr('opacity', opacity);
         break;
       case 'horizontal':
-        pattern.append('line')
+        overlayPattern.append('line')
           .attr('x1', 0).attr('y1', 4).attr('x2', 8).attr('y2', 4)
-          .attr('stroke', 'currentColor')
+          .attr('stroke', '#000')
           .attr('stroke-width', 1)
           .attr('opacity', opacity);
         break;
       case 'vertical':
-        pattern.append('line')
+        overlayPattern.append('line')
           .attr('x1', 4).attr('y1', 0).attr('x2', 4).attr('y2', 8)
-          .attr('stroke', 'currentColor')
+          .attr('stroke', '#000')
           .attr('stroke-width', 1)
           .attr('opacity', opacity);
         break;
@@ -2528,16 +2621,27 @@ export class BarChartProVisual implements IVisual {
 
   /**
    * Returns the fill value for a bar: either a gradient URL or the flat color.
+   * If this is the "Others" category from Top N, uses the othersColor override.
    */
   private getBarFill(
     defs: d3.Selection<SVGDefsElement, unknown, null, undefined> | null,
     color: string,
     direction: 'vertical' | 'horizontal',
+    othersColor?: string,
   ): string {
+    const effectiveColor = othersColor ?? color;
     if (defs) {
-      return this.createBarGradient(defs, color, direction);
+      return this.createBarGradient(defs, effectiveColor, direction);
     }
-    return color;
+    return effectiveColor;
+  }
+
+  /** Returns the othersColor if this category index is the "Others" slot. */
+  private getOthersColor(data: ChartData, catIdx: number): string | undefined {
+    if (data.othersColor && catIdx === data.categories.length - 1) {
+      return data.othersColor;
+    }
+    return undefined;
   }
 
   // ── Setting Accessors ───────────────────────────────────────────
