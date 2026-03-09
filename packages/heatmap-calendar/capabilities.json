@@ -831,42 +831,6 @@
           }
         }
       }
-    },
-    "heatmapSettings": {
-      "properties": {
-        "cellStrokeColor": {
-          "displayName": "Cell Stroke Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        },
-        "cellStrokeWidth": {
-          "displayName": "Cell Stroke Width",
-          "type": {
-            "numeric": true
-          }
-        },
-        "cellCornerRadius": {
-          "displayName": "Cell Corner Radius",
-          "type": {
-            "numeric": true
-          }
-        },
-        "labelColor": {
-          "displayName": "Label Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        }
-      }
     }
   },
   "supportsKeyboardFocus": true,

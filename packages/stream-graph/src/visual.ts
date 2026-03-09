@@ -130,6 +130,10 @@ export class StreamGraphVisual implements IVisual {
       );
     }
 
+    // Hide shared axis toggles that are shadowed by local settings
+    this.settings.axisFormattingCard.showXAxis.visible = false;
+    this.settings.axisFormattingCard.showYAxis.visible = false;
+
     // Extract data and apply user-configured sort order to series
     const data = this.sortStreamSeries(this.extractData(dataView));
 

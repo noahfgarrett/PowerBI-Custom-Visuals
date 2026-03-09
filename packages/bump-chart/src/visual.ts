@@ -116,6 +116,10 @@ export class BumpChartVisual implements IVisual {
       );
     }
 
+    // Hide shared axis toggles that are shadowed by local settings
+    this.settings.axisFormattingCard.showXAxis.visible = false;
+    this.settings.axisFormattingCard.showYAxis.visible = false;
+
     // Extract data
     const data = this.extractData(dataView);
 

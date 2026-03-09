@@ -774,36 +774,6 @@
           }
         }
       }
-    },
-    "waffleSettings": {
-      "properties": {
-        "cellStrokeColor": {
-          "displayName": "Cell Stroke Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        },
-        "cellCornerRadius": {
-          "displayName": "Cell Corner Radius",
-          "type": {
-            "numeric": true
-          }
-        },
-        "emptyColor": {
-          "displayName": "Empty Cell Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        }
-      }
     }
   },
   "supportsKeyboardFocus": true,

@@ -120,6 +120,12 @@
           "type": {
             "numeric": true
           }
+        },
+        "nodeRadius": {
+          "displayName": "Node Radius",
+          "type": {
+            "numeric": true
+          }
         }
       }
     },
@@ -651,48 +657,6 @@
         "colorTheme": {
           "type": {
             "text": true
-          }
-        }
-      }
-    },
-    "networkSettings": {
-      "properties": {
-        "nodeRadius": {
-          "displayName": "Node Radius",
-          "type": {
-            "numeric": true
-          }
-        },
-        "nodeBorderColor": {
-          "displayName": "Node Border Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        },
-        "nodeBorderWidth": {
-          "displayName": "Node Border Width",
-          "type": {
-            "numeric": true
-          }
-        },
-        "linkColor": {
-          "displayName": "Link Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        },
-        "linkWidth": {
-          "displayName": "Link Width",
-          "type": {
-            "numeric": true
           }
         }
       }

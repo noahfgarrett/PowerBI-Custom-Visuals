@@ -320,11 +320,15 @@ const PER_VISUAL_ADDITIONS = {
     },
   },
   'network-graph': {
-    networkSettings: {
+    nodeSettings: {
       properties: {
         nodeRadius: numProp('Node Radius'),
         nodeBorderColor: colorProp('Node Border Color'),
         nodeBorderWidth: numProp('Node Border Width'),
+      },
+    },
+    linkSettings: {
+      properties: {
         linkColor: colorProp('Link Color'),
         linkWidth: numProp('Link Width'),
       },
@@ -451,7 +455,7 @@ const PER_VISUAL_ADDITIONS = {
     },
   },
   'heatmap-calendar': {
-    heatmapSettings: {
+    calendarSettings: {
       properties: {
         cellStrokeColor: colorProp('Cell Stroke Color'),
         cellStrokeWidth: numProp('Cell Stroke Width'),
@@ -471,7 +475,7 @@ const PER_VISUAL_ADDITIONS = {
     },
   },
   'waffle-chart': {
-    waffleSettings: {
+    gridSettings: {
       properties: {
         cellStrokeColor: colorProp('Cell Stroke Color'),
         cellCornerRadius: numProp('Cell Corner Radius'),
