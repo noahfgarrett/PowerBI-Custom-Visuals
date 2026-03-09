@@ -270,6 +270,7 @@ export interface ReferenceLineConfig {
   labelFontSize?: number;
   showBand?: boolean;
   bandUpperValue?: number;
+  bandLowerValue?: number;
   bandOpacity?: number;
 }
 
@@ -332,12 +333,14 @@ export function renderHorizontalReferenceLine(
 
   const group = g.append('g').attr('class', 'reference-line-group');
 
-  // Band
+  // Band — draw from bandLowerValue to bandUpperValue (symmetrical around refValue)
   if (config.showBand && config.bandUpperValue != null) {
+    const lower = config.bandLowerValue ?? config.value;
     const yUpper = config.yScale(config.bandUpperValue);
-    if (isFinite(yUpper)) {
-      const yTop = Math.min(y, yUpper);
-      const h = Math.abs(yUpper - y);
+    const yLower = config.yScale(lower);
+    if (isFinite(yUpper) && isFinite(yLower)) {
+      const yTop = Math.min(yUpper, yLower);
+      const h = Math.abs(yLower - yUpper);
       group
         .append('rect')
         .attr('class', 'reference-band')

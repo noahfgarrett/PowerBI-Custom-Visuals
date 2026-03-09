@@ -514,6 +514,12 @@ export class ReferenceLineFormattingCard extends formattingSettings.SimpleCard {
     value: 10,
   });
 
+  referenceBandWidth = new formattingSettings.NumUpDown({
+    name: 'referenceBandWidth',
+    displayName: 'Band Width (%)',
+    value: 10,
+  });
+
   referenceLineAxis = new formattingSettings.ItemDropdown({
     name: 'referenceLineAxis',
     displayName: 'Target Axis',
@@ -537,6 +543,7 @@ export class ReferenceLineFormattingCard extends formattingSettings.SimpleCard {
     this.referenceLabelText,
     this.showReferenceBand,
     this.referenceBandOpacity,
+    this.referenceBandWidth,
     this.referenceLineAxis,
   ];
 }
@@ -1322,6 +1329,7 @@ export const CAPABILITIES_TEMPLATES: Record<string, Record<string, unknown>> = {
       referenceLabelText: { displayName: 'Label Text', type: { text: true } },
       showReferenceBand: { displayName: 'Show Band', type: { bool: true } },
       referenceBandOpacity: { displayName: 'Band Opacity (%)', type: { numeric: true } },
+      referenceBandWidth: { displayName: 'Band Width (%)', type: { numeric: true } },
       referenceLineAxis: { displayName: 'Target Axis', type: { enumeration: [{ value: 'primary', displayName: 'Primary' }, { value: 'secondary', displayName: 'Secondary' }] } },
     },
   },

@@ -108,7 +108,7 @@ interface Margin {
 
 const MARGIN_DEFAULT: Margin = { top: 8, right: 12, bottom: 36, left: 44 };
 const MARGIN_SECONDARY_Y: Margin = { top: 8, right: 44, bottom: 36, left: 44 };
-const LEGEND_HEIGHT = 28;
+const LEGEND_HEIGHT_MIN = 28;
 const MIN_BAR_WIDTH = 2;
 const LINE_DOT_RADIUS = 4;
 
@@ -181,6 +181,50 @@ export class BarChartProVisual implements IVisual {
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
     // Hide shared card's dataLabelPosition — bar-chart-pro uses barSettings.showDataLabels (none/above/inside) for positioning
     this.settings.dataLabelFormattingCard.dataLabelPosition.visible = false;
+
+    // ── Conditional visibility for mode-specific and toggle-dependent settings ──
+    const s = this.settings;
+
+    // Line Settings — hide when not in combo mode
+    s.lineSettings.showDots.visible = isCombo;
+    s.lineSettings.showLineDataLabels.visible = isCombo;
+    s.lineSettings.lineGradientFill.visible = isCombo;
+    s.lineSettings.lineGradientOpacity.visible = isCombo && s.lineSettings.lineGradientFill.value;
+
+    // Secondary Axis — hide title when showSecondaryYAxis is off or not combo
+    s.secondaryAxisSettings.secondaryYAxisTitle.visible = s.secondaryAxisSettings.showSecondaryYAxis.value && isCombo;
+
+    // Pattern Fill — hide sub-settings when disabled
+    s.patternFillSettings.pattern.visible = s.patternFillSettings.enabled.value;
+    s.patternFillSettings.patternOpacity.visible = s.patternFillSettings.enabled.value;
+
+    // Variance Indicators — hide sub-settings when show is off
+    s.varianceSettings.showDelta.visible = s.varianceSettings.show.value;
+    s.varianceSettings.showArrow.visible = s.varianceSettings.show.value;
+    s.varianceSettings.positiveColor.visible = s.varianceSettings.show.value;
+    s.varianceSettings.negativeColor.visible = s.varianceSettings.show.value;
+
+    // Benchmark Band — hide sub-settings when show is off
+    s.benchmarkBandSettings.lowerBound.visible = s.benchmarkBandSettings.show.value;
+    s.benchmarkBandSettings.upperBound.visible = s.benchmarkBandSettings.show.value;
+    s.benchmarkBandSettings.bandColor.visible = s.benchmarkBandSettings.show.value;
+    s.benchmarkBandSettings.bandOpacity.visible = s.benchmarkBandSettings.show.value;
+    s.benchmarkBandSettings.label.visible = s.benchmarkBandSettings.show.value;
+
+    // Top N — hide sub-settings when disabled
+    s.topNSettings.topN.visible = s.topNSettings.enabled.value;
+    s.topNSettings.othersLabel.visible = s.topNSettings.enabled.value;
+    s.topNSettings.othersColor.visible = s.topNSettings.enabled.value;
+    s.topNSettings.sortBy.visible = s.topNSettings.enabled.value;
+
+    // Drill-Down — hide sub-settings when disabled
+    s.drillDownSettings.showBreadcrumb.visible = s.drillDownSettings.enabled.value;
+    s.drillDownSettings.breadcrumbFontSize.visible = s.drillDownSettings.enabled.value;
+    s.drillDownSettings.breadcrumbColor.visible = s.drillDownSettings.enabled.value;
+
+    // Animation — hide sub-settings when disabled
+    s.animationSettings.duration.visible = s.animationSettings.enabled.value;
+    s.animationSettings.staggerDelay.visible = s.animationSettings.enabled.value;
 
     // Reset drill if data changed structurally
     if (data.isEmpty || !data.hasSubCategory) {
@@ -325,7 +369,6 @@ export class BarChartProVisual implements IVisual {
         }
       }
 
-      let subColorIdx = 0;
       for (const [catLabel, rowIndices] of catGroups) {
         // Build sub-category data for this parent category
         const subLabels: string[] = [];
@@ -378,7 +421,6 @@ export class BarChartProVisual implements IVisual {
           hasSubCategory: false,
           subCategoryMap: new Map<string, ChartData>(),
         });
-        subColorIdx++;
       }
 
       // When sub-category is present, aggregate categories to unique parent categories
@@ -734,6 +776,7 @@ export class BarChartProVisual implements IVisual {
       this.renderBreadcrumb();
     }
 
+    this.container.removeEventListener('click', this.handleBackgroundClick);
     this.container.addEventListener('click', this.handleBackgroundClick);
 
     const rawMode = this.getChartMode();
@@ -744,7 +787,8 @@ export class BarChartProVisual implements IVisual {
     // Legend
     const showLegend = s.legendFormattingCard.showLegend.value && (data.barSeries.length > 1 || data.lineSeries.length > 0);
     const legendPos = this.getLegendPosition();
-    const legendReserve = showLegend ? LEGEND_HEIGHT : 0;
+    const legendFontSize = s.legendFormattingCard.legendFontSize.value;
+    const legendReserve = showLegend ? Math.max(LEGEND_HEIGHT_MIN, legendFontSize + 16) : 0;
 
     // Margins
     const hasSecondaryY = mode === 'combo' && s.secondaryAxisSettings.showSecondaryYAxis.value && data.lineSeries.length > 0;
@@ -875,7 +919,7 @@ export class BarChartProVisual implements IVisual {
     const x0 = d3.scaleBand()
       .domain(data.categories)
       .range([0, width])
-      .paddingInner(0.1 + spacing * 0.02)
+      .paddingInner(Math.max(0, Math.min(0.9, 0.1 + spacing * 0.02)))
       .paddingOuter(0.05);
 
     const seriesKeys = data.barSeries.map((_, i) => String(i));
@@ -927,7 +971,9 @@ export class BarChartProVisual implements IVisual {
         this.attachSelection(rect, data.categorySelectionIds[catIdx], this.getCategoryLabel(cat, data));
         this.attachBarTooltip(rect, this.getCategoryLabel(cat, data), series.name, val);
         this.animateBar(rect, barH, catIdx, 'vertical');
-        if (sf.showLabels) {
+        // Use the global data label dropdown as the primary control;
+        // per-series showLabels is a secondary override
+        if (this.getDataLabelMode() !== 'none' || sf.showLabels) {
           this.renderDataLabel(g, barX + barW / 2, barY, barH, val, height);
         }
       });
@@ -964,22 +1010,27 @@ export class BarChartProVisual implements IVisual {
     const x = d3.scaleBand()
       .domain(data.categories)
       .range([0, width])
-      .paddingInner(0.1 + spacing * 0.02)
+      .paddingInner(Math.max(0, Math.min(0.9, 0.1 + spacing * 0.02)))
       .paddingOuter(0.05);
 
-    // Compute stacked totals per category
+    // Compute stacked positive and negative totals per category
     const stackedMax = data.categories.map((_, catIdx) => {
-      let total = 0;
+      let posTotal = 0;
+      let negTotal = 0;
       for (const series of data.barSeries) {
         const v = series.values[catIdx];
-        if (v !== null && v > 0) total += v;
+        if (v !== null && v !== undefined) {
+          if (v > 0) posTotal += v;
+          else if (v < 0) negTotal += v;
+        }
       }
-      return total;
+      return { posTotal, negTotal };
     });
 
-    const yMax = d3.max(stackedMax) ?? 0;
+    const yMax = d3.max(stackedMax, (d) => d.posTotal) ?? 0;
+    const yMin = d3.min(stackedMax, (d) => d.negTotal) ?? 0;
     const y = d3.scaleLinear()
-      .domain(this.applyYAxisOverrides([0, yMax * 1.1]))
+      .domain(this.applyYAxisOverrides([yMin * 1.1, yMax * 1.1]))
       .nice()
       .range([height, 0]);
 
@@ -990,26 +1041,32 @@ export class BarChartProVisual implements IVisual {
     const barSeriesFormats = data.barSeries.map((s, i) => resolveSeriesFormatting(this.settings.seriesFormattingCard, i, s.color));
 
     data.categories.forEach((cat, catIdx) => {
-      let cumulative = 0;
+      let posCumulative = 0;
+      let negCumulative = 0;
       const barW = Math.max(MIN_BAR_WIDTH, x.bandwidth());
 
       data.barSeries.forEach((series, serIdx) => {
         const val = series.values[catIdx];
-        if (val === null || val === undefined || val <= 0) return;
+        if (val === null || val === undefined) return;
+
+        const isNegative = val < 0;
+        const cumulative = isNegative ? negCumulative : posCumulative;
 
         const barX = x(cat) ?? 0;
-        const barY = y(cumulative + val);
-        const barH = y(cumulative) - y(cumulative + val);
+        const barY = isNegative ? y(cumulative) : y(cumulative + val);
+        const barH = Math.abs(y(cumulative) - y(cumulative + val));
 
-        // Only round the top segment
-        const isTopSegment = serIdx === data.barSeries.length - 1 ||
+        // Only round the outermost segment (top for positive, bottom for negative)
+        const isOuterSegment = serIdx === data.barSeries.length - 1 ||
           data.barSeries.slice(serIdx + 1).every((s) => {
             const sv = s.values[catIdx];
-            return sv === null || sv === undefined || sv <= 0;
+            if (sv === null || sv === undefined) return true;
+            // Check same sign — only consider same-direction segments
+            return isNegative ? sv >= 0 : sv <= 0;
           });
 
-        const rx = isTopSegment ? Math.min(cornerRadius, barW / 2) : 0;
-        const ry = isTopSegment ? Math.min(cornerRadius, barW / 2) : 0;
+        const rx = isOuterSegment ? Math.min(cornerRadius, barW / 2) : 0;
+        const ry = isOuterSegment ? Math.min(cornerRadius, barW / 2) : 0;
 
         const sf = barSeriesFormats[serIdx];
         const conditionalFill = this.getConditionalBarColor(val);
@@ -1030,21 +1087,31 @@ export class BarChartProVisual implements IVisual {
         this.attachBarTooltip(rect, this.getCategoryLabel(cat, data), series.name, val);
         this.animateBar(rect, barH, catIdx, 'vertical');
 
-        cumulative += val;
+        if (isNegative) {
+          negCumulative += val;
+        } else {
+          posCumulative += val;
+        }
       });
 
-      // Data label on top of the full stack
-      if (cumulative > 0) {
-        this.renderDataLabel(g, (x(cat) ?? 0) + barW / 2, y(cumulative), height - y(cumulative), cumulative, height);
+      // Data labels on top of positive stack and bottom of negative stack
+      if (this.getDataLabelMode() !== 'none') {
+        if (posCumulative > 0) {
+          this.renderDataLabel(g, (x(cat) ?? 0) + barW / 2, y(posCumulative), height - y(posCumulative), posCumulative, height);
+        }
+        if (negCumulative < 0) {
+          this.renderDataLabel(g, (x(cat) ?? 0) + barW / 2, y(negCumulative), y(negCumulative) - y(0), negCumulative, height);
+        }
       }
     });
 
     // Compute stacked totals for trend line and variance indicators
+    // Uses net total (positive + negative) for accurate trend representation
     const stackedTotals = data.categories.map((_, catIdx) => {
       let total = 0;
       for (const series of data.barSeries) {
         const v = series.values[catIdx];
-        if (v !== null && v > 0) total += v;
+        if (v !== null && v !== undefined) total += v;
       }
       return total;
     });
@@ -1077,15 +1144,17 @@ export class BarChartProVisual implements IVisual {
     const x = d3.scaleBand()
       .domain(data.categories)
       .range([0, width])
-      .paddingInner(0.1 + spacing * 0.02)
+      .paddingInner(Math.max(0, Math.min(0.9, 0.1 + spacing * 0.02)))
       .paddingOuter(0.05);
 
-    // Compute category totals for normalization
+    // Compute category totals for normalization using absolute values.
+    // Negative values contribute their absolute value to the 100% total
+    // since percentages cannot be negative.
     const categoryTotals = data.categories.map((_, catIdx) => {
       let total = 0;
       for (const series of data.barSeries) {
         const v = series.values[catIdx];
-        if (v !== null && v > 0) total += v;
+        if (v !== null && v !== undefined) total += Math.abs(v);
       }
       return total;
     });
@@ -1108,18 +1177,19 @@ export class BarChartProVisual implements IVisual {
 
       data.barSeries.forEach((series, serIdx) => {
         const rawVal = series.values[catIdx];
-        if (rawVal === null || rawVal === undefined || rawVal <= 0 || total === 0) return;
-
-        const pct = (rawVal / total) * 100;
+        if (rawVal === null || rawVal === undefined || total === 0) return;
+        // In 100% stacked mode, negative values contribute their absolute value
+        // to the total since stacking negative percentages is not meaningful.
+        const pct = (Math.abs(rawVal) / total) * 100;
         const barX = x(cat) ?? 0;
         const barY = y(cumulative + pct);
         const barH = y(cumulative) - y(cumulative + pct);
 
-        // Only round the top segment
+        // Only round the top segment — all values are absolute in 100% mode
         const isTopSegment = serIdx === data.barSeries.length - 1 ||
           data.barSeries.slice(serIdx + 1).every((ser) => {
             const sv = ser.values[catIdx];
-            return sv === null || sv === undefined || sv <= 0;
+            return sv === null || sv === undefined;
           });
 
         const rx = isTopSegment ? Math.min(cornerRadius, barW / 2) : 0;
@@ -1148,7 +1218,7 @@ export class BarChartProVisual implements IVisual {
       });
 
       // Data label on top of the full stack showing 100%
-      if (cumulative > 0) {
+      if (this.getDataLabelMode() !== 'none' && cumulative > 0) {
         this.renderPercentDataLabel(g, (x(cat) ?? 0) + barW / 2, y(cumulative), height - y(cumulative), cumulative, height);
       }
     });
@@ -1158,9 +1228,9 @@ export class BarChartProVisual implements IVisual {
     const percentY = d3.scaleLinear().domain([0, (d3.max(rawTotals) ?? 0) * 1.1]).nice().range([height, 0]);
     this.renderTrendLineOverlay(g, rawTotals, (i) => (x(data.categories[i]) ?? 0) + x.bandwidth() / 2, percentY);
 
-    this.renderTargetLine(g, data.targetValue, y, width);
-    this.renderReferenceLine(g, y, width);
-    this.renderBenchmarkBand(g, y, width);
+    // Target line, reference line, and benchmark band use raw values which are
+    // meaningless on the 0-100% scale. Skip them in stacked100 mode.
+    // TODO: Scale raw values to percentages if these overlays are needed here.
     this.renderAnnotationOverlay(g, data, x, y);
   }
 
@@ -1327,7 +1397,7 @@ export class BarChartProVisual implements IVisual {
     const x = d3.scaleBand()
       .domain(data.categories)
       .range([0, width])
-      .paddingInner(0.15 + spacing * 0.02)
+      .paddingInner(Math.max(0, Math.min(0.9, 0.15 + spacing * 0.02)))
       .paddingOuter(0.05);
 
     // Y scale (bars)
@@ -1386,7 +1456,9 @@ export class BarChartProVisual implements IVisual {
         this.attachSelection(rect, data.categorySelectionIds[catIdx], this.getCategoryLabel(cat, data));
         this.attachBarTooltip(rect, this.getCategoryLabel(cat, data), series.name, val);
         this.animateBar(rect, barH, catIdx, 'vertical');
-        if (sf.showLabels) {
+        // Use the global data label dropdown as the primary control;
+        // per-series showLabels is a secondary override
+        if (this.getDataLabelMode() !== 'none' || sf.showLabels) {
           this.renderDataLabel(g, barX + barW / 2, barY, barH, val, height);
         }
       });
@@ -1542,7 +1614,7 @@ export class BarChartProVisual implements IVisual {
     const y = d3.scaleBand()
       .domain(data.categories)
       .range([0, height])
-      .paddingInner(0.1 + spacing * 0.02)
+      .paddingInner(Math.max(0, Math.min(0.9, 0.1 + spacing * 0.02)))
       .paddingOuter(0.05);
 
     const seriesKeys = data.barSeries.map((_, i) => String(i));
@@ -1647,7 +1719,7 @@ export class BarChartProVisual implements IVisual {
         this.attachSelection(rect, data.categorySelectionIds[catIdx], this.getCategoryLabel(cat, data));
         this.attachBarTooltip(rect, this.getCategoryLabel(cat, data), series.name, val);
         this.animateBar(rect, barW, catIdx, 'horizontal');
-        if (sf.showLabels) {
+        if (this.getDataLabelMode() !== 'none' || sf.showLabels) {
           this.renderHorizontalDataLabel(g, barW, barY + barH / 2, val, width);
         }
       });
@@ -1706,14 +1778,16 @@ export class BarChartProVisual implements IVisual {
     const spacing = s.barSettings.barSpacing.value;
     const cornerRadius = s.barSettings.cornerRadius.value;
 
-    // Uses only the first bar series for diverging
+    // Diverging mode is inherently single-series by design: each bar represents
+    // the positive/negative value of one measure. Additional series are intentionally
+    // ignored. If multiple measures are provided, only the first is used.
     const series = data.barSeries[0];
     if (!series) return;
 
     const x = d3.scaleBand()
       .domain(data.categories)
       .range([0, width])
-      .paddingInner(0.1 + spacing * 0.02)
+      .paddingInner(Math.max(0, Math.min(0.9, 0.1 + spacing * 0.02)))
       .paddingOuter(0.05);
 
     const validValues = series.values.filter((v): v is number => v !== null);
@@ -1812,7 +1886,7 @@ export class BarChartProVisual implements IVisual {
       this.animateBar(rect, barH, catIdx, 'vertical');
 
       // Data label — position above positive bars and below negative bars
-      if (sf.showLabels) {
+      if (this.getDataLabelMode() !== 'none' || sf.showLabels) {
         this.renderDataLabel(g, barX + barW / 2, isPositive ? barY : barY + barH, barH, val, height);
       }
     });
@@ -1987,7 +2061,8 @@ export class BarChartProVisual implements IVisual {
       showLabel: ref.showReferenceLabel.value,
       labelText,
       showBand: ref.showReferenceBand.value,
-      bandUpperValue: refValue * 1.1,
+      bandUpperValue: refValue * (1 + ref.referenceBandWidth.value / 100),
+      bandLowerValue: refValue * (1 - ref.referenceBandWidth.value / 100),
       bandOpacity: ref.referenceBandOpacity.value / 100,
     });
   }
