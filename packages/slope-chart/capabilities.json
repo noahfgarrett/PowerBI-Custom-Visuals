@@ -1378,6 +1378,35 @@
           }
         }
       }
+    },
+    "numberFormatting": {
+      "displayName": "Number Format",
+      "properties": {
+        "displayUnits": {
+          "displayName": "Display Units",
+          "type": {
+            "enumeration": [
+              { "value": "auto", "displayName": "Auto" },
+              { "value": "none", "displayName": "None" },
+              { "value": "thousands", "displayName": "Thousands (K)" },
+              { "value": "millions", "displayName": "Millions (M)" },
+              { "value": "billions", "displayName": "Billions (B)" }
+            ]
+          }
+        },
+        "decimalPlaces": {
+          "displayName": "Decimal Places",
+          "type": { "numeric": true }
+        },
+        "valuePrefix": {
+          "displayName": "Prefix",
+          "type": { "text": true }
+        },
+        "valueSuffix": {
+          "displayName": "Suffix",
+          "type": { "text": true }
+        }
+      }
     }
   },
   "supportsKeyboardFocus": true,

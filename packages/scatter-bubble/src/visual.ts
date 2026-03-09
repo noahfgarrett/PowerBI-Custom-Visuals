@@ -37,9 +37,6 @@ import {
   renderHorizontalReferenceLine,
   computeStatValue,
   type StatType,
-  renderTrendLine,
-  computeRegression as coreComputeRegression,
-  type TrendType,
   resolveSeriesFormatting,
   populateSeriesFormattingGroups,
 } from '../../core/src';
@@ -411,6 +408,46 @@ export class ScatterBubbleVisual implements IVisual {
     this.settings.axisFormattingCard.yAxisMin.visible = false;
     this.settings.axisFormattingCard.yAxisMax.visible = false;
 
+    // ── Conditional Visibility ──────────────────────────────────
+    const colorScaleVal = resolveDropdown(this.settings.scatterColorSettings.colorScale) ?? 'categorical';
+    this.settings.scatterColorSettings.startColor.visible = colorScaleVal !== 'categorical';
+    this.settings.scatterColorSettings.endColor.visible = colorScaleVal !== 'categorical';
+
+    const clusterEnabled = this.settings.scatterClusterSettings.enabled.value;
+    this.settings.scatterClusterSettings.clusters.visible = clusterEnabled;
+    this.settings.scatterClusterSettings.showHulls.visible = clusterEnabled;
+
+    this.settings.scatterAnimationSettings.playSpeed.visible = this.settings.scatterAnimationSettings.enablePlayAxis.value;
+
+    const quadrantShow = this.settings.quadrantSettings.show.value;
+    this.settings.quadrantSettings.xValue.visible = quadrantShow;
+    this.settings.quadrantSettings.yValue.visible = quadrantShow;
+    this.settings.quadrantSettings.lineColor.visible = quadrantShow;
+    this.settings.quadrantSettings.lineWidth.visible = quadrantShow;
+    this.settings.quadrantSettings.lineStyle.visible = quadrantShow;
+    this.settings.quadrantSettings.showLabels.visible = quadrantShow;
+    this.settings.quadrantSettings.topRightLabel.visible = quadrantShow;
+    this.settings.quadrantSettings.topLeftLabel.visible = quadrantShow;
+    this.settings.quadrantSettings.bottomRightLabel.visible = quadrantShow;
+    this.settings.quadrantSettings.bottomLeftLabel.visible = quadrantShow;
+    this.settings.quadrantSettings.labelFontSize.visible = quadrantShow;
+    this.settings.quadrantSettings.zoneFillOpacity.visible = quadrantShow;
+
+    const trendShow = this.settings.trendlineSettings.show.value;
+    this.settings.trendlineSettings.type.visible = trendShow;
+    this.settings.trendlineSettings.polynomialOrder.visible = trendShow;
+    this.settings.trendlineSettings.lineColor.visible = trendShow;
+    this.settings.trendlineSettings.lineWidth.visible = trendShow;
+    this.settings.trendlineSettings.lineStyle.visible = trendShow;
+    this.settings.trendlineSettings.showEquation.visible = trendShow;
+    this.settings.trendlineSettings.showR2.visible = trendShow;
+    this.settings.trendlineSettings.labelFontSize.visible = trendShow;
+
+    const trendType = resolveDropdown(this.settings.trendlineSettings.type) ?? 'linear';
+    if (trendShow) {
+      this.settings.trendlineSettings.polynomialOrder.visible = trendType === 'polynomial';
+    }
+
     // Extract data
     const data = this.extractData(dataView);
 
@@ -756,9 +793,6 @@ export class ScatterBubbleVisual implements IVisual {
 
     // ── Shared Reference Line ────────────────────────────────
     this.renderSharedReferenceLine(chartGroup, yScale, chartWidth, data.points.map((p) => p.y));
-
-    // ── Shared Trend Line ─────────────────────────────────────
-    this.renderSharedTrendLine(chartGroup, yScale, xScale, data);
 
     // ── Bubbles ────────────────────────────────────────────────
     const bubblesGroup = document.createElementNS(svgNs, 'g');
@@ -1610,38 +1644,6 @@ export class ScatterBubbleVisual implements IVisual {
       labelText,
       showBand: ref.showReferenceBand.value,
       bandOpacity: ref.referenceBandOpacity.value / 100,
-    });
-  }
-
-  // ── Trend Line (shared card) ──────────────────────────────────
-
-  private renderSharedTrendLine(
-    chartGroup: SVGGElement,
-    yScale: d3.ScaleLinear<number, number>,
-    xScale: d3.ScaleLinear<number, number>,
-    data: ScatterData,
-  ): void {
-    const tl = this.settings.trendLineFormattingCard;
-    if (!tl.showTrendLine.value || data.points.length < 2) return;
-
-    const yValues = data.points.map((p) => p.y);
-    const trendType = (resolveDropdown(tl.trendLineType) ?? 'linear') as TrendType;
-    const result = coreComputeRegression(yValues, trendType, tl.polynomialOrder.value);
-    if (result.predicted.length < 2) return;
-
-    const trendColor = tl.trendLineColor.value?.value ?? '#6366F1';
-
-    const g = d3.select(chartGroup);
-    renderTrendLine(g as d3.Selection<SVGGElement, unknown, null, undefined>, {
-      predicted: result.predicted,
-      xScale: (i: number) => xScale(data.points[i]?.x ?? 0),
-      yScale,
-      lineColor: trendColor,
-      lineWidth: tl.trendLineWidth.value,
-      showEquation: tl.showEquation.value,
-      showR2: tl.showR2.value,
-      equation: result.equation,
-      r2: result.r2,
     });
   }
 

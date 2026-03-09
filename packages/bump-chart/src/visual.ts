@@ -16,6 +16,7 @@ import {
   animate,
   DURATION,
   getGlassStyle,
+  getChartColor,
   getHostChartColor,
   renderChartTitle,
   applyAxisFormatting,
@@ -124,6 +125,15 @@ export class BumpChartVisual implements IVisual {
     this.settings.axisFormattingCard.yAxisMin.visible = false;
     this.settings.axisFormattingCard.yAxisMax.visible = false;
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
+
+    // Conditional visibility: hide child settings when parent toggle is off
+    // Top N highlight: hide topN/showOthers when enabled is false
+    this.settings.bumpHighlightSettings.topN.visible = this.settings.bumpHighlightSettings.enabled.value;
+    this.settings.bumpHighlightSettings.showOthers.visible = this.settings.bumpHighlightSettings.enabled.value;
+    // Area fill: hide areaOpacity when showArea is false
+    this.settings.bumpSettings.areaOpacity.visible = this.settings.bumpSettings.showArea.value;
+    // Rank change: hide fontSize when show is false
+    this.settings.bumpRankChangeSettings.fontSize.visible = this.settings.bumpRankChangeSettings.show.value;
 
     // Extract data
     const data = this.extractData(dataView);
@@ -284,7 +294,7 @@ export class BumpChartVisual implements IVisual {
 
       if (points.length === 0) continue;
 
-      const color = useChartPalette ? getHostChartColor(this.host.colorPalette, colorIndex, themeName) : getHostChartColor(this.host.colorPalette, colorIndex, themeName);
+      const color = useChartPalette ? getHostChartColor(this.host.colorPalette, colorIndex, themeName) : getChartColor(colorIndex, themeName);
       const selectionIndex = itemFirstRowIndex.get(itemName) ?? 0;
       items.push({
         name: itemName,
@@ -754,8 +764,8 @@ export class BumpChartVisual implements IVisual {
 
     // ── Reference Line ─────────────────────────────────────────
 
-    const allValues = data.flatMap((item) => item.points.map((p) => p.value));
-    this.renderReferenceLine(g, yScale, innerWidth, allValues);
+    const allRankValues = data.flatMap((item) => item.points.map((p) => p.rank));
+    this.renderReferenceLine(g, yScale, innerWidth, allRankValues);
 
     // ── Trend Line ──────────────────────────────────────────────
 
@@ -847,7 +857,9 @@ export class BumpChartVisual implements IVisual {
         });
         el.addEventListener('mouseleave', () => {
           seriesElements.forEach((other) => {
-            (other as SVGElement).style.opacity = '1';
+            const otherIdx = Number(other.getAttribute('data-series'));
+            const isDimmed = topNSet != null && !topNSet.has(otherIdx);
+            (other as SVGElement).style.opacity = isDimmed ? '0.25' : '1';
           });
         });
       });

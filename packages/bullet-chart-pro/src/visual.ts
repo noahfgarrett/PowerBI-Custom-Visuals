@@ -126,6 +126,15 @@ export class BulletChartProVisual implements IVisual {
     this.settings.axisFormattingCard.gridLineWidth.visible = false;
     this.settings.axisFormattingCard.gridLineOpacity.visible = false;
 
+    // ── Conditional visibility ──────────────────────────────────────
+    // Forecast sub-settings: hide when show off
+    const forecastOn = this.settings.bulletForecast.show.value;
+    this.settings.bulletForecast.forecastValue.visible = forecastOn;
+    this.settings.bulletForecast.bandWidth.visible = forecastOn;
+
+    // Comparison sub-settings: hide when show off
+    this.settings.bulletComparison.comparativeColor.visible = this.settings.bulletComparison.show.value;
+
     // Extract data
     const data = this.extractData(dataView);
 

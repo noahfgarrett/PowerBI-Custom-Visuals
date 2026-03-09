@@ -760,7 +760,16 @@
         "connectorStyle": {
           "displayName": "Connector Style",
           "type": {
-            "enumeration": []
+            "enumeration": [
+              {
+                "value": "solid",
+                "displayName": "Solid"
+              },
+              {
+                "value": "dashed",
+                "displayName": "Dashed"
+              }
+            ]
           }
         }
       }

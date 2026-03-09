@@ -92,6 +92,14 @@ export class HeatmapCalendarVisual implements IVisual {
     this.settings.axisFormattingCard.gridLineWidth.visible = false;
     this.settings.axisFormattingCard.gridLineOpacity.visible = false;
 
+    // Conditional visibility: hide child settings when parent toggle is off
+    const colorMode = (this.settings.calendarScaleSettings.colorMode.value as unknown as { value?: string })?.value ?? 'continuous';
+    this.settings.colorSettings.midColor.visible = this.settings.colorSettings.showMidColor.value;
+    this.settings.colorSettings.midPoint.visible = this.settings.colorSettings.showMidColor.value;
+    this.settings.calendarScaleSettings.bins.visible = colorMode !== 'continuous';
+    this.settings.calendarStreakSettings.threshold.visible = this.settings.calendarStreakSettings.show.value;
+    this.settings.colorSettings.legendPosition.visible = this.settings.colorSettings.showLegend.value;
+
     const data = this.extractData(dataView);
     this.applyCardStyle();
 

@@ -122,6 +122,23 @@ export class SankeyDiagramVisual implements IVisual {
 
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
 
+    // ── Conditional Visibility ──────────────────────────────────
+    const linkColorMode = resolveDropdown(this.settings.linkSettings.colorMode) ?? 'gradient';
+    this.settings.linkSettings.customColor.visible = linkColorMode === 'custom';
+
+    this.settings.totalSettings.nodeValueFormat.visible = this.settings.totalSettings.showNodeValues.value;
+    this.settings.totalSettings.layerTotalPosition.visible = this.settings.totalSettings.showLayerTotals.value;
+
+    const showLinkLabels = this.settings.linkLabelSettings.showLinkLabels.value;
+    this.settings.linkLabelSettings.linkLabelFontSize.visible = showLinkLabels;
+    this.settings.linkLabelSettings.linkLabelFontColor.visible = showLinkLabels;
+    this.settings.linkLabelSettings.linkLabelFontWeight.visible = showLinkLabels;
+    this.settings.linkLabelSettings.linkLabelFormat.visible = showLinkLabels;
+
+    const showTooltips = this.settings.tooltipSettings.showTooltips.value;
+    this.settings.tooltipSettings.showPercentage.visible = showTooltips;
+    this.settings.tooltipSettings.valueFormat.visible = showTooltips;
+
     // Extract data
     const data = this.extractData(dataView);
 

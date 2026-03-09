@@ -93,6 +93,13 @@ export class RadarChartVisual implements IVisual {
     this.settings.axisFormattingCard.gridLineWidth.visible = false;
     this.settings.axisFormattingCard.gridLineOpacity.visible = false;
 
+    // Conditional visibility: hide dotRadius when showDots is off
+    this.settings.radarSettings.dotRadius.visible = this.settings.radarSettings.showDots.value;
+
+    // Conditional visibility: hide benchmark sub-settings when showBenchmark is off
+    this.settings.radarBenchmarkSettings.dashPattern.visible = this.settings.radarBenchmarkSettings.show.value;
+    this.settings.radarBenchmarkSettings.color.visible = this.settings.radarBenchmarkSettings.show.value;
+
     this.applyCardStyle();
 
     const categories = this.extractCategories(dataView);

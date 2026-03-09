@@ -136,6 +136,21 @@ export class StreamGraphVisual implements IVisual {
     this.settings.axisFormattingCard.yAxisMin.visible = false;
     this.settings.axisFormattingCard.yAxisMax.visible = false;
 
+    // Conditional visibility: hide annotation sub-settings when annotations are off
+    const annVisible = this.settings.annotationFormattingCard.showAnnotations.value;
+    this.settings.annotationFormattingCard.annotation1Category.visible = annVisible;
+    this.settings.annotationFormattingCard.annotation1Text.visible = annVisible;
+    this.settings.annotationFormattingCard.annotation1Position.visible = annVisible;
+    this.settings.annotationFormattingCard.annotation2Category.visible = annVisible;
+    this.settings.annotationFormattingCard.annotation2Text.visible = annVisible;
+    this.settings.annotationFormattingCard.annotation2Position.visible = annVisible;
+    this.settings.annotationFormattingCard.annotation3Category.visible = annVisible;
+    this.settings.annotationFormattingCard.annotation3Text.visible = annVisible;
+    this.settings.annotationFormattingCard.annotation3Position.visible = annVisible;
+
+    // Hide animation duration when animations are disabled
+    this.settings.animationSettings.duration.visible = this.settings.animationSettings.enabled.value;
+
     // Extract data and apply user-configured sort order to series
     const data = this.sortStreamSeries(this.extractData(dataView));
 
@@ -219,7 +234,7 @@ export class StreamGraphVisual implements IVisual {
       for (let m = 0; m < measureColumns.length; m++) {
         const rawVal = measureColumns[m].values[i];
         const numVal = typeof rawVal === 'number' ? rawVal : Number(rawVal);
-        row[seriesNames[m]] = Number.isFinite(numVal) ? Math.max(0, numVal) : 0;
+        row[seriesNames[m]] = Number.isFinite(numVal) ? numVal : 0;
       }
 
       rows.push(row);
@@ -386,6 +401,23 @@ export class StreamGraphVisual implements IVisual {
       .order(d3.stackOrderNone);
 
     const stackedData = stack(data.rows);
+
+    // Warn if negative values are present with the 'expand' offset (normalize to 0–1 breaks)
+    if (offsetKey === 'expand') {
+      const hasNegatives = data.rows.some((row) =>
+        data.seriesNames.some((name) => {
+          const v = row[name];
+          return typeof v === 'number' && v < 0;
+        }),
+      );
+      if (hasNegatives) {
+        console.warn(
+          '[StreamGraph] Negative values detected with "expand" (normalize) offset. ' +
+          'The expand offset normalises layers to 0–1 and may produce unexpected results ' +
+          'with negative data. Consider using "wiggle" or "silhouette" offset instead.',
+        );
+      }
+    }
 
     // Scales
     const xScale = d3.scaleLinear()
@@ -609,6 +641,8 @@ export class StreamGraphVisual implements IVisual {
           .attr('y', midY)
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', 'central')
+          .style('opacity', '0')
+          .style('pointer-events', 'none')
           .style('transition', 'opacity 0.15s ease')
           .text(String(Math.round(layerTotal)));
       });
@@ -762,17 +796,30 @@ export class StreamGraphVisual implements IVisual {
 
     const svgNode = svg.node();
     if (svgNode) {
-      const seriesElements = svgNode.querySelectorAll('[data-series]');
-      seriesElements.forEach((el) => {
+      const layerElements = svgNode.querySelectorAll('.stream-layer[data-series]');
+      const allSeriesElements = svgNode.querySelectorAll('[data-series]');
+      const valueLabelElements = svgNode.querySelectorAll('.stream-value-label[data-series]');
+
+      layerElements.forEach((el) => {
         el.addEventListener('mouseenter', () => {
           const seriesIdx = el.getAttribute('data-series');
-          seriesElements.forEach((other) => {
-            (other as SVGElement).style.opacity = other.getAttribute('data-series') === seriesIdx ? '1' : '0.2';
+          allSeriesElements.forEach((other) => {
+            const isMatch = other.getAttribute('data-series') === seriesIdx;
+            const isValueLabel = other.classList.contains('stream-value-label');
+            if (isValueLabel) {
+              // Value labels: show only the matching series label on hover
+              (other as SVGElement).style.opacity = isMatch ? '1' : '0';
+            } else {
+              // Layers and data labels: dim non-matching, full opacity for match
+              (other as SVGElement).style.opacity = isMatch ? '1' : '0.2';
+            }
           });
         });
         el.addEventListener('mouseleave', () => {
-          seriesElements.forEach((other) => {
-            (other as SVGElement).style.opacity = '1';
+          allSeriesElements.forEach((other) => {
+            const isValueLabel = other.classList.contains('stream-value-label');
+            // Restore: value labels hidden, everything else full opacity
+            (other as SVGElement).style.opacity = isValueLabel ? '0' : '1';
           });
         });
       });

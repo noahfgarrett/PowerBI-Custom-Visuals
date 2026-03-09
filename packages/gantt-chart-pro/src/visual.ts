@@ -23,6 +23,8 @@ import {
   resolveColorTheme,
   buildConditionalConfig,
   resolveConditionalColor,
+  renderLegend,
+  type LegendItem,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -122,6 +124,29 @@ export class GanttChartProVisual implements IVisual {
     this.settings.axisFormattingCard.showYAxis.visible = false;
     this.settings.axisFormattingCard.gridLineWidth.visible = false;
     this.settings.axisFormattingCard.gridLineOpacity.visible = false;
+
+    // Conditional visibility: hide child settings when parent toggle is off
+    // Milestones: hide shape/color when show is off
+    this.settings.ganttMilestoneSettings.shape.visible = this.settings.ganttMilestoneSettings.show.value;
+    this.settings.ganttMilestoneSettings.color.visible = this.settings.ganttMilestoneSettings.show.value;
+    // Critical path: hide color/lineWidth when show is off
+    this.settings.ganttCriticalPathSettings.color.visible = this.settings.ganttCriticalPathSettings.show.value;
+    this.settings.ganttCriticalPathSettings.lineWidth.visible = this.settings.ganttCriticalPathSettings.show.value;
+    // Baseline: hide color/opacity when show is off
+    this.settings.ganttBaselineSettings.color.visible = this.settings.ganttBaselineSettings.show.value;
+    this.settings.ganttBaselineSettings.opacity.visible = this.settings.ganttBaselineSettings.show.value;
+    // Dependencies: hide sub-settings when show is off
+    this.settings.dependencySettings.lineColor.visible = this.settings.dependencySettings.show.value;
+    this.settings.dependencySettings.lineWidth.visible = this.settings.dependencySettings.show.value;
+    this.settings.dependencySettings.arrowSize.visible = this.settings.dependencySettings.show.value;
+    this.settings.dependencySettings.lineStyle.visible = this.settings.dependencySettings.show.value;
+    // Grouping: hide collapsibleGroups when enableGrouping is false
+    this.settings.ganttGroupSettings.collapsibleGroups.visible = this.settings.ganttGroupSettings.enableGrouping.value;
+    // Today line: hide lineColor when showTodayLine is off
+    this.settings.ganttTodaySettings.lineColor.visible = this.settings.ganttTodaySettings.showTodayLine.value;
+    // Also hide todayLineWidth/todayLineStyle on main gantt card when showTodayLine is off
+    this.settings.ganttSettings.todayLineWidth.visible = this.settings.ganttTodaySettings.showTodayLine.value;
+    this.settings.ganttSettings.todayLineStyle.visible = this.settings.ganttTodaySettings.showTodayLine.value;
 
     // Extract data
     const allTasks = this.extractData(dataView);
@@ -766,6 +791,7 @@ export class GanttChartProVisual implements IVisual {
     this.renderMilestoneMarkers(rowsContainer, displayTasks, labelWidth, chartWidth, barHeight, rowHeight, range, minTime);
     this.renderBaselineBars(rowsContainer, displayTasks, labelWidth, chartWidth, barHeight, rowHeight, range, minTime);
     this.applyCriticalPathHighlighting(displayTasks);
+    this.renderLegendFromCategories(catColorMap);
     this.applyAccessibility();
 
     this.container.addEventListener('click', this.handleBackgroundClick);
@@ -1243,6 +1269,44 @@ export class GanttChartProVisual implements IVisual {
       cc.conditionalColor3.value?.value,
     );
     return resolveConditionalColor(value, config);
+  }
+
+  // -- Legend ----------------------------------------------------------------
+
+  private renderLegendFromCategories(catColorMap: Map<string, string>): void {
+    const legendFmtCard = this.settings.legendFormattingCard;
+    if (!legendFmtCard.showLegend.value) return;
+    if (catColorMap.size === 0) return;
+
+    const rawFontColor = legendFmtCard.legendFontColor.value?.value;
+    const legendFontColor =
+      rawFontColor != null && rawFontColor.length > 0 ? rawFontColor : '#475569';
+    const legendFontSize = legendFmtCard.legendFontSize.value;
+    const legendPosRaw = legendFmtCard.legendPosition.value;
+    const position =
+      (typeof legendPosRaw === 'string'
+        ? legendPosRaw
+        : (legendPosRaw as { value?: string } | undefined)?.value) ?? 'bottom';
+    const validPositions = ['top', 'bottom', 'left', 'right'] as const;
+    const legendPos: 'top' | 'bottom' | 'left' | 'right' =
+      (validPositions as readonly string[]).includes(position)
+        ? (position as 'top' | 'bottom' | 'left' | 'right')
+        : 'bottom';
+
+    const items: LegendItem[] = [...catColorMap.entries()].map(
+      ([label, color]) => ({ label, color }),
+    );
+
+    const rawLegendFontFamily =
+      resolveDropdown(legendFmtCard.legendFontFamily) || undefined;
+
+    renderLegend(this.container, {
+      items,
+      position: legendPos,
+      fontSize: legendFontSize,
+      fontColor: legendFontColor,
+      fontFamily: rawLegendFontFamily,
+    });
   }
 
   // -- Accessibility ----------------------------------------------------------

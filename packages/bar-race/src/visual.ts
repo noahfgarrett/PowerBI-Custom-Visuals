@@ -158,6 +158,23 @@ export class BarRaceVisual implements IVisual {
     this.settings.axisFormattingCard.axisLabelFontFamily.visible = false;
     this.settings.axisFormattingCard.axisLabelRotation.visible = false;
 
+    // ── Conditional visibility ──────────────────────────────────────
+    // Timestamp sub-settings: hide when showTimestamp off
+    const tsOn = this.settings.timestampSettings.show.value;
+    this.settings.timestampSettings.fontSize.visible = tsOn;
+    this.settings.timestampSettings.fontColor.visible = tsOn;
+    this.settings.timestampSettings.opacity.visible = tsOn;
+    this.settings.timestampSettings.position.visible = tsOn;
+
+    // Playback controls sub-settings: hide when showControls false
+    const ctrlOn = this.settings.playbackSettings.showControls.value;
+    this.settings.playbackSettings.speed.visible = ctrlOn;
+    this.settings.playbackSettings.loop.visible = ctrlOn;
+    this.settings.playbackSettings.controlPosition.visible = ctrlOn;
+
+    // Period label size: hide when showPeriodLabel off
+    this.settings.raceDisplay.periodLabelSize.visible = this.settings.raceDisplay.showPeriodLabel.value;
+
     // Apply glass card style
     this.applyCardStyle();
 

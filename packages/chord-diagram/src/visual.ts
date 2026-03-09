@@ -104,6 +104,10 @@ export class ChordDiagramVisual implements IVisual {
 
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
 
+    // Conditional visibility: hide child settings when parent toggle is off
+    // Chord interaction: hide dimOpacity when filtering is disabled
+    this.settings.chordSettings.dimOpacity.visible = this.settings.chordInteractionSettings.enableFiltering.value;
+
     // Extract data and apply user-configured sort order to entities
     const data = this.sortChordData(this.extractData(dataView));
 
@@ -380,11 +384,12 @@ export class ChordDiagramVisual implements IVisual {
     const useGradientRibbons = s.chordRibbonSettings.gradientRibbons.value;
     if (useGradientRibbons) {
       const defs = svg.append('defs');
-      chords.forEach((chord, ci) => {
+      chords.forEach((chord) => {
         const srcColor = resolveColor(chord.source.index);
         const tgtColor = resolveColor(chord.target.index);
+        const gradId = `chord-grad-${chord.source.index}-${chord.target.index}`;
         const grad = defs.append('linearGradient')
-          .attr('id', `chord-grad-${ci}`)
+          .attr('id', gradId)
           .attr('gradientUnits', 'userSpaceOnUse')
           .attr('x1', Math.cos((chord.source.startAngle + chord.source.endAngle) / 2 - Math.PI / 2) * innerRadius)
           .attr('y1', Math.sin((chord.source.startAngle + chord.source.endAngle) / 2 - Math.PI / 2) * innerRadius)
@@ -518,11 +523,9 @@ export class ChordDiagramVisual implements IVisual {
       .join('path')
       .attr('class', 'chord-ribbon')
       .attr('d', ribbonGen as unknown as d3.ValueFn<SVGPathElement, d3.Chord, string | null>)
-      .attr('fill', (d, i) => {
+      .attr('fill', (d) => {
         if (useGradientRibbons) {
-          // Find the original chord index for gradient lookup
-          const origIdx = chords.indexOf(d);
-          return origIdx >= 0 ? `url(#chord-grad-${origIdx})` : withOpacity(resolveColor(d.source.index), ribbonOpacity);
+          return `url(#chord-grad-${d.source.index}-${d.target.index})`;
         }
         return withOpacity(resolveColor(d.source.index), ribbonOpacity);
       })
@@ -601,7 +604,7 @@ export class ChordDiagramVisual implements IVisual {
     }
 
     // Hover interactions
-    this.attachHoverBehavior(groupArcs, ribbonPaths, chords, ribbonOpacity, hoverOpacity, dimOpacity, resolveColor, data);
+    this.attachHoverBehavior(groupArcs, ribbonPaths, chords, ribbonOpacity, hoverOpacity, dimOpacity, resolveColor, data, useGradientRibbons);
 
     // Entrance animations
     if (s.animationSettings.enabled.value) {
@@ -712,7 +715,13 @@ export class ChordDiagramVisual implements IVisual {
     dimOpacity: number,
     resolveColor: (index: number) => string,
     data: ChordData,
+    useGradientRibbons: boolean,
   ): void {
+    /** Return the correct fill for a ribbon in its default (non-hovered) state. */
+    const defaultRibbonFill = (d: d3.Chord): string =>
+      useGradientRibbons
+        ? `url(#chord-grad-${d.source.index}-${d.target.index})`
+        : withOpacity(resolveColor(d.source.index), baseOpacity);
     // Group arc hover: dim all ribbons NOT connected to that group
     groupArcs
       .on('mouseenter', (_event: MouseEvent, hoveredGroup: d3.ChordGroup) => {
@@ -732,8 +741,7 @@ export class ChordDiagramVisual implements IVisual {
       })
       .on('mouseleave', () => {
         groupArcs.attr('opacity', 1);
-        ribbonPaths
-          .attr('fill', (d) => withOpacity(resolveColor(d.source.index), baseOpacity));
+        ribbonPaths.attr('fill', (d) => defaultRibbonFill(d));
       });
 
     // Ribbon hover: highlight that ribbon and its source/target arcs
@@ -755,8 +763,7 @@ export class ChordDiagramVisual implements IVisual {
       })
       .on('mouseleave', () => {
         groupArcs.attr('opacity', 1);
-        ribbonPaths
-          .attr('fill', (d) => withOpacity(resolveColor(d.source.index), baseOpacity));
+        ribbonPaths.attr('fill', (d) => defaultRibbonFill(d));
       });
   }
 

@@ -1,7 +1,7 @@
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
 import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard,
-  SeriesFormattingCard, } from '../../core/src';
+  SeriesFormattingCard, NumberFormattingCard, } from '../../core/src';
 class RadarSettings extends formattingSettings.SimpleCard {
   showGrid = new formattingSettings.ToggleSwitch({ name: 'showGrid', displayName: 'Show Grid', value: true });
   gridLevels = new formattingSettings.NumUpDown({ name: 'gridLevels', displayName: 'Grid Levels', value: 5 });
@@ -158,6 +158,7 @@ export class RadarChartSettings extends formattingSettings.Model {
 
   colorThemeFormattingCard = new ColorThemeFormattingCard();
   seriesFormattingCard = new SeriesFormattingCard();
+  numberFormattingCard = new NumberFormattingCard();
   cards = [
     this.radarSettings,
     this.colorSettings,
@@ -174,5 +175,6 @@ export class RadarChartSettings extends formattingSettings.Model {
     this.accessibilityFormattingCard,
     this.seriesFormattingCard,
     this.colorThemeFormattingCard,
+    this.numberFormattingCard,
   ];
 }

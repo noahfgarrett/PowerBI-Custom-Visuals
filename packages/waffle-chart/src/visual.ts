@@ -97,6 +97,23 @@ export class WaffleChartVisual implements IVisual {
     }
 
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
+    this.settings.gridSettings.emptyColor.visible = false;
+
+    // Conditional visibility: hide pictogram sub-settings when pictogram is off
+    const pictoOn = this.settings.pictogramSettings.enabled.value;
+    this.settings.pictogramSettings.iconShape.visible = pictoOn;
+    this.settings.pictogramSettings.iconSize.visible = pictoOn;
+    this.settings.pictogramSettings.outlineOpacity.visible = pictoOn;
+
+    // Hide icon library card when pictogram is off (it only applies in pictogram mode)
+    this.settings.waffleIconSettings.iconSet.visible = pictoOn;
+
+    // Hide animation duration when animations are disabled
+    this.settings.animationSettings.duration.visible = this.settings.animationSettings.enabled.value;
+
+    // Hide value display sub-settings when show is off
+    this.settings.valueSettings.fontSize.visible = this.settings.valueSettings.show.value;
+    this.settings.valueSettings.fontColor.visible = this.settings.valueSettings.show.value;
 
     // Extract data
     const data = this.extractData(dataView);
@@ -169,7 +186,7 @@ export class WaffleChartVisual implements IVisual {
     const baseFillColor = (userFillColor && userFillColor.length > 0) ? userFillColor : getHostChartColor(this.host.colorPalette, 0, themeName);
     const conditionalColor = data.value !== null ? this.getConditionalColor(data.value) : undefined;
     const fillColor = conditionalColor ?? baseFillColor;
-    const emptyColor = s.gridSettings.emptyColor.value?.value || s.colorSettings.emptyColor.value?.value || '#E2E8F0';
+    const emptyColor = s.colorSettings.emptyColor.value?.value || s.gridSettings.emptyColor.value?.value || '#E2E8F0';
     const showValue = s.valueSettings.show.value;
     const fontSize = s.valueSettings.fontSize.value;
     const fontColor = s.valueSettings.fontColor.value?.value;
@@ -244,19 +261,15 @@ export class WaffleChartVisual implements IVisual {
     const availW = viewport.width - padding * 2;
     const availH = viewport.height - padding * 2 - valueAreaHeight;
 
+    let effectiveRows = rows;
+    let effectiveCols = cols;
+
     if (autoFitCells) {
       // Auto-compute: target cell size ~20px, compute how many fit
       const targetCellSize = 20;
-      const autoCols = Math.max(1, Math.floor((availW + gap) / (targetCellSize + gap)));
-      const autoRows = Math.max(1, Math.floor((availH + gap) / (targetCellSize + gap)));
-      // Override rows/cols with computed values (reuse vars by reassigning to local scope below)
-      (s.gridSettings.cols as { value: number }).value = autoCols;
-      (s.gridSettings.rows as { value: number }).value = autoRows;
+      effectiveCols = Math.max(1, Math.floor((availW + gap) / (targetCellSize + gap)));
+      effectiveRows = Math.max(1, Math.floor((availH + gap) / (targetCellSize + gap)));
     }
-
-    // Re-read after potential auto-fit
-    const effectiveRows = Math.max(1, s.gridSettings.rows.value);
-    const effectiveCols = Math.max(1, s.gridSettings.cols.value);
 
     const cellSize = Math.max(
       4,

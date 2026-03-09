@@ -35,7 +35,6 @@ import {
   applyChartAria,
   attachKeyboardNav,
   ensureFocusRingStyles,
-  renderHorizontalReferenceLine,
   computeStatValue,
   type StatType,
   renderTrendLine,
@@ -119,6 +118,15 @@ export class DumbbellChartVisual implements IVisual {
     this.settings.axisFormattingCard.yAxisMin.visible = false;
     this.settings.axisFormattingCard.yAxisMax.visible = false;
     this.settings.axisFormattingCard.axisLabelRotation.visible = false;
+
+    // Conditional visibility: hide child settings when parent toggle is off
+    // Display: hide autoDirectionalColor when showArrow is false
+    this.settings.dumbbellDisplaySettings.autoDirectionalColor.visible = this.settings.dumbbellDisplaySettings.showArrow.value;
+    // Delta labels: hide sub-settings when show is false
+    this.settings.deltaLabelSettings.fontSize.visible = this.settings.deltaLabelSettings.show.value;
+    this.settings.deltaLabelSettings.fontColor.visible = this.settings.deltaLabelSettings.show.value;
+    this.settings.deltaLabelSettings.format.visible = this.settings.deltaLabelSettings.show.value;
+    this.settings.deltaLabelSettings.position.visible = this.settings.deltaLabelSettings.show.value;
 
     // Apply glass effect
     this.applyCardStyle();
@@ -668,10 +676,7 @@ export class DumbbellChartVisual implements IVisual {
     this.renderConnectorArrows(rows, chartGroup, xScale, yScale, bandMiddle);
 
     // Render reference line if enabled (vertical — along X value axis)
-    this.renderSharedReferenceLine(chartGroup, xScale, chartHeight);
-
-    // Render horizontal reference line with stat computation (mean/median/etc.)
-    this.renderStatReferenceLine(chartGroup, xScale, chartWidth, allValues);
+    this.renderSharedReferenceLine(chartGroup, xScale, chartHeight, allValues);
 
     // Render trend line overlay
     const endValues = rows.map((r) => r.end);
@@ -869,13 +874,21 @@ export class DumbbellChartVisual implements IVisual {
     chartGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
     xScale: d3.ScaleLinear<number, number>,
     chartHeight: number,
+    allValues: number[],
   ): void {
     const ref = this.settings.referenceLineFormattingCard;
     if (!ref.showReferenceLine.value) return;
 
+    // Determine the reference value — use stat computation when type is not 'custom'
+    const refType = resolveDropdown(ref.referenceLineType) ?? 'custom';
+    let refValue = ref.referenceLineValue.value;
+    if (refType !== 'custom' && allValues.length > 0) {
+      refValue = computeStatValue(allValues, refType as StatType);
+    }
+
     const refColor = ref.referenceLineColor.value?.value ?? '#EF4444';
     const refStyleVal = resolveDropdown(ref.referenceLineStyle) ?? 'dashed';
-    const xPos = xScale(ref.referenceLineValue.value);
+    const xPos = xScale(refValue);
 
     if (!isFinite(xPos)) return;
 
@@ -889,7 +902,7 @@ export class DumbbellChartVisual implements IVisual {
       showLabel: ref.showReferenceLabel.value,
       labelText: ref.referenceLabelText.value.length > 0
         ? ref.referenceLabelText.value
-        : formatNumber(ref.referenceLineValue.value, { abbreviate: true }),
+        : formatNumber(refValue, { abbreviate: true }),
     };
 
     renderVerticalReferenceLine(chartGroup, config);
@@ -944,48 +957,6 @@ export class DumbbellChartVisual implements IVisual {
     this.cancelAnimations.push(cleanup);
   }
 
-  // -- Horizontal Reference Line -------------------------------------------
-
-  /**
-   * Renders a horizontal reference line across the chart using stat computation.
-   * Uses the shared renderHorizontalReferenceLine from core.
-   */
-  private renderStatReferenceLine(
-    chartGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
-    yScale: d3.ScaleLinear<number, number>,
-    chartWidth: number,
-    allValues: number[],
-  ): void {
-    const ref = this.settings.referenceLineFormattingCard;
-    if (!ref.showReferenceLine.value) return;
-
-    const refType = resolveDropdown(ref.referenceLineType) ?? 'custom';
-    let refValue = ref.referenceLineValue.value;
-
-    // Compute statistical value if needed
-    if (refType !== 'custom' && allValues.length > 0) {
-      refValue = computeStatValue(allValues, refType as StatType);
-    }
-
-    const refColor = ref.referenceLineColor.value?.value ?? '#EF4444';
-    const refStyle = resolveDropdown(ref.referenceLineStyle) ?? 'dashed';
-    const labelText = ref.referenceLabelText.value.length > 0
-      ? ref.referenceLabelText.value
-      : formatNumber(refValue, { abbreviate: true });
-
-    renderHorizontalReferenceLine(chartGroup, {
-      value: refValue,
-      yScale,
-      chartWidth,
-      lineColor: refColor,
-      lineWidth: ref.referenceLineWidth.value,
-      lineStyle: refStyle as 'solid' | 'dashed' | 'dotted',
-      showLabel: ref.showReferenceLabel.value,
-      labelText,
-      showBand: ref.showReferenceBand.value,
-      bandOpacity: ref.referenceBandOpacity.value / 100,
-    });
-  }
 
   // -- Trend Line ----------------------------------------------------------
 

@@ -109,6 +109,10 @@ export class NetworkGraphVisual implements IVisual {
 
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
 
+    // Conditional visibility: hide link min/max width when widthByWeight is off
+    this.settings.networkLinkSettings.minWidth.visible = this.settings.networkLinkSettings.widthByWeight.value;
+    this.settings.networkLinkSettings.maxWidth.visible = this.settings.networkLinkSettings.widthByWeight.value;
+
     // Extract data
     const data = this.extractData(dataView);
 

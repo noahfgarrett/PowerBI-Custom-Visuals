@@ -1,6 +1,6 @@
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard } from '../../core/src';
+import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard, NumberFormattingCard } from '../../core/src';
 class GanttSettings extends formattingSettings.SimpleCard {
   barHeight = new formattingSettings.NumUpDown({ name: 'barHeight', displayName: 'Bar Height', value: 24 });
   showProgress = new formattingSettings.ToggleSwitch({ name: 'showProgress', displayName: 'Show Progress', value: true });
@@ -239,6 +239,7 @@ export class GanttChartProSettings extends formattingSettings.Model {
   accessibilityFormattingCard = new AccessibilityFormattingCard();
 
   colorThemeFormattingCard = new ColorThemeFormattingCard();
+  numberFormattingCard = new NumberFormattingCard();
   cards = [
     this.ganttSettings,
     this.colorSettings,
@@ -258,5 +259,6 @@ export class GanttChartProSettings extends formattingSettings.Model {
     this.conditionalFormattingCard,
     this.accessibilityFormattingCard,
     this.colorThemeFormattingCard,
+    this.numberFormattingCard,
   ];
 }

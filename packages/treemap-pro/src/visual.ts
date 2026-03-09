@@ -19,6 +19,7 @@ import {
   getHostChartColor,
   withOpacity,
   renderChartTitle,
+  renderLegend,
   applyDataLabelFormatting,
   applyChartAria,
   attachKeyboardNav,
@@ -28,6 +29,7 @@ import {
   resolveConditionalColor,
   resolveDropdown,
 } from '../../core/src';
+import type { LegendItem, ColorThemeName } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
@@ -122,6 +124,26 @@ export class TreemapProVisual implements IVisual {
         dataView,
       );
     }
+
+    // Conditional visibility: hide heat color sub-settings when heat mode is off
+    const heatOn = this.settings.treemapHeatSettings.enabled.value;
+    this.settings.treemapHeatSettings.startColor.visible = heatOn;
+    this.settings.treemapHeatSettings.endColor.visible = heatOn;
+
+    // Hide drill breadcrumb sub-settings when drill is off
+    const drillOn = this.settings.drillDownSettings.enabled.value;
+    this.settings.drillDownSettings.showBreadcrumb.visible = drillOn;
+    this.settings.drillDownSettings.breadcrumbFontSize.visible = drillOn && this.settings.drillDownSettings.showBreadcrumb.value;
+    this.settings.drillDownSettings.breadcrumbColor.visible = drillOn && this.settings.drillDownSettings.showBreadcrumb.value;
+
+    // Hide percentOf when showPercentage is off
+    this.settings.treemapDisplaySettings.percentOf.visible = this.settings.treemapDisplaySettings.showPercentage.value;
+
+    // Hide animation duration when animations are disabled
+    this.settings.animationSettings.duration.visible = this.settings.animationSettings.enabled.value;
+
+    // Hide label-related settings when showLabels is off
+    this.settings.treemapSettings.labelColor.visible = this.settings.treemapSettings.showLabels.value;
 
     // Extract data
     const data = this.extractData(dataView);
@@ -588,8 +610,39 @@ export class TreemapProVisual implements IVisual {
     // Apply shared formatting settings
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.treemap-value');
 
+    // Legend
+    this.renderLegend(data, themeName);
+
     this.applyAccessibility(this.container);
     this.container.addEventListener('click', this.handleBackgroundClick);
+  }
+
+  // -- Legend -----------------------------------------------------------------
+
+  private renderLegend(data: TreemapData, themeName: ColorThemeName): void {
+    const legendFmtCard = this.settings.legendFormattingCard;
+    const rawFontColor = legendFmtCard.legendFontColor.value?.value;
+    const legendPos = resolveDropdown(legendFmtCard.legendPosition) ?? 'bottom';
+    const useChartPalette = this.settings.colorSettings.useChartPalette.value;
+
+    // Build legend items from top-level categories
+    const topLevel = data.root.children ?? [];
+    const items: LegendItem[] = topLevel.map((node, i) => {
+      const colorIdx = node.colorIndex ?? i;
+      const color = useChartPalette
+        ? getHostChartColor(this.host.colorPalette, colorIdx, themeName)
+        : getHostChartColor(this.host.colorPalette, i, themeName);
+      return { label: node.name, color };
+    });
+
+    const rawFontFamily = resolveDropdown(legendFmtCard.legendFontFamily) || undefined;
+    renderLegend(this.container, {
+      items,
+      position: legendPos as 'top' | 'bottom' | 'left' | 'right',
+      fontSize: legendFmtCard.legendFontSize.value,
+      fontColor: rawFontColor && rawFontColor.length > 0 ? rawFontColor : '#64748B',
+      fontFamily: rawFontFamily,
+    });
   }
 
   // -- Breadcrumb -------------------------------------------------------------
@@ -778,7 +831,36 @@ export class TreemapProVisual implements IVisual {
     return this.interpolateHexColor(startColor, endColor, t);
   }
 
-  private interpolateHexColor(hex1: string, hex2: string, t: number): string {
+  /**
+   * Normalises any CSS color string (`#RRGGBB`, `#RGB`, `rgb(r,g,b)`,
+   * `rgba(r,g,b,a)`) to `#RRGGBB` hex so that `parseInt(..., 16)` never
+   * returns NaN.
+   */
+  private normalizeToHex(color: string): string {
+    const trimmed = color.trim();
+
+    // Handle rgb(...) and rgba(...) — extract numeric components
+    const rgbMatch = trimmed.match(
+      /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*(?:,\s*[\d.]+\s*)?\)$/,
+    );
+    if (rgbMatch) {
+      const toHex = (n: string): string => parseInt(n, 10).toString(16).padStart(2, '0');
+      return `#${toHex(rgbMatch[1])}${toHex(rgbMatch[2])}${toHex(rgbMatch[3])}`;
+    }
+
+    // Handle shorthand hex: #RGB → #RRGGBB
+    const shortHexMatch = trimmed.match(/^#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])$/);
+    if (shortHexMatch) {
+      return `#${shortHexMatch[1]}${shortHexMatch[1]}${shortHexMatch[2]}${shortHexMatch[2]}${shortHexMatch[3]}${shortHexMatch[3]}`;
+    }
+
+    // Already #RRGGBB (or close enough) — return as-is
+    return trimmed;
+  }
+
+  private interpolateHexColor(color1: string, color2: string, t: number): string {
+    const hex1 = this.normalizeToHex(color1);
+    const hex2 = this.normalizeToHex(color2);
     const parse = (hex: string): [number, number, number] => {
       const clean = hex.replace('#', '');
       return [

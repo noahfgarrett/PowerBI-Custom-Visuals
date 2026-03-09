@@ -92,6 +92,18 @@ export class TimelineMilestoneVisual implements IVisual {
       );
     }
 
+    // Conditional visibility: hide date format when showDates is off
+    this.settings.timelineSettings.dateFormat.visible = this.settings.timelineSettings.showDates.value;
+
+    // Hide today line color when showTodayLine is off
+    this.settings.timelineMarkerSettings.todayLineColor.visible = this.settings.timelineMarkerSettings.showTodayLine.value;
+
+    // Hide cluster threshold when clusterNearby is off
+    this.settings.timelineMarkerSettings.clusterThresholdDays.visible = this.settings.timelineMarkerSettings.clusterNearby.value;
+
+    // Hide animation duration when animations are disabled
+    this.settings.animationSettings.duration.visible = this.settings.animationSettings.enabled.value;
+
     // Extract data
     const milestones = this.extractData(dataView);
 
@@ -110,24 +122,24 @@ export class TimelineMilestoneVisual implements IVisual {
     if (!dataView?.categorical) return result;
 
     const categorical = dataView.categorical;
-    const categories = categorical.categories?.[0];
-    if (!categories) return result;
+    const allCategories = categorical.categories;
+    if (!allCategories || allCategories.length === 0) return result;
 
-    const values = categorical.values;
-    const count = categories.values.length;
+    // Find date, label, and category columns from categories
+    let dateCol: powerbi.DataViewCategoryColumn | undefined;
+    let labelCol: powerbi.DataViewCategoryColumn | undefined;
+    let catCol: powerbi.DataViewCategoryColumn | undefined;
 
-    // Find label and category columns from values
-    let labelCol: powerbi.DataViewValueColumn | undefined;
-    let catCol: powerbi.DataViewValueColumn | undefined;
-
-    if (values) {
-      for (const col of values) {
-        const role = col.source.roles;
-        if (!role) continue;
-        if (role['label']) labelCol = col;
-        if (role['category']) catCol = col;
-      }
+    for (const col of allCategories) {
+      const role = col.source.roles;
+      if (!role) continue;
+      if (role['date']) dateCol = col;
+      if (role['label']) labelCol = col;
+      if (role['category']) catCol = col;
     }
+
+    const categories = dateCol ?? allCategories[0];
+    const count = categories.values.length;
 
     for (let i = 0; i < count; i++) {
       const rawDate = categories.values[i];
@@ -386,19 +398,27 @@ export class TimelineMilestoneVisual implements IVisual {
         const cx = n > 1 ? xStart + i * step : svgWidth / 2;
         // Determine above/below based on layout mode
         let isAbove: boolean;
+        let staggerLevel = 0; // 0 = normal offset, 1/2 = progressively further
         if (layoutMode === 'top') {
           isAbove = true;
         } else if (layoutMode === 'bottom') {
           isAbove = false;
+        } else if (layoutMode === 'staggered') {
+          // 3-level stagger: above-near, below, above-far
+          const level = i % 3;
+          isAbove = level !== 1; // levels 0 and 2 are above, level 1 is below
+          staggerLevel = level;
         } else {
-          // 'alternating' or 'staggered'
+          // 'alternating'
           isAbove = i % 2 === 0;
         }
         const baseColor = colorByCat && ms.category ? (catColorMap.get(ms.category) ?? defaultColor) : getHostChartColor(this.host.colorPalette, i, themeName);
-        const color = this.getConditionalColor(i) ?? baseColor;
+        const conditionalValue = ms.date ? ms.date.getTime() : i;
+        const color = this.getConditionalColor(conditionalValue) ?? baseColor;
 
-        // Connector line from spine to label area
-        const connectorLen = labelSpace - markerSize;
+        // Connector line from spine to label area — staggered uses varying lengths
+        const staggerMultiplier = layoutMode === 'staggered' ? (staggerLevel === 2 ? 1.6 : staggerLevel === 1 ? 1.0 : 0.6) : 1.0;
+        const connectorLen = (labelSpace - markerSize) * staggerMultiplier;
         const y1 = isAbove ? cy - markerSize / 2 : cy + markerSize / 2;
         const y2 = isAbove ? cy - connectorLen : cy + connectorLen;
 
@@ -511,18 +531,25 @@ export class TimelineMilestoneVisual implements IVisual {
         const my = n > 1 ? yStart + i * step : svgHeight / 2;
         // Determine left/right based on layout mode
         let isLeft: boolean;
+        let staggerLevel = 0;
         if (layoutMode === 'top') {
           isLeft = true;
         } else if (layoutMode === 'bottom') {
           isLeft = false;
+        } else if (layoutMode === 'staggered') {
+          const level = i % 3;
+          isLeft = level !== 1;
+          staggerLevel = level;
         } else {
           isLeft = i % 2 === 0;
         }
         const baseColor = colorByCat && ms.category ? (catColorMap.get(ms.category) ?? defaultColor) : getHostChartColor(this.host.colorPalette, i, themeName);
-        const color = this.getConditionalColor(i) ?? baseColor;
+        const conditionalValue = ms.date ? ms.date.getTime() : i;
+        const color = this.getConditionalColor(conditionalValue) ?? baseColor;
 
-        // Connector
-        const connectorLen = 60;
+        // Connector — staggered uses varying lengths
+        const staggerMultiplier = layoutMode === 'staggered' ? (staggerLevel === 2 ? 1.6 : staggerLevel === 1 ? 1.0 : 0.6) : 1.0;
+        const connectorLen = 60 * staggerMultiplier;
         const x1 = isLeft ? cx - markerSize / 2 : cx + markerSize / 2;
         const x2 = isLeft ? cx - connectorLen : cx + connectorLen;
 

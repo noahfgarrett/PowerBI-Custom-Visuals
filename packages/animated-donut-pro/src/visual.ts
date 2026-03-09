@@ -111,6 +111,34 @@ export class AnimatedDonutProVisual implements IVisual {
       );
     }
 
+    // ── Conditional visibility ──────────────────────────────────────
+    const s = this.settings;
+
+    // Center value sub-settings: hide when showCenter is off
+    const showCenter = s.donutSettings.showCenter.value;
+    s.valueSettings.fontSize.visible = showCenter;
+    s.valueSettings.fontColor.visible = showCenter;
+    s.valueSettings.prefix.visible = showCenter;
+    s.valueSettings.suffix.visible = showCenter;
+    s.valueSettings.decimalPlaces.visible = showCenter;
+
+    // Top N sub-settings: hide when Top N is disabled
+    const topNEnabled = s.topNSettings.enabled.value;
+    s.topNSettings.topN.visible = topNEnabled;
+    s.topNSettings.othersLabel.visible = topNEnabled;
+    s.topNSettings.othersColor.visible = topNEnabled;
+    s.topNSettings.sortBy.visible = topNEnabled;
+
+    // Explode distance: hide when explode is off
+    s.donutExplodeSettings.distance.visible = s.donutExplodeSettings.enabled.value;
+
+    // Label format & connector settings: hide when showLabels is off
+    const showLabels = s.donutSettings.showLabels.value;
+    s.donutLabelSettings.format.visible = showLabels;
+    s.donutLabelSettings.connectorLines.visible = showLabels;
+
+    // Nested ring sub-settings: hide when nested rings are off
+    s.donutNestedSettings.innerRingField.visible = s.donutNestedSettings.enabled.value;
 
     // Extract data
     const rawSegments = this.extractData(dataView);

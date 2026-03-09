@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, SortFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AnnotationFormattingCard, AccessibilityFormattingCard } from '../../core/src';
+import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, SortFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AnnotationFormattingCard, AccessibilityFormattingCard, NumberFormattingCard } from '../../core/src';
 
 // -- Health Bar Settings ------------------------------------------------------
 
@@ -316,6 +316,7 @@ export class HealthBarSettings extends formattingSettings.Model {
   healthBarZone = new HealthBarZoneSettings();
   healthBarScale = new HealthBarScaleSettings();
   healthBarValuePosition = new HealthBarValuePositionSettings();
+  numberFormattingCard = new NumberFormattingCard();
 
   cards = [
     this.healthBarSettings,
@@ -337,5 +338,6 @@ export class HealthBarSettings extends formattingSettings.Model {
     this.healthBarZone,
     this.healthBarScale,
     this.healthBarValuePosition,
+    this.numberFormattingCard,
   ];
 }

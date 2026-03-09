@@ -101,6 +101,17 @@ export class ProgressBarStackVisual implements IVisual {
     this.settings.axisFormattingCard.gridLineOpacity.visible = false;
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
 
+    // Conditional visibility: hide gradient colors when gradient is disabled
+    this.settings.progressGradient.startColor.visible = this.settings.progressGradient.enabled.value;
+    this.settings.progressGradient.endColor.visible = this.settings.progressGradient.enabled.value;
+
+    // Conditional visibility: hide milestone CSV when milestones are off
+    this.settings.progressMilestone.milestones.visible = this.settings.progressMilestone.show.value;
+
+    // Conditional visibility: hide target color/lineWidth when target is off
+    this.settings.targetSettings.color.visible = this.settings.targetSettings.show.value;
+    this.settings.targetSettings.lineWidth.visible = this.settings.targetSettings.show.value;
+
     // Extract data
     const rows = this.extractData(dataView);
 

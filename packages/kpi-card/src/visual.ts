@@ -68,6 +68,16 @@ export class KpiCardVisual implements IVisual {
       );
     }
 
+    // Conditional visibility: hide child settings when parent toggle is off
+    const s = this.settings;
+    s.kpiGoalSettings.goalValue.visible = s.kpiGoalSettings.show.value;
+    s.kpiGoalSettings.showProgressBar.visible = s.kpiGoalSettings.show.value;
+    s.kpiGoalSettings.metColor.visible = s.kpiGoalSettings.show.value;
+    s.kpiGoalSettings.unmetColor.visible = s.kpiGoalSettings.show.value;
+    s.kpiComparisonSettings.showPercentChange.visible = s.kpiComparisonSettings.show.value;
+    s.kpiLayoutSettings.sparklineType.visible = s.sparklineSettings.show.value;
+    s.sparklineSettings.lineColor.visible = s.sparklineSettings.show.value;
+
     // Extract data from the table dataView
     const data = this.extractData(dataViews?.[0]);
 
@@ -334,9 +344,10 @@ export class KpiCardVisual implements IVisual {
       }
     }
 
-    // Format function
+    // Format function — guards against null/undefined values
     const fmt = (v: number | null | undefined): string => {
-      return formatWithSettings(v as number, this.settings.numberFormattingCard);
+      if (v === null || v === undefined) return '\u2014';
+      return formatWithSettings(v, this.settings.numberFormattingCard);
     };
     // Count-up animation (only for the primary KPI slot)
     if (data.value !== null && s.animationSettings.enabled.value && slotIndex === 0) {
@@ -638,7 +649,9 @@ export class KpiCardVisual implements IVisual {
     barFill.style.cssText = `
       width: ${progress}%;
       height: 100%;
-      background: ${progress >= 100 ? '#22C55E' : '#3B82F6'};
+      background: ${progress >= 100
+        ? (goalSettings.metColor.value?.value || '#22C55E')
+        : (goalSettings.unmetColor.value?.value || '#3B82F6')};
       border-radius: 3px;
       transition: width 0.3s ease;
     `;

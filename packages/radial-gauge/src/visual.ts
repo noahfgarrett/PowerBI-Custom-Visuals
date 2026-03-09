@@ -89,6 +89,19 @@ export class RadialGaugeVisual implements IVisual {
 
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
 
+    // Conditional visibility: hide needle sub-settings when showNeedle is off
+    this.settings.needleSettings.color.visible = this.settings.needleSettings.show.value;
+    this.settings.needleSettings.width.visible = this.settings.needleSettings.show.value;
+    this.settings.needleSettings.showHub.visible = this.settings.needleSettings.show.value;
+    this.settings.needleSettings.hubRadius.visible = this.settings.needleSettings.show.value;
+
+    // Conditional visibility: hide segment count when LED segments is off
+    this.settings.gaugeArcSettings.segmentCount.visible = this.settings.gaugeArcSettings.segmented.value;
+
+    // Conditional visibility: hide delta/sparkline are independent toggles (no sub-settings to hide)
+    // But we can hide target color when showTarget is off
+    this.settings.targetSettings.color.visible = this.settings.targetSettings.show.value;
+
     // Extract data
     const data = this.extractData(dataView);
 

@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AnnotationFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard } from '../../core/src';
+import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AnnotationFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard, NumberFormattingCard } from '../../core/src';
 class BarSettings extends formattingSettings.SimpleCard {
   barHeight = new formattingSettings.NumUpDown({
     name: 'barHeight',
@@ -234,6 +234,7 @@ export class ProgressBarStackSettings extends formattingSettings.Model {
   progressGradient = new ProgressGradientSettings();
 
   colorThemeFormattingCard = new ColorThemeFormattingCard();
+  numberFormattingCard = new NumberFormattingCard();
   cards = [
     this.barSettings,
     this.colorSettings,
@@ -251,5 +252,6 @@ export class ProgressBarStackSettings extends formattingSettings.Model {
     this.progressMilestone,
     this.progressGradient,
     this.colorThemeFormattingCard,
+    this.numberFormattingCard,
   ];
 }

@@ -140,6 +140,33 @@ export class AnimatedWaterfallVisual implements IVisual {
     this.settings.axisFormattingCard.yAxisMax.visible = false;
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
 
+    // ── Conditional visibility ──────────────────────────────────────
+    // Subtotal sub-settings: hide when subtotals disabled
+    const subtotalOn = this.settings.subtotalSettings.enabled.value;
+    this.settings.subtotalSettings.subtotalColor.visible = subtotalOn;
+    this.settings.subtotalSettings.subtotalLabel.visible = subtotalOn;
+    this.settings.subtotalSettings.indices.visible = subtotalOn;
+
+    // Drill-down sub-settings: hide when drill disabled
+    const drillOn = this.settings.drillDownSettings.enabled.value;
+    this.settings.drillDownSettings.showBreadcrumb.visible = drillOn;
+    this.settings.drillDownSettings.breadcrumbFontSize.visible = drillOn;
+    this.settings.drillDownSettings.breadcrumbColor.visible = drillOn;
+
+    // Summary banner fontSize: hide when banner off
+    this.settings.waterfallSummary.fontSize.visible = this.settings.waterfallSummary.show.value;
+
+    // Connector sub-settings: hide when showConnectors false
+    const connectorsOn = this.settings.waterfallSettings.showConnectors.value;
+    this.settings.connectorSettings.connectorColor.visible = connectorsOn;
+    this.settings.connectorSettings.connectorWidth.visible = connectorsOn;
+    this.settings.connectorSettings.connectorStyle.visible = connectorsOn;
+
+    // Total bar sub-settings: hide when total bar off
+    const totalBarOn = this.settings.waterfallTotalBar.show.value;
+    this.settings.waterfallTotalBar.label.visible = totalBarOn;
+    this.settings.waterfallTotalBar.color.visible = totalBarOn;
+
     // Extract data
     const data = this.extractData(dataView);
     this.currentData = data;
@@ -232,7 +259,7 @@ export class AnimatedWaterfallVisual implements IVisual {
     }
     if (measureValues.length === 0) return empty;
 
-    const showTotal = this.settings.waterfallSettings.showTotal.value || this.settings.waterfallTotalBar.show.value;
+    const showTotal = this.settings.waterfallTotalBar.show.value;
     const hasIsTotalField = isTotalValues.length > 0;
 
     // Build waterfall steps

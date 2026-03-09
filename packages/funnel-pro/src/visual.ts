@@ -34,6 +34,8 @@ import {
   renderTrendLine,
   computeRegression,
   type TrendType,
+  renderLegend,
+  type LegendItem,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -113,8 +115,19 @@ export class FunnelProVisual implements IVisual {
     this.settings.axisFormattingCard.gridLineOpacity.visible = false;
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
 
+    // Conditional visibility: hide child settings when parent toggle is off
+    // Comparison: hide drop-off sub-settings when comparison is disabled
+    this.settings.funnelComparisonSettings.showDropOff.visible = this.settings.funnelComparisonSettings.enabled.value;
+    this.settings.funnelComparisonSettings.dropOffColor.visible = this.settings.funnelComparisonSettings.enabled.value;
+    // Gradient: hide baseColor when useGradient is off
+    this.settings.colorSettings.baseColor.visible = this.settings.colorSettings.useGradient.value;
+
     // Extract data
     const stages = this.extractData(dataView);
+
+    // Hide neckWidth/neckHeight when only 1-2 stages (neck is irrelevant)
+    this.settings.funnelLayoutSettings.neckWidth.visible = stages.length > 2;
+    this.settings.funnelLayoutSettings.neckHeight.visible = stages.length > 2;
 
     // Apply glass effect
     this.applyCardStyle();
@@ -300,10 +313,11 @@ export class FunnelProVisual implements IVisual {
       return width;
     });
 
-    // Pyramid mode: reverse the width mapping so widest segment is at the bottom
+    // Pyramid mode: reverse the width mapping so widest segment is at the bottom.
+    // Only reverse widths — heights must stay in stage order so that indices align
+    // with the stages array during the forEach loop below.
     if (pyramidMode) {
       widths.reverse();
-      segmentHeights.reverse();
     }
 
     // ── Grid lines (horizontal reference lines at stage boundaries) ───
@@ -552,6 +566,9 @@ export class FunnelProVisual implements IVisual {
       }
       return cy + segmentHeights[i] / 2;
     }, yScale);
+
+    // ── Legend ────────────────────────────────────────────────────
+    this.renderSharedLegend(stages, useGradient, baseColor);
 
     // ── Accessibility ─────────────────────────────────────────────
     this.applyAccessibility(stages);
@@ -876,6 +893,49 @@ export class FunnelProVisual implements IVisual {
       showR2: tl.showR2.value,
       equation: result.equation,
       r2: result.r2,
+    });
+  }
+
+  // ── Shared Legend ──────────────────────────────────────────────
+
+  /**
+   * Renders the shared legend showing funnel stage names and their colors.
+   */
+  private renderSharedLegend(
+    stages: FunnelStage[],
+    useGradient: boolean,
+    baseColor: string,
+  ): void {
+    const legendFmtCard = this.settings.legendFormattingCard;
+    if (!legendFmtCard.showLegend.value) return;
+
+    const rawFontColor = legendFmtCard.legendFontColor.value?.value;
+    const legendFontColor = rawFontColor != null && rawFontColor.length > 0 ? rawFontColor : '#475569';
+    const legendFontSize = legendFmtCard.legendFontSize.value;
+    const legendPosRaw = legendFmtCard.legendPosition.value;
+    const position = (typeof legendPosRaw === 'string'
+      ? legendPosRaw
+      : (legendPosRaw as { value?: string } | undefined)?.value) ?? 'bottom';
+    const validPositions = ['top', 'bottom', 'left', 'right'] as const;
+    const legendPos: 'top' | 'bottom' | 'left' | 'right' =
+      (validPositions as readonly string[]).includes(position)
+        ? (position as 'top' | 'bottom' | 'left' | 'right')
+        : 'bottom';
+
+    const stageCount = stages.length;
+    const items: LegendItem[] = stages.map((stage, index) => ({
+      label: stage.label,
+      color: this.getStageColor(index, stageCount, useGradient, baseColor),
+    }));
+
+    const rawLegendFontFamily = resolveDropdown(legendFmtCard.legendFontFamily) || undefined;
+
+    renderLegend(this.container, {
+      items,
+      position: legendPos,
+      fontSize: legendFontSize,
+      fontColor: legendFontColor,
+      fontFamily: rawLegendFontFamily,
     });
   }
 

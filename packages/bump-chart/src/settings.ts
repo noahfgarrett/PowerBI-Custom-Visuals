@@ -20,6 +20,7 @@ import {
   AccessibilityFormattingCard,
   ColorThemeFormattingCard,
   SeriesFormattingCard,
+  NumberFormattingCard,
 } from '../../core/src';
 
 // ── Bump Settings ──────────────────────────────────────────────────
@@ -247,6 +248,7 @@ export class BumpChartSettings extends formattingSettings.Model {
 
   colorThemeFormattingCard = new ColorThemeFormattingCard();
   seriesFormattingCard = new SeriesFormattingCard();
+  numberFormattingCard = new NumberFormattingCard();
   cards = [
     this.bumpSettings,
     this.colorSettings,
@@ -270,5 +272,6 @@ export class BumpChartSettings extends formattingSettings.Model {
     this.accessibilityFormattingCard,
     this.seriesFormattingCard,
     this.colorThemeFormattingCard,
+    this.numberFormattingCard,
   ];
 }

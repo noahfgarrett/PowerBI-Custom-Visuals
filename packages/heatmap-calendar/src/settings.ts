@@ -1,6 +1,6 @@
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard } from '../../core/src';
+import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, NumberFormattingCard } from '../../core/src';
 class CalendarSettings extends formattingSettings.SimpleCard {
   cellSize = new formattingSettings.NumUpDown({
     name: 'cellSize',
@@ -276,6 +276,7 @@ export class HeatmapCalendarSettings extends formattingSettings.Model {
   axisFormattingCard = new AxisFormattingCard();
   conditionalFormattingCard = new ConditionalFormattingCard();
   accessibilityFormattingCard = new AccessibilityFormattingCard();
+  numberFormattingCard = new NumberFormattingCard();
 
   cards = [
     this.calendarSettings,
@@ -290,5 +291,6 @@ export class HeatmapCalendarSettings extends formattingSettings.Model {
     this.axisFormattingCard,
     this.conditionalFormattingCard,
     this.accessibilityFormattingCard,
+    this.numberFormattingCard,
   ];
 }

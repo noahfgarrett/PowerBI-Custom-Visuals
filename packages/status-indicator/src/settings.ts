@@ -1,6 +1,6 @@
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { LegendFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard } from '../../core/src';
+import { LegendFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, NumberFormattingCard } from '../../core/src';
 class IndicatorSettings extends formattingSettings.SimpleCard {
   shape = new formattingSettings.ItemDropdown({
     name: 'shape', displayName: 'Shape',
@@ -154,6 +154,7 @@ export class StatusIndicatorSettings extends formattingSettings.Model {
   titleFormattingCard = new TitleFormattingCard();
   conditionalFormattingCard = new ConditionalFormattingCard();
   accessibilityFormattingCard = new AccessibilityFormattingCard();
+  numberFormattingCard = new NumberFormattingCard();
 
   cards = [
     this.indicatorSettings,
@@ -167,5 +168,6 @@ export class StatusIndicatorSettings extends formattingSettings.Model {
     this.titleFormattingCard,
     this.conditionalFormattingCard,
     this.accessibilityFormattingCard,
+    this.numberFormattingCard,
   ];
 }

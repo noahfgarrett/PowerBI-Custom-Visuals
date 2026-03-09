@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, SortFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard } from '../../core/src';
+import { LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, SortFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard, NumberFormattingCard } from '../../core/src';
 class RingSettings extends formattingSettings.SimpleCard {
   thickness = new formattingSettings.NumUpDown({
     name: 'thickness',
@@ -310,6 +310,7 @@ export class RingStackSettings extends formattingSettings.Model {
   accessibilityFormattingCard = new AccessibilityFormattingCard();
 
   colorThemeFormattingCard = new ColorThemeFormattingCard();
+  numberFormattingCard = new NumberFormattingCard();
 
   cards = [
     this.ringSettings,
@@ -327,5 +328,6 @@ export class RingStackSettings extends formattingSettings.Model {
     this.conditionalFormattingCard,
     this.accessibilityFormattingCard,
     this.colorThemeFormattingCard,
+    this.numberFormattingCard,
   ];
 }

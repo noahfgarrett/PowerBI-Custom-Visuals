@@ -106,6 +106,14 @@ export class HealthBarVisual implements IVisual {
     this.settings.axisFormattingCard.yAxisMin.visible = false;
     this.settings.axisFormattingCard.yAxisMax.visible = false;
 
+    // Conditional visibility: hide child settings when parent toggle is off
+    this.settings.animationSettings.duration.visible = this.settings.animationSettings.enabled.value;
+    this.settings.animationSettings.staggerDelay.visible = this.settings.animationSettings.enabled.value;
+    this.settings.targetSettings.color.visible = this.settings.targetSettings.show.value;
+    this.settings.targetSettings.lineWidth.visible = this.settings.targetSettings.show.value;
+    this.settings.targetSettings.markerStyle.visible = this.settings.targetSettings.show.value;
+    this.settings.healthBarSettings.showPercent.visible = this.settings.healthBarSettings.showValue.value;
+
     // Extract data and apply user-configured sort order
     const items = applySortOrder(
       this.extractData(dataView).map((d) => ({ ...d, name: d.label })),

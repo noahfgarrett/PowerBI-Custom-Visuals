@@ -220,6 +220,26 @@ export class BoxPlotVisual implements IVisual {
     this.settings.axisFormattingCard.yAxisMin.visible = false;
     this.settings.axisFormattingCard.yAxisMax.visible = false;
 
+    // ── Conditional visibility ──────────────────────────────────────
+    // Mean marker sub-settings: hide when showMean off
+    const meanOn = this.settings.meanMarkerSettings.show.value;
+    this.settings.meanMarkerSettings.shape.visible = meanOn;
+    this.settings.meanMarkerSettings.color.visible = meanOn;
+    this.settings.meanMarkerSettings.size.visible = meanOn;
+
+    // Jitter (data points) sub-settings: hide when showDataPoints off
+    const jitterOn = this.settings.jitterSettings.show.value;
+    this.settings.jitterSettings.opacity.visible = jitterOn;
+    this.settings.jitterSettings.radius.visible = jitterOn;
+    this.settings.jitterSettings.color.visible = jitterOn;
+
+    // Outlier radius: hide when showOutliers off
+    this.settings.boxSettings.outlierRadius.visible = this.settings.boxSettings.showOutliers.value;
+
+    // Violin settings: hide when showViolin off (no sub-settings beyond the toggle itself)
+    // Notch settings: hide when showNotches off (no sub-settings beyond the toggle itself)
+    // Note: showViolin and showNotches are simple toggles without child properties in boxPlotDisplaySettings
+
     // Extract data
     const data = this.extractData(dataView);
 

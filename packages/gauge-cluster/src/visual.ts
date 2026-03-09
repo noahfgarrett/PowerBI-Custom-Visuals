@@ -92,6 +92,13 @@ export class GaugeClusterVisual implements IVisual {
       );
     }
 
+    // Conditional visibility: hide child settings when parent toggle is off
+    const s = this.settings;
+    s.clusterLabelSettings.subtitleField.visible = s.clusterLabelSettings.showSubtitle.value;
+    s.animationSettings.duration.visible = s.animationSettings.enabled.value;
+    s.targetSettings.color.visible = s.targetSettings.show.value;
+    s.targetSettings.lineWidth.visible = s.targetSettings.show.value;
+
     // Extract data
     const items = this.extractData(dataView);
 

@@ -13,6 +13,7 @@ import {
   ConditionalFormattingCard,
   AccessibilityFormattingCard,
   ColorThemeFormattingCard,
+  NumberFormattingCard,
 } from '../../core/src';
 class ChordSettings extends formattingSettings.SimpleCard {
   padding = new formattingSettings.NumUpDown({
@@ -195,6 +196,7 @@ export class ChordDiagramSettings extends formattingSettings.Model {
   accessibilityFormattingCard = new AccessibilityFormattingCard();
 
   colorThemeFormattingCard = new ColorThemeFormattingCard();
+  numberFormattingCard = new NumberFormattingCard();
   cards = [
     this.chordSettings,
     this.colorSettings,
@@ -210,5 +212,6 @@ export class ChordDiagramSettings extends formattingSettings.Model {
     this.conditionalFormattingCard,
     this.accessibilityFormattingCard,
     this.colorThemeFormattingCard,
+    this.numberFormattingCard,
   ];
 }

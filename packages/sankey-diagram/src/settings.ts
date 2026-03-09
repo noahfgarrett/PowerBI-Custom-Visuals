@@ -13,6 +13,7 @@ import {
   ConditionalFormattingCard,
   AccessibilityFormattingCard,
   ColorThemeFormattingCard,
+  NumberFormattingCard,
 } from '../../core/src';
 class NodeSettings extends formattingSettings.SimpleCard {
   width = new formattingSettings.NumUpDown({
@@ -488,6 +489,7 @@ export class SankeyDiagramSettings extends formattingSettings.Model {
   accessibilityFormattingCard = new AccessibilityFormattingCard();
 
   colorThemeFormattingCard = new ColorThemeFormattingCard();
+  numberFormattingCard = new NumberFormattingCard();
   cards = [
     this.nodeSettings,
     this.linkSettings,
@@ -507,5 +509,6 @@ export class SankeyDiagramSettings extends formattingSettings.Model {
     this.conditionalFormattingCard,
     this.accessibilityFormattingCard,
     this.colorThemeFormattingCard,
+    this.numberFormattingCard,
   ];
 }

@@ -261,9 +261,21 @@ class KpiGoalSettings extends formattingSettings.SimpleCard {
     value: true,
   });
 
+  metColor = new formattingSettings.ColorPicker({
+    name: 'metColor',
+    displayName: 'Goal Met Color',
+    value: { value: '#22C55E' },
+  });
+
+  unmetColor = new formattingSettings.ColorPicker({
+    name: 'unmetColor',
+    displayName: 'Goal Unmet Color',
+    value: { value: '#3B82F6' },
+  });
+
   name = 'kpiGoalSettings';
   displayName = 'Goal / Target';
-  slices = [this.show, this.goalValue, this.showProgressBar];
+  slices = [this.show, this.goalValue, this.showProgressBar, this.metColor, this.unmetColor];
 }
 
 export class KpiCardSettings extends formattingSettings.Model {

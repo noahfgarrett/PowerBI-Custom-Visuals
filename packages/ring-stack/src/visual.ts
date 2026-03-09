@@ -123,6 +123,15 @@ export class RingStackVisual implements IVisual {
 
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
 
+    // ── Conditional Visibility ──────────────────────────────────
+    const displayModeVal = (typeof this.settings.centerContentSettings.displayMode.value === 'string'
+      ? this.settings.centerContentSettings.displayMode.value
+      : (this.settings.centerContentSettings.displayMode.value as { value?: string })?.value) ?? 'total';
+    this.settings.centerContentSettings.customText.visible = displayModeVal === 'custom';
+
+    this.settings.perRingMaxSettings.maxValues.visible = this.settings.perRingMaxSettings.enabled.value;
+    this.settings.perRingMaxSettings.showPercentage.visible = this.settings.perRingMaxSettings.enabled.value;
+
     // Extract ring data and apply user-configured sort order
     const rings = applySortOrder(
       this.extractData(dataView),

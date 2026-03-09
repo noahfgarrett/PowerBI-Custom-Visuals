@@ -104,6 +104,9 @@ export class PolarChartVisual implements IVisual {
     this.settings.axisFormattingCard.gridLineWidth.visible = false;
     this.settings.axisFormattingCard.gridLineOpacity.visible = false;
 
+    // Conditional visibility: hide gradient-only setting (gradient card has no sub-settings to hide)
+    // Polar chart has no parent-child toggle relationships requiring conditional visibility
+
     // Extract data and apply user-configured sort order
     const data = applySortOrder(
       this.extractData(dataView).map((d) => ({ ...d, name: d.label })),

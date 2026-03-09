@@ -18,6 +18,7 @@ import {
   AnnotationFormattingCard,
   AccessibilityFormattingCard,
   SeriesFormattingCard,
+  NumberFormattingCard,
 } from '../../core/src';
 
 class SlopeSettings extends formattingSettings.SimpleCard {
@@ -298,6 +299,7 @@ export class SlopeChartSettings extends formattingSettings.Model {
   crosshairFormattingCard = new CrosshairFormattingCard();
   annotationFormattingCard = new AnnotationFormattingCard();
   accessibilityFormattingCard = new AccessibilityFormattingCard();
+  numberFormattingCard = new NumberFormattingCard();
 
   cards = [
     this.slopeSettings,
@@ -319,5 +321,6 @@ export class SlopeChartSettings extends formattingSettings.Model {
     this.crosshairFormattingCard,
     this.annotationFormattingCard,
     this.accessibilityFormattingCard,
+    this.numberFormattingCard,
   ];
 }

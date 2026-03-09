@@ -141,6 +141,21 @@ export class MorphingAreaChartVisual implements IVisual {
     this.settings.axisFormattingCard.gridLineWidth.visible = false;
     this.settings.axisFormattingCard.gridLineOpacity.visible = false;
 
+    // Conditional visibility: hide child settings when parent toggle is off
+    this.settings.areaForecastSettings.periods.visible = this.settings.areaForecastSettings.show.value;
+    this.settings.areaForecastSettings.opacity.visible = this.settings.areaForecastSettings.show.value;
+    this.settings.brushSettings.contextHeight.visible = this.settings.brushSettings.enabled.value;
+    this.settings.brushSettings.brushColor.visible = this.settings.brushSettings.enabled.value;
+    this.settings.brushSettings.brushOpacity.visible = this.settings.brushSettings.enabled.value;
+    this.settings.areaThresholdSettings.threshold.visible = this.settings.areaThresholdSettings.show.value;
+    this.settings.areaThresholdSettings.aboveColor.visible = this.settings.areaThresholdSettings.show.value;
+    this.settings.areaThresholdSettings.belowColor.visible = this.settings.areaThresholdSettings.show.value;
+    this.settings.areaSettings.fillOpacity.visible = this.settings.lineSettings.showArea.value;
+    this.settings.areaSettings.useGradient.visible = this.settings.lineSettings.showArea.value;
+    this.settings.lineSettings.dotRadius.visible = this.settings.lineSettings.showDots.value;
+    this.settings.lineSettings.dotStrokeColor.visible = this.settings.lineSettings.showDots.value;
+    this.settings.lineSettings.dotStrokeWidth.visible = this.settings.lineSettings.showDots.value;
+
     // Extract data
     const data = this.extractData(dataView);
 

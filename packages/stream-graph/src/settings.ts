@@ -20,6 +20,7 @@ import {
   AccessibilityFormattingCard,
   ColorThemeFormattingCard,
   SeriesFormattingCard,
+  NumberFormattingCard,
 } from '../../core/src';
 
 class StreamSettings extends formattingSettings.SimpleCard {
@@ -235,6 +236,7 @@ export class StreamGraphSettings extends formattingSettings.Model {
 
   colorThemeFormattingCard = new ColorThemeFormattingCard();
   seriesFormattingCard = new SeriesFormattingCard();
+  numberFormattingCard = new NumberFormattingCard();
   cards = [
     this.streamSettings,
     this.colorSettings,
@@ -257,5 +259,6 @@ export class StreamGraphSettings extends formattingSettings.Model {
     this.accessibilityFormattingCard,
     this.seriesFormattingCard,
     this.colorThemeFormattingCard,
+    this.numberFormattingCard,
   ];
 }

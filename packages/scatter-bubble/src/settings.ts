@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, NumberFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard,
+import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, NumberFormattingCard, ReferenceLineFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard,
   SeriesFormattingCard, } from '../../core/src';
 // ── Scatter Settings ──────────────────────────────────────────────────
 
@@ -453,7 +453,6 @@ export class ScatterBubbleSettings extends formattingSettings.Model {
   numberFormattingCard = new NumberFormattingCard();
 
   referenceLineFormattingCard = new ReferenceLineFormattingCard();
-  trendLineFormattingCard = new TrendLineFormattingCard();
   conditionalFormattingCard = new ConditionalFormattingCard();
   accessibilityFormattingCard = new AccessibilityFormattingCard();
 
@@ -476,7 +475,6 @@ export class ScatterBubbleSettings extends formattingSettings.Model {
     this.titleFormattingCard,
     this.numberFormattingCard,
     this.referenceLineFormattingCard,
-    this.trendLineFormattingCard,
     this.conditionalFormattingCard,
     this.accessibilityFormattingCard,
     this.seriesFormattingCard,

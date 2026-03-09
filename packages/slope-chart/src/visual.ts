@@ -113,6 +113,24 @@ export class SlopeChartVisual implements IVisual {
     this.settings.axisFormattingCard.showGridLines.visible = false;
     this.settings.axisFormattingCard.gridLineColor.visible = false;
 
+    // ── Conditional Visibility ──────────────────────────────────
+    this.settings.slopeSettings.fillOpacity.visible = this.settings.slopeSettings.showArea.value;
+
+    const colorByDir = this.settings.slopeSettings.colorByDirection.value;
+    this.settings.slopeSettings.positiveColor.visible = colorByDir;
+    this.settings.slopeSettings.negativeColor.visible = colorByDir;
+    this.settings.slopeSettings.neutralColor.visible = colorByDir;
+
+    const thresholdShow = this.settings.slopeThresholdSettings.show.value;
+    this.settings.slopeThresholdSettings.threshold.visible = thresholdShow;
+    this.settings.slopeThresholdSettings.glowColor.visible = thresholdShow;
+
+    const changeLabelShow = this.settings.changeLabelSettings.show.value;
+    this.settings.changeLabelSettings.fontSize.visible = changeLabelShow;
+    this.settings.changeLabelSettings.fontColor.visible = changeLabelShow;
+    this.settings.changeLabelSettings.format.visible = changeLabelShow;
+    this.settings.changeLabelSettings.position.visible = changeLabelShow;
+
     // Extract data
     let data = this.extractData(dataView);
 

@@ -113,6 +113,32 @@ export class SunburstChartVisual implements IVisual {
       );
     }
 
+    // Conditional visibility: center content sub-settings hidden when show is off
+    const ccShow = this.settings.centerContentSettings.show.value;
+    const ccMode = resolveDropdown(this.settings.centerContentSettings.displayMode) ?? 'total';
+    this.settings.centerContentSettings.displayMode.visible = ccShow;
+    this.settings.centerContentSettings.customText.visible = ccShow && ccMode === 'custom';
+    this.settings.centerContentSettings.fontSize.visible = ccShow;
+    this.settings.centerContentSettings.fontColor.visible = ccShow;
+    this.settings.centerContentSettings.showLabel.visible = ccShow && ccMode !== 'custom';
+    this.settings.centerContentSettings.labelFontSize.visible = ccShow && ccMode !== 'custom' && this.settings.centerContentSettings.showLabel.value;
+
+    // Hide percentOf when showPercentages is off
+    this.settings.sunburstDisplaySettings.percentOf.visible = this.settings.sunburstDisplaySettings.showPercentages.value;
+
+    // Hide drill breadcrumb sub-settings when drill is off
+    const drillOn = this.settings.drillDownSettings.enabled.value;
+    this.settings.drillDownSettings.showBreadcrumb.visible = drillOn;
+    this.settings.drillDownSettings.breadcrumbFontSize.visible = drillOn && this.settings.drillDownSettings.showBreadcrumb.value;
+    this.settings.drillDownSettings.breadcrumbColor.visible = drillOn && this.settings.drillDownSettings.showBreadcrumb.value;
+
+    // Hide animation duration when animations are disabled
+    this.settings.animationSettings.duration.visible = this.settings.animationSettings.enabled.value;
+
+    // Hide label sub-settings when showLabels is off
+    this.settings.sunburstSettings.labelMinAngle.visible = this.settings.sunburstSettings.showLabels.value;
+    this.settings.sunburstSettings.labelColor.visible = this.settings.sunburstSettings.showLabels.value;
+
     // Extract hierarchical data
     const useChartPalette = this.settings.colorSettings.useChartPalette.value;
     const root = this.extractData(dataView, useChartPalette);
@@ -344,8 +370,10 @@ export class SunburstChartVisual implements IVisual {
     // 'none' / data order: no sort applied
 
     // Inner radius (percentage of outer radius) and start angle offset
-    const innerRadiusPx = (s.sunburstDisplaySettings.innerRadius.value / 100) * radius;
-    const startAngleRad = (s.sunburstDisplaySettings.startAngle.value / 360) * 2 * Math.PI;
+    const clampedInnerRadius = Math.max(0, Math.min(80, s.sunburstDisplaySettings.innerRadius.value));
+    const innerRadiusPx = (clampedInnerRadius / 100) * radius;
+    const clampedStartAngle = Math.max(0, Math.min(359, s.sunburstDisplaySettings.startAngle.value));
+    const startAngleRad = (clampedStartAngle / 360) * 2 * Math.PI;
 
     const partition = d3.partition<SunburstNode>()
       .size([2 * Math.PI, radius]);
@@ -629,9 +657,10 @@ export class SunburstChartVisual implements IVisual {
       const modeRaw = cc.displayMode.value;
       const mode: string = (typeof modeRaw === 'string' ? modeRaw : (modeRaw as { value?: string })?.value) ?? 'total';
 
-      // Sum of root-level children values
-      const total = effectiveRoot.children.reduce((sum, child) => sum + child.value, 0);
-      const count = effectiveRoot.children.length;
+      // Use d3 hierarchy summed values (not raw node.value which is 0 for intermediates)
+      const hierarchyChildren = partitionedRoot.children ?? [];
+      const total = hierarchyChildren.reduce((sum, child) => sum + (child.value ?? 0), 0);
+      const count = hierarchyChildren.length;
       const average = count > 0 ? total / count : 0;
 
       const ccFontColor = cc.fontColor.value?.value || '';

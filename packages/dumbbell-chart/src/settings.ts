@@ -7,6 +7,7 @@ import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
 import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, SortFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard,   ColorThemeFormattingCard,
   SeriesFormattingCard,
+  NumberFormattingCard,
 } from '../../core/src';
 // -- Dumbbell Settings --------------------------------------------------------
 
@@ -269,6 +270,7 @@ export class DumbbellChartSettings extends formattingSettings.Model {
 
   colorThemeFormattingCard = new ColorThemeFormattingCard();
   seriesFormattingCard = new SeriesFormattingCard();
+  numberFormattingCard = new NumberFormattingCard();
 
   cards = [
     this.dumbbellSettings,
@@ -289,5 +291,6 @@ export class DumbbellChartSettings extends formattingSettings.Model {
     this.accessibilityFormattingCard,
     this.colorThemeFormattingCard,
     this.seriesFormattingCard,
+    this.numberFormattingCard,
   ];
 }

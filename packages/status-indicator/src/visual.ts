@@ -79,6 +79,18 @@ export class StatusIndicatorVisual implements IVisual {
       );
     }
 
+    // ── Conditional Visibility ──────────────────────────────────
+    const useCustom = this.settings.thresholdSettings.useCustomThresholds.value;
+    this.settings.thresholdSettings.threshold1.visible = useCustom;
+    this.settings.thresholdSettings.threshold2.visible = useCustom;
+
+    this.settings.thresholdSettings.valueFontSize.visible = this.settings.thresholdSettings.showValue.value;
+
+    const levelCountRaw = this.settings.statusLevelSettings.levelCount.value?.value ?? '3';
+    const levelCountNum = parseInt(String(levelCountRaw), 10) || 3;
+    this.settings.statusLevelSettings.level4Color.visible = levelCountNum > 3;
+    this.settings.statusLevelSettings.level5Color.visible = levelCountNum > 3;
+
     // Extract data
     const rows = this.extractData(dataView);
 
@@ -324,6 +336,14 @@ export class StatusIndicatorVisual implements IVisual {
     const showStatusText = s.statusDisplaySettings.showStatusText.value;
     const iconSet = resolveDropdown(s.statusDisplaySettings.iconSet) ?? 'circle';
 
+    // Hide the shape setting — iconSet supersedes it entirely
+    s.indicatorSettings.shape.visible = false;
+
+    // Compute max absolute value across all rows for sparkline scaling
+    const maxAbsValue = rows.reduce((max, r) => {
+      return r.value !== null ? Math.max(max, Math.abs(r.value)) : max;
+    }, 0);
+
     // ── Conditional Formatting Config ───────────────────────────
     const cc = s.conditionalFormattingCard;
     const conditionalConfig = buildConditionalConfig(
@@ -378,11 +398,11 @@ export class StatusIndicatorVisual implements IVisual {
         shapeEl.style.backgroundColor = color;
         shapeEl.style.flexShrink = '0';
 
-        if (iconSet === 'circle' || shape === 'circle') {
+        if (iconSet === 'circle') {
           shapeEl.style.borderRadius = '50%';
-        } else if (iconSet === 'square' || shape === 'square') {
+        } else if (iconSet === 'square') {
           shapeEl.style.borderRadius = '2px';
-        } else if (iconSet === 'diamond' || shape === 'diamond') {
+        } else if (iconSet === 'diamond') {
           shapeEl.style.width = `${iconSize * 0.75}px`;
           shapeEl.style.height = `${iconSize * 0.75}px`;
           shapeEl.style.transform = 'rotate(45deg)';
@@ -431,7 +451,7 @@ export class StatusIndicatorVisual implements IVisual {
 
       // Mini sparkline
       if (showSparkline && row.value !== null) {
-        const sparklineEl = this.createMiniSparkline(row.value, color);
+        const sparklineEl = this.createMiniSparkline(row.value, color, maxAbsValue);
         rowEl.appendChild(sparklineEl);
       }
 
@@ -540,9 +560,9 @@ export class StatusIndicatorVisual implements IVisual {
 
   /**
    * Creates a mini sparkline SVG element showing a simple value indicator.
-   * Uses the value to render a small bar relative to 100.
+   * Uses the value to render a small bar relative to the max absolute value in the dataset.
    */
-  private createMiniSparkline(value: number, color: string): HTMLElement {
+  private createMiniSparkline(value: number, color: string, maxAbsValue: number): HTMLElement {
     const width = 48;
     const height = 16;
     const NS = 'http://www.w3.org/2000/svg';
@@ -567,8 +587,9 @@ export class StatusIndicatorVisual implements IVisual {
     bgRect.setAttribute('fill', '#E2E8F0');
     svg.appendChild(bgRect);
 
-    // Value bar (scaled to width, clamped 0-100 range for visual)
-    const barWidth = Math.max(2, Math.min(width, (Math.abs(value) / 100) * width));
+    // Value bar (scaled to width relative to the max absolute value in the dataset)
+    const scale = maxAbsValue > 0 ? maxAbsValue : 1;
+    const barWidth = Math.max(2, Math.min(width, (Math.abs(value) / scale) * width));
     const valueRect = document.createElementNS(NS, 'rect');
     valueRect.setAttribute('x', '0');
     valueRect.setAttribute('y', '4');

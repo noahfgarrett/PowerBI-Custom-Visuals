@@ -6,7 +6,7 @@
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
 import { AxisFormattingCard, DataLabelFormattingCard, LegendFormattingCard, TitleFormattingCard, SortFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard,
-  SeriesFormattingCard, } from '../../core/src';
+  SeriesFormattingCard, NumberFormattingCard, } from '../../core/src';
 class PolarSettings extends formattingSettings.SimpleCard {
   innerRadius = new formattingSettings.NumUpDown({
     name: 'innerRadius',
@@ -187,6 +187,7 @@ export class PolarChartSettings extends formattingSettings.Model {
 
   colorThemeFormattingCard = new ColorThemeFormattingCard();
   seriesFormattingCard = new SeriesFormattingCard();
+  numberFormattingCard = new NumberFormattingCard();
   cards = [
     this.polarSettings,
     this.colorSettings,
@@ -203,5 +204,6 @@ export class PolarChartSettings extends formattingSettings.Model {
     this.accessibilityFormattingCard,
     this.seriesFormattingCard,
     this.colorThemeFormattingCard,
+    this.numberFormattingCard,
   ];
 }

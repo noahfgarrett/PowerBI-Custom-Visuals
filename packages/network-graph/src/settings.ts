@@ -11,6 +11,7 @@ import {
   ConditionalFormattingCard,
   AccessibilityFormattingCard,
   ColorThemeFormattingCard,
+  NumberFormattingCard,
 } from '../../core/src';
 class ForceSettings extends formattingSettings.SimpleCard {
   strength = new formattingSettings.NumUpDown({
@@ -287,6 +288,7 @@ export class NetworkGraphSettings extends formattingSettings.Model {
   accessibilityFormattingCard = new AccessibilityFormattingCard();
 
   colorThemeFormattingCard = new ColorThemeFormattingCard();
+  numberFormattingCard = new NumberFormattingCard();
   cards = [
     this.forceSettings,
     this.nodeSettings,
@@ -303,5 +305,6 @@ export class NetworkGraphSettings extends formattingSettings.Model {
     this.conditionalFormattingCard,
     this.accessibilityFormattingCard,
     this.colorThemeFormattingCard,
+    this.numberFormattingCard,
   ];
 }

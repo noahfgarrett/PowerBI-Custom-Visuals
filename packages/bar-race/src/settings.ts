@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AnnotationFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard } from '../../core/src';
+import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AnnotationFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard, NumberFormattingCard } from '../../core/src';
 // ── Race Settings ──────────────────────────────────────────────────
 
 class RaceSettings extends formattingSettings.SimpleCard {
@@ -309,6 +309,7 @@ export class BarRaceSettings extends formattingSettings.Model {
   racePlayback = new RacePlaybackSettings();
 
   colorThemeFormattingCard = new ColorThemeFormattingCard();
+  numberFormattingCard = new NumberFormattingCard();
   cards = [
     this.raceSettings,
     this.colorSettings,
@@ -328,5 +329,6 @@ export class BarRaceSettings extends formattingSettings.Model {
     this.raceDisplay,
     this.racePlayback,
     this.colorThemeFormattingCard,
+    this.numberFormattingCard,
   ];
 }

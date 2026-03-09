@@ -15,12 +15,6 @@ class WaterfallSettingsCard extends formattingSettings.SimpleCard {
     value: true,
   });
 
-  showTotal = new formattingSettings.ToggleSwitch({
-    name: 'showTotal',
-    displayName: 'Show Total',
-    value: true,
-  });
-
   barWidth = new formattingSettings.NumUpDown({
     name: 'barWidth',
     displayName: 'Bar Width',
@@ -61,7 +55,7 @@ class WaterfallSettingsCard extends formattingSettings.SimpleCard {
 
   name = 'waterfallSettings';
   displayName = 'Waterfall Settings';
-  slices = [this.showConnectors, this.showTotal, this.barWidth, this.barCornerRadius, this.barBorderColor, this.barBorderWidth];
+  slices = [this.showConnectors, this.barWidth, this.barCornerRadius, this.barBorderColor, this.barBorderWidth];
 }
 
 // -- Color Settings -----------------------------------------------------------
