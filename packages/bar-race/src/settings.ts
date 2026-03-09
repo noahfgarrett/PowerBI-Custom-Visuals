@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard } from '../../core/src';
+import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AnnotationFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard } from '../../core/src';
 // ── Race Settings ──────────────────────────────────────────────────
 
 class RaceSettings extends formattingSettings.SimpleCard {
@@ -13,12 +13,6 @@ class RaceSettings extends formattingSettings.SimpleCard {
     name: 'topN',
     displayName: 'Top N Items',
     value: 10,
-  });
-
-  autoPlay = new formattingSettings.ToggleSwitch({
-    name: 'autoPlay',
-    displayName: 'Auto-Play',
-    value: true,
   });
 
   playSpeed = new formattingSettings.NumUpDown({
@@ -67,7 +61,7 @@ class RaceSettings extends formattingSettings.SimpleCard {
 
   name = 'raceSettings';
   displayName = 'Race Settings';
-  slices = [this.topN, this.autoPlay, this.playSpeed, this.barHeight, this.barCornerRadius, this.barOpacity, this.labelColor];
+  slices = [this.topN, this.playSpeed, this.barHeight, this.barCornerRadius, this.barOpacity, this.labelColor];
 }
 
 // ── Color Settings ─────────────────────────────────────────────────
@@ -113,6 +107,12 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
     value: true,
   });
 
+  backgroundColor = new formattingSettings.ColorPicker({
+    name: 'backgroundColor',
+    displayName: 'Background Color',
+    value: { value: '' },
+  });
+
   backgroundOpacity = new formattingSettings.NumUpDown({
     name: 'backgroundOpacity',
     displayName: 'Background Opacity (%)',
@@ -127,7 +127,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 // ── Animation Settings ─────────────────────────────────────────────
@@ -242,6 +242,46 @@ class PlaybackSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.autoPlay, this.showControls, this.speed, this.loop, this.controlPosition];
 }
 
+// ── Race Display Settings ───────────────────────────────────────────
+
+class RaceDisplaySettings extends formattingSettings.SimpleCard {
+  showRankNumbers = new formattingSettings.ToggleSwitch({
+    name: 'showRankNumbers',
+    displayName: 'Show Rank Numbers',
+    value: false,
+  });
+
+  showPeriodLabel = new formattingSettings.ToggleSwitch({
+    name: 'showPeriodLabel',
+    displayName: 'Show Period Label',
+    value: true,
+  });
+
+  periodLabelSize = new formattingSettings.NumUpDown({
+    name: 'periodLabelSize',
+    displayName: 'Period Label Size',
+    value: 14,
+  });
+
+  name = 'raceDisplay';
+  displayName = 'Race Display';
+  slices = [this.showRankNumbers, this.showPeriodLabel, this.periodLabelSize];
+}
+
+// ── Race Playback Settings ──────────────────────────────────────────
+
+class RacePlaybackSettings extends formattingSettings.SimpleCard {
+  pauseDuration = new formattingSettings.NumUpDown({
+    name: 'pauseDuration',
+    displayName: 'Pause Duration (ms)',
+    value: 0,
+  });
+
+  name = 'racePlayback';
+  displayName = 'Race Playback';
+  slices = [this.pauseDuration];
+}
+
 // ── Root Model ─────────────────────────────────────────────────────
 
 export class BarRaceSettings extends formattingSettings.Model {
@@ -259,6 +299,16 @@ export class BarRaceSettings extends formattingSettings.Model {
 
   axisFormattingCard = new AxisFormattingCard();
 
+  referenceLineFormattingCard = new ReferenceLineFormattingCard();
+  trendLineFormattingCard = new TrendLineFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  annotationFormattingCard = new AnnotationFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
+
+  raceDisplay = new RaceDisplaySettings();
+  racePlayback = new RacePlaybackSettings();
+
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
   cards = [
     this.raceSettings,
     this.colorSettings,
@@ -270,5 +320,13 @@ export class BarRaceSettings extends formattingSettings.Model {
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.axisFormattingCard,
+    this.referenceLineFormattingCard,
+    this.trendLineFormattingCard,
+    this.conditionalFormattingCard,
+    this.annotationFormattingCard,
+    this.accessibilityFormattingCard,
+    this.raceDisplay,
+    this.racePlayback,
+    this.colorThemeFormattingCard,
   ];
 }

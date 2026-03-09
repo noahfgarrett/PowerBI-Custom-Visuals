@@ -95,51 +95,6 @@
               }
             }
           }
-        },
-        "displayUnits": {
-          "displayName": "Display Units",
-          "type": {
-            "enumeration": [
-              {
-                "value": "auto",
-                "displayName": "Auto"
-              },
-              {
-                "value": "none",
-                "displayName": "None"
-              },
-              {
-                "value": "thousands",
-                "displayName": "Thousands"
-              },
-              {
-                "value": "millions",
-                "displayName": "Millions"
-              },
-              {
-                "value": "billions",
-                "displayName": "Billions"
-              }
-            ]
-          }
-        },
-        "decimalPlaces": {
-          "displayName": "Decimal Places",
-          "type": {
-            "numeric": true
-          }
-        },
-        "prefix": {
-          "displayName": "Prefix",
-          "type": {
-            "text": true
-          }
-        },
-        "suffix": {
-          "displayName": "Suffix",
-          "type": {
-            "text": true
-          }
         }
       }
     },
@@ -270,74 +225,6 @@
         }
       }
     },
-    "conditionalColorSettings": {
-      "displayName": "Conditional Value Color",
-      "properties": {
-        "enabled": {
-          "displayName": "Enable Conditional Coloring",
-          "type": {
-            "bool": true
-          }
-        },
-        "threshold1": {
-          "displayName": "Low Threshold",
-          "type": {
-            "numeric": true
-          }
-        },
-        "threshold2": {
-          "displayName": "High Threshold",
-          "type": {
-            "numeric": true
-          }
-        },
-        "color1": {
-          "displayName": "Below Low Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        },
-        "color2": {
-          "displayName": "Between Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        },
-        "color3": {
-          "displayName": "Above High Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        },
-        "direction": {
-          "displayName": "Direction",
-          "type": {
-            "enumeration": [
-              {
-                "value": "ascending",
-                "displayName": "Ascending (low=bad, high=good)"
-              },
-              {
-                "value": "descending",
-                "displayName": "Descending (low=good, high=bad)"
-              }
-            ]
-          }
-        }
-      }
-    },
     "animationSettings": {
       "displayName": "Animation",
       "properties": {
@@ -431,6 +318,11 @@
           "type": {
             "numeric": true
           }
+        },
+        "enableGlass": {
+          "type": {
+            "bool": true
+          }
         }
       }
     },
@@ -478,6 +370,181 @@
         },
         "valueSuffix": {
           "displayName": "Suffix",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "kpiComparisonSettings": {
+      "displayName": "Comparison",
+      "properties": {
+        "show": {
+          "displayName": "Show Comparison",
+          "type": {
+            "bool": true
+          }
+        },
+        "showPercentChange": {
+          "displayName": "Show % Change",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "kpiLayoutSettings": {
+      "displayName": "Layout",
+      "properties": {
+        "kpiCount": {
+          "displayName": "KPI Count",
+          "type": {
+            "enumeration": [
+              {
+                "value": "1",
+                "displayName": "1"
+              },
+              {
+                "value": "2",
+                "displayName": "2"
+              },
+              {
+                "value": "3",
+                "displayName": "3"
+              },
+              {
+                "value": "4",
+                "displayName": "4"
+              }
+            ]
+          }
+        },
+        "sparklineType": {
+          "displayName": "Sparkline Type",
+          "type": {
+            "enumeration": [
+              {
+                "value": "line",
+                "displayName": "Line"
+              },
+              {
+                "value": "area",
+                "displayName": "Area"
+              },
+              {
+                "value": "bar",
+                "displayName": "Bar"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "kpiGoalSettings": {
+      "displayName": "Goal / Target",
+      "properties": {
+        "show": {
+          "displayName": "Show Goal",
+          "type": {
+            "bool": true
+          }
+        },
+        "goalValue": {
+          "displayName": "Goal Value",
+          "type": {
+            "numeric": true
+          }
+        },
+        "showProgressBar": {
+          "displayName": "Show Progress Bar",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "conditionalFormatting": {
+      "displayName": "Conditional Formatting",
+      "properties": {
+        "enableConditional": {
+          "displayName": "Enable Conditional Formatting",
+          "type": {
+            "bool": true
+          }
+        },
+        "conditionalDirection": {
+          "displayName": "Direction",
+          "type": {
+            "enumeration": [
+              {
+                "value": "ascending",
+                "displayName": "Ascending (Low = Bad)"
+              },
+              {
+                "value": "descending",
+                "displayName": "Descending (Low = Good)"
+              }
+            ]
+          }
+        },
+        "threshold1": {
+          "displayName": "Threshold 1",
+          "type": {
+            "numeric": true
+          }
+        },
+        "threshold2": {
+          "displayName": "Threshold 2",
+          "type": {
+            "numeric": true
+          }
+        },
+        "conditionalColor1": {
+          "displayName": "Color 1 (Bad)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "conditionalColor2": {
+          "displayName": "Color 2 (Warning)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "conditionalColor3": {
+          "displayName": "Color 3 (Good)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "accessibilityFormatting": {
+      "displayName": "Accessibility",
+      "properties": {
+        "enableKeyboardNav": {
+          "displayName": "Enable Keyboard Navigation",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "colorThemeFormatting": {
+      "properties": {
+        "colorTheme": {
           "type": {
             "text": true
           }

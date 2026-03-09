@@ -22,6 +22,14 @@ import {
   renderChartTitle,
   applyDataLabelFormatting,
   resolveDropdown,
+  renderLegend,
+  type LegendItem,
+  resolveColorTheme,
+  buildConditionalConfig,
+  resolveConditionalColor,
+  applyChartAria,
+  attachKeyboardNav,
+  ensureFocusRingStyles,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -41,6 +49,14 @@ interface DonutSegment {
   value: number;
   color: string;
   selectionId: ISelectionId | null;
+}
+
+/** Segment for the nested inner ring */
+interface InnerRingSegment {
+  label: string;
+  value: number;
+  color: string;
+  parentLabel: string;
 }
 
 interface SegmentArc {
@@ -95,6 +111,7 @@ export class AnimatedDonutProVisual implements IVisual {
       );
     }
 
+
     // Extract data
     const rawSegments = this.extractData(dataView);
     const segments = this.applyTopN(rawSegments);
@@ -106,13 +123,14 @@ export class AnimatedDonutProVisual implements IVisual {
     if (segments.length === 0) {
       this.renderEmpty();
     } else {
-      this.render(segments, options.viewport);
+      this.render(segments, options.viewport, dataView);
     }
   }
 
   // ── Data Extraction ─────────────────────────────────────────────
 
   private extractData(dataView: DataView | undefined): DonutSegment[] {
+    const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
     if (!dataView?.categorical) return [];
 
     const categorical = dataView.categorical;
@@ -141,7 +159,7 @@ export class AnimatedDonutProVisual implements IVisual {
       segments.push({
         label,
         value,
-        color: getHostChartColor(this.host.colorPalette, i),
+        color: getHostChartColor(this.host.colorPalette, i, themeName),
         selectionId: this.host.createSelectionIdBuilder()
           .withCategory(categoryColumn, i)
           .createSelectionId(),
@@ -197,7 +215,7 @@ export class AnimatedDonutProVisual implements IVisual {
       const glass = getGlassStyle({
         mode: 'light',
         opacity: s.backgroundOpacity.value / 100,
-        backgroundColor: ((s as any).backgroundColor?.value?.value ?? (s as any).bgColor?.value?.value),
+        backgroundColor: s.backgroundColor.value?.value,
         borderRadius: s.borderRadius.value,
       });
       Object.assign(this.container.style, glass);
@@ -224,7 +242,7 @@ export class AnimatedDonutProVisual implements IVisual {
 
   // ── Main Render ───────────────────────────────────────────────
 
-  private render(segments: DonutSegment[], viewport: powerbi.IViewport): void {
+  private render(segments: DonutSegment[], viewport: powerbi.IViewport, dataView?: DataView): void {
     this.clearContainer();
     this.container.style.flexDirection = 'column';
     renderChartTitle(this.container, this.settings.titleFormattingCard);
@@ -244,7 +262,7 @@ export class AnimatedDonutProVisual implements IVisual {
 
     // Render legend at top position
     if (showLegend && legendPos === 'top') {
-      this.renderLegend(segments);
+      this.renderSharedLegend(segments);
     }
 
     const svgWidth = viewport.width - padding * 2;
@@ -342,13 +360,32 @@ export class AnimatedDonutProVisual implements IVisual {
     const animEnabled = s.animationSettings.enabled.value;
     const animDuration = animEnabled ? s.animationSettings.duration.value : 0;
 
+    // Explode settings
+    const explodeEnabled = s.donutExplodeSettings.enabled.value;
+    const explodeDistance = s.donutExplodeSettings.distance.value;
+
     // Draw each segment
     arcs.forEach((arc, index) => {
+      const conditionalFill = this.getConditionalColor(arc.segment.value);
+
+      // Calculate explode offset if enabled
+      let explodeTransform = '';
+      if (explodeEnabled && explodeDistance > 0) {
+        const midAngle = (arc.startAngle + arc.endAngle) / 2;
+        const dx = Math.cos(midAngle) * explodeDistance;
+        const dy = Math.sin(midAngle) * explodeDistance;
+        explodeTransform = `translate(${dx},${dy})`;
+      }
+
       const path = g.append('path')
         .attr('class', 'donut-segment')
-        .attr('fill', arc.segment.color)
+        .attr('fill', conditionalFill ?? arc.segment.color)
         .attr('stroke', this.settings.donutSettings.segmentStrokeColor.value?.value || '#FFFFFF')
         .attr('stroke-width', this.settings.donutSettings.segmentStrokeWidth.value);
+
+      if (explodeTransform) {
+        path.attr('transform', explodeTransform);
+      }
 
       const pathNode = path.node();
       if (!pathNode) return;
@@ -415,9 +452,9 @@ export class AnimatedDonutProVisual implements IVisual {
       }
     });
 
-    // Labels at arc centroids (gated by both donut showLabels and shared showDataLabels)
-    if (s.donutSettings.showLabels.value && s.dataLabelFormattingCard.showDataLabels.value) {
-      this.renderLabels(g, arcs, innerRadius, outerRadius, animEnabled, animDuration);
+    // Labels at arc centroids (gated by local showLabels toggle)
+    if (s.donutSettings.showLabels.value) {
+      this.renderLabels(g, arcs, innerRadius, outerRadius, animEnabled, animDuration, total);
 
       // Apply shared data label formatting (font color, size, weight)
       applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.donut-label');
@@ -428,12 +465,61 @@ export class AnimatedDonutProVisual implements IVisual {
       this.renderCenterValue(g, total, animEnabled, animDuration);
     }
 
-    // Render legend at bottom (or left/right — fallback to bottom)
-    if (showLegend && legendPos !== 'top') {
-      this.renderLegend(segments);
+    // Nested inner ring
+    if (s.donutNestedSettings.enabled.value) {
+      const innerRingFieldName = s.donutNestedSettings.innerRingField.value.trim();
+      if (innerRingFieldName.length > 0) {
+        this.renderNestedRing(
+          g, segments, innerRadius, total,
+          layoutStartAngle, layoutEndAngle,
+          innerRingFieldName, dataView, animEnabled, animDuration,
+        );
+      }
     }
 
+    // Render legend at bottom (or left/right — fallback to bottom)
+    if (showLegend && legendPos !== 'top') {
+      this.renderSharedLegend(segments);
+    }
+
+    this.applyAccessibility(arcs.length);
     this.container.addEventListener('click', this.handleBackgroundClick);
+  }
+
+  // ── Conditional Formatting ───────────────────────────────────
+
+  private getConditionalColor(value: number): string | undefined {
+    const cc = this.settings.conditionalFormattingCard;
+    if (!cc.enableConditional.value) return undefined;
+    const config = buildConditionalConfig(
+      true,
+      resolveDropdown(cc.conditionalDirection),
+      cc.threshold1.value,
+      cc.threshold2.value,
+      cc.conditionalColor1.value?.value,
+      cc.conditionalColor2.value?.value,
+      cc.conditionalColor3.value?.value,
+    );
+    return resolveConditionalColor(value, config);
+  }
+
+  // ── Accessibility ──────────────────────────────────────────────
+
+  private applyAccessibility(dataPointCount: number): void {
+    const acc = this.settings.accessibilityFormattingCard;
+    if (!acc.enableKeyboardNav.value) return;
+    ensureFocusRingStyles();
+    applyChartAria(this.container, {
+      chartType: 'donut chart',
+      title: this.settings.titleFormattingCard?.titleText?.value || undefined,
+      dataPointCount,
+    });
+    const cleanup = attachKeyboardNav({
+      container: this.container,
+      itemSelector: '.donut-segment',
+      onActivate: (el) => (el as HTMLElement).click?.(),
+    });
+    this.cancelAnimations.push(cleanup);
   }
 
   // ── Arc Computation ───────────────────────────────────────────
@@ -474,13 +560,56 @@ export class AnimatedDonutProVisual implements IVisual {
     outerRadius: number,
     animEnabled: boolean,
     animDuration: number,
+    total: number,
   ): void {
-    const labelRadius = (innerRadius + outerRadius) / 2;
+    const showConnectors = this.settings.donutLabelSettings.connectorLines.value;
+    const labelFormatRaw = resolveDropdown(this.settings.donutLabelSettings.format) ?? 'category';
+
+    // When connector lines are on, place labels outside the donut
+    const labelRadius = showConnectors
+      ? outerRadius + 20
+      : (innerRadius + outerRadius) / 2;
 
     arcs.forEach((arc, index) => {
       const midAngle = (arc.startAngle + arc.endAngle) / 2;
       const lx = Math.cos(midAngle) * labelRadius;
       const ly = Math.sin(midAngle) * labelRadius;
+
+      // Resolve label text based on format setting
+      const pct = total > 0 ? ((arc.segment.value / total) * 100).toFixed(1) : '0.0';
+      const formattedValue = formatNumber(arc.segment.value, { abbreviate: true });
+      let labelText: string;
+      switch (labelFormatRaw) {
+        case 'value':
+          labelText = formattedValue;
+          break;
+        case 'percent':
+          labelText = `${pct}%`;
+          break;
+        case 'both':
+          labelText = `${arc.segment.label}: ${formattedValue}`;
+          break;
+        default: // 'category'
+          labelText = arc.segment.label;
+          break;
+      }
+
+      // Draw connector line from arc centroid to label position
+      if (showConnectors) {
+        const arcCentroidRadius = (innerRadius + outerRadius) / 2;
+        const cx = Math.cos(midAngle) * arcCentroidRadius;
+        const cy = Math.sin(midAngle) * arcCentroidRadius;
+        const elbowRadius = outerRadius + 10;
+        const ex = Math.cos(midAngle) * elbowRadius;
+        const ey = Math.sin(midAngle) * elbowRadius;
+
+        g.append('polyline')
+          .attr('class', 'donut-connector')
+          .attr('points', `${cx},${cy} ${ex},${ey} ${lx},${ly}`)
+          .attr('fill', 'none')
+          .attr('stroke', this.settings.donutSettings.labelColor.value?.value || '#94A3B8')
+          .attr('stroke-width', 1);
+      }
 
       const text = g.append('text')
         .attr('class', 'donut-label')
@@ -488,7 +617,12 @@ export class AnimatedDonutProVisual implements IVisual {
         .attr('y', ly)
         .attr('fill', this.settings.donutSettings.labelColor.value?.value || '#475569')
         .attr('font-size', `${this.settings.donutSettings.labelFontSize.value}px`)
-        .text(arc.segment.label);
+        .text(labelText);
+
+      // When labels are outside with connectors, align text based on side
+      if (showConnectors) {
+        text.attr('text-anchor', lx >= 0 ? 'start' : 'end');
+      }
 
       if (animEnabled) {
         const textNode = text.node();
@@ -500,6 +634,119 @@ export class AnimatedDonutProVisual implements IVisual {
         }
       }
     });
+  }
+
+  // ── Nested Inner Ring ────────────────────────────────────────
+
+  private renderNestedRing(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    outerSegments: DonutSegment[],
+    innerRadius: number,
+    total: number,
+    layoutStartAngle: number,
+    layoutEndAngle: number,
+    fieldName: string,
+    dataView: DataView | undefined,
+    animEnabled: boolean,
+    animDuration: number,
+  ): void {
+    if (!dataView?.categorical) return;
+
+    const categorical = dataView.categorical;
+    const categories = categorical.categories;
+    if (!categories || categories.length < 2) return;
+
+    // Find the column whose displayName matches the innerRingField setting
+    let innerColumn: powerbi.DataViewCategoryColumn | undefined;
+    for (let ci = 1; ci < categories.length; ci++) {
+      const colName = categories[ci].source.displayName ?? '';
+      if (colName.toLowerCase() === fieldName.toLowerCase()) {
+        innerColumn = categories[ci];
+        break;
+      }
+    }
+    if (!innerColumn) return;
+
+    const valuesColumn = categorical.values?.[0];
+    if (!valuesColumn) return;
+
+    // Build inner ring segments grouped by outer category
+    const innerSegments: InnerRingSegment[] = [];
+    const outerCategory = categories[0];
+
+    for (let i = 0; i < innerColumn.values.length; i++) {
+      const parentLabel = outerCategory.values[i] != null ? String(outerCategory.values[i]) : '';
+      const label = innerColumn.values[i] != null ? String(innerColumn.values[i]) : '';
+      const rawVal = valuesColumn.values[i];
+      const value = typeof rawVal === 'number' && !Number.isNaN(rawVal) ? rawVal : 0;
+      if (value <= 0) continue;
+
+      innerSegments.push({ label, value, color: '', parentLabel });
+    }
+
+    if (innerSegments.length === 0) return;
+
+    // Assign colors: derive from parent's color with slight lightening
+    const parentColorMap = new Map<string, string>();
+    for (const seg of outerSegments) {
+      parentColorMap.set(seg.label, seg.color);
+    }
+
+    let colorIndex = 0;
+    for (const seg of innerSegments) {
+      const parentColor = parentColorMap.get(seg.parentLabel) ?? '#94A3B8';
+      seg.color = withOpacity(parentColor, 0.6 + (colorIndex % 3) * 0.15);
+      colorIndex++;
+    }
+
+    // Inner ring radii: from 60% of innerRadius to innerRadius - 2px gap
+    const nestedOuterR = Math.max(0, innerRadius - 2);
+    const nestedInnerR = nestedOuterR * 0.5;
+    if (nestedOuterR <= nestedInnerR || nestedOuterR <= 0) return;
+
+    const innerTotal = innerSegments.reduce((sum, s) => sum + s.value, 0);
+    if (innerTotal <= 0) return;
+
+    const totalArcSpan = layoutEndAngle - layoutStartAngle;
+    let currentAngle = layoutStartAngle;
+
+    const arcGen = d3.arc<{ startAngle: number; endAngle: number }>()
+      .innerRadius(nestedInnerR)
+      .outerRadius(nestedOuterR)
+      .startAngle((d) => d.startAngle)
+      .endAngle((d) => d.endAngle);
+
+    for (const seg of innerSegments) {
+      const fraction = seg.value / innerTotal;
+      const arcAngle = fraction * totalArcSpan;
+      const endAngle = currentAngle + arcAngle;
+
+      const arcData = { startAngle: currentAngle, endAngle };
+
+      const path = g.append('path')
+        .attr('class', 'donut-inner-segment')
+        .attr('fill', seg.color)
+        .attr('stroke', '#FFFFFF')
+        .attr('stroke-width', 0.5);
+
+      if (animEnabled && animDuration > 0) {
+        path.attr('d', arcGen({ startAngle: currentAngle, endAngle: currentAngle }));
+        const delay = animDuration * 0.3;
+        const startA = currentAngle;
+        const endA = endAngle;
+        const tid = setTimeout(() => {
+          const cancel = sweepArc(startA, endA, animDuration, (cur) => {
+            path.attr('d', arcGen({ startAngle: startA, endAngle: cur }));
+          });
+          this.cancelAnimations.push(cancel);
+        }, delay);
+        this.cancelAnimations.push(() => clearTimeout(tid));
+      } else {
+        path.attr('d', arcGen(arcData));
+      }
+
+      currentAngle = endAngle;
+    }
   }
 
   // ── Center Value ──────────────────────────────────────────────
@@ -573,49 +820,38 @@ export class AnimatedDonutProVisual implements IVisual {
 
   // ── Legend ──────────────────────────────────────────────────
 
-  private renderLegend(segments: DonutSegment[]): void {
+  private renderSharedLegend(segments: DonutSegment[]): void {
     const legendFmtCard = this.settings.legendFormattingCard;
     const rawFontColor = legendFmtCard.legendFontColor.value?.value;
     const legendFontColor = rawFontColor != null && rawFontColor.length > 0 ? rawFontColor : '#475569';
     const legendFontSize = legendFmtCard.legendFontSize.value;
+    const legendPosRaw = legendFmtCard.legendPosition.value;
+    const position = (typeof legendPosRaw === 'string'
+      ? legendPosRaw
+      : (legendPosRaw as { value?: string } | undefined)?.value) ?? 'bottom';
+    const validPositions = ['top', 'bottom', 'left', 'right'] as const;
+    const legendPos: 'top' | 'bottom' | 'left' | 'right' =
+      (validPositions as readonly string[]).includes(position)
+        ? (position as 'top' | 'bottom' | 'left' | 'right')
+        : 'bottom';
+
+    const items: LegendItem[] = segments.map((seg) => ({
+      label: seg.label,
+      color: seg.color,
+    }));
+
+    const legendEl = renderLegend(this.container, {
+      items,
+      position: legendPos,
+      fontSize: legendFontSize,
+      fontColor: legendFontColor,
+    });
 
     const animEnabled = this.settings.animationSettings.enabled.value;
     const animDuration = animEnabled ? this.settings.animationSettings.duration.value : 0;
 
-    const legend = document.createElement('div');
-    legend.style.display = 'flex';
-    legend.style.justifyContent = 'center';
-    legend.style.gap = '16px';
-    legend.style.padding = '4px 0';
-    legend.style.flexWrap = 'wrap';
-
-    for (const seg of segments) {
-      const item = document.createElement('div');
-      item.style.display = 'flex';
-      item.style.alignItems = 'center';
-      item.style.gap = '4px';
-
-      const swatch = document.createElement('div');
-      swatch.style.width = '10px';
-      swatch.style.height = '10px';
-      swatch.style.borderRadius = '2px';
-      swatch.style.backgroundColor = seg.color;
-      swatch.style.flexShrink = '0';
-
-      const label = document.createElement('span');
-      label.style.fontSize = `${legendFontSize}px`;
-      label.style.color = legendFontColor;
-      label.textContent = seg.label;
-
-      item.appendChild(swatch);
-      item.appendChild(label);
-      legend.appendChild(item);
-    }
-
-    this.container.appendChild(legend);
-
     if (animEnabled && animDuration > 0) {
-      const cancel = fadeSlideIn(legend, 'up', animDuration * 0.5, animDuration * 0.5);
+      const cancel = fadeSlideIn(legendEl, 'up', animDuration * 0.5, animDuration * 0.5);
       this.cancelAnimations.push(cancel);
     }
   }

@@ -99,21 +99,6 @@
             ]
           }
         },
-        "startAngle": {
-          "displayName": "Arc Range",
-          "type": {
-            "enumeration": [
-              {
-                "value": "half",
-                "displayName": "Half Circle (180\u00b0)"
-              },
-              {
-                "value": "full",
-                "displayName": "Three-Quarter (270\u00b0)"
-              }
-            ]
-          }
-        },
         "trackOpacity": {
           "displayName": "Track Opacity (%)",
           "type": {
@@ -136,6 +121,21 @@
           "displayName": "Rounded Caps",
           "type": {
             "bool": true
+          }
+        },
+        "startAngle": {
+          "displayName": "Arc Preset",
+          "type": {
+            "enumeration": [
+              {
+                "value": "half",
+                "displayName": "Half Circle"
+              },
+              {
+                "value": "full",
+                "displayName": "Full Circle"
+              }
+            ]
           }
         }
       }
@@ -204,24 +204,6 @@
                 "color": true
               }
             }
-          }
-        },
-        "prefix": {
-          "displayName": "Prefix",
-          "type": {
-            "text": true
-          }
-        },
-        "suffix": {
-          "displayName": "Suffix",
-          "type": {
-            "text": true
-          }
-        },
-        "decimalPlaces": {
-          "displayName": "Decimal Places",
-          "type": {
-            "numeric": true
           }
         }
       }
@@ -306,12 +288,6 @@
     "dataLabelFormatting": {
       "displayName": "Data Labels",
       "properties": {
-        "showDataLabels": {
-          "displayName": "Show Data Labels",
-          "type": {
-            "bool": true
-          }
-        },
         "dataLabelFontSize": {
           "displayName": "Font Size",
           "type": {
@@ -421,6 +397,159 @@
           "type": {
             "numeric": true
           }
+        },
+        "enableGlass": {
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "gaugeScaleSettings": {
+      "displayName": "Scale",
+      "properties": {
+        "showTicks": {
+          "displayName": "Show Tick Marks",
+          "type": {
+            "bool": true
+          }
+        },
+        "showLabels": {
+          "displayName": "Show Scale Labels",
+          "type": {
+            "bool": true
+          }
+        },
+        "majorTicks": {
+          "displayName": "Major Ticks",
+          "type": {
+            "numeric": true
+          }
+        },
+        "minorTicks": {
+          "displayName": "Minor Ticks",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "gaugeArcSettings": {
+      "displayName": "Arc Display",
+      "properties": {
+        "arcRange": {
+          "displayName": "Arc Range (degrees)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "segmented": {
+          "displayName": "LED-Style Segments",
+          "type": {
+            "bool": true
+          }
+        },
+        "segmentCount": {
+          "displayName": "Segment Count",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "gaugeComparisonSettings": {
+      "displayName": "Comparison",
+      "properties": {
+        "showDelta": {
+          "displayName": "Show Delta Indicator",
+          "type": {
+            "bool": true
+          }
+        },
+        "showSparkline": {
+          "displayName": "Show Mini Sparkline",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "conditionalFormatting": {
+      "displayName": "Conditional Formatting",
+      "properties": {
+        "enableConditional": {
+          "displayName": "Enable Conditional Formatting",
+          "type": {
+            "bool": true
+          }
+        },
+        "conditionalDirection": {
+          "displayName": "Direction",
+          "type": {
+            "enumeration": [
+              {
+                "value": "ascending",
+                "displayName": "Ascending (Low = Bad)"
+              },
+              {
+                "value": "descending",
+                "displayName": "Descending (Low = Good)"
+              }
+            ]
+          }
+        },
+        "threshold1": {
+          "displayName": "Threshold 1",
+          "type": {
+            "numeric": true
+          }
+        },
+        "threshold2": {
+          "displayName": "Threshold 2",
+          "type": {
+            "numeric": true
+          }
+        },
+        "conditionalColor1": {
+          "displayName": "Color 1 (Bad)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "conditionalColor2": {
+          "displayName": "Color 2 (Warning)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "conditionalColor3": {
+          "displayName": "Color 3 (Good)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "accessibilityFormatting": {
+      "displayName": "Accessibility",
+      "properties": {
+        "enableKeyboardNav": {
+          "displayName": "Enable Keyboard Navigation",
+          "type": {
+            "bool": true
+          }
         }
       }
     },
@@ -475,6 +604,7 @@
       }
     }
   },
+  "supportsKeyboardFocus": true,
   "privileges": [],
   "suppressDefaultTitle": true
 }

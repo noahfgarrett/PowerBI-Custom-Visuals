@@ -5,7 +5,8 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, NumberFormattingCard} from '../../core/src';
+import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, NumberFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard,
+  SeriesFormattingCard, } from '../../core/src';
 // ── Scatter Settings ──────────────────────────────────────────────────
 
 class ScatterSettingsCard extends formattingSettings.SimpleCard {
@@ -80,20 +81,6 @@ class AxisSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.showXAxis, this.showYAxis, this.gridLines];
 }
 
-// ── Legend Settings ───────────────────────────────────────────────────
-
-class LegendSettingsCard extends formattingSettings.SimpleCard {
-  show = new formattingSettings.ToggleSwitch({
-    name: 'show',
-    displayName: 'Show Legend',
-    value: true,
-  });
-
-  name = 'legendSettings';
-  displayName = 'Legend';
-  slices = [this.show];
-}
-
 // ── Card Style ────────────────────────────────────────────────────────
 
 class CardStyleSettings extends formattingSettings.SimpleCard {
@@ -103,14 +90,14 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
     value: true,
   });
 
-  bgColor = new formattingSettings.ColorPicker({
-    name: 'bgColor',
+  backgroundColor = new formattingSettings.ColorPicker({
+    name: 'backgroundColor',
     displayName: 'Background Color',
     value: { value: '' },
   });
 
-  bgOpacity = new formattingSettings.NumUpDown({
-    name: 'bgOpacity',
+  backgroundOpacity = new formattingSettings.NumUpDown({
+    name: 'backgroundOpacity',
     displayName: 'Background Opacity (%)',
     value: 35,
   });
@@ -123,7 +110,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.bgColor, this.bgOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 // ── Animation Settings ───────────────────────────────────────────────
@@ -338,16 +325,122 @@ class TrendlineSettingsCard extends formattingSettings.SimpleCard {
   ];
 }
 
+// ── Scatter Cluster Settings ─────────────────────────────────────────
+
+class ScatterClusterSettingsCard extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Clustering',
+    value: false,
+  });
+
+  clusters = new formattingSettings.NumUpDown({
+    name: 'clusters',
+    displayName: 'Number of Clusters',
+    value: 3,
+  });
+
+  showHulls = new formattingSettings.ToggleSwitch({
+    name: 'showHulls',
+    displayName: 'Show Convex Hulls',
+    value: true,
+  });
+
+  name = 'scatterClusterSettings';
+  displayName = 'Clustering';
+  slices = [this.enabled, this.clusters, this.showHulls];
+}
+
+// ── Scatter Animation Settings ──────────────────────────────────────
+
+class ScatterAnimationSettingsCard extends formattingSettings.SimpleCard {
+  enableTransitions = new formattingSettings.ToggleSwitch({
+    name: 'enableTransitions',
+    displayName: 'Animated Transitions',
+    value: true,
+  });
+
+  enablePlayAxis = new formattingSettings.ToggleSwitch({
+    name: 'enablePlayAxis',
+    displayName: 'Enable Play Axis',
+    value: false,
+  });
+
+  playSpeed = new formattingSettings.NumUpDown({
+    name: 'playSpeed',
+    displayName: 'Play Speed (ms)',
+    value: 1000,
+  });
+
+  name = 'scatterAnimationSettings';
+  displayName = 'Scatter Animation';
+  slices = [this.enableTransitions, this.enablePlayAxis, this.playSpeed];
+}
+
+// ── Scatter Zoom Settings ───────────────────────────────────────────
+
+class ScatterZoomSettingsCard extends formattingSettings.SimpleCard {
+  enableZoom = new formattingSettings.ToggleSwitch({
+    name: 'enableZoom',
+    displayName: 'Enable Zoom',
+    value: false,
+  });
+
+  enablePan = new formattingSettings.ToggleSwitch({
+    name: 'enablePan',
+    displayName: 'Enable Pan',
+    value: false,
+  });
+
+  name = 'scatterZoomSettings';
+  displayName = 'Zoom & Pan';
+  slices = [this.enableZoom, this.enablePan];
+}
+
+// ── Scatter Color Settings ──────────────────────────────────────────
+
+class ScatterColorSettingsCard extends formattingSettings.SimpleCard {
+  colorScale = new formattingSettings.ItemDropdown({
+    name: 'colorScale',
+    displayName: 'Color Scale',
+    items: [
+      { value: 'categorical', displayName: 'Categorical' },
+      { value: 'sequential', displayName: 'Sequential' },
+    ],
+    value: { value: 'categorical', displayName: 'Categorical' },
+  });
+
+  startColor = new formattingSettings.ColorPicker({
+    name: 'startColor',
+    displayName: 'Start Color',
+    value: { value: '#3B82F6' },
+  });
+
+  endColor = new formattingSettings.ColorPicker({
+    name: 'endColor',
+    displayName: 'End Color',
+    value: { value: '#EF4444' },
+  });
+
+  name = 'scatterColorSettings';
+  displayName = 'Color Scale';
+  slices = [this.colorScale, this.startColor, this.endColor];
+}
+
 // ── Root Model ────────────────────────────────────────────────────────
 
 export class ScatterBubbleSettings extends formattingSettings.Model {
   scatterSettings = new ScatterSettingsCard();
   axisSettings = new AxisSettingsCard();
-  legendSettings = new LegendSettingsCard();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettingsCard();
   quadrantSettings = new QuadrantSettingsCard();
   trendlineSettings = new TrendlineSettingsCard();
+
+  scatterClusterSettings = new ScatterClusterSettingsCard();
+  scatterAnimationSettings = new ScatterAnimationSettingsCard();
+  scatterZoomSettings = new ScatterZoomSettingsCard();
+  scatterColorSettings = new ScatterColorSettingsCard();
 
   axisFormattingCard = new AxisFormattingCard();
 
@@ -357,21 +450,36 @@ export class ScatterBubbleSettings extends formattingSettings.Model {
 
   titleFormattingCard = new TitleFormattingCard();
 
-
   numberFormattingCard = new NumberFormattingCard();
 
+  referenceLineFormattingCard = new ReferenceLineFormattingCard();
+  trendLineFormattingCard = new TrendLineFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
+
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
+  seriesFormattingCard = new SeriesFormattingCard();
   cards = [
     this.scatterSettings,
     this.axisSettings,
-    this.legendSettings,
     this.cardSettings,
     this.animationSettings,
     this.quadrantSettings,
     this.trendlineSettings,
+    this.scatterClusterSettings,
+    this.scatterAnimationSettings,
+    this.scatterZoomSettings,
+    this.scatterColorSettings,
     this.axisFormattingCard,
     this.legendFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.numberFormattingCard,
+    this.referenceLineFormattingCard,
+    this.trendLineFormattingCard,
+    this.conditionalFormattingCard,
+    this.accessibilityFormattingCard,
+    this.seriesFormattingCard,
+    this.colorThemeFormattingCard,
   ];
 }

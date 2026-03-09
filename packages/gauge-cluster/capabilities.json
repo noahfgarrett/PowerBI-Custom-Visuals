@@ -82,7 +82,7 @@
           }
         },
         "arcRange": {
-          "displayName": "Arc Range (\u00b0)",
+          "displayName": "Arc Range (°)",
           "type": {
             "numeric": true
           }
@@ -313,7 +313,7 @@
     "cardSettings": {
       "displayName": "Card Style",
       "properties": {
-        "bgColor": {
+        "backgroundColor": {
           "displayName": "Background Color",
           "type": {
             "fill": {
@@ -323,7 +323,7 @@
             }
           }
         },
-        "bgOpacity": {
+        "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
@@ -333,6 +333,11 @@
           "displayName": "Border Radius",
           "type": {
             "numeric": true
+          }
+        },
+        "enableGlass": {
+          "type": {
+            "bool": true
           }
         }
       }
@@ -383,6 +388,125 @@
           "displayName": "Suffix",
           "type": {
             "text": true
+          }
+        }
+      }
+    },
+    "clusterDisplaySettings": {
+      "displayName": "Cluster Display",
+      "properties": {
+        "showSparklines": {
+          "displayName": "Show Mini Sparklines",
+          "type": {
+            "bool": true
+          }
+        },
+        "showNeedle": {
+          "displayName": "Show Needle/Pointer",
+          "type": {
+            "bool": true
+          }
+        },
+        "sortByValue": {
+          "displayName": "Sort by Value",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "clusterLabelSettings": {
+      "displayName": "Cluster Labels",
+      "properties": {
+        "showSubtitle": {
+          "displayName": "Show Subtitle",
+          "type": {
+            "bool": true
+          }
+        },
+        "subtitleField": {
+          "displayName": "Subtitle Field",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "conditionalFormatting": {
+      "displayName": "Conditional Formatting",
+      "properties": {
+        "enableConditional": {
+          "displayName": "Enable Conditional Formatting",
+          "type": {
+            "bool": true
+          }
+        },
+        "conditionalDirection": {
+          "displayName": "Direction",
+          "type": {
+            "enumeration": [
+              {
+                "value": "ascending",
+                "displayName": "Ascending (Low = Bad)"
+              },
+              {
+                "value": "descending",
+                "displayName": "Descending (Low = Good)"
+              }
+            ]
+          }
+        },
+        "threshold1": {
+          "displayName": "Threshold 1",
+          "type": {
+            "numeric": true
+          }
+        },
+        "threshold2": {
+          "displayName": "Threshold 2",
+          "type": {
+            "numeric": true
+          }
+        },
+        "conditionalColor1": {
+          "displayName": "Color 1 (Bad)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "conditionalColor2": {
+          "displayName": "Color 2 (Warning)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "conditionalColor3": {
+          "displayName": "Color 3 (Good)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "accessibilityFormatting": {
+      "displayName": "Accessibility",
+      "properties": {
+        "enableKeyboardNav": {
+          "displayName": "Enable Keyboard Navigation",
+          "type": {
+            "bool": true
           }
         }
       }

@@ -17,6 +17,14 @@ import {
   getGlassStyle,
   renderChartTitle,
   applyDataLabelFormatting,
+  resolveConditionalColor,
+  buildConditionalConfig,
+  resolveDropdown,
+  applyChartAria,
+  applyDataPointAria,
+  attachKeyboardNav,
+  ensureFocusRingStyles,
+  renderSparkline,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -58,6 +66,7 @@ export class GaugeClusterVisual implements IVisual {
   private settings: GaugeClusterSettings;
   private formattingSettingsService: FormattingSettingsService;
   private previousValues: Map<string, number> = new Map();
+  private sparklineHistory: Map<string, number[]> = new Map();
   private cancelAnimations: Array<() => void> = [];
 
   constructor(options: VisualConstructorOptions) {
@@ -164,8 +173,8 @@ export class GaugeClusterVisual implements IVisual {
     if (s.cardSettings.enableGlass.value) {
       const glass = getGlassStyle({
         mode: 'light',
-        opacity: s.cardSettings.bgOpacity.value / 100,
-        backgroundColor: ((s.cardSettings as any).backgroundColor?.value?.value ?? (s.cardSettings as any).bgColor?.value?.value),
+        opacity: s.cardSettings.backgroundOpacity.value / 100,
+        backgroundColor: s.cardSettings.backgroundColor.value?.value,
         borderRadius: s.cardSettings.borderRadius.value,
       });
       Object.assign(this.container.style, glass);
@@ -200,7 +209,7 @@ export class GaugeClusterVisual implements IVisual {
     const maxVal = s.clusterSettings.maxValue.value;
     const totalRange = maxVal > minVal ? maxVal - minVal : 100;
     const showLabels = s.clusterSettings.showLabels.value;
-    const showValues = s.clusterSettings.showValues.value;
+    const showValues = s.clusterSettings.showValues.value && s.dataLabelFormattingCard.showDataLabels.value;
 
     // Zone thresholds (as fraction 0..1)
     const lowThresholdPct = Math.max(0, Math.min(100, s.zoneSettings.lowThreshold.value)) / 100;
@@ -235,10 +244,27 @@ export class GaugeClusterVisual implements IVisual {
       .outerRadius(outerRadius)
       .cornerRadius(s.clusterSettings.roundedCaps.value ? arcWidth / 2 : 0);
 
+    // ── Conditional Formatting Config ───────────────────────────
+    const cc = s.conditionalFormattingCard;
+    const conditionalConfig = buildConditionalConfig(
+      cc.enableConditional.value,
+      resolveDropdown(cc.conditionalDirection),
+      cc.threshold1.value,
+      cc.threshold2.value,
+      cc.conditionalColor1.value?.value,
+      cc.conditionalColor2.value?.value,
+      cc.conditionalColor3.value?.value,
+    );
+
+    // ── Sort by value if enabled ─────────────────────────────────
+    const sortedItems = s.clusterDisplaySettings.sortByValue.value
+      ? [...items].sort((a, b) => b.value - a.value)
+      : items;
+
     // ── Render Each Gauge ────────────────────────────────────────
     const newValues = new Map<string, number>();
 
-    items.forEach((item, index) => {
+    sortedItems.forEach((item, index) => {
       const cell = document.createElement('div');
       cell.className = 'gauge-cell';
       cell.style.cursor = 'pointer';
@@ -285,12 +311,13 @@ export class GaugeClusterVisual implements IVisual {
       const normalizedValue = (clampedValue - minVal) / totalRange; // 0..1
       newValues.set(item.label, item.value);
 
-      // Color by zone
-      const valueColor = normalizedValue < lowThresholdPct
+      // Color by zone (conditional formatting overrides zone colors if enabled)
+      const zoneColor = normalizedValue < lowThresholdPct
         ? lowColor
         : normalizedValue < highThresholdPct
           ? midColor
           : highColor;
+      const valueColor = resolveConditionalColor(item.value, conditionalConfig) ?? zoneColor;
 
       // Fill arc end angle proportional to value
       const valueEndAngle = startAngleRad + totalSweepRad * normalizedValue;
@@ -403,6 +430,33 @@ export class GaugeClusterVisual implements IVisual {
         }
       }
 
+      // ── Needle / Pointer ────────────────────────────────────
+      if (s.clusterDisplaySettings.showNeedle.value) {
+        const needleAngle = startAngleRad + totalSweepRad * normalizedValue;
+        const needleLength = outerRadius - 4;
+        // d3.arc uses 12-o'clock origin; rotate by -PI/2 for Math.cos/sin
+        const cosN = Math.cos(needleAngle - Math.PI / 2);
+        const sinN = Math.sin(needleAngle - Math.PI / 2);
+
+        g.append('line')
+          .attr('class', 'gauge-needle')
+          .attr('x1', 0)
+          .attr('y1', 0)
+          .attr('x2', needleLength * cosN)
+          .attr('y2', needleLength * sinN)
+          .attr('stroke', valueColor)
+          .attr('stroke-width', 2)
+          .attr('stroke-linecap', 'round');
+
+        // Center dot
+        g.append('circle')
+          .attr('class', 'gauge-needle-center')
+          .attr('cx', 0)
+          .attr('cy', 0)
+          .attr('r', 3)
+          .attr('fill', valueColor);
+      }
+
       // ── Label Text (below arc) ───────────────────────────────
       if (showLabels) {
         // Position label below the arc
@@ -413,6 +467,48 @@ export class GaugeClusterVisual implements IVisual {
           .attr('x', 0)
           .attr('y', labelY)
           .text(item.label);
+      }
+
+      // ── Subtitle ────────────────────────────────────────────
+      if (s.clusterLabelSettings.showSubtitle.value) {
+        const subtitleText = s.clusterLabelSettings.subtitleField.value || '';
+        if (subtitleText.length > 0) {
+          const subtitleY = outerRadius + (showLabels ? 16 : 6);
+          g.append('text')
+            .attr('class', 'gauge-subtitle')
+            .attr('x', 0)
+            .attr('y', subtitleY)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', '7px')
+            .attr('fill', '#64748B')
+            .attr('opacity', 0.8)
+            .text(subtitleText);
+        }
+      }
+
+      // ── Sparkline ───────────────────────────────────────────
+      if (s.clusterDisplaySettings.showSparklines.value) {
+        // Track history for sparkline (keep up to 20 points)
+        const history = this.sparklineHistory.get(item.label) ?? [];
+        history.push(item.value);
+        if (history.length > 20) history.shift();
+        this.sparklineHistory.set(item.label, history);
+
+        if (history.length >= 2) {
+          const sparkW = outerRadius * 1.6;
+          const sparkH = outerRadius * 0.4;
+          const sparkSvg = renderSparkline({
+            values: history,
+            width: sparkW,
+            height: sparkH,
+            lineColor: valueColor,
+            lineWidth: 1,
+            showEndDot: true,
+          });
+          sparkSvg.style.display = 'block';
+          sparkSvg.style.margin = '2px auto 0';
+          cell.appendChild(sparkSvg);
+        }
       }
 
       // ── Cell Entrance Animation ──────────────────────────────
@@ -441,6 +537,36 @@ export class GaugeClusterVisual implements IVisual {
     this.previousValues = newValues;
     // Apply shared formatting settings
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.gauge-value');
+
+    // ── Accessibility ─────────────────────────────────────────────
+    if (s.accessibilityFormattingCard.enableKeyboardNav.value) {
+      ensureFocusRingStyles();
+
+      applyChartAria(this.container, {
+        chartType: 'gauge cluster',
+        title: s.titleFormattingCard.titleText.value || undefined,
+        dataPointCount: sortedItems.length,
+      });
+
+      // Make each gauge cell keyboard-focusable
+      const cells = this.container.querySelectorAll('.gauge-cell');
+      cells.forEach((cell, i) => {
+        if (i < sortedItems.length) {
+          const item = sortedItems[i];
+          const fmtVal = formatWithSettings(item.value, this.settings.numberFormattingCard);
+          applyDataPointAria(cell, item.label, fmtVal, i, sortedItems.length);
+        }
+      });
+
+      const cleanup = attachKeyboardNav({
+        container: this.container,
+        itemSelector: '.gauge-cell',
+        onActivate: (el) => {
+          (el as HTMLElement).click?.();
+        },
+      });
+      this.cancelAnimations.push(cleanup);
+    }
 
     this.container.addEventListener('click', this.handleBackgroundClick);
   }

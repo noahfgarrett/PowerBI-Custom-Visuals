@@ -1,6 +1,6 @@
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { TitleFormattingCard } from '../../core/src';
+import { TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard } from '../../core/src';
 class IndicatorSettings extends formattingSettings.SimpleCard {
   shape = new formattingSettings.ItemDropdown({
     name: 'shape', displayName: 'Shape',
@@ -59,11 +59,12 @@ class PulseSettings extends formattingSettings.SimpleCard {
 
 class CardStyleSettings extends formattingSettings.SimpleCard {
   enableGlass = new formattingSettings.ToggleSwitch({ name: 'enableGlass', displayName: 'Glass Effect', value: true });
+  backgroundColor = new formattingSettings.ColorPicker({ name: 'backgroundColor', displayName: 'Background Color', value: { value: '' } });
   backgroundOpacity = new formattingSettings.NumUpDown({ name: 'backgroundOpacity', displayName: 'Background Opacity (%)', value: 35 });
   borderRadius = new formattingSettings.NumUpDown({ name: 'borderRadius', displayName: 'Border Radius', value: 12 });
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 class AnimationSettings extends formattingSettings.SimpleCard {
@@ -74,15 +75,95 @@ class AnimationSettings extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
+// -- Status Display Settings --------------------------------------------------
+
+class StatusDisplaySettings extends formattingSettings.SimpleCard {
+  showSparkline = new formattingSettings.ToggleSwitch({
+    name: 'showSparkline',
+    displayName: 'Show Sparkline',
+    value: false,
+  });
+
+  showStatusText = new formattingSettings.ToggleSwitch({
+    name: 'showStatusText',
+    displayName: 'Show Status Text',
+    value: false,
+  });
+
+  iconSet = new formattingSettings.ItemDropdown({
+    name: 'iconSet',
+    displayName: 'Icon Set',
+    items: [
+      { value: 'circle', displayName: 'Circle' },
+      { value: 'square', displayName: 'Square' },
+      { value: 'triangle', displayName: 'Triangle' },
+      { value: 'diamond', displayName: 'Diamond' },
+      { value: 'star', displayName: 'Star' },
+      { value: 'heart', displayName: 'Heart' },
+      { value: 'flag', displayName: 'Flag' },
+      { value: 'check', displayName: 'Check' },
+    ],
+    value: { value: 'circle', displayName: 'Circle' },
+  });
+
+  name = 'statusDisplaySettings';
+  displayName = 'Status Display';
+  slices = [this.showSparkline, this.showStatusText, this.iconSet];
+}
+
+// -- Status Level Settings ----------------------------------------------------
+
+class StatusLevelSettings extends formattingSettings.SimpleCard {
+  levelCount = new formattingSettings.ItemDropdown({
+    name: 'levelCount',
+    displayName: 'Level Count',
+    items: [
+      { value: '3', displayName: '3' },
+      { value: '4', displayName: '4' },
+      { value: '5', displayName: '5' },
+    ],
+    value: { value: '3', displayName: '3' },
+  });
+
+  level4Color = new formattingSettings.ColorPicker({
+    name: 'level4Color',
+    displayName: 'Level 4 Color',
+    value: { value: '#60A5FA' },
+  });
+
+  level5Color = new formattingSettings.ColorPicker({
+    name: 'level5Color',
+    displayName: 'Level 5 Color',
+    value: { value: '#A78BFA' },
+  });
+
+  name = 'statusLevelSettings';
+  displayName = 'Status Levels';
+  slices = [this.levelCount, this.level4Color, this.level5Color];
+}
+
 export class StatusIndicatorSettings extends formattingSettings.Model {
   indicatorSettings = new IndicatorSettings();
   thresholdSettings = new ThresholdSettings();
   pulseSettings = new PulseSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
+  statusDisplaySettings = new StatusDisplaySettings();
+  statusLevelSettings = new StatusLevelSettings();
   titleFormattingCard = new TitleFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
 
-  cards = [this.indicatorSettings, this.thresholdSettings, this.pulseSettings,
- this.cardSettings,
-    this.animationSettings, this.titleFormattingCard];
+  cards = [
+    this.indicatorSettings,
+    this.thresholdSettings,
+    this.pulseSettings,
+    this.cardSettings,
+    this.animationSettings,
+    this.statusDisplaySettings,
+    this.statusLevelSettings,
+    this.titleFormattingCard,
+    this.conditionalFormattingCard,
+    this.accessibilityFormattingCard,
+  ];
 }

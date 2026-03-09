@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, SortFormattingCard} from '../../core/src';
+import { LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, SortFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard } from '../../core/src';
 class RingSettings extends formattingSettings.SimpleCard {
   thickness = new formattingSettings.NumUpDown({
     name: 'thickness',
@@ -77,37 +77,37 @@ class ColorSettings extends formattingSettings.SimpleCard {
   ring1Color = new formattingSettings.ColorPicker({
     name: 'ring1Color',
     displayName: 'Ring 1 Color',
-    value: { value: '#F28C38' },
+    value: { value: '' },
   });
 
   ring2Color = new formattingSettings.ColorPicker({
     name: 'ring2Color',
     displayName: 'Ring 2 Color',
-    value: { value: '#3B82F6' },
+    value: { value: '' },
   });
 
   ring3Color = new formattingSettings.ColorPicker({
     name: 'ring3Color',
     displayName: 'Ring 3 Color',
-    value: { value: '#34D399' },
+    value: { value: '' },
   });
 
   ring4Color = new formattingSettings.ColorPicker({
     name: 'ring4Color',
     displayName: 'Ring 4 Color',
-    value: { value: '#F87171' },
+    value: { value: '' },
   });
 
   ring5Color = new formattingSettings.ColorPicker({
     name: 'ring5Color',
     displayName: 'Ring 5 Color',
-    value: { value: '#A78BFA' },
+    value: { value: '' },
   });
 
   ring6Color = new formattingSettings.ColorPicker({
     name: 'ring6Color',
     displayName: 'Ring 6 Color',
-    value: { value: '#FBBF24' },
+    value: { value: '' },
   });
 
   name = 'colorSettings';
@@ -149,7 +149,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 class CenterContentSettings extends formattingSettings.SimpleCard {
@@ -258,6 +258,40 @@ class AnimationSettings extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
+// ── Ring Display Settings ───────────────────────────────────────
+
+class RingDisplaySettings extends formattingSettings.SimpleCard {
+  showArcLabels = new formattingSettings.ToggleSwitch({
+    name: 'showArcLabels',
+    displayName: 'Show Arc Labels (textPath)',
+    value: false,
+  });
+
+  showOverflow = new formattingSettings.ToggleSwitch({
+    name: 'showOverflow',
+    displayName: 'Show Overflow Indicator (>100%)',
+    value: false,
+  });
+
+  name = 'ringDisplaySettings';
+  displayName = 'Ring Display';
+  slices = [this.showArcLabels, this.showOverflow];
+}
+
+// ── Ring Gradient Settings ──────────────────────────────────────
+
+class RingGradientSettings extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Gradient Fill',
+    value: false,
+  });
+
+  name = 'ringGradientSettings';
+  displayName = 'Ring Gradient';
+  slices = [this.enabled];
+}
+
 export class RingStackSettings extends formattingSettings.Model {
   ringSettings = new RingSettings();
   colorSettings = new ColorSettings();
@@ -265,15 +299,17 @@ export class RingStackSettings extends formattingSettings.Model {
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
   perRingMaxSettings = new PerRingMaxSettingsCard();
+  ringDisplaySettings = new RingDisplaySettings();
+  ringGradientSettings = new RingGradientSettings();
 
   legendFormattingCard = new LegendFormattingCard();
-
   dataLabelFormattingCard = new DataLabelFormattingCard();
-
   titleFormattingCard = new TitleFormattingCard();
-
-
   sortFormattingCard = new SortFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
+
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
 
   cards = [
     this.ringSettings,
@@ -282,9 +318,14 @@ export class RingStackSettings extends formattingSettings.Model {
     this.cardSettings,
     this.animationSettings,
     this.perRingMaxSettings,
+    this.ringDisplaySettings,
+    this.ringGradientSettings,
     this.legendFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.sortFormattingCard,
+    this.conditionalFormattingCard,
+    this.accessibilityFormattingCard,
+    this.colorThemeFormattingCard,
   ];
 }

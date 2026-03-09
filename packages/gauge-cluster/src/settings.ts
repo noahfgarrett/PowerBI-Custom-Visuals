@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { DataLabelFormattingCard, TitleFormattingCard, NumberFormattingCard} from '../../core/src';
+import { DataLabelFormattingCard, TitleFormattingCard, NumberFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard } from '../../core/src';
 class ClusterSettings extends formattingSettings.SimpleCard {
   gaugesPerRow = new formattingSettings.NumUpDown({
     name: 'gaugesPerRow',
@@ -123,14 +123,14 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
     value: true,
   });
 
-  bgColor = new formattingSettings.ColorPicker({
-    name: 'bgColor',
+  backgroundColor = new formattingSettings.ColorPicker({
+    name: 'backgroundColor',
     displayName: 'Background Color',
     value: { value: '' },
   });
 
-  bgOpacity = new formattingSettings.NumUpDown({
-    name: 'bgOpacity',
+  backgroundOpacity = new formattingSettings.NumUpDown({
+    name: 'backgroundOpacity',
     displayName: 'Background Opacity (%)',
     value: 35,
   });
@@ -143,7 +143,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.bgColor, this.bgOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 class TargetSettings extends formattingSettings.SimpleCard {
@@ -188,19 +188,67 @@ class AnimationSettings extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
+// ── Cluster Display Settings ────────────────────────────────────
+
+class ClusterDisplaySettings extends formattingSettings.SimpleCard {
+  showSparklines = new formattingSettings.ToggleSwitch({
+    name: 'showSparklines',
+    displayName: 'Show Mini Sparklines',
+    value: false,
+  });
+
+  showNeedle = new formattingSettings.ToggleSwitch({
+    name: 'showNeedle',
+    displayName: 'Show Needle/Pointer',
+    value: false,
+  });
+
+  sortByValue = new formattingSettings.ToggleSwitch({
+    name: 'sortByValue',
+    displayName: 'Sort by Value',
+    value: false,
+  });
+
+  name = 'clusterDisplaySettings';
+  displayName = 'Cluster Display';
+  slices = [this.showSparklines, this.showNeedle, this.sortByValue];
+}
+
+// ── Cluster Label Settings ──────────────────────────────────────
+
+class ClusterLabelSettings extends formattingSettings.SimpleCard {
+  showSubtitle = new formattingSettings.ToggleSwitch({
+    name: 'showSubtitle',
+    displayName: 'Show Subtitle',
+    value: false,
+  });
+
+  subtitleField = new formattingSettings.TextInput({
+    name: 'subtitleField',
+    displayName: 'Subtitle Field',
+    value: '',
+    placeholder: 'e.g. Department',
+  });
+
+  name = 'clusterLabelSettings';
+  displayName = 'Cluster Labels';
+  slices = [this.showSubtitle, this.subtitleField];
+}
+
 export class GaugeClusterSettings extends formattingSettings.Model {
   clusterSettings = new ClusterSettings();
   zoneSettings = new ZoneSettings();
   targetSettings = new TargetSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
+  clusterDisplaySettings = new ClusterDisplaySettings();
+  clusterLabelSettings = new ClusterLabelSettings();
 
   dataLabelFormattingCard = new DataLabelFormattingCard();
-
   titleFormattingCard = new TitleFormattingCard();
-
-
   numberFormattingCard = new NumberFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
 
   cards = [
     this.clusterSettings,
@@ -208,8 +256,12 @@ export class GaugeClusterSettings extends formattingSettings.Model {
     this.targetSettings,
     this.cardSettings,
     this.animationSettings,
+    this.clusterDisplaySettings,
+    this.clusterLabelSettings,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.numberFormattingCard,
+    this.conditionalFormattingCard,
+    this.accessibilityFormattingCard,
   ];
 }

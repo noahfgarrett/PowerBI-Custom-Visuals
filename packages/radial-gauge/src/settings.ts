@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { DataLabelFormattingCard, TitleFormattingCard, NumberFormattingCard} from '../../core/src';
+import { DataLabelFormattingCard, TitleFormattingCard, NumberFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard } from '../../core/src';
 class ArcSettings extends formattingSettings.SimpleCard {
   thickness = new formattingSettings.ItemDropdown({
     name: 'thickness',
@@ -17,17 +17,6 @@ class ArcSettings extends formattingSettings.SimpleCard {
     ],
     value: { value: 'medium', displayName: 'Medium' },
   });
-
-  startAngle = new formattingSettings.ItemDropdown({
-    name: 'startAngle',
-    displayName: 'Arc Range',
-    items: [
-      { value: 'half', displayName: 'Half Circle (180\u00b0)' },
-      { value: 'full', displayName: 'Three-Quarter (270\u00b0)' },
-    ],
-    value: { value: 'full', displayName: 'Three-Quarter (270\u00b0)' },
-  });
-
 
   trackOpacity = new formattingSettings.NumUpDown({
 
@@ -65,9 +54,19 @@ class ArcSettings extends formattingSettings.SimpleCard {
     value: true,
   });
 
+  startAngle = new formattingSettings.ItemDropdown({
+    name: 'startAngle',
+    displayName: 'Arc Preset',
+    items: [
+      { value: 'half', displayName: 'Half Circle' },
+      { value: 'full', displayName: 'Full Circle' },
+    ],
+    value: { value: 'half', displayName: 'Half Circle' },
+  });
+
   name = 'arcSettings';
   displayName = 'Arc';
-  slices = [this.thickness, this.startAngle, this.trackOpacity, this.zoneBorderWidth, this.zoneBorderOpacity, this.roundedCaps];
+  slices = [this.thickness, this.trackOpacity, this.zoneBorderWidth, this.zoneBorderOpacity, this.roundedCaps, this.startAngle];
 }
 
 class ZoneSettings extends formattingSettings.SimpleCard {
@@ -125,29 +124,9 @@ class ValueSettings extends formattingSettings.SimpleCard {
     value: { value: '' }, // empty = use theme default
   });
 
-  prefix = new formattingSettings.TextInput({
-    name: 'prefix',
-    displayName: 'Prefix',
-    value: '',
-    placeholder: 'e.g. $',
-  });
-
-  suffix = new formattingSettings.TextInput({
-    name: 'suffix',
-    displayName: 'Suffix',
-    value: '',
-    placeholder: 'e.g. %',
-  });
-
-  decimalPlaces = new formattingSettings.NumUpDown({
-    name: 'decimalPlaces',
-    displayName: 'Decimal Places',
-    value: 0,
-  });
-
   name = 'valueSettings';
   displayName = 'Value';
-  slices = [this.fontSize, this.fontColor, this.prefix, this.suffix, this.decimalPlaces];
+  slices = [this.fontSize, this.fontColor];
 }
 
 class TargetSettings extends formattingSettings.SimpleCard {
@@ -195,7 +174,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 class NeedleSettings extends formattingSettings.SimpleCard {
@@ -252,6 +231,84 @@ class AnimationSettings extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
+// ── Gauge Scale Settings ────────────────────────────────────────
+
+class GaugeScaleSettings extends formattingSettings.SimpleCard {
+  showTicks = new formattingSettings.ToggleSwitch({
+    name: 'showTicks',
+    displayName: 'Show Tick Marks',
+    value: false,
+  });
+
+  showLabels = new formattingSettings.ToggleSwitch({
+    name: 'showLabels',
+    displayName: 'Show Scale Labels',
+    value: false,
+  });
+
+  majorTicks = new formattingSettings.NumUpDown({
+    name: 'majorTicks',
+    displayName: 'Major Ticks',
+    value: 5,
+  });
+
+  minorTicks = new formattingSettings.NumUpDown({
+    name: 'minorTicks',
+    displayName: 'Minor Ticks',
+    value: 2,
+  });
+
+  name = 'gaugeScaleSettings';
+  displayName = 'Scale';
+  slices = [this.showTicks, this.showLabels, this.majorTicks, this.minorTicks];
+}
+
+// ── Gauge Arc Settings ──────────────────────────────────────────
+
+class GaugeArcSettings extends formattingSettings.SimpleCard {
+  arcRange = new formattingSettings.NumUpDown({
+    name: 'arcRange',
+    displayName: 'Arc Range (degrees)',
+    value: 270,
+  });
+
+  segmented = new formattingSettings.ToggleSwitch({
+    name: 'segmented',
+    displayName: 'LED-Style Segments',
+    value: false,
+  });
+
+  segmentCount = new formattingSettings.NumUpDown({
+    name: 'segmentCount',
+    displayName: 'Segment Count',
+    value: 20,
+  });
+
+  name = 'gaugeArcSettings';
+  displayName = 'Arc Display';
+  slices = [this.arcRange, this.segmented, this.segmentCount];
+}
+
+// ── Gauge Comparison Settings ───────────────────────────────────
+
+class GaugeComparisonSettings extends formattingSettings.SimpleCard {
+  showDelta = new formattingSettings.ToggleSwitch({
+    name: 'showDelta',
+    displayName: 'Show Delta Indicator',
+    value: false,
+  });
+
+  showSparkline = new formattingSettings.ToggleSwitch({
+    name: 'showSparkline',
+    displayName: 'Show Mini Sparkline',
+    value: false,
+  });
+
+  name = 'gaugeComparisonSettings';
+  displayName = 'Comparison';
+  slices = [this.showDelta, this.showSparkline];
+}
+
 export class RadialGaugeSettings extends formattingSettings.Model {
   arcSettings = new ArcSettings();
   zoneSettings = new ZoneSettings();
@@ -260,13 +317,15 @@ export class RadialGaugeSettings extends formattingSettings.Model {
   needleSettings = new NeedleSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
+  gaugeScaleSettings = new GaugeScaleSettings();
+  gaugeArcSettings = new GaugeArcSettings();
+  gaugeComparisonSettings = new GaugeComparisonSettings();
 
   dataLabelFormattingCard = new DataLabelFormattingCard();
-
   titleFormattingCard = new TitleFormattingCard();
-
-
   numberFormattingCard = new NumberFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
 
   cards = [
     this.arcSettings,
@@ -276,8 +335,13 @@ export class RadialGaugeSettings extends formattingSettings.Model {
     this.needleSettings,
     this.cardSettings,
     this.animationSettings,
+    this.gaugeScaleSettings,
+    this.gaugeArcSettings,
+    this.gaugeComparisonSettings,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.numberFormattingCard,
+    this.conditionalFormattingCard,
+    this.accessibilityFormattingCard,
   ];
 }

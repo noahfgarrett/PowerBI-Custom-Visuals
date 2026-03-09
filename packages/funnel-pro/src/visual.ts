@@ -21,6 +21,19 @@ import {
   withOpacity,
   renderChartTitle,
   applyDataLabelFormatting,
+  resolveColorTheme,
+  resolveDropdown,
+  buildConditionalConfig,
+  resolveConditionalColor,
+  applyChartAria,
+  attachKeyboardNav,
+  ensureFocusRingStyles,
+  renderHorizontalReferenceLine,
+  computeStatValue,
+  type StatType,
+  renderTrendLine,
+  computeRegression,
+  type TrendType,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -87,6 +100,18 @@ export class FunnelProVisual implements IVisual {
       );
     }
 
+    // Hide inapplicable shared axis properties — funnel-pro doesn't use titles/rotation/min/max/fontFamily/gridLineWidth/gridLineOpacity
+    this.settings.axisFormattingCard.showXAxis.visible = false;
+    this.settings.axisFormattingCard.showYAxis.visible = false;
+    this.settings.axisFormattingCard.xAxisTitle.visible = false;
+    this.settings.axisFormattingCard.yAxisTitle.visible = false;
+    this.settings.axisFormattingCard.axisLabelFontFamily.visible = false;
+    this.settings.axisFormattingCard.axisLabelRotation.visible = false;
+    this.settings.axisFormattingCard.yAxisMin.visible = false;
+    this.settings.axisFormattingCard.yAxisMax.visible = false;
+    this.settings.axisFormattingCard.gridLineWidth.visible = false;
+    this.settings.axisFormattingCard.gridLineOpacity.visible = false;
+
     // Extract data
     const stages = this.extractData(dataView);
 
@@ -150,7 +175,7 @@ export class FunnelProVisual implements IVisual {
       const glass = getGlassStyle({
         mode: 'light',
         opacity: s.backgroundOpacity.value / 100,
-        backgroundColor: ((s as any).backgroundColor?.value?.value ?? (s as any).bgColor?.value?.value),
+        backgroundColor: s.backgroundColor.value?.value,
         borderRadius: s.borderRadius.value,
       });
       Object.assign(this.container.style, glass);
@@ -202,8 +227,6 @@ export class FunnelProVisual implements IVisual {
       ? gridLineStyleValue
       : (gridLineStyleValue as { value?: string } | undefined)?.value ?? 'dashed';
     const gridDash = gridLineStyle === 'dashed' ? '4 3' : 'none';
-    const showDataLabels = s.dataLabelFormattingCard.showDataLabels.value;
-
     const svgWidth = viewport.width - SVG_PADDING * 2;
     const svgHeight = viewport.height - SVG_PADDING * 2;
 
@@ -221,27 +244,65 @@ export class FunnelProVisual implements IVisual {
     const stageCount = stages.length;
     const firstValue = stages[0].value;
 
+    // Layout settings
+    const neckWidthPct = Math.max(5, Math.min(100, s.funnelLayoutSettings.neckWidth.value)) / 100;
+    const neckHeightPct = Math.max(0, Math.min(80, s.funnelLayoutSettings.neckHeight.value)) / 100;
+    const dynamicHeight = s.funnelLayoutSettings.dynamicHeight.value;
+
     // Calculate total gaps and conversion label space
     const totalGaps = gap * (stageCount - 1);
     const conversionRows = showConversion ? stageCount - 1 : 0;
     const totalConversionHeight = conversionRows * CONVERSION_LABEL_HEIGHT;
     const availableHeight = svgHeight - totalGaps - totalConversionHeight;
+
+    // Compute per-stage heights: when dynamicHeight is enabled, heights vary by value
+    let segmentHeights: number[];
+    if (dynamicHeight && stageCount > 0) {
+      const totalValue = stages.reduce((sum, st) => sum + st.value, 0);
+      if (totalValue > 0) {
+        segmentHeights = stages.map((st) =>
+          Math.max(1, (st.value / totalValue) * availableHeight),
+        );
+      } else {
+        segmentHeights = stages.map(() => Math.max(1, availableHeight / stageCount));
+      }
+    } else {
+      const uniformHeight = Math.max(1, availableHeight / stageCount);
+      segmentHeights = stages.map(() => uniformHeight);
+    }
+    // Alias for uniform fallback used elsewhere
     const segmentHeight = Math.max(1, availableHeight / stageCount);
 
     // Max funnel width — leave some horizontal margin for labels
     const maxFunnelWidth = svgWidth * 0.85;
     const centerX = svgWidth / 2;
 
-    // Compute widths: proportional to value relative to first stage value
-    const widths = stages.map((stage) => {
+    // Neck width: the minimum width at the bottom of the funnel
+    const neckMinWidth = neckWidthPct * maxFunnelWidth;
+
+    // Determine which stages are in the "neck" region
+    // neckHeight determines the bottom percentage of stages that form the neck
+    const neckStageCount = Math.max(1, Math.round(neckHeightPct * stageCount));
+    const neckStartIndex = stageCount - neckStageCount;
+
+    // Compute widths: proportional to value relative to first stage value, with neck constraints
+    const widths = stages.map((stage, index) => {
       const ratio = firstValue > 0 ? stage.value / firstValue : 1;
       const clampedRatio = Math.max(MIN_WIDTH_RATIO, Math.min(1, ratio));
-      return clampedRatio * maxFunnelWidth;
+      let width = clampedRatio * maxFunnelWidth;
+
+      // Apply neck width constraint: stages in the neck region use the neck width
+      if (index >= neckStartIndex) {
+        width = Math.min(width, neckMinWidth);
+      }
+
+      return width;
     });
 
     // Pyramid mode: reverse the width mapping so widest segment is at the bottom
     if (pyramidMode) {
       widths.reverse();
+      segmentHeights.reverse();
     }
 
     // ── Grid lines (horizontal reference lines at stage boundaries) ───
@@ -258,7 +319,7 @@ export class FunnelProVisual implements IVisual {
           .attr('stroke-dasharray', gridDash)
           .attr('stroke-opacity', 0.6);
         if (gi < stageCount) {
-          gridY += segmentHeight;
+          gridY += segmentHeights[gi];
           if (showConversion && gi < stageCount - 1) {
             gridY += gap + CONVERSION_LABEL_HEIGHT;
           } else if (gi < stageCount - 1) {
@@ -271,7 +332,7 @@ export class FunnelProVisual implements IVisual {
     // ── Axis separator lines (between segments in the gap area) ─────
     if (axisLineWidth > 0 && stageCount > 1) {
       const axisGroup = svg.append('g').attr('class', 'funnel-axis-lines');
-      let sepY = segmentHeight;
+      let sepY = segmentHeights[0];
       for (let si = 0; si < stageCount - 1; si++) {
         const sepLineY = sepY + gap / 2;
         axisGroup.append('line')
@@ -282,7 +343,7 @@ export class FunnelProVisual implements IVisual {
           .attr('stroke', axisLineColor)
           .attr('stroke-width', axisLineWidth)
           .attr('stroke-opacity', 0.5);
-        sepY += segmentHeight + gap;
+        sepY += segmentHeights[si + 1] + gap;
         if (showConversion) {
           sepY += CONVERSION_LABEL_HEIGHT;
         }
@@ -293,28 +354,32 @@ export class FunnelProVisual implements IVisual {
     let currentY = 0;
 
     stages.forEach((stage, index) => {
+      const stageH = segmentHeights[index];
       const topWidth = widths[index];
       const bottomWidth = index < stageCount - 1 ? widths[index + 1] : topWidth;
 
-      // Compute polygon points based on style
-      const points = this.computeTrapezoidPoints(
+      // Compute path with rounded corners
+      const borderRadius = Math.max(0, s.funnelLayoutSettings.borderRadius.value);
+      const pathD = this.computeTrapezoidPath(
         funnelStyle,
         centerX,
         maxFunnelWidth,
         currentY,
-        segmentHeight,
+        stageH,
         topWidth,
         bottomWidth,
+        borderRadius,
       );
 
-      // Determine color
-      const color = this.getStageColor(index, stageCount, useGradient, baseColor);
+      // Determine color (conditional formatting overrides base color)
+      const baseSegColor = this.getStageColor(index, stageCount, useGradient, baseColor);
+      const color = this.getConditionalSegmentColor(stage.value) ?? baseSegColor;
 
-      // Draw polygon
+      // Draw path (trapezoid with optional rounded corners)
       const segStrokeColor = s.funnelSettings.segmentStrokeColor.value?.value;
-      const polygon = svg.append('polygon')
+      const polygon = svg.append('path')
         .attr('class', 'funnel-stage')
-        .attr('points', points)
+        .attr('d', pathD)
         .attr('fill', color)
         .attr('stroke', segStrokeColor || withOpacity(color, 0.3))
         .attr('stroke-width', s.funnelSettings.segmentStrokeWidth.value);
@@ -347,7 +412,7 @@ export class FunnelProVisual implements IVisual {
       }
 
       // Stage label (centered within trapezoid)
-      const labelY = currentY + segmentHeight / 2;
+      const labelY = currentY + stageH / 2;
       const labelX = funnelStyle === 'symmetric' ? centerX : topWidth / 2;
 
       const stageLabelColor = s.funnelSettings.labelColor.value?.value;
@@ -361,8 +426,9 @@ export class FunnelProVisual implements IVisual {
         labelText.attr('fill', stageLabelColor);
       }
 
-      // Value label below stage label
-      if (showValues && showDataLabels) {
+      // Value label below stage label — local showValues controls visibility,
+      // shared DataLabelFormattingCard controls styling (font size, color, weight)
+      if (showValues) {
         const valueText = svg.append('text')
           .attr('class', 'funnel-value-label')
           .attr('x', labelX)
@@ -390,7 +456,7 @@ export class FunnelProVisual implements IVisual {
       }
 
       // Move Y cursor past this segment
-      currentY += segmentHeight;
+      currentY += stageH;
 
       // Conversion rate label between stages
       if (showConversion && index < stageCount - 1) {
@@ -424,15 +490,154 @@ export class FunnelProVisual implements IVisual {
         currentY += gap;
       }
     });
+    // Render drop-off highlighting between stages
+    this.renderDropOffHighlighting(svg, stages, widths, segmentHeights, gap, showConversion, funnelStyle, centerX);
+
+    // ── Stage Annotations (conversion rates next to segments) ──────
+    if (s.funnelAnnotationSettings.show.value && stages.length >= 2) {
+      const annotGroup = svg.append('g').attr('class', 'funnel-annotations');
+      let annotY = 0;
+
+      for (let ai = 0; ai < stages.length; ai++) {
+        const stageH = segmentHeights[ai];
+
+        if (ai > 0) {
+          const prevVal = stages[ai - 1].value;
+          const convPct = prevVal > 0
+            ? ((stages[ai].value / prevVal) * 100).toFixed(1)
+            : '0.0';
+
+          const annotLabelY = annotY + stageH / 2;
+          const annotLabelX = funnelStyle === 'symmetric'
+            ? centerX + widths[ai] / 2 + 10
+            : widths[ai] + 10;
+
+          annotGroup.append('text')
+            .attr('class', 'funnel-annotation-label')
+            .attr('x', annotLabelX)
+            .attr('y', annotLabelY)
+            .attr('fill', '#64748B')
+            .attr('font-size', '10px')
+            .attr('dominant-baseline', 'middle')
+            .text(`${convPct}% conversion`);
+        }
+
+        annotY += stageH;
+        if (showConversion && ai < stages.length - 1) {
+          annotY += gap + CONVERSION_LABEL_HEIGHT;
+        } else if (ai < stages.length - 1) {
+          annotY += gap;
+        }
+      }
+    }
+
     // Apply shared formatting settings
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.funnel-value-label');
+
+    // ── Reference Line & Trend Line overlays ──────────────────────
+    const allValues = stages.map((st) => st.value);
+    const maxVal = Math.max(...allValues);
+    const yScale = d3.scaleLinear().domain([0, maxVal]).range([svgHeight, 0]);
+    const overlayG = svg.append('g').attr('class', 'funnel-overlay');
+
+    this.renderReferenceLine(overlayG, yScale, svgWidth, allValues);
+    this.renderTrendLineOverlay(overlayG, allValues, (i) => {
+      // Map stage index to vertical center of segment
+      let cy = 0;
+      for (let k = 0; k < i; k++) {
+        cy += segmentHeights[k];
+        if (showConversion && k < stageCount - 1) cy += gap + CONVERSION_LABEL_HEIGHT;
+        else if (k < stageCount - 1) cy += gap;
+      }
+      return cy + segmentHeights[i] / 2;
+    }, yScale);
+
+    // ── Accessibility ─────────────────────────────────────────────
+    this.applyAccessibility(stages);
 
     this.container.addEventListener('click', this.handleBackgroundClick);
   }
 
+  // ── Drop-Off Highlighting ─────────────────────────────────────
+
+  private renderDropOffHighlighting(
+    svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
+    stages: FunnelStage[],
+    widths: number[],
+    segmentHeights: number[],
+    gap: number,
+    showConversion: boolean,
+    funnelStyle: string,
+    centerX: number,
+  ): void {
+    const compSettings = this.settings.funnelComparisonSettings;
+    if (!compSettings.enabled.value || !compSettings.showDropOff.value || stages.length < 2) return;
+
+    const dropOffColor = compSettings.dropOffColor.value?.value ?? '#EF4444';
+
+    let currentY = 0;
+
+    for (let i = 0; i < stages.length - 1; i++) {
+      const currentWidth = widths[i];
+      const nextWidth = widths[i + 1];
+
+      if (currentWidth <= nextWidth) {
+        // No drop-off when next stage is wider
+        currentY += segmentHeights[i];
+        if (showConversion) currentY += gap + CONVERSION_LABEL_HEIGHT;
+        else currentY += gap;
+        continue;
+      }
+
+      // Draw drop-off indicator at the bottom of the current segment
+      const y = currentY + segmentHeights[i];
+      const dropWidth = currentWidth - nextWidth;
+
+      if (funnelStyle === 'symmetric') {
+        // Left side drop-off
+        svg.append('rect')
+          .attr('class', 'funnel-dropoff')
+          .attr('x', centerX - currentWidth / 2)
+          .attr('y', y)
+          .attr('width', dropWidth / 2)
+          .attr('height', gap > 0 ? gap : 3)
+          .attr('fill', withOpacity(dropOffColor, 0.3))
+          .style('pointer-events', 'none');
+
+        // Right side drop-off
+        svg.append('rect')
+          .attr('class', 'funnel-dropoff')
+          .attr('x', centerX + nextWidth / 2)
+          .attr('y', y)
+          .attr('width', dropWidth / 2)
+          .attr('height', gap > 0 ? gap : 3)
+          .attr('fill', withOpacity(dropOffColor, 0.3))
+          .style('pointer-events', 'none');
+      } else {
+        // Left-aligned: drop-off on the right side
+        svg.append('rect')
+          .attr('class', 'funnel-dropoff')
+          .attr('x', nextWidth)
+          .attr('y', y)
+          .attr('width', dropWidth)
+          .attr('height', gap > 0 ? gap : 3)
+          .attr('fill', withOpacity(dropOffColor, 0.3))
+          .style('pointer-events', 'none');
+      }
+
+      currentY += segmentHeights[i];
+      if (showConversion) currentY += gap + CONVERSION_LABEL_HEIGHT;
+      else currentY += gap;
+    }
+  }
+
   // ── Trapezoid Geometry ─────────────────────────────────────────
 
-  private computeTrapezoidPoints(
+  /**
+   * Builds an SVG `<path>` d-attribute for a trapezoid with rounded corners.
+   * When `r` is 0 the result is a sharp-cornered trapezoid.
+   */
+  private computeTrapezoidPath(
     style: string,
     centerX: number,
     _maxWidth: number,
@@ -440,22 +645,50 @@ export class FunnelProVisual implements IVisual {
     height: number,
     topWidth: number,
     bottomWidth: number,
+    r: number,
   ): string {
+    let x1: number, y1: number, x2: number, y2: number;
+    let x3: number, y3: number, x4: number, y4: number;
+
     if (style === 'leftAligned') {
-      // Left-aligned: all trapezoids start from left edge
-      const topLeft = `0,${y}`;
-      const topRight = `${topWidth},${y}`;
-      const bottomRight = `${bottomWidth},${y + height}`;
-      const bottomLeft = `0,${y + height}`;
-      return `${topLeft} ${topRight} ${bottomRight} ${bottomLeft}`;
+      // TL, TR, BR, BL
+      x1 = 0;       y1 = y;
+      x2 = topWidth; y2 = y;
+      x3 = bottomWidth; y3 = y + height;
+      x4 = 0;            y4 = y + height;
+    } else {
+      // Symmetric
+      x1 = centerX - topWidth / 2;    y1 = y;
+      x2 = centerX + topWidth / 2;    y2 = y;
+      x3 = centerX + bottomWidth / 2; y3 = y + height;
+      x4 = centerX - bottomWidth / 2; y4 = y + height;
     }
 
-    // Symmetric (default): centered horizontally
-    const topLeft = `${centerX - topWidth / 2},${y}`;
-    const topRight = `${centerX + topWidth / 2},${y}`;
-    const bottomRight = `${centerX + bottomWidth / 2},${y + height}`;
-    const bottomLeft = `${centerX - bottomWidth / 2},${y + height}`;
-    return `${topLeft} ${topRight} ${bottomRight} ${bottomLeft}`;
+    // Clamp radius so it doesn't exceed half the shortest edge
+    const topEdge = Math.abs(x2 - x1);
+    const bottomEdge = Math.abs(x3 - x4);
+    const leftEdge = Math.hypot(x4 - x1, y4 - y1);
+    const rightEdge = Math.hypot(x3 - x2, y3 - y2);
+    const minHalf = Math.min(topEdge, bottomEdge, leftEdge, rightEdge) / 2;
+    const radius = Math.max(0, Math.min(r, minHalf));
+
+    if (radius <= 0) {
+      return `M${x1},${y1} L${x2},${y2} L${x3},${y3} L${x4},${y4} Z`;
+    }
+
+    // Use quadratic Bezier curves at each corner for rounding
+    return [
+      `M${x1 + radius},${y1}`,
+      `L${x2 - radius},${y2}`,
+      `Q${x2},${y2} ${x2},${y2 + radius}`,
+      `L${x3},${y3 - radius}`,
+      `Q${x3},${y3} ${x3 - radius},${y3}`,
+      `L${x4 + radius},${y4}`,
+      `Q${x4},${y4} ${x4},${y4 - radius}`,
+      `L${x1},${y1 + radius}`,
+      `Q${x1},${y1} ${x1 + radius},${y1}`,
+      'Z',
+    ].join(' ');
   }
 
   // ── Stage Coloring ─────────────────────────────────────────────
@@ -466,8 +699,9 @@ export class FunnelProVisual implements IVisual {
     useGradient: boolean,
     baseColor: string,
   ): string {
+    const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
     if (!useGradient) {
-      return getHostChartColor(this.host.colorPalette, index);
+      return getHostChartColor(this.host.colorPalette, index, themeName);
     }
 
     // Generate progressively lighter shades from the base color
@@ -495,7 +729,7 @@ export class FunnelProVisual implements IVisual {
   // ── Tooltips ───────────────────────────────────────────────────
 
   private attachStageTooltip(
-    polygon: d3.Selection<SVGPolygonElement, unknown, null, undefined>,
+    polygon: d3.Selection<SVGPathElement, unknown, null, undefined>,
     stage: FunnelStage,
     allStages: FunnelStage[],
     index: number,
@@ -551,6 +785,124 @@ export class FunnelProVisual implements IVisual {
     polygon.on('mouseout', () => {
       host.tooltipService.hide({ immediately: true, isTouchEvent: false });
     });
+  }
+
+  // ── Conditional Formatting ──────────────────────────────────────
+
+  /**
+   * Resolves conditional color for a funnel segment value, or returns undefined if not enabled.
+   */
+  private getConditionalSegmentColor(value: number): string | undefined {
+    const cc = this.settings.conditionalFormattingCard;
+    if (!cc.enableConditional.value) return undefined;
+
+    const config = buildConditionalConfig(
+      true,
+      resolveDropdown(cc.conditionalDirection),
+      cc.threshold1.value,
+      cc.threshold2.value,
+      cc.conditionalColor1.value?.value,
+      cc.conditionalColor2.value?.value,
+      cc.conditionalColor3.value?.value,
+    );
+    return resolveConditionalColor(value, config);
+  }
+
+  // ── Reference Line ────────────────────────────────────────────
+
+  /**
+   * Renders a horizontal reference line on the funnel overlay group.
+   */
+  private renderReferenceLine(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    yScale: d3.ScaleLinear<number, number>,
+    chartWidth: number,
+    allValues: number[],
+  ): void {
+    const ref = this.settings.referenceLineFormattingCard;
+    if (!ref.showReferenceLine.value) return;
+
+    const refType = resolveDropdown(ref.referenceLineType) ?? 'custom';
+    let refValue = ref.referenceLineValue.value;
+
+    if (refType !== 'custom' && allValues.length > 0) {
+      refValue = computeStatValue(allValues, refType as StatType);
+    }
+
+    const refColor = ref.referenceLineColor.value?.value ?? '#EF4444';
+    const refStyle = (resolveDropdown(ref.referenceLineStyle) ?? 'dashed') as 'solid' | 'dashed' | 'dotted';
+    const labelText = ref.referenceLabelText.value || formatNumber(refValue);
+
+    renderHorizontalReferenceLine(g, {
+      value: refValue,
+      yScale,
+      chartWidth,
+      lineColor: refColor,
+      lineWidth: ref.referenceLineWidth.value,
+      lineStyle: refStyle,
+      showLabel: ref.showReferenceLabel.value,
+      labelText,
+      showBand: ref.showReferenceBand.value,
+      bandOpacity: ref.referenceBandOpacity.value / 100,
+    });
+  }
+
+  // ── Trend Line ────────────────────────────────────────────────
+
+  /**
+   * Renders a trend/regression line through the funnel stage values.
+   */
+  private renderTrendLineOverlay(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    values: number[],
+    xScale: (index: number) => number,
+    yScale: d3.ScaleLinear<number, number>,
+  ): void {
+    const tl = this.settings.trendLineFormattingCard;
+    if (!tl.showTrendLine.value || values.length < 2) return;
+
+    const trendType = (resolveDropdown(tl.trendLineType) ?? 'linear') as TrendType;
+    const result = computeRegression(values, trendType, tl.polynomialOrder.value);
+    const trendColor = tl.trendLineColor.value?.value ?? '#6366F1';
+
+    renderTrendLine(g, {
+      predicted: result.predicted,
+      xScale,
+      yScale,
+      lineColor: trendColor,
+      lineWidth: tl.trendLineWidth.value,
+      showEquation: tl.showEquation.value,
+      showR2: tl.showR2.value,
+      equation: result.equation,
+      r2: result.r2,
+    });
+  }
+
+  // ── Accessibility ─────────────────────────────────────────────
+
+  /**
+   * Applies ARIA labels, keyboard navigation, and focus ring styles.
+   */
+  private applyAccessibility(stages: FunnelStage[]): void {
+    const acc = this.settings.accessibilityFormattingCard;
+    if (!acc.enableKeyboardNav.value) return;
+
+    ensureFocusRingStyles();
+
+    applyChartAria(this.container, {
+      chartType: 'funnel chart',
+      title: this.settings.titleFormattingCard.titleText.value || undefined,
+      dataPointCount: stages.length,
+    });
+
+    const cleanup = attachKeyboardNav({
+      container: this.container,
+      itemSelector: '.funnel-stage, [tabindex="0"]',
+      onActivate: (el) => {
+        (el as HTMLElement).click?.();
+      },
+    });
+    this.cancelAnimations.push(cleanup);
   }
 
   // ── Formatting Model ───────────────────────────────────────────

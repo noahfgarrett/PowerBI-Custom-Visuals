@@ -17,6 +17,11 @@ import {
   withOpacity,
   renderChartTitle,
   applyDataLabelFormatting,
+  resolveConditionalColor,
+  buildConditionalConfig,
+  resolveDropdown,
+  applyChartAria,
+  ensureFocusRingStyles,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -40,12 +45,6 @@ const THICKNESS_MAP: Record<string, number> = {
   thick: 0.28,
 };
 
-/** Arc sweep configurations in degrees. */
-const ARC_RANGE: Record<string, { start: number; end: number }> = {
-  half: { start: -90, end: 90 },    // 180-degree sweep (top half)
-  full: { start: -135, end: 135 },   // 270-degree sweep (3/4 circle)
-};
-
 // ── Data Interface ───────────────────────────────────────────────────
 
 interface RadialGaugeData {
@@ -53,6 +52,7 @@ interface RadialGaugeData {
   target: number | null;
   min: number;
   max: number;
+  trend: number[];
 }
 
 // ── Visual Class ─────────────────────────────────────────────────────
@@ -106,6 +106,7 @@ export class RadialGaugeVisual implements IVisual {
       target: null,
       min: 0,
       max: 100,
+      trend: [],
     };
 
     if (!dataView?.categorical) return result;
@@ -120,6 +121,9 @@ export class RadialGaugeVisual implements IVisual {
       if (role['value'] && col.values.length > 0) {
         const lastVal = col.values[col.values.length - 1];
         result.value = typeof lastVal === 'number' ? lastVal : null;
+        // Collect all value rows for trend sparkline
+        result.trend = col.values
+          .filter((v): v is number => typeof v === 'number');
       }
 
       if (role['target'] && col.values.length > 0) {
@@ -162,7 +166,7 @@ export class RadialGaugeVisual implements IVisual {
       const glass = getGlassStyle({
         mode: 'light',
         opacity: s.cardSettings.backgroundOpacity.value / 100,
-        backgroundColor: ((s.cardSettings as any).backgroundColor?.value?.value ?? (s.cardSettings as any).bgColor?.value?.value),
+        backgroundColor: s.cardSettings.backgroundColor.value?.value,
         borderRadius: s.cardSettings.borderRadius.value,
       });
       Object.assign(this.container.style, glass);
@@ -199,10 +203,20 @@ export class RadialGaugeVisual implements IVisual {
     const arcWidth = outerRadius * thicknessFraction;
     const innerRadius = outerRadius - arcWidth;
 
-    const rangeKey = s.arcSettings.startAngle.value?.value ?? 'full';
-    const range = ARC_RANGE[rangeKey] ?? ARC_RANGE['full'];
-    const startAngleRad = range.start * DEG_TO_RAD;
-    const endAngleRad = range.end * DEG_TO_RAD;
+    // Arc range: preset dropdown sets a quick base (half=180, full=360).
+    // If the user has manually changed arcRange from its default (270), that
+    // takes precedence as a fine-tuning override.
+    const arcPreset = resolveDropdown(s.arcSettings.startAngle);
+    const arcRangeDefault = 270;
+    const presetRange = arcPreset === 'full' ? 360 : 180;
+    const rawArcRange = s.gaugeArcSettings.arcRange.value;
+    const effectiveRange = rawArcRange !== arcRangeDefault ? rawArcRange : presetRange;
+    const customArcRange = Math.max(30, Math.min(360, effectiveRange));
+    const halfSweep = customArcRange / 2;
+    const startAngleRad = -halfSweep * DEG_TO_RAD;
+    const endAngleRad = halfSweep * DEG_TO_RAD;
+    // Keep rangeKey for text positioning heuristic
+    const rangeKey = customArcRange <= 180 ? 'half' : 'full';
 
     // ── SVG Setup ───────────────────────────────────────────────
     const svg = d3.select(this.container)
@@ -246,56 +260,98 @@ export class RadialGaugeVisual implements IVisual {
     const zone3Color = s.zoneSettings.zone3Color.value?.value ?? '#34D399';
 
     // Determine which color the current value falls into
-    const valueColor = normalizedValue <= zone1Pct
+    const zoneColor = normalizedValue <= zone1Pct
       ? zone1Color
       : normalizedValue <= zone2Pct
         ? zone2Color
         : zone3Color;
 
+    // Conditional formatting overrides zone colors if enabled
+    const cc = s.conditionalFormattingCard;
+    const conditionalConfig = buildConditionalConfig(
+      cc.enableConditional.value,
+      resolveDropdown(cc.conditionalDirection),
+      cc.threshold1.value,
+      cc.threshold2.value,
+      cc.conditionalColor1.value?.value,
+      cc.conditionalColor2.value?.value,
+      cc.conditionalColor3.value?.value,
+    );
+    const valueColor = resolveConditionalColor(data.value, conditionalConfig) ?? zoneColor;
+
     // Value arc angle
     const totalSweep = endAngleRad - startAngleRad;
     const valueEndAngle = startAngleRad + totalSweep * normalizedValue;
 
-    // Render value arc (with or without animation)
-    const valueArcPath = g.append('path')
-      .attr('class', 'radial-gauge-zone')
-      .attr('fill', valueColor)
-      .attr('stroke', 'none');
-    valueArcPath
-      .on('mouseenter', (event: MouseEvent) => {
-        this.showGaugeTooltip(data, event);
-      })
-      .on('mousemove', (event: MouseEvent) => {
-        this.moveTooltip(event);
-      })
-      .on('mouseleave', () => {
-        this.hideTooltip();
-      });
+    // Render value arc — optionally as LED-style segments
+    const isSegmented = s.gaugeArcSettings.segmented.value;
+    const segmentCount = Math.max(2, Math.min(100, s.gaugeArcSettings.segmentCount.value));
 
-    if (s.animationSettings.enabled.value) {
-      // Start from no sweep, animate to target angle
-      valueArcPath.attr('d', arcGen({
-        startAngle: startAngleRad,
-        endAngle: startAngleRad,
-      }));
+    if (isSegmented) {
+      // LED-style segmented arc: draw individual segment arcs
+      const segGap = 0.008; // radians gap between segments
+      const segSweep = (totalSweep - segGap * segmentCount) / segmentCount;
+      const litSegments = Math.round(normalizedValue * segmentCount);
 
-      const cancelSweep = sweepArc(
-        startAngleRad,
-        valueEndAngle,
-        s.animationSettings.duration.value,
-        (currentAngle) => {
-          valueArcPath.attr('d', arcGen({
-            startAngle: startAngleRad,
-            endAngle: currentAngle,
-          }));
-        }
-      );
-      this.cancelAnimations.push(cancelSweep);
+      // Non-rounded arc generator for segments
+      const segArcGen = d3.arc<{ startAngle: number; endAngle: number }>()
+        .innerRadius(innerRadius)
+        .outerRadius(outerRadius)
+        .cornerRadius(0);
+
+      for (let i = 0; i < segmentCount; i++) {
+        const segStart = startAngleRad + i * (segSweep + segGap);
+        const segEnd = segStart + segSweep;
+        const isLit = i < litSegments;
+
+        g.append('path')
+          .attr('class', 'radial-gauge-segment')
+          .attr('d', segArcGen({ startAngle: segStart, endAngle: segEnd }))
+          .attr('fill', isLit ? valueColor : '#94A3B8')
+          .attr('opacity', isLit ? 1 : (s.arcSettings.trackOpacity.value / 100));
+      }
     } else {
-      valueArcPath.attr('d', arcGen({
-        startAngle: startAngleRad,
-        endAngle: valueEndAngle,
-      }));
+      // Continuous value arc
+      const valueArcPath = g.append('path')
+        .attr('class', 'radial-gauge-zone')
+        .attr('fill', valueColor)
+        .attr('stroke', 'none');
+      valueArcPath
+        .on('mouseenter', (event: MouseEvent) => {
+          this.showGaugeTooltip(data, event);
+        })
+        .on('mousemove', (event: MouseEvent) => {
+          this.moveTooltip(event);
+        })
+        .on('mouseleave', () => {
+          this.hideTooltip();
+        });
+
+      if (s.animationSettings.enabled.value) {
+        // Start from no sweep, animate to target angle
+        valueArcPath.attr('d', arcGen({
+          startAngle: startAngleRad,
+          endAngle: startAngleRad,
+        }));
+
+        const cancelSweep = sweepArc(
+          startAngleRad,
+          valueEndAngle,
+          s.animationSettings.duration.value,
+          (currentAngle) => {
+            valueArcPath.attr('d', arcGen({
+              startAngle: startAngleRad,
+              endAngle: currentAngle,
+            }));
+          }
+        );
+        this.cancelAnimations.push(cancelSweep);
+      } else {
+        valueArcPath.attr('d', arcGen({
+          startAngle: startAngleRad,
+          endAngle: valueEndAngle,
+        }));
+      }
     }
 
     // ── Zone boundary ticks (subtle marks at zone thresholds) ───
@@ -371,8 +427,8 @@ export class RadialGaugeVisual implements IVisual {
       // Needle angle: d3.arc uses 12-o'clock origin (0 = up), so rotation
       // in degrees is just the angle in degrees (no -90 offset needed since
       // we drew the needle pointing up along -Y axis).
-      const startAngleDeg = range.start;
-      const valueAngleDeg = startAngleDeg + (normalizedValue * (range.end - range.start));
+      const startAngleDeg = -halfSweep;
+      const valueAngleDeg = startAngleDeg + (normalizedValue * customArcRange);
 
       if (s.animationSettings.enabled.value) {
         // Start at the arc's start angle, animate to the value angle
@@ -425,6 +481,132 @@ export class RadialGaugeVisual implements IVisual {
     } else {
       valueText.text(fmt(data.value));
       this.previousValue = data.value;
+    }
+
+    // ── Scale Ticks ──────────────────────────────────────────────
+    if (s.gaugeScaleSettings.showTicks.value) {
+      const majorCount = Math.max(2, s.gaugeScaleSettings.majorTicks.value);
+      const minorPerMajor = Math.max(0, s.gaugeScaleSettings.minorTicks.value);
+
+      for (let i = 0; i <= majorCount; i++) {
+        const pct = i / majorCount;
+        const angle = startAngleRad + totalSweep * pct;
+        const cosA = Math.cos(angle - Math.PI / 2);
+        const sinA = Math.sin(angle - Math.PI / 2);
+
+        // Major tick
+        g.append('line')
+          .attr('x1', (outerRadius + 3) * cosA)
+          .attr('y1', (outerRadius + 3) * sinA)
+          .attr('x2', (outerRadius + 8) * cosA)
+          .attr('y2', (outerRadius + 8) * sinA)
+          .attr('stroke', '#64748B')
+          .attr('stroke-width', 1.5);
+
+        // Scale label
+        if (s.gaugeScaleSettings.showLabels.value) {
+          const labelVal = min + totalRange * pct;
+          g.append('text')
+            .attr('x', (outerRadius + 14) * cosA)
+            .attr('y', (outerRadius + 14) * sinA)
+            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'central')
+            .attr('font-size', '8px')
+            .attr('fill', '#64748B')
+            .text(formatWithSettings(labelVal, this.settings.numberFormattingCard));
+        }
+
+        // Minor ticks between major ticks
+        if (i < majorCount && minorPerMajor > 0) {
+          for (let j = 1; j <= minorPerMajor; j++) {
+            const minorPct = pct + (j / (majorCount * (minorPerMajor + 1)));
+            if (minorPct > 1) break;
+            const minorAngle = startAngleRad + totalSweep * minorPct;
+            const minorCos = Math.cos(minorAngle - Math.PI / 2);
+            const minorSin = Math.sin(minorAngle - Math.PI / 2);
+
+            g.append('line')
+              .attr('x1', (outerRadius + 3) * minorCos)
+              .attr('y1', (outerRadius + 3) * minorSin)
+              .attr('x2', (outerRadius + 5) * minorCos)
+              .attr('y2', (outerRadius + 5) * minorSin)
+              .attr('stroke', '#94A3B8')
+              .attr('stroke-width', 0.75);
+          }
+        }
+      }
+    }
+
+    // ── Comparison: Delta Indicator ─────────────────────────────────
+    if (s.gaugeComparisonSettings.showDelta.value && data.value !== null && data.target !== null) {
+      const delta = data.value - data.target;
+      const sign = delta >= 0 ? '+' : '';
+      const deltaText = g.append('text')
+        .attr('class', 'radial-gauge-delta')
+        .attr('x', 0)
+        .attr('y', textOffsetY + fontSize * 0.9)
+        .attr('text-anchor', 'middle')
+        .attr('dominant-baseline', 'central')
+        .attr('font-size', `${Math.max(10, fontSize * 0.45)}px`)
+        .attr('fill', delta >= 0 ? '#22C55E' : '#EF4444');
+      deltaText.text(`${sign}${formatWithSettings(delta, this.settings.numberFormattingCard)}`);
+    }
+
+    // ── Comparison: Mini Sparkline ───────────────────────────────
+    if (s.gaugeComparisonSettings.showSparkline.value && data.trend.length > 1) {
+      const sparkWidth = outerRadius * 1.2;
+      const sparkHeight = outerRadius * 0.22;
+      const sparkY = cy + outerRadius * 0.55;
+      const sparkX = cx - sparkWidth / 2;
+
+      const sparkG = svg.append('g')
+        .attr('transform', `translate(${sparkX}, ${sparkY})`);
+
+      const xScale = d3.scaleLinear()
+        .domain([0, data.trend.length - 1])
+        .range([0, sparkWidth]);
+
+      const trendMin = d3.min(data.trend) ?? 0;
+      const trendMax = d3.max(data.trend) ?? 1;
+      const trendPad = (trendMax - trendMin) * 0.1 || 1;
+      const yScaleSpark = d3.scaleLinear()
+        .domain([trendMin - trendPad, trendMax + trendPad])
+        .range([sparkHeight, 0]);
+
+      const sparkLine = d3.line<number>()
+        .x((_, i) => xScale(i))
+        .y((dVal) => yScaleSpark(dVal))
+        .curve(d3.curveMonotoneX);
+
+      sparkG.append('path')
+        .datum(data.trend)
+        .attr('d', sparkLine)
+        .attr('fill', 'none')
+        .attr('stroke', valueColor)
+        .attr('stroke-width', 1.5)
+        .attr('stroke-linecap', 'round')
+        .attr('opacity', 0.7);
+
+      // End dot
+      const lastTrendIdx = data.trend.length - 1;
+      sparkG.append('circle')
+        .attr('cx', xScale(lastTrendIdx))
+        .attr('cy', yScaleSpark(data.trend[lastTrendIdx]))
+        .attr('r', 2)
+        .attr('fill', valueColor);
+    }
+
+    // ── Accessibility ─────────────────────────────────────────────
+    if (s.accessibilityFormattingCard.enableKeyboardNav.value) {
+      ensureFocusRingStyles();
+      applyChartAria(this.container, {
+        chartType: 'radial gauge',
+        title: s.titleFormattingCard.titleText.value || undefined,
+        dataPointCount: 1,
+        summary: data.value !== null
+          ? `Value: ${formatWithSettings(data.value, this.settings.numberFormattingCard)}, Range: ${min} to ${max}`
+          : undefined,
+      });
     }
 
     // ── Entrance Animation ──────────────────────────────────────

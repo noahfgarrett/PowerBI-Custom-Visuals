@@ -14,6 +14,16 @@ import {
   getGlassStyle,
   renderChartTitle,
   applyDataLabelFormatting,
+  renderLegend,
+  getHostChartColor,
+  resolveColorTheme,
+  buildConditionalConfig,
+  resolveConditionalColor,
+  resolveDropdown,
+  applyChartAria,
+  attachKeyboardNav,
+  ensureFocusRingStyles,
+  type LegendItem,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -152,7 +162,11 @@ export class WaffleChartVisual implements IVisual {
     const shapeValue = s.gridSettings.shape.value?.value ?? 'square';
     const cellStrokeColor = s.gridSettings.cellStrokeColor.value?.value;
     const cellCornerRadius = s.gridSettings.cellCornerRadius.value;
-    const fillColor = s.colorSettings.fillColor.value?.value ?? '#3B82F6';
+    const themeName = resolveColorTheme(s.colorThemeFormattingCard);
+    const userFillColor = s.colorSettings.fillColor.value?.value;
+    const baseFillColor = (userFillColor && userFillColor.length > 0) ? userFillColor : getHostChartColor(this.host.colorPalette, 0, themeName);
+    const conditionalColor = data.value !== null ? this.getConditionalColor(data.value) : undefined;
+    const fillColor = conditionalColor ?? baseFillColor;
     const emptyColor = s.gridSettings.emptyColor.value?.value || s.colorSettings.emptyColor.value?.value || '#E2E8F0';
     const showValue = s.valueSettings.show.value;
     const fontSize = s.valueSettings.fontSize.value;
@@ -168,12 +182,29 @@ export class WaffleChartVisual implements IVisual {
     const iconSizePct = Math.max(80, Math.min(100, s.pictogramSettings.iconSize.value)) / 100;
     const outlineOpacity = Math.max(0, Math.min(100, s.pictogramSettings.outlineOpacity.value)) / 100;
 
+    // Icon Set from waffleIconSettings — maps sets to shape overrides
+    const iconSetRaw = s.waffleIconSettings.iconSet.value;
+    const iconSetValue: string = (typeof iconSetRaw === 'string'
+      ? iconSetRaw
+      : (iconSetRaw as { value?: string } | undefined)?.value) ?? 'default';
+    // Map icon set names to pictogram shapes when pictogram is enabled
+    const iconSetShapeMap: Record<string, PictogramIconShape> = {
+      default: iconShape, // use user's own choice
+      weather: 'star',
+      arrows: 'checkmark',
+      shapes: 'square',
+      status: 'circle',
+    };
+    const effectiveIconShape: PictogramIconShape = pictogramEnabled
+      ? (iconSetValue !== 'default' ? (iconSetShapeMap[iconSetValue] ?? iconShape) : iconShape)
+      : iconShape;
+
     // Apply glass effect if enabled
     if (s.cardSettings.enableGlass.value) {
       const glass = getGlassStyle({
         mode: 'light',
         opacity: s.cardSettings.backgroundOpacity.value / 100,
-        backgroundColor: ((s.cardSettings as any).backgroundColor?.value?.value ?? (s.cardSettings as any).bgColor?.value?.value),
+        backgroundColor: s.cardSettings.backgroundColor.value?.value,
         borderRadius: s.cardSettings.borderRadius.value,
       });
       Object.assign(this.container.style, glass);
@@ -196,17 +227,41 @@ export class WaffleChartVisual implements IVisual {
     wrapper.style.width = '100%';
     wrapper.style.height = '100%';
 
+    // Fill direction setting
+    const fillDirRaw = s.waffleLayoutSettings.fillDirection.value;
+    const fillDirection: string = (typeof fillDirRaw === 'string'
+      ? fillDirRaw
+      : (fillDirRaw as { value?: string } | undefined)?.value) ?? 'bt';
+
+    // Auto-fit cells: override rows/cols to fill viewport
+    const autoFitCells = s.waffleLayoutSettings.autoFitCells.value;
+
     // Calculate cell size
     const padding = 12;
     const valueAreaHeight = showValue ? 50 : 0;
     const availW = viewport.width - padding * 2;
     const availH = viewport.height - padding * 2 - valueAreaHeight;
+
+    if (autoFitCells) {
+      // Auto-compute: target cell size ~20px, compute how many fit
+      const targetCellSize = 20;
+      const autoCols = Math.max(1, Math.floor((availW + gap) / (targetCellSize + gap)));
+      const autoRows = Math.max(1, Math.floor((availH + gap) / (targetCellSize + gap)));
+      // Override rows/cols with computed values (reuse vars by reassigning to local scope below)
+      (s.gridSettings.cols as { value: number }).value = autoCols;
+      (s.gridSettings.rows as { value: number }).value = autoRows;
+    }
+
+    // Re-read after potential auto-fit
+    const effectiveRows = Math.max(1, s.gridSettings.rows.value);
+    const effectiveCols = Math.max(1, s.gridSettings.cols.value);
+
     const cellSize = Math.max(
       4,
       Math.floor(
         Math.min(
-          (availW - (cols - 1) * gap) / cols,
-          (availH - (rows - 1) * gap) / rows
+          (availW - (effectiveCols - 1) * gap) / effectiveCols,
+          (availH - (effectiveRows - 1) * gap) / effectiveRows
         )
       )
     );
@@ -214,35 +269,70 @@ export class WaffleChartVisual implements IVisual {
     // Grid container
     const grid = document.createElement('div');
     grid.className = 'waffle-grid';
-    grid.style.gridTemplateColumns = `repeat(${cols}, ${cellSize}px)`;
+    grid.style.gridTemplateColumns = `repeat(${effectiveCols}, ${cellSize}px)`;
     grid.style.gap = `${gap}px`;
     grid.addEventListener('mouseenter', (event) => this.showWaffleTooltip(data, event));
     grid.addEventListener('mousemove', (event) => this.moveTooltip(event));
     grid.addEventListener('mouseleave', () => this.hideTooltip());
 
     // Calculate filled cells
-    const totalCells = rows * cols;
+    const totalCells = effectiveRows * effectiveCols;
     const filledCells = Math.round((data.percentage / 100) * totalCells);
 
-    // Build cells — fill order: bottom-left to top-right
-    // Logical index 0 = bottom-left corner, fills left-to-right then bottom-to-top
-    // Grid DOM order is top-left to bottom-right (row 0 = top)
-    // So for each DOM cell at (gridRow, gridCol), compute its fill index:
-    //   fillIndex = (rows - 1 - gridRow) * cols + gridCol
-    // Then: isFilled = fillIndex < filledCells
+    // Build cells — fill order depends on fillDirection setting
+    // Compute a fill index for each (gridRow, gridCol) based on direction
+    const computeFillIndex = (gridRow: number, gridCol: number): number => {
+      switch (fillDirection) {
+        case 'lr':
+          // Left to right, top to bottom
+          return gridRow * effectiveCols + gridCol;
+        case 'bt':
+        default:
+          // Bottom to top, left to right (default)
+          return (effectiveRows - 1 - gridRow) * effectiveCols + gridCol;
+        case 'diagonal':
+          // Diagonal fill: sum of row+col determines fill order
+          return (gridRow + gridCol) * (effectiveRows + effectiveCols) / 2 + gridCol;
+        case 'radial': {
+          // Radial: distance from center determines fill order
+          const centerRow = (effectiveRows - 1) / 2;
+          const centerCol = (effectiveCols - 1) / 2;
+          const dist = Math.sqrt((gridRow - centerRow) ** 2 + (gridCol - centerCol) ** 2);
+          // Invert so center fills first
+          const maxDist = Math.sqrt(centerRow ** 2 + centerCol ** 2);
+          return Math.round(dist / maxDist * totalCells);
+        }
+      }
+    };
+
+    // For diagonal and radial, we need to rank cells by computed index
+    // Build a sorted mapping
+    type CellInfo = { gridRow: number; gridCol: number; rawIndex: number };
+    const allCellInfos: CellInfo[] = [];
+    for (let r = 0; r < effectiveRows; r++) {
+      for (let c = 0; c < effectiveCols; c++) {
+        allCellInfos.push({ gridRow: r, gridCol: c, rawIndex: computeFillIndex(r, c) });
+      }
+    }
+    // Sort by rawIndex to assign rank
+    const sorted = [...allCellInfos].sort((a, b) => a.rawIndex - b.rawIndex);
+    const rankMap = new Map<string, number>();
+    sorted.forEach((cell, rank) => {
+      rankMap.set(`${cell.gridRow},${cell.gridCol}`, rank);
+    });
 
     const filledElements: HTMLElement[] = [];
 
-    for (let gridRow = 0; gridRow < rows; gridRow++) {
-      for (let gridCol = 0; gridCol < cols; gridCol++) {
-        const fillIndex = (rows - 1 - gridRow) * cols + gridCol;
-        const isFilled = fillIndex < filledCells;
+    for (let gridRow = 0; gridRow < effectiveRows; gridRow++) {
+      for (let gridCol = 0; gridCol < effectiveCols; gridCol++) {
+        const fillRank = rankMap.get(`${gridRow},${gridCol}`) ?? 0;
+        const isFilled = fillRank < filledCells;
 
         if (pictogramEnabled) {
           // Pictogram mode: render SVG icon per cell
           const cellEl = this.createPictogramCell(
             cellSize,
-            iconShape,
+            effectiveIconShape,
             iconSizePct,
             isFilled,
             fillColor,
@@ -337,10 +427,10 @@ export class WaffleChartVisual implements IVisual {
 
       // Pre-set all empty cells to fully visible (they don't animate)
       allCells.forEach((cell, i) => {
-        const gridRow = Math.floor(i / cols);
-        const gridCol = i % cols;
-        const fillIndex = (rows - 1 - gridRow) * cols + gridCol;
-        if (fillIndex >= filledCells) {
+        const gridRow = Math.floor(i / effectiveCols);
+        const gridCol = i % effectiveCols;
+        const fillRank3 = rankMap.get(`${gridRow},${gridCol}`) ?? 0;
+        if (fillRank3 >= filledCells) {
           // Empty cell — ensure it stays visible
           cell.style.opacity = '1';
           cell.style.transform = 'scale(1)';
@@ -349,16 +439,16 @@ export class WaffleChartVisual implements IVisual {
 
       // Animate only filled cells using rippleFill on the full grid
       // to get correct Manhattan distance calculation
-      const cancel = rippleFill(allCells, cols, animDuration, 25, 'bottom-left');
+      const cancel = rippleFill(allCells, effectiveCols, animDuration, 25, 'bottom-left');
 
       // Override: after setting up the ripple, immediately finalize empty cells
       // so they don't animate (rippleFill sets opacity:0 and scale:0 on all)
       requestAnimationFrame(() => {
         allCells.forEach((cell, i) => {
-          const gridRow = Math.floor(i / cols);
-          const gridCol = i % cols;
-          const fillIndex = (rows - 1 - gridRow) * cols + gridCol;
-          if (fillIndex >= filledCells) {
+          const gridRow = Math.floor(i / effectiveCols);
+          const gridCol = i % effectiveCols;
+          const fillRank2 = rankMap.get(`${gridRow},${gridCol}`) ?? 0;
+          if (fillRank2 >= filledCells) {
             cell.style.opacity = '1';
             cell.style.transform = 'scale(1)';
           }
@@ -376,81 +466,75 @@ export class WaffleChartVisual implements IVisual {
 
     // ── Legend ────────────────────────────────────────────────────
     if (s.legendFormattingCard.showLegend.value) {
-      this.renderLegend(fillColor, emptyColor);
+      this.renderSharedLegend(fillColor, emptyColor);
     }
 
     // Apply shared formatting settings
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.waffle-value');
 
+    // Accessibility
+    this.applyAccessibility(filledCells);
   }
 
   // ── Legend Rendering ────────────────────────────────────────
 
-  private renderLegend(fillColor: string, emptyColor: string): void {
+  private renderSharedLegend(fillColor: string, emptyColor: string): void {
     const legendFmtCard = this.settings.legendFormattingCard;
     const rawFontColor = legendFmtCard.legendFontColor.value?.value;
     const legendFontColor = rawFontColor != null && rawFontColor.length > 0 ? rawFontColor : '';
     const legendFontSize = legendFmtCard.legendFontSize.value;
     const position = this.getLegendPosition();
 
-    const legendDiv = document.createElement('div');
-    legendDiv.style.display = 'flex';
-    legendDiv.style.flexWrap = 'wrap';
-    legendDiv.style.gap = '12px';
-    legendDiv.style.padding = '6px 0';
-    legendDiv.style.justifyContent = 'center';
-
-    if (position === 'left' || position === 'right') {
-      legendDiv.style.flexDirection = 'column';
-      legendDiv.style.justifyContent = 'flex-start';
-    }
-
-    const items = [
-      { name: 'Filled', color: fillColor },
-      { name: 'Empty', color: emptyColor },
+    const items: LegendItem[] = [
+      { label: 'Filled', color: fillColor },
+      { label: 'Empty', color: emptyColor },
     ];
 
-    items.forEach((item) => {
-      const itemEl = document.createElement('div');
-      itemEl.style.display = 'flex';
-      itemEl.style.alignItems = 'center';
-      itemEl.style.gap = '5px';
-
-      const swatch = document.createElement('div');
-      swatch.style.width = '10px';
-      swatch.style.height = '10px';
-      swatch.style.borderRadius = '2px';
-      swatch.style.backgroundColor = item.color;
-      swatch.style.flexShrink = '0';
-
-      const label = document.createElement('span');
-      label.textContent = item.name;
-      if (legendFontColor.length > 0) label.style.color = legendFontColor;
-      if (legendFontSize !== 11) label.style.fontSize = `${legendFontSize}px`;
-
-      itemEl.appendChild(swatch);
-      itemEl.appendChild(label);
-      legendDiv.appendChild(itemEl);
+    renderLegend(this.container, {
+      items,
+      position,
+      fontSize: legendFontSize,
+      fontColor: legendFontColor,
     });
-
-    if (position === 'top') {
-      // Insert after title but before wrapper
-      const wrapper = this.container.querySelector('.waffle-container > div');
-      if (wrapper) {
-        this.container.insertBefore(legendDiv, wrapper);
-      } else {
-        this.container.appendChild(legendDiv);
-      }
-    } else {
-      this.container.appendChild(legendDiv);
-    }
   }
 
-  private getLegendPosition(): string {
+  private getConditionalColor(value: number): string | undefined {
+    const cc = this.settings.conditionalFormattingCard;
+    if (!cc.enableConditional.value) return undefined;
+    const config = buildConditionalConfig(
+      true,
+      resolveDropdown(cc.conditionalDirection),
+      cc.threshold1.value,
+      cc.threshold2.value,
+      cc.conditionalColor1.value?.value,
+      cc.conditionalColor2.value?.value,
+      cc.conditionalColor3.value?.value,
+    );
+    return resolveConditionalColor(value, config);
+  }
+
+  private applyAccessibility(dataPointCount: number): void {
+    const acc = this.settings.accessibilityFormattingCard;
+    if (!acc.enableKeyboardNav.value) return;
+    ensureFocusRingStyles();
+    applyChartAria(this.container, {
+      chartType: 'waffle chart',
+      title: this.settings.titleFormattingCard?.titleText?.value || undefined,
+      dataPointCount,
+    });
+    const cleanup = attachKeyboardNav({
+      container: this.container,
+      itemSelector: '.waffle-cell',
+      onActivate: (el) => (el as HTMLElement).click?.(),
+    });
+    this.cancelAnimations.push(cleanup);
+  }
+
+  private getLegendPosition(): 'top' | 'bottom' | 'left' | 'right' {
     const val = this.settings.legendFormattingCard.legendPosition.value?.value;
-    const validPositions = ['bottom', 'top', 'left', 'right'];
-    if (typeof val === 'string' && validPositions.includes(val)) {
-      return val;
+    const validPositions = ['bottom', 'top', 'left', 'right'] as const;
+    if (typeof val === 'string' && (validPositions as readonly string[]).includes(val)) {
+      return val as 'top' | 'bottom' | 'left' | 'right';
     }
     return 'bottom';
   }

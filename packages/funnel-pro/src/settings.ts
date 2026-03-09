@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard } from '../../core/src';
+import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard } from '../../core/src';
 // ── Funnel Settings ──────────────────────────────────────────────────
 
 class FunnelSettingsCard extends formattingSettings.SimpleCard {
@@ -128,7 +128,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 // ── Animation Settings ───────────────────────────────────────────────
@@ -151,6 +151,78 @@ class AnimationSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
+// ── Funnel Comparison Settings ───────────────────────────────────────
+
+class FunnelComparisonSettingsCard extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Comparison',
+    value: false,
+  });
+
+  showDropOff = new formattingSettings.ToggleSwitch({
+    name: 'showDropOff',
+    displayName: 'Show Drop-Off',
+    value: false,
+  });
+
+  dropOffColor = new formattingSettings.ColorPicker({
+    name: 'dropOffColor',
+    displayName: 'Drop-Off Color',
+    value: { value: '#EF4444' },
+  });
+
+  name = 'funnelComparisonSettings';
+  displayName = 'Comparison';
+  slices = [this.enabled, this.showDropOff, this.dropOffColor];
+}
+
+// ── Funnel Layout Settings ──────────────────────────────────────────
+
+class FunnelLayoutSettingsCard extends formattingSettings.SimpleCard {
+  neckWidth = new formattingSettings.NumUpDown({
+    name: 'neckWidth',
+    displayName: 'Neck Width (%)',
+    value: 20,
+  });
+
+  neckHeight = new formattingSettings.NumUpDown({
+    name: 'neckHeight',
+    displayName: 'Neck Height (%)',
+    value: 25,
+  });
+
+  dynamicHeight = new formattingSettings.ToggleSwitch({
+    name: 'dynamicHeight',
+    displayName: 'Dynamic Height per Stage',
+    value: false,
+  });
+
+  borderRadius = new formattingSettings.NumUpDown({
+    name: 'borderRadius',
+    displayName: 'Border Radius',
+    value: 4,
+  });
+
+  name = 'funnelLayoutSettings';
+  displayName = 'Funnel Layout';
+  slices = [this.neckWidth, this.neckHeight, this.dynamicHeight, this.borderRadius];
+}
+
+// ── Funnel Annotation Settings ──────────────────────────────────────
+
+class FunnelAnnotationSettingsCard extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Annotations',
+    value: false,
+  });
+
+  name = 'funnelAnnotationSettings';
+  displayName = 'Stage Annotations';
+  slices = [this.show];
+}
+
 // ── Root Model ───────────────────────────────────────────────────────
 
 export class FunnelProSettings extends formattingSettings.Model {
@@ -159,19 +231,37 @@ export class FunnelProSettings extends formattingSettings.Model {
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettingsCard();
 
+  funnelComparisonSettings = new FunnelComparisonSettingsCard();
+  funnelLayoutSettings = new FunnelLayoutSettingsCard();
+  funnelAnnotationSettings = new FunnelAnnotationSettingsCard();
+
   dataLabelFormattingCard = new DataLabelFormattingCard();
 
   titleFormattingCard = new TitleFormattingCard();
 
   axisFormattingCard = new AxisFormattingCard();
 
+  referenceLineFormattingCard = new ReferenceLineFormattingCard();
+  trendLineFormattingCard = new TrendLineFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
+
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
   cards = [
     this.funnelSettings,
     this.colorSettings,
     this.cardSettings,
     this.animationSettings,
+    this.funnelComparisonSettings,
+    this.funnelLayoutSettings,
+    this.funnelAnnotationSettings,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.axisFormattingCard,
+    this.referenceLineFormattingCard,
+    this.trendLineFormattingCard,
+    this.conditionalFormattingCard,
+    this.accessibilityFormattingCard,
+    this.colorThemeFormattingCard,
   ];
 }

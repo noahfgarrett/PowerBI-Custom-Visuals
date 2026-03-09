@@ -27,6 +27,20 @@ import {
   applyDataLabelFormatting,
   applyAllAxisFormatting,
   createScrollableChart,
+  buildConditionalConfig,
+  resolveConditionalColor,
+  resolveDropdown,
+  applyChartAria,
+  attachKeyboardNav,
+  ensureFocusRingStyles,
+  renderHorizontalReferenceLine,
+  computeStatValue,
+  type StatType,
+  renderTrendLine,
+  computeRegression,
+  type TrendType,
+  renderAnnotations,
+  buildAnnotationConfig,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -116,6 +130,7 @@ export class AnimatedWaterfallVisual implements IVisual {
         dataView,
       );
     }
+
 
     // Extract data
     const data = this.extractData(dataView);
@@ -209,7 +224,7 @@ export class AnimatedWaterfallVisual implements IVisual {
     }
     if (measureValues.length === 0) return empty;
 
-    const showTotal = this.settings.waterfallSettings.showTotal.value;
+    const showTotal = this.settings.waterfallSettings.showTotal.value || this.settings.waterfallTotalBar.show.value;
     const hasIsTotalField = isTotalValues.length > 0;
 
     // Build waterfall steps
@@ -289,9 +304,10 @@ export class AnimatedWaterfallVisual implements IVisual {
       // Recalculate running total from the last non-subtotal step
       const lastNonSubtotal = [...steps].reverse().find((s) => !s.isSubtotal);
       const finalRunningTotal = lastNonSubtotal ? lastNonSubtotal.runningTotal : runningTotal;
+      const totalLabel = this.settings.waterfallTotalBar.label.value || 'Total';
       steps.push({
-        key: `${rowCount}::Total`,
-        label: 'Total',
+        key: `${rowCount}::${totalLabel}`,
+        label: totalLabel,
         value: finalRunningTotal,
         runningTotal: finalRunningTotal,
         previousRunningTotal: 0,
@@ -303,6 +319,37 @@ export class AnimatedWaterfallVisual implements IVisual {
     }
 
     if (steps.length === 0) return empty;
+
+    // Sort by absolute contribution if enabled (only non-total, non-subtotal steps)
+    if (this.settings.waterfallSort.sortByContribution.value) {
+      // Separate total/subtotal entries from regular steps
+      const regularSteps = steps.filter((s) => !s.isTotal && !s.isSubtotal);
+      const totalSteps = steps.filter((s) => s.isTotal);
+      const subtotalSteps = steps.filter((s) => s.isSubtotal);
+
+      // Sort regular steps by absolute value descending
+      regularSteps.sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+
+      // Recalculate running totals after sorting
+      let newRunning = 0;
+      for (const step of regularSteps) {
+        step.previousRunningTotal = newRunning;
+        newRunning += step.value;
+        step.runningTotal = newRunning;
+      }
+
+      // Re-assemble: regular steps first, then any subtotals, then total
+      steps.length = 0;
+      steps.push(...regularSteps, ...subtotalSteps);
+
+      // Update total bar's running total
+      for (const t of totalSteps) {
+        t.runningTotal = newRunning;
+        t.previousRunningTotal = 0;
+        t.value = newRunning;
+        steps.push(t);
+      }
+    }
 
     // Compute domain bounds across all running totals and 0
     const allTotals = steps.map((s) => s.runningTotal);
@@ -507,7 +554,7 @@ export class AnimatedWaterfallVisual implements IVisual {
       const glass = getGlassStyle({
         mode: 'light',
         opacity: s.backgroundOpacity.value / 100,
-        backgroundColor: ((s as any).backgroundColor?.value?.value ?? (s as any).bgColor?.value?.value),
+        backgroundColor: s.backgroundColor.value?.value,
         borderRadius: s.borderRadius.value,
       });
       Object.assign(this.container.style, glass);
@@ -614,7 +661,7 @@ export class AnimatedWaterfallVisual implements IVisual {
     // Colors
     const positiveColor = s.colorSettings.positiveColor.value?.value ?? '#34D399';
     const negativeColor = s.colorSettings.negativeColor.value?.value ?? '#F87171';
-    const totalColor = s.colorSettings.totalColor.value?.value ?? '#3B82F6';
+    const totalColor = s.waterfallTotalBar.color.value?.value || s.colorSettings.totalColor.value?.value || '#3B82F6';
     const subtotalColor = s.subtotalSettings.subtotalColor.value?.value ?? '#6366F1';
 
     // Animation settings
@@ -661,6 +708,10 @@ export class AnimatedWaterfallVisual implements IVisual {
         barBottom = yScale(step.runningTotal);
         barColor = negativeColor;
       }
+
+      // Conditional formatting override
+      const condColor = this.getConditionalColor(step.value);
+      if (condColor) barColor = condColor;
 
       const barHeight = Math.max(MIN_BAR_HEIGHT, barBottom - barTop);
 
@@ -830,11 +881,205 @@ export class AnimatedWaterfallVisual implements IVisual {
       }
     }
 
+    // Wrap chartGroup in d3 selection for shared overlay renderers
+    const gSelection = d3.select(chartGroup) as unknown as d3.Selection<SVGGElement, unknown, null, undefined>;
+
+    // Collect all values for statistical computations
+    const allValues = data.steps
+      .filter((step) => !step.isTotal && !step.isSubtotal)
+      .map((step) => step.value);
+
+    // Reference line overlay
+    this.renderReferenceLine(gSelection, yScale, chartWidth, allValues);
+
+    // Trend line overlay on cumulative running totals
+    const cumulativeValues = data.steps.map((step) => step.runningTotal);
+    this.renderTrendLineOverlay(
+      gSelection,
+      cumulativeValues,
+      (i) => (xScale(data.steps[i]?.key ?? '') ?? 0) + xScale.bandwidth() / 2,
+      yScale,
+    );
+
+    // Annotation overlays — resolve category names to bar center positions
+    this.renderAnnotationOverlay(gSelection, (category: string) => {
+      const step = data.steps.find((s) => s.label === category);
+      if (!step) return null;
+      const bx = xScale(step.key) ?? 0;
+      const bw = xScale.bandwidth();
+      const cx = bx + bw / 2;
+      const cy = step.isTotal || step.isSubtotal
+        ? yScale(Math.max(0, step.runningTotal))
+        : step.isPositive
+          ? yScale(step.runningTotal)
+          : yScale(step.previousRunningTotal);
+      return { x: cx, y: cy };
+    });
+
     // Apply shared formatting settings
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.waterfall-value');
     applyAllAxisFormatting(this.container, this.settings.axisFormattingCard, '.waterfall-axis', '.waterfall-grid');
 
+    // Waterfall summary banner
+    if (s.waterfallSummary.show.value) {
+      const nonTotalSteps = data.steps.filter((step) => !step.isTotal && !step.isSubtotal);
+      const totalPositive = nonTotalSteps.filter((step) => step.value > 0).reduce((sum, step) => sum + step.value, 0);
+      const totalNegative = nonTotalSteps.filter((step) => step.value < 0).reduce((sum, step) => sum + step.value, 0);
+      const netChange = totalPositive + totalNegative;
+      const sign = netChange >= 0 ? '+' : '';
+      const summaryText = `Increase: ${formatWithSettings(totalPositive, s.numberFormattingCard)}  |  Decrease: ${formatWithSettings(totalNegative, s.numberFormattingCard)}  |  Net Change: ${sign}${formatWithSettings(netChange, s.numberFormattingCard)}`;
+      const summaryFontSize = s.waterfallSummary.fontSize.value || 11;
+
+      const summaryEl = document.createElementNS(SVG_NS, 'text');
+      summaryEl.setAttribute('class', 'waterfall-summary');
+      summaryEl.setAttribute('x', String(chartWidth / 2));
+      summaryEl.setAttribute('y', String(chartHeight + MARGIN.bottom - 4));
+      summaryEl.setAttribute('text-anchor', 'middle');
+      summaryEl.style.setProperty('font-size', `${summaryFontSize}px`);
+      summaryEl.style.setProperty('fill', '#64748B');
+      summaryEl.textContent = summaryText;
+      chartGroup.appendChild(summaryEl);
+    }
+
+    // Accessibility
+    this.applyAccessibility(data);
+
     this.container.addEventListener('click', this.handleBackgroundClick);
+  }
+
+  // -- Conditional Formatting ------------------------------------------------
+
+  private getConditionalColor(value: number): string | undefined {
+    const cc = this.settings.conditionalFormattingCard;
+    if (!cc.enableConditional.value) return undefined;
+
+    const config = buildConditionalConfig(
+      true,
+      resolveDropdown(cc.conditionalDirection),
+      cc.threshold1.value,
+      cc.threshold2.value,
+      cc.conditionalColor1.value?.value,
+      cc.conditionalColor2.value?.value,
+      cc.conditionalColor3.value?.value,
+    );
+    return resolveConditionalColor(value, config);
+  }
+
+  // -- Accessibility --------------------------------------------------------
+
+  private applyAccessibility(data: WaterfallData): void {
+    const acc = this.settings.accessibilityFormattingCard;
+    if (!acc.enableKeyboardNav.value) return;
+
+    ensureFocusRingStyles();
+
+    applyChartAria(this.container, {
+      chartType: 'waterfall chart',
+      title: this.settings.titleFormattingCard.titleText.value || undefined,
+      dataPointCount: data.steps.length,
+    });
+
+    const cleanup = attachKeyboardNav({
+      container: this.container,
+      itemSelector: '.waterfall-bar, [tabindex="0"]',
+      onActivate: (el) => {
+        (el as HTMLElement).click?.();
+      },
+    });
+    this.cancelAnimations.push(cleanup);
+  }
+
+  // -- Reference Line -------------------------------------------------------
+
+  private renderReferenceLine(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    yScale: d3.ScaleLinear<number, number>,
+    chartWidth: number,
+    allValues: number[],
+  ): void {
+    const ref = this.settings.referenceLineFormattingCard;
+    if (!ref.showReferenceLine.value) return;
+
+    const refType = resolveDropdown(ref.referenceLineType) ?? 'custom';
+    let refValue = ref.referenceLineValue.value;
+
+    if (refType !== 'custom' && allValues.length > 0) {
+      refValue = computeStatValue(allValues, refType as StatType);
+    }
+
+    const refColor = ref.referenceLineColor.value?.value ?? '#EF4444';
+    const refStyle = resolveDropdown(ref.referenceLineStyle) ?? 'dashed';
+    const labelText = ref.referenceLabelText.value.length > 0
+      ? ref.referenceLabelText.value
+      : formatWithSettings(refValue, this.settings.numberFormattingCard);
+
+    renderHorizontalReferenceLine(g, {
+      value: refValue,
+      yScale,
+      chartWidth,
+      lineColor: refColor,
+      lineWidth: ref.referenceLineWidth.value,
+      lineStyle: refStyle as 'solid' | 'dashed' | 'dotted',
+      showLabel: ref.showReferenceLabel.value,
+      labelText,
+      showBand: ref.showReferenceBand.value,
+      bandUpperValue: refValue * 1.1,
+      bandOpacity: ref.referenceBandOpacity.value / 100,
+    });
+  }
+
+  // -- Trend Line -----------------------------------------------------------
+
+  private renderTrendLineOverlay(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    values: number[],
+    xScale: (index: number) => number,
+    yScale: d3.ScaleLinear<number, number>,
+  ): void {
+    const tl = this.settings.trendLineFormattingCard;
+    if (!tl.showTrendLine.value || values.length < 2) return;
+
+    const trendType = (resolveDropdown(tl.trendLineType) ?? 'linear') as TrendType;
+    const result = computeRegression(values, trendType, tl.polynomialOrder.value);
+    const trendColor = tl.trendLineColor.value?.value ?? '#6366F1';
+
+    renderTrendLine(g, {
+      predicted: result.predicted,
+      xScale,
+      yScale,
+      lineColor: trendColor,
+      lineWidth: tl.trendLineWidth.value,
+      showEquation: tl.showEquation.value,
+      showR2: tl.showR2.value,
+      equation: result.equation,
+      r2: result.r2,
+    });
+  }
+
+  // -- Annotations ----------------------------------------------------------
+
+  private renderAnnotationOverlay(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    resolvePosition: (category: string) => { x: number; y: number } | null,
+  ): void {
+    const ann = this.settings.annotationFormattingCard;
+    if (!ann.showAnnotations.value) return;
+
+    const slots = [
+      { category: ann.annotation1Category.value, text: ann.annotation1Text.value, position: resolveDropdown(ann.annotation1Position) ?? 'above' },
+      { category: ann.annotation2Category.value, text: ann.annotation2Text.value, position: resolveDropdown(ann.annotation2Position) ?? 'above' },
+      { category: ann.annotation3Category.value, text: ann.annotation3Text.value, position: resolveDropdown(ann.annotation3Position) ?? 'above' },
+    ];
+
+    const config = buildAnnotationConfig(
+      true,
+      slots,
+      ann.annotationFontSize.value,
+      ann.annotationFontColor.value?.value || '#475569',
+      ann.annotationConnectorColor.value?.value || '#94A3B8',
+      resolvePosition,
+    );
+    if (config) renderAnnotations(g, config);
   }
 
   // -- Grid -------------------------------------------------------------------

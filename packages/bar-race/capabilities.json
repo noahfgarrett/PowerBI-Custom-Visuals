@@ -76,12 +76,6 @@
             "numeric": true
           }
         },
-        "autoPlay": {
-          "displayName": "Auto-Play",
-          "type": {
-            "bool": true
-          }
-        },
         "playSpeed": {
           "displayName": "Play Speed (ms)",
           "type": {
@@ -218,12 +212,6 @@
     "dataLabelFormatting": {
       "displayName": "Data Labels",
       "properties": {
-        "showDataLabels": {
-          "displayName": "Show Data Labels",
-          "type": {
-            "bool": true
-          }
-        },
         "dataLabelFontSize": {
           "displayName": "Font Size",
           "type": {
@@ -327,53 +315,6 @@
           "type": {
             "numeric": true
           }
-        },
-        "axisLineColor": {
-          "displayName": "Axis Line Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        },
-        "axisLineWidth": {
-          "displayName": "Axis Line Width",
-          "type": {
-            "numeric": true
-          }
-        },
-        "showGridLines": {
-          "displayName": "Show Grid Lines",
-          "type": {
-            "bool": true
-          }
-        },
-        "gridLineColor": {
-          "displayName": "Grid Line Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        },
-        "gridLineStyle": {
-          "displayName": "Grid Line Style",
-          "type": {
-            "enumeration": [
-              {
-                "value": "solid",
-                "displayName": "Solid"
-              },
-              {
-                "value": "dashed",
-                "displayName": "Dashed"
-              }
-            ]
-          }
         }
       }
     },
@@ -465,6 +406,442 @@
           "displayName": "Border Radius",
           "type": {
             "numeric": true
+          }
+        },
+        "enableGlass": {
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "referenceLineFormatting": {
+      "displayName": "Reference Line",
+      "properties": {
+        "showReferenceLine": {
+          "displayName": "Show Reference Line",
+          "type": {
+            "bool": true
+          }
+        },
+        "referenceLineType": {
+          "displayName": "Type",
+          "type": {
+            "enumeration": [
+              {
+                "value": "custom",
+                "displayName": "Custom Value"
+              },
+              {
+                "value": "mean",
+                "displayName": "Mean"
+              },
+              {
+                "value": "median",
+                "displayName": "Median"
+              },
+              {
+                "value": "percentile",
+                "displayName": "Percentile"
+              },
+              {
+                "value": "min",
+                "displayName": "Min"
+              },
+              {
+                "value": "max",
+                "displayName": "Max"
+              }
+            ]
+          }
+        },
+        "referenceLineValue": {
+          "displayName": "Value",
+          "type": {
+            "numeric": true
+          }
+        },
+        "referenceLineColor": {
+          "displayName": "Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "referenceLineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "referenceLineStyle": {
+          "displayName": "Line Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "solid",
+                "displayName": "Solid"
+              },
+              {
+                "value": "dashed",
+                "displayName": "Dashed"
+              },
+              {
+                "value": "dotted",
+                "displayName": "Dotted"
+              }
+            ]
+          }
+        },
+        "showReferenceLabel": {
+          "displayName": "Show Label",
+          "type": {
+            "bool": true
+          }
+        },
+        "referenceLabelText": {
+          "displayName": "Label Text",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "trendLineFormatting": {
+      "displayName": "Trend Line",
+      "properties": {
+        "showTrendLine": {
+          "displayName": "Show Trend Line",
+          "type": {
+            "bool": true
+          }
+        },
+        "trendLineType": {
+          "displayName": "Type",
+          "type": {
+            "enumeration": [
+              {
+                "value": "linear",
+                "displayName": "Linear"
+              },
+              {
+                "value": "polynomial",
+                "displayName": "Polynomial"
+              },
+              {
+                "value": "exponential",
+                "displayName": "Exponential"
+              },
+              {
+                "value": "logarithmic",
+                "displayName": "Logarithmic"
+              },
+              {
+                "value": "power",
+                "displayName": "Power"
+              }
+            ]
+          }
+        },
+        "polynomialOrder": {
+          "displayName": "Polynomial Order",
+          "type": {
+            "numeric": true
+          }
+        },
+        "trendLineColor": {
+          "displayName": "Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "trendLineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "showEquation": {
+          "displayName": "Show Equation",
+          "type": {
+            "bool": true
+          }
+        },
+        "showR2": {
+          "displayName": "Show R\u00b2",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "conditionalFormatting": {
+      "displayName": "Conditional Formatting",
+      "properties": {
+        "enableConditional": {
+          "displayName": "Enable Conditional Formatting",
+          "type": {
+            "bool": true
+          }
+        },
+        "conditionalDirection": {
+          "displayName": "Direction",
+          "type": {
+            "enumeration": [
+              {
+                "value": "ascending",
+                "displayName": "Ascending (Low = Bad)"
+              },
+              {
+                "value": "descending",
+                "displayName": "Descending (Low = Good)"
+              }
+            ]
+          }
+        },
+        "threshold1": {
+          "displayName": "Threshold 1",
+          "type": {
+            "numeric": true
+          }
+        },
+        "threshold2": {
+          "displayName": "Threshold 2",
+          "type": {
+            "numeric": true
+          }
+        },
+        "conditionalColor1": {
+          "displayName": "Color 1 (Bad)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "conditionalColor2": {
+          "displayName": "Color 2 (Warning)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "conditionalColor3": {
+          "displayName": "Color 3 (Good)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "annotationFormatting": {
+      "displayName": "Annotations",
+      "properties": {
+        "showAnnotations": {
+          "displayName": "Show Annotations",
+          "type": {
+            "bool": true
+          }
+        },
+        "annotation1Category": {
+          "displayName": "Annotation 1 \u2014 Category",
+          "type": {
+            "text": true
+          }
+        },
+        "annotation1Text": {
+          "displayName": "Annotation 1 \u2014 Text",
+          "type": {
+            "text": true
+          }
+        },
+        "annotation1Position": {
+          "displayName": "Annotation 1 \u2014 Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "above",
+                "displayName": "Above"
+              },
+              {
+                "value": "below",
+                "displayName": "Below"
+              },
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        },
+        "annotation2Category": {
+          "displayName": "Annotation 2 \u2014 Category",
+          "type": {
+            "text": true
+          }
+        },
+        "annotation2Text": {
+          "displayName": "Annotation 2 \u2014 Text",
+          "type": {
+            "text": true
+          }
+        },
+        "annotation2Position": {
+          "displayName": "Annotation 2 \u2014 Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "above",
+                "displayName": "Above"
+              },
+              {
+                "value": "below",
+                "displayName": "Below"
+              },
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        },
+        "annotation3Category": {
+          "displayName": "Annotation 3 \u2014 Category",
+          "type": {
+            "text": true
+          }
+        },
+        "annotation3Text": {
+          "displayName": "Annotation 3 \u2014 Text",
+          "type": {
+            "text": true
+          }
+        },
+        "annotation3Position": {
+          "displayName": "Annotation 3 \u2014 Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "above",
+                "displayName": "Above"
+              },
+              {
+                "value": "below",
+                "displayName": "Below"
+              },
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        },
+        "annotationFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "annotationFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "annotationConnectorColor": {
+          "displayName": "Connector Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "accessibilityFormatting": {
+      "displayName": "Accessibility",
+      "properties": {
+        "enableKeyboardNav": {
+          "displayName": "Enable Keyboard Navigation",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "raceDisplay": {
+      "displayName": "Race Display",
+      "properties": {
+        "showRankNumbers": {
+          "displayName": "Show Rank Numbers",
+          "type": {
+            "bool": true
+          }
+        },
+        "showPeriodLabel": {
+          "displayName": "Show Period Label",
+          "type": {
+            "bool": true
+          }
+        },
+        "periodLabelSize": {
+          "displayName": "Period Label Size",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "racePlayback": {
+      "displayName": "Race Playback",
+      "properties": {
+        "pauseDuration": {
+          "displayName": "Pause Duration (ms)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "colorThemeFormatting": {
+      "properties": {
+        "colorTheme": {
+          "type": {
+            "text": true
           }
         }
       }

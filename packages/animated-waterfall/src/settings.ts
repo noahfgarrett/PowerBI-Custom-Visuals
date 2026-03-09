@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, NumberFormattingCard} from '../../core/src';
+import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, NumberFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AnnotationFormattingCard, AccessibilityFormattingCard } from '../../core/src';
 // -- Waterfall Settings -------------------------------------------------------
 
 class WaterfallSettingsCard extends formattingSettings.SimpleCard {
@@ -159,7 +159,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 // -- Animation Settings -------------------------------------------------------
@@ -254,6 +254,67 @@ class DrillDownSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.showBreadcrumb, this.breadcrumbFontSize, this.breadcrumbColor];
 }
 
+// -- Waterfall Total Bar Settings ---------------------------------------------
+
+class WaterfallTotalBarSettings extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Total Bar',
+    value: true,
+  });
+
+  label = new formattingSettings.TextInput({
+    name: 'label',
+    displayName: 'Total Label',
+    value: 'Total',
+    placeholder: 'Total',
+  });
+
+  color = new formattingSettings.ColorPicker({
+    name: 'color',
+    displayName: 'Total Bar Color',
+    value: { value: '#3B82F6' },
+  });
+
+  name = 'waterfallTotalBar';
+  displayName = 'Total Bar';
+  slices = [this.show, this.label, this.color];
+}
+
+// -- Waterfall Summary Settings -----------------------------------------------
+
+class WaterfallSummarySettings extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Summary Banner',
+    value: false,
+  });
+
+  fontSize = new formattingSettings.NumUpDown({
+    name: 'fontSize',
+    displayName: 'Font Size',
+    value: 11,
+  });
+
+  name = 'waterfallSummary';
+  displayName = 'Summary Metrics';
+  slices = [this.show, this.fontSize];
+}
+
+// -- Waterfall Sort Settings --------------------------------------------------
+
+class WaterfallSortSettings extends formattingSettings.SimpleCard {
+  sortByContribution = new formattingSettings.ToggleSwitch({
+    name: 'sortByContribution',
+    displayName: 'Sort by Contribution',
+    value: false,
+  });
+
+  name = 'waterfallSort';
+  displayName = 'Sort';
+  slices = [this.sortByContribution];
+}
+
 // -- Root Model ---------------------------------------------------------------
 
 
@@ -310,6 +371,16 @@ export class AnimatedWaterfallSettings extends formattingSettings.Model {
 
   numberFormattingCard = new NumberFormattingCard();
 
+  referenceLineFormattingCard = new ReferenceLineFormattingCard();
+  trendLineFormattingCard = new TrendLineFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  annotationFormattingCard = new AnnotationFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
+
+  waterfallTotalBar = new WaterfallTotalBarSettings();
+  waterfallSummary = new WaterfallSummarySettings();
+  waterfallSort = new WaterfallSortSettings();
+
   cards = [
     this.waterfallSettings,
     this.colorSettings,
@@ -325,5 +396,13 @@ export class AnimatedWaterfallSettings extends formattingSettings.Model {
     this.subtotalSettings,
     this.scrollFormattingCard,
     this.numberFormattingCard,
+    this.referenceLineFormattingCard,
+    this.trendLineFormattingCard,
+    this.conditionalFormattingCard,
+    this.annotationFormattingCard,
+    this.accessibilityFormattingCard,
+    this.waterfallTotalBar,
+    this.waterfallSummary,
+    this.waterfallSort,
   ];
 }

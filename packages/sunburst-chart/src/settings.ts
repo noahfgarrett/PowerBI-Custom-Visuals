@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard } from '../../core/src';
+import { LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard } from '../../core/src';
 class SunburstSettings extends formattingSettings.SimpleCard {
   showLabels = new formattingSettings.ToggleSwitch({
     name: 'showLabels',
@@ -75,6 +75,12 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
     value: true,
   });
 
+  backgroundColor = new formattingSettings.ColorPicker({
+    name: 'backgroundColor',
+    displayName: 'Background Color',
+    value: { value: '' },
+  });
+
   backgroundOpacity = new formattingSettings.NumUpDown({
     name: 'backgroundOpacity',
     displayName: 'Background Opacity (%)',
@@ -89,7 +95,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 class CenterContentSettings extends formattingSettings.SimpleCard {
@@ -203,6 +209,53 @@ class DrillDownSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.showBreadcrumb, this.breadcrumbFontSize, this.breadcrumbColor];
 }
 
+// ── Sunburst Display Settings ──────────────────────────────────
+
+class SunburstDisplaySettings extends formattingSettings.SimpleCard {
+  showPercentages = new formattingSettings.ToggleSwitch({
+    name: 'showPercentages',
+    displayName: 'Show Percentages',
+    value: false,
+  });
+
+  percentOf = new formattingSettings.ItemDropdown({
+    name: 'percentOf',
+    displayName: 'Percent Of',
+    items: [
+      { value: 'parent', displayName: 'Parent' },
+      { value: 'total', displayName: 'Total' },
+    ],
+    value: { value: 'parent', displayName: 'Parent' },
+  });
+
+  innerRadius = new formattingSettings.NumUpDown({
+    name: 'innerRadius',
+    displayName: 'Inner Radius',
+    value: 0,
+  });
+
+  startAngle = new formattingSettings.NumUpDown({
+    name: 'startAngle',
+    displayName: 'Start Angle',
+    value: 0,
+  });
+
+  sortOrder = new formattingSettings.ItemDropdown({
+    name: 'sortOrder',
+    displayName: 'Sort Order',
+    items: [
+      { value: 'descending', displayName: 'Descending (largest first)' },
+      { value: 'ascending', displayName: 'Ascending (smallest first)' },
+      { value: 'none', displayName: 'Data Order' },
+    ],
+    value: { value: 'descending', displayName: 'Descending (largest first)' },
+  });
+
+  name = 'sunburstDisplaySettings';
+  displayName = 'Sunburst Display';
+  slices = [this.showPercentages, this.percentOf, this.innerRadius, this.startAngle, this.sortOrder];
+}
+
 export class SunburstChartSettings extends formattingSettings.Model {
   sunburstSettings = new SunburstSettings();
   colorSettings = new ColorSettings();
@@ -210,14 +263,15 @@ export class SunburstChartSettings extends formattingSettings.Model {
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
   drillDownSettings = new DrillDownSettingsCard();
+  sunburstDisplaySettings = new SunburstDisplaySettings();
 
   legendFormattingCard = new LegendFormattingCard();
-
   dataLabelFormattingCard = new DataLabelFormattingCard();
-
   titleFormattingCard = new TitleFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
 
-
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
   cards = [
     this.sunburstSettings,
     this.colorSettings,
@@ -225,8 +279,12 @@ export class SunburstChartSettings extends formattingSettings.Model {
     this.cardSettings,
     this.animationSettings,
     this.drillDownSettings,
+    this.sunburstDisplaySettings,
     this.legendFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
+    this.conditionalFormattingCard,
+    this.accessibilityFormattingCard,
+    this.colorThemeFormattingCard,
   ];
 }

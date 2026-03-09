@@ -5,7 +5,15 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { DataLabelFormattingCard, LegendFormattingCard, TitleFormattingCard, SortFormattingCard} from '../../core/src';
+import {
+  DataLabelFormattingCard,
+  LegendFormattingCard,
+  TitleFormattingCard,
+  SortFormattingCard,
+  ConditionalFormattingCard,
+  AccessibilityFormattingCard,
+  ColorThemeFormattingCard,
+} from '../../core/src';
 class ChordSettings extends formattingSettings.SimpleCard {
   padding = new formattingSettings.NumUpDown({
     name: 'padding',
@@ -71,6 +79,12 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
     value: true,
   });
 
+  backgroundColor = new formattingSettings.ColorPicker({
+    name: 'backgroundColor',
+    displayName: 'Background Color',
+    value: { value: '' },
+  });
+
   backgroundOpacity = new formattingSettings.NumUpDown({
     name: 'backgroundOpacity',
     displayName: 'Background Opacity (%)',
@@ -85,7 +99,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 class AnimationSettings extends formattingSettings.SimpleCard {
@@ -106,11 +120,69 @@ class AnimationSettings extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
+class ChordInteractionSettings extends formattingSettings.SimpleCard {
+  enableFiltering = new formattingSettings.ToggleSwitch({
+    name: 'enableFiltering',
+    displayName: 'Enable Chord Filtering',
+    value: false,
+  });
+
+  showFlowLabels = new formattingSettings.ToggleSwitch({
+    name: 'showFlowLabels',
+    displayName: 'Show Flow Labels on Hover',
+    value: false,
+  });
+
+  name = 'chordInteractionSettings';
+  displayName = 'Interaction Features';
+  slices = [this.enableFiltering, this.showFlowLabels];
+}
+
+class ChordRibbonSettings extends formattingSettings.SimpleCard {
+  gradientRibbons = new formattingSettings.ToggleSwitch({
+    name: 'gradientRibbons',
+    displayName: 'Gradient Ribbons',
+    value: false,
+  });
+
+  directional = new formattingSettings.ToggleSwitch({
+    name: 'directional',
+    displayName: 'Directional Ribbons',
+    value: false,
+  });
+
+  minArcAngle = new formattingSettings.NumUpDown({
+    name: 'minArcAngle',
+    displayName: 'Min Arc Angle (degrees)',
+    value: 0,
+  });
+
+  name = 'chordRibbonSettings';
+  displayName = 'Ribbon Features';
+  slices = [this.gradientRibbons, this.directional, this.minArcAngle];
+}
+
+class ChordLabelSettings extends formattingSettings.SimpleCard {
+  showEntityValues = new formattingSettings.ToggleSwitch({
+    name: 'showEntityValues',
+    displayName: 'Show Entity Values',
+    value: false,
+  });
+
+  name = 'chordLabelSettings';
+  displayName = 'Label Features';
+  slices = [this.showEntityValues];
+}
+
 export class ChordDiagramSettings extends formattingSettings.Model {
   chordSettings = new ChordSettings();
   colorSettings = new ColorSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
+
+  chordInteractionSettings = new ChordInteractionSettings();
+  chordRibbonSettings = new ChordRibbonSettings();
+  chordLabelSettings = new ChordLabelSettings();
 
   dataLabelFormattingCard = new DataLabelFormattingCard();
 
@@ -119,15 +191,24 @@ export class ChordDiagramSettings extends formattingSettings.Model {
   legendFormattingCard = new LegendFormattingCard();
 
   sortFormattingCard = new SortFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
 
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
   cards = [
     this.chordSettings,
     this.colorSettings,
     this.cardSettings,
     this.animationSettings,
+    this.chordInteractionSettings,
+    this.chordRibbonSettings,
+    this.chordLabelSettings,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.legendFormattingCard,
     this.sortFormattingCard,
+    this.conditionalFormattingCard,
+    this.accessibilityFormattingCard,
+    this.colorThemeFormattingCard,
   ];
 }

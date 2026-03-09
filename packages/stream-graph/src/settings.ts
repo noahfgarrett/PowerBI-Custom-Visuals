@@ -5,7 +5,23 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, LineStrokeFormattingCard, SortFormattingCard} from '../../core/src';
+import {
+  AxisFormattingCard,
+  LegendFormattingCard,
+  DataLabelFormattingCard,
+  TitleFormattingCard,
+  LineStrokeFormattingCard,
+  SortFormattingCard,
+  ReferenceLineFormattingCard,
+  TrendLineFormattingCard,
+  ConditionalFormattingCard,
+  CrosshairFormattingCard,
+  AnnotationFormattingCard,
+  AccessibilityFormattingCard,
+  ColorThemeFormattingCard,
+  SeriesFormattingCard,
+} from '../../core/src';
+
 class StreamSettings extends formattingSettings.SimpleCard {
   offset = new formattingSettings.ItemDropdown({
     name: 'offset',
@@ -62,9 +78,15 @@ class StreamSettings extends formattingSettings.SimpleCard {
   });
 
 
+  useGradient = new formattingSettings.ToggleSwitch({
+    name: 'useGradient',
+    displayName: 'Gradient Fill',
+    value: false,
+  });
+
   name = 'streamSettings';
   displayName = 'Stream';
-  slices = [this.offset, this.curve, this.streamOpacity, this.streamStrokeColor, this.streamStrokeWidth];
+  slices = [this.offset, this.curve, this.streamOpacity, this.streamStrokeColor, this.streamStrokeWidth, this.useGradient];
 }
 
 class ColorSettings extends formattingSettings.SimpleCard {
@@ -79,7 +101,9 @@ class ColorSettings extends formattingSettings.SimpleCard {
   slices = [this.useChartPalette];
 }
 
-class AxisSettings extends formattingSettings.SimpleCard {
+// ── Axis Visibility (unique properties not in shared AxisFormattingCard) ─
+
+class AxisVisibilitySettings extends formattingSettings.SimpleCard {
   showXAxis = new formattingSettings.ToggleSwitch({
     name: 'showXAxis',
     displayName: 'Show X Axis',
@@ -87,7 +111,7 @@ class AxisSettings extends formattingSettings.SimpleCard {
   });
 
   name = 'axisSettings';
-  displayName = 'Axis';
+  displayName = 'Axis Visibility';
   slices = [this.showXAxis];
 }
 
@@ -118,7 +142,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 class AnimationSettings extends formattingSettings.SimpleCard {
@@ -139,82 +163,99 @@ class AnimationSettings extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
-// ── Crosshair Settings ──────────────────────────────────────────────
+// ── Stream Display Settings ─────────────────────────────────────────
 
-class CrosshairSettingsCard extends formattingSettings.SimpleCard {
-  show = new formattingSettings.ToggleSwitch({
-    name: 'show',
-    displayName: 'Show Crosshair',
-    value: true,
+class StreamDisplaySettingsCard extends formattingSettings.SimpleCard {
+  showYAxis = new formattingSettings.ToggleSwitch({
+    name: 'showYAxis',
+    displayName: 'Show Y-Axis',
+    value: false,
   });
 
-  lineColor = new formattingSettings.ColorPicker({
-    name: 'lineColor',
-    displayName: 'Line Color',
-    value: { value: '#94A3B8' },
-  });
-
-  lineWidth = new formattingSettings.NumUpDown({
-    name: 'lineWidth',
-    displayName: 'Line Width',
-    value: 1,
-  });
-
-  lineStyle = new formattingSettings.ItemDropdown({
-    name: 'lineStyle',
-    displayName: 'Line Style',
-    items: [
-      { value: 'solid', displayName: 'Solid' },
-      { value: 'dashed', displayName: 'Dashed' },
-    ],
-    value: { value: 'dashed', displayName: 'Dashed' },
+  showPercentages = new formattingSettings.ToggleSwitch({
+    name: 'showPercentages',
+    displayName: 'Show Percentages on Hover',
+    value: false,
   });
 
   showValues = new formattingSettings.ToggleSwitch({
     name: 'showValues',
-    displayName: 'Show Values',
-    value: true,
+    displayName: 'Show Layer Values on Hover',
+    value: false,
   });
 
-  name = 'crosshairSettings';
-  displayName = 'Crosshair';
-  slices = [this.show, this.lineColor, this.lineWidth, this.lineStyle, this.showValues];
+  name = 'streamDisplaySettings';
+  displayName = 'Stream Display';
+  slices = [this.showYAxis, this.showPercentages, this.showValues];
+}
+
+// ── Stream Sort Settings ────────────────────────────────────────────
+
+class StreamSortSettingsCard extends formattingSettings.SimpleCard {
+  sortOrder = new formattingSettings.ItemDropdown({
+    name: 'sortOrder',
+    displayName: 'Layer Sort Order',
+    items: [
+      { value: 'inside-out', displayName: 'Inside-Out' },
+      { value: 'by-peak', displayName: 'By Peak Value' },
+      { value: 'appearance', displayName: 'Appearance Order' },
+    ],
+    value: { value: 'inside-out', displayName: 'Inside-Out' },
+  });
+
+  name = 'streamSortSettings';
+  displayName = 'Layer Sort Order';
+  slices = [this.sortOrder];
 }
 
 export class StreamGraphSettings extends formattingSettings.Model {
   streamSettings = new StreamSettings();
   colorSettings = new ColorSettings();
-  axisSettings = new AxisSettings();
+  axisVisibilitySettings = new AxisVisibilitySettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
 
+  // New feature cards
+  streamDisplaySettings = new StreamDisplaySettingsCard();
+  streamSortSettings = new StreamSortSettingsCard();
+
+  // Shared formatting cards from core
   axisFormattingCard = new AxisFormattingCard();
-
   legendFormattingCard = new LegendFormattingCard();
-
   dataLabelFormattingCard = new DataLabelFormattingCard();
-
   titleFormattingCard = new TitleFormattingCard();
-
   lineStrokeFormattingCard = new LineStrokeFormattingCard();
-
-
   sortFormattingCard = new SortFormattingCard();
+  referenceLineFormattingCard = new ReferenceLineFormattingCard();
+  trendLineFormattingCard = new TrendLineFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  crosshairFormattingCard = new CrosshairFormattingCard();
+  annotationFormattingCard = new AnnotationFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
 
-  crosshairSettings = new CrosshairSettingsCard();
-
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
+  seriesFormattingCard = new SeriesFormattingCard();
   cards = [
     this.streamSettings,
     this.colorSettings,
-    this.axisSettings,
+    this.axisVisibilitySettings,
     this.cardSettings,
     this.animationSettings,
+    this.streamDisplaySettings,
+    this.streamSortSettings,
     this.axisFormattingCard,
     this.legendFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.lineStrokeFormattingCard,
     this.sortFormattingCard,
-    this.crosshairSettings,
+    this.referenceLineFormattingCard,
+    this.trendLineFormattingCard,
+    this.conditionalFormattingCard,
+    this.crosshairFormattingCard,
+    this.annotationFormattingCard,
+    this.accessibilityFormattingCard,
+    this.seriesFormattingCard,
+    this.colorThemeFormattingCard,
   ];
 }

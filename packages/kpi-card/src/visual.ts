@@ -16,6 +16,14 @@ import {
   DURATION,
   getGlassStyle,
   renderChartTitle,
+  applyChartAria,
+  attachKeyboardNav,
+  ensureFocusRingStyles,
+  buildConditionalConfig,
+  resolveConditionalColor,
+  resolveDropdown,
+  getHostChartColor,
+  resolveColorTheme,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -208,26 +216,12 @@ export class KpiCardVisual implements IVisual {
     valueEl.style.fontSize = `${s.valueSettings.fontSize.value}px`;
     valueEl.style.color = s.valueSettings.fontColor.value?.value || '#0F172A';
 
-    // Conditional value coloring — override fontColor based on thresholds
-    if (s.conditionalColorSettings.enabled.value && data.value !== null) {
-      const cc = s.conditionalColorSettings;
-      const low = cc.threshold1.value;
-      const high = cc.threshold2.value;
-      const isAscending = cc.direction.value?.value !== 'descending';
-
-      let resolvedColor: string;
-      if (data.value < low) {
-        resolvedColor = isAscending
-          ? (cc.color1.value?.value ?? '#F87171')
-          : (cc.color3.value?.value ?? '#34D399');
-      } else if (data.value < high) {
-        resolvedColor = cc.color2.value?.value ?? '#FBBF24';
-      } else {
-        resolvedColor = isAscending
-          ? (cc.color3.value?.value ?? '#34D399')
-          : (cc.color1.value?.value ?? '#F87171');
+    // Shared conditional formatting card — overrides font color if enabled
+    if (data.value !== null) {
+      const sharedColor = this.getConditionalColor(data.value);
+      if (sharedColor) {
+        valueEl.style.color = sharedColor;
       }
-      valueEl.style.color = resolvedColor;
     }
 
     // Format function
@@ -279,6 +273,38 @@ export class KpiCardVisual implements IVisual {
 
     wrapper.appendChild(valueRow);
 
+    // Additional KPI values (when kpiCount > 1 and trend data is available)
+    const kpiCount = parseInt(resolveDropdown(s.kpiLayoutSettings.kpiCount) ?? '1', 10);
+    if (kpiCount > 1 && data.trend.length >= kpiCount) {
+      const extraRow = document.createElement('div');
+      extraRow.className = 'kpi-extra-values';
+      extraRow.style.cssText = `
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+      `;
+
+      // Show the last N values from trend (excluding the primary which is already shown)
+      const startIdx = Math.max(0, data.trend.length - kpiCount);
+      for (let i = startIdx; i < data.trend.length - 1; i++) {
+        const val = data.trend[i];
+        const extraEl = document.createElement('div');
+        extraEl.className = 'kpi-extra-value';
+        extraEl.style.cssText = `
+          font-size: ${Math.max(12, s.valueSettings.fontSize.value * 0.6)}px;
+          color: ${s.valueSettings.fontColor.value?.value || '#64748B'};
+          opacity: 0.75;
+        `;
+        extraEl.textContent = fmt(val);
+        extraRow.appendChild(extraEl);
+      }
+
+      if (extraRow.childElementCount > 0) {
+        wrapper.appendChild(extraRow);
+      }
+    }
+
     // Sparkline
     if (s.sparklineSettings.show.value && data.trend.length > 1) {
       // Divider between value row and sparkline
@@ -293,10 +319,14 @@ export class KpiCardVisual implements IVisual {
       const sparkDiv = document.createElement('div');
       sparkDiv.className = 'kpi-sparkline';
 
-      const lineColor = s.sparklineSettings.lineColor.value?.value ?? '#3B82F6';
+      const themeName = resolveColorTheme(s.colorThemeFormattingCard);
+      const userLineColor = s.sparklineSettings.lineColor.value?.value;
+      const lineColor = (userLineColor && userLineColor.length > 0) ? userLineColor : getHostChartColor(this.host.colorPalette, 0, themeName);
       const strokeColor = s.sparklineSettings.sparklineColor.value?.value || lineColor;
       const strokeWidth = s.sparklineSettings.sparklineWidth.value ?? 2;
       const fillOp = (s.sparklineSettings.fillOpacity.value ?? 45) / 100;
+
+      const sparklineType = resolveDropdown(s.kpiLayoutSettings.sparklineType) ?? 'line';
 
       const svg = d3.select(sparkDiv)
         .append('svg')
@@ -316,56 +346,77 @@ export class KpiCardVisual implements IVisual {
         .domain([yMin - yPad, yMax + yPad])
         .range([30, 2]);
 
-      // Gradient fill
-      const gradId = 'kpi-spark-grad';
-      const defs = svg.append('defs');
-      const grad = defs.append('linearGradient')
-        .attr('id', gradId)
-        .attr('x1', '0%').attr('y1', '0%')
-        .attr('x2', '0%').attr('y2', '100%');
-      grad.append('stop').attr('offset', '0%')
-        .attr('stop-color', lineColor).attr('stop-opacity', fillOp);
-      grad.append('stop').attr('offset', '100%')
-        .attr('stop-color', lineColor).attr('stop-opacity', 0.05);
+      let pathEl: d3.Selection<SVGPathElement, number[], null, undefined> | null = null;
 
-      const area = d3.area<number>()
-        .x((_, i) => x(i))
-        .y0(32)
-        .y1((d) => yScale(d))
-        .curve(d3.curveMonotoneX);
+      if (sparklineType === 'bar') {
+        // Bar sparkline
+        const barWidth = Math.max(1, 200 / data.trend.length - 1);
+        svg.selectAll('rect')
+          .data(data.trend)
+          .enter()
+          .append('rect')
+          .attr('x', (_, i) => x(i) - barWidth / 2)
+          .attr('y', (d) => yScale(d))
+          .attr('width', barWidth)
+          .attr('height', (d) => 32 - yScale(d))
+          .attr('fill', strokeColor)
+          .attr('opacity', 0.85);
+      } else {
+        // Line or Area sparkline
+        // Gradient fill
+        const gradId = 'kpi-spark-grad';
+        const defs = svg.append('defs');
+        const grad = defs.append('linearGradient')
+          .attr('id', gradId)
+          .attr('x1', '0%').attr('y1', '0%')
+          .attr('x2', '0%').attr('y2', '100%');
+        grad.append('stop').attr('offset', '0%')
+          .attr('stop-color', lineColor).attr('stop-opacity', fillOp);
+        grad.append('stop').attr('offset', '100%')
+          .attr('stop-color', lineColor).attr('stop-opacity', 0.05);
 
-      svg.append('path')
-        .datum(data.trend)
-        .attr('d', area)
-        .attr('fill', `url(#${gradId})`);
+        if (sparklineType === 'area') {
+          const area = d3.area<number>()
+            .x((_, i) => x(i))
+            .y0(32)
+            .y1((d) => yScale(d))
+            .curve(d3.curveMonotoneX);
 
-      const line = d3.line<number>()
-        .x((_, i) => x(i))
-        .y((d) => yScale(d))
-        .curve(d3.curveMonotoneX);
+          svg.append('path')
+            .datum(data.trend)
+            .attr('d', area)
+            .attr('fill', `url(#${gradId})`);
+        }
 
-      const pathEl = svg.append('path')
-        .datum(data.trend)
-        .attr('d', line)
-        .attr('fill', 'none')
-        .attr('stroke', strokeColor)
-        .attr('stroke-width', strokeWidth)
-        .attr('stroke-linecap', 'round');
+        const line = d3.line<number>()
+          .x((_, i) => x(i))
+          .y((d) => yScale(d))
+          .curve(d3.curveMonotoneX);
 
-      // End dot
-      const lastIdx = data.trend.length - 1;
-      svg.append('circle')
-        .attr('cx', x(lastIdx))
-        .attr('cy', yScale(data.trend[lastIdx]))
-        .attr('r', 3)
-        .attr('fill', strokeColor);
+        pathEl = svg.append('path')
+          .datum(data.trend)
+          .attr('d', line)
+          .attr('fill', 'none')
+          .attr('stroke', strokeColor)
+          .attr('stroke-width', strokeWidth)
+          .attr('stroke-linecap', 'round');
+
+        // End dot
+        const lastIdx = data.trend.length - 1;
+        svg.append('circle')
+          .attr('cx', x(lastIdx))
+          .attr('cy', yScale(data.trend[lastIdx]))
+          .attr('r', 3)
+          .attr('fill', strokeColor);
+      }
 
       wrapper.appendChild(sparkDiv);
 
-      // Draw animation
-      if (s.animationSettings.enabled.value) {
+      // Draw animation (line/area only)
+      if (s.animationSettings.enabled.value && pathEl) {
+        const animPathEl = pathEl;
         requestAnimationFrame(() => {
-          const node = pathEl.node();
+          const node = animPathEl.node();
           if (node) {
             const cancel = drawPath(node, s.animationSettings.duration.value, 200);
             this.cancelAnimations.push(cancel);
@@ -374,7 +425,14 @@ export class KpiCardVisual implements IVisual {
       }
     }
 
+    // Goal progress bar and comparison
+    if (data.value !== null) {
+      this.renderGoalProgressBar(wrapper, data.value);
+    }
+    this.renderComparison(wrapper, data);
+
     this.container.appendChild(wrapper);
+    this.applyAccessibility();
     this.container.addEventListener('click', this.handleBackgroundClick);
 
     // Entrance animation
@@ -464,6 +522,105 @@ export class KpiCardVisual implements IVisual {
   private handleBackgroundClick = (): void => {
     void this.selectionManager.clear();
   };
+
+  // -- Goal / Target Progress Bar ---------------------------------------------
+
+  private renderGoalProgressBar(wrapper: HTMLElement, value: number): void {
+    const goalSettings = this.settings.kpiGoalSettings;
+    if (!goalSettings.show.value || !goalSettings.showProgressBar.value) return;
+
+    const goalValue = goalSettings.goalValue.value;
+    if (goalValue <= 0) return;
+
+    const progress = Math.min(100, Math.max(0, (value / goalValue) * 100));
+
+    const barContainer = document.createElement('div');
+    barContainer.className = 'kpi-goal-bar-container';
+    barContainer.style.cssText = `
+      width: 100%;
+      height: 6px;
+      background: rgba(0,0,0,0.1);
+      border-radius: 3px;
+      overflow: hidden;
+    `;
+
+    const barFill = document.createElement('div');
+    barFill.className = 'kpi-goal-bar-fill';
+    barFill.style.cssText = `
+      width: ${progress}%;
+      height: 100%;
+      background: ${progress >= 100 ? '#22C55E' : '#3B82F6'};
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    `;
+
+    barContainer.appendChild(barFill);
+    wrapper.appendChild(barContainer);
+  }
+
+  // -- Comparison Rendering ---------------------------------------------------
+
+  private renderComparison(wrapper: HTMLElement, data: KpiCardData): void {
+    const comparison = this.settings.kpiComparisonSettings;
+    if (!comparison.show.value || data.value === null || data.target === null) return;
+
+    const delta = data.value - data.target;
+    const compEl = document.createElement('div');
+    compEl.className = 'kpi-comparison';
+    compEl.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: #64748B;
+    `;
+
+    if (comparison.showPercentChange.value && data.target !== 0) {
+      const pct = ((delta / Math.abs(data.target)) * 100).toFixed(1);
+      const sign = delta >= 0 ? '+' : '';
+      compEl.textContent = `${sign}${pct}% vs target`;
+    } else {
+      compEl.textContent = `Delta: ${formatWithSettings(delta, this.settings.numberFormattingCard)}`;
+    }
+
+    wrapper.appendChild(compEl);
+  }
+
+  // -- Shared Conditional Formatting ------------------------------------------
+
+  private getConditionalColor(value: number): string | undefined {
+    const cc = this.settings.conditionalFormattingCard;
+    if (!cc.enableConditional.value) return undefined;
+    const config = buildConditionalConfig(
+      true,
+      resolveDropdown(cc.conditionalDirection),
+      cc.threshold1.value,
+      cc.threshold2.value,
+      cc.conditionalColor1.value?.value,
+      cc.conditionalColor2.value?.value,
+      cc.conditionalColor3.value?.value,
+    );
+    return resolveConditionalColor(value, config);
+  }
+
+  // -- Accessibility ----------------------------------------------------------
+
+  private applyAccessibility(): void {
+    const a11y = this.settings.accessibilityFormattingCard;
+    if (!a11y.enableKeyboardNav.value) return;
+    ensureFocusRingStyles();
+    applyChartAria(this.container, {
+      chartType: 'KPI card',
+      title: this.settings.titleFormattingCard?.titleText?.value || undefined,
+      dataPointCount: 1,
+    });
+    const cleanup = attachKeyboardNav({
+      container: this.container,
+      itemSelector: '.kpi-value-row',
+      onActivate: (el) => (el as HTMLElement).click?.(),
+    });
+    this.cancelAnimations.push(cleanup);
+  }
 
   public destroy(): void {
     this.hideTooltip();

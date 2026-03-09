@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { TitleFormattingCard, NumberFormattingCard} from '../../core/src';
+import { TitleFormattingCard, NumberFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard } from '../../core/src';
 class ValueSettings extends formattingSettings.SimpleCard {
   fontSize = new formattingSettings.NumUpDown({
     name: 'fontSize',
@@ -19,29 +19,9 @@ class ValueSettings extends formattingSettings.SimpleCard {
     value: { value: '' }, // empty = use theme default
   });
 
-  prefix = new formattingSettings.TextInput({
-    name: 'prefix',
-    displayName: 'Prefix',
-    value: '',
-    placeholder: 'e.g. $',
-  });
-
-  suffix = new formattingSettings.TextInput({
-    name: 'suffix',
-    displayName: 'Suffix',
-    value: '',
-    placeholder: 'e.g. %',
-  });
-
-  decimalPlaces = new formattingSettings.NumUpDown({
-    name: 'decimalPlaces',
-    displayName: 'Decimal Places',
-    value: 0,
-  });
-
   name = 'valueSettings';
   displayName = 'Value';
-  slices = [this.fontSize, this.fontColor, this.prefix, this.suffix, this.decimalPlaces];
+  slices = [this.fontSize, this.fontColor];
 }
 
 class LabelSettings extends formattingSettings.SimpleCard {
@@ -115,7 +95,7 @@ class SparklineSettings extends formattingSettings.SimpleCard {
   lineColor = new formattingSettings.ColorPicker({
     name: 'lineColor',
     displayName: 'Line Color',
-    value: { value: '#3B82F6' },
+    value: { value: '' },
   });
 
   fillOpacity = new formattingSettings.NumUpDown({
@@ -188,67 +168,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundColor, this.backgroundOpacity, this.borderRadius];
-}
-
-class ConditionalColorSettings extends formattingSettings.SimpleCard {
-  enabled = new formattingSettings.ToggleSwitch({
-    name: 'enabled',
-    displayName: 'Enable Conditional Coloring',
-    value: false,
-  });
-
-  threshold1 = new formattingSettings.NumUpDown({
-    name: 'threshold1',
-    displayName: 'Low Threshold',
-    value: 0,
-  });
-
-  threshold2 = new formattingSettings.NumUpDown({
-    name: 'threshold2',
-    displayName: 'High Threshold',
-    value: 50,
-  });
-
-  color1 = new formattingSettings.ColorPicker({
-    name: 'color1',
-    displayName: 'Below Low Color',
-    value: { value: '#F87171' },
-  });
-
-  color2 = new formattingSettings.ColorPicker({
-    name: 'color2',
-    displayName: 'Between Color',
-    value: { value: '#FBBF24' },
-  });
-
-  color3 = new formattingSettings.ColorPicker({
-    name: 'color3',
-    displayName: 'Above High Color',
-    value: { value: '#34D399' },
-  });
-
-  direction = new formattingSettings.ItemDropdown({
-    name: 'direction',
-    displayName: 'Direction',
-    items: [
-      { value: 'ascending', displayName: 'Ascending (low=bad, high=good)' },
-      { value: 'descending', displayName: 'Descending (low=good, high=bad)' },
-    ],
-    value: { value: 'ascending', displayName: 'Ascending (low=bad, high=good)' },
-  });
-
-  name = 'conditionalColorSettings';
-  displayName = 'Conditional Value Color';
-  slices = [
-    this.enabled,
-    this.threshold1,
-    this.threshold2,
-    this.color1,
-    this.color2,
-    this.color3,
-    this.direction,
-  ];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 class AnimationSettings extends formattingSettings.SimpleCard {
@@ -269,6 +189,83 @@ class AnimationSettings extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
+// -- KPI Comparison Settings --------------------------------------------------
+
+class KpiComparisonSettings extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Comparison',
+    value: false,
+  });
+
+  showPercentChange = new formattingSettings.ToggleSwitch({
+    name: 'showPercentChange',
+    displayName: 'Show % Change',
+    value: true,
+  });
+
+  name = 'kpiComparisonSettings';
+  displayName = 'Comparison';
+  slices = [this.show, this.showPercentChange];
+}
+
+// -- KPI Layout Settings ------------------------------------------------------
+
+class KpiLayoutSettings extends formattingSettings.SimpleCard {
+  kpiCount = new formattingSettings.ItemDropdown({
+    name: 'kpiCount',
+    displayName: 'KPI Count',
+    items: [
+      { value: '1', displayName: '1' },
+      { value: '2', displayName: '2' },
+      { value: '3', displayName: '3' },
+      { value: '4', displayName: '4' },
+    ],
+    value: { value: '1', displayName: '1' },
+  });
+
+  sparklineType = new formattingSettings.ItemDropdown({
+    name: 'sparklineType',
+    displayName: 'Sparkline Type',
+    items: [
+      { value: 'line', displayName: 'Line' },
+      { value: 'area', displayName: 'Area' },
+      { value: 'bar', displayName: 'Bar' },
+    ],
+    value: { value: 'line', displayName: 'Line' },
+  });
+
+  name = 'kpiLayoutSettings';
+  displayName = 'Layout';
+  slices = [this.kpiCount, this.sparklineType];
+}
+
+// -- KPI Goal Settings --------------------------------------------------------
+
+class KpiGoalSettings extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Goal',
+    value: false,
+  });
+
+  goalValue = new formattingSettings.NumUpDown({
+    name: 'goalValue',
+    displayName: 'Goal Value',
+    value: 100,
+  });
+
+  showProgressBar = new formattingSettings.ToggleSwitch({
+    name: 'showProgressBar',
+    displayName: 'Show Progress Bar',
+    value: true,
+  });
+
+  name = 'kpiGoalSettings';
+  displayName = 'Goal / Target';
+  slices = [this.show, this.goalValue, this.showProgressBar];
+}
+
 export class KpiCardSettings extends formattingSettings.Model {
   valueSettings = new ValueSettings();
   labelSettings = new LabelSettings();
@@ -276,12 +273,16 @@ export class KpiCardSettings extends formattingSettings.Model {
   sparklineSettings = new SparklineSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
-  conditionalColorSettings = new ConditionalColorSettings();
+  kpiComparisonSettings = new KpiComparisonSettings();
+  kpiLayoutSettings = new KpiLayoutSettings();
+  kpiGoalSettings = new KpiGoalSettings();
 
   titleFormattingCard = new TitleFormattingCard();
-
-
   numberFormattingCard = new NumberFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
+
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
 
   cards = [
     this.valueSettings,
@@ -290,8 +291,13 @@ export class KpiCardSettings extends formattingSettings.Model {
     this.sparklineSettings,
     this.cardSettings,
     this.animationSettings,
-    this.conditionalColorSettings,
+    this.kpiComparisonSettings,
+    this.kpiLayoutSettings,
+    this.kpiGoalSettings,
     this.titleFormattingCard,
     this.numberFormattingCard,
+    this.conditionalFormattingCard,
+    this.accessibilityFormattingCard,
+    this.colorThemeFormattingCard,
   ];
 }

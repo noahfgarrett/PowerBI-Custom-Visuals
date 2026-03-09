@@ -5,7 +5,8 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, DataLabelFormattingCard, LegendFormattingCard, TitleFormattingCard, SortFormattingCard} from '../../core/src';
+import { AxisFormattingCard, DataLabelFormattingCard, LegendFormattingCard, TitleFormattingCard, SortFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard,
+  SeriesFormattingCard, } from '../../core/src';
 class PolarSettings extends formattingSettings.SimpleCard {
   innerRadius = new formattingSettings.NumUpDown({
     name: 'innerRadius',
@@ -101,7 +102,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 class AnimationSettings extends formattingSettings.SimpleCard {
@@ -122,31 +123,85 @@ class AnimationSettings extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
+// ── Polar Display Settings ──────────────────────────────────────
+
+class PolarDisplaySettings extends formattingSettings.SimpleCard {
+  showRadialLabels = new formattingSettings.ToggleSwitch({
+    name: 'showRadialLabels',
+    displayName: 'Show Radial Labels',
+    value: false,
+  });
+
+  showInnerLabels = new formattingSettings.ToggleSwitch({
+    name: 'showInnerLabels',
+    displayName: 'Show Inner Labels',
+    value: false,
+  });
+
+  segmentPadding = new formattingSettings.NumUpDown({
+    name: 'segmentPadding',
+    displayName: 'Segment Padding',
+    value: 2,
+  });
+
+  endAngle = new formattingSettings.NumUpDown({
+    name: 'endAngle',
+    displayName: 'End Angle',
+    value: 360,
+  });
+
+  name = 'polarDisplaySettings';
+  displayName = 'Polar Display';
+  slices = [this.showRadialLabels, this.showInnerLabels, this.segmentPadding, this.endAngle];
+}
+
+// ── Polar Gradient Settings ────────────────────────────────────
+
+class PolarGradientSettings extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Gradient Fill',
+    value: false,
+  });
+
+  name = 'polarGradientSettings';
+  displayName = 'Gradient Fill';
+  slices = [this.enabled];
+}
+
 export class PolarChartSettings extends formattingSettings.Model {
   polarSettings = new PolarSettings();
   colorSettings = new ColorSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
+  polarDisplaySettings = new PolarDisplaySettings();
+  polarGradientSettings = new PolarGradientSettings();
 
   axisFormattingCard = new AxisFormattingCard();
-
   dataLabelFormattingCard = new DataLabelFormattingCard();
-
   titleFormattingCard = new TitleFormattingCard();
-
   legendFormattingCard = new LegendFormattingCard();
-
   sortFormattingCard = new SortFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
 
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
+  seriesFormattingCard = new SeriesFormattingCard();
   cards = [
     this.polarSettings,
     this.colorSettings,
     this.cardSettings,
     this.animationSettings,
+    this.polarDisplaySettings,
+    this.polarGradientSettings,
     this.axisFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.legendFormattingCard,
     this.sortFormattingCard,
+    this.conditionalFormattingCard,
+    this.accessibilityFormattingCard,
+    this.seriesFormattingCard,
+    this.colorThemeFormattingCard,
   ];
 }

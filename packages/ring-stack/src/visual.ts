@@ -18,6 +18,16 @@ import {
   renderChartTitle,
   applyDataLabelFormatting,
   applySortOrder,
+  renderLegend,
+  getHostChartColor,
+  resolveColorTheme,
+  buildConditionalConfig,
+  resolveConditionalColor,
+  resolveDropdown,
+  applyChartAria,
+  attachKeyboardNav,
+  ensureFocusRingStyles,
+  type LegendItem,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -143,14 +153,22 @@ export class RingStackVisual implements IVisual {
       : [];
 
     // Color array from settings, indexed by measure slot
-    const colors = [
-      s.colorSettings.ring1Color.value?.value ?? '#6366F1',
-      s.colorSettings.ring2Color.value?.value ?? '#3B82F6',
-      s.colorSettings.ring3Color.value?.value ?? '#34D399',
-      s.colorSettings.ring4Color.value?.value ?? '#F87171',
-      s.colorSettings.ring5Color.value?.value ?? '#A78BFA',
-      s.colorSettings.ring6Color.value?.value ?? '#FBBF24',
+    // User-set color overrides theme; empty = use theme/palette color
+    const themeName = resolveColorTheme(s.colorThemeFormattingCard);
+    const ringColorPickers = [
+      s.colorSettings.ring1Color,
+      s.colorSettings.ring2Color,
+      s.colorSettings.ring3Color,
+      s.colorSettings.ring4Color,
+      s.colorSettings.ring5Color,
+      s.colorSettings.ring6Color,
     ];
+    const colors = ringColorPickers.map((picker, i) => {
+      const userColor = picker.value?.value;
+      return (userColor && userColor.length > 0)
+        ? userColor
+        : getHostChartColor(this.host.colorPalette, i, themeName);
+    });
 
     // Map each bound measure column to a ring datum
     let ringIndex = 0;
@@ -216,7 +234,7 @@ export class RingStackVisual implements IVisual {
       const glass = getGlassStyle({
         mode: 'light',
         opacity: s.cardSettings.backgroundOpacity.value / 100,
-        backgroundColor: ((s.cardSettings as any).backgroundColor?.value?.value ?? (s.cardSettings as any).bgColor?.value?.value),
+        backgroundColor: s.cardSettings.backgroundColor.value?.value,
         borderRadius: s.cardSettings.borderRadius.value,
       });
       Object.assign(this.container.style, glass);
@@ -273,6 +291,26 @@ export class RingStackVisual implements IVisual {
     const g = svg.append('g')
       .attr('transform', `translate(${centerX}, ${centerY})`);
 
+    // ── Gradient Defs (if enabled) ──────────────────────────────
+    const gradientEnabled = s.ringGradientSettings.enabled.value;
+    if (gradientEnabled) {
+      const defs = svg.append('defs');
+      rings.forEach((ring, i) => {
+        const grad = defs.append('linearGradient')
+          .attr('id', `ring-grad-${i}`)
+          .attr('x1', '0%').attr('y1', '0%')
+          .attr('x2', '100%').attr('y2', '0%');
+        grad.append('stop')
+          .attr('offset', '0%')
+          .attr('stop-color', ring.color)
+          .attr('stop-opacity', 1);
+        grad.append('stop')
+          .attr('offset', '100%')
+          .attr('stop-color', ring.color)
+          .attr('stop-opacity', 0.5);
+      });
+    }
+
     // ── Render Each Ring ────────────────────────────────────────
     const animEnabled = s.animationSettings.enabled.value;
     const animDuration = s.animationSettings.duration.value;
@@ -305,11 +343,13 @@ export class RingStackVisual implements IVisual {
         }))
         .attr('fill', trackFill);
 
-      // Filled arc
+      // Filled arc — apply conditional color override if enabled
+      const conditionalColor = this.getConditionalColor(ring.value);
+      const arcFillColor = conditionalColor ?? (gradientEnabled ? `url(#ring-grad-${i})` : ring.color);
       const ringStrokeColor = s.ringSettings.ringStrokeColor.value?.value;
       const arcPath = g.append('path')
         .attr('class', 'ring-stack-arc')
-        .attr('fill', ring.color);
+        .attr('fill', arcFillColor);
       if (ringStrokeColor) {
         arcPath.attr('stroke', ringStrokeColor).attr('stroke-width', 1);
       }
@@ -359,6 +399,58 @@ export class RingStackVisual implements IVisual {
           startAngle: START_ANGLE,
           endAngle: ring.endAngle,
         }));
+      }
+
+      // ── Arc Labels (textPath) ─────────────────────────────────
+      if (s.ringDisplaySettings.showArcLabels.value) {
+        const midRadius = (ringInner + ringOuter) / 2;
+        // Create an arc path for the text to follow (half-circle at midRadius)
+        const arcId = `ring-arc-label-${i}`;
+        const textArcGen = d3.arc<{ startAngle: number; endAngle: number }>()
+          .innerRadius(midRadius)
+          .outerRadius(midRadius);
+        const textArcD = textArcGen({
+          startAngle: START_ANGLE,
+          endAngle: START_ANGLE + Math.PI,
+        });
+        if (textArcD) {
+          const defPath = g.append('path')
+            .attr('id', arcId)
+            .attr('d', textArcD)
+            .attr('fill', 'none')
+            .attr('stroke', 'none');
+
+          g.append('text')
+            .attr('class', 'ring-stack-arc-label')
+            .attr('dy', '0.35em')
+            .style('font-size', `${Math.max(8, thickness * 0.6)}px`)
+            .style('fill', arcFillColor)
+            .append('textPath')
+            .attr('href', `#${arcId}`)
+            .attr('startOffset', '2%')
+            .text(ring.name);
+        }
+      }
+
+      // ── Overflow Indicator (>100%) ────────────────────────────
+      if (s.ringDisplaySettings.showOverflow.value && ring.value > ring.ringMax) {
+        const overflowPct = (ring.value - ring.ringMax) / ring.ringMax;
+        const overflowAngle = START_ANGLE + TWO_PI * Math.min(overflowPct, 1);
+        const overflowArcGen = d3.arc<{ startAngle: number; endAngle: number }>()
+          .innerRadius(ringInner)
+          .outerRadius(ringOuter)
+          .cornerRadius(s.ringSettings.roundedCaps.value ? thickness / 2 : 0);
+
+        g.append('path')
+          .attr('class', 'ring-stack-overflow')
+          .attr('d', overflowArcGen({
+            startAngle: START_ANGLE,
+            endAngle: overflowAngle,
+          }))
+          .attr('fill', withOpacity(arcFillColor, 0.4))
+          .attr('stroke', arcFillColor)
+          .attr('stroke-width', 0.5)
+          .attr('stroke-dasharray', '3,2');
       }
     });
 
@@ -557,77 +649,83 @@ export class RingStackVisual implements IVisual {
       }
     }
 
-    // Apply shared formatting settings
-    if (s.dataLabelFormattingCard.showDataLabels.value) {
+    // Apply shared data label styling when local showLabels is on
+    if (showLabels) {
       applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.ring-label-pct');
     }
 
     // Legend
     const showLegend = s.legendFormattingCard.showLegend.value;
     if (showLegend && rings.length > 0) {
-      this.renderLegend(rings);
+      this.renderSharedLegend(rings);
     }
 
+    // Accessibility
+    this.applyAccessibility(rings.length);
   }
 
-  private renderLegend(rings: RingDatum[]): void {
+  private getConditionalColor(value: number): string | undefined {
+    const cc = this.settings.conditionalFormattingCard;
+    if (!cc.enableConditional.value) return undefined;
+    const config = buildConditionalConfig(
+      true,
+      resolveDropdown(cc.conditionalDirection),
+      cc.threshold1.value,
+      cc.threshold2.value,
+      cc.conditionalColor1.value?.value,
+      cc.conditionalColor2.value?.value,
+      cc.conditionalColor3.value?.value,
+    );
+    return resolveConditionalColor(value, config);
+  }
+
+  private applyAccessibility(dataPointCount: number): void {
+    const acc = this.settings.accessibilityFormattingCard;
+    if (!acc.enableKeyboardNav.value) return;
+    ensureFocusRingStyles();
+    applyChartAria(this.container, {
+      chartType: 'ring chart',
+      title: this.settings.titleFormattingCard?.titleText?.value || undefined,
+      dataPointCount,
+    });
+    const cleanup = attachKeyboardNav({
+      container: this.container,
+      itemSelector: '.ring-stack-arc',
+      onActivate: (el) => (el as HTMLElement).click?.(),
+    });
+    this.cancelAnimations.push(cleanup);
+  }
+
+  private renderSharedLegend(rings: RingDatum[]): void {
     const legendFmtCard = this.settings.legendFormattingCard;
     const rawFontColor = legendFmtCard.legendFontColor.value?.value;
     const legendFontColor = rawFontColor != null && rawFontColor.length > 0 ? rawFontColor : '';
     const legendFontSize = legendFmtCard.legendFontSize.value;
     const legendPosRaw = legendFmtCard.legendPosition.value;
-    const legendPosition = (typeof legendPosRaw === 'string'
+    const legendPosStr = (typeof legendPosRaw === 'string'
       ? legendPosRaw
       : (legendPosRaw as { value?: string })?.value) ?? 'bottom';
+    const validPositions = ['top', 'bottom', 'left', 'right'] as const;
+    const legendPosition: 'top' | 'bottom' | 'left' | 'right' =
+      (validPositions as readonly string[]).includes(legendPosStr)
+        ? (legendPosStr as 'top' | 'bottom' | 'left' | 'right')
+        : 'bottom';
 
-    const legendDiv = document.createElement('div');
-    legendDiv.className = 'ring-stack-legend';
+    const items: LegendItem[] = rings.map((ring) => ({
+      label: ring.name,
+      color: ring.color,
+    }));
 
-    if (legendPosition === 'top' || legendPosition === 'bottom') {
-      legendDiv.style.display = 'flex';
-      legendDiv.style.justifyContent = 'center';
-      legendDiv.style.gap = '16px';
-      legendDiv.style.padding = '4px 0';
-    } else {
-      legendDiv.style.display = 'flex';
-      legendDiv.style.flexDirection = 'column';
-      legendDiv.style.gap = '6px';
-      legendDiv.style.padding = '0 8px';
-    }
-
-    for (const ring of rings) {
-      const item = document.createElement('div');
-      item.style.display = 'flex';
-      item.style.alignItems = 'center';
-      item.style.gap = '4px';
-
-      const swatch = document.createElement('div');
-      swatch.style.width = '10px';
-      swatch.style.height = '10px';
-      swatch.style.borderRadius = '2px';
-      swatch.style.backgroundColor = ring.color;
-      swatch.style.flexShrink = '0';
-
-      const label = document.createElement('span');
-      label.textContent = ring.name;
-      label.style.whiteSpace = 'nowrap';
-      if (legendFontColor.length > 0) label.style.color = legendFontColor;
-      if (legendFontSize !== 11) label.style.fontSize = `${legendFontSize}px`;
-
-      item.appendChild(swatch);
-      item.appendChild(label);
-      legendDiv.appendChild(item);
-    }
-
-    if (legendPosition === 'top') {
-      this.container.insertBefore(legendDiv, this.container.querySelector('.ring-stack-svg'));
-    } else {
-      this.container.appendChild(legendDiv);
-    }
+    const legendEl = renderLegend(this.container, {
+      items,
+      position: legendPosition,
+      fontSize: legendFontSize,
+      fontColor: legendFontColor,
+    });
 
     // Entrance fade for legend
     if (this.settings.animationSettings.enabled.value) {
-      const cancel = fadeSlideIn(legendDiv, 'up', DURATION.fast, rings.length * 80);
+      const cancel = fadeSlideIn(legendEl, 'up', DURATION.fast, rings.length * 80);
       this.cancelAnimations.push(cancel);
     }
   }

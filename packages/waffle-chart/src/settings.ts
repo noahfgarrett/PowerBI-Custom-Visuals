@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { DataLabelFormattingCard, LegendFormattingCard, TitleFormattingCard } from '../../core/src';
+import { DataLabelFormattingCard, LegendFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard } from '../../core/src';
 // ── Grid Settings ────────────────────────────────────────────────────
 
 class GridSettings extends formattingSettings.SimpleCard {
@@ -80,7 +80,7 @@ class ColorSettings extends formattingSettings.SimpleCard {
   fillColor = new formattingSettings.ColorPicker({
     name: 'fillColor',
     displayName: 'Fill Color',
-    value: { value: '#3B82F6' },
+    value: { value: '' },
   });
 
   emptyColor = new formattingSettings.ColorPicker({
@@ -149,7 +149,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 // ── Animation Settings ───────────────────────────────────────────────
@@ -214,6 +214,55 @@ class PictogramSettingsCard extends formattingSettings.SimpleCard {
 
 // ── Top-level Model ──────────────────────────────────────────────────
 
+// ── Waffle Layout Settings ──────────────────────────────────────
+
+class WaffleLayoutSettings extends formattingSettings.SimpleCard {
+  fillDirection = new formattingSettings.ItemDropdown({
+    name: 'fillDirection',
+    displayName: 'Fill Direction',
+    items: [
+      { value: 'lr', displayName: 'Left to Right' },
+      { value: 'bt', displayName: 'Bottom to Top' },
+      { value: 'diagonal', displayName: 'Diagonal' },
+      { value: 'radial', displayName: 'Radial' },
+    ],
+    value: { value: 'bt', displayName: 'Bottom to Top' },
+  });
+
+  autoFitCells = new formattingSettings.ToggleSwitch({
+    name: 'autoFitCells',
+    displayName: 'Auto-Fit Cell Size',
+    value: false,
+  });
+
+  name = 'waffleLayoutSettings';
+  displayName = 'Layout';
+  slices = [this.fillDirection, this.autoFitCells];
+}
+
+// ── Waffle Icon Settings ────────────────────────────────────────
+
+class WaffleIconSettings extends formattingSettings.SimpleCard {
+  iconSet = new formattingSettings.ItemDropdown({
+    name: 'iconSet',
+    displayName: 'Icon Set',
+    items: [
+      { value: 'default', displayName: 'Default' },
+      { value: 'weather', displayName: 'Weather' },
+      { value: 'arrows', displayName: 'Arrows' },
+      { value: 'shapes', displayName: 'Shapes' },
+      { value: 'status', displayName: 'Status' },
+    ],
+    value: { value: 'default', displayName: 'Default' },
+  });
+
+  name = 'waffleIconSettings';
+  displayName = 'Icon Library';
+  slices = [this.iconSet];
+}
+
+// ── Top-level Model ──────────────────────────────────────────────────
+
 export class WaffleChartSettings extends formattingSettings.Model {
   gridSettings = new GridSettings();
   colorSettings = new ColorSettings();
@@ -221,12 +270,16 @@ export class WaffleChartSettings extends formattingSettings.Model {
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
   pictogramSettings = new PictogramSettingsCard();
+  waffleLayoutSettings = new WaffleLayoutSettings();
+  waffleIconSettings = new WaffleIconSettings();
 
   dataLabelFormattingCard = new DataLabelFormattingCard();
-
   titleFormattingCard = new TitleFormattingCard();
-
   legendFormattingCard = new LegendFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
+
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
 
   cards = [
     this.gridSettings,
@@ -235,8 +288,13 @@ export class WaffleChartSettings extends formattingSettings.Model {
     this.cardSettings,
     this.animationSettings,
     this.pictogramSettings,
+    this.waffleLayoutSettings,
+    this.waffleIconSettings,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.legendFormattingCard,
+    this.conditionalFormattingCard,
+    this.accessibilityFormattingCard,
+    this.colorThemeFormattingCard,
   ];
 }

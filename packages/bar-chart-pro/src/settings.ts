@@ -5,91 +5,136 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, NumberFormattingCard} from '../../core/src';
+import {
+  AxisFormattingCard,
+  LegendFormattingCard,
+  DataLabelFormattingCard,
+  TitleFormattingCard,
+  ScrollFormattingCard,
+  NumberFormattingCard,
+  ReferenceLineFormattingCard,
+  TrendLineFormattingCard,
+  ConditionalFormattingCard,
+  AnnotationFormattingCard,
+  AccessibilityFormattingCard,
+  SeriesFormattingCard,
+  ColorThemeFormattingCard,
+} from '../../core/src';
 
-// ── Reference Line Settings ─────────────────────────────────────────
+// ── Pattern Fill Settings ───────────────────────────────────────────
 
-class ReferenceLineSettingsCard extends formattingSettings.SimpleCard {
-  show = new formattingSettings.ToggleSwitch({
-    name: 'show',
-    displayName: 'Show Reference Line',
+class PatternFillSettingsCard extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Pattern Fill',
     value: false,
   });
 
-  value = new formattingSettings.NumUpDown({
-    name: 'value',
-    displayName: 'Value',
-    value: 0,
-  });
-
-  lineColor = new formattingSettings.ColorPicker({
-    name: 'lineColor',
-    displayName: 'Line Color',
-    value: { value: '#EF4444' },
-  });
-
-  lineWidth = new formattingSettings.NumUpDown({
-    name: 'lineWidth',
-    displayName: 'Line Width',
-    value: 2,
-  });
-
-  lineStyle = new formattingSettings.ItemDropdown({
-    name: 'lineStyle',
-    displayName: 'Line Style',
+  pattern = new formattingSettings.ItemDropdown({
+    name: 'pattern',
+    displayName: 'Pattern',
     items: [
-      { value: 'solid', displayName: 'Solid' },
-      { value: 'dashed', displayName: 'Dashed' },
-      { value: 'dotted', displayName: 'Dotted' },
+      { value: 'diagonal', displayName: 'Diagonal Lines' },
+      { value: 'crosshatch', displayName: 'Crosshatch' },
+      { value: 'dots', displayName: 'Dots' },
+      { value: 'horizontal', displayName: 'Horizontal Lines' },
+      { value: 'vertical', displayName: 'Vertical Lines' },
     ],
-    value: { value: 'dashed', displayName: 'Dashed' },
+    value: { value: 'diagonal', displayName: 'Diagonal Lines' },
   });
 
-  showLabel = new formattingSettings.ToggleSwitch({
-    name: 'showLabel',
-    displayName: 'Show Label',
+  patternOpacity = new formattingSettings.NumUpDown({
+    name: 'patternOpacity',
+    displayName: 'Pattern Opacity (%)',
+    value: 30,
+  });
+
+  name = 'patternFillSettings';
+  displayName = 'Pattern Fill';
+  slices = [this.enabled, this.pattern, this.patternOpacity];
+}
+
+// ── Variance Indicator Settings ─────────────────────────────────────
+
+class VarianceSettingsCard extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Variance Indicators',
+    value: false,
+  });
+
+  showDelta = new formattingSettings.ToggleSwitch({
+    name: 'showDelta',
+    displayName: 'Show Delta Value',
     value: true,
   });
 
-  labelText = new formattingSettings.TextInput({
-    name: 'labelText',
-    displayName: 'Label Text',
-    value: '',
-    placeholder: 'Custom label (blank = value)',
+  showArrow = new formattingSettings.ToggleSwitch({
+    name: 'showArrow',
+    displayName: 'Show Arrow',
+    value: true,
   });
 
-  showBand = new formattingSettings.ToggleSwitch({
-    name: 'showBand',
-    displayName: 'Show Band',
+  positiveColor = new formattingSettings.ColorPicker({
+    name: 'positiveColor',
+    displayName: 'Positive Color',
+    value: { value: '#22C55E' },
+  });
+
+  negativeColor = new formattingSettings.ColorPicker({
+    name: 'negativeColor',
+    displayName: 'Negative Color',
+    value: { value: '#EF4444' },
+  });
+
+  name = 'varianceSettings';
+  displayName = 'Variance Indicators';
+  slices = [this.show, this.showDelta, this.showArrow, this.positiveColor, this.negativeColor];
+}
+
+// ── Benchmark Band Settings ─────────────────────────────────────────
+
+class BenchmarkBandSettingsCard extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Benchmark Band',
     value: false,
   });
 
-  bandUpperValue = new formattingSettings.NumUpDown({
-    name: 'bandUpperValue',
-    displayName: 'Band Upper Value',
+  lowerBound = new formattingSettings.NumUpDown({
+    name: 'lowerBound',
+    displayName: 'Lower Bound',
     value: 0,
+  });
+
+  upperBound = new formattingSettings.NumUpDown({
+    name: 'upperBound',
+    displayName: 'Upper Bound',
+    value: 100,
+  });
+
+  bandColor = new formattingSettings.ColorPicker({
+    name: 'bandColor',
+    displayName: 'Band Color',
+    value: { value: '#3B82F6' },
   });
 
   bandOpacity = new formattingSettings.NumUpDown({
     name: 'bandOpacity',
     displayName: 'Band Opacity (%)',
-    value: 15,
+    value: 8,
   });
 
-  name = 'referenceLineSettings';
-  displayName = 'Reference Line';
-  slices = [
-    this.show,
-    this.value,
-    this.lineColor,
-    this.lineWidth,
-    this.lineStyle,
-    this.showLabel,
-    this.labelText,
-    this.showBand,
-    this.bandUpperValue,
-    this.bandOpacity,
-  ];
+  label = new formattingSettings.TextInput({
+    name: 'label',
+    displayName: 'Label',
+    value: '',
+    placeholder: 'e.g. Target Zone',
+  });
+
+  name = 'benchmarkBandSettings';
+  displayName = 'Benchmark Band';
+  slices = [this.show, this.lowerBound, this.upperBound, this.bandColor, this.bandOpacity, this.label];
 }
 
 // ── Top N / Others ──────────────────────────────────────────────────
@@ -228,63 +273,41 @@ class BarSettings extends formattingSettings.SimpleCard {
 // ── Line Settings (combo mode) ──────────────────────────────────────
 
 class LineSettings extends formattingSettings.SimpleCard {
-  lineWidth = new formattingSettings.NumUpDown({
-    name: 'lineWidth',
-    displayName: 'Line Width',
-    value: 2,
-  });
-
   showDots = new formattingSettings.ToggleSwitch({
     name: 'showDots',
     displayName: 'Show Dots',
     value: true,
   });
 
-  lineStyle = new formattingSettings.ItemDropdown({
-    name: 'lineStyle',
-    displayName: 'Line Style',
-    items: [
-      { value: 'solid', displayName: 'Solid' },
-      { value: 'dashed', displayName: 'Dashed' },
-    ],
-    value: { value: 'solid', displayName: 'Solid' },
+  lineGradientFill = new formattingSettings.ToggleSwitch({
+    name: 'lineGradientFill',
+    displayName: 'Gradient Fill Under Line',
+    value: false,
+  });
+
+  lineGradientOpacity = new formattingSettings.NumUpDown({
+    name: 'lineGradientOpacity',
+    displayName: 'Gradient Opacity (%)',
+    value: 30,
   });
 
   name = 'lineSettings';
   displayName = 'Line Settings';
-  slices = [this.lineWidth, this.showDots, this.lineStyle];
+  slices = [this.showDots, this.lineGradientFill, this.lineGradientOpacity];
 }
 
-// ── Axis Settings ───────────────────────────────────────────────────
+// ── Secondary Axis Settings (combo mode only) ──────────────────────
 
-class AxisSettings extends formattingSettings.SimpleCard {
-  showXAxis = new formattingSettings.ToggleSwitch({
-    name: 'showXAxis',
-    displayName: 'Show X-Axis',
-    value: true,
-  });
-
-  showYAxis = new formattingSettings.ToggleSwitch({
-    name: 'showYAxis',
-    displayName: 'Show Y-Axis',
-    value: true,
-  });
-
+class SecondaryAxisSettingsCard extends formattingSettings.SimpleCard {
   showSecondaryYAxis = new formattingSettings.ToggleSwitch({
     name: 'showSecondaryYAxis',
     displayName: 'Show Secondary Y-Axis',
     value: false,
   });
 
-  xLabelRotation = new formattingSettings.NumUpDown({
-    name: 'xLabelRotation',
-    displayName: 'X Label Rotation',
-    value: 0,
-  });
-
-  name = 'axisSettings';
-  displayName = 'Axes';
-  slices = [this.showXAxis, this.showYAxis, this.showSecondaryYAxis, this.xLabelRotation];
+  name = 'secondaryAxisSettings';
+  displayName = 'Secondary Axis';
+  slices = [this.showSecondaryYAxis];
 }
 
 // ── Target Line ─────────────────────────────────────────────────────
@@ -324,31 +347,6 @@ class TargetLineSettings extends formattingSettings.SimpleCard {
   slices = [this.show, this.label, this.style, this.color];
 }
 
-// ── Legend Settings ──────────────────────────────────────────────────
-
-class LegendSettings extends formattingSettings.SimpleCard {
-  show = new formattingSettings.ToggleSwitch({
-    name: 'show',
-    displayName: 'Show Legend',
-    value: true,
-  });
-
-  position = new formattingSettings.ItemDropdown({
-    name: 'position',
-    displayName: 'Position',
-    items: [
-      { value: 'bottom', displayName: 'Bottom' },
-      { value: 'top', displayName: 'Top' },
-      { value: 'right', displayName: 'Right' },
-    ],
-    value: { value: 'bottom', displayName: 'Bottom' },
-  });
-
-  name = 'legendSettings';
-  displayName = 'Legend';
-  slices = [this.show, this.position];
-}
-
 // ── Card Style ──────────────────────────────────────────────────────
 
 class CardStyleSettings extends formattingSettings.SimpleCard {
@@ -378,7 +376,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 // ── Animation Settings ──────────────────────────────────────────────
@@ -445,44 +443,58 @@ export class BarChartProSettings extends formattingSettings.Model {
   chartMode = new ChartModeSettings();
   barSettings = new BarSettings();
   lineSettings = new LineSettings();
-  axisSettings = new AxisSettings();
+  secondaryAxisSettings = new SecondaryAxisSettingsCard();
   targetLine = new TargetLineSettings();
-  legendSettings = new LegendSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettingsCard();
   topNSettings = new TopNSettingsCard();
-  referenceLineSettings = new ReferenceLineSettingsCard();
   drillDownSettings = new DrillDownSettingsCard();
 
+  // New feature cards
+  patternFillSettings = new PatternFillSettingsCard();
+  varianceSettings = new VarianceSettingsCard();
+  benchmarkBandSettings = new BenchmarkBandSettingsCard();
+
+  // Shared formatting cards from core
   axisFormattingCard = new AxisFormattingCard();
-
   legendFormattingCard = new LegendFormattingCard();
-
   dataLabelFormattingCard = new DataLabelFormattingCard();
-
   titleFormattingCard = new TitleFormattingCard();
-
   scrollFormattingCard = new ScrollFormattingCard();
-
   numberFormattingCard = new NumberFormattingCard();
+  referenceLineFormattingCard = new ReferenceLineFormattingCard();
+  trendLineFormattingCard = new TrendLineFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  annotationFormattingCard = new AnnotationFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
+  seriesFormattingCard = new SeriesFormattingCard();
 
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
   cards = [
     this.chartMode,
     this.barSettings,
     this.lineSettings,
-    this.axisSettings,
+    this.secondaryAxisSettings,
     this.targetLine,
-    this.legendSettings,
     this.cardSettings,
     this.animationSettings,
     this.topNSettings,
-    this.referenceLineSettings,
     this.drillDownSettings,
+    this.patternFillSettings,
+    this.varianceSettings,
+    this.benchmarkBandSettings,
     this.axisFormattingCard,
     this.legendFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.scrollFormattingCard,
     this.numberFormattingCard,
+    this.referenceLineFormattingCard,
+    this.trendLineFormattingCard,
+    this.conditionalFormattingCard,
+    this.annotationFormattingCard,
+    this.accessibilityFormattingCard,
+    this.seriesFormattingCard,
+    this.colorThemeFormattingCard,
   ];
 }

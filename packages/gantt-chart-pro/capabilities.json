@@ -134,12 +134,6 @@
             "bool": true
           }
         },
-        "showToday": {
-          "displayName": "Show Today Line",
-          "type": {
-            "bool": true
-          }
-        },
         "showLabels": {
           "displayName": "Show Labels",
           "type": {
@@ -199,16 +193,6 @@
         },
         "progressColor": {
           "displayName": "Progress Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        },
-        "todayColor": {
-          "displayName": "Today Line Color",
           "type": {
             "fill": {
               "solid": {
@@ -492,6 +476,231 @@
           "displayName": "Border Radius",
           "type": {
             "numeric": true
+          }
+        },
+        "enableGlass": {
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "ganttMilestoneSettings": {
+      "displayName": "Milestones",
+      "properties": {
+        "show": {
+          "displayName": "Show Milestones",
+          "type": {
+            "bool": true
+          }
+        },
+        "shape": {
+          "displayName": "Milestone Shape",
+          "type": {
+            "enumeration": [
+              {
+                "value": "diamond",
+                "displayName": "Diamond"
+              },
+              {
+                "value": "circle",
+                "displayName": "Circle"
+              },
+              {
+                "value": "triangle",
+                "displayName": "Triangle"
+              }
+            ]
+          }
+        },
+        "color": {
+          "displayName": "Milestone Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "ganttCriticalPathSettings": {
+      "displayName": "Critical Path",
+      "properties": {
+        "show": {
+          "displayName": "Show Critical Path",
+          "type": {
+            "bool": true
+          }
+        },
+        "color": {
+          "displayName": "Critical Path Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "lineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "ganttBaselineSettings": {
+      "displayName": "Baseline",
+      "properties": {
+        "show": {
+          "displayName": "Show Baseline",
+          "type": {
+            "bool": true
+          }
+        },
+        "color": {
+          "displayName": "Baseline Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "opacity": {
+          "displayName": "Baseline Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "ganttGroupSettings": {
+      "displayName": "Task Grouping",
+      "properties": {
+        "enableGrouping": {
+          "displayName": "Enable Grouping",
+          "type": {
+            "bool": true
+          }
+        },
+        "collapsibleGroups": {
+          "displayName": "Collapsible Groups",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "ganttTodaySettings": {
+      "displayName": "Today Marker",
+      "properties": {
+        "showTodayLine": {
+          "displayName": "Show Today Line",
+          "type": {
+            "bool": true
+          }
+        },
+        "lineColor": {
+          "displayName": "Today Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "conditionalFormatting": {
+      "displayName": "Conditional Formatting",
+      "properties": {
+        "enableConditional": {
+          "displayName": "Enable Conditional Formatting",
+          "type": {
+            "bool": true
+          }
+        },
+        "conditionalDirection": {
+          "displayName": "Direction",
+          "type": {
+            "enumeration": [
+              {
+                "value": "ascending",
+                "displayName": "Ascending (Low = Bad)"
+              },
+              {
+                "value": "descending",
+                "displayName": "Descending (Low = Good)"
+              }
+            ]
+          }
+        },
+        "threshold1": {
+          "displayName": "Threshold 1",
+          "type": {
+            "numeric": true
+          }
+        },
+        "threshold2": {
+          "displayName": "Threshold 2",
+          "type": {
+            "numeric": true
+          }
+        },
+        "conditionalColor1": {
+          "displayName": "Color 1 (Bad)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "conditionalColor2": {
+          "displayName": "Color 2 (Warning)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "conditionalColor3": {
+          "displayName": "Color 3 (Good)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "accessibilityFormatting": {
+      "displayName": "Accessibility",
+      "properties": {
+        "enableKeyboardNav": {
+          "displayName": "Enable Keyboard Navigation",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "colorThemeFormatting": {
+      "properties": {
+        "colorTheme": {
+          "type": {
+            "text": true
           }
         }
       }

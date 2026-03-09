@@ -5,92 +5,8 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, NumberFormattingCard} from '../../core/src';
-
-// -- Reference Line Settings -----------------------------------------------
-
-class ReferenceLineSettingsCard extends formattingSettings.SimpleCard {
-  show = new formattingSettings.ToggleSwitch({
-    name: 'show',
-    displayName: 'Show Reference Line',
-    value: false,
-  });
-
-  value = new formattingSettings.NumUpDown({
-    name: 'value',
-    displayName: 'Value',
-    value: 0,
-  });
-
-  lineColor = new formattingSettings.ColorPicker({
-    name: 'lineColor',
-    displayName: 'Line Color',
-    value: { value: '#EF4444' },
-  });
-
-  lineWidth = new formattingSettings.NumUpDown({
-    name: 'lineWidth',
-    displayName: 'Line Width',
-    value: 2,
-  });
-
-  lineStyle = new formattingSettings.ItemDropdown({
-    name: 'lineStyle',
-    displayName: 'Line Style',
-    items: [
-      { value: 'solid', displayName: 'Solid' },
-      { value: 'dashed', displayName: 'Dashed' },
-      { value: 'dotted', displayName: 'Dotted' },
-    ],
-    value: { value: 'dashed', displayName: 'Dashed' },
-  });
-
-  showLabel = new formattingSettings.ToggleSwitch({
-    name: 'showLabel',
-    displayName: 'Show Label',
-    value: true,
-  });
-
-  labelText = new formattingSettings.TextInput({
-    name: 'labelText',
-    displayName: 'Label Text',
-    value: '',
-    placeholder: 'Custom label (blank = value)',
-  });
-
-  showBand = new formattingSettings.ToggleSwitch({
-    name: 'showBand',
-    displayName: 'Show Band',
-    value: false,
-  });
-
-  bandUpperValue = new formattingSettings.NumUpDown({
-    name: 'bandUpperValue',
-    displayName: 'Band Upper Value',
-    value: 0,
-  });
-
-  bandOpacity = new formattingSettings.NumUpDown({
-    name: 'bandOpacity',
-    displayName: 'Band Opacity (%)',
-    value: 15,
-  });
-
-  name = 'referenceLineSettings';
-  displayName = 'Reference Line';
-  slices = [
-    this.show,
-    this.value,
-    this.lineColor,
-    this.lineWidth,
-    this.lineStyle,
-    this.showLabel,
-    this.labelText,
-    this.showBand,
-    this.bandUpperValue,
-    this.bandOpacity,
-  ];
-}
+import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, NumberFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard,
+  SeriesFormattingCard, } from '../../core/src';
 
 // -- Box Settings ----------------------------------------------------------
 
@@ -241,7 +157,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 // -- Animation Settings ----------------------------------------------------
@@ -339,6 +255,62 @@ class JitterSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.show, this.opacity, this.radius, this.color];
 }
 
+// -- Box Plot Display Settings ------------------------------------------------
+
+class BoxPlotDisplaySettingsCard extends formattingSettings.SimpleCard {
+  showViolin = new formattingSettings.ToggleSwitch({
+    name: 'showViolin',
+    displayName: 'Violin Overlay',
+    value: false,
+  });
+
+  showNotches = new formattingSettings.ToggleSwitch({
+    name: 'showNotches',
+    displayName: 'Show Notches (95% CI)',
+    value: false,
+  });
+
+  orientation = new formattingSettings.ItemDropdown({
+    name: 'orientation',
+    displayName: 'Orientation',
+    items: [
+      { value: 'vertical', displayName: 'Vertical' },
+      { value: 'horizontal', displayName: 'Horizontal' },
+    ],
+    value: { value: 'vertical', displayName: 'Vertical' },
+  });
+
+  whiskerCalc = new formattingSettings.ItemDropdown({
+    name: 'whiskerCalc',
+    displayName: 'Whisker Calculation',
+    items: [
+      { value: 'iqr', displayName: '1.5x IQR' },
+      { value: 'minmax', displayName: 'Min/Max' },
+      { value: 'percentile', displayName: 'Percentile (5/95)' },
+      { value: 'stddev', displayName: 'Std Dev' },
+    ],
+    value: { value: 'iqr', displayName: '1.5x IQR' },
+  });
+
+  name = 'boxPlotDisplaySettings';
+  displayName = 'Box Plot Display';
+  slices = [this.showViolin, this.showNotches, this.orientation, this.whiskerCalc];
+}
+
+// -- Box Plot Color Settings --------------------------------------------------
+
+class BoxPlotColorSettingsCard extends formattingSettings.SimpleCard {
+  perCategoryColors = new formattingSettings.ToggleSwitch({
+    name: 'perCategoryColors',
+    displayName: 'Per-Category Colors',
+    value: false,
+  });
+
+  name = 'boxPlotColorSettings';
+  displayName = 'Box Plot Colors';
+  slices = [this.perCategoryColors];
+}
+
 // -- Root Model ------------------------------------------------------------
 
 export class BoxPlotSettings extends formattingSettings.Model {
@@ -349,7 +321,9 @@ export class BoxPlotSettings extends formattingSettings.Model {
   animationSettings = new AnimationSettingsCard();
   meanMarkerSettings = new MeanMarkerSettingsCard();
   jitterSettings = new JitterSettingsCard();
-  referenceLineSettings = new ReferenceLineSettingsCard();
+
+  boxPlotDisplaySettings = new BoxPlotDisplaySettingsCard();
+  boxPlotColorSettings = new BoxPlotColorSettingsCard();
 
   axisFormattingCard = new AxisFormattingCard();
 
@@ -368,6 +342,13 @@ export class BoxPlotSettings extends formattingSettings.Model {
 
   numberFormattingCard = new NumberFormattingCard();
 
+  referenceLineFormattingCard = new ReferenceLineFormattingCard();
+  trendLineFormattingCard = new TrendLineFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
+
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
+  seriesFormattingCard = new SeriesFormattingCard();
   cards = [
     this.boxSettings,
     this.colorSettings,
@@ -376,12 +357,19 @@ export class BoxPlotSettings extends formattingSettings.Model {
     this.animationSettings,
     this.meanMarkerSettings,
     this.jitterSettings,
-    this.referenceLineSettings,
+    this.boxPlotDisplaySettings,
+    this.boxPlotColorSettings,
     this.axisFormattingCard,
     this.legendFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.scrollFormattingCard,
     this.numberFormattingCard,
+    this.referenceLineFormattingCard,
+    this.trendLineFormattingCard,
+    this.conditionalFormattingCard,
+    this.accessibilityFormattingCard,
+    this.seriesFormattingCard,
+    this.colorThemeFormattingCard,
   ];
 }

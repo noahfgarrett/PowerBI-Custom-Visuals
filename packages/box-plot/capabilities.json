@@ -10,7 +10,7 @@
       "displayName": "Values",
       "name": "values",
       "kind": "Measure",
-      "description": "Raw values \u2014 the visual computes min/Q1/median/Q3/max internally"
+      "description": "Raw values — the visual computes min/Q1/median/Q3/max internally"
     }
   ],
   "dataViewMappings": [
@@ -476,22 +476,53 @@
         }
       }
     },
-    "referenceLineSettings": {
+    "referenceLineFormatting": {
       "displayName": "Reference Line",
       "properties": {
-        "show": {
+        "showReferenceLine": {
           "displayName": "Show Reference Line",
           "type": {
             "bool": true
           }
         },
-        "value": {
+        "referenceLineType": {
+          "displayName": "Type",
+          "type": {
+            "enumeration": [
+              {
+                "value": "custom",
+                "displayName": "Custom Value"
+              },
+              {
+                "value": "mean",
+                "displayName": "Mean"
+              },
+              {
+                "value": "median",
+                "displayName": "Median"
+              },
+              {
+                "value": "percentile",
+                "displayName": "Percentile"
+              },
+              {
+                "value": "min",
+                "displayName": "Min"
+              },
+              {
+                "value": "max",
+                "displayName": "Max"
+              }
+            ]
+          }
+        },
+        "referenceLineValue": {
           "displayName": "Value",
           "type": {
             "numeric": true
           }
         },
-        "lineColor": {
+        "referenceLineColor": {
           "displayName": "Line Color",
           "type": {
             "fill": {
@@ -501,13 +532,13 @@
             }
           }
         },
-        "lineWidth": {
+        "referenceLineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
           }
         },
-        "lineStyle": {
+        "referenceLineStyle": {
           "displayName": "Line Style",
           "type": {
             "enumeration": [
@@ -526,34 +557,245 @@
             ]
           }
         },
-        "showLabel": {
+        "showReferenceLabel": {
           "displayName": "Show Label",
           "type": {
             "bool": true
           }
         },
-        "labelText": {
+        "referenceLabelText": {
           "displayName": "Label Text",
           "type": {
             "text": true
           }
         },
-        "showBand": {
+        "showReferenceBand": {
           "displayName": "Show Band",
           "type": {
             "bool": true
           }
         },
-        "bandUpperValue": {
-          "displayName": "Band Upper Value",
+        "referenceBandOpacity": {
+          "displayName": "Band Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "trendLineFormatting": {
+      "displayName": "Trend Line",
+      "properties": {
+        "showTrendLine": {
+          "displayName": "Show Trend Line",
+          "type": {
+            "bool": true
+          }
+        },
+        "trendLineType": {
+          "displayName": "Type",
+          "type": {
+            "enumeration": [
+              {
+                "value": "linear",
+                "displayName": "Linear"
+              },
+              {
+                "value": "polynomial",
+                "displayName": "Polynomial"
+              },
+              {
+                "value": "exponential",
+                "displayName": "Exponential"
+              },
+              {
+                "value": "logarithmic",
+                "displayName": "Logarithmic"
+              },
+              {
+                "value": "power",
+                "displayName": "Power"
+              }
+            ]
+          }
+        },
+        "polynomialOrder": {
+          "displayName": "Polynomial Order",
           "type": {
             "numeric": true
           }
         },
-        "bandOpacity": {
-          "displayName": "Band Opacity (%)",
+        "trendLineColor": {
+          "displayName": "Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "trendLineWidth": {
+          "displayName": "Line Width",
           "type": {
             "numeric": true
+          }
+        },
+        "showEquation": {
+          "displayName": "Show Equation",
+          "type": {
+            "bool": true
+          }
+        },
+        "showR2": {
+          "displayName": "Show R²",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "conditionalFormatting": {
+      "displayName": "Conditional Formatting",
+      "properties": {
+        "enableConditional": {
+          "displayName": "Enable Conditional Formatting",
+          "type": {
+            "bool": true
+          }
+        },
+        "conditionalDirection": {
+          "displayName": "Direction",
+          "type": {
+            "enumeration": [
+              {
+                "value": "ascending",
+                "displayName": "Ascending (Low = Bad)"
+              },
+              {
+                "value": "descending",
+                "displayName": "Descending (Low = Good)"
+              }
+            ]
+          }
+        },
+        "threshold1": {
+          "displayName": "Threshold 1",
+          "type": {
+            "numeric": true
+          }
+        },
+        "threshold2": {
+          "displayName": "Threshold 2",
+          "type": {
+            "numeric": true
+          }
+        },
+        "conditionalColor1": {
+          "displayName": "Color 1 (Bad)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "conditionalColor2": {
+          "displayName": "Color 2 (Warning)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "conditionalColor3": {
+          "displayName": "Color 3 (Good)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "accessibilityFormatting": {
+      "displayName": "Accessibility",
+      "properties": {
+        "enableKeyboardNav": {
+          "displayName": "Enable Keyboard Navigation",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "boxPlotDisplaySettings": {
+      "displayName": "Box Plot Display",
+      "properties": {
+        "showViolin": {
+          "displayName": "Violin Overlay",
+          "type": {
+            "bool": true
+          }
+        },
+        "showNotches": {
+          "displayName": "Show Notches (95% CI)",
+          "type": {
+            "bool": true
+          }
+        },
+        "orientation": {
+          "displayName": "Orientation",
+          "type": {
+            "enumeration": [
+              {
+                "value": "vertical",
+                "displayName": "Vertical"
+              },
+              {
+                "value": "horizontal",
+                "displayName": "Horizontal"
+              }
+            ]
+          }
+        },
+        "whiskerCalc": {
+          "displayName": "Whisker Calculation",
+          "type": {
+            "enumeration": [
+              {
+                "value": "iqr",
+                "displayName": "1.5x IQR"
+              },
+              {
+                "value": "minmax",
+                "displayName": "Min/Max"
+              },
+              {
+                "value": "percentile",
+                "displayName": "Percentile (5/95)"
+              },
+              {
+                "value": "stddev",
+                "displayName": "Std Dev"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "boxPlotColorSettings": {
+      "displayName": "Box Plot Colors",
+      "properties": {
+        "perCategoryColors": {
+          "displayName": "Per-Category Colors",
+          "type": {
+            "bool": true
           }
         }
       }
@@ -581,6 +823,11 @@
           "displayName": "Border Radius",
           "type": {
             "numeric": true
+          }
+        },
+        "enableGlass": {
+          "type": {
+            "bool": true
           }
         }
       }
@@ -648,6 +895,43 @@
           "displayName": "Suffix",
           "type": {
             "text": true
+          }
+        }
+      }
+    },
+    "colorThemeFormatting": {
+      "properties": {
+        "colorTheme": {
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "seriesFormatting": {
+      "properties": {
+        "seriesColor": {
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "seriesLineStyle": {
+          "type": {
+            "text": true
+          }
+        },
+        "seriesLineWidth": {
+          "type": {
+            "numeric": true
+          }
+        },
+        "seriesOpacity": {
+          "type": {
+            "numeric": true
           }
         }
       }

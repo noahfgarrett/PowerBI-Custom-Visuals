@@ -21,6 +21,16 @@ import {
   renderChartTitle,
   applyDataLabelFormatting,
   resolveDropdown,
+  applyChartAria,
+  attachKeyboardNav,
+  ensureFocusRingStyles,
+  createHoverDim,
+  resolveColorTheme,
+  buildConditionalConfig,
+  resolveConditionalColor,
+  resolveSeriesFormatting,
+  populateSeriesFormattingGroups,
+  lineStyleToDashArray,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -71,11 +81,34 @@ export class RadarChartVisual implements IVisual {
       );
     }
 
+    // Hide inapplicable shared axis properties — radar-chart doesn't use titles/rotation/min/max
+    this.settings.axisFormattingCard.showXAxis.visible = false;
+    this.settings.axisFormattingCard.showYAxis.visible = false;
+    this.settings.axisFormattingCard.xAxisTitle.visible = false;
+    this.settings.axisFormattingCard.yAxisTitle.visible = false;
+    this.settings.axisFormattingCard.axisLabelRotation.visible = false;
+    this.settings.axisFormattingCard.yAxisMin.visible = false;
+    this.settings.axisFormattingCard.yAxisMax.visible = false;
+
     this.applyCardStyle();
 
     const categories = this.extractCategories(dataView);
     const categorySelectionIds = this.extractCategorySelectionIds(dataView, categories.length);
     const series = this.extractSeries(dataView, categories.length);
+
+    // Populate per-series formatting groups
+    {
+      const colorLookup = new Map<string, string>();
+      for (const ser of series) {
+        colorLookup.set(ser.name, ser.color);
+      }
+      populateSeriesFormattingGroups(
+        this.settings.seriesFormattingCard,
+        dataView,
+        ['measure'],
+        colorLookup,
+      );
+    }
 
     this.notifyRenderStarted();
     try {
@@ -101,6 +134,7 @@ export class RadarChartVisual implements IVisual {
   }
 
   private extractSeries(dataView: DataView | undefined, numAxes: number): RadarSeries[] {
+    const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
     if (!dataView?.categorical?.values || numAxes === 0) return [];
 
     const result: RadarSeries[] = [];
@@ -121,8 +155,8 @@ export class RadarChartVisual implements IVisual {
         name,
         values,
         color: useChartPalette
-          ? getHostChartColor(this.host.colorPalette, si)
-          : getChartColor(si),
+          ? getHostChartColor(this.host.colorPalette, si, themeName)
+          : getChartColor(si, themeName),
       });
     }
 
@@ -150,7 +184,7 @@ export class RadarChartVisual implements IVisual {
       const glass = getGlassStyle({
         mode: 'light',
         opacity: s.backgroundOpacity.value / 100,
-        backgroundColor: ((s as any).backgroundColor?.value?.value ?? (s as any).bgColor?.value?.value),
+        backgroundColor: s.backgroundColor.value?.value,
         borderRadius: s.borderRadius.value,
       });
       Object.assign(this.container.style, glass);
@@ -196,7 +230,7 @@ export class RadarChartVisual implements IVisual {
     const webStrokeWidth = Math.max(0.5, s.radarSettings.webStrokeWidth.value);
     const webFillOpacity = Math.max(0, Math.min(100, s.radarSettings.webFillOpacity.value)) / 100;
     const areaOpacity = Math.max(0, Math.min(100, s.radarSettings.areaOpacity.value)) / 100;
-    const showLegend = s.legendSettings.show.value;
+    const showLegend = s.legendFormattingCard.showLegend.value;
     const animEnabled = s.animationSettings.enabled.value;
     const animDuration = s.animationSettings.duration.value;
 
@@ -216,7 +250,6 @@ export class RadarChartVisual implements IVisual {
     // Legend formatting
     const legendFontColor = s.legendFormattingCard.legendFontColor.value?.value || '#1E293B';
     const legendFontSize = s.legendFormattingCard.legendFontSize.value;
-    const showLegendFormatted = s.legendFormattingCard.showLegend.value;
     const legendPosRaw = s.legendFormattingCard.legendPosition.value;
     const legendPos: string = (typeof legendPosRaw === 'string'
       ? legendPosRaw
@@ -228,7 +261,13 @@ export class RadarChartVisual implements IVisual {
     const numAxes = categories.length;
     const angleSlice = (2 * Math.PI) / numAxes;
 
-    // Compute max value across all series
+    // User-configurable start angle offset (degrees -> radians)
+    const startAngleOffset = (s.radarDisplaySettings.startAngle.value * Math.PI) / 180;
+
+    // Independent axis scales: when enabled, each axis gets its own max
+    const useIndependentScales = s.radarDisplaySettings.independentScales.value;
+
+    // Compute global max value across all series
     let maxVal = 0;
     for (const ser of series) {
       for (const v of ser.values) {
@@ -237,7 +276,23 @@ export class RadarChartVisual implements IVisual {
     }
     if (maxVal === 0) maxVal = 1;
 
-    const effectiveShowLegend = showLegend && showLegendFormatted;
+    // Per-axis max values (only used when independentScales is on)
+    const axisMaxValues: number[] = [];
+    if (useIndependentScales) {
+      for (let i = 0; i < numAxes; i++) {
+        let axisMax = 0;
+        for (const ser of series) {
+          if (ser.values[i] > axisMax) axisMax = ser.values[i];
+        }
+        axisMaxValues.push(axisMax > 0 ? axisMax : 1);
+      }
+    }
+
+    /** Get the max value for a given axis index. */
+    const getAxisMax = (axisIndex: number): number =>
+      useIndependentScales ? axisMaxValues[axisIndex] : maxVal;
+
+    const effectiveShowLegend = showLegend;
     const isLegendVertical = legendPos === 'top' || legendPos === 'bottom';
     const legendHeight = effectiveShowLegend && isLegendVertical ? 30 : 0;
     const margin = 40;
@@ -276,7 +331,7 @@ export class RadarChartVisual implements IVisual {
             .attr('stroke-dasharray', gridDashArray)
             .attr('fill', withOpacity(webStrokeColor, webFillOpacity));
         } else {
-          const points = this.buildPolygonPoints(numAxes, angleSlice, r);
+          const points = this.buildPolygonPoints(numAxes, angleSlice, r, startAngleOffset);
           g.append('polygon')
             .attr('class', 'radar-grid-line')
             .attr('points', points)
@@ -291,7 +346,7 @@ export class RadarChartVisual implements IVisual {
     // ── Axis lines + labels ──
 
     for (let i = 0; i < numAxes; i++) {
-      const angle = angleSlice * i - Math.PI / 2;
+      const angle = angleSlice * i - Math.PI / 2 + startAngleOffset;
       const x = radius * Math.cos(angle);
       const y = radius * Math.sin(angle);
 
@@ -320,11 +375,16 @@ export class RadarChartVisual implements IVisual {
 
     for (let si = 0; si < series.length; si++) {
       const ser = series[si];
+      const sf = resolveSeriesFormatting(this.settings.seriesFormattingCard, si, ser.color);
+      const seriesColor = sf.color;
+      const seriesOpacity = sf.opacity / 100;
+      const seriesLineStyle = lineStyleToDashArray(sf.lineStyle);
+      const seriesLineWidth = sf.lineWidth;
       const points: Array<[number, number]> = [];
 
       for (let i = 0; i < numAxes; i++) {
-        const angle = angleSlice * i - Math.PI / 2;
-        const r = (ser.values[i] / maxVal) * radius;
+        const angle = angleSlice * i - Math.PI / 2 + startAngleOffset;
+        const r = (ser.values[i] / getAxisMax(i)) * radius;
         points.push([r * Math.cos(angle), r * Math.sin(angle)]);
       }
 
@@ -334,10 +394,11 @@ export class RadarChartVisual implements IVisual {
       const polygon = g.append('path')
         .attr('class', 'radar-polygon')
         .attr('d', pathData)
-        .attr('fill', withOpacity(ser.color, fillOpacity))
+        .attr('fill', withOpacity(seriesColor, fillOpacity * seriesOpacity))
         .attr('fill-opacity', areaOpacity)
-        .attr('stroke', ser.color)
-        .attr('stroke-width', webStrokeWidth);
+        .attr('stroke', seriesColor)
+        .attr('stroke-width', seriesLineWidth)
+        .attr('stroke-dasharray', seriesLineStyle);
 
       polygon
         .on('mouseenter', (event: MouseEvent) => {
@@ -385,12 +446,13 @@ export class RadarChartVisual implements IVisual {
       // Dots
       if (showDots) {
         for (let i = 0; i < numAxes; i++) {
+          const dotConditionalFill = this.getConditionalColor(ser.values[i]);
           const dot = g.append('circle')
             .attr('class', 'radar-dot')
             .attr('cx', points[i][0])
             .attr('cy', points[i][1])
             .attr('r', dotRadius)
-            .attr('fill', ser.color)
+            .attr('fill', dotConditionalFill ?? seriesColor)
             .style('cursor', 'pointer');
 
           const pointCategory = categories[i];
@@ -435,10 +497,10 @@ export class RadarChartVisual implements IVisual {
       }
 
       // Data labels
-      if (showDataLabels) {
+      if (showDataLabels && sf.showLabels) {
         for (let i = 0; i < numAxes; i++) {
-          const angle = angleSlice * i - Math.PI / 2;
-          const labelR = (ser.values[i] / maxVal) * radius + dotRadius + 6;
+          const angle = angleSlice * i - Math.PI / 2 + startAngleOffset;
+          const labelR = (ser.values[i] / getAxisMax(i)) * radius + dotRadius + 6;
           const lx = labelR * Math.cos(angle);
           const ly = labelR * Math.sin(angle);
           const locale = this.getHostLocale();
@@ -485,7 +547,9 @@ export class RadarChartVisual implements IVisual {
         legend.style.alignItems = 'flex-start';
       }
 
-      for (const ser of series) {
+      for (let li = 0; li < series.length; li++) {
+        const ser = series[li];
+        const legendSf = resolveSeriesFormatting(this.settings.seriesFormattingCard, li, ser.color);
         const item = document.createElement('div');
         item.style.display = 'flex';
         item.style.alignItems = 'center';
@@ -495,7 +559,7 @@ export class RadarChartVisual implements IVisual {
         swatch.style.width = '10px';
         swatch.style.height = '10px';
         swatch.style.borderRadius = '2px';
-        swatch.style.backgroundColor = ser.color;
+        swatch.style.backgroundColor = legendSf.color;
 
         const label = document.createElement('span');
         label.style.fontSize = `${legendFontSize}px`;
@@ -522,15 +586,20 @@ export class RadarChartVisual implements IVisual {
     // Apply shared data label formatting
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.radar-data-label');
 
+    // Benchmark overlay, axis values, hover behavior
+    this.renderBenchmarkOverlay(g, series, numAxes, angleSlice, radius, maxVal, startAngleOffset, getAxisMax);
+    this.renderAxisValues(g, gridLevels, radius, maxVal, axisLineColor, axisLabelSize, startAngleOffset, numAxes, angleSlice, getAxisMax);
+    this.applyHoverDimBehavior();
+    this.applyAccessibility();
     this.container.addEventListener('click', this.handleBackgroundClick);
   }
 
   // ── Helpers ──────────────────────────────────────────────────────
 
-  private buildPolygonPoints(numAxes: number, angleSlice: number, radius: number): string {
+  private buildPolygonPoints(numAxes: number, angleSlice: number, radius: number, angleOffset: number = 0): string {
     const pts: string[] = [];
     for (let i = 0; i < numAxes; i++) {
-      const angle = angleSlice * i - Math.PI / 2;
+      const angle = angleSlice * i - Math.PI / 2 + angleOffset;
       pts.push(`${radius * Math.cos(angle)},${radius * Math.sin(angle)}`);
     }
     return pts.join(' ');
@@ -634,6 +703,155 @@ export class RadarChartVisual implements IVisual {
     }).eventService;
     const reason = error instanceof Error ? error.message : 'render failure';
     eventService?.renderingFailed?.(reason);
+  }
+
+  // ── Conditional Formatting ───────────────────────────────────
+
+  private getConditionalColor(value: number): string | undefined {
+    const cc = this.settings.conditionalFormattingCard;
+    if (!cc.enableConditional.value) return undefined;
+    const config = buildConditionalConfig(
+      true,
+      resolveDropdown(cc.conditionalDirection),
+      cc.threshold1.value,
+      cc.threshold2.value,
+      cc.conditionalColor1.value?.value,
+      cc.conditionalColor2.value?.value,
+      cc.conditionalColor3.value?.value,
+    );
+    return resolveConditionalColor(value, config);
+  }
+
+  // -- Benchmark Overlay -------------------------------------------------------
+
+  /**
+   * Renders a dashed benchmark polygon using the last series as reference data.
+   * Only renders if benchmark settings are enabled and there are 2+ series.
+   */
+  private renderBenchmarkOverlay(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    series: RadarSeries[],
+    numAxes: number,
+    angleSlice: number,
+    radius: number,
+    _maxVal: number,
+    startAngleOffset: number = 0,
+    getAxisMax: (i: number) => number = () => _maxVal,
+  ): void {
+    const benchmarkSettings = this.settings.radarBenchmarkSettings;
+    if (!benchmarkSettings.show.value || series.length < 2) return;
+
+    // Use the last series as the benchmark
+    const benchSeries = series[series.length - 1];
+    const color = benchmarkSettings.color.value?.value ?? '#94A3B8';
+    const dashRaw = resolveDropdown(benchmarkSettings.dashPattern) ?? 'dashed';
+    const dashArray = dashRaw === 'dotted' ? '2,3' : dashRaw === 'dashed' ? '6,4' : 'none';
+
+    const points: Array<[number, number]> = [];
+    for (let i = 0; i < numAxes; i++) {
+      const angle = angleSlice * i - Math.PI / 2 + startAngleOffset;
+      const r = (benchSeries.values[i] / getAxisMax(i)) * radius;
+      points.push([r * Math.cos(angle), r * Math.sin(angle)]);
+    }
+
+    const pathData = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0]},${p[1]}`).join(' ') + ' Z';
+
+    g.append('path')
+      .attr('class', 'radar-benchmark')
+      .attr('d', pathData)
+      .attr('fill', 'none')
+      .attr('stroke', color)
+      .attr('stroke-width', 2)
+      .attr('stroke-dasharray', dashArray);
+  }
+
+  // -- Axis Value Labels ------------------------------------------------------
+
+  private renderAxisValues(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    gridLevels: number,
+    radius: number,
+    maxVal: number,
+    axisColor: string,
+    axisLabelSize: number,
+    startAngleOffset: number = 0,
+    numAxes: number = 0,
+    angleSlice: number = 0,
+    getAxisMax: (i: number) => number = () => maxVal,
+  ): void {
+    const displaySettings = this.settings.radarDisplaySettings;
+    if (!displaySettings.showAxisValues.value) return;
+
+    const useIndependentScales = displaySettings.independentScales.value;
+    const fontSize = `${Math.max(8, axisLabelSize - 2)}px`;
+
+    if (useIndependentScales && numAxes > 0) {
+      // Show per-axis max labels at the tip of each axis
+      for (let i = 0; i < numAxes; i++) {
+        const angle = angleSlice * i - Math.PI / 2 + startAngleOffset;
+        const axisMax = getAxisMax(i);
+        for (let level = 1; level <= gridLevels; level++) {
+          const r = (radius / gridLevels) * level;
+          const value = (axisMax / gridLevels) * level;
+          g.append('text')
+            .attr('class', 'radar-axis-value')
+            .attr('x', r * Math.cos(angle) + 4)
+            .attr('y', r * Math.sin(angle))
+            .attr('fill', axisColor)
+            .style('font-size', fontSize)
+            .text(formatNumber(value));
+        }
+      }
+    } else {
+      // Uniform scale: show values along the first axis
+      const baseAngle = -Math.PI / 2 + startAngleOffset;
+      for (let level = 1; level <= gridLevels; level++) {
+        const r = (radius / gridLevels) * level;
+        const value = (maxVal / gridLevels) * level;
+        g.append('text')
+          .attr('class', 'radar-axis-value')
+          .attr('x', r * Math.cos(baseAngle) + 4)
+          .attr('y', r * Math.sin(baseAngle))
+          .attr('fill', axisColor)
+          .style('font-size', fontSize)
+          .text(formatNumber(value));
+      }
+    }
+  }
+
+  // -- Hover Dim/Isolate ------------------------------------------------------
+
+  private applyHoverDimBehavior(): void {
+    const interactionSettings = this.settings.radarInteractionSettings;
+    if (!interactionSettings.hoverDim.value) return;
+
+    const polygons = this.container.querySelectorAll('.radar-polygon');
+    if (polygons.length > 0) {
+      createHoverDim({
+        elements: polygons,
+        dimOpacity: 0.15,
+      });
+    }
+  }
+
+  // -- Accessibility ----------------------------------------------------------
+
+  private applyAccessibility(): void {
+    const a11y = this.settings.accessibilityFormattingCard;
+    if (a11y.enableKeyboardNav.value) {
+      ensureFocusRingStyles();
+      attachKeyboardNav({
+        container: this.container,
+        itemSelector: '.radar-dot',
+        onActivate: (el: Element) => {
+          (el as HTMLElement).click();
+        },
+      });
+    }
+    applyChartAria(this.container, {
+      chartType: 'radar chart',
+      dataPointCount: this.container.querySelectorAll('.radar-dot').length,
+    });
   }
 
   public destroy(): void {

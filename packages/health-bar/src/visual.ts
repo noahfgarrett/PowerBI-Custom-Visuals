@@ -28,6 +28,19 @@ import {
   createScrollableChart,
   applySortOrder,
   resolveDropdown,
+  buildConditionalConfig,
+  resolveConditionalColor,
+  applyChartAria,
+  attachKeyboardNav,
+  ensureFocusRingStyles,
+  renderHorizontalReferenceLine,
+  computeStatValue,
+  type StatType,
+  renderTrendLine,
+  computeRegression,
+  type TrendType,
+  renderAnnotations,
+  buildAnnotationConfig,
 } from '../../core/src';
 
 import { HealthBarSettings } from './settings';
@@ -56,7 +69,7 @@ export class HealthBarVisual implements IVisual {
   private host: IVisualHost;
   private selectionManager: powerbi.extensibility.ISelectionManager;
   private container: HTMLElement;
-  private settings: HealthBarSettings;
+  private settings!: HealthBarSettings;
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
 
@@ -83,6 +96,16 @@ export class HealthBarVisual implements IVisual {
       dataView,
     );
 
+    // Hide inapplicable shared axis properties — health-bar only uses axisLabelColor and axisLabelSize
+    this.settings.axisFormattingCard.showXAxis.visible = false;
+    this.settings.axisFormattingCard.showYAxis.visible = false;
+    this.settings.axisFormattingCard.xAxisTitle.visible = false;
+    this.settings.axisFormattingCard.yAxisTitle.visible = false;
+    this.settings.axisFormattingCard.axisLabelFontFamily.visible = false;
+    this.settings.axisFormattingCard.axisLabelRotation.visible = false;
+    this.settings.axisFormattingCard.yAxisMin.visible = false;
+    this.settings.axisFormattingCard.yAxisMax.visible = false;
+
     // Extract data and apply user-configured sort order
     const items = applySortOrder(
       this.extractData(dataView).map((d) => ({ ...d, name: d.label })),
@@ -101,6 +124,8 @@ export class HealthBarVisual implements IVisual {
     const categories = dataView.categorical.categories[0];
     const allValues = dataView.categorical.values;
     const maxVal = this.settings.healthBarSettings.maxValue.value || 100;
+    const minVal = this.settings.healthBarScale.minValue.value ?? 0;
+    const scaleRange = maxVal - minVal;
     const items: HealthBarItem[] = [];
 
     // Find measure and target columns by role
@@ -122,8 +147,8 @@ export class HealthBarVisual implements IVisual {
 
       if (!Number.isFinite(rawValue)) continue;
 
-      const clamped = Math.max(0, Math.min(rawValue, maxVal));
-      const pct = maxVal > 0 ? clamped / maxVal : 0;
+      const clamped = Math.max(minVal, Math.min(rawValue, maxVal));
+      const pct = scaleRange > 0 ? (clamped - minVal) / scaleRange : 0;
 
       let target: number | null = null;
       if (targetColumn && i < targetColumn.values.length) {
@@ -217,6 +242,7 @@ export class HealthBarVisual implements IVisual {
       availableChartWidth: barAreaWidth,
       availableChartHeight: chartHeight,
       direction: 'horizontal',
+      categoryPadding: gap,
     });
 
     const effectiveBarAreaWidth = scroll.isScrolling ? scroll.chartWidth : barAreaWidth;
@@ -285,6 +311,34 @@ export class HealthBarVisual implements IVisual {
 
       defs.appendChild(gradient);
       svg.insertBefore(defs, svg.firstChild);
+    }
+
+    // ── Zone Background ─────────────────────────────────────────
+    if (s.healthBarZone.show.value) {
+      const zoneColorsRaw = s.healthBarZone.zoneColors.value || '';
+      const zoneColors = zoneColorsRaw
+        .split(',')
+        .map((c: string) => c.trim())
+        .filter((c: string) => c.length > 0);
+
+      if (zoneColors.length > 0) {
+        const zoneCount = zoneColors.length;
+        const zoneHeight = chartHeight / zoneCount;
+
+        for (let z = 0; z < zoneCount; z++) {
+          // Zones go from top (highest value) to bottom (lowest value)
+          const zoneRect = document.createElementNS(SVG_NS, 'rect');
+          zoneRect.setAttribute('class', 'health-bar-zone');
+          zoneRect.setAttribute('x', String(offsetX));
+          zoneRect.setAttribute('y', String(z * zoneHeight));
+          zoneRect.setAttribute('width', String(totalBarsWidth));
+          zoneRect.setAttribute('height', String(zoneHeight));
+          // Reverse order: first color = high (top), last color = low (bottom)
+          zoneRect.setAttribute('fill', zoneColors[z]);
+          zoneRect.setAttribute('opacity', '0.12');
+          chartGroup.appendChild(zoneRect);
+        }
+      }
     }
 
     // Grid lines (rendered independently of Y-axis labels)
@@ -358,7 +412,11 @@ export class HealthBarVisual implements IVisual {
       fill.setAttribute('rx', String(cornerRadius));
       fill.setAttribute('ry', String(cornerRadius));
 
-      if (useGradient) {
+      // Determine fill color: conditional formatting overrides gradient/solid
+      const conditionalOverride = this.resolveConditionalBarColor(item.value);
+      if (conditionalOverride) {
+        fill.style.setProperty('fill', conditionalOverride);
+      } else if (useGradient) {
         fill.setAttribute('fill', 'url(#health-gradient)');
       } else {
         const solidColor = this.interpolateHealthColor(item.pct, lowColor, midColor, highColor);
@@ -437,13 +495,29 @@ export class HealthBarVisual implements IVisual {
         const pctText = showPercent
           ? formatPercent(item.pct, { decimals: 0 })
           : formatNumber(item.value, { abbreviate: true });
-        const labelY = fillY - 6;
+
+        const valuePosition = resolveDropdown(s.healthBarValuePosition.position) ?? 'above';
 
         const text = document.createElementNS(SVG_NS, 'text');
         text.setAttribute('class', 'health-bar-value');
-        text.setAttribute('x', String(barX + barWidth / 2));
-        text.setAttribute('y', String(Math.max(12, labelY)));
-        text.setAttribute('text-anchor', 'middle');
+
+        if (valuePosition === 'inside') {
+          text.setAttribute('x', String(barX + barWidth / 2));
+          text.setAttribute('y', String(fillY + fillHeight / 2 + 4));
+          text.setAttribute('text-anchor', 'middle');
+          text.setAttribute('fill', '#FFFFFF');
+        } else if (valuePosition === 'right' || valuePosition === 'end') {
+          text.setAttribute('x', String(barX + barWidth + 4));
+          text.setAttribute('y', String(fillY + 4));
+          text.setAttribute('text-anchor', 'start');
+        } else {
+          // 'above' (default)
+          const labelY = fillY - 6;
+          text.setAttribute('x', String(barX + barWidth / 2));
+          text.setAttribute('y', String(Math.max(12, labelY)));
+          text.setAttribute('text-anchor', 'middle');
+        }
+
         text.textContent = pctText;
         chartGroup.appendChild(text);
 
@@ -502,6 +576,37 @@ export class HealthBarVisual implements IVisual {
       }
     }
 
+    // d3 selection for shared overlay helpers
+    const d3ChartGroup = d3.select(chartGroup as unknown as SVGGElement);
+
+    // Build y scale for reference / trend overlays (value → pixel)
+    const maxVal = s.healthBarSettings.maxValue.value || 100;
+    const yScale = d3.scaleLinear().domain([0, maxVal]).range([chartHeight, 0]);
+    const allValues = items.map((d) => d.value);
+
+    // Reference line
+    this.renderReferenceLine(d3ChartGroup, yScale, totalBarsWidth, allValues);
+
+    // Trend line
+    this.renderTrendLineOverlay(
+      d3ChartGroup,
+      allValues,
+      (idx: number) => offsetX + idx * (barWidth + gap) + barWidth / 2,
+      yScale,
+    );
+
+    // Annotations
+    this.renderAnnotationOverlay(d3ChartGroup, (category: string) => {
+      const idx = items.findIndex((d) => d.label === category);
+      if (idx < 0) return null;
+      const x = offsetX + idx * (barWidth + gap) + barWidth / 2;
+      const y = yScale(items[idx].value);
+      return { x, y };
+    });
+
+    // Accessibility
+    this.applyAccessibility(items);
+
     // Background click clears selection
     this.container.addEventListener('click', this.handleBackgroundClick);
   }
@@ -534,6 +639,141 @@ export class HealthBarVisual implements IVisual {
   private handleBackgroundClick = (): void => {
     void this.selectionManager.clear();
   };
+
+  // ── Conditional Formatting ──────────────────────────────────────────
+
+  private resolveConditionalBarColor(value: number): string | undefined {
+    const cc = this.settings.conditionalFormattingCard;
+    if (!cc.enableConditional.value) return undefined;
+
+    const config = buildConditionalConfig(
+      true,
+      resolveDropdown(cc.conditionalDirection),
+      cc.threshold1.value,
+      cc.threshold2.value,
+      cc.conditionalColor1.value?.value,
+      cc.conditionalColor2.value?.value,
+      cc.conditionalColor3.value?.value,
+    );
+    return resolveConditionalColor(value, config);
+  }
+
+  // ── Reference Line ────────────────────────────────────────────────
+
+  private renderReferenceLine(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    yScale: d3.ScaleLinear<number, number>,
+    chartWidth: number,
+    allValues: number[],
+  ): void {
+    const ref = this.settings.referenceLineFormattingCard;
+    if (!ref.showReferenceLine.value) return;
+
+    const refType = resolveDropdown(ref.referenceLineType) ?? 'custom';
+    let refValue = ref.referenceLineValue.value;
+
+    if (refType !== 'custom' && allValues.length > 0) {
+      refValue = computeStatValue(allValues, refType as StatType);
+    }
+
+    const refColor = ref.referenceLineColor.value?.value ?? '#EF4444';
+    const refStyle = resolveDropdown(ref.referenceLineStyle) ?? 'dashed';
+    const labelText = ref.referenceLabelText.value.length > 0
+      ? ref.referenceLabelText.value
+      : formatNumber(refValue, { abbreviate: true });
+
+    renderHorizontalReferenceLine(g, {
+      value: refValue,
+      yScale,
+      chartWidth,
+      lineColor: refColor,
+      lineWidth: ref.referenceLineWidth.value,
+      lineStyle: refStyle as 'solid' | 'dashed' | 'dotted',
+      showLabel: ref.showReferenceLabel.value,
+      labelText,
+      showBand: ref.showReferenceBand.value,
+      bandUpperValue: refValue * 1.1,
+      bandOpacity: ref.referenceBandOpacity.value / 100,
+    });
+  }
+
+  // ── Trend Line ────────────────────────────────────────────────────
+
+  private renderTrendLineOverlay(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    values: number[],
+    xScale: (index: number) => number,
+    yScale: d3.ScaleLinear<number, number>,
+  ): void {
+    const tl = this.settings.trendLineFormattingCard;
+    if (!tl.showTrendLine.value || values.length < 2) return;
+
+    const trendType = (resolveDropdown(tl.trendLineType) ?? 'linear') as TrendType;
+    const result = computeRegression(values, trendType, tl.polynomialOrder.value);
+    const trendColor = tl.trendLineColor.value?.value ?? '#6366F1';
+
+    renderTrendLine(g, {
+      predicted: result.predicted,
+      xScale,
+      yScale,
+      lineColor: trendColor,
+      lineWidth: tl.trendLineWidth.value,
+      showEquation: tl.showEquation.value,
+      showR2: tl.showR2.value,
+      equation: result.equation,
+      r2: result.r2,
+    });
+  }
+
+  // ── Annotations ───────────────────────────────────────────────────
+
+  private renderAnnotationOverlay(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    resolvePosition: (category: string) => { x: number; y: number } | null,
+  ): void {
+    const ann = this.settings.annotationFormattingCard;
+    if (!ann.showAnnotations.value) return;
+
+    const slots = [
+      { category: ann.annotation1Category.value, text: ann.annotation1Text.value, position: resolveDropdown(ann.annotation1Position) ?? 'above' },
+      { category: ann.annotation2Category.value, text: ann.annotation2Text.value, position: resolveDropdown(ann.annotation2Position) ?? 'above' },
+      { category: ann.annotation3Category.value, text: ann.annotation3Text.value, position: resolveDropdown(ann.annotation3Position) ?? 'above' },
+    ];
+
+    const config = buildAnnotationConfig(
+      true,
+      slots,
+      ann.annotationFontSize.value,
+      ann.annotationFontColor.value?.value || '#475569',
+      ann.annotationConnectorColor.value?.value || '#94A3B8',
+      resolvePosition,
+    );
+    if (config) renderAnnotations(g, config);
+  }
+
+  // ── Accessibility ─────────────────────────────────────────────────
+
+  private applyAccessibility(items: HealthBarItem[]): void {
+    const acc = this.settings.accessibilityFormattingCard;
+    if (!acc.enableKeyboardNav.value) return;
+
+    ensureFocusRingStyles();
+
+    applyChartAria(this.container, {
+      chartType: 'health bar chart',
+      title: this.settings.titleFormattingCard.titleText.value || undefined,
+      dataPointCount: items.length,
+    });
+
+    const cleanup = attachKeyboardNav({
+      container: this.container,
+      itemSelector: '.health-bar-fill',
+      onActivate: (el) => {
+        (el as HTMLElement).click?.();
+      },
+    });
+    this.cancelAnimations.push(cleanup);
+  }
 
   // ── Formatting Model ────────────────────────────────────────────────
 

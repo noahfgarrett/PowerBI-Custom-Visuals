@@ -105,12 +105,6 @@
             "bool": true
           }
         },
-        "nodeRadius": {
-          "displayName": "Node Radius",
-          "type": {
-            "numeric": true
-          }
-        },
         "nodeBorderColor": {
           "displayName": "Node Border Color",
           "type": {
@@ -216,12 +210,6 @@
     "dataLabelFormatting": {
       "displayName": "Data Labels",
       "properties": {
-        "showDataLabels": {
-          "displayName": "Show Data Labels",
-          "type": {
-            "bool": true
-          }
-        },
         "dataLabelFontSize": {
           "displayName": "Font Size",
           "type": {
@@ -330,6 +318,174 @@
           "displayName": "Border Radius",
           "type": {
             "numeric": true
+          }
+        },
+        "enableGlass": {
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "networkLayoutSettings": {
+      "displayName": "Layout Features",
+      "properties": {
+        "enableClustering": {
+          "displayName": "Cluster Detection & Coloring",
+          "type": {
+            "bool": true
+          }
+        },
+        "sizeByDegree": {
+          "displayName": "Size by Degree",
+          "type": {
+            "bool": true
+          }
+        },
+        "enableCollision": {
+          "displayName": "Collision Prevention",
+          "type": {
+            "bool": true
+          }
+        },
+        "edgeBundling": {
+          "displayName": "Edge Bundling",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "networkInteractionSettings": {
+      "displayName": "Interaction Features",
+      "properties": {
+        "enableDrag": {
+          "displayName": "Enable Node Drag",
+          "type": {
+            "bool": true
+          }
+        },
+        "enableSearch": {
+          "displayName": "Enable Search",
+          "type": {
+            "bool": true
+          }
+        },
+        "highlightNeighbors": {
+          "displayName": "Highlight Neighbors on Hover",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "networkLinkSettings": {
+      "displayName": "Link Features",
+      "properties": {
+        "widthByWeight": {
+          "displayName": "Width by Weight",
+          "type": {
+            "bool": true
+          }
+        },
+        "minWidth": {
+          "displayName": "Min Link Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "maxWidth": {
+          "displayName": "Max Link Width",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "conditionalFormatting": {
+      "displayName": "Conditional Formatting",
+      "properties": {
+        "enableConditional": {
+          "displayName": "Enable Conditional Formatting",
+          "type": {
+            "bool": true
+          }
+        },
+        "conditionalDirection": {
+          "displayName": "Direction",
+          "type": {
+            "enumeration": [
+              {
+                "value": "ascending",
+                "displayName": "Ascending (Low = Bad)"
+              },
+              {
+                "value": "descending",
+                "displayName": "Descending (Low = Good)"
+              }
+            ]
+          }
+        },
+        "threshold1": {
+          "displayName": "Threshold 1",
+          "type": {
+            "numeric": true
+          }
+        },
+        "threshold2": {
+          "displayName": "Threshold 2",
+          "type": {
+            "numeric": true
+          }
+        },
+        "conditionalColor1": {
+          "displayName": "Color 1 (Bad)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "conditionalColor2": {
+          "displayName": "Color 2 (Warning)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "conditionalColor3": {
+          "displayName": "Color 3 (Good)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "accessibilityFormatting": {
+      "displayName": "Accessibility",
+      "properties": {
+        "enableKeyboardNav": {
+          "displayName": "Enable Keyboard Navigation",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "colorThemeFormatting": {
+      "properties": {
+        "colorTheme": {
+          "type": {
+            "text": true
           }
         }
       }

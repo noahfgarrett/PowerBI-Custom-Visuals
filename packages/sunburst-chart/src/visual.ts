@@ -22,6 +22,15 @@ import {
   formatNumber,
   renderChartTitle,
   applyDataLabelFormatting,
+  renderLegend,
+  type LegendItem,
+  resolveColorTheme,
+  buildConditionalConfig,
+  resolveConditionalColor,
+  resolveDropdown,
+  applyChartAria,
+  attachKeyboardNav,
+  ensureFocusRingStyles,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -125,6 +134,7 @@ export class SunburstChartVisual implements IVisual {
   // ── Data Extraction ───────────────────────────────────────────
 
   private extractData(dataView: DataView | undefined, useChartPalette: boolean): SunburstNode {
+    const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
     const root: SunburstNode = { name: 'root', value: 0, children: [], depth: 0, color: '' };
 
     if (!dataView?.categorical) return root;
@@ -181,8 +191,8 @@ export class SunburstChartVisual implements IVisual {
             depth: lvl + 1,
             color: lvl === 0
               ? (useChartPalette
-                ? getHostChartColor(this.host.colorPalette, colorIndex++)
-                : getChartColor(colorIndex++))
+                ? getHostChartColor(this.host.colorPalette, colorIndex++, themeName)
+                : getChartColor(colorIndex++, themeName))
               : '',
             selectionId: selectionBuilder.createSelectionId(),
           };
@@ -218,6 +228,7 @@ export class SunburstChartVisual implements IVisual {
     viewport: powerbi.IViewport,
     entrance: boolean
   ): void {
+    const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
     this.hideTooltip();
 
     // Clear container (no innerHTML)
@@ -268,7 +279,7 @@ export class SunburstChartVisual implements IVisual {
       const glass = getGlassStyle({
         mode: 'light',
         opacity: s.cardSettings.backgroundOpacity.value / 100,
-        backgroundColor: ((s.cardSettings as any).backgroundColor?.value?.value ?? (s.cardSettings as any).bgColor?.value?.value),
+        backgroundColor: s.cardSettings.backgroundColor.value?.value,
         borderRadius: s.cardSettings.borderRadius.value,
       });
       Object.assign(this.container.style, glass);
@@ -291,7 +302,7 @@ export class SunburstChartVisual implements IVisual {
 
     // Render legend at top position
     if (showLegend && legendPos === 'top') {
-      this.renderLegend(effectiveRoot.children);
+      this.renderSharedLegend(effectiveRoot.children);
     }
 
     // Empty state: no children means no data
@@ -313,9 +324,26 @@ export class SunburstChartVisual implements IVisual {
     const radius = (size / 2) - padding;
 
     // ── D3 Hierarchy + Partition ────────────────────────────────
+    // Sort order from display settings
+    const sortOrderRaw = s.sunburstDisplaySettings.sortOrder.value;
+    const sortOrder: string = (typeof sortOrderRaw === 'string'
+      ? sortOrderRaw
+      : (sortOrderRaw as { value?: string } | undefined)?.value) ?? 'descending';
+
     const hierarchy = d3.hierarchy<SunburstNode>(effectiveRoot)
-      .sum((d) => (d.children.length === 0 ? d.value : 0))
-      .sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
+      .sum((d) => (d.children.length === 0 ? d.value : 0));
+
+    // Apply sort order
+    if (sortOrder === 'descending') {
+      hierarchy.sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
+    } else if (sortOrder === 'ascending') {
+      hierarchy.sort((a, b) => (a.value ?? 0) - (b.value ?? 0));
+    }
+    // 'none' / data order: no sort applied
+
+    // Inner radius (percentage of outer radius) and start angle offset
+    const innerRadiusPx = (s.sunburstDisplaySettings.innerRadius.value / 100) * radius;
+    const startAngleRad = (s.sunburstDisplaySettings.startAngle.value / 360) * 2 * Math.PI;
 
     const partition = d3.partition<SunburstNode>()
       .size([2 * Math.PI, radius]);
@@ -327,10 +355,10 @@ export class SunburstChartVisual implements IVisual {
     const zoomTarget = this.zoomedNode ?? partitionedRoot;
     const xScale = d3.scaleLinear()
       .domain([zoomTarget.x0, zoomTarget.x1])
-      .range([0, 2 * Math.PI]);
+      .range([0 + startAngleRad, 2 * Math.PI + startAngleRad]);
     const yScale = d3.scaleLinear()
       .domain([zoomTarget.y0, radius])
-      .range([zoomTarget.y0 === 0 ? 0 : 20, radius]);
+      .range([zoomTarget.y0 === 0 ? innerRadiusPx : Math.max(20, innerRadiusPx), radius]);
 
     // ── SVG Setup ──────────────────────────────────────────────
     const svg = d3.select(this.container)
@@ -374,7 +402,8 @@ export class SunburstChartVisual implements IVisual {
       if (arcAngle < 0.001) continue;
 
       const nodeData = node.data;
-      const segColor = nodeData.color || getHostChartColor(this.host.colorPalette, 0);
+      const conditionalColor = this.getConditionalColor(node.value ?? 0);
+      const segColor = conditionalColor ?? (nodeData.color || getHostChartColor(this.host.colorPalette, 0, themeName));
       // Slightly lighten deeper rings for visual depth
       const opacity = Math.max(0.6, 1 - (node.depth - 1) * 0.12);
 
@@ -523,7 +552,9 @@ export class SunburstChartVisual implements IVisual {
       }
 
       // ── Labels (gated by both sunburst showLabels and shared showDataLabels) ──
-      if (s.sunburstSettings.showLabels.value && s.dataLabelFormattingCard.showDataLabels.value && arcAngle >= labelMinAngleRad) {
+      // Consolidate: local showLabels AND shared DataLabelFormattingCard.showDataLabels must both be true
+      const effectiveShowLabels = s.sunburstSettings.showLabels.value && s.dataLabelFormattingCard.showDataLabels.value;
+      if (effectiveShowLabels && arcAngle >= labelMinAngleRad) {
         const midAngle = (startAngle + endAngle) / 2;
         const labelRadius = (innerR + outerR) / 2;
         const labelX = labelRadius * Math.sin(midAngle);
@@ -532,6 +563,28 @@ export class SunburstChartVisual implements IVisual {
         // Only render label if there's enough radial space
         const radialSpace = outerR - innerR;
         if (radialSpace > 18) {
+          // Build label text — include percentage if enabled
+          const showPct = s.sunburstDisplaySettings.showPercentages.value;
+          const percentOfRaw = s.sunburstDisplaySettings.percentOf.value;
+          const percentOf: string = (typeof percentOfRaw === 'string'
+            ? percentOfRaw
+            : (percentOfRaw as { value?: string } | undefined)?.value) ?? 'parent';
+
+          let labelText = nodeData.name;
+          if (showPct && (node.value ?? 0) > 0) {
+            let baseValue: number;
+            if (percentOf === 'parent' && node.parent) {
+              baseValue = node.parent.value ?? 1;
+            } else {
+              // 'total' — use the full root value
+              baseValue = partitionedRoot.value ?? 1;
+            }
+            const pct = baseValue > 0
+              ? ((node.value ?? 0) / baseValue) * 100
+              : 0;
+            labelText = `${nodeData.name} (${pct.toFixed(1)}%)`;
+          }
+
           const labelEl = segGroup.append('text')
             .attr('class', 'sunburst-label')
             .attr('x', labelX)
@@ -540,7 +593,7 @@ export class SunburstChartVisual implements IVisual {
           if (labelColor) {
             labelEl.attr('fill', labelColor);
           }
-          labelEl.text(nodeData.name);
+          labelEl.text(labelText);
 
           // Rotate label to follow arc
           const angleDeg = (midAngle * 180) / Math.PI;
@@ -696,16 +749,56 @@ export class SunburstChartVisual implements IVisual {
     }
 
     // Apply shared data label formatting (font color, size, weight)
+    // Consolidated: local showLabels is ANDed with shared showDataLabels
     if (s.sunburstSettings.showLabels.value && s.dataLabelFormattingCard.showDataLabels.value) {
       applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.sunburst-label');
     }
 
     // Render legend at bottom (or left/right — fallback to bottom)
     if (showLegend && legendPos !== 'top') {
-      this.renderLegend(effectiveRoot.children);
+      this.renderSharedLegend(effectiveRoot.children);
     }
 
+    // Apply accessibility (keyboard nav + ARIA)
+    this.applyAccessibility(descendants.length);
+
     this.container.addEventListener('click', this.handleBackgroundClick);
+  }
+
+  // -- Conditional Formatting -------------------------------------------------
+
+  private getConditionalColor(value: number): string | undefined {
+    const cc = this.settings.conditionalFormattingCard;
+    if (!cc.enableConditional.value) return undefined;
+    const config = buildConditionalConfig(
+      true,
+      resolveDropdown(cc.conditionalDirection),
+      cc.threshold1.value,
+      cc.threshold2.value,
+      cc.conditionalColor1.value?.value,
+      cc.conditionalColor2.value?.value,
+      cc.conditionalColor3.value?.value,
+    );
+    return resolveConditionalColor(value, config);
+  }
+
+  // -- Accessibility ----------------------------------------------------------
+
+  private applyAccessibility(dataPointCount: number): void {
+    const acc = this.settings.accessibilityFormattingCard;
+    if (!acc.enableKeyboardNav.value) return;
+    ensureFocusRingStyles();
+    applyChartAria(this.container, {
+      chartType: 'sunburst chart',
+      title: this.settings.titleFormattingCard?.titleText?.value || undefined,
+      dataPointCount,
+    });
+    const cleanup = attachKeyboardNav({
+      container: this.container,
+      itemSelector: '.sunburst-segment',
+      onActivate: (el) => (el as HTMLElement).click?.(),
+    });
+    this.cancelAnimations.push(cleanup);
   }
 
   public getFormattingModel(): powerbi.visuals.FormattingModel {
@@ -796,49 +889,38 @@ export class SunburstChartVisual implements IVisual {
     }
   }
 
-  private renderLegend(level1Nodes: SunburstNode[]): void {
+  private renderSharedLegend(level1Nodes: SunburstNode[]): void {
     const legendFmtCard = this.settings.legendFormattingCard;
     const rawFontColor = legendFmtCard.legendFontColor.value?.value;
     const legendFontColor = rawFontColor != null && rawFontColor.length > 0 ? rawFontColor : '#475569';
     const legendFontSize = legendFmtCard.legendFontSize.value;
+    const legendPosRaw = legendFmtCard.legendPosition.value;
+    const legendPosStr = (typeof legendPosRaw === 'string'
+      ? legendPosRaw
+      : (legendPosRaw as { value?: string } | undefined)?.value) ?? 'bottom';
+    const validPositions = ['top', 'bottom', 'left', 'right'] as const;
+    const legendPosition: 'top' | 'bottom' | 'left' | 'right' =
+      (validPositions as readonly string[]).includes(legendPosStr)
+        ? (legendPosStr as 'top' | 'bottom' | 'left' | 'right')
+        : 'bottom';
+
+    const items: LegendItem[] = level1Nodes.map((node) => ({
+      label: node.name,
+      color: node.color,
+    }));
 
     const animEnabled = this.settings.animationSettings.enabled.value;
     const animDuration = animEnabled ? this.settings.animationSettings.duration.value : 0;
 
-    const legend = document.createElement('div');
-    legend.style.display = 'flex';
-    legend.style.justifyContent = 'center';
-    legend.style.gap = '16px';
-    legend.style.padding = '4px 0';
-    legend.style.flexWrap = 'wrap';
-
-    for (const node of level1Nodes) {
-      const item = document.createElement('div');
-      item.style.display = 'flex';
-      item.style.alignItems = 'center';
-      item.style.gap = '4px';
-
-      const swatch = document.createElement('div');
-      swatch.style.width = '10px';
-      swatch.style.height = '10px';
-      swatch.style.borderRadius = '2px';
-      swatch.style.backgroundColor = node.color;
-      swatch.style.flexShrink = '0';
-
-      const label = document.createElement('span');
-      label.style.fontSize = `${legendFontSize}px`;
-      label.style.color = legendFontColor;
-      label.textContent = node.name;
-
-      item.appendChild(swatch);
-      item.appendChild(label);
-      legend.appendChild(item);
-    }
-
-    this.container.appendChild(legend);
+    const legendEl = renderLegend(this.container, {
+      items,
+      position: legendPosition,
+      fontSize: legendFontSize,
+      fontColor: legendFontColor,
+    });
 
     if (animEnabled && animDuration > 0) {
-      const cancel = fadeSlideIn(legend, 'up', animDuration * 0.5, animDuration * 0.5);
+      const cancel = fadeSlideIn(legendEl, 'up', animDuration * 0.5, animDuration * 0.5);
       this.cancelAnimations.push(cancel);
     }
   }

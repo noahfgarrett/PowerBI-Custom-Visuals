@@ -5,7 +5,20 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, LineStrokeFormattingCard } from '../../core/src';
+import {
+  AxisFormattingCard,
+  DataLabelFormattingCard,
+  TitleFormattingCard,
+  LineStrokeFormattingCard,
+  ReferenceLineFormattingCard,
+  TrendLineFormattingCard,
+  ConditionalFormattingCard,
+  CrosshairFormattingCard,
+  AnnotationFormattingCard,
+  AccessibilityFormattingCard,
+  SeriesFormattingCard,
+} from '../../core/src';
+
 class SlopeSettings extends formattingSettings.SimpleCard {
   lineWidth = new formattingSettings.NumUpDown({
     name: 'lineWidth',
@@ -141,7 +154,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 class ChangeLabelSettings extends formattingSettings.SimpleCard {
@@ -208,6 +221,58 @@ class AnimationSettings extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
+// ── Slope Display Settings ──────────────────────────────────────────
+
+class SlopeDisplaySettingsCard extends formattingSettings.SimpleCard {
+  showPercentChange = new formattingSettings.ToggleSwitch({
+    name: 'showPercentChange',
+    displayName: 'Show Percentage Change Labels',
+    value: false,
+  });
+
+  sortByMagnitude = new formattingSettings.ToggleSwitch({
+    name: 'sortByMagnitude',
+    displayName: 'Sort by Change Magnitude',
+    value: false,
+  });
+
+  showConfidenceInterval = new formattingSettings.ToggleSwitch({
+    name: 'showConfidenceInterval',
+    displayName: 'Show Confidence Intervals',
+    value: false,
+  });
+
+  name = 'slopeDisplaySettings';
+  displayName = 'Slope Display';
+  slices = [this.showPercentChange, this.sortByMagnitude, this.showConfidenceInterval];
+}
+
+// ── Slope Threshold Settings ────────────────────────────────────────
+
+class SlopeThresholdSettingsCard extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Threshold Highlight',
+    value: false,
+  });
+
+  threshold = new formattingSettings.NumUpDown({
+    name: 'threshold',
+    displayName: 'Threshold Value',
+    value: 0,
+  });
+
+  glowColor = new formattingSettings.ColorPicker({
+    name: 'glowColor',
+    displayName: 'Glow Color',
+    value: { value: '#F59E0B' },
+  });
+
+  name = 'slopeThresholdSettings';
+  displayName = 'Threshold Highlight';
+  slices = [this.show, this.threshold, this.glowColor];
+}
+
 export class SlopeChartSettings extends formattingSettings.Model {
   slopeSettings = new SlopeSettings();
   columnSettings = new ColumnSettings();
@@ -215,13 +280,22 @@ export class SlopeChartSettings extends formattingSettings.Model {
   changeLabelSettings = new ChangeLabelSettings();
   animationSettings = new AnimationSettings();
 
+  // New feature cards
+  slopeDisplaySettings = new SlopeDisplaySettingsCard();
+  slopeThresholdSettings = new SlopeThresholdSettingsCard();
+
+  // Shared formatting cards from core
+  seriesFormattingCard = new SeriesFormattingCard();
   dataLabelFormattingCard = new DataLabelFormattingCard();
-
   titleFormattingCard = new TitleFormattingCard();
-
   lineStrokeFormattingCard = new LineStrokeFormattingCard();
-
   axisFormattingCard = new AxisFormattingCard();
+  referenceLineFormattingCard = new ReferenceLineFormattingCard();
+  trendLineFormattingCard = new TrendLineFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  crosshairFormattingCard = new CrosshairFormattingCard();
+  annotationFormattingCard = new AnnotationFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
 
   cards = [
     this.slopeSettings,
@@ -229,9 +303,18 @@ export class SlopeChartSettings extends formattingSettings.Model {
     this.changeLabelSettings,
     this.cardSettings,
     this.animationSettings,
+    this.slopeDisplaySettings,
+    this.slopeThresholdSettings,
+    this.seriesFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.lineStrokeFormattingCard,
     this.axisFormattingCard,
+    this.referenceLineFormattingCard,
+    this.trendLineFormattingCard,
+    this.conditionalFormattingCard,
+    this.crosshairFormattingCard,
+    this.annotationFormattingCard,
+    this.accessibilityFormattingCard,
   ];
 }

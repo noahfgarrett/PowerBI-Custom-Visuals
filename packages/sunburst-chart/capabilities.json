@@ -426,6 +426,156 @@
           "type": {
             "numeric": true
           }
+        },
+        "enableGlass": {
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "sunburstDisplaySettings": {
+      "displayName": "Sunburst Display",
+      "properties": {
+        "showPercentages": {
+          "displayName": "Show Percentages",
+          "type": {
+            "bool": true
+          }
+        },
+        "percentOf": {
+          "displayName": "Percent Of",
+          "type": {
+            "enumeration": [
+              {
+                "value": "parent",
+                "displayName": "Parent"
+              },
+              {
+                "value": "total",
+                "displayName": "Total"
+              }
+            ]
+          }
+        },
+        "innerRadius": {
+          "displayName": "Inner Radius",
+          "type": {
+            "numeric": true
+          }
+        },
+        "startAngle": {
+          "displayName": "Start Angle",
+          "type": {
+            "numeric": true
+          }
+        },
+        "sortOrder": {
+          "displayName": "Sort Order",
+          "type": {
+            "enumeration": [
+              {
+                "value": "descending",
+                "displayName": "Descending (largest first)"
+              },
+              {
+                "value": "ascending",
+                "displayName": "Ascending (smallest first)"
+              },
+              {
+                "value": "none",
+                "displayName": "Data Order"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "conditionalFormatting": {
+      "displayName": "Conditional Formatting",
+      "properties": {
+        "enableConditional": {
+          "displayName": "Enable Conditional Formatting",
+          "type": {
+            "bool": true
+          }
+        },
+        "conditionalDirection": {
+          "displayName": "Direction",
+          "type": {
+            "enumeration": [
+              {
+                "value": "ascending",
+                "displayName": "Ascending (Low = Bad)"
+              },
+              {
+                "value": "descending",
+                "displayName": "Descending (Low = Good)"
+              }
+            ]
+          }
+        },
+        "threshold1": {
+          "displayName": "Threshold 1",
+          "type": {
+            "numeric": true
+          }
+        },
+        "threshold2": {
+          "displayName": "Threshold 2",
+          "type": {
+            "numeric": true
+          }
+        },
+        "conditionalColor1": {
+          "displayName": "Color 1 (Bad)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "conditionalColor2": {
+          "displayName": "Color 2 (Warning)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "conditionalColor3": {
+          "displayName": "Color 3 (Good)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "accessibilityFormatting": {
+      "displayName": "Accessibility",
+      "properties": {
+        "enableKeyboardNav": {
+          "displayName": "Enable Keyboard Navigation",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "colorThemeFormatting": {
+      "properties": {
+        "colorTheme": {
+          "type": {
+            "text": true
+          }
         }
       }
     }

@@ -1,6 +1,6 @@
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard } from '../../core/src';
+import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard } from '../../core/src';
 class CalendarSettings extends formattingSettings.SimpleCard {
   cellSize = new formattingSettings.NumUpDown({
     name: 'cellSize',
@@ -148,6 +148,12 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
     value: true,
   });
 
+  backgroundColor = new formattingSettings.ColorPicker({
+    name: 'backgroundColor',
+    displayName: 'Background Color',
+    value: { value: '' },
+  });
+
   backgroundOpacity = new formattingSettings.NumUpDown({
     name: 'backgroundOpacity',
     displayName: 'Background Opacity (%)',
@@ -162,7 +168,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 class AnimationSettings extends formattingSettings.SimpleCard {
@@ -183,25 +189,106 @@ class AnimationSettings extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
+// -- Calendar Granularity Settings --------------------------------------------
+
+class CalendarGranularitySettings extends formattingSettings.SimpleCard {
+  granularity = new formattingSettings.ItemDropdown({
+    name: 'granularity',
+    displayName: 'Granularity',
+    items: [
+      { value: 'day', displayName: 'Day' },
+      { value: 'week', displayName: 'Week' },
+      { value: 'month', displayName: 'Month' },
+    ],
+    value: { value: 'day', displayName: 'Day' },
+  });
+
+  name = 'calendarGranularitySettings';
+  displayName = 'Granularity';
+  slices = [this.granularity];
+}
+
+// -- Calendar Streak Settings -------------------------------------------------
+
+class CalendarStreakSettings extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Streaks',
+    value: false,
+  });
+
+  threshold = new formattingSettings.NumUpDown({
+    name: 'threshold',
+    displayName: 'Streak Threshold',
+    value: 0,
+  });
+
+  name = 'calendarStreakSettings';
+  displayName = 'Streak Highlighting';
+  slices = [this.show, this.threshold];
+}
+
+// -- Calendar Scale Settings --------------------------------------------------
+
+class CalendarScaleSettings extends formattingSettings.SimpleCard {
+  colorMode = new formattingSettings.ItemDropdown({
+    name: 'colorMode',
+    displayName: 'Color Mode',
+    items: [
+      { value: 'continuous', displayName: 'Continuous' },
+      { value: 'discrete', displayName: 'Discrete' },
+    ],
+    value: { value: 'continuous', displayName: 'Continuous' },
+  });
+
+  bins = new formattingSettings.NumUpDown({
+    name: 'bins',
+    displayName: 'Discrete Bins',
+    value: 5,
+  });
+
+  weekStart = new formattingSettings.ItemDropdown({
+    name: 'weekStart',
+    displayName: 'Week Start Day',
+    items: [
+      { value: 'sunday', displayName: 'Sunday' },
+      { value: 'monday', displayName: 'Monday' },
+    ],
+    value: { value: 'monday', displayName: 'Monday' },
+  });
+
+  name = 'calendarScaleSettings';
+  displayName = 'Color Scale';
+  slices = [this.colorMode, this.bins, this.weekStart];
+}
+
 export class HeatmapCalendarSettings extends formattingSettings.Model {
   calendarSettings = new CalendarSettings();
   colorSettings = new ColorSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
+  calendarGranularitySettings = new CalendarGranularitySettings();
+  calendarStreakSettings = new CalendarStreakSettings();
+  calendarScaleSettings = new CalendarScaleSettings();
 
   dataLabelFormattingCard = new DataLabelFormattingCard();
-
   titleFormattingCard = new TitleFormattingCard();
-
   axisFormattingCard = new AxisFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
 
   cards = [
     this.calendarSettings,
     this.colorSettings,
     this.cardSettings,
     this.animationSettings,
+    this.calendarGranularitySettings,
+    this.calendarStreakSettings,
+    this.calendarScaleSettings,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.axisFormattingCard,
+    this.conditionalFormattingCard,
+    this.accessibilityFormattingCard,
   ];
 }

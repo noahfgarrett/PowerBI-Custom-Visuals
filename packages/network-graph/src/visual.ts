@@ -20,6 +20,14 @@ import {
   withOpacity,
   renderChartTitle,
   applyDataLabelFormatting,
+  applyChartAria,
+  applyDataPointAria,
+  attachKeyboardNav,
+  ensureFocusRingStyles,
+  resolveColorTheme,
+  buildConditionalConfig,
+  resolveConditionalColor,
+  resolveDropdown,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -202,6 +210,7 @@ export class NetworkGraphVisual implements IVisual {
   // ── Rendering ────────────────────────────────────────────────
 
   private render(data: NetworkData | null, viewport: powerbi.IViewport): void {
+    const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
     // Clear previous content
     this.container.removeEventListener('click', this.handleBackgroundClick);
     while (this.container.firstChild) {
@@ -217,7 +226,7 @@ export class NetworkGraphVisual implements IVisual {
       const glass = getGlassStyle({
         mode: 'light',
         opacity: s.cardSettings.backgroundOpacity.value / 100,
-        backgroundColor: ((s.cardSettings as any).backgroundColor?.value?.value ?? (s.cardSettings as any).bgColor?.value?.value),
+        backgroundColor: s.cardSettings.backgroundColor.value?.value,
         borderRadius: s.cardSettings.borderRadius.value,
       });
       this.container.style.background = glass.background;
@@ -239,6 +248,11 @@ export class NetworkGraphVisual implements IVisual {
     if (!data) {
       this.renderEmptyState();
       return;
+    }
+
+    // Search input for filtering/highlighting nodes
+    if (s.networkInteractionSettings.enableSearch.value) {
+      this.renderSearchInput(data);
     }
 
     const width = viewport.width;
@@ -290,6 +304,62 @@ export class NetworkGraphVisual implements IVisual {
     // Compute max weight for link width scaling
     const maxWeight = Math.max(1, ...simLinks.map((l) => l.weight));
 
+    // Compute degree (number of connections) per node for size-by-degree
+    const degreeMap = new Map<string, number>();
+    for (const link of simLinks) {
+      const srcId = typeof link.source === 'string' ? link.source : (link.source as GraphNode).id;
+      const tgtId = typeof link.target === 'string' ? link.target : (link.target as GraphNode).id;
+      degreeMap.set(srcId, (degreeMap.get(srcId) ?? 0) + 1);
+      degreeMap.set(tgtId, (degreeMap.get(tgtId) ?? 0) + 1);
+    }
+    const maxDegree = Math.max(1, ...Array.from(degreeMap.values()));
+
+    // Cluster detection: simple label propagation
+    const clusterMap = new Map<string, number>();
+    if (s.networkLayoutSettings.enableClustering.value) {
+      // Initialize each node as its own cluster
+      simNodes.forEach((n, i) => clusterMap.set(n.id, i));
+
+      // Build adjacency for clustering
+      const clusterAdj = new Map<string, string[]>();
+      for (const link of simLinks) {
+        const srcId = typeof link.source === 'string' ? link.source : (link.source as GraphNode).id;
+        const tgtId = typeof link.target === 'string' ? link.target : (link.target as GraphNode).id;
+        if (!clusterAdj.has(srcId)) clusterAdj.set(srcId, []);
+        if (!clusterAdj.has(tgtId)) clusterAdj.set(tgtId, []);
+        clusterAdj.get(srcId)!.push(tgtId);
+        clusterAdj.get(tgtId)!.push(srcId);
+      }
+
+      // Run label propagation for a few iterations
+      for (let iter = 0; iter < 10; iter++) {
+        let changed = false;
+        for (const node of simNodes) {
+          const neighbors = clusterAdj.get(node.id) ?? [];
+          if (neighbors.length === 0) continue;
+          // Find most common cluster among neighbors
+          const freq = new Map<number, number>();
+          for (const nbr of neighbors) {
+            const c = clusterMap.get(nbr) ?? 0;
+            freq.set(c, (freq.get(c) ?? 0) + 1);
+          }
+          let bestCluster = clusterMap.get(node.id) ?? 0;
+          let bestCount = 0;
+          for (const [c, count] of freq) {
+            if (count > bestCount) {
+              bestCount = count;
+              bestCluster = c;
+            }
+          }
+          if (bestCluster !== clusterMap.get(node.id)) {
+            clusterMap.set(node.id, bestCluster);
+            changed = true;
+          }
+        }
+        if (!changed) break;
+      }
+    }
+
     // Create link elements
     const linkGroup = g.append('g').attr('class', 'network-links');
     const linkOpacity = s.linkSettings.opacity.value / 100;
@@ -297,35 +367,111 @@ export class NetworkGraphVisual implements IVisual {
     const resolvedLinkColor = s.linkSettings.linkColor.value?.value || '#94A3B8';
     const resolvedLinkWidth = s.linkSettings.linkWidth.value;
 
-    const linkElements = linkGroup.selectAll<SVGLineElement, GraphLink>('.network-link')
-      .data(simLinks)
-      .join('line')
-      .attr('class', 'network-link')
-      .attr('data-source', (d) => String(typeof d.source === 'string' ? d.source : (d.source as GraphNode).id))
-      .attr('data-target', (d) => String(typeof d.target === 'string' ? d.target : (d.target as GraphNode).id))
-      .attr('stroke', resolvedLinkColor)
-      .attr('stroke-opacity', linkOpacity)
-      .attr('stroke-width', (d) => Math.max(1, (d.weight / maxWeight) * resolvedLinkWidth * 4))
-      .style('transition', 'opacity 0.15s ease');
+    // Link width by weight feature
+    const widthByWeight = s.networkLinkSettings.widthByWeight.value;
+    const linkMinWidth = s.networkLinkSettings.minWidth.value;
+    const linkMaxWidth = s.networkLinkSettings.maxWidth.value;
 
-    if (s.linkSettings.showArrows.value) {
-      linkElements.attr('marker-end', 'url(#network-arrowhead)');
+    const edgeBundling = s.networkLayoutSettings.edgeBundling.value;
+
+    const getLinkWidth = (d: GraphLink): number => {
+      if (widthByWeight) {
+        const normalized = d.weight / maxWeight;
+        return linkMinWidth + normalized * (linkMaxWidth - linkMinWidth);
+      }
+      return Math.max(1, (d.weight / maxWeight) * resolvedLinkWidth * 4);
+    };
+
+    // When edge bundling is enabled, use <path> elements with curved lines;
+    // otherwise use straight <line> elements.
+    let linkElements: d3.Selection<SVGLineElement, GraphLink, SVGGElement, unknown>;
+    let bundledLinkElements: d3.Selection<SVGPathElement, GraphLink, SVGGElement, unknown> | null = null;
+
+    if (edgeBundling) {
+      bundledLinkElements = linkGroup.selectAll<SVGPathElement, GraphLink>('.network-link')
+        .data(simLinks)
+        .join('path')
+        .attr('class', 'network-link')
+        .attr('data-source', (d) => String(typeof d.source === 'string' ? d.source : (d.source as GraphNode).id))
+        .attr('data-target', (d) => String(typeof d.target === 'string' ? d.target : (d.target as GraphNode).id))
+        .attr('stroke', resolvedLinkColor)
+        .attr('stroke-opacity', linkOpacity)
+        .attr('stroke-width', (d) => getLinkWidth(d))
+        .attr('fill', 'none')
+        .style('transition', 'opacity 0.15s ease');
+
+      if (s.linkSettings.showArrows.value) {
+        bundledLinkElements.attr('marker-end', 'url(#network-arrowhead)');
+      }
+
+      // Create a dummy line selection for type compatibility (empty)
+      linkElements = linkGroup.selectAll<SVGLineElement, GraphLink>('.network-link-dummy')
+        .data([] as GraphLink[])
+        .join('line');
+    } else {
+      linkElements = linkGroup.selectAll<SVGLineElement, GraphLink>('.network-link')
+        .data(simLinks)
+        .join('line')
+        .attr('class', 'network-link')
+        .attr('data-source', (d) => String(typeof d.source === 'string' ? d.source : (d.source as GraphNode).id))
+        .attr('data-target', (d) => String(typeof d.target === 'string' ? d.target : (d.target as GraphNode).id))
+        .attr('stroke', resolvedLinkColor)
+        .attr('stroke-opacity', linkOpacity)
+        .attr('stroke-width', (d) => getLinkWidth(d))
+        .style('transition', 'opacity 0.15s ease');
+
+      if (s.linkSettings.showArrows.value) {
+        linkElements.attr('marker-end', 'url(#network-arrowhead)');
+      }
     }
 
+    // Unified reference for all link elements (for hover/animation/conditional)
+    const allLinkElements = edgeBundling ? bundledLinkElements! : linkElements;
+
+    // Apply conditional formatting to links
+    allLinkElements.each((d: GraphLink, i: number, elements: ArrayLike<SVGElement>) => {
+      const condColor = this.getConditionalColor(d.weight);
+      if (condColor) {
+        d3.select(elements[i]).attr('stroke', condColor);
+      }
+    });
+
     // Create node elements
-    const nodeRadius = s.nodeSettings.nodeRadius.value;
+    const nodeRadius = s.nodeSettings.radius.value;
     const usePalette = s.colorSettings.useChartPalette.value;
+    const sizeByDegree = s.networkLayoutSettings.sizeByDegree.value;
+    const enableClustering = s.networkLayoutSettings.enableClustering.value;
     const nodeGroup = g.append('g').attr('class', 'network-nodes');
+
+    const getNodeRadius = (d: GraphNode): number => {
+      if (sizeByDegree) {
+        const degree = degreeMap.get(d.id) ?? 1;
+        const minR = nodeRadius * 0.5;
+        const maxR = nodeRadius * 2.5;
+        return minR + (degree / maxDegree) * (maxR - minR);
+      }
+      return nodeRadius;
+    };
+
+    const getNodeColor = (d: GraphNode, i: number): string => {
+      if (enableClustering) {
+        const cluster = clusterMap.get(d.id) ?? 0;
+        return usePalette
+          ? getHostChartColor(this.host.colorPalette, cluster, themeName)
+          : getChartColor(cluster, themeName);
+      }
+      return usePalette
+        ? getHostChartColor(this.host.colorPalette, i, themeName)
+        : getChartColor(i, themeName);
+    };
 
     const nodeElements = nodeGroup.selectAll<SVGCircleElement, GraphNode>('.network-node')
       .data(simNodes)
       .join('circle')
       .attr('class', 'network-node')
       .attr('data-node', (d) => d.id)
-      .attr('r', nodeRadius)
-      .attr('fill', (_d, i) => usePalette
-        ? getHostChartColor(this.host.colorPalette, i)
-        : getChartColor(i))
+      .attr('r', (d) => getNodeRadius(d))
+      .attr('fill', (d, i) => getNodeColor(d, i))
       .attr('stroke', s.nodeSettings.nodeBorderColor.value?.value || '#ffffff')
       .attr('stroke-width', s.nodeSettings.nodeBorderWidth.value)
       .style('cursor', 'pointer')
@@ -370,34 +516,58 @@ export class NetworkGraphVisual implements IVisual {
       .force('link', d3.forceLink<GraphNode, GraphLink>(simLinks)
         .id((d) => d.id)
         .distance(s.forceSettings.linkDistance.value)
+        .strength(s.forceSettings.strength.value)
       )
       .force('charge', d3.forceManyBody<GraphNode>()
         .strength(s.forceSettings.chargeStrength.value)
       )
-      .force('center', d3.forceCenter<GraphNode>(centerX, centerY))
-      .force('collide', d3.forceCollide<GraphNode>(nodeRadius + 2));
+      .force('center', d3.forceCenter<GraphNode>(centerX, centerY));
+
+    // Collision prevention (configurable)
+    if (s.networkLayoutSettings.enableCollision.value) {
+      simulation.force('collide', d3.forceCollide<GraphNode>((d) => getNodeRadius(d) + 2));
+    }
 
     this.simulation = simulation;
 
     // Tick handler: update SVG positions
     simulation.on('tick', () => {
-      linkElements
-        .attr('x1', (d) => {
+      if (edgeBundling && bundledLinkElements) {
+        // Edge bundling: route edges through curved paths bending toward center
+        bundledLinkElements.attr('d', (d) => {
           const src = d.source as GraphNode;
-          return src.x ?? 0;
-        })
-        .attr('y1', (d) => {
-          const src = d.source as GraphNode;
-          return src.y ?? 0;
-        })
-        .attr('x2', (d) => {
           const tgt = d.target as GraphNode;
-          return tgt.x ?? 0;
-        })
-        .attr('y2', (d) => {
-          const tgt = d.target as GraphNode;
-          return tgt.y ?? 0;
+          const sx = src.x ?? 0;
+          const sy = src.y ?? 0;
+          const tx = tgt.x ?? 0;
+          const ty = tgt.y ?? 0;
+          // Control point: midpoint between the two nodes pulled toward center
+          const mx = (sx + tx) / 2;
+          const my = (sy + ty) / 2;
+          const bundleFactor = 0.3; // How strongly to pull toward center
+          const cx = mx + (centerX - mx) * bundleFactor;
+          const cy = my + (centerY - my) * bundleFactor;
+          return `M${sx},${sy} Q${cx},${cy} ${tx},${ty}`;
         });
+      } else {
+        linkElements
+          .attr('x1', (d) => {
+            const src = d.source as GraphNode;
+            return src.x ?? 0;
+          })
+          .attr('y1', (d) => {
+            const src = d.source as GraphNode;
+            return src.y ?? 0;
+          })
+          .attr('x2', (d) => {
+            const tgt = d.target as GraphNode;
+            return tgt.x ?? 0;
+          })
+          .attr('y2', (d) => {
+            const tgt = d.target as GraphNode;
+            return tgt.y ?? 0;
+          });
+      }
 
       nodeElements
         .attr('cx', (d) => d.x ?? 0)
@@ -410,24 +580,26 @@ export class NetworkGraphVisual implements IVisual {
       }
     });
 
-    // Drag behavior
-    const dragBehavior = d3.drag<SVGCircleElement, GraphNode>()
-      .on('start', (event: d3.D3DragEvent<SVGCircleElement, GraphNode, GraphNode>, d) => {
-        if (!event.active) simulation.alphaTarget(0.3).restart();
-        d.fx = d.x;
-        d.fy = d.y;
-      })
-      .on('drag', (event: d3.D3DragEvent<SVGCircleElement, GraphNode, GraphNode>, d) => {
-        d.fx = event.x;
-        d.fy = event.y;
-      })
-      .on('end', (event: d3.D3DragEvent<SVGCircleElement, GraphNode, GraphNode>, d) => {
-        if (!event.active) simulation.alphaTarget(0);
-        d.fx = null;
-        d.fy = null;
-      });
+    // Drag behavior (configurable)
+    if (s.networkInteractionSettings.enableDrag.value) {
+      const dragBehavior = d3.drag<SVGCircleElement, GraphNode>()
+        .on('start', (event: d3.D3DragEvent<SVGCircleElement, GraphNode, GraphNode>, d) => {
+          if (!event.active) simulation.alphaTarget(0.3).restart();
+          d.fx = d.x;
+          d.fy = d.y;
+        })
+        .on('drag', (event: d3.D3DragEvent<SVGCircleElement, GraphNode, GraphNode>, d) => {
+          d.fx = event.x;
+          d.fy = event.y;
+        })
+        .on('end', (event: d3.D3DragEvent<SVGCircleElement, GraphNode, GraphNode>, d) => {
+          if (!event.active) simulation.alphaTarget(0);
+          d.fx = null;
+          d.fy = null;
+        });
 
-    nodeElements.call(dragBehavior);
+      nodeElements.call(dragBehavior);
+    }
 
     // ── Zoom & Pan ───────────────────────────────────────────────
 
@@ -453,6 +625,45 @@ export class NetworkGraphVisual implements IVisual {
     }
 
     // ── Node Hover Highlight/Dim ─────────────────────────────────
+
+    if (!s.networkInteractionSettings.highlightNeighbors.value) {
+      // Skip neighbor highlighting when disabled
+      // Entrance animations
+      if (s.animationSettings.enabled.value) {
+        this.animateEntrance(nodeElements, allLinkElements as unknown as d3.Selection<SVGElement, GraphLink, SVGGElement, unknown>, labelElements, s.animationSettings.duration.value);
+      }
+
+      // Apply shared formatting settings
+      applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.network-label');
+
+      // Accessibility
+      if (s.accessibilityFormattingCard.enableKeyboardNav.value) {
+        ensureFocusRingStyles();
+        applyChartAria(this.container, {
+          chartType: 'network-graph',
+          dataPointCount: simNodes.length,
+        });
+        nodeElements.each(function (d, i) {
+          applyDataPointAria(
+            this,
+            d.id,
+            String(degreeMap.get(d.id) ?? 0),
+            i,
+            simNodes.length,
+          );
+        });
+        attachKeyboardNav({
+          container: this.container,
+          itemSelector: '.network-node',
+          onActivate: (el) => {
+            (el as HTMLElement).click();
+          },
+        });
+      }
+
+      this.container.addEventListener('click', this.handleBackgroundClick);
+      return;
+    }
 
     // Build adjacency set for fast lookup: nodeId -> Set of connected nodeIds
     const adjacency = new Map<string, Set<string>>();
@@ -505,13 +716,117 @@ export class NetworkGraphVisual implements IVisual {
 
     // Entrance animations
     if (s.animationSettings.enabled.value) {
-      this.animateEntrance(nodeElements, linkElements, labelElements, s.animationSettings.duration.value);
+      this.animateEntrance(nodeElements, allLinkElements as unknown as d3.Selection<SVGElement, GraphLink, SVGGElement, unknown>, labelElements, s.animationSettings.duration.value);
     }
 
     // Apply shared formatting settings
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.network-label');
 
+    // Accessibility
+    if (s.accessibilityFormattingCard.enableKeyboardNav.value) {
+      ensureFocusRingStyles();
+      applyChartAria(this.container, {
+        chartType: 'network-graph',
+        dataPointCount: simNodes.length,
+      });
+      nodeElements.each(function (d, i) {
+        applyDataPointAria(
+          this,
+          d.id,
+          String(degreeMap.get(d.id) ?? 0),
+          i,
+          simNodes.length,
+        );
+      });
+      attachKeyboardNav({
+        container: this.container,
+        itemSelector: '.network-node',
+        onActivate: (el) => {
+          (el as HTMLElement).click();
+        },
+      });
+    }
+
     this.container.addEventListener('click', this.handleBackgroundClick);
+  }
+
+  private getConditionalColor(value: number): string | undefined {
+    const cc = this.settings.conditionalFormattingCard;
+    if (!cc.enableConditional.value) return undefined;
+    const config = buildConditionalConfig(
+      true,
+      resolveDropdown(cc.conditionalDirection),
+      cc.threshold1.value,
+      cc.threshold2.value,
+      cc.conditionalColor1.value?.value,
+      cc.conditionalColor2.value?.value,
+      cc.conditionalColor3.value?.value,
+    );
+    return resolveConditionalColor(value, config);
+  }
+
+  // ── Search Input ────────────────────────────────────────────
+
+  private renderSearchInput(data: NetworkData): void {
+    const wrapper = document.createElement('div');
+    wrapper.style.padding = '4px 8px';
+    wrapper.style.display = 'flex';
+    wrapper.style.gap = '4px';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Search nodes...';
+    input.style.flex = '1';
+    input.style.padding = '4px 8px';
+    input.style.border = '1px solid #CBD5E1';
+    input.style.borderRadius = '4px';
+    input.style.fontSize = '12px';
+    input.style.outline = 'none';
+    input.style.fontFamily = "'Segoe UI', sans-serif";
+
+    input.addEventListener('input', () => {
+      const query = input.value.toLowerCase().trim();
+      const svgEl = this.container.querySelector('svg');
+      if (!svgEl) return;
+
+      const allNodes = svgEl.querySelectorAll('.network-node');
+      const allLabels = svgEl.querySelectorAll('.network-label');
+      const allLinks = svgEl.querySelectorAll('.network-link');
+
+      if (query.length === 0) {
+        allNodes.forEach((el) => { (el as SVGElement).style.opacity = '1'; });
+        allLabels.forEach((el) => { (el as SVGElement).style.opacity = '1'; });
+        allLinks.forEach((el) => { (el as SVGElement).style.opacity = '1'; });
+        return;
+      }
+
+      const matchedIds = new Set<string>();
+      for (const node of data.nodes) {
+        if (node.id.toLowerCase().includes(query)) {
+          matchedIds.add(node.id);
+        }
+      }
+
+      allNodes.forEach((el) => {
+        const nodeId = el.getAttribute('data-node') ?? '';
+        (el as SVGElement).style.opacity = matchedIds.has(nodeId) ? '1' : '0.15';
+      });
+
+      allLabels.forEach((el) => {
+        const nodeId = el.getAttribute('data-node') ?? '';
+        (el as SVGElement).style.opacity = matchedIds.has(nodeId) ? '1' : '0.15';
+      });
+
+      allLinks.forEach((el) => {
+        const srcId = el.getAttribute('data-source') ?? '';
+        const tgtId = el.getAttribute('data-target') ?? '';
+        const connected = matchedIds.has(srcId) || matchedIds.has(tgtId);
+        (el as SVGElement).style.opacity = connected ? '1' : '0.08';
+      });
+    });
+
+    wrapper.appendChild(input);
+    this.container.appendChild(wrapper);
   }
 
   // ── Empty State ──────────────────────────────────────────────
@@ -527,7 +842,7 @@ export class NetworkGraphVisual implements IVisual {
 
   private animateEntrance(
     nodeElements: d3.Selection<SVGCircleElement, GraphNode, SVGGElement, unknown>,
-    linkElements: d3.Selection<SVGLineElement, GraphLink, SVGGElement, unknown>,
+    linkElements: d3.Selection<SVGElement, GraphLink, SVGGElement, unknown>,
     labelElements: d3.Selection<SVGTextElement, GraphNode, SVGGElement, unknown> | null,
     duration: number,
   ): void {

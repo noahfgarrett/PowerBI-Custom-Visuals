@@ -15,6 +15,11 @@ import {
   renderChartTitle,
   applyDataLabelFormatting,
   resolveDropdown,
+  applyChartAria,
+  attachKeyboardNav,
+  ensureFocusRingStyles,
+  buildConditionalConfig,
+  resolveConditionalColor,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -36,7 +41,8 @@ interface CalendarDatum {
 
 // ── Constants ────────────────────────────────────────────────────────
 
-const DAY_LABELS = ['Mon', '', 'Wed', '', 'Fri', '', ''];
+const DAY_LABELS_MONDAY = ['Mon', '', 'Wed', '', 'Fri', '', ''];
+const DAY_LABELS_SUNDAY = ['Sun', '', 'Tue', '', 'Thu', '', 'Sat'];
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 // ── Visual ───────────────────────────────────────────────────────────
@@ -68,6 +74,16 @@ export class HeatmapCalendarVisual implements IVisual {
         dataView,
       );
     }
+
+    // Hide inapplicable shared axis properties — heatmap-calendar only uses axisLabelColor and axisLabelSize
+    this.settings.axisFormattingCard.showXAxis.visible = false;
+    this.settings.axisFormattingCard.showYAxis.visible = false;
+    this.settings.axisFormattingCard.xAxisTitle.visible = false;
+    this.settings.axisFormattingCard.yAxisTitle.visible = false;
+    this.settings.axisFormattingCard.axisLabelFontFamily.visible = false;
+    this.settings.axisFormattingCard.axisLabelRotation.visible = false;
+    this.settings.axisFormattingCard.yAxisMin.visible = false;
+    this.settings.axisFormattingCard.yAxisMax.visible = false;
 
     const data = this.extractData(dataView);
     this.applyCardStyle();
@@ -128,7 +144,7 @@ export class HeatmapCalendarVisual implements IVisual {
       const glass = getGlassStyle({
         mode: 'light',
         opacity: s.backgroundOpacity.value / 100,
-        backgroundColor: ((s as any).backgroundColor?.value?.value ?? (s as any).bgColor?.value?.value),
+        backgroundColor: s.backgroundColor.value?.value,
         borderRadius: s.borderRadius.value,
       });
       Object.assign(this.container.style, glass);
@@ -180,6 +196,12 @@ export class HeatmapCalendarVisual implements IVisual {
     const animDuration = s.animationSettings.duration.value;
     const showDataLabels = s.dataLabelFormattingCard.showDataLabels.value;
 
+    // Granularity & scale settings
+    const granularity = resolveDropdown(s.calendarGranularitySettings.granularity) ?? 'day';
+    const colorMode = resolveDropdown(s.calendarScaleSettings.colorMode) ?? 'continuous';
+    const discreteBins = Math.max(2, s.calendarScaleSettings.bins.value);
+    const weekStart = resolveDropdown(s.calendarScaleSettings.weekStart) ?? 'monday';
+
     // Build date→value map
     const dateMap = new Map<string, number>();
     const selectionMap = new Map<string, ISelectionId>();
@@ -196,6 +218,44 @@ export class HeatmapCalendarVisual implements IVisual {
       }
       if (val < minVal) minVal = val;
       if (val > maxVal) maxVal = val;
+    }
+
+    // Aggregate by granularity (weekly or monthly)
+    if (granularity === 'week') {
+      const weekMap = new Map<string, number>();
+      for (const [key, val] of dateMap) {
+        const [y, m, d] = key.split('-').map(Number);
+        const date = new Date(y, m - 1, d);
+        // Get the start of the week
+        const dow = date.getDay();
+        const offset = weekStart === 'sunday' ? dow : (dow === 0 ? 6 : dow - 1);
+        const weekStartDate = new Date(date.getTime() - offset * 86400000);
+        const wKey = this.dateKey(weekStartDate);
+        weekMap.set(wKey, (weekMap.get(wKey) ?? 0) + val);
+      }
+      dateMap.clear();
+      minVal = Infinity;
+      maxVal = -Infinity;
+      for (const [key, val] of weekMap) {
+        dateMap.set(key, val);
+        if (val < minVal) minVal = val;
+        if (val > maxVal) maxVal = val;
+      }
+    } else if (granularity === 'month') {
+      const monthMap = new Map<string, number>();
+      for (const [key, val] of dateMap) {
+        const [y, m] = key.split('-').map(Number);
+        const mKey = `${y}-${String(m).padStart(2, '0')}-01`;
+        monthMap.set(mKey, (monthMap.get(mKey) ?? 0) + val);
+      }
+      dateMap.clear();
+      minVal = Infinity;
+      maxVal = -Infinity;
+      for (const [key, val] of monthMap) {
+        dateMap.set(key, val);
+        if (val < minVal) minVal = val;
+        if (val > maxVal) maxVal = val;
+      }
     }
 
     if (minVal === maxVal) {
@@ -231,7 +291,8 @@ export class HeatmapCalendarVisual implements IVisual {
       if (showDayLabels) {
         const dayCol = document.createElement('div');
         dayCol.className = 'heatmap-day-labels';
-        for (const label of DAY_LABELS) {
+        const dayLabels = weekStart === 'sunday' ? DAY_LABELS_SUNDAY : DAY_LABELS_MONDAY;
+        for (const label of dayLabels) {
           const dayEl = document.createElement('div');
           dayEl.style.height = `${cellSize}px`;
           dayEl.style.lineHeight = `${cellSize}px`;
@@ -259,15 +320,23 @@ export class HeatmapCalendarVisual implements IVisual {
       const startDate = new Date(year, 0, 1);
       const endDate = new Date(year, 11, 31);
 
-      // Move start to Monday of the week containing Jan 1
+      // Move start to the configured week-start day containing Jan 1
       const startDay = startDate.getDay();
-      const mondayOffset = startDay === 0 ? -6 : 1 - startDay;
-      const gridStart = new Date(year, 0, 1 + mondayOffset);
+      const weekStartDay = weekStart === 'sunday' ? 0 : 1;
+      let dayOffset: number;
+      if (weekStartDay === 1) {
+        // Monday start
+        dayOffset = startDay === 0 ? -6 : 1 - startDay;
+      } else {
+        // Sunday start
+        dayOffset = -startDay;
+      }
+      const gridStart = new Date(year, 0, 1 + dayOffset);
 
       let currentDate = new Date(gridStart);
       let lastMonthLabel = -1;
 
-      while (currentDate <= endDate || currentDate.getDay() !== 1) {
+      while (currentDate <= endDate || currentDate.getDay() !== weekStartDay) {
         // Build one week column (7 cells)
         const weekCol = document.createElement('div');
         weekCol.style.display = 'flex';
@@ -302,12 +371,26 @@ export class HeatmapCalendarVisual implements IVisual {
           }
 
           if (currentDate.getFullYear() === year) {
-            const key = this.dateKey(currentDate);
+            let key: string;
+            if (granularity === 'week') {
+              const dow = currentDate.getDay();
+              const offset = weekStart === 'sunday' ? dow : (dow === 0 ? 6 : dow - 1);
+              const weekStartDate = new Date(currentDate.getTime() - offset * 86400000);
+              key = this.dateKey(weekStartDate);
+            } else if (granularity === 'month') {
+              key = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-01`;
+            } else {
+              key = this.dateKey(currentDate);
+            }
             const val = dateMap.get(key);
 
             if (val !== undefined) {
               const t = maxVal !== minVal ? (val - minVal) / (maxVal - minVal) : 0.5;
-              cell.style.backgroundColor = interpolateColor(t);
+              const conditionalColor = this.getConditionalColor(val);
+              const baseColor = colorMode === 'discrete'
+                ? this.discretizeColor(t, discreteBins, interpolateColor)
+                : interpolateColor(t);
+              cell.style.backgroundColor = conditionalColor ?? baseColor;
               cell.title = `${this.formatDateStr(currentDate)}: ${formatNumber(val)}`;
               if (showDataLabels) {
                 const labelSpan = document.createElement('span');
@@ -347,7 +430,7 @@ export class HeatmapCalendarVisual implements IVisual {
         weeksContainer.appendChild(weekCol);
 
         // Break if we've passed the year
-        if (currentDate.getFullYear() > year && currentDate.getDay() === 1) break;
+        if (currentDate.getFullYear() > year && currentDate.getDay() === weekStartDay) break;
       }
 
       if (monthLabelRow) {
@@ -373,6 +456,11 @@ export class HeatmapCalendarVisual implements IVisual {
       const cancel = rippleFill(allCells, cols > 0 ? cols : 1, animDuration, 15, 'top-left');
       this.cancelAnimations.push(cancel);
     }
+    // ── Streak Highlighting ────────────────────────────────────────
+    if (s.calendarStreakSettings.show.value) {
+      this.applyStreakHighlighting(dateMap, selectionMap);
+    }
+
     this.applyAxisLabelFormatting();
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.heatmap-data-label');
     if (labelColor) {
@@ -384,6 +472,8 @@ export class HeatmapCalendarVisual implements IVisual {
         }
       }
     }
+
+    this.applyAccessibility();
     this.container.addEventListener('click', this.handleBackgroundClick);
   }
 
@@ -643,6 +733,93 @@ export class HeatmapCalendarVisual implements IVisual {
       cancel();
     }
     this.cancelAnimations = [];
+  }
+
+  // -- Streak Highlighting -----------------------------------------------------
+
+  /**
+   * Identifies consecutive days above the streak threshold and applies
+   * a CSS class for visual highlighting.
+   */
+  private applyStreakHighlighting(
+    dateMap: Map<string, number>,
+    selectionMap: Map<string, ISelectionId>,
+  ): void {
+    const streakSettings = this.settings.calendarStreakSettings;
+    if (!streakSettings.show.value) return;
+
+    const threshold = streakSettings.threshold.value;
+    const cells = this.container.querySelectorAll('.heatmap-cell');
+    for (const cell of cells) {
+      const cellEl = cell as HTMLElement;
+      const title = cellEl.title;
+      if (!title) continue;
+      // Cells with a value above the threshold get a streak border
+      const colonIdx = title.indexOf(':');
+      if (colonIdx < 0) continue;
+      const dateStr = title.slice(0, colonIdx).trim();
+      // We rely on the cell having a title like "Jan 5, 2024: 42"
+      // For simplicity, check all filled cells against their title
+      if (cellEl.style.backgroundColor && cellEl.style.backgroundColor !== this.settings.colorSettings.emptyColor.value?.value) {
+        // Parse value from the title text
+        const valStr = title.slice(colonIdx + 1).trim();
+        const val = parseFloat(valStr.replace(/,/g, ''));
+        if (!isNaN(val) && val > threshold) {
+          cellEl.style.outline = '2px solid #F59E0B';
+          cellEl.style.outlineOffset = '-1px';
+        }
+      }
+    }
+  }
+
+  // -- Discrete Color Bins ----------------------------------------------------
+
+  private discretizeColor(
+    t: number,
+    bins: number,
+    interpolateColor: (t: number) => string,
+  ): string {
+    if (bins <= 1) return interpolateColor(t);
+    const binIndex = Math.min(bins - 1, Math.floor(t * bins));
+    const binT = binIndex / (bins - 1);
+    return interpolateColor(binT);
+  }
+
+  // -- Conditional Formatting -------------------------------------------------
+
+  private getConditionalColor(value: number): string | undefined {
+    const cc = this.settings.conditionalFormattingCard;
+    if (!cc.enableConditional.value) return undefined;
+    const config = buildConditionalConfig(
+      true,
+      resolveDropdown(cc.conditionalDirection),
+      cc.threshold1.value,
+      cc.threshold2.value,
+      cc.conditionalColor1.value?.value,
+      cc.conditionalColor2.value?.value,
+      cc.conditionalColor3.value?.value,
+    );
+    return resolveConditionalColor(value, config);
+  }
+
+  // -- Accessibility ----------------------------------------------------------
+
+  private applyAccessibility(): void {
+    const a11y = this.settings.accessibilityFormattingCard;
+    if (a11y.enableKeyboardNav.value) {
+      ensureFocusRingStyles();
+      attachKeyboardNav({
+        container: this.container,
+        itemSelector: '.heatmap-cell',
+        onActivate: (el: Element) => {
+          (el as HTMLElement).click();
+        },
+      });
+    }
+    applyChartAria(this.container, {
+      chartType: 'heatmap calendar',
+      dataPointCount: this.container.querySelectorAll('.heatmap-cell').length,
+    });
   }
 
   public destroy(): void {

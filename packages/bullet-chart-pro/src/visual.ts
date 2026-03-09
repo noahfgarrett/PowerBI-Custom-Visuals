@@ -18,6 +18,20 @@ import {
   renderChartTitle,
   applyDataLabelFormatting,
   createScrollableChart,
+  resolveDropdown,
+  buildConditionalConfig,
+  resolveConditionalColor,
+  applyChartAria,
+  attachKeyboardNav,
+  ensureFocusRingStyles,
+  renderHorizontalReferenceLine,
+  computeStatValue,
+  type StatType,
+  renderTrendLine,
+  computeRegression,
+  type TrendType,
+  renderAnnotations,
+  buildAnnotationConfig,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -192,7 +206,7 @@ export class BulletChartProVisual implements IVisual {
       const glass = getGlassStyle({
         mode: 'light',
         opacity: s.backgroundOpacity.value / 100,
-        backgroundColor: ((s as any).backgroundColor?.value?.value ?? (s as any).bgColor?.value?.value),
+        backgroundColor: s.backgroundColor.value?.value,
         borderRadius: s.borderRadius.value,
       });
       Object.assign(this.container.style, glass);
@@ -231,6 +245,7 @@ export class BulletChartProVisual implements IVisual {
     const barHeight = Math.max(8, s.bulletSettings.barHeight.value);
     const showTarget = s.bulletSettings.showTarget.value;
     const showLabels = s.bulletSettings.showLabels.value;
+    const isVertical = (resolveDropdown(s.bulletLayout.orientation) ?? 'horizontal') === 'vertical';
 
     // Colors
     const poorColor = s.rangeSettings.poorColor.value?.value ?? '#FCA5A5';
@@ -246,9 +261,225 @@ export class BulletChartProVisual implements IVisual {
     const animEnabled = s.animationSettings.enabled.value;
     const animDuration = s.animationSettings.duration.value;
 
+    // Forecast settings
+    const showForecast = s.bulletForecast.show.value;
+    const forecastValue = s.bulletForecast.forecastValue.value;
+    const forecastBandWidth = s.bulletForecast.bandWidth.value;
+
+    // Comparison settings
+    const showComparative = s.bulletComparison.show.value;
+    const comparativeColor = s.bulletComparison.comparativeColor.value?.value ?? '#94A3B8';
+
     // Layout calculations
     const svgWidth = viewport.width - CONTAINER_PADDING * 2;
     const totalRows = data.items.length;
+
+    if (isVertical) {
+      // ── Vertical layout: columns side by side ─────────────────
+      const colWidth = barHeight + ROW_GAP;
+      const labelReserve = showLabels ? 20 : 0; // bottom labels
+      const valueLabelReserve = showLabels ? 20 : 0; // top value labels
+      const svgHeight = viewport.height - CONTAINER_PADDING * 2;
+      const chartTop = valueLabelReserve + 4;
+      const chartBottom = svgHeight - labelReserve - 4;
+      const chartHeight = Math.max(0, chartBottom - chartTop);
+      if (chartHeight <= 0) { this.renderEmpty(); return; }
+
+      const globalMax = d3.max(data.items, (d) =>
+        Math.max(d.good, d.value, d.target ?? 0),
+      ) ?? 100;
+
+      const yScale = d3.scaleLinear()
+        .domain([0, globalMax])
+        .range([chartBottom, chartTop])
+        .nice();
+
+      const scroll = createScrollableChart({
+        container: this.container,
+        viewportWidth: svgWidth,
+        viewportHeight: svgHeight,
+        categoryCount: totalRows,
+        scrollSettings: s.scrollFormattingCard,
+        availableChartWidth: svgWidth,
+        availableChartHeight: chartHeight,
+        direction: 'horizontal',
+        categoryPadding: ROW_GAP,
+      });
+
+      const svg = d3.select(scroll.svgParent)
+        .append('svg')
+        .attr('class', 'bullet-svg')
+        .attr('width', scroll.svgWidth)
+        .attr('height', svgHeight);
+
+      data.items.forEach((item, colIdx) => {
+        const colX = colIdx * colWidth + colWidth / 2;
+        const colGroup = svg.append('g')
+          .attr('transform', `translate(${colX},0)`);
+
+        // Category label (bottom)
+        if (showLabels) {
+          colGroup.append('text')
+            .attr('class', 'bullet-label')
+            .attr('x', 0)
+            .attr('y', chartBottom + 16)
+            .attr('text-anchor', 'middle')
+            .text(this.truncateLabel(item.label, colWidth - 4));
+        }
+
+        // Qualitative range rectangles (vertical)
+        const halfBar = barHeight / 2;
+        const poorY1 = yScale(item.poor);
+        const poorH = Math.max(0, yScale(0) - poorY1);
+        colGroup.append('rect')
+          .attr('class', 'bullet-range bullet-range-poor')
+          .attr('x', -halfBar).attr('y', poorY1)
+          .attr('width', barHeight).attr('height', poorH)
+          .attr('fill', withOpacity(poorColor, rangeOpacity))
+          .attr('rx', barCornerRadius).attr('ry', barCornerRadius);
+
+        const satY1 = yScale(item.satisfactory);
+        const satH = Math.max(0, yScale(item.poor) - satY1);
+        colGroup.append('rect')
+          .attr('class', 'bullet-range bullet-range-satisfactory')
+          .attr('x', -halfBar).attr('y', satY1)
+          .attr('width', barHeight).attr('height', satH)
+          .attr('fill', withOpacity(satColor, rangeOpacity))
+          .attr('rx', barCornerRadius).attr('ry', barCornerRadius);
+
+        const goodY1 = yScale(item.good);
+        const goodH = Math.max(0, yScale(item.satisfactory) - goodY1);
+        colGroup.append('rect')
+          .attr('class', 'bullet-range bullet-range-good')
+          .attr('x', -halfBar).attr('y', goodY1)
+          .attr('width', barHeight).attr('height', goodH)
+          .attr('fill', withOpacity(goodColor, rangeOpacity))
+          .attr('rx', barCornerRadius).attr('ry', barCornerRadius);
+
+        // Actual value bar (vertical — thin bar from bottom up)
+        const valBarWidth = barHeight * 0.4;
+        const valBarX = -valBarWidth / 2;
+        const valBarTop = yScale(item.value);
+        const valBarH = Math.max(0, yScale(0) - valBarTop);
+
+        const valueRect = colGroup.append('rect')
+          .attr('class', 'bullet-value-bar')
+          .attr('x', valBarX).attr('y', valBarTop)
+          .attr('width', valBarWidth).attr('height', valBarH)
+          .attr('fill', barColor)
+          .attr('rx', barCornerRadius).attr('ry', barCornerRadius);
+
+        this.attachTooltip(valueRect, item);
+        valueRect.style('cursor', 'pointer')
+          .on('click', (event: MouseEvent) => {
+            event.stopPropagation();
+            void this.selectionManager.select(item.selectionId, event.ctrlKey || event.metaKey);
+          })
+          .on('contextmenu', (event: MouseEvent) => {
+            event.preventDefault(); event.stopPropagation();
+            void this.selectionManager.showContextMenu(item.selectionId, { x: event.clientX, y: event.clientY });
+          });
+
+        if (animEnabled) {
+          const valueNode = valueRect.node();
+          if (valueNode) {
+            const delay = colIdx * DURATION.stagger;
+            const cancel = growBar(valueNode, delay, animDuration, 'vertical');
+            this.cancelAnimations.push(cancel);
+          }
+        }
+
+        // Target marker (horizontal line)
+        if (showTarget && item.target !== null) {
+          const targetY = yScale(item.target);
+          const markerGroup = colGroup.append('g').attr('class', 'bullet-target-group');
+          markerGroup.append('line')
+            .attr('class', 'bullet-target')
+            .attr('x1', -halfBar).attr('x2', halfBar)
+            .attr('y1', targetY).attr('y2', targetY)
+            .attr('stroke', barColor).attr('stroke-width', 2);
+          if (animEnabled) {
+            const markerNode = markerGroup.node();
+            if (markerNode) {
+              const delay = colIdx * DURATION.stagger + 200;
+              const cancel = fadeSlideIn(markerNode as unknown as HTMLElement, 'left', 300, delay);
+              this.cancelAnimations.push(cancel);
+            }
+          }
+        }
+
+        // Comparative marker
+        if (showComparative && item.target !== null) {
+          const compY = yScale(item.target);
+          colGroup.append('line')
+            .attr('class', 'bullet-comparative')
+            .attr('x1', -halfBar * 0.6).attr('x2', halfBar * 0.6)
+            .attr('y1', compY).attr('y2', compY)
+            .attr('stroke', comparativeColor).attr('stroke-width', 3);
+        }
+
+        // Forecast marker
+        if (showForecast && forecastValue > 0) {
+          const fcY = yScale(forecastValue);
+          const bandHalf = forecastBandWidth / 2;
+          colGroup.append('rect')
+            .attr('class', 'bullet-forecast-band')
+            .attr('x', -halfBar).attr('y', fcY - bandHalf)
+            .attr('width', barHeight).attr('height', forecastBandWidth)
+            .attr('fill', withOpacity('#6366F1', 0.2))
+            .style('pointer-events', 'none');
+          colGroup.append('line')
+            .attr('class', 'bullet-forecast')
+            .attr('x1', -halfBar).attr('x2', halfBar)
+            .attr('y1', fcY).attr('y2', fcY)
+            .attr('stroke', '#6366F1').attr('stroke-width', 2)
+            .attr('stroke-dasharray', '4,3');
+        }
+
+        // Conditional color override
+        const conditionalOverride = this.resolveConditionalBarColor(item.value);
+        if (conditionalOverride) { valueRect.attr('fill', conditionalOverride); }
+
+        // Value label (top)
+        if (showLabels) {
+          colGroup.append('text')
+            .attr('class', 'bullet-value-label')
+            .attr('x', 0).attr('y', valBarTop - 4)
+            .attr('text-anchor', 'middle')
+            .text(formatNumber(item.value, { abbreviate: true }));
+        }
+      });
+
+      // Shared formatting
+      applyDataLabelFormatting(this.container, s.dataLabelFormattingCard, '.bullet-value-label');
+      const axisSettings = s.axisFormattingCard;
+      const axisLabelColor = axisSettings.axisLabelColor.value?.value || '#64748B';
+      const axisLabelSize = axisSettings.axisLabelSize.value;
+      const labelEls = this.container.querySelectorAll<SVGTextElement>('.bullet-label');
+      for (const el of labelEls) {
+        el.style.setProperty('fill', axisLabelColor);
+        el.style.setProperty('font-size', `${axisLabelSize}px`);
+      }
+
+      const svgGroup = svg.append('g').attr('class', 'bullet-overlays');
+      const allValues = data.items.map((d) => d.value);
+      const xOverlayScale = d3.scaleLinear().domain([0, globalMax]).range([0, svgWidth]);
+      this.renderReferenceLine(svgGroup, yScale, svgWidth, allValues);
+      this.renderTrendLineOverlay(svgGroup, allValues, (idx: number) => {
+        return idx * colWidth + colWidth / 2;
+      }, yScale);
+      this.renderAnnotationOverlay(svgGroup, (category: string) => {
+        const idx = data.items.findIndex((d) => d.label === category);
+        if (idx < 0) return null;
+        const item = data.items[idx];
+        return { x: idx * colWidth + colWidth / 2, y: yScale(item.value) };
+      });
+      this.applyAccessibility(data);
+      this.container.addEventListener('click', this.handleBackgroundClick);
+      return;
+    }
+
+    // ── Horizontal layout (original) ────────────────────────────────
     const rowHeight = barHeight + ROW_GAP;
     const baseSvgHeight = Math.max(totalRows * rowHeight, barHeight);
 
@@ -276,6 +507,7 @@ export class BulletChartProVisual implements IVisual {
       availableChartWidth: chartWidth,
       availableChartHeight: viewport.height - CONTAINER_PADDING * 2,
       direction: 'vertical',
+      categoryPadding: ROW_GAP,
     });
     const svgHeight = scroll.isScrolling
       ? Math.max(totalRows * rowHeight, barHeight)
@@ -419,8 +651,6 @@ export class BulletChartProVisual implements IVisual {
         if (animEnabled) {
           const markerNode = markerGroup.node();
           if (markerNode) {
-            // Cast to HTMLElement since fadeSlideIn expects HTMLElement
-            // but SVGGElement has the same style property interface
             const delay = rowIdx * DURATION.stagger + 200;
             const cancel = fadeSlideIn(
               markerNode as unknown as HTMLElement,
@@ -431,6 +661,50 @@ export class BulletChartProVisual implements IVisual {
             this.cancelAnimations.push(cancel);
           }
         }
+      }
+
+      // ── Comparative marker ──────────────────────────────────────
+      if (showComparative && item.target !== null) {
+        const compX = xScale(item.target);
+        rowGroup.append('line')
+          .attr('class', 'bullet-comparative')
+          .attr('x1', compX)
+          .attr('x2', compX)
+          .attr('y1', barHeight * 0.15)
+          .attr('y2', barHeight * 0.85)
+          .attr('stroke', comparativeColor)
+          .attr('stroke-width', 3);
+      }
+
+      // ── Forecast marker + band ──────────────────────────────────
+      if (showForecast && forecastValue > 0) {
+        const fcX = xScale(forecastValue);
+        const bandHalf = forecastBandWidth / 2;
+        // Band rectangle
+        rowGroup.append('rect')
+          .attr('class', 'bullet-forecast-band')
+          .attr('x', fcX - bandHalf)
+          .attr('y', 0)
+          .attr('width', forecastBandWidth)
+          .attr('height', barHeight)
+          .attr('fill', withOpacity('#6366F1', 0.2))
+          .style('pointer-events', 'none');
+        // Forecast line
+        rowGroup.append('line')
+          .attr('class', 'bullet-forecast')
+          .attr('x1', fcX)
+          .attr('x2', fcX)
+          .attr('y1', 0)
+          .attr('y2', barHeight)
+          .attr('stroke', '#6366F1')
+          .attr('stroke-width', 2)
+          .attr('stroke-dasharray', '4,3');
+      }
+
+      // ── Conditional color override ───────────────────────────────
+      const conditionalOverride = this.resolveConditionalBarColor(item.value);
+      if (conditionalOverride) {
+        valueRect.attr('fill', conditionalOverride);
       }
 
       // ── Value label (right) ─────────────────────────────────────
@@ -457,6 +731,40 @@ export class BulletChartProVisual implements IVisual {
       el.style.setProperty('fill', axisLabelColor);
       el.style.setProperty('font-size', `${axisLabelSize}px`);
     }
+
+    // d3 selection for the SVG root group (shared overlay helpers)
+    const svgGroup = svg.append('g').attr('class', 'bullet-overlays');
+    const allValues = data.items.map((d) => d.value);
+
+    // Build a yScale for reference/trend overlays: maps data values → vertical pixel positions
+    const yScale = d3.scaleLinear().domain([0, globalMax]).range([svgHeight, 0]);
+
+    // Reference line
+    this.renderReferenceLine(svgGroup, yScale, svgWidth, allValues);
+
+    // Trend line
+    this.renderTrendLineOverlay(
+      svgGroup,
+      allValues,
+      (idx: number) => {
+        const item = data.items[idx];
+        return item ? xScale(item.value) : 0;
+      },
+      yScale,
+    );
+
+    // Annotations
+    this.renderAnnotationOverlay(svgGroup, (category: string) => {
+      const idx = data.items.findIndex((d) => d.label === category);
+      if (idx < 0) return null;
+      const item = data.items[idx];
+      const x = xScale(item.value);
+      const y = idx * rowHeight + barHeight / 2;
+      return { x, y };
+    });
+
+    // Accessibility
+    this.applyAccessibility(data);
 
     this.container.addEventListener('click', this.handleBackgroundClick);
   }
@@ -526,6 +834,141 @@ export class BulletChartProVisual implements IVisual {
   private handleBackgroundClick = (): void => {
     void this.selectionManager.clear();
   };
+
+  // ── Conditional Formatting ────────────────────────────────────────
+
+  private resolveConditionalBarColor(value: number): string | undefined {
+    const cc = this.settings.conditionalFormattingCard;
+    if (!cc.enableConditional.value) return undefined;
+
+    const config = buildConditionalConfig(
+      true,
+      resolveDropdown(cc.conditionalDirection),
+      cc.threshold1.value,
+      cc.threshold2.value,
+      cc.conditionalColor1.value?.value,
+      cc.conditionalColor2.value?.value,
+      cc.conditionalColor3.value?.value,
+    );
+    return resolveConditionalColor(value, config);
+  }
+
+  // ── Reference Line ──────────────────────────────────────────────
+
+  private renderReferenceLine(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    yScale: d3.ScaleLinear<number, number>,
+    chartWidth: number,
+    allValues: number[],
+  ): void {
+    const ref = this.settings.referenceLineFormattingCard;
+    if (!ref.showReferenceLine.value) return;
+
+    const refType = resolveDropdown(ref.referenceLineType) ?? 'custom';
+    let refValue = ref.referenceLineValue.value;
+
+    if (refType !== 'custom' && allValues.length > 0) {
+      refValue = computeStatValue(allValues, refType as StatType);
+    }
+
+    const refColor = ref.referenceLineColor.value?.value ?? '#EF4444';
+    const refStyle = resolveDropdown(ref.referenceLineStyle) ?? 'dashed';
+    const labelText = ref.referenceLabelText.value.length > 0
+      ? ref.referenceLabelText.value
+      : formatNumber(refValue, { abbreviate: true });
+
+    renderHorizontalReferenceLine(g, {
+      value: refValue,
+      yScale,
+      chartWidth,
+      lineColor: refColor,
+      lineWidth: ref.referenceLineWidth.value,
+      lineStyle: refStyle as 'solid' | 'dashed' | 'dotted',
+      showLabel: ref.showReferenceLabel.value,
+      labelText,
+      showBand: ref.showReferenceBand.value,
+      bandUpperValue: refValue * 1.1,
+      bandOpacity: ref.referenceBandOpacity.value / 100,
+    });
+  }
+
+  // ── Trend Line ──────────────────────────────────────────────────
+
+  private renderTrendLineOverlay(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    values: number[],
+    xScale: (index: number) => number,
+    yScale: d3.ScaleLinear<number, number>,
+  ): void {
+    const tl = this.settings.trendLineFormattingCard;
+    if (!tl.showTrendLine.value || values.length < 2) return;
+
+    const trendType = (resolveDropdown(tl.trendLineType) ?? 'linear') as TrendType;
+    const result = computeRegression(values, trendType, tl.polynomialOrder.value);
+    const trendColor = tl.trendLineColor.value?.value ?? '#6366F1';
+
+    renderTrendLine(g, {
+      predicted: result.predicted,
+      xScale,
+      yScale,
+      lineColor: trendColor,
+      lineWidth: tl.trendLineWidth.value,
+      showEquation: tl.showEquation.value,
+      showR2: tl.showR2.value,
+      equation: result.equation,
+      r2: result.r2,
+    });
+  }
+
+  // ── Annotations ─────────────────────────────────────────────────
+
+  private renderAnnotationOverlay(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    resolvePosition: (category: string) => { x: number; y: number } | null,
+  ): void {
+    const ann = this.settings.annotationFormattingCard;
+    if (!ann.showAnnotations.value) return;
+
+    const slots = [
+      { category: ann.annotation1Category.value, text: ann.annotation1Text.value, position: resolveDropdown(ann.annotation1Position) ?? 'above' },
+      { category: ann.annotation2Category.value, text: ann.annotation2Text.value, position: resolveDropdown(ann.annotation2Position) ?? 'above' },
+      { category: ann.annotation3Category.value, text: ann.annotation3Text.value, position: resolveDropdown(ann.annotation3Position) ?? 'above' },
+    ];
+
+    const config = buildAnnotationConfig(
+      true,
+      slots,
+      ann.annotationFontSize.value,
+      ann.annotationFontColor.value?.value || '#475569',
+      ann.annotationConnectorColor.value?.value || '#94A3B8',
+      resolvePosition,
+    );
+    if (config) renderAnnotations(g, config);
+  }
+
+  // ── Accessibility ───────────────────────────────────────────────
+
+  private applyAccessibility(data: BulletData): void {
+    const acc = this.settings.accessibilityFormattingCard;
+    if (!acc.enableKeyboardNav.value) return;
+
+    ensureFocusRingStyles();
+
+    applyChartAria(this.container, {
+      chartType: 'bullet chart',
+      title: this.settings.titleFormattingCard.titleText.value || undefined,
+      dataPointCount: data.items.length,
+    });
+
+    const cleanup = attachKeyboardNav({
+      container: this.container,
+      itemSelector: '.bullet-value-bar',
+      onActivate: (el) => {
+        (el as HTMLElement).click?.();
+      },
+    });
+    this.cancelAnimations.push(cleanup);
+  }
 
   // ── Formatting Model ──────────────────────────────────────────────
 

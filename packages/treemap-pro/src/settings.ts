@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { DataLabelFormattingCard, TitleFormattingCard } from '../../core/src';
+import { DataLabelFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard } from '../../core/src';
 // -- Treemap Layout Settings --------------------------------------------------
 
 class TreemapSettings extends formattingSettings.SimpleCard {
@@ -103,6 +103,12 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
     value: true,
   });
 
+  backgroundColor = new formattingSettings.ColorPicker({
+    name: 'backgroundColor',
+    displayName: 'Background Color',
+    value: { value: '' },
+  });
+
   backgroundOpacity = new formattingSettings.NumUpDown({
     name: 'backgroundOpacity',
     displayName: 'Background Opacity (%)',
@@ -117,7 +123,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 // -- Animation Settings -------------------------------------------------------
@@ -172,6 +178,72 @@ class DrillDownSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.showBreadcrumb, this.breadcrumbFontSize, this.breadcrumbColor];
 }
 
+// -- Heat Coloring Settings ---------------------------------------------------
+
+class TreemapHeatSettings extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Heat Coloring',
+    value: false,
+  });
+
+  startColor = new formattingSettings.ColorPicker({
+    name: 'startColor',
+    displayName: 'Start Color',
+    value: { value: '#E2E8F0' },
+  });
+
+  endColor = new formattingSettings.ColorPicker({
+    name: 'endColor',
+    displayName: 'End Color',
+    value: { value: '#EF4444' },
+  });
+
+  name = 'treemapHeatSettings';
+  displayName = 'Heat Coloring';
+  slices = [this.enabled, this.startColor, this.endColor];
+}
+
+// -- Treemap Display Settings -------------------------------------------------
+
+class TreemapDisplaySettings extends formattingSettings.SimpleCard {
+  showPercentage = new formattingSettings.ToggleSwitch({
+    name: 'showPercentage',
+    displayName: 'Show Percentage',
+    value: false,
+  });
+
+  percentOf = new formattingSettings.ItemDropdown({
+    name: 'percentOf',
+    displayName: 'Percent Of',
+    items: [
+      { value: 'total', displayName: 'Total' },
+      { value: 'parent', displayName: 'Parent' },
+    ],
+    value: { value: 'total', displayName: 'Total' },
+  });
+
+  labelOverflow = new formattingSettings.ItemDropdown({
+    name: 'labelOverflow',
+    displayName: 'Label Overflow',
+    items: [
+      { value: 'truncate', displayName: 'Truncate' },
+      { value: 'hide', displayName: 'Hide' },
+    ],
+    value: { value: 'truncate', displayName: 'Truncate' },
+  });
+
+  colorByDepth = new formattingSettings.ToggleSwitch({
+    name: 'colorByDepth',
+    displayName: 'Color Variation by Depth',
+    value: false,
+  });
+
+  name = 'treemapDisplaySettings';
+  displayName = 'Display';
+  slices = [this.showPercentage, this.percentOf, this.labelOverflow, this.colorByDepth];
+}
+
 // -- Root Model ---------------------------------------------------------------
 
 export class TreemapProSettings extends formattingSettings.Model {
@@ -180,20 +252,27 @@ export class TreemapProSettings extends formattingSettings.Model {
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettingsCard();
   drillDownSettings = new DrillDownSettingsCard();
+  treemapHeatSettings = new TreemapHeatSettings();
+  treemapDisplaySettings = new TreemapDisplaySettings();
 
   dataLabelFormattingCard = new DataLabelFormattingCard();
-
   titleFormattingCard = new TitleFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
 
-
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
   cards = [
     this.treemapSettings,
     this.colorSettings,
     this.cardSettings,
     this.animationSettings,
     this.drillDownSettings,
+    this.treemapHeatSettings,
+    this.treemapDisplaySettings,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
-
+    this.conditionalFormattingCard,
+    this.accessibilityFormattingCard,
+    this.colorThemeFormattingCard,
   ];
 }

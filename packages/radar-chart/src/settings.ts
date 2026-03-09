@@ -1,6 +1,7 @@
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard } from '../../core/src';
+import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard,
+  SeriesFormattingCard, } from '../../core/src';
 class RadarSettings extends formattingSettings.SimpleCard {
   showGrid = new formattingSettings.ToggleSwitch({ name: 'showGrid', displayName: 'Show Grid', value: true });
   gridLevels = new formattingSettings.NumUpDown({ name: 'gridLevels', displayName: 'Grid Levels', value: 5 });
@@ -44,13 +45,6 @@ class RadarSettings extends formattingSettings.SimpleCard {
   slices = [this.showGrid, this.gridLevels, this.gridShape, this.fillOpacity, this.showDots, this.dotRadius, this.webStrokeColor, this.webStrokeWidth, this.webFillOpacity, this.areaOpacity];
 }
 
-class LegendSettings extends formattingSettings.SimpleCard {
-  show = new formattingSettings.ToggleSwitch({ name: 'show', displayName: 'Show Legend', value: true });
-  name = 'legendSettings';
-  displayName = 'Legend';
-  slices = [this.show];
-}
-
 class ColorSettings extends formattingSettings.SimpleCard {
   useChartPalette = new formattingSettings.ToggleSwitch({ name: 'useChartPalette', displayName: 'Use Chart Palette', value: true });
   name = 'colorSettings';
@@ -60,11 +54,12 @@ class ColorSettings extends formattingSettings.SimpleCard {
 
 class CardStyleSettings extends formattingSettings.SimpleCard {
   enableGlass = new formattingSettings.ToggleSwitch({ name: 'enableGlass', displayName: 'Glass Effect', value: true });
+  backgroundColor = new formattingSettings.ColorPicker({ name: 'backgroundColor', displayName: 'Background Color', value: { value: '' } });
   backgroundOpacity = new formattingSettings.NumUpDown({ name: 'backgroundOpacity', displayName: 'Background Opacity (%)', value: 35 });
   borderRadius = new formattingSettings.NumUpDown({ name: 'borderRadius', displayName: 'Border Radius', value: 12 });
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 class AnimationSettings extends formattingSettings.SimpleCard {
@@ -75,18 +70,109 @@ class AnimationSettings extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
+// -- Radar Benchmark Settings -------------------------------------------------
+
+class RadarBenchmarkSettings extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Benchmark',
+    value: false,
+  });
+
+  dashPattern = new formattingSettings.ItemDropdown({
+    name: 'dashPattern',
+    displayName: 'Dash Pattern',
+    items: [
+      { value: 'solid', displayName: 'Solid' },
+      { value: 'dashed', displayName: 'Dashed' },
+      { value: 'dotted', displayName: 'Dotted' },
+    ],
+    value: { value: 'dashed', displayName: 'Dashed' },
+  });
+
+  color = new formattingSettings.ColorPicker({
+    name: 'color',
+    displayName: 'Benchmark Color',
+    value: { value: '#94A3B8' },
+  });
+
+  name = 'radarBenchmarkSettings';
+  displayName = 'Benchmark';
+  slices = [this.show, this.dashPattern, this.color];
+}
+
+// -- Radar Display Settings ---------------------------------------------------
+
+class RadarDisplaySettings extends formattingSettings.SimpleCard {
+  showAxisValues = new formattingSettings.ToggleSwitch({
+    name: 'showAxisValues',
+    displayName: 'Show Axis Values',
+    value: false,
+  });
+
+  startAngle = new formattingSettings.NumUpDown({
+    name: 'startAngle',
+    displayName: 'Start Angle (degrees)',
+    value: 0,
+  });
+
+  independentScales = new formattingSettings.ToggleSwitch({
+    name: 'independentScales',
+    displayName: 'Independent Axis Scales',
+    value: false,
+  });
+
+  name = 'radarDisplaySettings';
+  displayName = 'Radar Display';
+  slices = [this.showAxisValues, this.startAngle, this.independentScales];
+}
+
+// -- Radar Interaction Settings -----------------------------------------------
+
+class RadarInteractionSettings extends formattingSettings.SimpleCard {
+  hoverDim = new formattingSettings.ToggleSwitch({
+    name: 'hoverDim',
+    displayName: 'Dim on Hover',
+    value: false,
+  });
+
+  name = 'radarInteractionSettings';
+  displayName = 'Interaction';
+  slices = [this.hoverDim];
+}
+
 export class RadarChartSettings extends formattingSettings.Model {
   radarSettings = new RadarSettings();
-  legendSettings = new LegendSettings();
   colorSettings = new ColorSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
+  radarBenchmarkSettings = new RadarBenchmarkSettings();
+  radarDisplaySettings = new RadarDisplaySettings();
+  radarInteractionSettings = new RadarInteractionSettings();
   axisFormattingCard = new AxisFormattingCard();
   legendFormattingCard = new LegendFormattingCard();
   dataLabelFormattingCard = new DataLabelFormattingCard();
   titleFormattingCard = new TitleFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
 
-  cards = [this.radarSettings, this.legendSettings, this.colorSettings,
- this.cardSettings,
-    this.animationSettings, this.axisFormattingCard, this.legendFormattingCard, this.dataLabelFormattingCard, this.titleFormattingCard];
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
+  seriesFormattingCard = new SeriesFormattingCard();
+  cards = [
+    this.radarSettings,
+    this.colorSettings,
+    this.cardSettings,
+    this.animationSettings,
+    this.radarBenchmarkSettings,
+    this.radarDisplaySettings,
+    this.radarInteractionSettings,
+    this.axisFormattingCard,
+    this.legendFormattingCard,
+    this.dataLabelFormattingCard,
+    this.titleFormattingCard,
+    this.conditionalFormattingCard,
+    this.accessibilityFormattingCard,
+    this.seriesFormattingCard,
+    this.colorThemeFormattingCard,
+  ];
 }

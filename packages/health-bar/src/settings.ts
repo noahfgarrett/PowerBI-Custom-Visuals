@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, SortFormattingCard} from '../../core/src';
+import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, SortFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AnnotationFormattingCard, AccessibilityFormattingCard } from '../../core/src';
 
 // -- Health Bar Settings ------------------------------------------------------
 
@@ -180,7 +180,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 // -- Animation Settings -------------------------------------------------------
@@ -235,6 +235,61 @@ class CategoryLabelSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.show, this.fontSize, this.fontColor];
 }
 
+// -- Health Bar Zone Settings -------------------------------------------------
+
+class HealthBarZoneSettings extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Zone Background',
+    value: false,
+  });
+
+  zoneColors = new formattingSettings.TextInput({
+    name: 'zoneColors',
+    displayName: 'Zone Colors (CSV)',
+    value: '#EF4444,#F59E0B,#22C55E',
+    placeholder: '#EF4444,#F59E0B,#22C55E',
+  });
+
+  name = 'healthBarZone';
+  displayName = 'Zone Background';
+  slices = [this.show, this.zoneColors];
+}
+
+// -- Health Bar Scale Settings ------------------------------------------------
+
+class HealthBarScaleSettings extends formattingSettings.SimpleCard {
+  minValue = new formattingSettings.NumUpDown({
+    name: 'minValue',
+    displayName: 'Min Value',
+    value: 0,
+  });
+
+  name = 'healthBarScale';
+  displayName = 'Scale';
+  slices = [this.minValue];
+}
+
+// -- Health Bar Value Position Settings ---------------------------------------
+
+class HealthBarValuePositionSettings extends formattingSettings.SimpleCard {
+  position = new formattingSettings.ItemDropdown({
+    name: 'position',
+    displayName: 'Value Position',
+    items: [
+      { value: 'above', displayName: 'Above' },
+      { value: 'inside', displayName: 'Inside' },
+      { value: 'end', displayName: 'End' },
+      { value: 'right', displayName: 'Right' },
+    ],
+    value: { value: 'above', displayName: 'Above' },
+  });
+
+  name = 'healthBarValuePosition';
+  displayName = 'Value Position';
+  slices = [this.position];
+}
+
 // -- Root Model ---------------------------------------------------------------
 
 export class HealthBarSettings extends formattingSettings.Model {
@@ -252,6 +307,16 @@ export class HealthBarSettings extends formattingSettings.Model {
 
   sortFormattingCard = new SortFormattingCard();
 
+  referenceLineFormattingCard = new ReferenceLineFormattingCard();
+  trendLineFormattingCard = new TrendLineFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  annotationFormattingCard = new AnnotationFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
+
+  healthBarZone = new HealthBarZoneSettings();
+  healthBarScale = new HealthBarScaleSettings();
+  healthBarValuePosition = new HealthBarValuePositionSettings();
+
   cards = [
     this.healthBarSettings,
     this.colorSettings,
@@ -264,5 +329,13 @@ export class HealthBarSettings extends formattingSettings.Model {
     this.titleFormattingCard,
     this.scrollFormattingCard,
     this.sortFormattingCard,
+    this.referenceLineFormattingCard,
+    this.trendLineFormattingCard,
+    this.conditionalFormattingCard,
+    this.annotationFormattingCard,
+    this.accessibilityFormattingCard,
+    this.healthBarZone,
+    this.healthBarScale,
+    this.healthBarValuePosition,
   ];
 }

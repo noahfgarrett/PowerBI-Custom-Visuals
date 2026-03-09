@@ -5,92 +5,23 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, LineStrokeFormattingCard, ScrollFormattingCard, NumberFormattingCard} from '../../core/src';
-
-// ── Reference Line Settings ─────────────────────────────────────────
-
-class ReferenceLineSettingsCard extends formattingSettings.SimpleCard {
-  show = new formattingSettings.ToggleSwitch({
-    name: 'show',
-    displayName: 'Show Reference Line',
-    value: false,
-  });
-
-  value = new formattingSettings.NumUpDown({
-    name: 'value',
-    displayName: 'Value',
-    value: 0,
-  });
-
-  lineColor = new formattingSettings.ColorPicker({
-    name: 'lineColor',
-    displayName: 'Line Color',
-    value: { value: '#EF4444' },
-  });
-
-  lineWidth = new formattingSettings.NumUpDown({
-    name: 'lineWidth',
-    displayName: 'Line Width',
-    value: 2,
-  });
-
-  lineStyle = new formattingSettings.ItemDropdown({
-    name: 'lineStyle',
-    displayName: 'Line Style',
-    items: [
-      { value: 'solid', displayName: 'Solid' },
-      { value: 'dashed', displayName: 'Dashed' },
-      { value: 'dotted', displayName: 'Dotted' },
-    ],
-    value: { value: 'dashed', displayName: 'Dashed' },
-  });
-
-  showLabel = new formattingSettings.ToggleSwitch({
-    name: 'showLabel',
-    displayName: 'Show Label',
-    value: true,
-  });
-
-  labelText = new formattingSettings.TextInput({
-    name: 'labelText',
-    displayName: 'Label Text',
-    value: '',
-    placeholder: 'Custom label (blank = value)',
-  });
-
-  showBand = new formattingSettings.ToggleSwitch({
-    name: 'showBand',
-    displayName: 'Show Band',
-    value: false,
-  });
-
-  bandUpperValue = new formattingSettings.NumUpDown({
-    name: 'bandUpperValue',
-    displayName: 'Band Upper Value',
-    value: 0,
-  });
-
-  bandOpacity = new formattingSettings.NumUpDown({
-    name: 'bandOpacity',
-    displayName: 'Band Opacity (%)',
-    value: 15,
-  });
-
-  name = 'referenceLineSettings';
-  displayName = 'Reference Line';
-  slices = [
-    this.show,
-    this.value,
-    this.lineColor,
-    this.lineWidth,
-    this.lineStyle,
-    this.showLabel,
-    this.labelText,
-    this.showBand,
-    this.bandUpperValue,
-    this.bandOpacity,
-  ];
-}
+import {
+  AxisFormattingCard,
+  LegendFormattingCard,
+  DataLabelFormattingCard,
+  TitleFormattingCard,
+  LineStrokeFormattingCard,
+  ScrollFormattingCard,
+  NumberFormattingCard,
+  ReferenceLineFormattingCard,
+  TrendLineFormattingCard,
+  ConditionalFormattingCard,
+  CrosshairFormattingCard,
+  AnnotationFormattingCard,
+  AccessibilityFormattingCard,
+  SeriesFormattingCard,
+  ColorThemeFormattingCard,
+} from '../../core/src';
 
 // ── Line Settings ────────────────────────────────────────────────────
 
@@ -207,31 +138,6 @@ class AxisSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.showXAxis, this.showYAxis, this.gridLines];
 }
 
-// ── Legend Settings ──────────────────────────────────────────────────
-
-class LegendSettingsCard extends formattingSettings.SimpleCard {
-  show = new formattingSettings.ToggleSwitch({
-    name: 'show',
-    displayName: 'Show Legend',
-    value: true,
-  });
-
-  position = new formattingSettings.ItemDropdown({
-    name: 'position',
-    displayName: 'Position',
-    items: [
-      { value: 'top', displayName: 'Top' },
-      { value: 'bottom', displayName: 'Bottom' },
-      { value: 'left', displayName: 'Left' },
-      { value: 'right', displayName: 'Right' },
-    ],
-    value: { value: 'top', displayName: 'Top' },
-  });
-
-  name = 'legendSettings';
-  displayName = 'Legend';
-  slices = [this.show, this.position];
-}
 
 // ── Card Style ───────────────────────────────────────────────────────
 
@@ -242,14 +148,14 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
     value: true,
   });
 
-  bgColor = new formattingSettings.ColorPicker({
-    name: 'bgColor',
+  backgroundColor = new formattingSettings.ColorPicker({
+    name: 'backgroundColor',
     displayName: 'Background Color',
     value: { value: '' },
   });
 
-  bgOpacity = new formattingSettings.NumUpDown({
-    name: 'bgOpacity',
+  backgroundOpacity = new formattingSettings.NumUpDown({
+    name: 'backgroundOpacity',
     displayName: 'Background Opacity (%)',
     value: 35,
   });
@@ -262,7 +168,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.bgColor, this.bgOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 // ── Animation Settings ──────────────────────────────────────────────
@@ -285,46 +191,132 @@ class AnimationSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
-// ── Crosshair Settings ──────────────────────────────────────────────
+// ── Area Forecast Settings ──────────────────────────────────────────
 
-class CrosshairSettingsCard extends formattingSettings.SimpleCard {
+class AreaForecastSettingsCard extends formattingSettings.SimpleCard {
   show = new formattingSettings.ToggleSwitch({
     name: 'show',
-    displayName: 'Show Crosshair',
-    value: true,
+    displayName: 'Show Forecast Zone',
+    value: false,
   });
 
-  lineColor = new formattingSettings.ColorPicker({
-    name: 'lineColor',
-    displayName: 'Line Color',
-    value: { value: '#94A3B8' },
+  periods = new formattingSettings.NumUpDown({
+    name: 'periods',
+    displayName: 'Forecast Periods',
+    value: 3,
   });
 
-  lineWidth = new formattingSettings.NumUpDown({
-    name: 'lineWidth',
-    displayName: 'Line Width',
-    value: 1,
+  opacity = new formattingSettings.NumUpDown({
+    name: 'opacity',
+    displayName: 'Confidence Band Opacity (%)',
+    value: 20,
   });
 
-  lineStyle = new formattingSettings.ItemDropdown({
-    name: 'lineStyle',
-    displayName: 'Line Style',
+  name = 'areaForecastSettings';
+  displayName = 'Forecast / Projection';
+  slices = [this.show, this.periods, this.opacity];
+}
+
+// ── Area Stack Settings ─────────────────────────────────────────────
+
+class AreaStackSettingsCard extends formattingSettings.SimpleCard {
+  mode = new formattingSettings.ItemDropdown({
+    name: 'mode',
+    displayName: 'Stack Mode',
     items: [
-      { value: 'solid', displayName: 'Solid' },
-      { value: 'dashed', displayName: 'Dashed' },
+      { value: 'normal', displayName: 'Normal (Overlapping)' },
+      { value: 'stacked', displayName: 'Stacked' },
+      { value: 'stacked100', displayName: '100% Stacked' },
     ],
-    value: { value: 'dashed', displayName: 'Dashed' },
+    value: { value: 'normal', displayName: 'Normal (Overlapping)' },
   });
 
-  showValues = new formattingSettings.ToggleSwitch({
-    name: 'showValues',
-    displayName: 'Show Values',
-    value: true,
+  name = 'areaStackSettings';
+  displayName = 'Area Stacking';
+  slices = [this.mode];
+}
+
+// ── Area Gap Handling Settings ──────────────────────────────────────
+
+class AreaGapSettingsCard extends formattingSettings.SimpleCard {
+  nullHandling = new formattingSettings.ItemDropdown({
+    name: 'nullHandling',
+    displayName: 'Null / Gap Handling',
+    items: [
+      { value: 'skip', displayName: 'Skip (Leave Gap)' },
+      { value: 'connect', displayName: 'Connect Adjacent' },
+      { value: 'interpolate', displayName: 'Interpolate' },
+    ],
+    value: { value: 'skip', displayName: 'Skip (Leave Gap)' },
   });
 
-  name = 'crosshairSettings';
-  displayName = 'Crosshair';
-  slices = [this.show, this.lineColor, this.lineWidth, this.lineStyle, this.showValues];
+  name = 'areaGapSettings';
+  displayName = 'Gap Handling';
+  slices = [this.nullHandling];
+}
+
+// ── Area Threshold Settings ─────────────────────────────────────────
+
+class AreaThresholdSettingsCard extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Threshold Zone',
+    value: false,
+  });
+
+  threshold = new formattingSettings.NumUpDown({
+    name: 'threshold',
+    displayName: 'Threshold Value',
+    value: 0,
+  });
+
+  aboveColor = new formattingSettings.ColorPicker({
+    name: 'aboveColor',
+    displayName: 'Above Color',
+    value: { value: '#22C55E' },
+  });
+
+  belowColor = new formattingSettings.ColorPicker({
+    name: 'belowColor',
+    displayName: 'Below Color',
+    value: { value: '#EF4444' },
+  });
+
+  name = 'areaThresholdSettings';
+  displayName = 'Threshold Zone';
+  slices = [this.show, this.threshold, this.aboveColor, this.belowColor];
+}
+
+// ── Brush / Zoom Settings ──────────────────────────────────────────
+
+class BrushSettingsCard extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Brush/Zoom',
+    value: false,
+  });
+
+  contextHeight = new formattingSettings.NumUpDown({
+    name: 'contextHeight',
+    displayName: 'Context Height (px)',
+    value: 60,
+  });
+
+  brushColor = new formattingSettings.ColorPicker({
+    name: 'brushColor',
+    displayName: 'Brush Color',
+    value: { value: '#3B82F6' },
+  });
+
+  brushOpacity = new formattingSettings.NumUpDown({
+    name: 'brushOpacity',
+    displayName: 'Brush Opacity (%)',
+    value: 30,
+  });
+
+  name = 'brushSettings';
+  displayName = 'Brush / Zoom';
+  slices = [this.enabled, this.contextHeight, this.brushColor, this.brushOpacity];
 }
 
 // ── Root Model ───────────────────────────────────────────────────────
@@ -333,39 +325,49 @@ export class MorphingAreaChartSettings extends formattingSettings.Model {
   lineSettings = new LineSettingsCard();
   areaSettings = new AreaSettingsCard();
   axisSettings = new AxisSettingsCard();
-  legendSettings = new LegendSettingsCard();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettingsCard();
 
+  // New feature cards
+  areaForecastSettings = new AreaForecastSettingsCard();
+  areaStackSettings = new AreaStackSettingsCard();
+  areaGapSettings = new AreaGapSettingsCard();
+  areaThresholdSettings = new AreaThresholdSettingsCard();
+  brushSettings = new BrushSettingsCard();
+
+  // Shared formatting cards from core
   axisFormattingCard = new AxisFormattingCard();
-
   legendFormattingCard = new LegendFormattingCard();
-
   dataLabelFormattingCard = new DataLabelFormattingCard();
-
   titleFormattingCard = new TitleFormattingCard();
-
   lineStrokeFormattingCard = new LineStrokeFormattingCard();
-
   scrollFormattingCard = new ScrollFormattingCard();
+  numberFormattingCard = new NumberFormattingCard();
+  referenceLineFormattingCard = new ReferenceLineFormattingCard();
+  trendLineFormattingCard = new TrendLineFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  crosshairFormattingCard = new CrosshairFormattingCard();
+  annotationFormattingCard = new AnnotationFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
+  seriesFormattingCard = new SeriesFormattingCard();
 
   constructor() {
     super();
     this.scrollFormattingCard.minCategoryWidth.value = 20;
   }
 
-  numberFormattingCard = new NumberFormattingCard();
-
-  crosshairSettings = new CrosshairSettingsCard();
-  referenceLineSettings = new ReferenceLineSettingsCard();
-
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
   cards = [
     this.lineSettings,
     this.areaSettings,
     this.axisSettings,
-    this.legendSettings,
     this.cardSettings,
     this.animationSettings,
+    this.areaForecastSettings,
+    this.areaStackSettings,
+    this.areaGapSettings,
+    this.areaThresholdSettings,
+    this.brushSettings,
     this.axisFormattingCard,
     this.legendFormattingCard,
     this.dataLabelFormattingCard,
@@ -373,7 +375,13 @@ export class MorphingAreaChartSettings extends formattingSettings.Model {
     this.lineStrokeFormattingCard,
     this.scrollFormattingCard,
     this.numberFormattingCard,
-    this.crosshairSettings,
-    this.referenceLineSettings,
+    this.referenceLineFormattingCard,
+    this.trendLineFormattingCard,
+    this.conditionalFormattingCard,
+    this.crosshairFormattingCard,
+    this.annotationFormattingCard,
+    this.accessibilityFormattingCard,
+    this.seriesFormattingCard,
+    this.colorThemeFormattingCard,
   ];
 }

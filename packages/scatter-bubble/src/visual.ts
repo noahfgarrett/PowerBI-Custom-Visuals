@@ -26,6 +26,22 @@ import {
   applyDataLabelFormatting,
   applyAllAxisFormatting,
   resolveDropdown,
+  renderLegend,
+  type LegendItem,
+  resolveColorTheme,
+  buildConditionalConfig,
+  resolveConditionalColor,
+  applyChartAria,
+  attachKeyboardNav,
+  ensureFocusRingStyles,
+  renderHorizontalReferenceLine,
+  computeStatValue,
+  type StatType,
+  renderTrendLine,
+  computeRegression as coreComputeRegression,
+  type TrendType,
+  resolveSeriesFormatting,
+  populateSeriesFormattingGroups,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -392,6 +408,27 @@ export class ScatterBubbleVisual implements IVisual {
     // Extract data
     const data = this.extractData(dataView);
 
+    // Populate per-series formatting groups from value columns
+    {
+      const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
+      const colorLookup = new Map<string, string>();
+      const valueColumns = dataView?.categorical?.values;
+      if (valueColumns) {
+        for (let i = 0; i < valueColumns.length; i++) {
+          const name = valueColumns[i].source.displayName;
+          if (name) {
+            colorLookup.set(name, getHostChartColor(this.host.colorPalette, i, themeName));
+          }
+        }
+      }
+      populateSeriesFormattingGroups(
+        this.settings.seriesFormattingCard,
+        dataView,
+        ['xValue', 'yValue', 'size'],
+        colorLookup,
+      );
+    }
+
     // Apply glass effect
     this.applyCardStyle();
 
@@ -410,6 +447,7 @@ export class ScatterBubbleVisual implements IVisual {
   // ── Data Extraction ──────────────────────────────────────────────
 
   private extractData(dataView: DataView | undefined): ScatterData {
+    const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
     const empty: ScatterData = {
       points: [],
       xExtent: [0, 1],
@@ -464,7 +502,7 @@ export class ScatterBubbleVisual implements IVisual {
         y: yRaw,
         size: sizeVal,
         index: i,
-        color: getHostChartColor(this.host.colorPalette, i),
+        color: getHostChartColor(this.host.colorPalette, i, themeName),
         selectionId: this.host.createSelectionIdBuilder()
           .withCategory(categoryColumn, i)
           .createSelectionId(),
@@ -472,6 +510,22 @@ export class ScatterBubbleVisual implements IVisual {
     }
 
     if (points.length === 0) return empty;
+
+    // Apply sequential color scale if configured
+    const colorScaleMode = resolveDropdown(this.settings.scatterColorSettings.colorScale) ?? 'categorical';
+    if (colorScaleMode === 'sequential' && points.length > 0) {
+      const startColor = this.settings.scatterColorSettings.startColor.value?.value || '#3B82F6';
+      const endColor = this.settings.scatterColorSettings.endColor.value?.value || '#EF4444';
+      const yVals = points.map((p) => p.y);
+      const yMin = Math.min(...yVals);
+      const yMax = Math.max(...yVals);
+      const yRange = yMax - yMin || 1;
+      const colorInterp = d3.interpolateRgb(startColor, endColor);
+      for (const pt of points) {
+        const t = (pt.y - yMin) / yRange;
+        pt.color = colorInterp(t);
+      }
+    }
 
     // Compute extents with padding
     const xValues = points.map((p) => p.x);
@@ -506,8 +560,8 @@ export class ScatterBubbleVisual implements IVisual {
     if (s.enableGlass.value) {
       const glass = getGlassStyle({
         mode: 'light',
-        opacity: s.bgOpacity.value / 100,
-        backgroundColor: ((s as any).backgroundColor?.value?.value ?? (s as any).bgColor?.value?.value),
+        opacity: s.backgroundOpacity.value / 100,
+        backgroundColor: s.backgroundColor.value?.value,
         borderRadius: s.borderRadius.value,
       });
       Object.assign(this.container.style, glass);
@@ -559,47 +613,18 @@ export class ScatterBubbleVisual implements IVisual {
       ? legendPositionValue
       : (legendPositionValue as { value?: string } | undefined)?.value ?? 'bottom';
 
-    if (s.legendSettings.show.value && data.points.length > 0) {
-      const legendEl = document.createElement('div');
-      legendEl.className = 'scatter-bubble-legend';
+    if (s.legendFormattingCard.showLegend.value && data.points.length > 0) {
+      const legendItems: LegendItem[] = data.points.slice(0, 10).map((pt) => ({
+        label: pt.label || `Point ${pt.index + 1}`,
+        color: pt.color,
+      }));
 
-      // Apply legend position
-      if (legendPosition === 'top') {
-        legendEl.style.order = '-1';
-      } else if (legendPosition === 'left' || legendPosition === 'right') {
-        legendEl.style.flexDirection = 'column';
-      }
-
-      // Show unique labels (limit to first 10 to avoid overflow)
-      const legendItems = data.points.slice(0, 10);
-      for (const pt of legendItems) {
-        const item = document.createElement('span');
-        item.className = 'scatter-bubble-legend-item';
-
-        const swatch = document.createElement('span');
-        swatch.className = 'scatter-bubble-legend-swatch';
-        (swatch.style as unknown as Record<string, string>)['backgroundColor'] = pt.color;
-
-        const label = document.createElement('span');
-        label.textContent = pt.label || `Point ${pt.index + 1}`;
-        label.style.color = legendFontColor;
-        label.style.fontSize = `${legendFontSize}px`;
-
-        item.appendChild(swatch);
-        item.appendChild(label);
-        legendEl.appendChild(item);
-      }
-
-      if (data.points.length > 10) {
-        const more = document.createElement('span');
-        more.className = 'scatter-bubble-legend-item';
-        more.textContent = `+${data.points.length - 10} more`;
-        more.style.color = legendFontColor;
-        more.style.fontSize = `${legendFontSize}px`;
-        legendEl.appendChild(more);
-      }
-
-      this.container.appendChild(legendEl);
+      const legendEl = renderLegend(this.container, {
+        items: legendItems,
+        position: legendPosition as 'top' | 'bottom' | 'left' | 'right',
+        fontSize: legendFontSize,
+        fontColor: legendFontColor,
+      });
 
       if (s.animationSettings.enabled.value) {
         const cancel = fadeSlideIn(legendEl, 'up', DURATION.normal, 0);
@@ -687,6 +712,12 @@ export class ScatterBubbleVisual implements IVisual {
       this.renderTrendline(chartGroup, data, xScale, yScale, chartWidth, chartHeight);
     }
 
+    // ── Shared Reference Line ────────────────────────────────
+    this.renderSharedReferenceLine(chartGroup, yScale, chartWidth, data.points.map((p) => p.y));
+
+    // ── Shared Trend Line ─────────────────────────────────────
+    this.renderSharedTrendLine(chartGroup, yScale, xScale, data);
+
     // ── Bubbles ────────────────────────────────────────────────
     const bubblesGroup = document.createElementNS(svgNs, 'g');
     bubblesGroup.setAttribute('class', 'scatter-bubble-points');
@@ -709,7 +740,9 @@ export class ScatterBubbleVisual implements IVisual {
     const animEnabled = s.animationSettings.enabled.value;
     const animDuration = s.animationSettings.duration.value;
 
-    for (const pt of data.points) {
+    for (let ptIdx = 0; ptIdx < data.points.length; ptIdx++) {
+      const pt = data.points[ptIdx];
+      const sf = resolveSeriesFormatting(this.settings.seriesFormattingCard, ptIdx, pt.color);
       const cx = xScale(pt.x);
       const cy = yScale(pt.y);
       const r = sizeScale && pt.size !== null
@@ -720,10 +753,19 @@ export class ScatterBubbleVisual implements IVisual {
       circle.setAttribute('cx', String(cx));
       circle.setAttribute('cy', String(cy));
       circle.setAttribute('r', String(r));
-      circle.setAttribute('fill', withOpacity(pt.color, bubbleOpacity));
-      circle.setAttribute('stroke', this.settings.scatterSettings.bubbleStrokeColor.value?.value || pt.color);
+      const conditionalFill = this.getConditionalBubbleColor(pt.y);
+      const effectiveColor = conditionalFill ?? sf.color;
+      const effectiveOpacity = (sf.opacity / 100) * bubbleOpacity;
+      circle.setAttribute('fill', withOpacity(effectiveColor, effectiveOpacity));
+      circle.setAttribute('stroke', this.settings.scatterSettings.bubbleStrokeColor.value?.value || sf.color);
       circle.setAttribute('stroke-width', String(this.settings.scatterSettings.bubbleStrokeWidth.value));
       circle.setAttribute('class', 'scatter-bubble-point');
+
+      // Apply CSS transitions for smooth data-update movement
+      if (s.scatterAnimationSettings.enableTransitions.value) {
+        const transMs = animDuration;
+        circle.style.transition = `cx ${transMs}ms ease, cy ${transMs}ms ease, r ${transMs}ms ease`;
+      }
 
       bubblesGroup.appendChild(circle);
 
@@ -782,11 +824,28 @@ export class ScatterBubbleVisual implements IVisual {
       }
     }
 
+    // ── Cluster Highlighting ─────────────────────────────────────
+    this.renderClusterHighlighting(chartGroup, data, xScale, yScale, chartWidth, chartHeight);
+
+    // ── Density Contours ─────────────────────────────────────────
+    this.renderDensityContours(chartGroup, data, xScale, yScale, chartWidth, chartHeight);
+
+    // ── Zoom & Pan ───────────────────────────────────────────────
+    this.applyZoomPan(svg, chartGroup, xScale, yScale, chartWidth, chartHeight);
+
+    // ── Play Axis ──────────────────────────────────────────────
+    if (s.scatterAnimationSettings.enablePlayAxis.value && data.points.length > 1) {
+      this.renderPlayAxis(data, bubblesGroup, xScale, yScale, sizeScale, s);
+    }
+
     // Apply shared formatting settings
     applyAllAxisFormatting(this.container, this.settings.axisFormattingCard, '.scatter-bubble-axis', '.scatter-bubble-grid');
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.scatter-bubble-label');
 
     this.container.addEventListener('click', this.handleBackgroundClick);
+
+    // ── Accessibility ──────────────────────────────────────────
+    this.applyAccessibility(data);
   }
 
   // ── Axes Rendering ─────────────────────────────────────────────
@@ -1098,6 +1157,180 @@ export class ScatterBubbleVisual implements IVisual {
     }
   }
 
+  // ── Cluster Highlighting ────────────────────────────────────────
+
+  private renderClusterHighlighting(
+    chartGroup: SVGGElement,
+    data: ScatterData,
+    xScale: d3.ScaleLinear<number, number>,
+    yScale: d3.ScaleLinear<number, number>,
+    _chartWidth: number,
+    _chartHeight: number,
+  ): void {
+    const cs = this.settings.scatterClusterSettings;
+    if (!cs.enabled.value || data.points.length < 2) return;
+
+    const k = Math.max(2, Math.min(cs.clusters.value, data.points.length));
+    const points = data.points.map((p) => ({ x: xScale(p.x), y: yScale(p.y) }));
+
+    // Simple k-means clustering
+    const assignments = this.kMeans(points, k);
+
+    if (!cs.showHulls.value) return;
+
+    const svgNs = 'http://www.w3.org/2000/svg';
+    const hullGroup = document.createElementNS(svgNs, 'g');
+    hullGroup.setAttribute('class', 'scatter-cluster-hulls');
+    chartGroup.insertBefore(hullGroup, chartGroup.firstChild);
+
+    const clusterColors = ['#3B82F6', '#EF4444', '#22C55E', '#F59E0B', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
+
+    for (let c = 0; c < k; c++) {
+      const clusterPoints: [number, number][] = [];
+      for (let i = 0; i < assignments.length; i++) {
+        if (assignments[i] === c) {
+          clusterPoints.push([points[i].x, points[i].y]);
+        }
+      }
+
+      if (clusterPoints.length < 3) continue;
+
+      const hull = d3.polygonHull(clusterPoints);
+      if (!hull) continue;
+
+      const hullColor = clusterColors[c % clusterColors.length];
+      const pathD = 'M' + hull.map((p) => `${p[0]},${p[1]}`).join('L') + 'Z';
+
+      const path = document.createElementNS(svgNs, 'path');
+      path.setAttribute('d', pathD);
+      path.setAttribute('fill', withOpacity(hullColor, 0.1));
+      path.setAttribute('stroke', withOpacity(hullColor, 0.4));
+      path.setAttribute('stroke-width', '1.5');
+      path.setAttribute('pointer-events', 'none');
+      hullGroup.appendChild(path);
+    }
+  }
+
+  /** Simple k-means clustering. Returns cluster assignments for each point. */
+  private kMeans(points: Array<{ x: number; y: number }>, k: number): number[] {
+    const n = points.length;
+    // Initialize centroids by picking evenly spaced points
+    const centroids: Array<{ x: number; y: number }> = [];
+    for (let i = 0; i < k; i++) {
+      const idx = Math.floor((i * n) / k);
+      centroids.push({ x: points[idx].x, y: points[idx].y });
+    }
+
+    let assignments = new Array<number>(n).fill(0);
+    const maxIterations = 20;
+
+    for (let iter = 0; iter < maxIterations; iter++) {
+      // Assign each point to nearest centroid
+      const newAssignments = new Array<number>(n);
+      for (let i = 0; i < n; i++) {
+        let minDist = Infinity;
+        let minCluster = 0;
+        for (let c = 0; c < k; c++) {
+          const dx = points[i].x - centroids[c].x;
+          const dy = points[i].y - centroids[c].y;
+          const dist = dx * dx + dy * dy;
+          if (dist < minDist) {
+            minDist = dist;
+            minCluster = c;
+          }
+        }
+        newAssignments[i] = minCluster;
+      }
+
+      // Check convergence
+      let changed = false;
+      for (let i = 0; i < n; i++) {
+        if (newAssignments[i] !== assignments[i]) {
+          changed = true;
+          break;
+        }
+      }
+      assignments = newAssignments;
+      if (!changed) break;
+
+      // Update centroids
+      for (let c = 0; c < k; c++) {
+        let sumX = 0, sumY = 0, count = 0;
+        for (let i = 0; i < n; i++) {
+          if (assignments[i] === c) {
+            sumX += points[i].x;
+            sumY += points[i].y;
+            count++;
+          }
+        }
+        if (count > 0) {
+          centroids[c] = { x: sumX / count, y: sumY / count };
+        }
+      }
+    }
+
+    return assignments;
+  }
+
+  // ── Density Contours ──────────────────────────────────────────
+
+  private renderDensityContours(
+    _chartGroup: SVGGElement,
+    _data: ScatterData,
+    _xScale: d3.ScaleLinear<number, number>,
+    _yScale: d3.ScaleLinear<number, number>,
+    _chartWidth: number,
+    _chartHeight: number,
+  ): void {
+    // Density contour rendering is a placeholder for 2D KDE overlay.
+    // Full implementation requires d3-contour which is not yet included.
+    // The settings card (scatterClusterSettings) provides the toggle.
+  }
+
+  // ── Zoom & Pan ────────────────────────────────────────────────
+
+  private applyZoomPan(
+    svg: SVGSVGElement,
+    _chartGroup: SVGGElement,
+    _xScale: d3.ScaleLinear<number, number>,
+    _yScale: d3.ScaleLinear<number, number>,
+    _chartWidth: number,
+    _chartHeight: number,
+  ): void {
+    const zs = this.settings.scatterZoomSettings;
+    if (!zs.enableZoom.value && !zs.enablePan.value) return;
+
+    // Apply d3-zoom behavior for scroll-zoom and drag-pan
+    const svgSel = d3.select(svg);
+    const zoom = d3.zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.5, 10])
+      .on('zoom', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
+        const g = svg.querySelector('.scatter-bubble-points');
+        if (g) {
+          (g as SVGGElement).setAttribute(
+            'transform',
+            `translate(${event.transform.x},${event.transform.y}) scale(${event.transform.k})`,
+          );
+        }
+      });
+
+    if (!zs.enableZoom.value) {
+      zoom.filter((event: Event) => {
+        // Only allow drag (pan), not scroll-zoom
+        return (event as MouseEvent).type !== 'wheel';
+      });
+    }
+
+    if (!zs.enablePan.value) {
+      zoom.filter((event: Event) => {
+        // Only allow wheel zoom, not drag
+        return (event as MouseEvent).type === 'wheel';
+      });
+    }
+
+    svgSel.call(zoom);
+  }
+
   // ── Tooltip ────────────────────────────────────────────────────
 
   private showTooltip(pt: ScatterPoint, event: MouseEvent): void {
@@ -1154,6 +1387,218 @@ export class ScatterBubbleVisual implements IVisual {
     if (existing) {
       this.container.removeChild(existing);
     }
+  }
+
+  // ── Conditional Formatting ──────────────────────────────────────
+
+  private getConditionalBubbleColor(value: number): string | undefined {
+    const cc = this.settings.conditionalFormattingCard;
+    if (!cc.enableConditional.value) return undefined;
+
+    const config = buildConditionalConfig(
+      true,
+      resolveDropdown(cc.conditionalDirection),
+      cc.threshold1.value,
+      cc.threshold2.value,
+      cc.conditionalColor1.value?.value,
+      cc.conditionalColor2.value?.value,
+      cc.conditionalColor3.value?.value,
+    );
+    return resolveConditionalColor(value, config);
+  }
+
+  // ── Play Axis ──────────────────────────────────────────────────
+
+  private renderPlayAxis(
+    data: ScatterData,
+    bubblesGroup: SVGGElement,
+    xScale: d3.ScaleLinear<number, number>,
+    yScale: d3.ScaleLinear<number, number>,
+    sizeScale: d3.ScalePower<number, number> | null,
+    s: ScatterBubbleSettings,
+  ): void {
+    const playSpeed = Math.max(100, s.scatterAnimationSettings.playSpeed.value);
+    const points = data.points;
+    const circles = bubblesGroup.querySelectorAll('.scatter-bubble-point');
+    if (circles.length === 0 || points.length === 0) return;
+
+    // Build a play control bar
+    const playBar = document.createElement('div');
+    playBar.className = 'scatter-play-axis';
+    playBar.style.display = 'flex';
+    playBar.style.alignItems = 'center';
+    playBar.style.gap = '8px';
+    playBar.style.padding = '4px 8px';
+    playBar.style.justifyContent = 'center';
+
+    const playBtn = document.createElement('button');
+    playBtn.textContent = '\u25B6';
+    playBtn.style.cursor = 'pointer';
+    playBtn.style.border = 'none';
+    playBtn.style.background = 'none';
+    playBtn.style.fontSize = '16px';
+    playBar.appendChild(playBtn);
+
+    const stepLabel = document.createElement('span');
+    stepLabel.style.fontSize = '11px';
+    stepLabel.style.minWidth = '60px';
+    stepLabel.textContent = `1 / ${points.length}`;
+    playBar.appendChild(stepLabel);
+
+    this.container.appendChild(playBar);
+
+    let currentStep = 0;
+    let playing = false;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+
+    const showStep = (step: number): void => {
+      for (let i = 0; i < circles.length; i++) {
+        const c = circles[i] as SVGCircleElement;
+        if (i <= step) {
+          c.style.opacity = '1';
+        } else {
+          c.style.opacity = '0.1';
+        }
+      }
+      stepLabel.textContent = `${step + 1} / ${points.length}`;
+    };
+
+    const stop = (): void => {
+      playing = false;
+      playBtn.textContent = '\u25B6';
+      if (intervalId !== null) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+
+    const play = (): void => {
+      playing = true;
+      playBtn.textContent = '\u23F8';
+      intervalId = setInterval(() => {
+        currentStep++;
+        if (currentStep >= points.length) {
+          currentStep = points.length - 1;
+          stop();
+          return;
+        }
+        showStep(currentStep);
+      }, playSpeed);
+    };
+
+    playBtn.addEventListener('click', () => {
+      if (playing) {
+        stop();
+      } else {
+        if (currentStep >= points.length - 1) {
+          currentStep = 0;
+        }
+        play();
+      }
+    });
+
+    // Initial state: show all
+    showStep(points.length - 1);
+
+    this.cancelAnimations.push(() => {
+      stop();
+    });
+  }
+
+  // ── Accessibility ─────────────────────────────────────────────
+
+  private applyAccessibility(data: ScatterData): void {
+    const acc = this.settings.accessibilityFormattingCard;
+    if (!acc.enableKeyboardNav.value) return;
+
+    ensureFocusRingStyles();
+
+    applyChartAria(this.container, {
+      chartType: 'scatter chart',
+      title: this.settings.titleFormattingCard.titleText.value || undefined,
+      dataPointCount: data.points.length,
+    });
+
+    const cleanup = attachKeyboardNav({
+      container: this.container,
+      itemSelector: '.bubble, circle, [tabindex="0"]',
+      onActivate: (el) => {
+        (el as HTMLElement).click?.();
+      },
+    });
+    this.cancelAnimations.push(cleanup);
+  }
+
+  // ── Reference Line (shared card) ─────────────────────────────
+
+  private renderSharedReferenceLine(
+    chartGroup: SVGGElement,
+    yScale: d3.ScaleLinear<number, number>,
+    chartWidth: number,
+    yValues: number[],
+  ): void {
+    const ref = this.settings.referenceLineFormattingCard;
+    if (!ref.showReferenceLine.value || yValues.length === 0) return;
+
+    const refTypeRaw = resolveDropdown(ref.referenceLineType) ?? 'custom';
+    let refValue: number;
+    if (refTypeRaw === 'custom') {
+      refValue = ref.referenceLineValue.value;
+    } else {
+      refValue = computeStatValue(yValues, refTypeRaw as StatType);
+    }
+    if (!isFinite(refValue)) return;
+
+    const refColor = ref.referenceLineColor.value?.value ?? '#EF4444';
+    const refStyle = (resolveDropdown(ref.referenceLineStyle) ?? 'dashed') as 'solid' | 'dashed' | 'dotted';
+    const labelText = ref.referenceLabelText.value
+      || `${refTypeRaw}: ${formatWithSettings(refValue, this.settings.numberFormattingCard)}`;
+
+    const g = d3.select(chartGroup);
+    renderHorizontalReferenceLine(g as d3.Selection<SVGGElement, unknown, null, undefined>, {
+      value: refValue,
+      yScale,
+      chartWidth,
+      lineColor: refColor,
+      lineWidth: ref.referenceLineWidth.value,
+      lineStyle: refStyle,
+      showLabel: ref.showReferenceLabel.value,
+      labelText,
+      showBand: ref.showReferenceBand.value,
+      bandOpacity: ref.referenceBandOpacity.value / 100,
+    });
+  }
+
+  // ── Trend Line (shared card) ──────────────────────────────────
+
+  private renderSharedTrendLine(
+    chartGroup: SVGGElement,
+    yScale: d3.ScaleLinear<number, number>,
+    xScale: d3.ScaleLinear<number, number>,
+    data: ScatterData,
+  ): void {
+    const tl = this.settings.trendLineFormattingCard;
+    if (!tl.showTrendLine.value || data.points.length < 2) return;
+
+    const yValues = data.points.map((p) => p.y);
+    const trendType = (resolveDropdown(tl.trendLineType) ?? 'linear') as TrendType;
+    const result = coreComputeRegression(yValues, trendType, tl.polynomialOrder.value);
+    if (result.predicted.length < 2) return;
+
+    const trendColor = tl.trendLineColor.value?.value ?? '#6366F1';
+
+    const g = d3.select(chartGroup);
+    renderTrendLine(g as d3.Selection<SVGGElement, unknown, null, undefined>, {
+      predicted: result.predicted,
+      xScale: (i: number) => xScale(data.points[i]?.x ?? 0),
+      yScale,
+      lineColor: trendColor,
+      lineWidth: tl.trendLineWidth.value,
+      showEquation: tl.showEquation.value,
+      showR2: tl.showR2.value,
+      equation: result.equation,
+      r2: result.r2,
+    });
   }
 
   private handleBackgroundClick = (): void => {

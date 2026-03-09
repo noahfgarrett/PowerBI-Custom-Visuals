@@ -279,12 +279,6 @@
     "lineStrokeFormatting": {
       "displayName": "Line Stroke",
       "properties": {
-        "lineWidth": {
-          "displayName": "Line Width",
-          "type": {
-            "numeric": true
-          }
-        },
         "lineStyle": {
           "displayName": "Line Style",
           "type": {
@@ -452,6 +446,541 @@
         },
         "borderRadius": {
           "displayName": "Border Radius",
+          "type": {
+            "numeric": true
+          }
+        },
+        "enableGlass": {
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "referenceLineFormatting": {
+      "displayName": "Reference Line",
+      "properties": {
+        "showReferenceLine": {
+          "displayName": "Show Reference Line",
+          "type": {
+            "bool": true
+          }
+        },
+        "referenceLineType": {
+          "displayName": "Type",
+          "type": {
+            "enumeration": [
+              {
+                "value": "custom",
+                "displayName": "Custom Value"
+              },
+              {
+                "value": "mean",
+                "displayName": "Mean"
+              },
+              {
+                "value": "median",
+                "displayName": "Median"
+              },
+              {
+                "value": "percentile",
+                "displayName": "Percentile"
+              },
+              {
+                "value": "min",
+                "displayName": "Min"
+              },
+              {
+                "value": "max",
+                "displayName": "Max"
+              }
+            ]
+          }
+        },
+        "referenceLineValue": {
+          "displayName": "Value",
+          "type": {
+            "numeric": true
+          }
+        },
+        "referenceLineColor": {
+          "displayName": "Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "referenceLineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "referenceLineStyle": {
+          "displayName": "Line Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "solid",
+                "displayName": "Solid"
+              },
+              {
+                "value": "dashed",
+                "displayName": "Dashed"
+              },
+              {
+                "value": "dotted",
+                "displayName": "Dotted"
+              }
+            ]
+          }
+        },
+        "showReferenceLabel": {
+          "displayName": "Show Label",
+          "type": {
+            "bool": true
+          }
+        },
+        "referenceLabelText": {
+          "displayName": "Label Text",
+          "type": {
+            "text": true
+          }
+        },
+        "showReferenceBand": {
+          "displayName": "Show Band",
+          "type": {
+            "bool": true
+          }
+        },
+        "referenceBandOpacity": {
+          "displayName": "Band Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "trendLineFormatting": {
+      "displayName": "Trend Line",
+      "properties": {
+        "showTrendLine": {
+          "displayName": "Show Trend Line",
+          "type": {
+            "bool": true
+          }
+        },
+        "trendLineType": {
+          "displayName": "Type",
+          "type": {
+            "enumeration": [
+              {
+                "value": "linear",
+                "displayName": "Linear"
+              },
+              {
+                "value": "polynomial",
+                "displayName": "Polynomial"
+              },
+              {
+                "value": "exponential",
+                "displayName": "Exponential"
+              },
+              {
+                "value": "logarithmic",
+                "displayName": "Logarithmic"
+              },
+              {
+                "value": "power",
+                "displayName": "Power"
+              }
+            ]
+          }
+        },
+        "polynomialOrder": {
+          "displayName": "Polynomial Order",
+          "type": {
+            "numeric": true
+          }
+        },
+        "trendLineColor": {
+          "displayName": "Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "trendLineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "showEquation": {
+          "displayName": "Show Equation",
+          "type": {
+            "bool": true
+          }
+        },
+        "showR2": {
+          "displayName": "Show R²",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "conditionalFormatting": {
+      "displayName": "Conditional Formatting",
+      "properties": {
+        "enableConditional": {
+          "displayName": "Enable",
+          "type": {
+            "bool": true
+          }
+        },
+        "conditionalDirection": {
+          "displayName": "Direction",
+          "type": {
+            "enumeration": [
+              {
+                "value": "ascending",
+                "displayName": "Ascending (Low = Bad)"
+              },
+              {
+                "value": "descending",
+                "displayName": "Descending (Low = Good)"
+              }
+            ]
+          }
+        },
+        "threshold1": {
+          "displayName": "Threshold 1",
+          "type": {
+            "numeric": true
+          }
+        },
+        "threshold2": {
+          "displayName": "Threshold 2",
+          "type": {
+            "numeric": true
+          }
+        },
+        "conditionalColor1": {
+          "displayName": "Color 1 (Bad)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "conditionalColor2": {
+          "displayName": "Color 2 (Warning)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "conditionalColor3": {
+          "displayName": "Color 3 (Good)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "crosshairFormatting": {
+      "displayName": "Crosshair",
+      "properties": {
+        "showCrosshair": {
+          "displayName": "Show Crosshair",
+          "type": {
+            "bool": true
+          }
+        },
+        "crosshairLineColor": {
+          "displayName": "Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "crosshairLineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "crosshairLineStyle": {
+          "displayName": "Line Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "solid",
+                "displayName": "Solid"
+              },
+              {
+                "value": "dashed",
+                "displayName": "Dashed"
+              },
+              {
+                "value": "dotted",
+                "displayName": "Dotted"
+              }
+            ]
+          }
+        },
+        "showCrosshairValues": {
+          "displayName": "Show Values",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "annotationFormatting": {
+      "displayName": "Annotations",
+      "properties": {
+        "showAnnotations": {
+          "displayName": "Show Annotations",
+          "type": {
+            "bool": true
+          }
+        },
+        "annotation1Category": {
+          "displayName": "Annotation 1 — Category",
+          "type": {
+            "text": true
+          }
+        },
+        "annotation1Text": {
+          "displayName": "Annotation 1 — Text",
+          "type": {
+            "text": true
+          }
+        },
+        "annotation1Position": {
+          "displayName": "Annotation 1 — Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "above",
+                "displayName": "Above"
+              },
+              {
+                "value": "below",
+                "displayName": "Below"
+              },
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        },
+        "annotation2Category": {
+          "displayName": "Annotation 2 — Category",
+          "type": {
+            "text": true
+          }
+        },
+        "annotation2Text": {
+          "displayName": "Annotation 2 — Text",
+          "type": {
+            "text": true
+          }
+        },
+        "annotation2Position": {
+          "displayName": "Annotation 2 — Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "above",
+                "displayName": "Above"
+              },
+              {
+                "value": "below",
+                "displayName": "Below"
+              },
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        },
+        "annotation3Category": {
+          "displayName": "Annotation 3 — Category",
+          "type": {
+            "text": true
+          }
+        },
+        "annotation3Text": {
+          "displayName": "Annotation 3 — Text",
+          "type": {
+            "text": true
+          }
+        },
+        "annotation3Position": {
+          "displayName": "Annotation 3 — Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "above",
+                "displayName": "Above"
+              },
+              {
+                "value": "below",
+                "displayName": "Below"
+              },
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        },
+        "annotationFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "annotationFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "annotationConnectorColor": {
+          "displayName": "Connector Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "accessibilityFormatting": {
+      "displayName": "Accessibility",
+      "properties": {
+        "enableKeyboardNav": {
+          "displayName": "Enable Keyboard Navigation",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "slopeDisplaySettings": {
+      "displayName": "Slope Display",
+      "properties": {
+        "showPercentChange": {
+          "displayName": "Show Percentage Change Labels",
+          "type": {
+            "bool": true
+          }
+        },
+        "sortByMagnitude": {
+          "displayName": "Sort by Change Magnitude",
+          "type": {
+            "bool": true
+          }
+        },
+        "showConfidenceInterval": {
+          "displayName": "Show Confidence Intervals",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "slopeThresholdSettings": {
+      "displayName": "Threshold Highlight",
+      "properties": {
+        "show": {
+          "displayName": "Show Threshold Highlight",
+          "type": {
+            "bool": true
+          }
+        },
+        "threshold": {
+          "displayName": "Threshold Value",
+          "type": {
+            "numeric": true
+          }
+        },
+        "glowColor": {
+          "displayName": "Glow Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "seriesFormatting": {
+      "properties": {
+        "seriesColor": {
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "seriesLineStyle": {
+          "type": {
+            "text": true
+          }
+        },
+        "seriesLineWidth": {
+          "type": {
+            "numeric": true
+          }
+        },
+        "seriesOpacity": {
           "type": {
             "numeric": true
           }

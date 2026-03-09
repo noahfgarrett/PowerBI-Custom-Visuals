@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard } from '../../core/src';
+import { LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard } from '../../core/src';
 
 // ── Top N / Others ──────────────────────────────────────────────────
 
@@ -198,7 +198,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 // ── Animation Settings ──────────────────────────────────────────────
@@ -221,6 +221,73 @@ class AnimationSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
+// ── Nested Rings Settings ────────────────────────────────────────
+
+class DonutNestedSettings extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Nested Rings',
+    value: false,
+  });
+
+  innerRingField = new formattingSettings.TextInput({
+    name: 'innerRingField',
+    displayName: 'Inner Ring Field',
+    value: '',
+    placeholder: 'e.g. SubCategory',
+  });
+
+  name = 'donutNestedSettings';
+  displayName = 'Nested Rings';
+  slices = [this.enabled, this.innerRingField];
+}
+
+// ── Exploded Segments Settings ──────────────────────────────────
+
+class DonutExplodeSettings extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Exploded Segments',
+    value: false,
+  });
+
+  distance = new formattingSettings.NumUpDown({
+    name: 'distance',
+    displayName: 'Explode Distance (px)',
+    value: 20,
+  });
+
+  name = 'donutExplodeSettings';
+  displayName = 'Exploded Segments';
+  slices = [this.enabled, this.distance];
+}
+
+// ── Donut Label Format Settings ─────────────────────────────────
+
+class DonutLabelSettings extends formattingSettings.SimpleCard {
+  format = new formattingSettings.ItemDropdown({
+    name: 'format',
+    displayName: 'Label Format',
+    items: [
+      { value: 'category', displayName: 'Category' },
+      { value: 'value', displayName: 'Value' },
+      { value: 'percent', displayName: 'Percentage' },
+      { value: 'both', displayName: 'Category + Value' },
+    ],
+    value: { value: 'category', displayName: 'Category' },
+  });
+
+  connectorLines = new formattingSettings.ToggleSwitch({
+    name: 'connectorLines',
+    displayName: 'Connector Lines',
+    value: false,
+  });
+
+  name = 'donutLabelSettings';
+  displayName = 'Label Format';
+  slices = [this.format, this.connectorLines];
+}
+
 // ── Root Model ──────────────────────────────────────────────────────
 
 export class AnimatedDonutProSettings extends formattingSettings.Model {
@@ -229,23 +296,31 @@ export class AnimatedDonutProSettings extends formattingSettings.Model {
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettingsCard();
   topNSettings = new TopNSettingsCard();
+  donutNestedSettings = new DonutNestedSettings();
+  donutExplodeSettings = new DonutExplodeSettings();
+  donutLabelSettings = new DonutLabelSettings();
 
   legendFormattingCard = new LegendFormattingCard();
-
   dataLabelFormattingCard = new DataLabelFormattingCard();
-
   titleFormattingCard = new TitleFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
 
-
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
   cards = [
     this.donutSettings,
     this.valueSettings,
     this.cardSettings,
     this.animationSettings,
     this.topNSettings,
+    this.donutNestedSettings,
+    this.donutExplodeSettings,
+    this.donutLabelSettings,
     this.legendFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
-
+    this.conditionalFormattingCard,
+    this.accessibilityFormattingCard,
+    this.colorThemeFormattingCard,
   ];
 }

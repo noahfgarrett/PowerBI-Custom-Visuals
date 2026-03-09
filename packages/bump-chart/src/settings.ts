@@ -5,7 +5,23 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, LineStrokeFormattingCard, ScrollFormattingCard } from '../../core/src';
+import {
+  AxisFormattingCard,
+  LegendFormattingCard,
+  DataLabelFormattingCard,
+  TitleFormattingCard,
+  LineStrokeFormattingCard,
+  ScrollFormattingCard,
+  ReferenceLineFormattingCard,
+  TrendLineFormattingCard,
+  ConditionalFormattingCard,
+  CrosshairFormattingCard,
+  AnnotationFormattingCard,
+  AccessibilityFormattingCard,
+  ColorThemeFormattingCard,
+  SeriesFormattingCard,
+} from '../../core/src';
+
 // ── Bump Settings ──────────────────────────────────────────────────
 
 class BumpSettings extends formattingSettings.SimpleCard {
@@ -38,10 +54,21 @@ class BumpSettings extends formattingSettings.SimpleCard {
 
   });
 
+  showArea = new formattingSettings.ToggleSwitch({
+    name: 'showArea',
+    displayName: 'Show Area Fill',
+    value: false,
+  });
+
+  areaOpacity = new formattingSettings.NumUpDown({
+    name: 'areaOpacity',
+    displayName: 'Area Opacity (%)',
+    value: 20,
+  });
 
   name = 'bumpSettings';
   displayName = 'Bump Lines';
-  slices = [this.lineWidth, this.dotRadius, this.showRankNumbers, this.dotStrokeColor];
+  slices = [this.lineWidth, this.dotRadius, this.showRankNumbers, this.dotStrokeColor, this.showArea, this.areaOpacity];
 }
 
 // ── Color Settings ──────────────────────────────────────────────────
@@ -58,42 +85,19 @@ class ColorSettings extends formattingSettings.SimpleCard {
   slices = [this.useChartPalette];
 }
 
-// ── Axis Settings ───────────────────────────────────────────────────
 
-class AxisSettings extends formattingSettings.SimpleCard {
+// ── Axis Visibility (unique properties not in shared AxisFormattingCard) ─
+
+class AxisVisibilitySettings extends formattingSettings.SimpleCard {
   showXAxis = new formattingSettings.ToggleSwitch({
     name: 'showXAxis',
     displayName: 'Show X-Axis',
     value: true,
   });
 
-  name = 'axisSettings';
-  displayName = 'Axes';
+  name = 'axisVisibilitySettings';
+  displayName = 'Axis Visibility';
   slices = [this.showXAxis];
-}
-
-// ── Legend Settings ──────────────────────────────────────────────────
-
-class LegendSettings extends formattingSettings.SimpleCard {
-  show = new formattingSettings.ToggleSwitch({
-    name: 'show',
-    displayName: 'Show Legend',
-    value: true,
-  });
-
-  position = new formattingSettings.ItemDropdown({
-    name: 'position',
-    displayName: 'Position',
-    items: [
-      { value: 'right', displayName: 'Right' },
-      { value: 'bottom', displayName: 'Bottom' },
-    ],
-    value: { value: 'right', displayName: 'Right' },
-  });
-
-  name = 'legendSettings';
-  displayName = 'Legend';
-  slices = [this.show, this.position];
 }
 
 // ── Card Style ──────────────────────────────────────────────────────
@@ -103,6 +107,12 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
     name: 'enableGlass',
     displayName: 'Glass Effect',
     value: true,
+  });
+
+  backgroundColor = new formattingSettings.ColorPicker({
+    name: 'backgroundColor',
+    displayName: 'Background Color',
+    value: { value: '' },
   });
 
   backgroundOpacity = new formattingSettings.NumUpDown({
@@ -119,7 +129,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 // ── Animation Settings ──────────────────────────────────────────────
@@ -142,46 +152,64 @@ class AnimationSettings extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
-// ── Crosshair Settings ──────────────────────────────────────────────
+// ── Bump Highlight Settings ─────────────────────────────────────────
 
-class CrosshairSettingsCard extends formattingSettings.SimpleCard {
+class BumpHighlightSettingsCard extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Highlight Top/Bottom N',
+    value: false,
+  });
+
+  topN = new formattingSettings.NumUpDown({
+    name: 'topN',
+    displayName: 'Top N',
+    value: 3,
+  });
+
+  showOthers = new formattingSettings.ToggleSwitch({
+    name: 'showOthers',
+    displayName: 'Show Others (Dimmed)',
+    value: true,
+  });
+
+  name = 'bumpHighlightSettings';
+  displayName = 'Highlight Top/Bottom N';
+  slices = [this.enabled, this.topN, this.showOthers];
+}
+
+// ── Bump Rank Change Settings ───────────────────────────────────────
+
+class BumpRankChangeSettingsCard extends formattingSettings.SimpleCard {
   show = new formattingSettings.ToggleSwitch({
     name: 'show',
-    displayName: 'Show Crosshair',
-    value: true,
+    displayName: 'Show Rank Change Indicators',
+    value: false,
   });
 
-  lineColor = new formattingSettings.ColorPicker({
-    name: 'lineColor',
-    displayName: 'Line Color',
-    value: { value: '#94A3B8' },
+  fontSize = new formattingSettings.NumUpDown({
+    name: 'fontSize',
+    displayName: 'Font Size',
+    value: 9,
   });
 
-  lineWidth = new formattingSettings.NumUpDown({
-    name: 'lineWidth',
-    displayName: 'Line Width',
-    value: 1,
+  name = 'bumpRankChangeSettings';
+  displayName = 'Rank Change Indicators';
+  slices = [this.show, this.fontSize];
+}
+
+// ── Bump Comparison Settings ────────────────────────────────────────
+
+class BumpComparisonSettingsCard extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Period Comparison',
+    value: false,
   });
 
-  lineStyle = new formattingSettings.ItemDropdown({
-    name: 'lineStyle',
-    displayName: 'Line Style',
-    items: [
-      { value: 'solid', displayName: 'Solid' },
-      { value: 'dashed', displayName: 'Dashed' },
-    ],
-    value: { value: 'dashed', displayName: 'Dashed' },
-  });
-
-  showValues = new formattingSettings.ToggleSwitch({
-    name: 'showValues',
-    displayName: 'Show Values',
-    value: true,
-  });
-
-  name = 'crosshairSettings';
-  displayName = 'Crosshair';
-  slices = [this.show, this.lineColor, this.lineWidth, this.lineStyle, this.showValues];
+  name = 'bumpComparisonSettings';
+  displayName = 'Period Comparison';
+  slices = [this.show];
 }
 
 // ── Root Model ──────────────────────────────────────────────────────
@@ -189,43 +217,58 @@ class CrosshairSettingsCard extends formattingSettings.SimpleCard {
 export class BumpChartSettings extends formattingSettings.Model {
   bumpSettings = new BumpSettings();
   colorSettings = new ColorSettings();
-  axisSettings = new AxisSettings();
-  legendSettings = new LegendSettings();
+  axisVisibilitySettings = new AxisVisibilitySettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
 
+  // New feature cards
+  bumpHighlightSettings = new BumpHighlightSettingsCard();
+  bumpRankChangeSettings = new BumpRankChangeSettingsCard();
+  bumpComparisonSettings = new BumpComparisonSettingsCard();
+
+  // Shared formatting cards from core
   axisFormattingCard = new AxisFormattingCard();
-
   legendFormattingCard = new LegendFormattingCard();
-
   dataLabelFormattingCard = new DataLabelFormattingCard();
-
   titleFormattingCard = new TitleFormattingCard();
-
   lineStrokeFormattingCard = new LineStrokeFormattingCard();
-
   scrollFormattingCard = new ScrollFormattingCard();
-
-  crosshairSettings = new CrosshairSettingsCard();
+  referenceLineFormattingCard = new ReferenceLineFormattingCard();
+  trendLineFormattingCard = new TrendLineFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  crosshairFormattingCard = new CrosshairFormattingCard();
+  annotationFormattingCard = new AnnotationFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
 
   constructor() {
     super();
     this.scrollFormattingCard.minCategoryWidth.value = 20;
   }
 
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
+  seriesFormattingCard = new SeriesFormattingCard();
   cards = [
     this.bumpSettings,
     this.colorSettings,
-    this.axisSettings,
-    this.legendSettings,
+    this.axisVisibilitySettings,
     this.cardSettings,
     this.animationSettings,
+    this.bumpHighlightSettings,
+    this.bumpRankChangeSettings,
+    this.bumpComparisonSettings,
     this.axisFormattingCard,
     this.legendFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.lineStrokeFormattingCard,
     this.scrollFormattingCard,
-    this.crosshairSettings,
+    this.referenceLineFormattingCard,
+    this.trendLineFormattingCard,
+    this.conditionalFormattingCard,
+    this.crosshairFormattingCard,
+    this.annotationFormattingCard,
+    this.accessibilityFormattingCard,
+    this.seriesFormattingCard,
+    this.colorThemeFormattingCard,
   ];
 }

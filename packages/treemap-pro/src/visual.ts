@@ -20,6 +20,13 @@ import {
   withOpacity,
   renderChartTitle,
   applyDataLabelFormatting,
+  applyChartAria,
+  attachKeyboardNav,
+  ensureFocusRingStyles,
+  resolveColorTheme,
+  buildConditionalConfig,
+  resolveConditionalColor,
+  resolveDropdown,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -268,7 +275,7 @@ export class TreemapProVisual implements IVisual {
       const glass = getGlassStyle({
         mode: 'light',
         opacity: s.backgroundOpacity.value / 100,
-        backgroundColor: ((s as any).backgroundColor?.value?.value ?? (s as any).bgColor?.value?.value),
+        backgroundColor: s.backgroundColor.value?.value,
         borderRadius: s.borderRadius.value,
       });
       Object.assign(this.container.style, glass);
@@ -298,6 +305,7 @@ export class TreemapProVisual implements IVisual {
   // -- Main Treemap Render ----------------------------------------------------
 
   private renderTreemap(data: TreemapData, viewport: powerbi.IViewport): void {
+    const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
     this.clearContainer();
     renderChartTitle(this.container, this.settings.titleFormattingCard);
 
@@ -370,7 +378,8 @@ export class TreemapProVisual implements IVisual {
 
     // After treemapLayout(), nodes have x0/y0/x1/y1 from HierarchyRectangularNode
     const leaves = hierarchy.leaves() as d3.HierarchyRectangularNode<TreeNode>[];
-    const showLabels = this.settings.treemapSettings.showLabels.value;
+    // Consolidate: local showLabels AND shared showDataLabels both must be true
+    const showLabels = this.settings.treemapSettings.showLabels.value && this.settings.dataLabelFormattingCard.showDataLabels.value;
     const showValues = this.settings.treemapSettings.showValues.value;
     const showDataLabels = this.settings.dataLabelFormattingCard.showDataLabels.value;
     const tileStrokeColor = this.settings.treemapSettings.tileStrokeColor.value?.value || '';
@@ -379,6 +388,21 @@ export class TreemapProVisual implements IVisual {
     const useChartPalette = this.settings.colorSettings.useChartPalette.value;
     const animEnabled = this.settings.animationSettings.enabled.value;
     const animDuration = this.settings.animationSettings.duration.value;
+
+    // Display settings
+    const showPercentage = this.settings.treemapDisplaySettings.showPercentage.value;
+    const percentOfRaw = this.settings.treemapDisplaySettings.percentOf.value;
+    const percentOf: string = (typeof percentOfRaw === 'string'
+      ? percentOfRaw
+      : (percentOfRaw as { value?: string } | undefined)?.value) ?? 'total';
+    const labelOverflowRaw = this.settings.treemapDisplaySettings.labelOverflow.value;
+    const labelOverflow: string = (typeof labelOverflowRaw === 'string'
+      ? labelOverflowRaw
+      : (labelOverflowRaw as { value?: string } | undefined)?.value) ?? 'truncate';
+    const colorByDepth = this.settings.treemapDisplaySettings.colorByDepth.value;
+
+    // Compute total for percentage
+    const totalValue = hierarchy.value ?? 1;
 
     leaves.forEach((leaf, idx) => {
       const x0 = leaf.x0 ?? 0;
@@ -397,9 +421,24 @@ export class TreemapProVisual implements IVisual {
 
       // Color
       const colorIdx = leaf.data.colorIndex ?? (leaf.parent?.data.colorIndex ?? idx);
-      const fillColor = useChartPalette
-        ? getHostChartColor(this.host.colorPalette, colorIdx)
-        : getHostChartColor(this.host.colorPalette, idx);
+      const conditionalColor = this.getConditionalColor(leaf.value ?? 0);
+      let baseFillColor = conditionalColor ?? (useChartPalette
+        ? getHostChartColor(this.host.colorPalette, colorIdx, themeName)
+        : getHostChartColor(this.host.colorPalette, idx, themeName));
+
+      // Color variation by depth: lighten deeper tiles
+      if (colorByDepth && leaf.depth > 1) {
+        const depthFactor = Math.min(0.4, (leaf.depth - 1) * 0.15);
+        baseFillColor = this.lightenColor(baseFillColor, depthFactor);
+      }
+      const fillColor = baseFillColor;
+
+      // Heat coloring override (if enabled)
+      const allLeafValues = leaves.map((l) => l.value ?? 0);
+      const minLeafVal = Math.min(...allLeafValues);
+      const maxLeafVal = Math.max(...allLeafValues);
+      const heatColor = this.getHeatColor(leaf.value ?? 0, minLeafVal, maxLeafVal);
+      const effectiveFillColor = heatColor ?? fillColor;
 
       // Rectangle — slightly translucent for depth perception
       const rect = document.createElementNS(svgNS, 'rect');
@@ -407,7 +446,7 @@ export class TreemapProVisual implements IVisual {
       rect.setAttribute('height', String(cellH));
       rect.setAttribute('rx', '3');
       rect.setAttribute('ry', '3');
-      rect.setAttribute('fill', withOpacity(fillColor, 0.92));
+      rect.setAttribute('fill', withOpacity(effectiveFillColor, 0.92));
       if (tileStrokeColor) {
         rect.setAttribute('stroke', tileStrokeColor);
         rect.setAttribute('stroke-width', String(tileStrokeWidth));
@@ -415,8 +454,11 @@ export class TreemapProVisual implements IVisual {
 
       g.appendChild(rect);
 
+      // Label overflow: 'hide' skips labels that don't fit, 'truncate' truncates
+      const fitsLabel = cellW >= LABEL_MIN_WIDTH && cellH >= LABEL_MIN_HEIGHT;
+
       // Label (category name)
-      if (showLabels && cellW >= LABEL_MIN_WIDTH && cellH >= LABEL_MIN_HEIGHT) {
+      if (showLabels && (labelOverflow === 'truncate' ? fitsLabel : fitsLabel)) {
         const label = document.createElementNS(svgNS, 'text');
         label.setAttribute('class', 'treemap-label');
         label.setAttribute('x', '6');
@@ -424,18 +466,43 @@ export class TreemapProVisual implements IVisual {
         if (labelColor) {
           label.setAttribute('fill', labelColor);
         }
-        label.textContent = this.truncateLabel(leaf.data.name, cellW - 12);
-        g.appendChild(label);
+        label.textContent = labelOverflow === 'hide' && leaf.data.name.length * 7 > cellW - 12
+          ? ''
+          : this.truncateLabel(leaf.data.name, cellW - 12);
+        if (label.textContent) {
+          g.appendChild(label);
+        }
       }
 
       // Value
+      let valueYOffset = 30;
       if (showValues && showDataLabels && cellW >= LABEL_MIN_WIDTH && cellH >= VALUE_MIN_HEIGHT) {
         const valueText = document.createElementNS(svgNS, 'text');
         valueText.setAttribute('class', 'treemap-value');
         valueText.setAttribute('x', '6');
-        valueText.setAttribute('y', '30');
+        valueText.setAttribute('y', String(valueYOffset));
         valueText.textContent = formatNumber(leaf.value ?? 0);
         g.appendChild(valueText);
+        valueYOffset += 14;
+      }
+
+      // Percentage display
+      if (showPercentage && cellW >= LABEL_MIN_WIDTH && cellH >= VALUE_MIN_HEIGHT) {
+        let base: number;
+        if (percentOf === 'parent' && leaf.parent) {
+          base = leaf.parent.value ?? totalValue;
+        } else {
+          base = totalValue;
+        }
+        const pctText = this.formatPercentage(leaf.value ?? 0, base);
+        const pctEl = document.createElementNS(svgNS, 'text');
+        pctEl.setAttribute('class', 'treemap-value');
+        pctEl.setAttribute('x', '6');
+        pctEl.setAttribute('y', String(valueYOffset));
+        pctEl.setAttribute('font-size', '10');
+        pctEl.setAttribute('opacity', '0.7');
+        pctEl.textContent = pctText;
+        g.appendChild(pctEl);
       }
 
       // Hover tooltip
@@ -519,6 +586,7 @@ export class TreemapProVisual implements IVisual {
     // Apply shared formatting settings
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.treemap-value');
 
+    this.applyAccessibility(this.container);
     this.container.addEventListener('click', this.handleBackgroundClick);
   }
 
@@ -672,6 +740,99 @@ export class TreemapProVisual implements IVisual {
   private handleBackgroundClick = (): void => {
     void this.selectionManager.clear();
   };
+
+  // -- Conditional Formatting -------------------------------------------------
+
+  private getConditionalColor(value: number): string | undefined {
+    const cc = this.settings.conditionalFormattingCard;
+    if (!cc.enableConditional.value) return undefined;
+    const config = buildConditionalConfig(
+      true,
+      resolveDropdown(cc.conditionalDirection),
+      cc.threshold1.value,
+      cc.threshold2.value,
+      cc.conditionalColor1.value?.value,
+      cc.conditionalColor2.value?.value,
+      cc.conditionalColor3.value?.value,
+    );
+    return resolveConditionalColor(value, config);
+  }
+
+  // -- Heat Coloring ----------------------------------------------------------
+
+  /**
+   * Computes a heat color for a value given the configured start/end gradient.
+   * Returns the interpolated color string, or null if heat coloring is disabled.
+   */
+  private getHeatColor(value: number, minVal: number, maxVal: number): string | null {
+    const heat = this.settings.treemapHeatSettings;
+    if (!heat.enabled.value) return null;
+
+    const startColor = heat.startColor.value?.value ?? '#E2E8F0';
+    const endColor = heat.endColor.value?.value ?? '#EF4444';
+    const range = maxVal - minVal;
+    const t = range > 0 ? Math.max(0, Math.min(1, (value - minVal) / range)) : 0.5;
+
+    return this.interpolateHexColor(startColor, endColor, t);
+  }
+
+  private interpolateHexColor(hex1: string, hex2: string, t: number): string {
+    const parse = (hex: string): [number, number, number] => {
+      const clean = hex.replace('#', '');
+      return [
+        parseInt(clean.slice(0, 2), 16),
+        parseInt(clean.slice(2, 4), 16),
+        parseInt(clean.slice(4, 6), 16),
+      ];
+    };
+    const [r1, g1, b1] = parse(hex1);
+    const [r2, g2, b2] = parse(hex2);
+    const r = Math.round(r1 + (r2 - r1) * t);
+    const g = Math.round(g1 + (g2 - g1) * t);
+    const b = Math.round(b1 + (b2 - b1) * t);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  // -- Percentage Display -----------------------------------------------------
+
+  private formatPercentage(value: number, total: number): string {
+    if (total <= 0) return '0%';
+    const pct = (value / total) * 100;
+    return `${pct.toFixed(1)}%`;
+  }
+
+  // -- Depth Color Variation --------------------------------------------------
+
+  private lightenColor(color: string, amount: number): string {
+    // Simple lightening by blending with white
+    return this.interpolateHexColor(color, '#FFFFFF', Math.min(1, Math.max(0, amount)));
+  }
+
+  // -- Accessibility ----------------------------------------------------------
+
+  private applyAccessibility(container: HTMLElement): void {
+    const a11y = this.settings.accessibilityFormattingCard;
+    if (a11y.enableKeyboardNav.value) {
+      ensureFocusRingStyles();
+      const focusableElements = container.querySelectorAll('.treemap-cell');
+      if (focusableElements.length > 0) {
+        attachKeyboardNav({
+          container,
+          itemSelector: '.treemap-cell',
+          onActivate: (_el: Element, index: number) => {
+            const cells = container.querySelectorAll('.treemap-cell');
+            if (index < cells.length) {
+              (cells[index] as HTMLElement).click();
+            }
+          },
+        });
+      }
+    }
+    applyChartAria(container, {
+      chartType: 'treemap',
+      dataPointCount: container.querySelectorAll('.treemap-cell').length,
+    });
+  }
 
   // -- Formatting Model -------------------------------------------------------
 

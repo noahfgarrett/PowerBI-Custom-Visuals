@@ -16,6 +16,13 @@ import {
   renderChartTitle,
   applyDataLabelFormatting,
   formatPercent,
+  applyChartAria,
+  attachKeyboardNav,
+  ensureFocusRingStyles,
+  resolveDropdown,
+  resolveColorTheme,
+  buildConditionalConfig,
+  resolveConditionalColor,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -71,6 +78,7 @@ export class GanttChartProVisual implements IVisual {
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
   private collapsedTasks: Set<string> = new Set();
+  private collapsedGroups: Set<string> = new Set();
   private collapseDefaultApplied = false;
   private lastUpdateOptions: VisualUpdateOptions | null = null;
 
@@ -332,6 +340,7 @@ export class GanttChartProVisual implements IVisual {
   }
 
   private render(tasks: GanttTask[], viewport: powerbi.IViewport, allTasks?: GanttTask[]): void {
+    const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
     // Clear container
     while (this.container.firstChild) {
       this.container.removeChild(this.container.firstChild);
@@ -342,11 +351,11 @@ export class GanttChartProVisual implements IVisual {
     const s = this.settings;
     const barHeight = Math.max(8, s.ganttSettings.barHeight.value);
     const showProgress = s.ganttSettings.showProgress.value;
-    const showToday = s.ganttSettings.showToday.value;
+    const showToday = s.ganttTodaySettings.showTodayLine.value;
     const showLabels = s.ganttSettings.showLabels.value;
     const barColor = s.colorSettings.barColor.value?.value ?? '#3B82F6';
     const progressColor = s.colorSettings.progressColor.value?.value ?? '#10B981';
-    const todayColor = s.colorSettings.todayColor.value?.value ?? '#EF4444';
+    const todayColor = s.ganttTodaySettings.lineColor.value?.value || '#EF4444';
     const animEnabled = s.animationSettings.enabled.value;
     const animDuration = s.animationSettings.duration.value;
     const showDataLabels = s.dataLabelFormattingCard.showDataLabels.value;
@@ -358,7 +367,7 @@ export class GanttChartProVisual implements IVisual {
       const glass = getGlassStyle({
         mode: 'light',
         opacity: s.cardSettings.backgroundOpacity.value / 100,
-        backgroundColor: ((s.cardSettings as any).backgroundColor?.value?.value ?? (s.cardSettings as any).bgColor?.value?.value),
+        backgroundColor: s.cardSettings.backgroundColor.value?.value,
         borderRadius: s.cardSettings.borderRadius.value,
       });
       Object.assign(this.container.style, glass);
@@ -410,7 +419,7 @@ export class GanttChartProVisual implements IVisual {
     const uniqueCats = [...new Set(validTasks.map((t) => t.category).filter(Boolean))];
     const catColorMap = new Map<string, string>();
     uniqueCats.forEach((cat, i) => {
-      catColorMap.set(cat, getHostChartColor(this.host.colorPalette, i));
+      catColorMap.set(cat, getHostChartColor(this.host.colorPalette, i, themeName));
     });
 
     // Layout
@@ -452,7 +461,81 @@ export class GanttChartProVisual implements IVisual {
     rowsContainer.style.position = 'relative';
     rowsContainer.style.width = `${labelWidth + chartWidth}px`;
 
-    validTasks.forEach((task, idx) => {
+    // ── Grouping ──────────────────────────────────────────────────
+    const enableGrouping = s.ganttGroupSettings.enableGrouping.value;
+    const collapsibleGroups = s.ganttGroupSettings.collapsibleGroups.value;
+
+    // Build grouped task list when grouping is enabled
+    let displayTasks = validTasks;
+    if (enableGrouping) {
+      // Group tasks by category
+      const groupOrder: string[] = [];
+      const groupMap = new Map<string, GanttTask[]>();
+      for (const t of validTasks) {
+        const groupKey = t.category || '(Ungrouped)';
+        if (!groupMap.has(groupKey)) {
+          groupMap.set(groupKey, []);
+          groupOrder.push(groupKey);
+        }
+        groupMap.get(groupKey)!.push(t);
+      }
+
+      // Render group headers and filter collapsed groups
+      displayTasks = [];
+      for (const groupName of groupOrder) {
+        const isCollapsed = collapsibleGroups && this.collapsedGroups.has(groupName);
+
+        // Group header row
+        const groupHeader = document.createElement('div');
+        groupHeader.className = 'gantt-group-header';
+        groupHeader.style.height = `${rowHeight}px`;
+        groupHeader.style.lineHeight = `${barHeight}px`;
+        groupHeader.style.paddingLeft = '8px';
+        groupHeader.style.fontWeight = '600';
+        groupHeader.style.display = 'flex';
+        groupHeader.style.alignItems = 'center';
+        groupHeader.style.gap = '6px';
+        groupHeader.style.borderBottom = '1px solid #E2E8F0';
+        groupHeader.style.userSelect = 'none';
+
+        if (collapsibleGroups) {
+          groupHeader.style.cursor = 'pointer';
+          const toggleIcon = document.createElement('span');
+          toggleIcon.style.fontSize = '10px';
+          toggleIcon.textContent = isCollapsed ? '\u25B6' : '\u25BC';
+          groupHeader.appendChild(toggleIcon);
+
+          groupHeader.addEventListener('click', () => {
+            if (this.collapsedGroups.has(groupName)) {
+              this.collapsedGroups.delete(groupName);
+            } else {
+              this.collapsedGroups.add(groupName);
+            }
+            if (this.lastUpdateOptions) {
+              this.update(this.lastUpdateOptions);
+            }
+          });
+        }
+
+        const groupLabel = document.createElement('span');
+        groupLabel.textContent = groupName;
+        groupHeader.appendChild(groupLabel);
+
+        const groupCount = document.createElement('span');
+        groupCount.style.opacity = '0.6';
+        groupCount.style.fontSize = '0.85em';
+        groupCount.textContent = `(${groupMap.get(groupName)!.length})`;
+        groupHeader.appendChild(groupCount);
+
+        rowsContainer.appendChild(groupHeader);
+
+        if (!isCollapsed) {
+          displayTasks.push(...groupMap.get(groupName)!);
+        }
+      }
+    }
+
+    displayTasks.forEach((task, idx) => {
       const row = document.createElement('div');
       row.className = 'gantt-task-row';
       row.style.height = `${rowHeight}px`;
@@ -540,9 +623,10 @@ export class GanttChartProVisual implements IVisual {
       const barLeft = startFrac * chartWidth;
       const barWidth = Math.max(2, (endFrac - startFrac) * chartWidth);
 
-      const color = task.category && catColorMap.has(task.category)
+      const baseColor = task.category && catColorMap.has(task.category)
         ? catColorMap.get(task.category)!
         : barColor;
+      const color = this.getConditionalColor(task.progress) ?? baseColor;
 
       // Bar element
       const bar = document.createElement('div');
@@ -647,7 +731,7 @@ export class GanttChartProVisual implements IVisual {
     // Dependency arrows
     if (this.settings.dependencySettings.show.value) {
       this.renderDependencyArrows(
-        rowsContainer, validTasks, labelWidth, chartWidth, barHeight, rowHeight, range, minTime,
+        rowsContainer, displayTasks, labelWidth, chartWidth, barHeight, rowHeight, range, minTime,
       );
     }
 
@@ -660,7 +744,13 @@ export class GanttChartProVisual implements IVisual {
     }
 
     // ── Apply axis formatting ────────────────────────────────────────
-    this.applyAxisCardFormatting(header, rowsContainer, validTasks.length, rowHeight, labelWidth, chartWidth, tickCount);
+    this.applyAxisCardFormatting(header, rowsContainer, displayTasks.length, rowHeight, labelWidth, chartWidth, tickCount);
+
+    // ── Milestones, baselines, critical path, accessibility ──────────
+    this.renderMilestoneMarkers(rowsContainer, displayTasks, labelWidth, chartWidth, barHeight, rowHeight, range, minTime);
+    this.renderBaselineBars(rowsContainer, displayTasks, labelWidth, chartWidth, barHeight, rowHeight, range, minTime);
+    this.applyCriticalPathHighlighting(displayTasks);
+    this.applyAccessibility();
 
     this.container.addEventListener('click', this.handleBackgroundClick);
   }
@@ -993,6 +1083,171 @@ export class GanttChartProVisual implements IVisual {
   private handleBackgroundClick = (): void => {
     void this.selectionManager.clear();
   };
+
+  // -- Milestone Markers -------------------------------------------------------
+
+  /**
+   * Renders milestone markers (diamond/circle/triangle) for zero-duration tasks.
+   */
+  private renderMilestoneMarkers(
+    rowsContainer: HTMLElement,
+    tasks: GanttTask[],
+    labelWidth: number,
+    chartWidth: number,
+    barHeight: number,
+    rowHeight: number,
+    range: number,
+    minTime: number,
+  ): void {
+    const milestoneSettings = this.settings.ganttMilestoneSettings;
+    if (!milestoneSettings.show.value) return;
+
+    const shape = resolveDropdown(milestoneSettings.shape) ?? 'diamond';
+    const color = milestoneSettings.color.value?.value ?? '#F59E0B';
+    const markerSize = barHeight * 0.7;
+
+    tasks.forEach((task, idx) => {
+      if (!task.startDate || !task.endDate) return;
+      // Zero-duration check: same day or start == end
+      const duration = task.endDate.getTime() - task.startDate.getTime();
+      if (duration > 86400000) return; // Only for zero-duration (within 1 day)
+
+      const frac = (task.startDate.getTime() - minTime) / range;
+      const x = labelWidth + frac * chartWidth;
+      const y = idx * rowHeight + barHeight / 2;
+
+      const marker = document.createElement('div');
+      marker.className = 'gantt-milestone-marker';
+      marker.style.position = 'absolute';
+      marker.style.left = `${x - markerSize / 2}px`;
+      marker.style.top = `${y - markerSize / 2}px`;
+      marker.style.width = `${markerSize}px`;
+      marker.style.height = `${markerSize}px`;
+      marker.style.backgroundColor = color;
+      marker.style.pointerEvents = 'none';
+      marker.style.zIndex = '2';
+
+      if (shape === 'diamond') {
+        marker.style.transform = 'rotate(45deg)';
+      } else if (shape === 'circle') {
+        marker.style.borderRadius = '50%';
+      } else if (shape === 'triangle') {
+        marker.style.backgroundColor = 'transparent';
+        marker.style.width = '0';
+        marker.style.height = '0';
+        marker.style.borderLeft = `${markerSize / 2}px solid transparent`;
+        marker.style.borderRight = `${markerSize / 2}px solid transparent`;
+        marker.style.borderBottom = `${markerSize}px solid ${color}`;
+      }
+
+      rowsContainer.appendChild(marker);
+    });
+  }
+
+  // -- Critical Path Highlighting ---------------------------------------------
+
+  /**
+   * Highlights bars on the critical path by adding a bold border.
+   * Simple heuristic: tasks with no slack (start immediately after predecessor ends).
+   */
+  private applyCriticalPathHighlighting(tasks: GanttTask[]): void {
+    const cpSettings = this.settings.ganttCriticalPathSettings;
+    if (!cpSettings.show.value) return;
+
+    const color = cpSettings.color.value?.value ?? '#EF4444';
+    const lineWidth = cpSettings.lineWidth.value;
+
+    // Simple heuristic: highlight tasks that have dependencies
+    const bars = this.container.querySelectorAll('.gantt-bar');
+    tasks.forEach((task, idx) => {
+      if (task.dependencyId && idx < bars.length) {
+        const bar = bars[idx] as HTMLElement;
+        bar.style.border = `${lineWidth}px solid ${color}`;
+        bar.style.boxSizing = 'border-box';
+      }
+    });
+  }
+
+  // -- Baseline Comparison ----------------------------------------------------
+
+  private renderBaselineBars(
+    rowsContainer: HTMLElement,
+    tasks: GanttTask[],
+    labelWidth: number,
+    chartWidth: number,
+    barHeight: number,
+    rowHeight: number,
+    range: number,
+    minTime: number,
+  ): void {
+    const baselineSettings = this.settings.ganttBaselineSettings;
+    if (!baselineSettings.show.value) return;
+
+    const color = baselineSettings.color.value?.value ?? '#94A3B8';
+    const opacity = (baselineSettings.opacity.value ?? 40) / 100;
+
+    // Baseline bars are rendered as ghost bars offset slightly below the main bar
+    tasks.forEach((task, idx) => {
+      if (!task.startDate || !task.endDate) return;
+
+      const startFrac = (task.startDate.getTime() - minTime) / range;
+      const endFrac = (task.endDate.getTime() - minTime) / range;
+      const barLeft = labelWidth + startFrac * chartWidth;
+      const barWidth = Math.max(2, (endFrac - startFrac) * chartWidth);
+      const y = idx * rowHeight + barHeight + 2;
+
+      const baselineBar = document.createElement('div');
+      baselineBar.className = 'gantt-baseline-bar';
+      baselineBar.style.position = 'absolute';
+      baselineBar.style.left = `${barLeft}px`;
+      baselineBar.style.top = `${y}px`;
+      baselineBar.style.width = `${barWidth}px`;
+      baselineBar.style.height = `${Math.max(3, barHeight * 0.3)}px`;
+      baselineBar.style.backgroundColor = color;
+      baselineBar.style.opacity = String(opacity);
+      baselineBar.style.borderRadius = '2px';
+      baselineBar.style.pointerEvents = 'none';
+
+      rowsContainer.appendChild(baselineBar);
+    });
+  }
+
+  // -- Conditional Formatting -------------------------------------------------
+
+  private getConditionalColor(value: number): string | undefined {
+    const cc = this.settings.conditionalFormattingCard;
+    if (!cc.enableConditional.value) return undefined;
+    const config = buildConditionalConfig(
+      true,
+      resolveDropdown(cc.conditionalDirection),
+      cc.threshold1.value,
+      cc.threshold2.value,
+      cc.conditionalColor1.value?.value,
+      cc.conditionalColor2.value?.value,
+      cc.conditionalColor3.value?.value,
+    );
+    return resolveConditionalColor(value, config);
+  }
+
+  // -- Accessibility ----------------------------------------------------------
+
+  private applyAccessibility(): void {
+    const a11y = this.settings.accessibilityFormattingCard;
+    if (a11y.enableKeyboardNav.value) {
+      ensureFocusRingStyles();
+      attachKeyboardNav({
+        container: this.container,
+        itemSelector: '.gantt-task-row',
+        onActivate: (el: Element) => {
+          (el as HTMLElement).click();
+        },
+      });
+    }
+    applyChartAria(this.container, {
+      chartType: 'gantt chart',
+      dataPointCount: this.container.querySelectorAll('.gantt-task-row').length,
+    });
+  }
 
   public destroy(): void {
     this.hideTooltip();

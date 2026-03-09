@@ -5,7 +5,14 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { DataLabelFormattingCard, ScrollFormattingCard, TitleFormattingCard } from '../../core/src';
+import {
+  DataLabelFormattingCard,
+  ScrollFormattingCard,
+  TitleFormattingCard,
+  ConditionalFormattingCard,
+  AccessibilityFormattingCard,
+  ColorThemeFormattingCard,
+} from '../../core/src';
 class NodeSettings extends formattingSettings.SimpleCard {
   width = new formattingSettings.NumUpDown({
     name: 'width',
@@ -27,6 +34,7 @@ class NodeSettings extends formattingSettings.SimpleCard {
       { value: 'beside', displayName: 'Beside' },
       { value: 'above', displayName: 'Above' },
       { value: 'below', displayName: 'Below' },
+      { value: 'none', displayName: 'None (Hover)' },
     ],
     value: { value: 'beside', displayName: 'Beside' },
   });
@@ -209,6 +217,61 @@ class LinkLabelSettings extends formattingSettings.SimpleCard {
   slices = [this.showLinkLabels, this.linkLabelFontSize, this.linkLabelFontColor, this.linkLabelFontWeight, this.linkLabelFormat];
 }
 
+class TotalSettings extends formattingSettings.SimpleCard {
+  showNodeValues = new formattingSettings.ToggleSwitch({
+    name: 'showNodeValues',
+    displayName: 'Show Node Values',
+    value: false,
+  });
+
+  nodeValueFormat = new formattingSettings.ItemDropdown({
+    name: 'nodeValueFormat',
+    displayName: 'Node Value Format',
+    items: [
+      { value: 'value', displayName: 'Value' },
+      { value: 'percent', displayName: 'Percent' },
+      { value: 'both', displayName: 'Both' },
+    ],
+    value: { value: 'value', displayName: 'Value' },
+  });
+
+  showLayerTotals = new formattingSettings.ToggleSwitch({
+    name: 'showLayerTotals',
+    displayName: 'Show Layer Totals',
+    value: false,
+  });
+
+  layerTotalPosition = new formattingSettings.ItemDropdown({
+    name: 'layerTotalPosition',
+    displayName: 'Layer Total Position',
+    items: [
+      { value: 'top', displayName: 'Top' },
+      { value: 'bottom', displayName: 'Bottom' },
+    ],
+    value: { value: 'top', displayName: 'Top' },
+  });
+
+  totalFontSize = new formattingSettings.NumUpDown({
+    name: 'totalFontSize',
+    displayName: 'Font Size',
+    value: 11,
+  });
+
+  totalFontColor = new formattingSettings.ColorPicker({
+    name: 'totalFontColor',
+    displayName: 'Font Color',
+    value: { value: '' },
+  });
+
+  name = 'totalSettings';
+  displayName = 'Totals';
+  slices = [
+    this.showNodeValues, this.nodeValueFormat,
+    this.showLayerTotals, this.layerTotalPosition,
+    this.totalFontSize, this.totalFontColor,
+  ];
+}
+
 class LayoutSettings extends formattingSettings.SimpleCard {
   nodeAlign = new formattingSettings.ItemDropdown({
     name: 'nodeAlign',
@@ -301,7 +364,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 class AnimationSettings extends formattingSettings.SimpleCard {
@@ -322,14 +385,85 @@ class AnimationSettings extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
+class SankeyInteractionSettings extends formattingSettings.SimpleCard {
+  highlightFlows = new formattingSettings.ToggleSwitch({
+    name: 'highlightFlows',
+    displayName: 'Highlight Flow Path',
+    value: true,
+  });
+
+  enableDrag = new formattingSettings.ToggleSwitch({
+    name: 'enableDrag',
+    displayName: 'Enable Node Drag',
+    value: false,
+  });
+
+  enableFiltering = new formattingSettings.ToggleSwitch({
+    name: 'enableFiltering',
+    displayName: 'Enable Flow Filtering',
+    value: false,
+  });
+
+  name = 'sankeyInteractionSettings';
+  displayName = 'Interaction';
+  slices = [this.highlightFlows, this.enableDrag, this.enableFiltering];
+}
+
+class SankeyLinkSettings extends formattingSettings.SimpleCard {
+  gradientLinks = new formattingSettings.ToggleSwitch({
+    name: 'gradientLinks',
+    displayName: 'Gradient Links',
+    value: true,
+  });
+
+  opacityByValue = new formattingSettings.ToggleSwitch({
+    name: 'opacityByValue',
+    displayName: 'Opacity by Value',
+    value: false,
+  });
+
+  showFlowLabels = new formattingSettings.ToggleSwitch({
+    name: 'showFlowLabels',
+    displayName: 'Show Flow Labels on Hover',
+    value: false,
+  });
+
+  name = 'sankeyLinkSettings';
+  displayName = 'Link Features';
+  slices = [this.gradientLinks, this.opacityByValue, this.showFlowLabels];
+}
+
+class SankeyNodeSettings extends formattingSettings.SimpleCard {
+  showNodeValues = new formattingSettings.ToggleSwitch({
+    name: 'showNodeValues',
+    displayName: 'Show Node Values',
+    value: false,
+  });
+
+  nodeLabelFontSize = new formattingSettings.NumUpDown({
+    name: 'nodeLabelFontSize',
+    displayName: 'Node Label Font Size',
+    value: 11,
+  });
+
+  name = 'sankeyNodeSettings';
+  displayName = 'Node Features';
+  slices = [this.showNodeValues, this.nodeLabelFontSize];
+}
+
 export class SankeyDiagramSettings extends formattingSettings.Model {
   nodeSettings = new NodeSettings();
   linkSettings = new LinkSettings();
   linkLabelSettings = new LinkLabelSettings();
+  totalSettings = new TotalSettings();
   layoutSettings = new LayoutSettings();
   tooltipSettings = new TooltipSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
+
+  sankeyInteractionSettings = new SankeyInteractionSettings();
+  sankeyLinkSettings = new SankeyLinkSettings();
+  sankeyNodeSettings = new SankeyNodeSettings();
 
   dataLabelFormattingCard = new DataLabelFormattingCard();
 
@@ -340,17 +474,27 @@ export class SankeyDiagramSettings extends formattingSettings.Model {
   })();
 
   titleFormattingCard = new TitleFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
 
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
   cards = [
     this.nodeSettings,
     this.linkSettings,
     this.linkLabelSettings,
+    this.totalSettings,
     this.layoutSettings,
     this.tooltipSettings,
     this.cardSettings,
     this.animationSettings,
+    this.sankeyInteractionSettings,
+    this.sankeyLinkSettings,
+    this.sankeyNodeSettings,
     this.dataLabelFormattingCard,
     this.scrollFormattingCard,
     this.titleFormattingCard,
+    this.conditionalFormattingCard,
+    this.accessibilityFormattingCard,
+    this.colorThemeFormattingCard,
   ];
 }

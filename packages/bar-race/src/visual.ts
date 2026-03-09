@@ -8,12 +8,28 @@
 import powerbi from 'powerbi-visuals-api';
 import { FormattingSettingsService } from 'powerbi-visuals-utils-formattingmodel';
 import { BarRaceSettings } from './settings';
+import * as d3 from 'd3';
 import {
   formatNumber,
   getGlassStyle,
   getHostChartColor,
   renderChartTitle,
   applyDataLabelFormatting,
+  resolveColorTheme,
+  resolveDropdown,
+  buildConditionalConfig,
+  resolveConditionalColor,
+  applyChartAria,
+  attachKeyboardNav,
+  ensureFocusRingStyles,
+  renderVerticalReferenceLine,
+  computeStatValue,
+  computeRegression,
+  renderTrendLine,
+  renderAnnotations,
+  buildAnnotationConfig,
+  type StatType,
+  type TrendType,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -96,8 +112,12 @@ export class BarRaceVisual implements IVisual {
 
   /** Viewport element containing the bars. */
   private viewport: HTMLElement | null = null;
+  /** SVG overlay for reference line, trend line, and annotations. */
+  private svgOverlay: SVGSVGElement | null = null;
   /** Time period label element. */
   private timeLabel: HTMLElement | null = null;
+  /** Period label overlay element (large period/year watermark). */
+  private periodLabelOverlay: HTMLElement | null = null;
 
   /** Playback control DOM references. */
   private controlsBar: HTMLElement | null = null;
@@ -155,6 +175,14 @@ export class BarRaceVisual implements IVisual {
       // Render initial frame
       this.renderFrame();
 
+      // Wire up shared formatting features
+      this.applyConditionalFormatting();
+      this.applyAccessibility();
+      this.buildSvgOverlay(options.viewport);
+      this.applyReferenceLine();
+      this.applyTrendLine();
+      this.applyAnnotations();
+
       // Start auto-play if enabled (uses new playback setting)
       const autoPlay = this.settings.playbackSettings.autoPlay.value;
       if (autoPlay) {
@@ -170,6 +198,7 @@ export class BarRaceVisual implements IVisual {
   // ── Data Extraction ─────────────────────────────────────────────
 
   private extractData(dataView: DataView | undefined): RaceData {
+    const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
     const empty: RaceData = {
       timePeriods: [],
       frames: new Map(),
@@ -245,7 +274,7 @@ export class BarRaceVisual implements IVisual {
       colorMap.set(
         cat,
         usePalette
-          ? getHostChartColor(this.host.colorPalette, idx)
+          ? getHostChartColor(this.host.colorPalette, idx, themeName)
           : BarRaceVisual.DEFAULT_LABEL_COLOR,
       );
     });
@@ -643,7 +672,10 @@ export class BarRaceVisual implements IVisual {
     const baseSpeed = Math.max(100, this.settings.raceSettings.playSpeed.value);
     const multiplier = this.getSpeedMultiplier();
     // Higher multiplier = faster = shorter interval
-    return Math.max(50, baseSpeed / multiplier);
+    const frameInterval = Math.max(50, baseSpeed / multiplier);
+    // Add pause duration between frames
+    const pauseMs = Math.max(0, this.settings.racePlayback.pauseDuration.value);
+    return frameInterval + pauseMs;
   }
 
   /** Start or resume playback. */
@@ -792,6 +824,9 @@ export class BarRaceVisual implements IVisual {
     const topN = Math.max(1, s.raceSettings.topN.value);
     const barHeight = Math.max(10, s.raceSettings.barHeight.value);
     const showValues = s.valueSettings.showValues.value;
+    const showRankNumbers = s.raceDisplay.showRankNumbers.value;
+    const showPeriodLabel = s.raceDisplay.showPeriodLabel.value;
+    const periodLabelSize = s.raceDisplay.periodLabelSize.value;
 
     const { timePeriods, frames } = this.raceData;
     if (timePeriods.length === 0) return;
@@ -820,6 +855,7 @@ export class BarRaceVisual implements IVisual {
     topItems.forEach((item, rank) => {
       const barEl = this.barElements.get(item.name);
       const valueEl = this.valueElements.get(item.name);
+      const labelEl = this.labelElements.get(item.name);
       if (!barEl) return;
 
       const topPos = rank * (barHeight + BAR_GAP);
@@ -829,6 +865,13 @@ export class BarRaceVisual implements IVisual {
       barEl.style.left = `${LABEL_AREA_WIDTH}px`;
       barEl.style.width = `${widthPx}px`;
       barEl.style.opacity = String(s.raceSettings.barOpacity.value / 100);
+
+      // Show rank number prefix on the label
+      if (labelEl) {
+        labelEl.textContent = showRankNumbers
+          ? `${rank + 1}. ${item.name}`
+          : item.name;
+      }
 
       if (valueEl && showValues) {
         valueEl.textContent = formatNumber(item.value);
@@ -852,6 +895,371 @@ export class BarRaceVisual implements IVisual {
     if (this.timeLabel) {
       this.timeLabel.textContent = currentPeriod;
     }
+
+    // Update period label overlay
+    this.updatePeriodLabelOverlay(currentPeriod, showPeriodLabel, periodLabelSize);
+
+    // Re-apply conditional formatting for the new frame's values
+    this.applyConditionalFormatting();
+
+    // Update SVG overlays (reference line, trend line, annotations) for the current frame
+    this.updateSvgOverlays();
+  }
+
+  // ── Period Label Overlay ─────────────────────────────────────────────
+
+  /**
+   * Creates or updates the large period label overlay that displays the current
+   * time period (e.g. year) as a watermark in the chart area.
+   * Controlled by raceDisplay.showPeriodLabel and raceDisplay.periodLabelSize.
+   */
+  private updatePeriodLabelOverlay(
+    currentPeriod: string,
+    show: boolean,
+    fontSize: number,
+  ): void {
+    if (!show) {
+      if (this.periodLabelOverlay) {
+        this.periodLabelOverlay.style.display = 'none';
+      }
+      return;
+    }
+
+    if (!this.periodLabelOverlay) {
+      const el = document.createElement('div');
+      el.className = 'bar-race-period-label';
+      el.style.position = 'absolute';
+      el.style.bottom = '40px';
+      el.style.right = '16px';
+      el.style.fontWeight = '700';
+      el.style.opacity = '0.15';
+      el.style.pointerEvents = 'none';
+      el.style.zIndex = '0';
+      el.style.lineHeight = '1';
+      if (this.viewport) {
+        this.viewport.appendChild(el);
+      } else {
+        this.container.appendChild(el);
+      }
+      this.periodLabelOverlay = el;
+    }
+
+    this.periodLabelOverlay.style.display = '';
+    this.periodLabelOverlay.style.fontSize = `${fontSize}px`;
+    this.periodLabelOverlay.textContent = currentPeriod;
+  }
+
+  // ── Conditional Formatting ──────────────────────────────────────────
+
+  /**
+   * Applies conditional color formatting to visible bars based on their values.
+   * Overrides the default palette color when thresholds are configured.
+   */
+  private applyConditionalFormatting(): void {
+    const cc = this.settings.conditionalFormattingCard;
+    if (!cc.enableConditional.value) return;
+
+    const config = buildConditionalConfig(
+      true,
+      resolveDropdown(cc.conditionalDirection),
+      cc.threshold1.value,
+      cc.threshold2.value,
+      cc.conditionalColor1.value?.value,
+      cc.conditionalColor2.value?.value,
+      cc.conditionalColor3.value?.value,
+    );
+
+    const topN = Math.max(1, this.settings.raceSettings.topN.value);
+    const { timePeriods, frames } = this.raceData;
+    if (timePeriods.length === 0) return;
+
+    const currentPeriod = timePeriods[this.currentTimeIndex];
+    if (currentPeriod === undefined) return;
+
+    const items = frames.get(currentPeriod);
+    if (!items) return;
+
+    const topItems = items.slice(0, topN);
+    for (const item of topItems) {
+      const barEl = this.barElements.get(item.name);
+      if (!barEl) continue;
+
+      const conditionalColor = resolveConditionalColor(item.value, config);
+      if (conditionalColor) {
+        barEl.style.backgroundColor = conditionalColor;
+      }
+    }
+  }
+
+  // ── Accessibility ────────────────────────────────────────────────────
+
+  /**
+   * Applies ARIA labels, keyboard navigation, and focus ring styles
+   * based on the accessibility formatting card settings.
+   */
+  private applyAccessibility(): void {
+    const acc = this.settings.accessibilityFormattingCard;
+    if (!acc.enableKeyboardNav.value) return;
+
+    ensureFocusRingStyles();
+
+    const topN = Math.max(1, this.settings.raceSettings.topN.value);
+    const { timePeriods, frames } = this.raceData;
+    const currentPeriod = timePeriods.length > 0 ? timePeriods[this.currentTimeIndex] : undefined;
+    const items = currentPeriod != null ? frames.get(currentPeriod) : undefined;
+    const dataPointCount = items ? Math.min(items.length, topN) : 0;
+
+    applyChartAria(this.container, {
+      chartType: 'bar race chart',
+      title: this.settings.titleFormattingCard.titleText.value || undefined,
+      dataPointCount,
+      summary: `Animated bar race with ${timePeriods.length} time periods, showing top ${topN} items`,
+    });
+
+    // Make bar elements focusable for keyboard nav
+    for (const [catName, barEl] of this.barElements) {
+      barEl.setAttribute('role', 'listitem');
+      barEl.setAttribute('tabindex', '0');
+      barEl.setAttribute('aria-label', catName);
+    }
+
+    const cleanupNav = attachKeyboardNav({
+      container: this.container,
+      itemSelector: '.bar-race-bar',
+      onActivate: (el) => {
+        const catName = el.querySelector('.bar-race-label')?.textContent ?? '';
+        const selectionId = this.raceData.selectionMap.get(catName);
+        if (selectionId) {
+          void this.selectionManager.select(selectionId, false);
+        }
+      },
+      wrap: true,
+    });
+    this.cancelFns.push(cleanupNav);
+  }
+
+  // ── SVG Overlay (for reference line, trend line, annotations) ──────
+
+  /**
+   * Creates a transparent SVG overlay positioned on top of the bar viewport
+   * so that d3-based reference lines, trend lines, and annotations can render.
+   */
+  private buildSvgOverlay(viewport: powerbi.IViewport): void {
+    // Remove previous overlay if present
+    if (this.svgOverlay) {
+      this.svgOverlay.remove();
+      this.svgOverlay = null;
+    }
+
+    const width = viewport.width;
+    const height = viewport.height;
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'bar-race-svg-overlay');
+    svg.setAttribute('width', String(width));
+    svg.setAttribute('height', String(height));
+    svg.style.position = 'absolute';
+    svg.style.top = '0';
+    svg.style.left = '0';
+    svg.style.pointerEvents = 'none';
+    svg.style.overflow = 'visible';
+
+    this.container.appendChild(svg);
+    this.svgOverlay = svg;
+  }
+
+  /**
+   * Collects all visible bar values for the current frame (used by stat helpers).
+   */
+  private getCurrentFrameValues(): number[] {
+    const topN = Math.max(1, this.settings.raceSettings.topN.value);
+    const { timePeriods, frames } = this.raceData;
+    if (timePeriods.length === 0) return [];
+
+    const currentPeriod = timePeriods[this.currentTimeIndex];
+    if (currentPeriod === undefined) return [];
+
+    const items = frames.get(currentPeriod);
+    if (!items) return [];
+
+    return items.slice(0, topN).map((item) => item.value);
+  }
+
+  /**
+   * Returns a new d3 <g> element appended to the SVG overlay.
+   * Returns null if no SVG overlay exists.
+   */
+  private getSvgGroup(): d3.Selection<SVGGElement, unknown, null, undefined> | null {
+    if (!this.svgOverlay) return null;
+
+    const sel = d3.select(this.svgOverlay);
+    const g = sel.append('g') as d3.Selection<SVGGElement, unknown, null, undefined>;
+    return g;
+  }
+
+  /**
+   * Clears all content from the SVG overlay.
+   */
+  private clearSvgOverlay(): void {
+    if (!this.svgOverlay) return;
+    d3.select(this.svgOverlay).selectAll('*').remove();
+  }
+
+  // ── Reference Line ──────────────────────────────────────────────────
+
+  /**
+   * Renders a vertical reference line on the SVG overlay.
+   * Bar race uses horizontal bars, so the value axis is horizontal (x).
+   */
+  private applyReferenceLine(): void {
+    const ref = this.settings.referenceLineFormattingCard;
+    if (!ref.showReferenceLine.value) return;
+    if (!this.svgOverlay) return;
+
+    const g = this.getSvgGroup();
+    if (!g) return;
+
+    const allValues = this.getCurrentFrameValues();
+    const refType = resolveDropdown(ref.referenceLineType) ?? 'custom';
+    let refValue = ref.referenceLineValue.value;
+
+    if (refType !== 'custom' && allValues.length > 0) {
+      refValue = computeStatValue(allValues, refType as StatType);
+    }
+
+    if (!isFinite(refValue)) return;
+
+    const containerWidth = this.container.clientWidth;
+    const availableBarWidth = Math.max(0, containerWidth - LABEL_AREA_WIDTH - VALUE_AREA_WIDTH - 16);
+    const maxVal = allValues.length > 0 ? Math.max(...allValues) : 1;
+    const safeMax = maxVal > 0 ? maxVal : 1;
+
+    const xPosition = LABEL_AREA_WIDTH + (refValue / safeMax) * availableBarWidth;
+    const chartHeight = this.svgOverlay ? parseInt(this.svgOverlay.getAttribute('height') ?? '0', 10) : 0;
+
+    const refColor = ref.referenceLineColor.value?.value ?? '#EF4444';
+    const refStyle = (resolveDropdown(ref.referenceLineStyle) ?? 'dashed') as 'solid' | 'dashed' | 'dotted';
+    const labelText = ref.showReferenceLabel.value
+      ? (ref.referenceLabelText.value || formatNumber(refValue))
+      : '';
+
+    renderVerticalReferenceLine(g, {
+      xPosition,
+      yStart: 0,
+      yEnd: chartHeight,
+      lineColor: refColor,
+      lineWidth: ref.referenceLineWidth.value,
+      lineStyle: refStyle,
+      showLabel: ref.showReferenceLabel.value,
+      labelText,
+    });
+  }
+
+  // ── Trend Line ────────────────────────────────────────────────────
+
+  /**
+   * Renders a trend/regression line across the current frame's bar values.
+   * Uses the SVG overlay with a linear x scale mapping bar rank to x position
+   * and a y scale mapping value to vertical position within bar area.
+   */
+  private applyTrendLine(): void {
+    const tl = this.settings.trendLineFormattingCard;
+    if (!tl.showTrendLine.value) return;
+    if (!this.svgOverlay) return;
+
+    const allValues = this.getCurrentFrameValues();
+    if (allValues.length < 2) return;
+
+    const g = this.getSvgGroup();
+    if (!g) return;
+
+    const trendType = (resolveDropdown(tl.trendLineType) ?? 'linear') as TrendType;
+    const result = computeRegression(allValues, trendType, tl.polynomialOrder.value);
+    const trendColor = tl.trendLineColor.value?.value ?? '#6366F1';
+
+    const containerWidth = this.container.clientWidth;
+    const availableBarWidth = Math.max(0, containerWidth - LABEL_AREA_WIDTH - VALUE_AREA_WIDTH - 16);
+    const maxVal = allValues.length > 0 ? Math.max(...allValues) : 1;
+    const safeMax = maxVal > 0 ? maxVal : 1;
+    const barHeight = Math.max(10, this.settings.raceSettings.barHeight.value);
+
+    // x scale: value -> pixel position along horizontal bar axis
+    const xScale = d3.scaleLinear().domain([0, safeMax]).range([LABEL_AREA_WIDTH, LABEL_AREA_WIDTH + availableBarWidth]);
+    // y scale: bar rank index -> vertical midpoint of each bar
+    const yScale = (index: number): number => index * (barHeight + BAR_GAP) + barHeight / 2;
+
+    renderTrendLine(g, {
+      predicted: result.predicted,
+      xScale: (i: number) => xScale(result.predicted[i] ?? 0),
+      yScale: d3.scaleLinear().domain([0, allValues.length - 1]).range([yScale(0), yScale(allValues.length - 1)]),
+      lineColor: trendColor,
+      lineWidth: tl.trendLineWidth.value,
+      showEquation: tl.showEquation.value,
+      showR2: tl.showR2.value,
+      equation: result.equation,
+      r2: result.r2,
+    });
+  }
+
+  // ── Annotations ───────────────────────────────────────────────────
+
+  /**
+   * Renders labeled callout annotations pointing to specific bar categories.
+   * Position is resolved by finding the bar element's center coordinates.
+   */
+  private applyAnnotations(): void {
+    const ann = this.settings.annotationFormattingCard;
+    if (!ann.showAnnotations.value) return;
+    if (!this.svgOverlay) return;
+
+    const g = this.getSvgGroup();
+    if (!g) return;
+
+    const slots = [
+      { category: ann.annotation1Category.value, text: ann.annotation1Text.value, position: resolveDropdown(ann.annotation1Position) ?? 'above' },
+      { category: ann.annotation2Category.value, text: ann.annotation2Text.value, position: resolveDropdown(ann.annotation2Position) ?? 'above' },
+      { category: ann.annotation3Category.value, text: ann.annotation3Text.value, position: resolveDropdown(ann.annotation3Position) ?? 'above' },
+    ];
+
+    const resolvePosition = (category: string): { x: number; y: number } | null => {
+      const barEl = this.barElements.get(category);
+      if (!barEl || barEl.style.opacity === '0') return null;
+
+      const top = parseFloat(barEl.style.top) || 0;
+      const left = parseFloat(barEl.style.left) || 0;
+      const width = parseFloat(barEl.style.width) || 0;
+      const height = barEl.offsetHeight || Math.max(10, this.settings.raceSettings.barHeight.value);
+
+      return { x: left + width, y: top + height / 2 };
+    };
+
+    const config = buildAnnotationConfig(
+      true,
+      slots,
+      ann.annotationFontSize.value,
+      ann.annotationFontColor.value?.value || '#475569',
+      ann.annotationConnectorColor.value?.value || '#94A3B8',
+      resolvePosition,
+    );
+    if (config) renderAnnotations(g, config);
+  }
+
+  // ── SVG Overlay Updates (per frame) ──────────────────────────────
+
+  /**
+   * Re-renders all SVG overlay features (reference line, trend line, annotations)
+   * for the current frame. Called from renderFrame() after bar positions update.
+   */
+  private updateSvgOverlays(): void {
+    if (!this.svgOverlay) return;
+
+    // Clear previous SVG content before re-rendering all overlays
+    this.clearSvgOverlay();
+
+    // Re-render each overlay if enabled
+    this.applyReferenceLine();
+    this.applyTrendLine();
+    this.applyAnnotations();
   }
 
   // ── Cleanup ───────────────────────────────────────────────────────
@@ -873,7 +1281,9 @@ export class BarRaceVisual implements IVisual {
       this.container.removeChild(this.container.firstChild);
     }
     this.viewport = null;
+    this.svgOverlay = null;
     this.timeLabel = null;
+    this.periodLabelOverlay = null;
     this.controlsBar = null;
     this.playPauseBtn = null;
     this.scrubSlider = null;

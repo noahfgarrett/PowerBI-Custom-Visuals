@@ -25,6 +25,26 @@ import {
   applyDataLabelFormatting,
   createScrollableChart,
   applySortOrder,
+  renderLegend,
+  renderVerticalReferenceLine,
+  resolveDropdown,
+  getHostChartColor,
+  resolveColorTheme,
+  buildConditionalConfig,
+  resolveConditionalColor,
+  applyChartAria,
+  attachKeyboardNav,
+  ensureFocusRingStyles,
+  renderHorizontalReferenceLine,
+  computeStatValue,
+  type StatType,
+  renderTrendLine,
+  computeRegression,
+  type TrendType,
+  type LegendItem,
+  type VerticalReferenceLineConfig,
+  resolveSeriesFormatting,
+  populateSeriesFormattingGroups,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -100,6 +120,16 @@ export class DumbbellChartVisual implements IVisual {
     const rows = applySortOrder(
       this.extractData(dataView).map((d) => ({ ...d, name: d.label, value: d.end })),
       this.settings.sortFormattingCard,
+    );
+
+    // Populate per-series formatting groups from data
+    const defaultColors = new Map<string, string>();
+    rows.forEach((d) => defaultColors.set(d.label, ''));
+    populateSeriesFormattingGroups(
+      this.settings.seriesFormattingCard,
+      dataView,
+      ['startValue', 'endValue'],
+      defaultColors,
     );
 
     // Render
@@ -178,7 +208,7 @@ export class DumbbellChartVisual implements IVisual {
       const glass = getGlassStyle({
         mode: 'light',
         opacity: s.backgroundOpacity.value / 100,
-        backgroundColor: ((s as any).backgroundColor?.value?.value ?? (s as any).bgColor?.value?.value),
+        backgroundColor: s.backgroundColor.value?.value,
         borderRadius: s.borderRadius.value,
       });
       Object.assign(this.container.style, glass);
@@ -217,8 +247,8 @@ export class DumbbellChartVisual implements IVisual {
     const s = this.settings;
     const margin = { ...MARGIN_DEFAULT };
 
-    if (!s.axisSettings.showXAxis.value) margin.bottom = 8;
-    if (!s.axisSettings.showYAxis.value) margin.left = 8;
+    if (!s.axisFormattingCard.showXAxis.value) margin.bottom = 8;
+    if (!s.axisFormattingCard.showYAxis.value) margin.left = 8;
 
     // Legend
     const showLegend = s.legendFormattingCard.showLegend.value;
@@ -259,14 +289,17 @@ export class DumbbellChartVisual implements IVisual {
     // Settings values
     const dotRadius = s.dumbbellSettings.dotRadius.value;
     const lineWidth = s.dumbbellSettings.lineWidth.value;
-    const startColor = s.dumbbellSettings.startColor.value?.value ?? '#94A3B8';
-    const endColor = s.dumbbellSettings.endColor.value?.value ?? '#3B82F6';
+    const themeName = resolveColorTheme(s.colorThemeFormattingCard);
+    const userStartColor = s.dumbbellSettings.startColor.value?.value;
+    const userEndColor = s.dumbbellSettings.endColor.value?.value;
+    const startColor = (userStartColor && userStartColor.length > 0) ? userStartColor : getHostChartColor(this.host.colorPalette, 0, themeName);
+    const endColor = (userEndColor && userEndColor.length > 0) ? userEndColor : getHostChartColor(this.host.colorPalette, 1, themeName);
     const animEnabled = s.animationSettings.enabled.value;
     const animDuration = s.animationSettings.duration.value;
 
     // Legend (top)
     if (showLegend && legendPos === 'top') {
-      this.renderLegend(startColor, endColor);
+      this.renderSharedLegend(startColor, endColor);
     }
 
     // SVG
@@ -335,7 +368,7 @@ export class DumbbellChartVisual implements IVisual {
       .attr('transform', 'translate(0,0)');
 
     // Axes
-    if (s.axisSettings.showYAxis.value) {
+    if (s.axisFormattingCard.showYAxis.value) {
       chartGroup.append('g')
         .attr('class', 'dumbbell-axis dumbbell-axis-y')
         .call(
@@ -346,7 +379,7 @@ export class DumbbellChartVisual implements IVisual {
         .select('.domain').remove();
     }
 
-    if (s.axisSettings.showXAxis.value) {
+    if (s.axisFormattingCard.showXAxis.value) {
       chartGroup.append('g')
         .attr('class', 'dumbbell-axis dumbbell-axis-x')
         .attr('transform', `translate(0,${chartHeight})`)
@@ -356,6 +389,41 @@ export class DumbbellChartVisual implements IVisual {
             .tickFormat((d) => formatNumber(d as number, { abbreviate: true })),
         )
         .select('.domain').remove();
+    }
+
+    // Render group sub-headers when grouping is enabled
+    const enableGrouping = s.dumbbellGroupSettings.enableGrouping.value;
+    if (enableGrouping) {
+      let lastGroup = '';
+      rows.forEach((row) => {
+        const groupKey = row.label.charAt(0).toUpperCase();
+        if (groupKey !== lastGroup) {
+          lastGroup = groupKey;
+          const cy = (yScale(row.key) ?? 0) - 2;
+          chartGroup.append('text')
+            .attr('class', 'dumbbell-group-header')
+            .attr('x', -8)
+            .attr('y', cy)
+            .attr('text-anchor', 'end')
+            .attr('dominant-baseline', 'auto')
+            .attr('font-size', '10px')
+            .attr('font-weight', '700')
+            .attr('fill', '#64748B')
+            .attr('letter-spacing', '0.05em')
+            .text(groupKey);
+
+          // Draw a subtle separator line
+          chartGroup.append('line')
+            .attr('class', 'dumbbell-group-separator')
+            .attr('x1', 0)
+            .attr('y1', cy + 2)
+            .attr('x2', chartWidth)
+            .attr('y2', cy + 2)
+            .attr('stroke', '#E2E8F0')
+            .attr('stroke-width', 0.5)
+            .attr('stroke-dasharray', '3 2');
+        }
+      });
     }
 
     // Render dumbbell rows
@@ -368,6 +436,11 @@ export class DumbbellChartVisual implements IVisual {
       const delay = rowIdx * STAGGER_DELAY;
       const seriesIdx = String(rowIdx);
 
+      // Conditional color based on gap/difference value
+      const gapValue = row.end - row.start;
+      const conditionalColor = this.getConditionalColor(gapValue);
+      const fmt = resolveSeriesFormatting(this.settings.seriesFormattingCard, rowIdx, resolvedLineColor);
+
       // Connecting line (rendered as SVG path for drawPath animation)
       const minX = Math.min(x1, x2);
       const maxX = Math.max(x1, x2);
@@ -376,9 +449,10 @@ export class DumbbellChartVisual implements IVisual {
         .attr('class', 'dumbbell-line')
         .attr('data-series', seriesIdx)
         .attr('d', `M${minX},${cy} L${maxX},${cy}`)
-        .attr('stroke', resolvedLineColor)
+        .attr('stroke', conditionalColor ?? fmt.color)
         .attr('stroke-width', lineWidth)
         .attr('fill', 'none')
+        .attr('opacity', fmt.opacity / 100)
         .style('transition', 'opacity 0.15s ease');
       this.attachSelection(pathEl, row.selectionId);
 
@@ -398,30 +472,34 @@ export class DumbbellChartVisual implements IVisual {
       }
 
       // Start dot
+      const startFmt = resolveSeriesFormatting(this.settings.seriesFormattingCard, rowIdx, startColor);
       const startDot = chartGroup.append('circle')
         .attr('class', 'dumbbell-dot dumbbell-dot-start')
         .attr('data-series', seriesIdx)
         .attr('cx', x1)
         .attr('cy', cy)
         .attr('r', dotRadius)
-        .attr('fill', startColor)
+        .attr('fill', conditionalColor ?? startFmt.color)
         .attr('stroke', dotStrokeColor)
         .attr('stroke-width', dotStrokeWidth)
+        .attr('opacity', startFmt.opacity / 100)
         .style('transition', 'opacity 0.15s ease');
       this.attachSelection(startDot, row.selectionId);
 
       this.attachDotTooltip(startDot, row.label, 'Start', row.start);
 
       // End dot
+      const endFmt = resolveSeriesFormatting(this.settings.seriesFormattingCard, rowIdx, endColor);
       const endDot = chartGroup.append('circle')
         .attr('class', 'dumbbell-dot dumbbell-dot-end')
         .attr('data-series', seriesIdx)
         .attr('cx', x2)
         .attr('cy', cy)
         .attr('r', dotRadius)
-        .attr('fill', endColor)
+        .attr('fill', conditionalColor ?? endFmt.color)
         .attr('stroke', dotStrokeColor)
         .attr('stroke-width', dotStrokeWidth)
+        .attr('opacity', endFmt.opacity / 100)
         .style('transition', 'opacity 0.15s ease');
       this.attachSelection(endDot, row.selectionId);
 
@@ -571,15 +649,39 @@ export class DumbbellChartVisual implements IVisual {
       applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.dumbbell-data-label');
     }
 
+    // Render ranking indicators if enabled
+    this.renderRankingIndicators(rows, chartGroup, xScale, yScale, bandMiddle);
+
+    // Render connector arrows if enabled
+    this.renderConnectorArrows(rows, chartGroup, xScale, yScale, bandMiddle);
+
+    // Render reference line if enabled (vertical — along X value axis)
+    this.renderSharedReferenceLine(chartGroup, xScale, chartHeight);
+
+    // Render horizontal reference line with stat computation (mean/median/etc.)
+    this.renderStatReferenceLine(chartGroup, xScale, chartWidth, allValues);
+
+    // Render trend line overlay
+    const endValues = rows.map((r) => r.end);
+    this.renderTrendLineOverlay(
+      chartGroup,
+      endValues,
+      (i) => (yScale(rows[i]?.key ?? '') ?? 0) + bandMiddle,
+      xScale,
+    );
+
     // Legend (bottom)
     if (showLegend && legendPos !== 'top') {
-      this.renderLegend(startColor, endColor);
+      this.renderSharedLegend(startColor, endColor);
     }
+
+    // Apply accessibility (ARIA labels, keyboard nav, focus ring)
+    this.applyAccessibility(rows);
 
     this.container.addEventListener('click', this.handleBackgroundClick);
 
     // Animate the Y-axis labels with fadeSlideIn
-    if (animEnabled && s.axisSettings.showYAxis.value) {
+    if (animEnabled && s.axisFormattingCard.showYAxis.value) {
       const yAxisTexts = this.container.querySelectorAll('.dumbbell-axis-y .tick text');
       yAxisTexts.forEach((textEl, idx) => {
         const cancel = fadeSlideIn(
@@ -650,41 +752,255 @@ export class DumbbellChartVisual implements IVisual {
     });
   }
 
-  // -- Legend -----------------------------------------------------------------
+  // -- Legend (shared) --------------------------------------------------------
 
-  private renderLegend(startColor: string, endColor: string): void {
+  private renderSharedLegend(startColor: string, endColor: string): void {
     const legendFmtCard = this.settings.legendFormattingCard;
     const rawFontColor = legendFmtCard.legendFontColor.value?.value;
-    const legendFontColor = rawFontColor != null && rawFontColor.length > 0 ? rawFontColor : '';
+    const legendFontColor = rawFontColor != null && rawFontColor.length > 0 ? rawFontColor : '#1E293B';
     const legendFontSize = legendFmtCard.legendFontSize.value;
+    const legendPosRaw = legendFmtCard.legendPosition.value;
+    const legendPos = (typeof legendPosRaw === 'string'
+      ? legendPosRaw
+      : (legendPosRaw as { value?: string })?.value) ?? 'bottom';
 
-    const legendDiv = document.createElement('div');
-    legendDiv.className = 'dumbbell-legend';
-
-    const entries: Array<{ label: string; color: string }> = [
+    const items: LegendItem[] = [
       { label: 'Start', color: startColor },
       { label: 'End', color: endColor },
     ];
 
-    for (const entry of entries) {
-      const item = document.createElement('div');
-      item.className = 'dumbbell-legend-item';
+    renderLegend(this.container, {
+      items,
+      position: legendPos as 'top' | 'bottom' | 'left' | 'right',
+      fontSize: legendFontSize,
+      fontColor: legendFontColor,
+    });
+  }
 
-      const swatch = document.createElement('div');
-      swatch.className = 'dumbbell-legend-swatch';
-      swatch.style.backgroundColor = entry.color;
-      item.appendChild(swatch);
+  // -- Ranking Indicators ---------------------------------------------------
 
-      const label = document.createElement('span');
-      label.textContent = entry.label;
-      if (legendFontColor.length > 0) label.style.color = legendFontColor;
-      if (legendFontSize !== 11) label.style.fontSize = `${legendFontSize}px`;
-      item.appendChild(label);
+  private renderRankingIndicators(
+    rows: DumbbellRow[],
+    chartGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
+    xScale: d3.ScaleLinear<number, number>,
+    yScale: d3.ScaleBand<string>,
+    bandMiddle: number,
+  ): void {
+    if (!this.settings.dumbbellDisplaySettings.showRanking.value) return;
 
-      legendDiv.appendChild(item);
+    // Rank by gap size (descending)
+    const ranked = rows.map((r, i) => ({ row: r, gap: Math.abs(r.end - r.start), idx: i }))
+      .sort((a, b) => b.gap - a.gap);
+
+    ranked.forEach((entry, rank) => {
+      const row = entry.row;
+      const cy = (yScale(row.key) ?? 0) + bandMiddle;
+      const x2 = xScale(row.end);
+
+      chartGroup.append('text')
+        .attr('class', 'dumbbell-ranking')
+        .attr('x', x2 + 16)
+        .attr('y', cy)
+        .attr('text-anchor', 'start')
+        .attr('dominant-baseline', 'central')
+        .attr('font-size', '10px')
+        .attr('fill', '#94A3B8')
+        .attr('font-weight', '600')
+        .style('pointer-events', 'none')
+        .text(`#${rank + 1}`);
+    });
+  }
+
+  // -- Connector Arrows -----------------------------------------------------
+
+  private renderConnectorArrows(
+    rows: DumbbellRow[],
+    chartGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
+    xScale: d3.ScaleLinear<number, number>,
+    yScale: d3.ScaleBand<string>,
+    bandMiddle: number,
+  ): void {
+    if (!this.settings.dumbbellDisplaySettings.showArrow.value) return;
+
+    const dotRadius = this.settings.dumbbellSettings.dotRadius.value;
+
+    for (const row of rows) {
+      const cy = (yScale(row.key) ?? 0) + bandMiddle;
+      const x1 = xScale(row.start);
+      const x2 = xScale(row.end);
+      const direction = x2 > x1 ? 1 : -1;
+
+      // Arrow tip at end dot edge
+      const arrowX = x2 - direction * (dotRadius + 2);
+      const arrowSize = 4;
+
+      const arrowPath = `M${arrowX},${cy} L${arrowX - direction * arrowSize},${cy - arrowSize} L${arrowX - direction * arrowSize},${cy + arrowSize} Z`;
+
+      const arrowColor = this.settings.dumbbellDisplaySettings.autoDirectionalColor.value
+        ? getDeltaColor(row.end - row.start)
+        : (this.settings.dumbbellSettings.endColor.value?.value ?? '#3B82F6');
+
+      chartGroup.append('path')
+        .attr('class', 'dumbbell-arrow')
+        .attr('d', arrowPath)
+        .attr('fill', arrowColor)
+        .style('pointer-events', 'none');
+    }
+  }
+
+  // -- Reference Line (shared) ----------------------------------------------
+
+  private renderSharedReferenceLine(
+    chartGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
+    xScale: d3.ScaleLinear<number, number>,
+    chartHeight: number,
+  ): void {
+    const ref = this.settings.referenceLineFormattingCard;
+    if (!ref.showReferenceLine.value) return;
+
+    const refColor = ref.referenceLineColor.value?.value ?? '#EF4444';
+    const refStyleVal = resolveDropdown(ref.referenceLineStyle) ?? 'dashed';
+    const xPos = xScale(ref.referenceLineValue.value);
+
+    if (!isFinite(xPos)) return;
+
+    const config: VerticalReferenceLineConfig = {
+      xPosition: xPos,
+      yStart: 0,
+      yEnd: chartHeight,
+      lineColor: refColor,
+      lineWidth: ref.referenceLineWidth.value,
+      lineStyle: refStyleVal as 'solid' | 'dashed' | 'dotted',
+      showLabel: ref.showReferenceLabel.value,
+      labelText: ref.referenceLabelText.value.length > 0
+        ? ref.referenceLabelText.value
+        : formatNumber(ref.referenceLineValue.value, { abbreviate: true }),
+    };
+
+    renderVerticalReferenceLine(chartGroup, config);
+  }
+
+  // -- Conditional Formatting ------------------------------------------------
+
+  /**
+   * Resolves a conditional color for a dumbbell row based on its gap/difference value.
+   * Returns undefined when conditional formatting is disabled.
+   */
+  private getConditionalColor(value: number): string | undefined {
+    const cc = this.settings.conditionalFormattingCard;
+    if (!cc.enableConditional.value) return undefined;
+
+    const config = buildConditionalConfig(
+      true,
+      resolveDropdown(cc.conditionalDirection),
+      cc.threshold1.value,
+      cc.threshold2.value,
+      cc.conditionalColor1.value?.value,
+      cc.conditionalColor2.value?.value,
+      cc.conditionalColor3.value?.value,
+    );
+    return resolveConditionalColor(value, config);
+  }
+
+  // -- Accessibility --------------------------------------------------------
+
+  /**
+   * Applies ARIA labels, focus ring styles, and keyboard navigation to the chart.
+   */
+  private applyAccessibility(rows: DumbbellRow[]): void {
+    const acc = this.settings.accessibilityFormattingCard;
+    if (!acc.enableKeyboardNav.value) return;
+
+    ensureFocusRingStyles();
+
+    applyChartAria(this.container, {
+      chartType: 'dumbbell chart',
+      title: this.settings.titleFormattingCard.titleText.value || undefined,
+      dataPointCount: rows.length,
+    });
+
+    const cleanup = attachKeyboardNav({
+      container: this.container,
+      itemSelector: '.dumbbell-dot',
+      onActivate: (el) => {
+        (el as HTMLElement).click?.();
+      },
+    });
+    this.cancelAnimations.push(cleanup);
+  }
+
+  // -- Horizontal Reference Line -------------------------------------------
+
+  /**
+   * Renders a horizontal reference line across the chart using stat computation.
+   * Uses the shared renderHorizontalReferenceLine from core.
+   */
+  private renderStatReferenceLine(
+    chartGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
+    yScale: d3.ScaleLinear<number, number>,
+    chartWidth: number,
+    allValues: number[],
+  ): void {
+    const ref = this.settings.referenceLineFormattingCard;
+    if (!ref.showReferenceLine.value) return;
+
+    const refType = resolveDropdown(ref.referenceLineType) ?? 'custom';
+    let refValue = ref.referenceLineValue.value;
+
+    // Compute statistical value if needed
+    if (refType !== 'custom' && allValues.length > 0) {
+      refValue = computeStatValue(allValues, refType as StatType);
     }
 
-    this.container.appendChild(legendDiv);
+    const refColor = ref.referenceLineColor.value?.value ?? '#EF4444';
+    const refStyle = resolveDropdown(ref.referenceLineStyle) ?? 'dashed';
+    const labelText = ref.referenceLabelText.value.length > 0
+      ? ref.referenceLabelText.value
+      : formatNumber(refValue, { abbreviate: true });
+
+    renderHorizontalReferenceLine(chartGroup, {
+      value: refValue,
+      yScale,
+      chartWidth,
+      lineColor: refColor,
+      lineWidth: ref.referenceLineWidth.value,
+      lineStyle: refStyle as 'solid' | 'dashed' | 'dotted',
+      showLabel: ref.showReferenceLabel.value,
+      labelText,
+      showBand: ref.showReferenceBand.value,
+      bandOpacity: ref.referenceBandOpacity.value / 100,
+    });
+  }
+
+  // -- Trend Line ----------------------------------------------------------
+
+  /**
+   * Renders a regression trend line overlay on the chart.
+   */
+  private renderTrendLineOverlay(
+    chartGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
+    values: number[],
+    xPositionFn: (index: number) => number,
+    yScale: d3.ScaleLinear<number, number>,
+  ): void {
+    const tl = this.settings.trendLineFormattingCard;
+    if (!tl.showTrendLine.value || values.length < 2) return;
+
+    const trendType = (resolveDropdown(tl.trendLineType) ?? 'linear') as TrendType;
+    const result = computeRegression(values, trendType, tl.polynomialOrder.value);
+    const trendColor = tl.trendLineColor.value?.value ?? '#6366F1';
+
+    renderTrendLine(chartGroup, {
+      predicted: result.predicted,
+      xScale: xPositionFn,
+      yScale,
+      lineColor: trendColor,
+      lineWidth: tl.trendLineWidth.value,
+      showEquation: tl.showEquation.value,
+      showR2: tl.showR2.value,
+      equation: result.equation,
+      r2: result.r2,
+    });
   }
 
   // -- Formatting Model -------------------------------------------------------

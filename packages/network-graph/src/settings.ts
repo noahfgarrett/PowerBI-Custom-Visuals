@@ -5,12 +5,18 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { DataLabelFormattingCard, TitleFormattingCard } from '../../core/src';
+import {
+  DataLabelFormattingCard,
+  TitleFormattingCard,
+  ConditionalFormattingCard,
+  AccessibilityFormattingCard,
+  ColorThemeFormattingCard,
+} from '../../core/src';
 class ForceSettings extends formattingSettings.SimpleCard {
   strength = new formattingSettings.NumUpDown({
     name: 'strength',
     displayName: 'Link Strength',
-    value: -300,
+    value: 0.5,
   });
 
   linkDistance = new formattingSettings.NumUpDown({
@@ -43,17 +49,6 @@ class NodeSettings extends formattingSettings.SimpleCard {
     value: true,
   });
 
-
-  nodeRadius = new formattingSettings.NumUpDown({
-
-    name: 'nodeRadius',
-
-    displayName: 'Node Radius',
-
-    value: 8,
-
-  });
-
   nodeBorderColor = new formattingSettings.ColorPicker({
 
     name: 'nodeBorderColor',
@@ -77,7 +72,7 @@ class NodeSettings extends formattingSettings.SimpleCard {
 
   name = 'nodeSettings';
   displayName = 'Nodes';
-  slices = [this.radius, this.showLabels, this.nodeRadius, this.nodeBorderColor, this.nodeBorderWidth];
+  slices = [this.radius, this.showLabels, this.nodeBorderColor, this.nodeBorderWidth];
 }
 
 class LinkSettings extends formattingSettings.SimpleCard {
@@ -129,6 +124,12 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
     value: true,
   });
 
+  backgroundColor = new formattingSettings.ColorPicker({
+    name: 'backgroundColor',
+    displayName: 'Background Color',
+    value: { value: '' },
+  });
+
   backgroundOpacity = new formattingSettings.NumUpDown({
     name: 'backgroundOpacity',
     displayName: 'Background Opacity (%)',
@@ -143,7 +144,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 class ZoomSettings extends formattingSettings.SimpleCard {
@@ -188,6 +189,84 @@ class AnimationSettings extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
+class NetworkLayoutSettings extends formattingSettings.SimpleCard {
+  enableClustering = new formattingSettings.ToggleSwitch({
+    name: 'enableClustering',
+    displayName: 'Cluster Detection & Coloring',
+    value: false,
+  });
+
+  sizeByDegree = new formattingSettings.ToggleSwitch({
+    name: 'sizeByDegree',
+    displayName: 'Size by Degree',
+    value: false,
+  });
+
+  enableCollision = new formattingSettings.ToggleSwitch({
+    name: 'enableCollision',
+    displayName: 'Collision Prevention',
+    value: true,
+  });
+
+  edgeBundling = new formattingSettings.ToggleSwitch({
+    name: 'edgeBundling',
+    displayName: 'Edge Bundling',
+    value: false,
+  });
+
+  name = 'networkLayoutSettings';
+  displayName = 'Layout Features';
+  slices = [this.enableClustering, this.sizeByDegree, this.enableCollision, this.edgeBundling];
+}
+
+class NetworkInteractionSettings extends formattingSettings.SimpleCard {
+  enableDrag = new formattingSettings.ToggleSwitch({
+    name: 'enableDrag',
+    displayName: 'Enable Node Drag',
+    value: true,
+  });
+
+  enableSearch = new formattingSettings.ToggleSwitch({
+    name: 'enableSearch',
+    displayName: 'Enable Search',
+    value: false,
+  });
+
+  highlightNeighbors = new formattingSettings.ToggleSwitch({
+    name: 'highlightNeighbors',
+    displayName: 'Highlight Neighbors on Hover',
+    value: true,
+  });
+
+  name = 'networkInteractionSettings';
+  displayName = 'Interaction Features';
+  slices = [this.enableDrag, this.enableSearch, this.highlightNeighbors];
+}
+
+class NetworkLinkSettings extends formattingSettings.SimpleCard {
+  widthByWeight = new formattingSettings.ToggleSwitch({
+    name: 'widthByWeight',
+    displayName: 'Width by Weight',
+    value: false,
+  });
+
+  minWidth = new formattingSettings.NumUpDown({
+    name: 'minWidth',
+    displayName: 'Min Link Width',
+    value: 1,
+  });
+
+  maxWidth = new formattingSettings.NumUpDown({
+    name: 'maxWidth',
+    displayName: 'Max Link Width',
+    value: 8,
+  });
+
+  name = 'networkLinkSettings';
+  displayName = 'Link Features';
+  slices = [this.widthByWeight, this.minWidth, this.maxWidth];
+}
+
 export class NetworkGraphSettings extends formattingSettings.Model {
   forceSettings = new ForceSettings();
   nodeSettings = new NodeSettings();
@@ -197,11 +276,17 @@ export class NetworkGraphSettings extends formattingSettings.Model {
   animationSettings = new AnimationSettings();
   zoomSettings = new ZoomSettings();
 
+  networkLayoutSettings = new NetworkLayoutSettings();
+  networkInteractionSettings = new NetworkInteractionSettings();
+  networkLinkSettings = new NetworkLinkSettings();
+
   dataLabelFormattingCard = new DataLabelFormattingCard();
 
   titleFormattingCard = new TitleFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
 
-
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
   cards = [
     this.forceSettings,
     this.nodeSettings,
@@ -210,8 +295,13 @@ export class NetworkGraphSettings extends formattingSettings.Model {
     this.cardSettings,
     this.animationSettings,
     this.zoomSettings,
+    this.networkLayoutSettings,
+    this.networkInteractionSettings,
+    this.networkLinkSettings,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
-
+    this.conditionalFormattingCard,
+    this.accessibilityFormattingCard,
+    this.colorThemeFormattingCard,
   ];
 }

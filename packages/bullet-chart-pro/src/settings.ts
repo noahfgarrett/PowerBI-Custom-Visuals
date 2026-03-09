@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard } from '../../core/src';
+import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AnnotationFormattingCard, AccessibilityFormattingCard } from '../../core/src';
 // ── Bullet Settings ─────────────────────────────────────────────────
 
 class BulletSettings extends formattingSettings.SimpleCard {
@@ -115,7 +115,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 // ── Animation Settings ──────────────────────────────────────────────
@@ -136,6 +136,70 @@ class AnimationSettingsCard extends formattingSettings.SimpleCard {
   name = 'animationSettings';
   displayName = 'Animation';
   slices = [this.enabled, this.duration];
+}
+
+// ── Bullet Layout Settings ──────────────────────────────────────────
+
+class BulletLayoutSettings extends formattingSettings.SimpleCard {
+  orientation = new formattingSettings.ItemDropdown({
+    name: 'orientation',
+    displayName: 'Orientation',
+    items: [
+      { value: 'horizontal', displayName: 'Horizontal' },
+      { value: 'vertical', displayName: 'Vertical' },
+    ],
+    value: { value: 'horizontal', displayName: 'Horizontal' },
+  });
+
+  name = 'bulletLayout';
+  displayName = 'Layout';
+  slices = [this.orientation];
+}
+
+// ── Bullet Forecast Settings ────────────────────────────────────────
+
+class BulletForecastSettings extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Forecast',
+    value: false,
+  });
+
+  forecastValue = new formattingSettings.NumUpDown({
+    name: 'forecastValue',
+    displayName: 'Forecast Value',
+    value: 0,
+  });
+
+  bandWidth = new formattingSettings.NumUpDown({
+    name: 'bandWidth',
+    displayName: 'Band Width',
+    value: 10,
+  });
+
+  name = 'bulletForecast';
+  displayName = 'Forecast';
+  slices = [this.show, this.forecastValue, this.bandWidth];
+}
+
+// ── Bullet Comparison Settings ──────────────────────────────────────
+
+class BulletComparisonSettings extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Comparative',
+    value: false,
+  });
+
+  comparativeColor = new formattingSettings.ColorPicker({
+    name: 'comparativeColor',
+    displayName: 'Comparative Color',
+    value: { value: '#94A3B8' },
+  });
+
+  name = 'bulletComparison';
+  displayName = 'Comparison';
+  slices = [this.show, this.comparativeColor];
 }
 
 // ── Root Model ──────────────────────────────────────────────────────
@@ -159,6 +223,16 @@ export class BulletChartProSettings extends formattingSettings.Model {
     this.scrollFormattingCard.minCategoryWidth.value = 30;
   }
 
+  referenceLineFormattingCard = new ReferenceLineFormattingCard();
+  trendLineFormattingCard = new TrendLineFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  annotationFormattingCard = new AnnotationFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
+
+  bulletLayout = new BulletLayoutSettings();
+  bulletForecast = new BulletForecastSettings();
+  bulletComparison = new BulletComparisonSettings();
+
   cards = [
     this.bulletSettings,
     this.rangeSettings,
@@ -168,5 +242,13 @@ export class BulletChartProSettings extends formattingSettings.Model {
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.scrollFormattingCard,
+    this.referenceLineFormattingCard,
+    this.trendLineFormattingCard,
+    this.conditionalFormattingCard,
+    this.annotationFormattingCard,
+    this.accessibilityFormattingCard,
+    this.bulletLayout,
+    this.bulletForecast,
+    this.bulletComparison,
   ];
 }

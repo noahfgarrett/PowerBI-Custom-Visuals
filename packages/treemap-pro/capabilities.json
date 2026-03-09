@@ -318,6 +318,177 @@
           "type": {
             "numeric": true
           }
+        },
+        "enableGlass": {
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "treemapHeatSettings": {
+      "displayName": "Heat Coloring",
+      "properties": {
+        "enabled": {
+          "displayName": "Enable Heat Coloring",
+          "type": {
+            "bool": true
+          }
+        },
+        "startColor": {
+          "displayName": "Start Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "endColor": {
+          "displayName": "End Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "treemapDisplaySettings": {
+      "displayName": "Display",
+      "properties": {
+        "showPercentage": {
+          "displayName": "Show Percentage",
+          "type": {
+            "bool": true
+          }
+        },
+        "percentOf": {
+          "displayName": "Percent Of",
+          "type": {
+            "enumeration": [
+              {
+                "value": "total",
+                "displayName": "Total"
+              },
+              {
+                "value": "parent",
+                "displayName": "Parent"
+              }
+            ]
+          }
+        },
+        "labelOverflow": {
+          "displayName": "Label Overflow",
+          "type": {
+            "enumeration": [
+              {
+                "value": "truncate",
+                "displayName": "Truncate"
+              },
+              {
+                "value": "hide",
+                "displayName": "Hide"
+              }
+            ]
+          }
+        },
+        "colorByDepth": {
+          "displayName": "Color Variation by Depth",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "conditionalFormatting": {
+      "displayName": "Conditional Formatting",
+      "properties": {
+        "enableConditional": {
+          "displayName": "Enable Conditional Formatting",
+          "type": {
+            "bool": true
+          }
+        },
+        "conditionalDirection": {
+          "displayName": "Direction",
+          "type": {
+            "enumeration": [
+              {
+                "value": "ascending",
+                "displayName": "Ascending (Low = Bad)"
+              },
+              {
+                "value": "descending",
+                "displayName": "Descending (Low = Good)"
+              }
+            ]
+          }
+        },
+        "threshold1": {
+          "displayName": "Threshold 1",
+          "type": {
+            "numeric": true
+          }
+        },
+        "threshold2": {
+          "displayName": "Threshold 2",
+          "type": {
+            "numeric": true
+          }
+        },
+        "conditionalColor1": {
+          "displayName": "Color 1 (Bad)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "conditionalColor2": {
+          "displayName": "Color 2 (Warning)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "conditionalColor3": {
+          "displayName": "Color 3 (Good)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "accessibilityFormatting": {
+      "displayName": "Accessibility",
+      "properties": {
+        "enableKeyboardNav": {
+          "displayName": "Enable Keyboard Navigation",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "colorThemeFormatting": {
+      "properties": {
+        "colorTheme": {
+          "type": {
+            "text": true
+          }
         }
       }
     }

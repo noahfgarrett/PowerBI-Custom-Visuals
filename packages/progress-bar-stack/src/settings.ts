@@ -5,7 +5,7 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard } from '../../core/src';
+import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AnnotationFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard } from '../../core/src';
 class BarSettings extends formattingSettings.SimpleCard {
   barHeight = new formattingSettings.NumUpDown({
     name: 'barHeight',
@@ -143,7 +143,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 class AnimationSettings extends formattingSettings.SimpleCard {
@@ -164,6 +164,53 @@ class AnimationSettings extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
+// -- Progress Milestone Settings -----------------------------------------------
+
+class ProgressMilestoneSettings extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Milestones',
+    value: false,
+  });
+
+  milestones = new formattingSettings.TextInput({
+    name: 'milestones',
+    displayName: 'Milestone Positions (CSV %)',
+    value: '25,50,75',
+    placeholder: '25,50,75',
+  });
+
+  name = 'progressMilestone';
+  displayName = 'Milestones';
+  slices = [this.show, this.milestones];
+}
+
+// -- Progress Gradient Settings ------------------------------------------------
+
+class ProgressGradientSettings extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Gradient',
+    value: false,
+  });
+
+  startColor = new formattingSettings.ColorPicker({
+    name: 'startColor',
+    displayName: 'Start Color',
+    value: { value: '#3B82F6' },
+  });
+
+  endColor = new formattingSettings.ColorPicker({
+    name: 'endColor',
+    displayName: 'End Color',
+    value: { value: '#8B5CF6' },
+  });
+
+  name = 'progressGradient';
+  displayName = 'Gradient Fill';
+  slices = [this.enabled, this.startColor, this.endColor];
+}
+
 export class ProgressBarStackSettings extends formattingSettings.Model {
   barSettings = new BarSettings();
   colorSettings = new ColorSettings();
@@ -177,6 +224,16 @@ export class ProgressBarStackSettings extends formattingSettings.Model {
 
   axisFormattingCard = new AxisFormattingCard();
 
+  referenceLineFormattingCard = new ReferenceLineFormattingCard();
+  trendLineFormattingCard = new TrendLineFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  annotationFormattingCard = new AnnotationFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
+
+  progressMilestone = new ProgressMilestoneSettings();
+  progressGradient = new ProgressGradientSettings();
+
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
   cards = [
     this.barSettings,
     this.colorSettings,
@@ -186,5 +243,13 @@ export class ProgressBarStackSettings extends formattingSettings.Model {
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.axisFormattingCard,
+    this.referenceLineFormattingCard,
+    this.trendLineFormattingCard,
+    this.conditionalFormattingCard,
+    this.annotationFormattingCard,
+    this.accessibilityFormattingCard,
+    this.progressMilestone,
+    this.progressGradient,
+    this.colorThemeFormattingCard,
   ];
 }

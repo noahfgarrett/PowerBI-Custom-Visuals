@@ -19,6 +19,18 @@
       "description": "Second intermediate node (used with Step 2)"
     },
     {
+      "displayName": "Step 4",
+      "name": "step4",
+      "kind": "Grouping",
+      "description": "Third intermediate node (used with Step 2 and Step 3)"
+    },
+    {
+      "displayName": "Step 5",
+      "name": "step5",
+      "kind": "Grouping",
+      "description": "Fourth intermediate node (used with Step 2, Step 3, and Step 4)"
+    },
+    {
       "displayName": "Target",
       "name": "target",
       "kind": "Grouping",
@@ -42,6 +54,12 @@
             "max": 1
           },
           "step3": {
+            "max": 1
+          },
+          "step4": {
+            "max": 1
+          },
+          "step5": {
             "max": 1
           },
           "target": {
@@ -68,6 +86,16 @@
             {
               "for": {
                 "in": "step3"
+              }
+            },
+            {
+              "for": {
+                "in": "step4"
+              }
+            },
+            {
+              "for": {
+                "in": "step5"
               }
             },
             {
@@ -129,6 +157,10 @@
               {
                 "value": "below",
                 "displayName": "Below"
+              },
+              {
+                "value": "none",
+                "displayName": "None (Hover)"
               }
             ]
           }
@@ -361,6 +393,73 @@
                 "displayName": "Both"
               }
             ]
+          }
+        }
+      }
+    },
+    "totalSettings": {
+      "displayName": "Totals",
+      "properties": {
+        "showNodeValues": {
+          "displayName": "Show Node Values",
+          "type": {
+            "bool": true
+          }
+        },
+        "nodeValueFormat": {
+          "displayName": "Node Value Format",
+          "type": {
+            "enumeration": [
+              {
+                "value": "value",
+                "displayName": "Value"
+              },
+              {
+                "value": "percent",
+                "displayName": "Percent"
+              },
+              {
+                "value": "both",
+                "displayName": "Both"
+              }
+            ]
+          }
+        },
+        "showLayerTotals": {
+          "displayName": "Show Layer Totals",
+          "type": {
+            "bool": true
+          }
+        },
+        "layerTotalPosition": {
+          "displayName": "Layer Total Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "top",
+                "displayName": "Top"
+              },
+              {
+                "value": "bottom",
+                "displayName": "Bottom"
+              }
+            ]
+          }
+        },
+        "totalFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "totalFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
           }
         }
       }
@@ -609,6 +708,162 @@
           "displayName": "Border Radius",
           "type": {
             "numeric": true
+          }
+        },
+        "enableGlass": {
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "sankeyInteractionSettings": {
+      "displayName": "Interaction",
+      "properties": {
+        "highlightFlows": {
+          "displayName": "Highlight Flow Path",
+          "type": {
+            "bool": true
+          }
+        },
+        "enableDrag": {
+          "displayName": "Enable Node Drag",
+          "type": {
+            "bool": true
+          }
+        },
+        "enableFiltering": {
+          "displayName": "Enable Flow Filtering",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "sankeyLinkSettings": {
+      "displayName": "Link Features",
+      "properties": {
+        "gradientLinks": {
+          "displayName": "Gradient Links",
+          "type": {
+            "bool": true
+          }
+        },
+        "opacityByValue": {
+          "displayName": "Opacity by Value",
+          "type": {
+            "bool": true
+          }
+        },
+        "showFlowLabels": {
+          "displayName": "Show Flow Labels on Hover",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "sankeyNodeSettings": {
+      "displayName": "Node Features",
+      "properties": {
+        "showNodeValues": {
+          "displayName": "Show Node Values",
+          "type": {
+            "bool": true
+          }
+        },
+        "nodeLabelFontSize": {
+          "displayName": "Node Label Font Size",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "conditionalFormatting": {
+      "displayName": "Conditional Formatting",
+      "properties": {
+        "enableConditional": {
+          "displayName": "Enable Conditional Formatting",
+          "type": {
+            "bool": true
+          }
+        },
+        "conditionalDirection": {
+          "displayName": "Direction",
+          "type": {
+            "enumeration": [
+              {
+                "value": "ascending",
+                "displayName": "Ascending (Low = Bad)"
+              },
+              {
+                "value": "descending",
+                "displayName": "Descending (Low = Good)"
+              }
+            ]
+          }
+        },
+        "threshold1": {
+          "displayName": "Threshold 1",
+          "type": {
+            "numeric": true
+          }
+        },
+        "threshold2": {
+          "displayName": "Threshold 2",
+          "type": {
+            "numeric": true
+          }
+        },
+        "conditionalColor1": {
+          "displayName": "Color 1 (Bad)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "conditionalColor2": {
+          "displayName": "Color 2 (Warning)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "conditionalColor3": {
+          "displayName": "Color 3 (Good)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "accessibilityFormatting": {
+      "displayName": "Accessibility",
+      "properties": {
+        "enableKeyboardNav": {
+          "displayName": "Enable Keyboard Navigation",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "colorThemeFormatting": {
+      "properties": {
+        "colorTheme": {
+          "type": {
+            "text": true
           }
         }
       }

@@ -9,6 +9,7 @@ import { FormattingSettingsService } from 'powerbi-visuals-utils-formattingmodel
 import { ChordDiagramSettings } from './settings';
 import {
   formatNumber,
+  formatPercent,
   animate,
   cubicOut,
   sweepArc,
@@ -21,6 +22,16 @@ import {
   renderChartTitle,
   applyDataLabelFormatting,
   applySortOrder,
+  renderLegend,
+  applyChartAria,
+  applyDataPointAria,
+  attachKeyboardNav,
+  ensureFocusRingStyles,
+  type LegendItem,
+  resolveColorTheme,
+  buildConditionalConfig,
+  resolveConditionalColor,
+  resolveDropdown,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -66,6 +77,7 @@ export class ChordDiagramVisual implements IVisual {
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
   private svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null;
+  private filteredGroupIndex: number | null = null;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
@@ -267,6 +279,7 @@ export class ChordDiagramVisual implements IVisual {
   // ── Rendering ────────────────────────────────────────────────
 
   private render(data: ChordData | null, viewport: powerbi.IViewport): void {
+    const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
     // Clear existing DOM (no innerHTML)
     this.container.removeEventListener('click', this.handleBackgroundClick);
     while (this.container.firstChild) {
@@ -282,7 +295,7 @@ export class ChordDiagramVisual implements IVisual {
       const glass = getGlassStyle({
         mode: 'light',
         opacity: s.cardSettings.backgroundOpacity.value / 100,
-        backgroundColor: ((s.cardSettings as any).backgroundColor?.value?.value ?? (s.cardSettings as any).bgColor?.value?.value),
+        backgroundColor: s.cardSettings.backgroundColor.value?.value,
         borderRadius: s.cardSettings.borderRadius.value,
       });
       this.container.style.background = glass.background;
@@ -329,9 +342,22 @@ export class ChordDiagramVisual implements IVisual {
       .attr('transform', `translate(${width / 2},${height / 2})`);
 
     // Build chord layout
-    const chordLayout = d3.chord()
-      .padAngle(s.chordSettings.padding.value / 100)
-      .sortSubgroups(d3.descending);
+    const minArcAngleDeg = s.chordRibbonSettings.minArcAngle.value;
+    const minArcAngleRad = (minArcAngleDeg * Math.PI) / 180;
+    const isDirectional = s.chordRibbonSettings.directional.value;
+
+    const padAngle = Math.max(s.chordSettings.padding.value / 100, minArcAngleRad);
+
+    const chordLayout = isDirectional
+      ? (d3 as unknown as Record<string, unknown>).chordDirected
+        ? ((d3 as unknown as Record<string, unknown>).chordDirected as () => d3.ChordLayout)()
+            .sortSubgroups(d3.descending)
+        : d3.chord().padAngle(padAngle).sortSubgroups(d3.descending)
+      : d3.chord().padAngle(padAngle).sortSubgroups(d3.descending);
+
+    if ('padAngle' in chordLayout) {
+      (chordLayout as d3.ChordLayout).padAngle(padAngle);
+    }
 
     const chords = chordLayout(data.matrix);
 
@@ -341,8 +367,31 @@ export class ChordDiagramVisual implements IVisual {
       .outerRadius(outerRadius);
 
     // Ribbon generator for connecting chords
-    const ribbonGen = d3.ribbon<d3.Chord, d3.ChordSubgroup>()
-      .radius(innerRadius);
+    // When directional, use ribbonArrow if available (d3-chord v3+) for arrow indicators
+    const ribbonArrowFactory = (d3 as unknown as Record<string, unknown>).ribbonArrow as
+      (() => d3.RibbonGenerator<unknown, d3.Chord, d3.ChordSubgroup>) | undefined;
+    const ribbonGen = (isDirectional && ribbonArrowFactory)
+      ? ribbonArrowFactory().radius(innerRadius)
+      : d3.ribbon<d3.Chord, d3.ChordSubgroup>().radius(innerRadius);
+
+    // Gradient ribbon defs
+    const useGradientRibbons = s.chordRibbonSettings.gradientRibbons.value;
+    if (useGradientRibbons) {
+      const defs = svg.append('defs');
+      chords.forEach((chord, ci) => {
+        const srcColor = resolveColor(chord.source.index);
+        const tgtColor = resolveColor(chord.target.index);
+        const grad = defs.append('linearGradient')
+          .attr('id', `chord-grad-${ci}`)
+          .attr('gradientUnits', 'userSpaceOnUse')
+          .attr('x1', Math.cos((chord.source.startAngle + chord.source.endAngle) / 2 - Math.PI / 2) * innerRadius)
+          .attr('y1', Math.sin((chord.source.startAngle + chord.source.endAngle) / 2 - Math.PI / 2) * innerRadius)
+          .attr('x2', Math.cos((chord.target.startAngle + chord.target.endAngle) / 2 - Math.PI / 2) * innerRadius)
+          .attr('y2', Math.sin((chord.target.startAngle + chord.target.endAngle) / 2 - Math.PI / 2) * innerRadius);
+        grad.append('stop').attr('offset', '0%').attr('stop-color', srcColor);
+        grad.append('stop').attr('offset', '100%').attr('stop-color', tgtColor);
+      });
+    }
 
     const ribbonOpacity = s.chordSettings.ribbonOpacity.value / 100;
     const hoverOpacity = s.chordSettings.hoverOpacity.value / 100;
@@ -352,8 +401,8 @@ export class ChordDiagramVisual implements IVisual {
     const useChartPalette = s.colorSettings.useChartPalette.value;
     const resolveColor = (index: number): string =>
       useChartPalette
-        ? getHostChartColor(this.host.colorPalette, index)
-        : getChartColor(index);
+        ? getHostChartColor(this.host.colorPalette, index, themeName)
+        : getChartColor(index, themeName);
 
     // Render outer group arcs
     const groupGroup = g.append('g').attr('class', 'chord-groups');
@@ -369,6 +418,16 @@ export class ChordDiagramVisual implements IVisual {
       .style('cursor', 'pointer')
       .on('click', (event: MouseEvent, d) => {
         event.stopPropagation();
+        // Chord filtering: click arc to isolate flows
+        if (s.chordInteractionSettings.enableFiltering.value) {
+          if (this.filteredGroupIndex === d.index) {
+            this.filteredGroupIndex = null;
+          } else {
+            this.filteredGroupIndex = d.index;
+          }
+          this.render(data, viewport);
+          return;
+        }
         const groupName = data.names[d.index];
         const selectionId = groupName ? data.groupSelectionIds.get(groupName) : undefined;
         if (selectionId) {
@@ -419,16 +478,53 @@ export class ChordDiagramVisual implements IVisual {
           .text(data.names[i] ?? '');
       });
 
+    // Entity value labels on arcs
+    if (s.chordLabelSettings.showEntityValues.value) {
+      labelGroup
+        .selectAll<SVGTextElement, d3.ChordGroup>('.chord-entity-value')
+        .data(chords.groups)
+        .join('text')
+        .attr('class', 'chord-entity-value')
+        .each(function (d, i) {
+          const angle = (d.startAngle + d.endAngle) / 2;
+          const labelR = outerRadius + LABEL_OFFSET + 14;
+          const x = Math.sin(angle) * labelR;
+          const y = -Math.cos(angle) * labelR;
+
+          d3.select(this)
+            .attr('x', x)
+            .attr('y', y)
+            .attr('dy', '0.35em')
+            .attr('text-anchor', angle > Math.PI ? 'end' : 'start')
+            .attr('font-size', 10)
+            .attr('fill', '#64748B')
+            .text(formatNumber(d.value, { abbreviate: true }));
+        });
+    }
+
     // Render ribbons
     const ribbonGroup = g.append('g').attr('class', 'chord-ribbons');
 
+    // Filter ribbons when filtering is active
+    const visibleChords = this.filteredGroupIndex != null
+      ? chords.filter((c) => c.source.index === this.filteredGroupIndex || c.target.index === this.filteredGroupIndex)
+      : chords;
+
     const ribbonPaths = ribbonGroup
       .selectAll<SVGPathElement, d3.Chord>('.chord-ribbon')
-      .data(chords)
+      .data(visibleChords)
       .join('path')
       .attr('class', 'chord-ribbon')
       .attr('d', ribbonGen as unknown as d3.ValueFn<SVGPathElement, d3.Chord, string | null>)
-      .attr('fill', (d) => withOpacity(resolveColor(d.source.index), ribbonOpacity))
+      .attr('fill', (d, i) => {
+        if (useGradientRibbons) {
+          // Find the original chord index for gradient lookup
+          const origIdx = chords.indexOf(d);
+          return origIdx >= 0 ? `url(#chord-grad-${origIdx})` : withOpacity(resolveColor(d.source.index), ribbonOpacity);
+        }
+        return withOpacity(resolveColor(d.source.index), ribbonOpacity);
+      })
+      .attr('fill-opacity', useGradientRibbons ? ribbonOpacity : 1)
       .attr('stroke', (d) => withOpacity(resolveColor(d.source.index), 0.3))
       .style('cursor', 'pointer')
       .on('click', (event: MouseEvent, d) => {
@@ -454,15 +550,53 @@ export class ChordDiagramVisual implements IVisual {
         }
       });
 
-    // Ribbon tooltips
+    // Apply conditional formatting to ribbons
+    ribbonPaths.each((d, i, elements) => {
+      const condColor = this.getConditionalColor(d.source.value);
+      if (condColor) {
+        d3.select(elements[i]).attr('fill', condColor).attr('fill-opacity', ribbonOpacity);
+      }
+    });
+
+    // Ribbon tooltips (rich: source, target, value, percentages)
+    const totalChordValue = chords.groups.reduce((sum, grp) => sum + grp.value, 0);
     ribbonPaths.each(function (d) {
       const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
       const srcName = data.names[d.source.index] ?? '';
       const tgtName = data.names[d.target.index] ?? '';
       const val = formatNumber(d.source.value, { abbreviate: true });
-      title.textContent = `${srcName} \u2192 ${tgtName}: ${val}`;
+      const pct = totalChordValue > 0 ? formatPercent(d.source.value / totalChordValue) : '';
+      const srcTotal = chords.groups[d.source.index]?.value ?? 0;
+      const srcPct = srcTotal > 0 ? formatPercent(d.source.value / srcTotal) : '';
+      title.textContent = `${srcName} \u2192 ${tgtName}: ${val}${pct ? ` (${pct} of total)` : ''}${srcPct ? ` | ${srcPct} of ${srcName}` : ''}`;
       this.appendChild(title);
     });
+
+    // Flow labels on hover (show value at ribbon midpoint)
+    if (s.chordInteractionSettings.showFlowLabels.value) {
+      const flowLabelGroup = g.append('g').attr('class', 'chord-flow-labels');
+      ribbonPaths
+        .on('mouseenter.flowlabel', (_event: MouseEvent, d: d3.Chord) => {
+          const srcAngle = (d.source.startAngle + d.source.endAngle) / 2;
+          const tgtAngle = (d.target.startAngle + d.target.endAngle) / 2;
+          const midAngle = (srcAngle + tgtAngle) / 2;
+          const midR = innerRadius * 0.5;
+          const midX = Math.sin(midAngle) * midR;
+          const midY = -Math.cos(midAngle) * midR;
+          flowLabelGroup.selectAll('*').remove();
+          flowLabelGroup.append('text')
+            .attr('x', midX)
+            .attr('y', midY)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', 11)
+            .attr('fill', '#1E293B')
+            .attr('pointer-events', 'none')
+            .text(formatNumber(d.source.value, { abbreviate: true }));
+        })
+        .on('mouseleave.flowlabel', () => {
+          flowLabelGroup.selectAll('*').remove();
+        });
+    }
 
     // Hover interactions
     this.attachHoverBehavior(groupArcs, ribbonPaths, chords, ribbonOpacity, hoverOpacity, dimOpacity, resolveColor, data);
@@ -477,67 +611,71 @@ export class ChordDiagramVisual implements IVisual {
 
     // ── Legend ────────────────────────────────────────────────────
     if (s.legendFormattingCard.showLegend.value) {
-      this.renderLegend(data, resolveColor);
+      const legendFmtCard = this.settings.legendFormattingCard;
+      const rawFontColor = legendFmtCard.legendFontColor.value?.value;
+      const legendFontColor = rawFontColor != null && rawFontColor.length > 0 ? rawFontColor : '';
+      const legendFontSize = legendFmtCard.legendFontSize.value;
+      const position = this.getLegendPosition();
+
+      const legendItems: LegendItem[] = data.names.map((name, i) => ({
+        label: name,
+        color: resolveColor(i),
+      }));
+
+      renderLegend(this.container, {
+        items: legendItems,
+        position: position as 'top' | 'bottom' | 'left' | 'right',
+        fontSize: legendFontSize,
+        fontColor: legendFontColor,
+      });
+    }
+
+    // Accessibility
+    if (s.accessibilityFormattingCard.enableKeyboardNav.value) {
+      ensureFocusRingStyles();
+      applyChartAria(this.container, {
+        chartType: 'chord-diagram',
+        dataPointCount: data.names.length,
+      });
+      const arcEls = this.container.querySelectorAll('.chord-group-arc');
+      arcEls.forEach((el, i) => {
+        const name = data.names[i];
+        const grp = chords.groups[i];
+        if (name && grp) {
+          applyDataPointAria(
+            el,
+            name,
+            formatNumber(grp.value, { abbreviate: true }),
+            i,
+            data.names.length,
+          );
+        }
+      });
+      attachKeyboardNav({
+        container: this.container,
+        itemSelector: '.chord-group-arc',
+        onActivate: (el) => {
+          (el as HTMLElement).click();
+        },
+      });
     }
 
     this.container.addEventListener('click', this.handleBackgroundClick);
   }
 
-  // ── Legend Rendering ────────────────────────────────────────
-
-  private renderLegend(data: ChordData, resolveColor: (index: number) => string): void {
-    const legendFmtCard = this.settings.legendFormattingCard;
-    const rawFontColor = legendFmtCard.legendFontColor.value?.value;
-    const legendFontColor = rawFontColor != null && rawFontColor.length > 0 ? rawFontColor : '';
-    const legendFontSize = legendFmtCard.legendFontSize.value;
-    const position = this.getLegendPosition();
-
-    const legendDiv = document.createElement('div');
-    legendDiv.style.display = 'flex';
-    legendDiv.style.flexWrap = 'wrap';
-    legendDiv.style.gap = '12px';
-    legendDiv.style.padding = '6px 0';
-    legendDiv.style.justifyContent = 'center';
-
-    if (position === 'left' || position === 'right') {
-      legendDiv.style.flexDirection = 'column';
-      legendDiv.style.justifyContent = 'flex-start';
-    }
-
-    data.names.forEach((name, i) => {
-      const itemEl = document.createElement('div');
-      itemEl.style.display = 'flex';
-      itemEl.style.alignItems = 'center';
-      itemEl.style.gap = '5px';
-
-      const swatch = document.createElement('div');
-      swatch.style.width = '10px';
-      swatch.style.height = '10px';
-      swatch.style.borderRadius = '2px';
-      swatch.style.backgroundColor = resolveColor(i);
-      swatch.style.flexShrink = '0';
-
-      const label = document.createElement('span');
-      label.textContent = name;
-      if (legendFontColor.length > 0) label.style.color = legendFontColor;
-      if (legendFontSize !== 11) label.style.fontSize = `${legendFontSize}px`;
-
-      itemEl.appendChild(swatch);
-      itemEl.appendChild(label);
-      legendDiv.appendChild(itemEl);
-    });
-
-    if (position === 'top') {
-      // Insert after title but before SVG
-      const svg = this.container.querySelector('svg');
-      if (svg) {
-        this.container.insertBefore(legendDiv, svg);
-      } else {
-        this.container.appendChild(legendDiv);
-      }
-    } else {
-      this.container.appendChild(legendDiv);
-    }
+  private getConditionalColor(value: number): string | undefined {
+    const cc = this.settings.conditionalFormattingCard;
+    if (!cc.enableConditional.value) return undefined;
+    const config = buildConditionalConfig(
+      true,
+      resolveDropdown(cc.conditionalDirection),
+      cc.threshold1.value,
+      cc.threshold2.value,
+      cc.conditionalColor1.value?.value,
+      cc.conditionalColor2.value?.value,
+      cc.conditionalColor3.value?.value,
+    );
+    return resolveConditionalColor(value, config);
   }
 
   private getLegendPosition(): string {
@@ -726,6 +864,9 @@ export class ChordDiagramVisual implements IVisual {
   }
 
   private handleBackgroundClick = (): void => {
+    if (this.filteredGroupIndex != null) {
+      this.filteredGroupIndex = null;
+    }
     void this.selectionManager.clear();
   };
 

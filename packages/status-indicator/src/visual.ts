@@ -14,6 +14,13 @@ import {
   getGlassStyle,
   DURATION,
   renderChartTitle,
+  applyChartAria,
+  applyDataPointAria,
+  attachKeyboardNav,
+  ensureFocusRingStyles,
+  resolveConditionalColor,
+  buildConditionalConfig,
+  resolveDropdown,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -28,7 +35,7 @@ import '../style/visual.less';
 
 // ── Data types ──────────────────────────────────────────────────────
 
-type StatusLevel = 'good' | 'warning' | 'critical';
+type StatusLevel = 'good' | 'warning' | 'critical' | 'level4' | 'level5';
 
 interface StatusRow {
   label: string;
@@ -174,6 +181,7 @@ export class StatusIndicatorVisual implements IVisual {
 
   /**
    * Compute status using user-configured custom threshold breakpoints.
+   * Supports 3, 4, or 5 levels based on levelCount setting.
    * ascending (higherIsBetter): value < t1 = critical, t1 <= value < t2 = warning, value >= t2 = good
    * descending (lowerIsBetter): value < t1 = good, t1 <= value < t2 = warning, value >= t2 = critical
    */
@@ -185,12 +193,52 @@ export class StatusIndicatorVisual implements IVisual {
   ): StatusLevel {
     if (value === null) return 'warning';
 
+    const levelCountRaw = this.settings.statusLevelSettings.levelCount.value?.value ?? '3';
+    const levelCount = parseInt(String(levelCountRaw), 10) || 3;
+
+    if (levelCount >= 5 && direction === 'higherIsBetter') {
+      const range = threshold2 - threshold1;
+      const t3 = threshold2 + range * 0.5;
+      const t4 = threshold2 + range;
+      if (value >= t4) return 'level5';
+      if (value >= t3) return 'level4';
+      if (value >= threshold2) return 'good';
+      if (value >= threshold1) return 'warning';
+      return 'critical';
+    }
+
+    if (levelCount >= 4 && direction === 'higherIsBetter') {
+      const t3 = threshold2 + (threshold2 - threshold1) * 0.5;
+      if (value >= t3) return 'level4';
+      if (value >= threshold2) return 'good';
+      if (value >= threshold1) return 'warning';
+      return 'critical';
+    }
+
+    if (levelCount >= 5 && direction === 'lowerIsBetter') {
+      const range = threshold2 - threshold1;
+      const t3 = threshold2 + range * 0.5;
+      const t4 = threshold2 + range;
+      if (value >= t4) return 'level5';
+      if (value >= t3) return 'level4';
+      if (value >= threshold2) return 'critical';
+      if (value >= threshold1) return 'warning';
+      return 'good';
+    }
+
+    if (levelCount >= 4 && direction === 'lowerIsBetter') {
+      const t3 = threshold2 + (threshold2 - threshold1) * 0.5;
+      if (value >= t3) return 'level4';
+      if (value >= threshold2) return 'critical';
+      if (value >= threshold1) return 'warning';
+      return 'good';
+    }
+
     if (direction === 'higherIsBetter') {
       if (value >= threshold2) return 'good';
       if (value >= threshold1) return 'warning';
       return 'critical';
     } else {
-      // lowerIsBetter: low values are good
       if (value < threshold1) return 'good';
       if (value < threshold2) return 'warning';
       return 'critical';
@@ -225,7 +273,7 @@ export class StatusIndicatorVisual implements IVisual {
       const glass = getGlassStyle({
         mode: 'light',
         opacity: s.cardSettings.backgroundOpacity.value / 100,
-        backgroundColor: ((s.cardSettings as any).backgroundColor?.value?.value ?? (s.cardSettings as any).bgColor?.value?.value),
+        backgroundColor: s.cardSettings.backgroundColor.value?.value,
         borderRadius: s.cardSettings.borderRadius.value,
       });
       Object.assign(this.container.style, glass);
@@ -257,11 +305,36 @@ export class StatusIndicatorVisual implements IVisual {
       layoutEl.className = 'status-layout-vertical';
     }
 
+    // Status level settings
+    const levelCountRaw = s.statusLevelSettings.levelCount.value?.value ?? '3';
+    const levelCount = parseInt(String(levelCountRaw), 10) || 3;
+    const level4Color = s.statusLevelSettings.level4Color.value?.value ?? '#60A5FA';
+    const level5Color = s.statusLevelSettings.level5Color.value?.value ?? '#A78BFA';
+
     const colorMap: Record<StatusLevel, string> = {
       good: goodColor,
       warning: warningColor,
       critical: criticalColor,
+      level4: level4Color,
+      level5: level5Color,
     };
+
+    // Status display settings
+    const showSparkline = s.statusDisplaySettings.showSparkline.value;
+    const showStatusText = s.statusDisplaySettings.showStatusText.value;
+    const iconSet = resolveDropdown(s.statusDisplaySettings.iconSet) ?? 'circle';
+
+    // ── Conditional Formatting Config ───────────────────────────
+    const cc = s.conditionalFormattingCard;
+    const conditionalConfig = buildConditionalConfig(
+      cc.enableConditional.value,
+      resolveDropdown(cc.conditionalDirection),
+      cc.threshold1.value,
+      cc.threshold2.value,
+      cc.conditionalColor1.value?.value,
+      cc.conditionalColor2.value?.value,
+      cc.conditionalColor3.value?.value,
+    );
 
     rows.forEach((row, idx) => {
       const rowEl = document.createElement('div');
@@ -284,23 +357,37 @@ export class StatusIndicatorVisual implements IVisual {
       });
 
       // Shape indicator
-      const shapeEl = document.createElement('div');
-      shapeEl.className = 'status-shape';
-      const color = colorMap[row.status];
-      shapeEl.style.width = `${iconSize}px`;
-      shapeEl.style.height = `${iconSize}px`;
-      shapeEl.style.backgroundColor = color;
-      shapeEl.style.flexShrink = '0';
+      const statusColor = colorMap[row.status];
+      const color = (row.value !== null ? resolveConditionalColor(row.value, conditionalConfig) : undefined) ?? statusColor;
 
-      if (shape === 'circle') {
-        shapeEl.style.borderRadius = '50%';
-      } else if (shape === 'square') {
-        shapeEl.style.borderRadius = '2px';
-      } else if (shape === 'diamond') {
-        shapeEl.style.width = `${iconSize * 0.75}px`;
-        shapeEl.style.height = `${iconSize * 0.75}px`;
-        shapeEl.style.transform = 'rotate(45deg)';
-        shapeEl.style.margin = `${iconSize * 0.125}px`;
+      // Use SVG icon set if a non-CSS shape is selected (triangle, star, heart, flag, check)
+      const iconSvg = this.getIconSvg(iconSet, color, iconSize);
+      let shapeEl: HTMLElement;
+      if (iconSvg) {
+        shapeEl = document.createElement('div');
+        shapeEl.className = 'status-shape';
+        shapeEl.style.width = `${iconSize}px`;
+        shapeEl.style.height = `${iconSize}px`;
+        shapeEl.style.flexShrink = '0';
+        shapeEl.innerHTML = iconSvg;
+      } else {
+        shapeEl = document.createElement('div');
+        shapeEl.className = 'status-shape';
+        shapeEl.style.width = `${iconSize}px`;
+        shapeEl.style.height = `${iconSize}px`;
+        shapeEl.style.backgroundColor = color;
+        shapeEl.style.flexShrink = '0';
+
+        if (iconSet === 'circle' || shape === 'circle') {
+          shapeEl.style.borderRadius = '50%';
+        } else if (iconSet === 'square' || shape === 'square') {
+          shapeEl.style.borderRadius = '2px';
+        } else if (iconSet === 'diamond' || shape === 'diamond') {
+          shapeEl.style.width = `${iconSize * 0.75}px`;
+          shapeEl.style.height = `${iconSize * 0.75}px`;
+          shapeEl.style.transform = 'rotate(45deg)';
+          shapeEl.style.margin = `${iconSize * 0.125}px`;
+        }
       }
 
       // Pulse animation for critical items
@@ -330,6 +417,24 @@ export class StatusIndicatorVisual implements IVisual {
         rowEl.appendChild(valueEl);
       }
 
+      // Status Text label (e.g., "On Track", "At Risk", "Critical")
+      if (showStatusText) {
+        const statusTextEl = document.createElement('div');
+        statusTextEl.className = 'status-text';
+        statusTextEl.style.fontSize = `${Math.max(8, size - 2)}px`;
+        statusTextEl.style.color = color;
+        statusTextEl.style.fontWeight = '500';
+        statusTextEl.style.marginLeft = '4px';
+        statusTextEl.textContent = this.getStatusText(row.status);
+        rowEl.appendChild(statusTextEl);
+      }
+
+      // Mini sparkline
+      if (showSparkline && row.value !== null) {
+        const sparklineEl = this.createMiniSparkline(row.value, color);
+        rowEl.appendChild(sparklineEl);
+      }
+
       layoutEl.appendChild(rowEl);
 
       // Entrance animation — staggered fadeSlideIn
@@ -341,6 +446,7 @@ export class StatusIndicatorVisual implements IVisual {
     });
 
     this.container.appendChild(layoutEl);
+    this.applyAccessibility();
   }
 
   public getFormattingModel(): powerbi.visuals.FormattingModel {
@@ -418,6 +524,124 @@ export class StatusIndicatorVisual implements IVisual {
   private handleBackgroundClick = (): void => {
     void this.selectionManager.clear();
   };
+
+  // -- Status Text Rendering ---------------------------------------------------
+
+  private getStatusText(status: StatusLevel): string {
+    switch (status) {
+      case 'good': return 'On Track';
+      case 'warning': return 'At Risk';
+      case 'critical': return 'Critical';
+      case 'level4': return 'Level 4';
+      case 'level5': return 'Level 5';
+      default: return '';
+    }
+  }
+
+  /**
+   * Creates a mini sparkline SVG element showing a simple value indicator.
+   * Uses the value to render a small bar relative to 100.
+   */
+  private createMiniSparkline(value: number, color: string): HTMLElement {
+    const width = 48;
+    const height = 16;
+    const NS = 'http://www.w3.org/2000/svg';
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'status-sparkline';
+    wrapper.style.marginLeft = '6px';
+    wrapper.style.flexShrink = '0';
+
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('width', String(width));
+    svg.setAttribute('height', String(height));
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+    // Background bar
+    const bgRect = document.createElementNS(NS, 'rect');
+    bgRect.setAttribute('x', '0');
+    bgRect.setAttribute('y', '4');
+    bgRect.setAttribute('width', String(width));
+    bgRect.setAttribute('height', '8');
+    bgRect.setAttribute('rx', '2');
+    bgRect.setAttribute('fill', '#E2E8F0');
+    svg.appendChild(bgRect);
+
+    // Value bar (scaled to width, clamped 0-100 range for visual)
+    const barWidth = Math.max(2, Math.min(width, (Math.abs(value) / 100) * width));
+    const valueRect = document.createElementNS(NS, 'rect');
+    valueRect.setAttribute('x', '0');
+    valueRect.setAttribute('y', '4');
+    valueRect.setAttribute('width', String(barWidth));
+    valueRect.setAttribute('height', '8');
+    valueRect.setAttribute('rx', '2');
+    valueRect.setAttribute('fill', color);
+    valueRect.setAttribute('opacity', '0.8');
+    svg.appendChild(valueRect);
+
+    wrapper.appendChild(svg);
+    return wrapper;
+  }
+
+  // -- Icon Set Rendering -----------------------------------------------------
+
+  /**
+   * Returns an SVG icon string for the selected icon set shape.
+   */
+  private getIconSvg(iconSet: string, color: string, size: number): string {
+    const s = size;
+    const half = s / 2;
+    switch (iconSet) {
+      case 'triangle':
+        return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}"><polygon points="${half},2 ${s - 2},${s - 2} 2,${s - 2}" fill="${color}"/></svg>`;
+      case 'star':
+        return `<svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="${color}"/></svg>`;
+      case 'heart':
+        return `<svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="${color}"/></svg>`;
+      case 'flag':
+        return `<svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6z" fill="${color}"/></svg>`;
+      case 'check':
+        return `<svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="${color}"/></svg>`;
+      default:
+        return '';
+    }
+  }
+
+  // -- Accessibility ----------------------------------------------------------
+
+  private applyAccessibility(): void {
+    const a11y = this.settings.accessibilityFormattingCard;
+    const rows = this.container.querySelectorAll('.status-row');
+    if (a11y.enableKeyboardNav.value) {
+      ensureFocusRingStyles();
+
+      applyChartAria(this.container, {
+        chartType: 'status indicator',
+        title: this.settings.titleFormattingCard.titleText.value || undefined,
+        dataPointCount: rows.length,
+      });
+
+      rows.forEach((rowEl, i) => {
+        const label = rowEl.querySelector('.status-label')?.textContent ?? '';
+        const value = rowEl.querySelector('.status-value')?.textContent ?? '';
+        applyDataPointAria(rowEl, label, value, i, rows.length);
+      });
+
+      const cleanup = attachKeyboardNav({
+        container: this.container,
+        itemSelector: '.status-row',
+        onActivate: (el: Element) => {
+          (el as HTMLElement).click();
+        },
+      });
+      this.cancelAnimations.push(cleanup);
+    } else {
+      applyChartAria(this.container, {
+        chartType: 'status indicator',
+        dataPointCount: rows.length,
+      });
+    }
+  }
 
   public destroy(): void {
     this.container.removeEventListener('click', this.handleBackgroundClick);

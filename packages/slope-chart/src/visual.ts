@@ -20,6 +20,25 @@ import {
   withOpacity,
   renderChartTitle,
   applyDataLabelFormatting,
+  resolveDropdown,
+  buildConditionalConfig,
+  resolveConditionalColor,
+  applyChartAria,
+  attachKeyboardNav,
+  ensureFocusRingStyles,
+  attachCrosshair,
+  buildCrosshairConfig,
+  renderHorizontalReferenceLine,
+  computeStatValue,
+  type StatType,
+  renderTrendLine,
+  computeRegression,
+  type TrendType,
+  renderAnnotations,
+  buildAnnotationConfig,
+  resolveSeriesFormatting,
+  populateSeriesFormattingGroups,
+  lineStyleToDashArray,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -81,7 +100,26 @@ export class SlopeChartVisual implements IVisual {
     }
 
     // Extract data
-    const data = this.extractData(dataView);
+    let data = this.extractData(dataView);
+
+    // Sort by magnitude of change if enabled
+    if (data && this.settings.slopeDisplaySettings.sortByMagnitude.value) {
+      data = [...data].sort((a, b) =>
+        Math.abs(b.endValue - b.startValue) - Math.abs(a.endValue - a.startValue)
+      );
+    }
+
+    // Populate per-series formatting groups from data
+    const defaultColors = new Map<string, string>();
+    if (data) {
+      data.forEach((d) => defaultColors.set(d.category, ''));
+    }
+    populateSeriesFormattingGroups(
+      this.settings.seriesFormattingCard,
+      dataView,
+      ['startMeasure', 'endMeasure'],
+      defaultColors,
+    );
 
     // Render
     this.render(data, options.viewport);
@@ -166,7 +204,7 @@ export class SlopeChartVisual implements IVisual {
       const glass = getGlassStyle({
         mode: 'light',
         opacity: s.cardSettings.backgroundOpacity.value / 100,
-        backgroundColor: ((s.cardSettings as any).backgroundColor?.value?.value ?? (s.cardSettings as any).bgColor?.value?.value),
+        backgroundColor: s.cardSettings.backgroundColor.value?.value,
         borderRadius: s.cardSettings.borderRadius.value,
       });
       Object.assign(this.container.style, glass);
@@ -319,13 +357,21 @@ export class SlopeChartVisual implements IVisual {
       });
     }
 
+    // ── Reference Line ────────────────────────────────────────────
+
+    this.renderReferenceLine(g, yScale, innerWidth, allValues);
+
     // ── Slope Lines ─────────────────────────────────────────────
 
     const lineGroup = g.append('g').attr('class', 'slope-lines');
 
     const getLineColor = (item: SlopeItem): string => {
-      if (!colorByDirection) return neutralColor;
+      // Conditional formatting takes precedence when enabled
       const delta = item.endValue - item.startValue;
+      const condColor = this.getConditionalColor(delta);
+      if (condColor) return condColor;
+
+      if (!colorByDirection) return neutralColor;
       if (delta > 0) return positiveColor;
       if (delta < 0) return negativeColor;
       return neutralColor;
@@ -342,7 +388,9 @@ export class SlopeChartVisual implements IVisual {
       data.forEach((item, i) => {
         const y1 = yScale(item.startValue);
         const y2 = yScale(item.endValue);
-        const color = getLineColor(item);
+        const baseColor = getLineColor(item);
+        const areaFmt = resolveSeriesFormatting(this.settings.seriesFormattingCard, i, baseColor);
+        const color = areaFmt.color;
 
         // Define a left-to-right linear gradient for this slope line
         const gradientId = `slope-area-gradient-${i}`;
@@ -387,22 +435,24 @@ export class SlopeChartVisual implements IVisual {
       const y1 = yScale(item.startValue);
       const y2 = yScale(item.endValue);
       const color = getLineColor(item);
+      const fmt = resolveSeriesFormatting(this.settings.seriesFormattingCard, i, color);
 
       const path = lineGroup.append('path')
         .attr('class', 'slope-line')
         .attr('data-series', String(i))
         .attr('d', `M ${leftX} ${y1} L ${rightX} ${y2}`)
-        .attr('stroke', color)
-        .attr('stroke-width', lineWidth)
+        .attr('stroke', fmt.color)
+        .attr('stroke-width', fmt.lineWidth)
         .attr('fill', 'none')
         .attr('stroke-linecap', 'round')
+        .attr('opacity', fmt.opacity / 100)
         .style('transition', 'opacity 0.15s ease');
 
-      // Apply line style from lineStrokeFormattingCard
-      if (lineStyle === 'dashed') {
-        path.attr('stroke-dasharray', '6,3');
-      } else if (lineStyle === 'dotted') {
-        path.attr('stroke-dasharray', '2,2');
+      // Apply line style: per-series override takes precedence, then lineStrokeFormattingCard
+      const effectiveLineStyle = fmt.lineStyle !== 'solid' ? fmt.lineStyle : lineStyle;
+      const dashArray = lineStyleToDashArray(effectiveLineStyle);
+      if (dashArray !== 'none') {
+        path.attr('stroke-dasharray', dashArray);
       }
 
       // Add tooltip
@@ -425,6 +475,7 @@ export class SlopeChartVisual implements IVisual {
       const y1 = yScale(item.startValue);
       const y2 = yScale(item.endValue);
       const color = getLineColor(item);
+      const fmt = resolveSeriesFormatting(this.settings.seriesFormattingCard, i, color);
 
       // Start dot
       const startDot = dotGroup.append('circle')
@@ -433,9 +484,10 @@ export class SlopeChartVisual implements IVisual {
         .attr('cx', leftX)
         .attr('cy', y1)
         .attr('r', dotRadius)
-        .attr('fill', color)
+        .attr('fill', fmt.color)
         .attr('stroke', dotStrokeColor)
         .attr('stroke-width', 1.5)
+        .attr('opacity', fmt.opacity / 100)
         .style('transition', 'opacity 0.15s ease');
       this.attachSelection(startDot, item.selectionId);
 
@@ -449,9 +501,10 @@ export class SlopeChartVisual implements IVisual {
         .attr('cx', rightX)
         .attr('cy', y2)
         .attr('r', dotRadius)
-        .attr('fill', color)
+        .attr('fill', fmt.color)
         .attr('stroke', dotStrokeColor)
         .attr('stroke-width', 1.5)
+        .attr('opacity', fmt.opacity / 100)
         .style('transition', 'opacity 0.15s ease');
       this.attachSelection(endDot, item.selectionId);
 
@@ -518,6 +571,118 @@ export class SlopeChartVisual implements IVisual {
       const endLabelNode = endLabel.node();
       if (endLabelNode) labels.push(endLabelNode);
     });
+
+    // ── Percent Change Labels (at right end) ──────────────────────
+
+    if (s.slopeDisplaySettings.showPercentChange.value) {
+      const pctGroup = g.append('g').attr('class', 'slope-pct-change-labels');
+      data.forEach((item, i) => {
+        const y2 = yScale(item.endValue);
+        const pct = item.startValue !== 0
+          ? ((item.endValue - item.startValue) / Math.abs(item.startValue)) * 100
+          : 0;
+        const pctSign = pct >= 0 ? '+' : '';
+        const pctText = item.startValue !== 0 ? `${pctSign}${pct.toFixed(1)}%` : 'N/A';
+        const delta = item.endValue - item.startValue;
+        const pctColor = delta > 0 ? positiveColor : delta < 0 ? negativeColor : neutralColor;
+
+        const pctLabel = pctGroup.append('text')
+          .attr('class', 'slope-pct-label')
+          .attr('data-series', String(i))
+          .attr('x', rightX + dotRadius + 6)
+          .attr('y', y2 + axisLabelSize + 4)
+          .attr('dy', '0.35em')
+          .attr('text-anchor', 'start')
+          .attr('font-size', Math.max(8, axisLabelSize - 2))
+          .attr('font-weight', '500')
+          .attr('fill', pctColor)
+          .style('transition', 'opacity 0.15s ease')
+          .text(pctText);
+
+        this.attachSelection(pctLabel, item.selectionId);
+      });
+    }
+
+    // ── Confidence Interval Bands ───────────────────────────────
+
+    if (s.slopeDisplaySettings.showConfidenceInterval.value) {
+      const ciGroup = g.append('g').attr('class', 'slope-confidence-intervals');
+      const allDeltas = data.map((d) => d.endValue - d.startValue);
+      const mean = allDeltas.reduce((sum, v) => sum + v, 0) / allDeltas.length;
+      const variance = allDeltas.reduce((sum, v) => sum + (v - mean) ** 2, 0) / Math.max(1, allDeltas.length - 1);
+      const stdErr = Math.sqrt(variance / allDeltas.length);
+      const ci95 = stdErr * 1.96;
+
+      data.forEach((item, i) => {
+        const y1 = yScale(item.startValue);
+        const y2 = yScale(item.endValue);
+        const y1Upper = yScale(item.startValue + ci95);
+        const y1Lower = yScale(item.startValue - ci95);
+        const y2Upper = yScale(item.endValue + ci95);
+        const y2Lower = yScale(item.endValue - ci95);
+        const color = getLineColor(item);
+        const bandPoints = [
+          `${leftX},${y1Upper}`,
+          `${rightX},${y2Upper}`,
+          `${rightX},${y2Lower}`,
+          `${leftX},${y1Lower}`,
+        ].join(' ');
+
+        ciGroup.append('polygon')
+          .attr('class', 'slope-ci-band')
+          .attr('data-series', String(i))
+          .attr('points', bandPoints)
+          .attr('fill', color)
+          .attr('fill-opacity', 0.1)
+          .attr('stroke', 'none');
+      });
+    }
+
+    // ── Threshold Glow Highlight ────────────────────────────────
+
+    if (s.slopeThresholdSettings.show.value) {
+      const thresholdVal = s.slopeThresholdSettings.threshold.value;
+      const glowColor = s.slopeThresholdSettings.glowColor.value?.value || '#F59E0B';
+
+      data.forEach((item, i) => {
+        const delta = Math.abs(item.endValue - item.startValue);
+        if (delta >= thresholdVal) {
+          // Apply glow filter to the matching slope line
+          const lineEl = lineGroup.select(`.slope-line[data-series="${i}"]`);
+          if (!lineEl.empty()) {
+            // Create a glow filter if not yet created
+            let defs = svg.select<SVGDefsElement>('defs');
+            if (defs.empty()) {
+              defs = svg.append('defs');
+            }
+            const filterId = 'slope-threshold-glow';
+            if (defs.select(`#${filterId}`).empty()) {
+              const filter = defs.append('filter')
+                .attr('id', filterId)
+                .attr('x', '-50%').attr('y', '-50%')
+                .attr('width', '200%').attr('height', '200%');
+              filter.append('feGaussianBlur')
+                .attr('in', 'SourceGraphic')
+                .attr('stdDeviation', '4')
+                .attr('result', 'blur');
+              filter.append('feFlood')
+                .attr('flood-color', glowColor)
+                .attr('flood-opacity', '0.6')
+                .attr('result', 'glowColor');
+              filter.append('feComposite')
+                .attr('in', 'glowColor')
+                .attr('in2', 'blur')
+                .attr('operator', 'in')
+                .attr('result', 'coloredBlur');
+              const feMerge = filter.append('feMerge');
+              feMerge.append('feMergeNode').attr('in', 'coloredBlur');
+              feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+            }
+            lineEl.attr('filter', `url(#${filterId})`);
+          }
+        }
+      });
+    }
 
     // ── Change Labels (percentage / absolute change on each line) ──
 
@@ -625,6 +790,64 @@ export class SlopeChartVisual implements IVisual {
       });
     }
 
+    // ── Trend Line ──────────────────────────────────────────────
+
+    // Use end values as the trend series (one value per category)
+    const trendValues = data.map((d) => d.endValue);
+    const trendXScale = (index: number): number => {
+      // Interpolate between leftX and rightX based on item index
+      if (data.length <= 1) return (leftX + rightX) / 2;
+      return leftX + (rightX - leftX) * (index / (data.length - 1));
+    };
+    this.renderTrendLineOverlay(g, trendValues, trendXScale, yScale);
+
+    // ── Annotations ─────────────────────────────────────────────
+
+    const resolveAnnotationPosition = (category: string): { x: number; y: number } | null => {
+      const item = data.find((d) => d.category === category);
+      if (!item) return null;
+      // Place annotation at the midpoint of the slope line
+      const midX = (leftX + rightX) / 2;
+      const midY = (yScale(item.startValue) + yScale(item.endValue)) / 2;
+      return { x: midX, y: midY };
+    };
+    this.renderAnnotationOverlay(g, resolveAnnotationPosition);
+
+    // ── Crosshair (shared core) ──────────────────────────────
+
+    const crosshairEnabled = s.crosshairFormattingCard.showCrosshair.value;
+    if (crosshairEnabled) {
+      const svgEl2 = svg.node();
+      const chartGroupNode = g.node();
+      if (svgEl2 && chartGroupNode) {
+        const chStyleVal = resolveDropdown(s.crosshairFormattingCard.crosshairLineStyle) ?? 'dashed';
+        // Build series data for crosshair: each slope item as a series with start/end values
+        const crosshairCategories = [leftLabel, rightLabel];
+        const crosshairSeries = data.map((item) => ({
+          name: item.category,
+          values: [item.startValue, item.endValue],
+          color: getLineColor(item),
+        }));
+        const crosshairCleanup = attachCrosshair(buildCrosshairConfig({
+          svg: svgEl2,
+          chartGroup: chartGroupNode,
+          marginLeft: MARGIN.left,
+          marginTop: MARGIN.top,
+          chartWidth: innerWidth,
+          chartHeight: innerHeight,
+          categories: crosshairCategories,
+          series: crosshairSeries,
+          yScale,
+          lineColor: s.crosshairFormattingCard.crosshairLineColor.value?.value || '#94A3B8',
+          lineWidth: s.crosshairFormattingCard.crosshairLineWidth.value,
+          lineStyle: chStyleVal,
+          showValues: s.crosshairFormattingCard.showCrosshairValues.value,
+          formatValue: (val: number) => formatNumber(val),
+        }));
+        this.cancelAnimations.push(crosshairCleanup);
+      }
+    }
+
     // ── Series Hover Highlight/Dim ──────────────────────────────
 
     const svgNode = svg.node();
@@ -652,6 +875,10 @@ export class SlopeChartVisual implements IVisual {
     }
     // Apply shared formatting settings
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.slope-label');
+
+    // ── Accessibility ─────────────────────────────────────────────
+
+    this.applyAccessibility(data.length);
 
     this.container.addEventListener('click', this.handleBackgroundClick);
   }
@@ -708,6 +935,121 @@ export class SlopeChartVisual implements IVisual {
       const cancel = popIn(el, delay, duration);
       this.cancelAnimations.push(cancel);
     });
+  }
+
+  // ── Conditional Formatting ────────────────────────────────────
+
+  private getConditionalColor(value: number): string | undefined {
+    const cc = this.settings.conditionalFormattingCard;
+    if (!cc.enableConditional.value) return undefined;
+    const config = buildConditionalConfig(
+      true,
+      resolveDropdown(cc.conditionalDirection),
+      cc.threshold1.value,
+      cc.threshold2.value,
+      cc.conditionalColor1.value?.value,
+      cc.conditionalColor2.value?.value,
+      cc.conditionalColor3.value?.value,
+    );
+    return resolveConditionalColor(value, config);
+  }
+
+  // ── Accessibility ───────────────────────────────────────────────
+
+  private applyAccessibility(dataPointCount: number): void {
+    const acc = this.settings.accessibilityFormattingCard;
+    if (!acc.enableKeyboardNav.value) return;
+    ensureFocusRingStyles();
+    applyChartAria(this.container, {
+      chartType: 'slope chart',
+      title: this.settings.titleFormattingCard?.titleText?.value || undefined,
+      dataPointCount,
+    });
+    const cleanup = attachKeyboardNav({
+      container: this.container,
+      itemSelector: '.slope-line, [tabindex="0"]',
+      onActivate: (el) => { (el as HTMLElement).click?.(); },
+    });
+    this.cancelAnimations.push(cleanup);
+  }
+
+  // ── Reference Line ──────────────────────────────────────────────
+
+  private renderReferenceLine(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    yScale: d3.ScaleLinear<number, number>,
+    width: number,
+    allValues: number[],
+  ): void {
+    const ref = this.settings.referenceLineFormattingCard;
+    if (!ref.showReferenceLine.value) return;
+    const refType = resolveDropdown(ref.referenceLineType) ?? 'custom';
+    let refValue = ref.referenceLineValue.value;
+    if (refType !== 'custom' && allValues.length > 0) {
+      refValue = computeStatValue(allValues, refType as StatType);
+    }
+    renderHorizontalReferenceLine(g, {
+      value: refValue,
+      yScale,
+      chartWidth: width,
+      lineColor: ref.referenceLineColor.value?.value ?? '#EF4444',
+      lineWidth: ref.referenceLineWidth.value,
+      lineStyle: (resolveDropdown(ref.referenceLineStyle) ?? 'dashed') as 'solid' | 'dashed' | 'dotted',
+      showLabel: ref.showReferenceLabel.value,
+      labelText: ref.referenceLabelText.value || String(refValue),
+      showBand: ref.showReferenceBand.value,
+      bandUpperValue: refValue * 1.1,
+      bandOpacity: ref.referenceBandOpacity.value / 100,
+    });
+  }
+
+  // ── Trend Line ──────────────────────────────────────────────────
+
+  private renderTrendLineOverlay(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    values: number[],
+    xScale: (index: number) => number,
+    yScale: d3.ScaleLinear<number, number>,
+  ): void {
+    const tl = this.settings.trendLineFormattingCard;
+    if (!tl.showTrendLine.value || values.length < 2) return;
+    const trendType = (resolveDropdown(tl.trendLineType) ?? 'linear') as TrendType;
+    const result = computeRegression(values, trendType, tl.polynomialOrder.value);
+    renderTrendLine(g, {
+      predicted: result.predicted,
+      xScale,
+      yScale,
+      lineColor: tl.trendLineColor.value?.value ?? '#6366F1',
+      lineWidth: tl.trendLineWidth.value,
+      showEquation: tl.showEquation.value,
+      showR2: tl.showR2.value,
+      equation: result.equation,
+      r2: result.r2,
+    });
+  }
+
+  // ── Annotations ─────────────────────────────────────────────────
+
+  private renderAnnotationOverlay(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    resolvePosition: (category: string) => { x: number; y: number } | null,
+  ): void {
+    const ann = this.settings.annotationFormattingCard;
+    if (!ann.showAnnotations.value) return;
+    const slots = [
+      { category: ann.annotation1Category.value, text: ann.annotation1Text.value, position: resolveDropdown(ann.annotation1Position) ?? 'above' },
+      { category: ann.annotation2Category.value, text: ann.annotation2Text.value, position: resolveDropdown(ann.annotation2Position) ?? 'above' },
+      { category: ann.annotation3Category.value, text: ann.annotation3Text.value, position: resolveDropdown(ann.annotation3Position) ?? 'above' },
+    ];
+    const config = buildAnnotationConfig(
+      true,
+      slots,
+      ann.annotationFontSize.value,
+      ann.annotationFontColor.value?.value || '#475569',
+      ann.annotationConnectorColor.value?.value || '#94A3B8',
+      resolvePosition,
+    );
+    if (config) renderAnnotations(g, config);
   }
 
   // ── Formatting Pane ──────────────────────────────────────────

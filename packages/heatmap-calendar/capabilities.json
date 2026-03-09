@@ -321,53 +321,6 @@
           "type": {
             "numeric": true
           }
-        },
-        "axisLineColor": {
-          "displayName": "Axis Line Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        },
-        "axisLineWidth": {
-          "displayName": "Axis Line Width",
-          "type": {
-            "numeric": true
-          }
-        },
-        "showGridLines": {
-          "displayName": "Show Grid Lines",
-          "type": {
-            "bool": true
-          }
-        },
-        "gridLineColor": {
-          "displayName": "Grid Line Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        },
-        "gridLineStyle": {
-          "displayName": "Grid Line Style",
-          "type": {
-            "enumeration": [
-              {
-                "value": "solid",
-                "displayName": "Solid"
-              },
-              {
-                "value": "dashed",
-                "displayName": "Dashed"
-              }
-            ]
-          }
         }
       }
     },
@@ -394,6 +347,172 @@
           "displayName": "Border Radius",
           "type": {
             "numeric": true
+          }
+        },
+        "enableGlass": {
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "calendarGranularitySettings": {
+      "displayName": "Granularity",
+      "properties": {
+        "granularity": {
+          "displayName": "Granularity",
+          "type": {
+            "enumeration": [
+              {
+                "value": "day",
+                "displayName": "Day"
+              },
+              {
+                "value": "week",
+                "displayName": "Week"
+              },
+              {
+                "value": "month",
+                "displayName": "Month"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "calendarStreakSettings": {
+      "displayName": "Streak Highlighting",
+      "properties": {
+        "show": {
+          "displayName": "Show Streaks",
+          "type": {
+            "bool": true
+          }
+        },
+        "threshold": {
+          "displayName": "Streak Threshold",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "calendarScaleSettings": {
+      "displayName": "Color Scale",
+      "properties": {
+        "colorMode": {
+          "displayName": "Color Mode",
+          "type": {
+            "enumeration": [
+              {
+                "value": "continuous",
+                "displayName": "Continuous"
+              },
+              {
+                "value": "discrete",
+                "displayName": "Discrete"
+              }
+            ]
+          }
+        },
+        "bins": {
+          "displayName": "Discrete Bins",
+          "type": {
+            "numeric": true
+          }
+        },
+        "weekStart": {
+          "displayName": "Week Start Day",
+          "type": {
+            "enumeration": [
+              {
+                "value": "sunday",
+                "displayName": "Sunday"
+              },
+              {
+                "value": "monday",
+                "displayName": "Monday"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "conditionalFormatting": {
+      "displayName": "Conditional Formatting",
+      "properties": {
+        "enableConditional": {
+          "displayName": "Enable Conditional Formatting",
+          "type": {
+            "bool": true
+          }
+        },
+        "conditionalDirection": {
+          "displayName": "Direction",
+          "type": {
+            "enumeration": [
+              {
+                "value": "ascending",
+                "displayName": "Ascending (Low = Bad)"
+              },
+              {
+                "value": "descending",
+                "displayName": "Descending (Low = Good)"
+              }
+            ]
+          }
+        },
+        "threshold1": {
+          "displayName": "Threshold 1",
+          "type": {
+            "numeric": true
+          }
+        },
+        "threshold2": {
+          "displayName": "Threshold 2",
+          "type": {
+            "numeric": true
+          }
+        },
+        "conditionalColor1": {
+          "displayName": "Color 1 (Bad)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "conditionalColor2": {
+          "displayName": "Color 2 (Warning)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "conditionalColor3": {
+          "displayName": "Color 3 (Good)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "accessibilityFormatting": {
+      "displayName": "Accessibility",
+      "properties": {
+        "enableKeyboardNav": {
+          "displayName": "Enable Keyboard Navigation",
+          "type": {
+            "bool": true
           }
         }
       }

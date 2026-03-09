@@ -5,7 +5,9 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, SortFormattingCard} from '../../core/src';
+import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, SortFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard,   ColorThemeFormattingCard,
+  SeriesFormattingCard,
+} from '../../core/src';
 // -- Dumbbell Settings --------------------------------------------------------
 
 class DumbbellSettings extends formattingSettings.SimpleCard {
@@ -24,13 +26,13 @@ class DumbbellSettings extends formattingSettings.SimpleCard {
   startColor = new formattingSettings.ColorPicker({
     name: 'startColor',
     displayName: 'Start Color',
-    value: { value: '#94A3B8' },
+    value: { value: '' },
   });
 
   endColor = new formattingSettings.ColorPicker({
     name: 'endColor',
     displayName: 'End Color',
-    value: { value: '#3B82F6' },
+    value: { value: '' },
   });
 
 
@@ -70,9 +72,9 @@ class DumbbellSettings extends formattingSettings.SimpleCard {
   slices = [this.dotRadius, this.lineWidth, this.startColor, this.endColor, this.dotStrokeColor, this.dotStrokeWidth, this.lineColor];
 }
 
-// -- Axis Settings ------------------------------------------------------------
+// -- Dumbbell Axis Card (extends shared AxisFormattingCard with show/hide) ----
 
-class AxisSettings extends formattingSettings.SimpleCard {
+class DumbbellAxisFormattingCard extends AxisFormattingCard {
   showXAxis = new formattingSettings.ToggleSwitch({
     name: 'showXAxis',
     displayName: 'Show X-Axis',
@@ -85,9 +87,11 @@ class AxisSettings extends formattingSettings.SimpleCard {
     value: true,
   });
 
-  name = 'axisSettings';
-  displayName = 'Axes';
-  slices = [this.showXAxis, this.showYAxis];
+  constructor() {
+    super();
+    // Prepend show/hide toggles before the inherited slices
+    this.slices = [this.showXAxis, this.showYAxis, ...this.slices];
+  }
 }
 
 // -- Card Style ---------------------------------------------------------------
@@ -119,7 +123,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 // -- Delta Label Settings -----------------------------------------------------
@@ -190,16 +194,58 @@ class AnimationSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
+// -- Dumbbell Display Settings ------------------------------------------------
+
+class DumbbellDisplaySettingsCard extends formattingSettings.SimpleCard {
+  showRanking = new formattingSettings.ToggleSwitch({
+    name: 'showRanking',
+    displayName: 'Show Ranking',
+    value: false,
+  });
+
+  showArrow = new formattingSettings.ToggleSwitch({
+    name: 'showArrow',
+    displayName: 'Connector Arrow',
+    value: false,
+  });
+
+  autoDirectionalColor = new formattingSettings.ToggleSwitch({
+    name: 'autoDirectionalColor',
+    displayName: 'Auto Directional Color',
+    value: false,
+  });
+
+  name = 'dumbbellDisplaySettings';
+  displayName = 'Dumbbell Display';
+  slices = [this.showRanking, this.showArrow, this.autoDirectionalColor];
+}
+
+// -- Dumbbell Group Settings --------------------------------------------------
+
+class DumbbellGroupSettingsCard extends formattingSettings.SimpleCard {
+  enableGrouping = new formattingSettings.ToggleSwitch({
+    name: 'enableGrouping',
+    displayName: 'Enable Grouping',
+    value: false,
+  });
+
+  name = 'dumbbellGroupSettings';
+  displayName = 'Dumbbell Grouping';
+  slices = [this.enableGrouping];
+}
+
 // -- Root Model ---------------------------------------------------------------
 
 export class DumbbellChartSettings extends formattingSettings.Model {
   dumbbellSettings = new DumbbellSettings();
-  axisSettings = new AxisSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettingsCard();
   deltaLabelSettings = new DeltaLabelSettings();
 
-  axisFormattingCard = new AxisFormattingCard();
+  dumbbellDisplaySettings = new DumbbellDisplaySettingsCard();
+  dumbbellGroupSettings = new DumbbellGroupSettingsCard();
+
+  axisFormattingCard = new DumbbellAxisFormattingCard();
 
   legendFormattingCard = new LegendFormattingCard();
 
@@ -216,17 +262,32 @@ export class DumbbellChartSettings extends formattingSettings.Model {
 
   sortFormattingCard = new SortFormattingCard();
 
+  referenceLineFormattingCard = new ReferenceLineFormattingCard();
+  trendLineFormattingCard = new TrendLineFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
+
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
+  seriesFormattingCard = new SeriesFormattingCard();
+
   cards = [
     this.dumbbellSettings,
-    this.axisSettings,
     this.cardSettings,
     this.animationSettings,
     this.deltaLabelSettings,
+    this.dumbbellDisplaySettings,
+    this.dumbbellGroupSettings,
     this.axisFormattingCard,
     this.legendFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.scrollFormattingCard,
     this.sortFormattingCard,
+    this.referenceLineFormattingCard,
+    this.trendLineFormattingCard,
+    this.conditionalFormattingCard,
+    this.accessibilityFormattingCard,
+    this.colorThemeFormattingCard,
+    this.seriesFormattingCard,
   ];
 }

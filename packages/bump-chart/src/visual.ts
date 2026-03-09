@@ -23,6 +23,28 @@ import {
   applyDataLabelFormatting,
   applyAllAxisFormatting,
   createScrollableChart,
+  resolveDropdown,
+  renderLegend,
+  attachCrosshair,
+  buildCrosshairConfig,
+  type LegendItem,
+  resolveColorTheme,
+  buildConditionalConfig,
+  resolveConditionalColor,
+  applyChartAria,
+  attachKeyboardNav,
+  ensureFocusRingStyles,
+  renderHorizontalReferenceLine,
+  computeStatValue,
+  type StatType,
+  renderTrendLine,
+  computeRegression,
+  type TrendType,
+  renderAnnotations,
+  buildAnnotationConfig,
+  resolveSeriesFormatting,
+  SeriesFormattingGroup,
+  lineStyleToDashArray,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -97,13 +119,33 @@ export class BumpChartVisual implements IVisual {
     // Extract data
     const data = this.extractData(dataView);
 
+    // Populate per-series formatting groups
+    this.populateSeriesGroups(data);
+
     // Render
     this.render(data, options.viewport);
+  }
+
+  // ── Series Formatting ────────────────────────────────────────
+
+  private populateSeriesGroups(data: BumpItem[] | null): void {
+    const card = this.settings.seriesFormattingCard;
+    card.groups = [];
+    if (!data) return;
+    for (let i = 0; i < data.length; i++) {
+      const group = new SeriesFormattingGroup({
+        name: `series_${i}`,
+        displayName: data[i].name,
+      });
+      group.seriesColor.value = { value: data[i].color };
+      card.groups.push(group);
+    }
   }
 
   // ── Data Extraction ──────────────────────────────────────────
 
   private extractData(dataView: DataView | undefined): BumpItem[] | null {
+    const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
     if (!dataView?.categorical) return null;
 
     const categorical = dataView.categorical;
@@ -233,7 +275,7 @@ export class BumpChartVisual implements IVisual {
 
       if (points.length === 0) continue;
 
-      const color = useChartPalette ? getHostChartColor(this.host.colorPalette, colorIndex) : getHostChartColor(this.host.colorPalette, colorIndex);
+      const color = useChartPalette ? getHostChartColor(this.host.colorPalette, colorIndex, themeName) : getHostChartColor(this.host.colorPalette, colorIndex, themeName);
       const selectionIndex = itemFirstRowIndex.get(itemName) ?? 0;
       items.push({
         name: itemName,
@@ -268,7 +310,7 @@ export class BumpChartVisual implements IVisual {
       const glass = getGlassStyle({
         mode: 'light',
         opacity: s.cardSettings.backgroundOpacity.value / 100,
-        backgroundColor: ((s.cardSettings as any).backgroundColor?.value?.value ?? (s.cardSettings as any).bgColor?.value?.value),
+        backgroundColor: s.cardSettings.backgroundColor.value?.value,
         borderRadius: s.cardSettings.borderRadius.value,
       });
       this.container.style.background = glass.background;
@@ -292,8 +334,8 @@ export class BumpChartVisual implements IVisual {
       return;
     }
 
-    const legendPosition = s.legendSettings.position.value.value;
-    const showLegend = s.legendSettings.show.value;
+    const legendPosition = (s.legendFormattingCard.legendPosition.value as { value?: string } | undefined)?.value ?? 'bottom';
+    const showLegend = s.legendFormattingCard.showLegend.value;
     const isLegendBottom = legendPosition === 'bottom';
 
     // Choose margins based on legend position
@@ -355,7 +397,7 @@ export class BumpChartVisual implements IVisual {
 
     // ── X-Axis ──────────────────────────────────────────────────
 
-    const showXAxis = s.axisSettings.showXAxis.value;
+    const showXAxis = s.axisVisibilitySettings.showXAxis.value;
 
     if (showXAxis) {
       const axisGroup = g.append('g')
@@ -376,6 +418,29 @@ export class BumpChartVisual implements IVisual {
       });
     }
 
+    // ── Top-N Highlight Filtering ──────────────────────────────
+
+    const highlightEnabled = s.bumpHighlightSettings.enabled.value;
+    const topN = s.bumpHighlightSettings.topN.value;
+    const showOthers = s.bumpHighlightSettings.showOthers.value;
+
+    // Determine which items are "top N" based on their best (lowest) rank across all time periods
+    let topNSet: Set<number> | null = null;
+    if (highlightEnabled && topN > 0 && topN < data.length) {
+      const bestRanks = data.map((item, idx) => ({
+        idx,
+        bestRank: Math.min(...item.points.map((p) => p.rank)),
+      }));
+      bestRanks.sort((a, b) => a.bestRank - b.bestRank);
+      topNSet = new Set(bestRanks.slice(0, topN).map((r) => r.idx));
+    }
+
+    // If highlighting is on and showOthers is off, filter data to only top-N items
+    let renderData = data;
+    if (topNSet && !showOthers) {
+      renderData = data.filter((_, idx) => topNSet!.has(idx));
+    }
+
     // ── Settings ────────────────────────────────────────────────
 
     const lineWidth = s.bumpSettings.lineWidth.value;
@@ -390,9 +455,58 @@ export class BumpChartVisual implements IVisual {
       ? lineStyleValue
       : (lineStyleValue as { value?: string } | undefined)?.value ?? 'solid';
 
-    // Legend formatting
-    const legendFontColor = s.legendFormattingCard.legendFontColor.value?.value || '#64748B';
-    const legendFontSize = s.legendFormattingCard.legendFontSize.value;
+    // ── Area Fill (gradient under lines) ──────────────────────
+
+    const showAreaFill = s.bumpSettings.showArea.value;
+    const areaOpacity = s.bumpSettings.areaOpacity.value / 100;
+    const defs = svg.append('defs');
+
+    if (showAreaFill) {
+      const areaGroup = g.append('g').attr('class', 'bump-areas');
+
+      const areaGenerator = d3.area<RankPoint>()
+        .x((d) => xScale(d.time) ?? 0)
+        .y0(innerHeight)
+        .y1((d) => yScale(d.rank))
+        .curve(d3.curveMonotoneX);
+
+      renderData.forEach((item, itemIdx) => {
+        const origIdx = data.indexOf(item);
+        const sf = resolveSeriesFormatting(this.settings.seriesFormattingCard, origIdx, item.color);
+        const isDimmed = topNSet != null && !topNSet.has(origIdx);
+
+        const gradientId = `bump-area-grad-${itemIdx}`;
+        const gradient = defs.append('linearGradient')
+          .attr('id', gradientId)
+          .attr('gradientUnits', 'userSpaceOnUse')
+          .attr('x1', 0)
+          .attr('y1', 0)
+          .attr('x2', 0)
+          .attr('y2', innerHeight);
+
+        const effectiveOpacity = isDimmed ? areaOpacity * 0.3 : areaOpacity;
+
+        gradient.append('stop')
+          .attr('offset', '0%')
+          .attr('stop-color', sf.color)
+          .attr('stop-opacity', effectiveOpacity);
+
+        gradient.append('stop')
+          .attr('offset', '100%')
+          .attr('stop-color', sf.color)
+          .attr('stop-opacity', 0);
+
+        const areaD = areaGenerator(item.points);
+        if (!areaD) return;
+
+        areaGroup.append('path')
+          .attr('class', 'bump-area')
+          .attr('data-series', String(origIdx))
+          .attr('d', areaD)
+          .attr('fill', `url(#${gradientId})`)
+          .style('transition', 'opacity 0.15s ease');
+      });
+    }
 
     // ── Lines ───────────────────────────────────────────────────
 
@@ -404,25 +518,38 @@ export class BumpChartVisual implements IVisual {
       .y((d) => yScale(d.rank))
       .curve(d3.curveMonotoneX);
 
-    data.forEach((item, itemIdx) => {
+    renderData.forEach((item) => {
+      const origIdx = data.indexOf(item);
       const pathD = lineGenerator(item.points);
       if (!pathD) return;
 
+      // Resolve per-series formatting
+      const sf = resolveSeriesFormatting(this.settings.seriesFormattingCard, origIdx, item.color);
+      const isDimmed = topNSet != null && !topNSet.has(origIdx);
+
+      // Determine conditional color from average value of this series
+      const avgValue = item.points.reduce((sum, p) => sum + p.value, 0) / item.points.length;
+      const condColor = this.getConditionalColor(avgValue);
+
       const path = lineGroup.append('path')
         .attr('class', 'bump-line')
-        .attr('data-series', String(itemIdx))
+        .attr('data-series', String(origIdx))
         .attr('d', pathD)
-        .attr('stroke', item.color)
-        .attr('stroke-width', lineWidth)
+        .attr('stroke', condColor || sf.color)
+        .attr('stroke-width', sf.lineWidth || lineWidth)
         .attr('fill', 'none')
         .attr('stroke-linecap', 'round')
         .style('transition', 'opacity 0.15s ease');
 
-      // Apply line style from lineStrokeFormattingCard
-      if (lineStyle === 'dashed') {
-        path.attr('stroke-dasharray', '6,3');
-      } else if (lineStyle === 'dotted') {
-        path.attr('stroke-dasharray', '2,2');
+      if (isDimmed) {
+        path.style('opacity', '0.25');
+      }
+
+      // Apply line style: per-series override takes precedence over global
+      const effectiveLineStyle = sf.lineStyle !== 'solid' ? sf.lineStyle : lineStyle;
+      const dashArray = lineStyleToDashArray(effectiveLineStyle);
+      if (dashArray !== '') {
+        path.attr('stroke-dasharray', dashArray);
       }
 
       path.style('cursor', 'pointer')
@@ -454,19 +581,24 @@ export class BumpChartVisual implements IVisual {
     const dotGroup = g.append('g').attr('class', 'bump-dots');
     const dots: SVGElement[] = [];
 
-    data.forEach((item, itemIdx) => {
+    renderData.forEach((item) => {
+      const origIdx = data.indexOf(item);
+      const dotSf = resolveSeriesFormatting(this.settings.seriesFormattingCard, origIdx, item.color);
+      const isDimmed = topNSet != null && !topNSet.has(origIdx);
       item.points.forEach((point) => {
         const cx = xScale(point.time);
         if (cx === undefined) return;
         const cy = yScale(point.rank);
 
+        const dotCondColor = this.getConditionalColor(point.value);
+
         const dot = dotGroup.append('circle')
           .attr('class', 'bump-dot')
-          .attr('data-series', String(itemIdx))
+          .attr('data-series', String(origIdx))
           .attr('cx', cx)
           .attr('cy', cy)
           .attr('r', dotRadius)
-          .attr('fill', item.color)
+          .attr('fill', dotCondColor || dotSf.color)
           .attr('stroke', s.bumpSettings.dotStrokeColor.value?.value || '#FFFFFF')
           .attr('stroke-width', 2)
           .style('transition', 'opacity 0.15s ease')
@@ -484,6 +616,10 @@ export class BumpChartVisual implements IVisual {
             });
           });
 
+        if (isDimmed) {
+          dot.style('opacity', '0.25');
+        }
+
         dot.append('title')
           .text(`${item.name} — ${point.time}: Rank ${point.rank}`);
 
@@ -499,7 +635,9 @@ export class BumpChartVisual implements IVisual {
     if (showRankNumbers) {
       const labelGroup = g.append('g').attr('class', 'bump-rank-labels');
 
-      data.forEach((item, itemIdx) => {
+      renderData.forEach((item) => {
+        const origIdx = data.indexOf(item);
+        const isDimmed = topNSet != null && !topNSet.has(origIdx);
         item.points.forEach((point) => {
           const cx = xScale(point.time);
           if (cx === undefined) return;
@@ -507,11 +645,15 @@ export class BumpChartVisual implements IVisual {
 
           const label = labelGroup.append('text')
             .attr('class', 'bump-rank-label')
-            .attr('data-series', String(itemIdx))
+            .attr('data-series', String(origIdx))
             .attr('x', cx)
             .attr('y', cy)
             .style('transition', 'opacity 0.15s ease')
             .text(point.rank);
+
+          if (isDimmed) {
+            label.style('opacity', '0.25');
+          }
 
           const labelNode = label.node();
           if (labelNode) labelElements.push(labelNode);
@@ -519,102 +661,162 @@ export class BumpChartVisual implements IVisual {
       });
     }
 
+    // ── Rank Change Indicators ──────────────────────────────────
+
+    if (s.bumpRankChangeSettings.show.value) {
+      const rcGroup = g.append('g').attr('class', 'bump-rank-change-labels');
+      const rcFontSize = s.bumpRankChangeSettings.fontSize.value;
+
+      renderData.forEach((item) => {
+        const origIdx = data.indexOf(item);
+        const isDimmed = topNSet != null && !topNSet.has(origIdx);
+        for (let pi = 1; pi < item.points.length; pi++) {
+          const prev = item.points[pi - 1];
+          const curr = item.points[pi];
+          const delta = curr.rank - prev.rank;
+          if (delta === 0) continue;
+
+          const cx = xScale(curr.time);
+          if (cx === undefined) continue;
+          const cy = yScale(curr.rank);
+
+          // Negative delta = moved up in rank = improvement (green)
+          const color = delta < 0 ? '#22C55E' : '#EF4444';
+          const label = delta > 0 ? `+${delta}` : String(delta);
+
+          const text = rcGroup.append('text')
+            .attr('class', 'rank-change-label')
+            .attr('data-series', String(origIdx))
+            .attr('x', cx + dotRadius + 4)
+            .attr('y', cy - dotRadius - 2)
+            .attr('font-size', `${rcFontSize}px`)
+            .attr('fill', color)
+            .attr('font-weight', 'bold')
+            .text(label);
+
+          if (isDimmed) {
+            text.style('opacity', '0.25');
+          }
+        }
+      });
+    }
+
+    // ── Period Comparison Badges ─────────────────────────────────
+
+    if (s.bumpComparisonSettings.show.value) {
+      const compGroup = g.append('g').attr('class', 'bump-comparison-labels');
+
+      renderData.forEach((item) => {
+        const origIdx = data.indexOf(item);
+        const isDimmed = topNSet != null && !topNSet.has(origIdx);
+        if (item.points.length < 2) return;
+
+        const firstRank = item.points[0].rank;
+        const lastRank = item.points[item.points.length - 1].rank;
+        const delta = lastRank - firstRank;
+
+        const lastPoint = item.points[item.points.length - 1];
+        const cx = xScale(lastPoint.time);
+        if (cx === undefined) return;
+        const cy = yScale(lastPoint.rank);
+
+        const color = delta < 0 ? '#22C55E' : delta > 0 ? '#EF4444' : '#64748B';
+        const label = delta === 0 ? '=' : delta > 0 ? `+${delta}` : String(delta);
+
+        const badge = compGroup.append('text')
+          .attr('class', 'bump-comparison-badge')
+          .attr('data-series', String(origIdx))
+          .attr('x', cx + dotRadius + 8)
+          .attr('y', cy + 4)
+          .attr('font-size', '10px')
+          .attr('fill', color)
+          .attr('font-weight', 'bold')
+          .text(`[${label}]`);
+
+        if (isDimmed) {
+          badge.style('opacity', '0.25');
+        }
+      });
+    }
+
+    // ── Reference Line ─────────────────────────────────────────
+
+    const allValues = data.flatMap((item) => item.points.map((p) => p.value));
+    this.renderReferenceLine(g, yScale, innerWidth, allValues);
+
+    // ── Trend Line ──────────────────────────────────────────────
+
+    // For trend line, use average rank per time period as the series values
+    const avgRanksPerTime = timePeriods.map((time) => {
+      const ranks = data.map((item) => {
+        const pt = item.points.find((p) => p.time === time);
+        return pt ? pt.rank : NaN;
+      }).filter((r) => isFinite(r));
+      return ranks.length > 0 ? ranks.reduce((a, b) => a + b, 0) / ranks.length : NaN;
+    }).filter((v) => isFinite(v));
+
+    const trendXScale = (index: number): number => {
+      const tp = timePeriods[index];
+      return tp !== undefined ? (xScale(tp) ?? 0) : 0;
+    };
+    this.renderTrendLineOverlay(g, avgRanksPerTime, trendXScale, yScale);
+
+    // ── Annotations ─────────────────────────────────────────────
+
+    const resolveAnnotationPosition = (category: string): { x: number; y: number } | null => {
+      for (const item of data) {
+        const pt = item.points.find((p) => p.time === category);
+        if (pt) {
+          const x = xScale(pt.time);
+          if (x !== undefined) {
+            return { x, y: yScale(pt.rank) };
+          }
+        }
+      }
+      return null;
+    };
+    this.renderAnnotationOverlay(g, resolveAnnotationPosition);
+
     // ── Legend ───────────────────────────────────────────────────
 
     if (showLegend) {
-      this.renderLegend(svg, data, isLegendBottom, width, height, margin, innerWidth, innerHeight, legendFontSize, legendFontColor);
+      this.renderBumpLegend(data, isLegendBottom);
     }
 
-    // ── Crosshair ──────────────────────────────────────────────
+    // ── Crosshair (shared core) ──────────────────────────────
 
-    const crosshairEnabled = s.crosshairSettings.show.value;
+    const crosshairEnabled = s.crosshairFormattingCard.showCrosshair.value;
     if (crosshairEnabled) {
-      const chColor = s.crosshairSettings.lineColor.value?.value || '#94A3B8';
-      const chWidth = s.crosshairSettings.lineWidth.value;
-      const chStyleVal = (s.crosshairSettings.lineStyle.value as { value?: string } | undefined)?.value;
-      const chDash = chStyleVal === 'dashed' ? '6 4' : 'none';
-      const chShowValues = s.crosshairSettings.showValues.value;
-
-      const crosshairGroup = g.append('g')
-        .attr('class', 'crosshair-group')
-        .style('display', 'none')
-        .style('pointer-events', 'none');
-
-      crosshairGroup.append('line')
-        .attr('class', 'crosshair-line')
-        .attr('y1', 0)
-        .attr('y2', innerHeight)
-        .attr('stroke', chColor)
-        .attr('stroke-width', chWidth)
-        .attr('stroke-dasharray', chDash);
-
       const svgEl2 = svg.node();
-      if (svgEl2) {
-        svgEl2.addEventListener('mousemove', (event: MouseEvent) => {
-          const [mouseX] = d3.pointer(event, g.node());
-
-          if (mouseX < 0 || mouseX > innerWidth) {
-            crosshairGroup.style('display', 'none');
-            return;
-          }
-
-          crosshairGroup.style('display', null);
-
-          // Find nearest time period
-          let nearestIdx = 0;
-          let nearestDist = Infinity;
-          for (let i = 0; i < timePeriods.length; i++) {
-            const xPos = xScale(timePeriods[i]);
-            if (xPos === undefined) continue;
-            const dist = Math.abs(xPos - mouseX);
-            if (dist < nearestDist) {
-              nearestDist = dist;
-              nearestIdx = i;
-            }
-          }
-
-          const snapX = xScale(timePeriods[nearestIdx]) ?? mouseX;
-          const nearestTime = timePeriods[nearestIdx];
-
-          crosshairGroup.select('.crosshair-line')
-            .attr('x1', snapX)
-            .attr('x2', snapX);
-
-          // Remove previous markers and labels
-          crosshairGroup.selectAll('.crosshair-marker').remove();
-          crosshairGroup.selectAll('.crosshair-label').remove();
-
-          if (chShowValues) {
-            data.forEach((item) => {
-              const point = item.points.find((p) => p.time === nearestTime);
-              if (!point) return;
-
-              const cy = yScale(point.rank);
-
-              crosshairGroup.append('circle')
-                .attr('class', 'crosshair-marker')
-                .attr('cx', snapX)
-                .attr('cy', cy)
-                .attr('r', 4)
-                .attr('fill', item.color)
-                .attr('stroke', '#fff')
-                .attr('stroke-width', 1.5);
-
-              crosshairGroup.append('text')
-                .attr('class', 'crosshair-label')
-                .attr('x', snapX + 8)
-                .attr('y', cy - 4)
-                .attr('font-size', '11px')
-                .attr('fill', item.color)
-                .attr('font-weight', '600')
-                .text(`#${point.rank}`);
-            });
-          }
-        });
-
-        svgEl2.addEventListener('mouseleave', () => {
-          crosshairGroup.style('display', 'none');
-        });
+      const chartGroupNode = g.node();
+      if (svgEl2 && chartGroupNode) {
+        const chStyleVal = resolveDropdown(s.crosshairFormattingCard.crosshairLineStyle) ?? 'dashed';
+        // Build series data for crosshair: rank values per time period
+        const crosshairSeries = data.map((item) => ({
+          name: item.name,
+          values: timePeriods.map((time) => {
+            const point = item.points.find((p) => p.time === time);
+            return point ? point.rank : NaN;
+          }),
+          color: item.color,
+        }));
+        const crosshairCleanup = attachCrosshair(buildCrosshairConfig({
+          svg: svgEl2,
+          chartGroup: chartGroupNode,
+          marginLeft: margin.left,
+          marginTop: margin.top,
+          chartWidth: innerWidth,
+          chartHeight: innerHeight,
+          categories: timePeriods,
+          series: crosshairSeries,
+          yScale,
+          lineColor: s.crosshairFormattingCard.crosshairLineColor.value?.value || '#94A3B8',
+          lineWidth: s.crosshairFormattingCard.crosshairLineWidth.value,
+          lineStyle: chStyleVal,
+          showValues: s.crosshairFormattingCard.showCrosshairValues.value,
+          formatValue: (val: number) => `#${Math.round(val)}`,
+        }));
+        this.cancelAnimations.push(crosshairCleanup);
       }
     }
 
@@ -648,77 +850,35 @@ export class BumpChartVisual implements IVisual {
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.bump-rank-label');
     applyAllAxisFormatting(this.container, this.settings.axisFormattingCard, '.bump-axis');
 
+    // ── Accessibility ─────────────────────────────────────────────
+
+    const totalDataPoints = data.reduce((sum, item) => sum + item.points.length, 0);
+    this.applyAccessibility(totalDataPoints);
+
     this.container.addEventListener('click', this.handleBackgroundClick);
   }
 
-  // ── Legend Rendering ────────────────────────────────────────
+  // ── Legend Rendering (shared core) ──────────────────────────
 
-  private renderLegend(
-    svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
+  private renderBumpLegend(
     data: BumpItem[],
     isBottom: boolean,
-    width: number,
-    height: number,
-    margin: { top: number; right: number; bottom: number; left: number },
-    innerWidth: number,
-    _innerHeight: number,
-    legendFontSize: number,
-    legendFontColor: string,
   ): void {
-    const legendGroup = svg.append('g').attr('class', 'bump-legend');
+    const legendFmtCard = this.settings.legendFormattingCard;
+    const rawFontColor = legendFmtCard.legendFontColor.value?.value;
+    const fontColor = rawFontColor != null && rawFontColor.length > 0 ? rawFontColor : '#64748B';
+    const position = isBottom ? 'bottom' : 'right';
 
-    if (isBottom) {
-      // Bottom legend: horizontal layout
-      const legendY = height - 28;
-      let currentX = margin.left;
-
-      data.forEach((item) => {
-        const itemGroup = legendGroup.append('g')
-          .attr('transform', `translate(${currentX},${legendY})`);
-
-        itemGroup.append('rect')
-          .attr('width', LEGEND_SWATCH_SIZE)
-          .attr('height', LEGEND_SWATCH_SIZE)
-          .attr('rx', 2)
-          .attr('fill', item.color);
-
-        itemGroup.append('text')
-          .attr('class', 'bump-legend-item')
-          .attr('x', LEGEND_SWATCH_SIZE + LEGEND_GAP)
-          .attr('y', LEGEND_SWATCH_SIZE - 1)
-          .attr('font-size', legendFontSize)
-          .attr('fill', legendFontColor)
-          .text(item.name);
-
-        // Estimate text width for next item offset
-        const estimatedTextWidth = item.name.length * 6;
-        currentX += LEGEND_SWATCH_SIZE + LEGEND_GAP + estimatedTextWidth + 16;
-      });
-    } else {
-      // Right legend: vertical layout
-      const legendX = width - margin.right + 20;
-
-      data.forEach((item, i) => {
-        const legendY = margin.top + i * LEGEND_ITEM_HEIGHT;
-
-        const itemGroup = legendGroup.append('g')
-          .attr('transform', `translate(${legendX},${legendY})`);
-
-        itemGroup.append('rect')
-          .attr('width', LEGEND_SWATCH_SIZE)
-          .attr('height', LEGEND_SWATCH_SIZE)
-          .attr('rx', 2)
-          .attr('fill', item.color);
-
-        itemGroup.append('text')
-          .attr('class', 'bump-legend-item')
-          .attr('x', LEGEND_SWATCH_SIZE + LEGEND_GAP)
-          .attr('y', LEGEND_SWATCH_SIZE - 1)
-          .attr('font-size', legendFontSize)
-          .attr('fill', legendFontColor)
-          .text(item.name);
-      });
-    }
+    const items: LegendItem[] = data.map((item) => ({
+      label: item.name,
+      color: item.color,
+    }));
+    renderLegend(this.container, {
+      items,
+      position,
+      fontSize: legendFmtCard.legendFontSize.value,
+      fontColor,
+    });
   }
 
   // ── Empty State ──────────────────────────────────────────────
@@ -764,6 +924,121 @@ export class BumpChartVisual implements IVisual {
         this.cancelAnimations.push(cancel);
       });
     }
+  }
+
+  // ── Conditional Formatting ────────────────────────────────────
+
+  private getConditionalColor(value: number): string | undefined {
+    const cc = this.settings.conditionalFormattingCard;
+    if (!cc.enableConditional.value) return undefined;
+    const config = buildConditionalConfig(
+      true,
+      resolveDropdown(cc.conditionalDirection),
+      cc.threshold1.value,
+      cc.threshold2.value,
+      cc.conditionalColor1.value?.value,
+      cc.conditionalColor2.value?.value,
+      cc.conditionalColor3.value?.value,
+    );
+    return resolveConditionalColor(value, config);
+  }
+
+  // ── Accessibility ───────────────────────────────────────────────
+
+  private applyAccessibility(dataPointCount: number): void {
+    const acc = this.settings.accessibilityFormattingCard;
+    if (!acc.enableKeyboardNav.value) return;
+    ensureFocusRingStyles();
+    applyChartAria(this.container, {
+      chartType: 'bump chart',
+      title: this.settings.titleFormattingCard?.titleText?.value || undefined,
+      dataPointCount,
+    });
+    const cleanup = attachKeyboardNav({
+      container: this.container,
+      itemSelector: '[tabindex="0"], .bump-line, .bump-dot',
+      onActivate: (el) => { (el as HTMLElement).click?.(); },
+    });
+    this.cancelAnimations.push(cleanup);
+  }
+
+  // ── Reference Line ──────────────────────────────────────────────
+
+  private renderReferenceLine(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    yScale: d3.ScaleLinear<number, number>,
+    width: number,
+    allValues: number[],
+  ): void {
+    const ref = this.settings.referenceLineFormattingCard;
+    if (!ref.showReferenceLine.value) return;
+    const refType = resolveDropdown(ref.referenceLineType) ?? 'custom';
+    let refValue = ref.referenceLineValue.value;
+    if (refType !== 'custom' && allValues.length > 0) {
+      refValue = computeStatValue(allValues, refType as StatType);
+    }
+    renderHorizontalReferenceLine(g, {
+      value: refValue,
+      yScale,
+      chartWidth: width,
+      lineColor: ref.referenceLineColor.value?.value ?? '#EF4444',
+      lineWidth: ref.referenceLineWidth.value,
+      lineStyle: (resolveDropdown(ref.referenceLineStyle) ?? 'dashed') as 'solid' | 'dashed' | 'dotted',
+      showLabel: ref.showReferenceLabel.value,
+      labelText: ref.referenceLabelText.value || String(refValue),
+      showBand: ref.showReferenceBand.value,
+      bandUpperValue: refValue * 1.1,
+      bandOpacity: ref.referenceBandOpacity.value / 100,
+    });
+  }
+
+  // ── Trend Line ──────────────────────────────────────────────────
+
+  private renderTrendLineOverlay(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    values: number[],
+    xScale: (index: number) => number,
+    yScale: d3.ScaleLinear<number, number>,
+  ): void {
+    const tl = this.settings.trendLineFormattingCard;
+    if (!tl.showTrendLine.value || values.length < 2) return;
+    const trendType = (resolveDropdown(tl.trendLineType) ?? 'linear') as TrendType;
+    const result = computeRegression(values, trendType, tl.polynomialOrder.value);
+    renderTrendLine(g, {
+      predicted: result.predicted,
+      xScale,
+      yScale,
+      lineColor: tl.trendLineColor.value?.value ?? '#6366F1',
+      lineWidth: tl.trendLineWidth.value,
+      showEquation: tl.showEquation.value,
+      showR2: tl.showR2.value,
+      equation: result.equation,
+      r2: result.r2,
+    });
+  }
+
+  // ── Annotations ─────────────────────────────────────────────────
+
+  private renderAnnotationOverlay(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    resolvePosition: (category: string) => { x: number; y: number } | null,
+  ): void {
+    const ann = this.settings.annotationFormattingCard;
+    if (!ann.showAnnotations.value) return;
+    const slots = [
+      { category: ann.annotation1Category.value, text: ann.annotation1Text.value, position: resolveDropdown(ann.annotation1Position) ?? 'above' },
+      { category: ann.annotation2Category.value, text: ann.annotation2Text.value, position: resolveDropdown(ann.annotation2Position) ?? 'above' },
+      { category: ann.annotation3Category.value, text: ann.annotation3Text.value, position: resolveDropdown(ann.annotation3Position) ?? 'above' },
+    ];
+    const config = buildAnnotationConfig(
+      true,
+      slots,
+      ann.annotationFontSize.value,
+      ann.annotationFontColor.value?.value || '#475569',
+      ann.annotationConnectorColor.value?.value || '#94A3B8',
+      resolvePosition,
+    );
+    if (config) renderAnnotations(g, config);
   }
 
   // ── Formatting Pane ──────────────────────────────────────────

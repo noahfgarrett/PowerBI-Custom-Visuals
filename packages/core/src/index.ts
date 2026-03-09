@@ -14,6 +14,8 @@ export {
   getDeltaColor,
   withOpacity,
   type ColorMode,
+  type ColorThemeName,
+  COLOR_THEMES,
 } from './colors';
 
 // Glassmorphic styling
@@ -62,8 +64,12 @@ export {
   isAtLeast,
   responsiveFontSize,
   responsivePadding,
+  responsiveTypography,
+  shouldShowLabels,
+  truncateText,
   type Breakpoint,
   type Dimensions,
+  type TypographyRole,
 } from './responsive';
 
 // Theme engine
@@ -85,6 +91,21 @@ export {
   ScrollFormattingCard,
   NumberFormattingCard,
   SortFormattingCard,
+  ReferenceLineFormattingCard,
+  TrendLineFormattingCard,
+  TargetFormattingCard,
+  ConditionalFormattingCard,
+  CrosshairFormattingCard,
+  AccessibilityFormattingCard,
+  ColorThemeFormattingCard,
+  AnnotationFormattingCard,
+  SeriesFormattingGroup,
+  SeriesFormattingCard,
+  resolveSeriesFormatting,
+  populateSeriesFormattingGroups,
+  lineStyleToDashArray,
+  type SeriesFormatting,
+  type LineStyleType,
   CAPABILITIES_TEMPLATES,
 } from './shared-settings';
 
@@ -98,8 +119,71 @@ export {
   applySortOrder,
   formatWithSettings,
   createScrollableChart,
+  ensureScrollStyles,
   resolveDropdown,
+  resolveColorTheme,
+  renderLegend,
+  createHoverDim,
+  renderSparkline,
   type SortableItem,
   type ScrollableChartOptions,
   type ScrollableChartResult,
+  type LegendItem,
+  type LegendConfig,
+  type HoverDimConfig,
+  type SparklineConfig,
 } from './shared-helpers';
+
+// Reference lines, trend lines, targets
+export {
+  computeStatValue,
+  computeRegression,
+  renderHorizontalReferenceLine,
+  renderVerticalReferenceLine,
+  renderTrendLine,
+  renderTargetLine,
+  type StatType,
+  type TrendType,
+  type RegressionResult,
+  type ReferenceLineConfig,
+  type VerticalReferenceLineConfig,
+  type TrendLineConfig,
+  type TargetLineConfig,
+} from './reference-lines';
+
+// Conditional formatting
+export {
+  resolveConditionalColor,
+  buildConditionalConfig,
+  applyConditionalColors,
+  type ConditionalConfig,
+  type ConditionalDirection,
+} from './conditional-formatting';
+
+// Crosshair interaction
+export {
+  attachCrosshair,
+  buildCrosshairConfig,
+  type CrosshairConfig,
+} from './crosshair';
+
+// Accessibility
+export {
+  detectContrastMode,
+  getAccessiblePalette,
+  applyChartAria,
+  applyDataPointAria,
+  attachKeyboardNav,
+  ensureFocusRingStyles,
+  type ContrastMode,
+  type ChartAriaConfig,
+  type KeyboardNavConfig,
+} from './accessibility';
+
+// Annotations
+export {
+  renderAnnotations,
+  buildAnnotationConfig,
+  type AnnotationItem,
+  type AnnotationConfig,
+} from './annotation';
