@@ -210,6 +210,12 @@
             "bool": true
           }
         },
+        "showLineDataLabels": {
+          "displayName": "Show Data Labels",
+          "type": {
+            "bool": true
+          }
+        },
         "lineGradientOpacity": {
           "displayName": "Gradient Opacity (%)",
           "type": {
@@ -225,6 +231,12 @@
           "displayName": "Show Secondary Y-Axis",
           "type": {
             "bool": true
+          }
+        },
+        "secondaryYAxisTitle": {
+          "displayName": "Secondary Y-Axis Title",
+          "type": {
+            "text": true
           }
         }
       }

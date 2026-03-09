@@ -279,6 +279,12 @@ class LineSettings extends formattingSettings.SimpleCard {
     value: true,
   });
 
+  showLineDataLabels = new formattingSettings.ToggleSwitch({
+    name: 'showLineDataLabels',
+    displayName: 'Show Data Labels',
+    value: false,
+  });
+
   lineGradientFill = new formattingSettings.ToggleSwitch({
     name: 'lineGradientFill',
     displayName: 'Gradient Fill Under Line',
@@ -293,7 +299,7 @@ class LineSettings extends formattingSettings.SimpleCard {
 
   name = 'lineSettings';
   displayName = 'Line Settings';
-  slices = [this.showDots, this.lineGradientFill, this.lineGradientOpacity];
+  slices = [this.showDots, this.showLineDataLabels, this.lineGradientFill, this.lineGradientOpacity];
 }
 
 // ── Secondary Axis Settings (combo mode only) ──────────────────────
@@ -305,9 +311,16 @@ class SecondaryAxisSettingsCard extends formattingSettings.SimpleCard {
     value: false,
   });
 
+  secondaryYAxisTitle = new formattingSettings.TextInput({
+    name: 'secondaryYAxisTitle',
+    displayName: 'Secondary Y-Axis Title',
+    value: '',
+    placeholder: 'e.g. Revenue',
+  });
+
   name = 'secondaryAxisSettings';
   displayName = 'Secondary Axis';
-  slices = [this.showSecondaryYAxis];
+  slices = [this.showSecondaryYAxis, this.secondaryYAxisTitle];
 }
 
 // ── Target Line ─────────────────────────────────────────────────────

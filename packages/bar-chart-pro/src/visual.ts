@@ -65,7 +65,7 @@ import '../style/visual.less';
 
 type ChartMode = 'grouped' | 'stacked' | 'stacked100' | 'combo' | 'horizontal' | 'diverging';
 type DataLabelMode = 'none' | 'above' | 'inside';
-type LegendPosition = 'bottom' | 'top' | 'right';
+type LegendPosition = 'bottom' | 'top' | 'left' | 'right';
 type LineStyle = 'solid' | 'dashed';
 
 interface BarSeries {
@@ -752,7 +752,12 @@ export class BarChartProVisual implements IVisual {
 
     if (!s.axisFormattingCard.showXAxis.value) margin.bottom = 8;
     if (!s.axisFormattingCard.showYAxis.value) margin.left = 8;
+    // Expand margins when axis titles are set to prevent clipping
+    if (s.axisFormattingCard.xAxisTitle.value && s.axisFormattingCard.showXAxis.value) margin.bottom += 20;
+    if (s.axisFormattingCard.yAxisTitle.value && s.axisFormattingCard.showYAxis.value) margin.left += 18;
+    if (hasSecondaryY && s.secondaryAxisSettings.secondaryYAxisTitle.value) margin.right += 18;
     if (legendPos === 'top') margin.top += legendReserve;
+    if (legendPos === 'left') margin.left += 80;
     if (legendPos === 'right') margin.right += 80;
 
     // Compute chart dimensions
@@ -827,8 +832,8 @@ export class BarChartProVisual implements IVisual {
         break;
     }
 
-    // Legend (bottom or right)
-    if (showLegend && (legendPos === 'bottom' || legendPos === 'right')) {
+    // Legend (bottom, left, or right)
+    if (showLegend && legendPos !== 'top') {
       this.renderLegend(data);
     }
 
@@ -1207,6 +1212,8 @@ export class BarChartProVisual implements IVisual {
     }
 
     // Axis titles
+    const axisTitleSize = `${s.axisFormattingCard.axisLabelSize.value}px`;
+    const axisTitleColor = s.axisFormattingCard.axisLabelColor.value?.value || '#64748B';
     const xTitle = s.axisFormattingCard.xAxisTitle.value;
     if (xTitle && s.axisFormattingCard.showXAxis.value) {
       g.append('text')
@@ -1214,8 +1221,8 @@ export class BarChartProVisual implements IVisual {
         .attr('x', width / 2)
         .attr('y', height + 36)
         .attr('text-anchor', 'middle')
-        .attr('font-size', '11px')
-        .attr('fill', '#64748B')
+        .attr('font-size', axisTitleSize)
+        .attr('fill', axisTitleColor)
         .text(xTitle);
     }
     const yTitle = s.axisFormattingCard.yAxisTitle.value;
@@ -1226,8 +1233,8 @@ export class BarChartProVisual implements IVisual {
         .attr('x', -height / 2)
         .attr('y', -40)
         .attr('text-anchor', 'middle')
-        .attr('font-size', '11px')
-        .attr('fill', '#64748B')
+        .attr('font-size', axisTitleSize)
+        .attr('fill', axisTitleColor)
         .text(yTitle);
     }
   }
@@ -1489,6 +1496,18 @@ export class BarChartProVisual implements IVisual {
           this.attachDotTooltip(dot, d.cat, series.name, d.val);
         });
       }
+
+      // Line data labels
+      if (s.lineSettings.showLineDataLabels.value) {
+        lineData.forEach((d) => {
+          g.append('text')
+            .attr('class', 'bar-chart-label')
+            .attr('x', d.x)
+            .attr('y', d.y - 10)
+            .attr('text-anchor', 'middle')
+            .text(formatWithSettings(d.val, this.settings.numberFormattingCard));
+        });
+      }
     });
 
     const comboValues = data.barSeries.flatMap((ser) => ser.values.filter((v): v is number => v !== null));
@@ -1560,6 +1579,8 @@ export class BarChartProVisual implements IVisual {
     }
 
     // Axis titles (in horizontal mode, x-axis shows values, y-axis shows categories)
+    const axisTitleSize = `${s.axisFormattingCard.axisLabelSize.value}px`;
+    const axisTitleColor = s.axisFormattingCard.axisLabelColor.value?.value || '#64748B';
     const xTitle = s.axisFormattingCard.xAxisTitle.value;
     if (xTitle && s.axisFormattingCard.showXAxis.value) {
       g.append('text')
@@ -1567,8 +1588,8 @@ export class BarChartProVisual implements IVisual {
         .attr('x', width / 2)
         .attr('y', height + 36)
         .attr('text-anchor', 'middle')
-        .attr('font-size', '11px')
-        .attr('fill', '#64748B')
+        .attr('font-size', axisTitleSize)
+        .attr('fill', axisTitleColor)
         .text(xTitle);
     }
     const yTitle = s.axisFormattingCard.yAxisTitle.value;
@@ -1579,8 +1600,8 @@ export class BarChartProVisual implements IVisual {
         .attr('x', -height / 2)
         .attr('y', -40)
         .attr('text-anchor', 'middle')
-        .attr('font-size', '11px')
-        .attr('fill', '#64748B')
+        .attr('font-size', axisTitleSize)
+        .attr('fill', axisTitleColor)
         .text(yTitle);
     }
 
@@ -1732,6 +1753,8 @@ export class BarChartProVisual implements IVisual {
     }
 
     // Axis titles
+    const axisTitleSize = `${s.axisFormattingCard.axisLabelSize.value}px`;
+    const axisTitleColor = s.axisFormattingCard.axisLabelColor.value?.value || '#64748B';
     const xTitle = s.axisFormattingCard.xAxisTitle.value;
     if (xTitle && s.axisFormattingCard.showXAxis.value) {
       g.append('text')
@@ -1739,8 +1762,8 @@ export class BarChartProVisual implements IVisual {
         .attr('x', width / 2)
         .attr('y', height + 36)
         .attr('text-anchor', 'middle')
-        .attr('font-size', '11px')
-        .attr('fill', '#64748B')
+        .attr('font-size', axisTitleSize)
+        .attr('fill', axisTitleColor)
         .text(xTitle);
     }
     const yTitle = s.axisFormattingCard.yAxisTitle.value;
@@ -1751,8 +1774,8 @@ export class BarChartProVisual implements IVisual {
         .attr('x', -height / 2)
         .attr('y', -40)
         .attr('text-anchor', 'middle')
-        .attr('font-size', '11px')
-        .attr('fill', '#64748B')
+        .attr('font-size', axisTitleSize)
+        .attr('fill', axisTitleColor)
         .text(yTitle);
     }
 
@@ -1882,6 +1905,8 @@ export class BarChartProVisual implements IVisual {
     }
 
     // Axis titles
+    const axisTitleSize = `${s.axisFormattingCard.axisLabelSize.value}px`;
+    const axisTitleColor = s.axisFormattingCard.axisLabelColor.value?.value || '#64748B';
     const xTitle = s.axisFormattingCard.xAxisTitle.value;
     if (xTitle && s.axisFormattingCard.showXAxis.value) {
       g.append('text')
@@ -1889,8 +1914,8 @@ export class BarChartProVisual implements IVisual {
         .attr('x', width / 2)
         .attr('y', height + 36)
         .attr('text-anchor', 'middle')
-        .attr('font-size', '11px')
-        .attr('fill', '#64748B')
+        .attr('font-size', axisTitleSize)
+        .attr('fill', axisTitleColor)
         .text(xTitle);
     }
     const yTitle = s.axisFormattingCard.yAxisTitle.value;
@@ -1901,9 +1926,22 @@ export class BarChartProVisual implements IVisual {
         .attr('x', -height / 2)
         .attr('y', -40)
         .attr('text-anchor', 'middle')
-        .attr('font-size', '11px')
-        .attr('fill', '#64748B')
+        .attr('font-size', axisTitleSize)
+        .attr('fill', axisTitleColor)
         .text(yTitle);
+    }
+    // Secondary Y-axis title (combo mode)
+    const secYTitle = s.secondaryAxisSettings.secondaryYAxisTitle.value;
+    if (secYTitle && secondaryYScale && s.secondaryAxisSettings.showSecondaryYAxis.value) {
+      g.append('text')
+        .attr('class', 'bar-chart-axis-title')
+        .attr('transform', 'rotate(90)')
+        .attr('x', height / 2)
+        .attr('y', -(width + 40))
+        .attr('text-anchor', 'middle')
+        .attr('font-size', axisTitleSize)
+        .attr('fill', axisTitleColor)
+        .text(secYTitle);
     }
   }
 
@@ -2792,7 +2830,7 @@ export class BarChartProVisual implements IVisual {
 
   private getLegendPosition(): LegendPosition {
     const val = resolveDropdown(this.settings.legendFormattingCard.legendPosition);
-    const validPositions: LegendPosition[] = ['bottom', 'top', 'right'];
+    const validPositions: LegendPosition[] = ['bottom', 'top', 'left', 'right'];
     if (typeof val === 'string' && validPositions.includes(val as LegendPosition)) {
       return val as LegendPosition;
     }
