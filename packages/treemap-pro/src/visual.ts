@@ -454,11 +454,13 @@ export class TreemapProVisual implements IVisual {
 
       g.appendChild(rect);
 
-      // Label overflow: 'hide' skips labels that don't fit, 'truncate' truncates
+      // Label overflow: 'hide' skips labels that don't fit, 'truncate' truncates to fit
       const fitsLabel = cellW >= LABEL_MIN_WIDTH && cellH >= LABEL_MIN_HEIGHT;
+      const textFitsCell = leaf.data.name.length * 7 <= cellW - 12;
+      const shouldShowLabel = labelOverflow === 'hide' ? (fitsLabel && textFitsCell) : fitsLabel;
 
       // Label (category name)
-      if (showLabels && (labelOverflow === 'truncate' ? fitsLabel : fitsLabel)) {
+      if (showLabels && shouldShowLabel) {
         const label = document.createElementNS(svgNS, 'text');
         label.setAttribute('class', 'treemap-label');
         label.setAttribute('x', '6');
@@ -466,9 +468,9 @@ export class TreemapProVisual implements IVisual {
         if (labelColor) {
           label.setAttribute('fill', labelColor);
         }
-        label.textContent = labelOverflow === 'hide' && leaf.data.name.length * 7 > cellW - 12
-          ? ''
-          : this.truncateLabel(leaf.data.name, cellW - 12);
+        label.textContent = labelOverflow === 'truncate'
+          ? this.truncateLabel(leaf.data.name, cellW - 12)
+          : leaf.data.name;
         if (label.textContent) {
           g.appendChild(label);
         }

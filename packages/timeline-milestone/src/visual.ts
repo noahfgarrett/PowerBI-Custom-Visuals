@@ -239,6 +239,7 @@ export class TimelineMilestoneVisual implements IVisual {
 
     const showSwimlanes = s.timelineLayoutSettings.showSwimlanes.value;
     const showDurationBars = s.timelineLayoutSettings.showDurationBars.value;
+    const showConnectors = s.timelineLayoutSettings.showConnectors.value;
 
     const locale = this.getHostLocale();
     const highContrast = this.getHighContrastColors();
@@ -399,11 +400,13 @@ export class TimelineMilestoneVisual implements IVisual {
         const y1 = isAbove ? cy - markerSize / 2 : cy + markerSize / 2;
         const y2 = isAbove ? cy - connectorLen : cy + connectorLen;
 
-        svg.append('line')
-          .attr('x1', cx).attr('y1', y1)
-          .attr('x2', cx).attr('y2', y2)
-          .attr('stroke', connectorColor).attr('stroke-width', 1)
-          .attr('stroke-dasharray', '2,2');
+        if (showConnectors) {
+          svg.append('line')
+            .attr('x1', cx).attr('y1', y1)
+            .attr('x2', cx).attr('y2', y2)
+            .attr('stroke', connectorColor).attr('stroke-width', 1)
+            .attr('stroke-dasharray', '2,2');
+        }
 
         // Marker
         const marker = this.createSvgMarker(svg, cx, cy, markerSize, markerShape, color, markerStroke);
@@ -521,11 +524,13 @@ export class TimelineMilestoneVisual implements IVisual {
         const x1 = isLeft ? cx - markerSize / 2 : cx + markerSize / 2;
         const x2 = isLeft ? cx - connectorLen : cx + connectorLen;
 
-        svg.append('line')
-          .attr('x1', x1).attr('y1', my)
-          .attr('x2', x2).attr('y2', my)
-          .attr('stroke', connectorColor).attr('stroke-width', 1)
-          .attr('stroke-dasharray', '2,2');
+        if (showConnectors) {
+          svg.append('line')
+            .attr('x1', x1).attr('y1', my)
+            .attr('x2', x2).attr('y2', my)
+            .attr('stroke', connectorColor).attr('stroke-width', 1)
+            .attr('stroke-dasharray', '2,2');
+        }
 
         // Marker
         const marker = this.createSvgMarker(svg, cx, my, markerSize, markerShape, color, markerStroke);
@@ -615,9 +620,8 @@ export class TimelineMilestoneVisual implements IVisual {
       }
     }
 
-    // Today line and connectors
+    // Today line
     this.renderTodayLine(svg, milestones, viewport, isHorizontal, padding);
-    this.renderConnectorLines(svg, milestones, isHorizontal);
 
     this.applyAccessibility();
     this.container.addEventListener('click', this.handleBackgroundClick);
@@ -855,19 +859,6 @@ export class TimelineMilestoneVisual implements IVisual {
         .attr('stroke-dasharray', '4,3')
         .attr('opacity', 0.7);
     }
-  }
-
-  // -- Connector Lines --------------------------------------------------------
-
-  private renderConnectorLines(
-    _svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
-    _milestones: Milestone[],
-    _isHorizontal: boolean,
-  ): void {
-    const layoutSettings = this.settings.timelineLayoutSettings;
-    if (!layoutSettings.showConnectors.value) return;
-    // Connector lines between sequential milestones are rendered as part of the
-    // spine line in the main render. This hook allows future dependency-style arrows.
   }
 
   // -- Conditional Formatting -------------------------------------------------
