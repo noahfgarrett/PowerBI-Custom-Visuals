@@ -362,3 +362,10 @@ No package-specific dead settings. Global accessibility fixes applied.
 | Radar-chart benchmark overlay | `RadarBenchmarkSettings` (show, dash, color) defined but broken implementation | FIXED — average-per-axis polygon with proper z-ordering |
 | Timeline-milestone connectors | `showConnectors` toggle checked but gated method was a no-op stub | FIXED — toggle now gates actual connector lines inline |
 | Treemap-pro label overflow | `labelOverflow` setting read but condition was a tautology (both branches identical) | FIXED — `hide` skips labels that don't fit, `truncate` clips text |
+
+### Additional Issues Found in Third Pass (End-to-End Trace)
+
+| Category | Details | Status |
+|---|---|---|
+| Bar chart pro — pattern fill never applied | `applyPatternFillDefs()` created SVG `<pattern>` defs but never set bar `fill` to `url(#pattern-id)` | FIXED — rewrote method to iterate `.bar-chart-bar` rects and replace fills with pattern URL refs |
+| Bar chart pro — Top N othersColor ignored | `othersColor` read from settings but never passed through to `getBarFill()` | FIXED — added `othersColor` to `ChartData` interface, `getOthersColor()` helper, wired through all 6 modes |
