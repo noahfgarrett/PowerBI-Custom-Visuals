@@ -17,6 +17,9 @@ globalThis.requestAnimationFrame = (cb: FrameRequestCallback): number => {
   fakeTime += 100_000; // advance 100s so any duration check completes
   try {
     cb(fakeTime);
+  } catch {
+    // Swallow errors from library-internal rAF callbacks (e.g. d3-force/d3-timer)
+    // that fail in JSDOM due to missing browser APIs.
   } finally {
     rafDepth--;
   }
@@ -38,6 +41,18 @@ Object.defineProperty(window, 'matchMedia', {
     dispatchEvent: () => false,
   }),
 });
+
+// SVGTextElement / SVGPathElement / SVGGeometryElement globals
+// JSDOM doesn't define these subclasses, but code uses instanceof checks.
+if (typeof globalThis.SVGTextElement === 'undefined' && typeof SVGElement !== 'undefined') {
+  (globalThis as unknown as Record<string, unknown>).SVGTextElement = SVGElement;
+}
+if (typeof globalThis.SVGPathElement === 'undefined' && typeof SVGElement !== 'undefined') {
+  (globalThis as unknown as Record<string, unknown>).SVGPathElement = SVGElement;
+}
+if (typeof globalThis.SVGGeometryElement === 'undefined' && typeof SVGElement !== 'undefined') {
+  (globalThis as unknown as Record<string, unknown>).SVGGeometryElement = SVGElement;
+}
 
 // SVGElement.prototype.getBBox
 if (typeof SVGElement !== 'undefined') {
