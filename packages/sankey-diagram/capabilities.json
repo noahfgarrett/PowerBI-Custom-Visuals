@@ -615,10 +615,22 @@
           "displayName": "Position",
           "type": {
             "enumeration": [
-              { "value": "bottom", "displayName": "Bottom" },
-              { "value": "top", "displayName": "Top" },
-              { "value": "left", "displayName": "Left" },
-              { "value": "right", "displayName": "Right" }
+              {
+                "value": "bottom",
+                "displayName": "Bottom"
+              },
+              {
+                "value": "top",
+                "displayName": "Top"
+              },
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
             ]
           }
         },
@@ -642,18 +654,54 @@
           "displayName": "Font",
           "type": {
             "enumeration": [
-              { "value": "", "displayName": "Default" },
-              { "value": "Arial", "displayName": "Arial" },
-              { "value": "Calibri", "displayName": "Calibri" },
-              { "value": "Cambria", "displayName": "Cambria" },
-              { "value": "Courier New", "displayName": "Courier New" },
-              { "value": "Georgia", "displayName": "Georgia" },
-              { "value": "Helvetica Neue", "displayName": "Helvetica Neue" },
-              { "value": "Segoe UI", "displayName": "Segoe UI" },
-              { "value": "Tahoma", "displayName": "Tahoma" },
-              { "value": "Times New Roman", "displayName": "Times New Roman" },
-              { "value": "Trebuchet MS", "displayName": "Trebuchet MS" },
-              { "value": "Verdana", "displayName": "Verdana" }
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              }
             ]
           }
         },
@@ -661,8 +709,14 @@
           "displayName": "Font Weight",
           "type": {
             "enumeration": [
-              { "value": "normal", "displayName": "Normal" },
-              { "value": "bold", "displayName": "Bold" }
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
             ]
           }
         }
@@ -901,8 +955,14 @@
           "displayName": "Font Weight",
           "type": {
             "enumeration": [
-              { "value": "normal", "displayName": "Normal" },
-              { "value": "bold", "displayName": "Bold" }
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
             ]
           }
         },
@@ -932,18 +992,54 @@
           "displayName": "Subtitle Font",
           "type": {
             "enumeration": [
-              { "value": "", "displayName": "Default" },
-              { "value": "Arial", "displayName": "Arial" },
-              { "value": "Calibri", "displayName": "Calibri" },
-              { "value": "Cambria", "displayName": "Cambria" },
-              { "value": "Courier New", "displayName": "Courier New" },
-              { "value": "Georgia", "displayName": "Georgia" },
-              { "value": "Helvetica Neue", "displayName": "Helvetica Neue" },
-              { "value": "Segoe UI", "displayName": "Segoe UI" },
-              { "value": "Tahoma", "displayName": "Tahoma" },
-              { "value": "Times New Roman", "displayName": "Times New Roman" },
-              { "value": "Trebuchet MS", "displayName": "Trebuchet MS" },
-              { "value": "Verdana", "displayName": "Verdana" }
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              }
             ]
           }
         },
@@ -951,8 +1047,14 @@
           "displayName": "Subtitle Font Weight",
           "type": {
             "enumeration": [
-              { "value": "normal", "displayName": "Normal" },
-              { "value": "bold", "displayName": "Bold" }
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
             ]
           }
         }
@@ -1003,7 +1105,8 @@
         "enableGlass": {
           "type": {
             "bool": true
-          }
+          },
+          "displayName": "Glass Effect"
         }
       }
     },
@@ -1152,11 +1255,42 @@
     "colorThemeFormatting": {
       "properties": {
         "colorTheme": {
+          "displayName": "Theme",
           "type": {
-            "text": true
+            "enumeration": [
+              {
+                "value": "default",
+                "displayName": "Default"
+              },
+              {
+                "value": "ocean",
+                "displayName": "Ocean"
+              },
+              {
+                "value": "sunset",
+                "displayName": "Sunset"
+              },
+              {
+                "value": "forest",
+                "displayName": "Forest"
+              },
+              {
+                "value": "berry",
+                "displayName": "Berry"
+              },
+              {
+                "value": "monochrome",
+                "displayName": "Monochrome"
+              },
+              {
+                "value": "earth",
+                "displayName": "Earth"
+              }
+            ]
           }
         }
-      }
+      },
+      "displayName": "Color Theme"
     },
     "numberFormatting": {
       "displayName": "Number Format",
@@ -1165,25 +1299,46 @@
           "displayName": "Display Units",
           "type": {
             "enumeration": [
-              { "value": "auto", "displayName": "Auto" },
-              { "value": "none", "displayName": "None" },
-              { "value": "thousands", "displayName": "Thousands (K)" },
-              { "value": "millions", "displayName": "Millions (M)" },
-              { "value": "billions", "displayName": "Billions (B)" }
+              {
+                "value": "auto",
+                "displayName": "Auto"
+              },
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "thousands",
+                "displayName": "Thousands (K)"
+              },
+              {
+                "value": "millions",
+                "displayName": "Millions (M)"
+              },
+              {
+                "value": "billions",
+                "displayName": "Billions (B)"
+              }
             ]
           }
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
-          "type": { "numeric": true }
+          "type": {
+            "numeric": true
+          }
         },
         "valuePrefix": {
           "displayName": "Prefix",
-          "type": { "text": true }
+          "type": {
+            "text": true
+          }
         },
         "valueSuffix": {
           "displayName": "Suffix",
-          "type": { "text": true }
+          "type": {
+            "text": true
+          }
         }
       }
     }

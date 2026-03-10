@@ -8,7 +8,6 @@ import * as d3 from 'd3';
 import { FormattingSettingsService } from 'powerbi-visuals-utils-formattingmodel';
 import { KpiCardSettings } from './settings';
 import {
-  formatNumber,
   formatWithSettings,
   countUp,
   drawPath,
@@ -72,9 +71,11 @@ export class KpiCardVisual implements IVisual {
     const s = this.settings;
     s.kpiGoalSettings.goalValue.visible = s.kpiGoalSettings.show.value;
     s.kpiGoalSettings.showProgressBar.visible = s.kpiGoalSettings.show.value;
-    s.kpiGoalSettings.metColor.visible = s.kpiGoalSettings.show.value;
-    s.kpiGoalSettings.unmetColor.visible = s.kpiGoalSettings.show.value;
+    s.kpiGoalSettings.metColor.visible = s.kpiGoalSettings.show.value && s.kpiGoalSettings.showProgressBar.value;
+    s.kpiGoalSettings.unmetColor.visible = s.kpiGoalSettings.show.value && s.kpiGoalSettings.showProgressBar.value;
     s.kpiComparisonSettings.showPercentChange.visible = s.kpiComparisonSettings.show.value;
+    s.kpiComparisonSettings.fontSize.visible = s.kpiComparisonSettings.show.value;
+    s.kpiComparisonSettings.fontColor.visible = s.kpiComparisonSettings.show.value;
     s.kpiLayoutSettings.sparklineType.visible = s.sparklineSettings.show.value;
 
     // Label sub-settings hidden when label is off
@@ -85,6 +86,7 @@ export class KpiCardVisual implements IVisual {
     s.labelSettings.customText.visible = s.labelSettings.show.value;
 
     // Trend sub-settings hidden when trend is off
+    s.trendSettings.fontSize.visible = s.trendSettings.show.value;
     s.trendSettings.positiveColor.visible = s.trendSettings.show.value;
     s.trendSettings.negativeColor.visible = s.trendSettings.show.value;
     s.trendSettings.neutralColor.visible = s.trendSettings.show.value;
@@ -98,6 +100,29 @@ export class KpiCardVisual implements IVisual {
 
     // Animation sub-settings hidden when animation is off
     s.animationSettings.duration.visible = s.animationSettings.enabled.value;
+
+    // Conditional formatting sub-settings
+    const showCond = s.conditionalFormattingCard.enableConditional.value;
+    s.conditionalFormattingCard.conditionalDirection.visible = showCond;
+    s.conditionalFormattingCard.threshold1.visible = showCond;
+    s.conditionalFormattingCard.threshold2.visible = showCond;
+    s.conditionalFormattingCard.conditionalColor1.visible = showCond;
+    s.conditionalFormattingCard.conditionalColor2.visible = showCond;
+    s.conditionalFormattingCard.conditionalColor3.visible = showCond;
+
+    // Title sub-settings
+    const showTitle = s.titleFormattingCard.showTitle.value;
+    s.titleFormattingCard.titleText.visible = showTitle;
+    s.titleFormattingCard.titleFontSize.visible = showTitle;
+    s.titleFormattingCard.titleFontColor.visible = showTitle;
+    s.titleFormattingCard.titleAlignment.visible = showTitle;
+    s.titleFormattingCard.titleFontFamily.visible = showTitle;
+    s.titleFormattingCard.titleFontWeight.visible = showTitle;
+    s.titleFormattingCard.subtitleText.visible = showTitle;
+    s.titleFormattingCard.subtitleFontSize.visible = showTitle;
+    s.titleFormattingCard.subtitleFontColor.visible = showTitle;
+    s.titleFormattingCard.subtitleFontFamily.visible = showTitle;
+    s.titleFormattingCard.subtitleFontWeight.visible = showTitle;
 
     // Card style sub-settings
     s.cardSettings.backgroundOpacity.visible = !!s.cardSettings.backgroundColor?.value?.value;
@@ -426,6 +451,7 @@ export class KpiCardVisual implements IVisual {
       const trendEl = document.createElement('div');
       trendEl.className = 'kpi-trend';
       trendEl.style.color = color;
+      trendEl.style.fontSize = `${s.trendSettings.fontSize.value}px`;
       const arrowSpan = document.createElement('span');
       arrowSpan.className = 'kpi-trend-arrow';
       arrowSpan.textContent = arrow;
@@ -590,7 +616,6 @@ export class KpiCardVisual implements IVisual {
 
   private showKpiTooltip(data: KpiCardData, event: MouseEvent): void {
     if (data.value === null) return;
-    const locale = this.getHostLocale();
     const numberSettings = this.settings.numberFormattingCard;
     const tooltipData: VisualTooltipDataItem[] = [
       { displayName: data.label || 'KPI', value: formatWithSettings(data.value as number, numberSettings) },
@@ -715,9 +740,9 @@ export class KpiCardVisual implements IVisual {
       display: flex;
       align-items: center;
       gap: 4px;
-      font-size: 11px;
-      color: #64748B;
     `;
+    compEl.style.fontSize = `${this.settings.kpiComparisonSettings.fontSize.value}px`;
+    compEl.style.color = this.settings.kpiComparisonSettings.fontColor.value?.value || '#64748B';
 
     if (comparison.showPercentChange.value && data.target !== 0) {
       const pct = ((delta / Math.abs(data.target)) * 100).toFixed(1);

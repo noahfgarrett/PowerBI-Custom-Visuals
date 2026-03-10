@@ -226,6 +226,66 @@ export class BarChartProVisual implements IVisual {
     s.animationSettings.duration.visible = s.animationSettings.enabled.value;
     s.animationSettings.staggerDelay.visible = s.animationSettings.enabled.value;
 
+    // Target line sub-settings
+    const showTarget = s.targetLine.show.value;
+    s.targetLine.label.visible = showTarget;
+    s.targetLine.style.visible = showTarget;
+    s.targetLine.color.visible = showTarget;
+
+    // Reference line sub-settings
+    const showRef = s.referenceLineFormattingCard.showReferenceLine.value;
+    s.referenceLineFormattingCard.referenceLineType.visible = showRef;
+    s.referenceLineFormattingCard.referenceLineValue.visible = showRef && resolveDropdown(s.referenceLineFormattingCard.referenceLineType) === 'custom';
+    s.referenceLineFormattingCard.referenceLineColor.visible = showRef;
+    s.referenceLineFormattingCard.referenceLineWidth.visible = showRef;
+    s.referenceLineFormattingCard.referenceLineStyle.visible = showRef;
+    s.referenceLineFormattingCard.showReferenceLabel.visible = showRef;
+    s.referenceLineFormattingCard.referenceLabelText.visible = showRef && s.referenceLineFormattingCard.showReferenceLabel.value;
+    s.referenceLineFormattingCard.showReferenceBand.visible = showRef;
+    s.referenceLineFormattingCard.referenceBandOpacity.visible = showRef && s.referenceLineFormattingCard.showReferenceBand.value;
+    s.referenceLineFormattingCard.referenceBandWidth.visible = showRef && s.referenceLineFormattingCard.showReferenceBand.value;
+
+    // Trend line sub-settings
+    const showTrend = s.trendLineFormattingCard.showTrendLine.value;
+    s.trendLineFormattingCard.trendLineType.visible = showTrend;
+    s.trendLineFormattingCard.polynomialOrder.visible = showTrend && resolveDropdown(s.trendLineFormattingCard.trendLineType) === 'polynomial';
+    s.trendLineFormattingCard.trendLineColor.visible = showTrend;
+    s.trendLineFormattingCard.trendLineWidth.visible = showTrend;
+    s.trendLineFormattingCard.showEquation.visible = showTrend;
+    s.trendLineFormattingCard.showR2.visible = showTrend;
+
+    // Conditional formatting sub-settings
+    const showCond = s.conditionalFormattingCard.enableConditional.value;
+    s.conditionalFormattingCard.conditionalDirection.visible = showCond;
+    s.conditionalFormattingCard.threshold1.visible = showCond;
+    s.conditionalFormattingCard.threshold2.visible = showCond;
+    s.conditionalFormattingCard.conditionalColor1.visible = showCond;
+    s.conditionalFormattingCard.conditionalColor2.visible = showCond;
+    s.conditionalFormattingCard.conditionalColor3.visible = showCond;
+
+    // Annotation sub-settings
+    const showAnnot = s.annotationFormattingCard.showAnnotations.value;
+    s.annotationFormattingCard.annotation1Category.visible = showAnnot;
+    s.annotationFormattingCard.annotation1Text.visible = showAnnot;
+    s.annotationFormattingCard.annotation1Position.visible = showAnnot;
+    s.annotationFormattingCard.annotation2Category.visible = showAnnot;
+    s.annotationFormattingCard.annotation2Text.visible = showAnnot;
+    s.annotationFormattingCard.annotation2Position.visible = showAnnot;
+    s.annotationFormattingCard.annotation3Category.visible = showAnnot;
+    s.annotationFormattingCard.annotation3Text.visible = showAnnot;
+    s.annotationFormattingCard.annotation3Position.visible = showAnnot;
+    s.annotationFormattingCard.annotationFontSize.visible = showAnnot;
+    s.annotationFormattingCard.annotationFontColor.visible = showAnnot;
+    s.annotationFormattingCard.annotationConnectorColor.visible = showAnnot;
+
+    // Legend sub-settings
+    const showLegend = s.legendFormattingCard.showLegend.value;
+    s.legendFormattingCard.legendPosition.visible = showLegend;
+    s.legendFormattingCard.legendFontSize.visible = showLegend;
+    s.legendFormattingCard.legendFontColor.visible = showLegend;
+    s.legendFormattingCard.legendFontFamily.visible = showLegend;
+    s.legendFormattingCard.legendFontWeight.visible = showLegend;
+
     // Reset drill if data changed structurally
     if (data.isEmpty || !data.hasSubCategory) {
       this.drillPath = [];
@@ -929,9 +989,10 @@ export class BarChartProVisual implements IVisual {
       .padding(0.05);
 
     const allValues = data.barSeries.flatMap((ser) => ser.values.filter((v): v is number => v !== null));
+    const yMin = d3.min(allValues) ?? 0;
     const yMax = d3.max(allValues) ?? 0;
     const y = d3.scaleLinear()
-      .domain(this.applyYAxisOverrides([0, yMax * 1.1]))
+      .domain(this.applyYAxisOverrides([Math.min(0, yMin * 1.1), yMax * 1.1]))
       .nice()
       .range([height, 0]);
 
@@ -988,8 +1049,12 @@ export class BarChartProVisual implements IVisual {
 
     // Variance indicators (per-category, first series only)
     if (data.barSeries.length > 0) {
-      const firstVals = data.barSeries[0].values.filter((v): v is number => v !== null);
-      const xPositions = data.categories.map((cat) => (x0(cat) ?? 0) + x0.bandwidth() / 2);
+      const rawVals = data.barSeries[0].values;
+      const pairs = data.categories
+        .map((cat, i) => ({ val: rawVals[i], x: (x0(cat) ?? 0) + x0.bandwidth() / 2 }))
+        .filter((p): p is { val: number; x: number } => p.val !== null);
+      const firstVals = pairs.map(p => p.val);
+      const xPositions = pairs.map(p => p.x);
       this.renderVarianceIndicators(g, firstVals, data.targetValue, xPositions, y);
     }
   }
@@ -1402,9 +1467,10 @@ export class BarChartProVisual implements IVisual {
 
     // Y scale (bars)
     const barValues = data.barSeries.flatMap((ser) => ser.values.filter((v): v is number => v !== null));
+    const yBarMin = d3.min(barValues) ?? 0;
     const yBarMax = d3.max(barValues) ?? 0;
     const yBar = d3.scaleLinear()
-      .domain(this.applyYAxisOverrides([0, yBarMax * 1.1]))
+      .domain(this.applyYAxisOverrides([Math.min(0, yBarMin * 1.1), yBarMax * 1.1]))
       .nice()
       .range([height, 0]);
 
@@ -1591,8 +1657,12 @@ export class BarChartProVisual implements IVisual {
 
     // Variance indicators (first bar series against target)
     if (data.barSeries.length > 0) {
-      const firstVals = data.barSeries[0].values.filter((v): v is number => v !== null);
-      const comboXPositions = data.categories.map((cat) => (x(cat) ?? 0) + x.bandwidth() / 2);
+      const rawVals = data.barSeries[0].values;
+      const pairs = data.categories
+        .map((cat, i) => ({ val: rawVals[i], x: (x(cat) ?? 0) + x.bandwidth() / 2 }))
+        .filter((p): p is { val: number; x: number } => p.val !== null);
+      const firstVals = pairs.map(p => p.val);
+      const comboXPositions = pairs.map(p => p.x);
       this.renderVarianceIndicators(g, firstVals, data.targetValue, comboXPositions, yBar);
     }
   }
@@ -1624,9 +1694,10 @@ export class BarChartProVisual implements IVisual {
       .padding(0.05);
 
     const allValues = data.barSeries.flatMap((ser) => ser.values.filter((v): v is number => v !== null));
+    const xMin = d3.min(allValues) ?? 0;
     const xMax = d3.max(allValues) ?? 0;
     const x = d3.scaleLinear()
-      .domain(this.applyYAxisOverrides([0, xMax * 1.1]))
+      .domain(this.applyYAxisOverrides([Math.min(0, xMin * 1.1), xMax * 1.1]))
       .nice()
       .range([0, width]);
 
@@ -1759,8 +1830,12 @@ export class BarChartProVisual implements IVisual {
 
     // Variance indicators (horizontal — text to right of bar end)
     if (data.barSeries.length > 0) {
-      const firstVals = data.barSeries[0].values.filter((v): v is number => v !== null);
-      const yPositions = data.categories.map((cat) => (y(cat) ?? 0) + y.bandwidth() / 2);
+      const rawVals = data.barSeries[0].values;
+      const pairs = data.categories
+        .map((cat, i) => ({ val: rawVals[i], y: (y(cat) ?? 0) + y.bandwidth() / 2 }))
+        .filter((p): p is { val: number; y: number } => p.val !== null);
+      const firstVals = pairs.map(p => p.val);
+      const yPositions = pairs.map(p => p.y);
       this.renderVarianceIndicatorsHorizontal(g, firstVals, data.targetValue, yPositions, x);
     }
   }
@@ -1899,8 +1974,11 @@ export class BarChartProVisual implements IVisual {
     this.renderAnnotationOverlay(g, data, x, y);
 
     // Variance indicators (first series values against target)
-    const divergingVals = series.values.filter((v): v is number => v !== null);
-    const divergingXPositions = data.categories.map((cat) => (x(cat) ?? 0) + x.bandwidth() / 2);
+    const divergingPairs = data.categories
+      .map((cat, i) => ({ val: series.values[i], x: (x(cat) ?? 0) + x.bandwidth() / 2 }))
+      .filter((p): p is { val: number; x: number } => p.val !== null);
+    const divergingVals = divergingPairs.map(p => p.val);
+    const divergingXPositions = divergingPairs.map(p => p.x);
     this.renderVarianceIndicators(g, divergingVals, data.targetValue, divergingXPositions, y);
   }
 
@@ -2666,6 +2744,7 @@ export class BarChartProVisual implements IVisual {
       fontSize: legendFmtCard.legendFontSize.value,
       fontColor: rawFontColor && rawFontColor.length > 0 ? rawFontColor : '#64748B',
       fontFamily: rawFontFamily,
+      fontWeight: resolveDropdown(legendFmtCard.legendFontWeight) || 'normal',
     });
   }
 

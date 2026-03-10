@@ -978,7 +978,8 @@
         "enableGlass": {
           "type": {
             "bool": true
-          }
+          },
+          "displayName": "Glass Effect"
         }
       }
     },
@@ -1196,11 +1197,42 @@
     "colorThemeFormatting": {
       "properties": {
         "colorTheme": {
+          "displayName": "Theme",
           "type": {
-            "text": true
+            "enumeration": [
+              {
+                "value": "default",
+                "displayName": "Default"
+              },
+              {
+                "value": "ocean",
+                "displayName": "Ocean"
+              },
+              {
+                "value": "sunset",
+                "displayName": "Sunset"
+              },
+              {
+                "value": "forest",
+                "displayName": "Forest"
+              },
+              {
+                "value": "berry",
+                "displayName": "Berry"
+              },
+              {
+                "value": "monochrome",
+                "displayName": "Monochrome"
+              },
+              {
+                "value": "earth",
+                "displayName": "Earth"
+              }
+            ]
           }
         }
-      }
+      },
+      "displayName": "Color Theme"
     },
     "numberFormatting": {
       "displayName": "Number Format",

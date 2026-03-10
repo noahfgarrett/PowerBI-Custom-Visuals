@@ -114,6 +114,12 @@ class TrendSettings extends formattingSettings.SimpleCard {
     value: true,
   });
 
+  fontSize = new formattingSettings.NumUpDown({
+    name: 'fontSize',
+    displayName: 'Font Size',
+    value: 14,
+  });
+
   positiveColor = new formattingSettings.ColorPicker({
     name: 'positiveColor',
     displayName: 'Positive Color',
@@ -134,7 +140,7 @@ class TrendSettings extends formattingSettings.SimpleCard {
 
   name = 'trendSettings';
   displayName = 'Trend Arrow';
-  slices = [this.show, this.positiveColor, this.negativeColor, this.neutralColor];
+  slices = [this.show, this.fontSize, this.positiveColor, this.negativeColor, this.neutralColor];
 }
 
 class SparklineSettings extends formattingSettings.SimpleCard {
@@ -256,9 +262,21 @@ class KpiComparisonSettings extends formattingSettings.SimpleCard {
     value: true,
   });
 
+  fontSize = new formattingSettings.NumUpDown({
+    name: 'fontSize',
+    displayName: 'Font Size',
+    value: 11,
+  });
+
+  fontColor = new formattingSettings.ColorPicker({
+    name: 'fontColor',
+    displayName: 'Font Color',
+    value: { value: '#64748B' },
+  });
+
   name = 'kpiComparisonSettings';
   displayName = 'Comparison';
-  slices = [this.show, this.showPercentChange];
+  slices = [this.show, this.showPercentChange, this.fontSize, this.fontColor];
 }
 
 // -- KPI Layout Settings ------------------------------------------------------

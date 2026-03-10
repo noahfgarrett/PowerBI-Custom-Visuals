@@ -101,6 +101,7 @@ export class SankeyDiagramVisual implements IVisual {
   private filteredNodeIndex: number | null = null;
   private currentData: SankeyData | null = null;
   private currentViewport: powerbi.IViewport = { width: 0, height: 0 };
+  private instanceId = Math.random().toString(36).slice(2, 10);
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
@@ -147,9 +148,6 @@ export class SankeyDiagramVisual implements IVisual {
 
     // Hide duplicate showNodeValues toggle in sankeyNodeSettings — totalSettings.showNodeValues is the functional one
     this.settings.sankeyNodeSettings.showNodeValues.visible = false;
-    // sankeyNodeSettings.nodeLabelFontSize visible only when totalSettings.showNodeValues is on
-    this.settings.sankeyNodeSettings.nodeLabelFontSize.visible = showNodeValues;
-
     // Link label sub-settings hidden when showLinkLabels is off
     const showLinkLabels = this.settings.linkLabelSettings.showLinkLabels.value;
     this.settings.linkLabelSettings.linkLabelFontSize.visible = showLinkLabels;
@@ -166,6 +164,44 @@ export class SankeyDiagramVisual implements IVisual {
     const showTooltips = this.settings.tooltipSettings.showTooltips.value;
     this.settings.tooltipSettings.showPercentage.visible = showTooltips;
     this.settings.tooltipSettings.valueFormat.visible = showTooltips;
+
+    // Scroll sub-settings
+    this.settings.scrollFormattingCard.minCategoryWidth.visible = this.settings.scrollFormattingCard.enableScroll.value;
+
+    // Legend sub-settings
+    const showLegend = this.settings.legendFormattingCard.showLegend.value;
+    this.settings.legendFormattingCard.legendPosition.visible = showLegend;
+    this.settings.legendFormattingCard.legendFontSize.visible = showLegend;
+    this.settings.legendFormattingCard.legendFontColor.visible = showLegend;
+    this.settings.legendFormattingCard.legendFontFamily.visible = showLegend;
+    this.settings.legendFormattingCard.legendFontWeight.visible = showLegend;
+
+    // Title sub-settings
+    const showTitle = this.settings.titleFormattingCard.showTitle.value;
+    this.settings.titleFormattingCard.titleText.visible = showTitle;
+    this.settings.titleFormattingCard.titleFontSize.visible = showTitle;
+    this.settings.titleFormattingCard.titleFontColor.visible = showTitle;
+    this.settings.titleFormattingCard.titleAlignment.visible = showTitle;
+    this.settings.titleFormattingCard.titleFontFamily.visible = showTitle;
+    this.settings.titleFormattingCard.titleFontWeight.visible = showTitle;
+    this.settings.titleFormattingCard.subtitleText.visible = showTitle;
+    this.settings.titleFormattingCard.subtitleFontSize.visible = showTitle;
+    this.settings.titleFormattingCard.subtitleFontColor.visible = showTitle;
+    this.settings.titleFormattingCard.subtitleFontFamily.visible = showTitle;
+    this.settings.titleFormattingCard.subtitleFontWeight.visible = showTitle;
+
+    // Conditional formatting sub-settings
+    const showCond = this.settings.conditionalFormattingCard.enableConditional.value;
+    this.settings.conditionalFormattingCard.conditionalDirection.visible = showCond;
+    this.settings.conditionalFormattingCard.threshold1.visible = showCond;
+    this.settings.conditionalFormattingCard.threshold2.visible = showCond;
+    this.settings.conditionalFormattingCard.conditionalColor1.visible = showCond;
+    this.settings.conditionalFormattingCard.conditionalColor2.visible = showCond;
+    this.settings.conditionalFormattingCard.conditionalColor3.visible = showCond;
+
+    // Card style sub-settings
+    const glassOn = this.settings.cardSettings.enableGlass.value;
+    this.settings.cardSettings.backgroundOpacity.visible = glassOn;
 
     // Extract data
     const data = this.extractData(dataView);
@@ -471,7 +507,7 @@ export class SankeyDiagramVisual implements IVisual {
         const targetColor = getHostChartColor(this.host.colorPalette, targetNode.index ?? 0, themeName);
 
         const grad = defs.append('linearGradient')
-          .attr('id', `sankey-grad-${gradId}`)
+          .attr('id', `sankey-grad-${this.instanceId}-${gradId}`)
           .attr('gradientUnits', 'userSpaceOnUse')
           .attr('x1', sourceNode.x1 ?? 0)
           .attr('x2', targetNode.x0 ?? 0);
@@ -840,6 +876,7 @@ export class SankeyDiagramVisual implements IVisual {
       fontSize: legendFontSize,
       fontColor: legendFontColor,
       fontFamily: rawLegendFontFamily,
+      fontWeight: resolveDropdown(legendFmtCard.legendFontWeight) || 'normal',
     });
   }
 
@@ -1047,7 +1084,7 @@ export class SankeyDiagramVisual implements IVisual {
       case 'gradient': {
         const src = link.source as LayoutNode;
         const tgt = link.target as LayoutNode;
-        return `url(#sankey-grad-${src.index ?? 0}-${tgt.index ?? 0})`;
+        return `url(#sankey-grad-${this.instanceId}-${src.index ?? 0}-${tgt.index ?? 0})`;
       }
       case 'custom':
         return this.settings.linkSettings.customColor.value?.value ?? '#64748B';
@@ -1079,7 +1116,14 @@ export class SankeyDiagramVisual implements IVisual {
 
   // ── Tooltip Formatting ────────────────────────────────────────
 
-  private formatTooltipValue(value: number, _format: string): string {
+  private formatTooltipValue(value: number, format: string): string {
+    if (format === 'full') {
+      return value.toLocaleString();
+    }
+    if (format === 'abbreviated') {
+      return formatWithSettings(value, this.settings.numberFormattingCard);
+    }
+    // 'auto' — use numberFormattingCard
     return formatWithSettings(value, this.settings.numberFormattingCard);
   }
 

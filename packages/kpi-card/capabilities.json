@@ -100,13 +100,34 @@
           "displayName": "Font Family",
           "type": {
             "enumeration": [
-              { "value": "Segoe UI", "displayName": "Segoe UI" },
-              { "value": "Arial", "displayName": "Arial" },
-              { "value": "Calibri", "displayName": "Calibri" },
-              { "value": "Helvetica", "displayName": "Helvetica" },
-              { "value": "Times New Roman", "displayName": "Times New Roman" },
-              { "value": "Verdana", "displayName": "Verdana" },
-              { "value": "Georgia", "displayName": "Georgia" }
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Helvetica",
+                "displayName": "Helvetica"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              }
             ]
           }
         },
@@ -114,9 +135,18 @@
           "displayName": "Font Weight",
           "type": {
             "enumeration": [
-              { "value": "normal", "displayName": "Normal" },
-              { "value": "bold", "displayName": "Bold" },
-              { "value": "600", "displayName": "Semi-Bold" }
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold"
+              }
             ]
           }
         }
@@ -151,13 +181,34 @@
           "displayName": "Font Family",
           "type": {
             "enumeration": [
-              { "value": "Segoe UI", "displayName": "Segoe UI" },
-              { "value": "Arial", "displayName": "Arial" },
-              { "value": "Calibri", "displayName": "Calibri" },
-              { "value": "Helvetica", "displayName": "Helvetica" },
-              { "value": "Times New Roman", "displayName": "Times New Roman" },
-              { "value": "Verdana", "displayName": "Verdana" },
-              { "value": "Georgia", "displayName": "Georgia" }
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Helvetica",
+                "displayName": "Helvetica"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              }
             ]
           }
         },
@@ -165,9 +216,18 @@
           "displayName": "Font Weight",
           "type": {
             "enumeration": [
-              { "value": "normal", "displayName": "Normal" },
-              { "value": "bold", "displayName": "Bold" },
-              { "value": "600", "displayName": "Semi-Bold" }
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold"
+              }
             ]
           }
         },
@@ -187,6 +247,10 @@
           "type": {
             "bool": true
           }
+        },
+        "fontSize": {
+          "displayName": "Font Size",
+          "type": { "numeric": true }
         },
         "positiveColor": {
           "displayName": "Positive Color",
@@ -399,8 +463,14 @@
           "displayName": "Font Weight",
           "type": {
             "enumeration": [
-              { "value": "normal", "displayName": "Normal" },
-              { "value": "bold", "displayName": "Bold" }
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
             ]
           }
         },
@@ -430,18 +500,54 @@
           "displayName": "Subtitle Font",
           "type": {
             "enumeration": [
-              { "value": "", "displayName": "Default" },
-              { "value": "Arial", "displayName": "Arial" },
-              { "value": "Calibri", "displayName": "Calibri" },
-              { "value": "Cambria", "displayName": "Cambria" },
-              { "value": "Courier New", "displayName": "Courier New" },
-              { "value": "Georgia", "displayName": "Georgia" },
-              { "value": "Helvetica Neue", "displayName": "Helvetica Neue" },
-              { "value": "Segoe UI", "displayName": "Segoe UI" },
-              { "value": "Tahoma", "displayName": "Tahoma" },
-              { "value": "Times New Roman", "displayName": "Times New Roman" },
-              { "value": "Trebuchet MS", "displayName": "Trebuchet MS" },
-              { "value": "Verdana", "displayName": "Verdana" }
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              }
             ]
           }
         },
@@ -449,8 +555,14 @@
           "displayName": "Subtitle Font Weight",
           "type": {
             "enumeration": [
-              { "value": "normal", "displayName": "Normal" },
-              { "value": "bold", "displayName": "Bold" }
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
             ]
           }
         }
@@ -484,7 +596,8 @@
         "enableGlass": {
           "type": {
             "bool": true
-          }
+          },
+          "displayName": "Glass Effect"
         }
       }
     },
@@ -551,6 +664,20 @@
           "displayName": "Show % Change",
           "type": {
             "bool": true
+          }
+        },
+        "fontSize": {
+          "displayName": "Font Size",
+          "type": { "numeric": true }
+        },
+        "fontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
           }
         }
       }
@@ -727,11 +854,42 @@
     "colorThemeFormatting": {
       "properties": {
         "colorTheme": {
+          "displayName": "Theme",
           "type": {
-            "text": true
+            "enumeration": [
+              {
+                "value": "default",
+                "displayName": "Default"
+              },
+              {
+                "value": "ocean",
+                "displayName": "Ocean"
+              },
+              {
+                "value": "sunset",
+                "displayName": "Sunset"
+              },
+              {
+                "value": "forest",
+                "displayName": "Forest"
+              },
+              {
+                "value": "berry",
+                "displayName": "Berry"
+              },
+              {
+                "value": "monochrome",
+                "displayName": "Monochrome"
+              },
+              {
+                "value": "earth",
+                "displayName": "Earth"
+              }
+            ]
           }
         }
-      }
+      },
+      "displayName": "Color Theme"
     }
   },
   "supportsKeyboardFocus": true,

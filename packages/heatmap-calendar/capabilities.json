@@ -767,7 +767,8 @@
         "enableGlass": {
           "type": {
             "bool": true
-          }
+          },
+          "displayName": "Glass Effect"
         }
       }
     },
