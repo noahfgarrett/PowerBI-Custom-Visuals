@@ -76,7 +76,31 @@ export class KpiCardVisual implements IVisual {
     s.kpiGoalSettings.unmetColor.visible = s.kpiGoalSettings.show.value;
     s.kpiComparisonSettings.showPercentChange.visible = s.kpiComparisonSettings.show.value;
     s.kpiLayoutSettings.sparklineType.visible = s.sparklineSettings.show.value;
+
+    // Label sub-settings hidden when label is off
+    s.labelSettings.fontSize.visible = s.labelSettings.show.value;
+    s.labelSettings.fontColor.visible = s.labelSettings.show.value;
+    s.labelSettings.fontFamily.visible = s.labelSettings.show.value;
+    s.labelSettings.fontWeight.visible = s.labelSettings.show.value;
+    s.labelSettings.customText.visible = s.labelSettings.show.value;
+
+    // Trend sub-settings hidden when trend is off
+    s.trendSettings.positiveColor.visible = s.trendSettings.show.value;
+    s.trendSettings.negativeColor.visible = s.trendSettings.show.value;
+    s.trendSettings.neutralColor.visible = s.trendSettings.show.value;
+
+    // Sparkline sub-settings hidden when sparkline is off
     s.sparklineSettings.lineColor.visible = s.sparklineSettings.show.value;
+    s.sparklineSettings.fillOpacity.visible = s.sparklineSettings.show.value;
+    s.sparklineSettings.sparklineColor.visible = s.sparklineSettings.show.value;
+    s.sparklineSettings.sparklineWidth.visible = s.sparklineSettings.show.value;
+    s.sparklineSettings.dividerColor.visible = s.sparklineSettings.show.value;
+
+    // Animation sub-settings hidden when animation is off
+    s.animationSettings.duration.visible = s.animationSettings.enabled.value;
+
+    // Card style sub-settings
+    s.cardSettings.backgroundOpacity.visible = !!s.cardSettings.backgroundColor?.value?.value;
 
     // Extract data from the table dataView
     const data = this.extractData(dataViews?.[0]);
@@ -179,7 +203,17 @@ export class KpiCardVisual implements IVisual {
       });
       Object.assign(this.container.style, glass);
     } else {
-      this.container.style.background = '';
+      const bgColor = s.cardSettings.backgroundColor?.value?.value;
+      const bgOpacity = s.cardSettings.backgroundOpacity.value / 100;
+      if (bgColor) {
+        // Convert hex to rgba
+        const r = parseInt(bgColor.slice(1, 3), 16);
+        const g = parseInt(bgColor.slice(3, 5), 16);
+        const b = parseInt(bgColor.slice(5, 7), 16);
+        this.container.style.background = `rgba(${r},${g},${b},${bgOpacity})`;
+      } else {
+        this.container.style.background = '';
+      }
       this.container.style.backdropFilter = '';
       (this.container.style as unknown as Record<string, string>).WebkitBackdropFilter = '';
       this.container.style.border = '';

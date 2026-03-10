@@ -681,26 +681,9 @@ export class SankeyDiagramVisual implements IVisual {
       nodeGroups.call(dragBehavior);
     }
 
-    // Sankey node feature: show node value labels with custom font size
-    if (s.sankeyNodeSettings.showNodeValues.value) {
-      const nfs = s.sankeyNodeSettings.nodeLabelFontSize.value;
-      const numFmt = this.settings.numberFormattingCard;
-      nodeGroups.each(function (d) {
-        const group = d3.select(this);
-        const nodeValue = d.value ?? 0;
-        const label = group.select<SVGTextElement>('.sankey-node-label');
-        if (label.empty()) return;
-
-        group.append('text')
-          .attr('class', 'sankey-feature-value')
-          .attr('x', label.attr('x'))
-          .attr('y', Number(label.attr('y')) + nfs + 2)
-          .attr('dy', label.attr('dy'))
-          .attr('text-anchor', label.attr('text-anchor'))
-          .attr('font-size', nfs)
-          .attr('fill', labelColor ?? theme.text.secondary)
-          .text(formatWithSettings(nodeValue, numFmt));
-      });
+    // Node value labels (controlled by totalSettings.showNodeValues)
+    if (s.totalSettings.showNodeValues.value) {
+      this.renderNodeValues(nodeGroups, totalWeight);
     }
 
     // Layer column totals

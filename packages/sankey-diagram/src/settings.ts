@@ -457,7 +457,7 @@ class SankeyNodeSettings extends formattingSettings.SimpleCard {
 
   name = 'sankeyNodeSettings';
   displayName = 'Node Features';
-  slices = [this.showNodeValues, this.nodeLabelFontSize];
+  slices = [this.nodeLabelFontSize];
 }
 
 export class SankeyDiagramSettings extends formattingSettings.Model {

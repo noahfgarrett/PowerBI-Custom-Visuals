@@ -246,13 +246,34 @@
           "displayName": "Font Family",
           "type": {
             "enumeration": [
-              { "value": "Segoe UI", "displayName": "Segoe UI" },
-              { "value": "Arial", "displayName": "Arial" },
-              { "value": "Calibri", "displayName": "Calibri" },
-              { "value": "Helvetica", "displayName": "Helvetica" },
-              { "value": "Times New Roman", "displayName": "Times New Roman" },
-              { "value": "Verdana", "displayName": "Verdana" },
-              { "value": "Georgia", "displayName": "Georgia" }
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Helvetica",
+                "displayName": "Helvetica"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              }
             ]
           }
         },
@@ -260,9 +281,18 @@
           "displayName": "Font Weight",
           "type": {
             "enumeration": [
-              { "value": "normal", "displayName": "Normal" },
-              { "value": "bold", "displayName": "Bold" },
-              { "value": "600", "displayName": "Semi-Bold" }
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold"
+              }
             ]
           }
         }
@@ -438,6 +468,21 @@
           "displayName": "Grid Line Opacity (%)",
           "type": {
             "numeric": true
+          }
+        },
+        "axisLabelFontWeight": {
+          "displayName": "Label Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
+            ]
           }
         }
       }
@@ -680,6 +725,91 @@
                 "color": true
               }
             }
+          }
+        },
+        "titleFontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
+            ]
+          }
+        },
+        "subtitleFontFamily": {
+          "displayName": "Subtitle Font",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              }
+            ]
+          }
+        },
+        "subtitleFontWeight": {
+          "displayName": "Subtitle Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
+            ]
           }
         }
       }
@@ -1258,25 +1388,46 @@
           "displayName": "Display Units",
           "type": {
             "enumeration": [
-              { "value": "auto", "displayName": "Auto" },
-              { "value": "none", "displayName": "None" },
-              { "value": "thousands", "displayName": "Thousands (K)" },
-              { "value": "millions", "displayName": "Millions (M)" },
-              { "value": "billions", "displayName": "Billions (B)" }
+              {
+                "value": "auto",
+                "displayName": "Auto"
+              },
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "thousands",
+                "displayName": "Thousands (K)"
+              },
+              {
+                "value": "millions",
+                "displayName": "Millions (M)"
+              },
+              {
+                "value": "billions",
+                "displayName": "Billions (B)"
+              }
             ]
           }
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
-          "type": { "numeric": true }
+          "type": {
+            "numeric": true
+          }
         },
         "valuePrefix": {
           "displayName": "Prefix",
-          "type": { "text": true }
+          "type": {
+            "text": true
+          }
         },
         "valueSuffix": {
           "displayName": "Suffix",
-          "type": { "text": true }
+          "type": {
+            "text": true
+          }
         }
       }
     }

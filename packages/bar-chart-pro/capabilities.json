@@ -221,6 +221,12 @@
           "type": {
             "numeric": true
           }
+        },
+        "lineDotRadius": {
+          "displayName": "Dot Radius",
+          "type": {
+            "numeric": true
+          }
         }
       }
     },
@@ -451,6 +457,21 @@
             ]
           }
         },
+        "axisLabelFontWeight": {
+          "displayName": "Label Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
+            ]
+          }
+        },
         "axisLabelRotation": {
           "displayName": "X-Label Rotation (°)",
           "type": {
@@ -582,6 +603,21 @@
               {
                 "value": "Verdana",
                 "displayName": "Verdana"
+              }
+            ]
+          }
+        },
+        "legendFontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
               }
             ]
           }
@@ -817,6 +853,21 @@
             ]
           }
         },
+        "titleFontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
+            ]
+          }
+        },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
@@ -837,6 +888,76 @@
                 "color": true
               }
             }
+          }
+        },
+        "subtitleFontFamily": {
+          "displayName": "Subtitle Font",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              }
+            ]
+          }
+        },
+        "subtitleFontWeight": {
+          "displayName": "Subtitle Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
+            ]
           }
         }
       }
@@ -1043,6 +1164,12 @@
         },
         "referenceBandOpacity": {
           "displayName": "Band Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "referenceBandWidth": {
+          "displayName": "Band Width (%)",
           "type": {
             "numeric": true
           }
