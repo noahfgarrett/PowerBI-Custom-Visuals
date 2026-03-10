@@ -324,6 +324,10 @@ export class KpiCardVisual implements IVisual {
       label.textContent = data.label;
       label.style.fontSize = `${s.labelSettings.fontSize.value}px`;
       label.style.color = s.labelSettings.fontColor.value?.value || '#64748B';
+      const labelFont = resolveDropdown(s.labelSettings.fontFamily);
+      if (labelFont) label.style.fontFamily = labelFont;
+      const labelWeight = resolveDropdown(s.labelSettings.fontWeight);
+      if (labelWeight) label.style.fontWeight = labelWeight;
       wrapper.appendChild(label);
     }
 
@@ -335,6 +339,10 @@ export class KpiCardVisual implements IVisual {
     valueEl.className = 'kpi-value';
     valueEl.style.fontSize = `${s.valueSettings.fontSize.value}px`;
     valueEl.style.color = s.valueSettings.fontColor.value?.value || '#0F172A';
+    const valueFont = resolveDropdown(s.valueSettings.fontFamily);
+    if (valueFont) valueEl.style.fontFamily = valueFont;
+    const valueWeight = resolveDropdown(s.valueSettings.fontWeight);
+    if (valueWeight) valueEl.style.fontWeight = valueWeight;
 
     // Shared conditional formatting card — overrides font color if enabled
     if (data.value !== null) {

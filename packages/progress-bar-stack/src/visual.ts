@@ -102,12 +102,16 @@ export class ProgressBarStackVisual implements IVisual {
     this.settings.axisFormattingCard.gridLineOpacity.visible = false;
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
 
+    // Hide duplicate trackColor — barSettings.trackColor is the single source
+    this.settings.colorSettings.trackColor.visible = false;
+
     // Conditional visibility: hide gradient colors when gradient is disabled
     this.settings.progressGradient.startColor.visible = this.settings.progressGradient.enabled.value;
     this.settings.progressGradient.endColor.visible = this.settings.progressGradient.enabled.value;
 
-    // Conditional visibility: hide milestone CSV when milestones are off
+    // Conditional visibility: hide milestone CSV and color when milestones are off
     this.settings.progressMilestone.milestones.visible = this.settings.progressMilestone.show.value;
+    this.settings.progressMilestone.milestoneColor.visible = this.settings.progressMilestone.show.value;
 
     // Conditional visibility: hide target color/lineWidth when target is off
     this.settings.targetSettings.color.visible = this.settings.targetSettings.show.value;
@@ -354,7 +358,7 @@ export class ProgressBarStackVisual implements IVisual {
             milestone.style.bottom = '-2px';
             milestone.style.left = `${mPct}%`;
             milestone.style.width = '2px';
-            milestone.style.backgroundColor = '#94A3B8';
+            milestone.style.backgroundColor = milestoneSettings.milestoneColor.value?.value ?? '#94A3B8';
             milestone.style.borderRadius = '1px';
             milestone.style.pointerEvents = 'none';
             milestone.style.opacity = '0.7';

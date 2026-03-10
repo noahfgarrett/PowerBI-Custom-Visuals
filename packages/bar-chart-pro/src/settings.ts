@@ -297,9 +297,15 @@ class LineSettings extends formattingSettings.SimpleCard {
     value: 30,
   });
 
+  lineDotRadius = new formattingSettings.NumUpDown({
+    name: 'lineDotRadius',
+    displayName: 'Dot Radius',
+    value: 4,
+  });
+
   name = 'lineSettings';
   displayName = 'Line Settings';
-  slices = [this.showDots, this.showLineDataLabels, this.lineGradientFill, this.lineGradientOpacity];
+  slices = [this.showDots, this.showLineDataLabels, this.lineGradientFill, this.lineGradientOpacity, this.lineDotRadius];
 }
 
 // ── Secondary Axis Settings (combo mode only) ──────────────────────

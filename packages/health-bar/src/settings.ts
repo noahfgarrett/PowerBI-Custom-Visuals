@@ -230,9 +230,35 @@ class CategoryLabelSettingsCard extends formattingSettings.SimpleCard {
     value: { value: '' },
   });
 
+  fontFamily = new formattingSettings.ItemDropdown({
+    name: 'fontFamily',
+    displayName: 'Font Family',
+    items: [
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Arial', displayName: 'Arial' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Helvetica', displayName: 'Helvetica' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
+      { value: 'Verdana', displayName: 'Verdana' },
+      { value: 'Georgia', displayName: 'Georgia' },
+    ],
+    value: { value: 'Segoe UI', displayName: 'Segoe UI' },
+  });
+
+  fontWeight = new formattingSettings.ItemDropdown({
+    name: 'fontWeight',
+    displayName: 'Font Weight',
+    items: [
+      { value: 'normal', displayName: 'Normal' },
+      { value: 'bold', displayName: 'Bold' },
+      { value: '600', displayName: 'Semi-Bold' },
+    ],
+    value: { value: 'normal', displayName: 'Normal' },
+  });
+
   name = 'categoryLabelSettings';
   displayName = 'Category Labels';
-  slices = [this.show, this.fontSize, this.fontColor];
+  slices = [this.show, this.fontSize, this.fontColor, this.fontFamily, this.fontWeight];
 }
 
 // -- Health Bar Zone Settings -------------------------------------------------

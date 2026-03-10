@@ -108,9 +108,21 @@ class TimelineLayoutSettings extends formattingSettings.SimpleCard {
     value: false,
   });
 
+  durationBarOpacity = new formattingSettings.NumUpDown({
+    name: 'durationBarOpacity',
+    displayName: 'Duration Bar Opacity (%)',
+    value: 30,
+  });
+
+  durationBarHeight = new formattingSettings.NumUpDown({
+    name: 'durationBarHeight',
+    displayName: 'Duration Bar Height (px)',
+    value: 4,
+  });
+
   name = 'timelineLayoutSettings';
   displayName = 'Timeline Layout';
-  slices = [this.layout, this.showSwimlanes, this.showDurationBars, this.showConnectors];
+  slices = [this.layout, this.showSwimlanes, this.showDurationBars, this.showConnectors, this.durationBarOpacity, this.durationBarHeight];
 }
 
 // -- Timeline Marker Settings -------------------------------------------------

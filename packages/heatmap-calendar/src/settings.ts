@@ -223,9 +223,15 @@ class CalendarStreakSettings extends formattingSettings.SimpleCard {
     value: 0,
   });
 
+  streakOutlineColor = new formattingSettings.ColorPicker({
+    name: 'streakOutlineColor',
+    displayName: 'Streak Outline Color',
+    value: { value: '#F59E0B' },
+  });
+
   name = 'calendarStreakSettings';
   displayName = 'Streak Highlighting';
-  slices = [this.show, this.threshold];
+  slices = [this.show, this.threshold, this.streakOutlineColor];
 }
 
 // -- Calendar Scale Settings --------------------------------------------------

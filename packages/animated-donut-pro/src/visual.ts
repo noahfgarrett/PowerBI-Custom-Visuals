@@ -133,6 +133,12 @@ export class AnimatedDonutProVisual implements IVisual {
     // Explode distance: hide when explode is off
     s.donutExplodeSettings.distance.visible = s.donutExplodeSettings.enabled.value;
 
+    // Hide shared showDataLabels — local donutSettings.showLabels is the functional toggle
+    s.dataLabelFormattingCard.showDataLabels.visible = false;
+    // Remove local labelFontSize and labelColor — let the shared DataLabelFormattingCard handle all label styling
+    s.donutSettings.labelFontSize.visible = false;
+    s.donutSettings.labelColor.visible = false;
+
     // Label format & connector settings: hide when showLabels is off
     const showLabels = s.donutSettings.showLabels.value;
     s.donutLabelSettings.format.visible = showLabels;

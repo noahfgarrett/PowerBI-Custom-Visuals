@@ -122,6 +122,46 @@
           "type": {
             "bool": true
           }
+        },
+        "labelFontSize": {
+          "displayName": "Label Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "labelFontColor": {
+          "displayName": "Label Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "labelFontFamily": {
+          "displayName": "Label Font Family",
+          "type": {
+            "enumeration": [
+              { "value": "Segoe UI", "displayName": "Segoe UI" },
+              { "value": "Arial", "displayName": "Arial" },
+              { "value": "Calibri", "displayName": "Calibri" },
+              { "value": "Helvetica", "displayName": "Helvetica" },
+              { "value": "Times New Roman", "displayName": "Times New Roman" },
+              { "value": "Verdana", "displayName": "Verdana" },
+              { "value": "Georgia", "displayName": "Georgia" }
+            ]
+          }
+        },
+        "labelFontWeight": {
+          "displayName": "Label Font Weight",
+          "type": {
+            "enumeration": [
+              { "value": "normal", "displayName": "Normal" },
+              { "value": "bold", "displayName": "Bold" },
+              { "value": "600", "displayName": "Semi-Bold" }
+            ]
+          }
         }
       }
     },

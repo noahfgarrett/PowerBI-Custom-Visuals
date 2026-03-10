@@ -145,8 +145,10 @@ export class SankeyDiagramVisual implements IVisual {
     this.settings.totalSettings.nodeValueFormat.visible = showNodeValues;
     this.settings.totalSettings.layerTotalPosition.visible = showLayerTotals;
 
-    // sankeyNodeSettings.nodeLabelFontSize visible only when showNodeValues is on
-    this.settings.sankeyNodeSettings.nodeLabelFontSize.visible = this.settings.sankeyNodeSettings.showNodeValues.value;
+    // Hide duplicate showNodeValues toggle in sankeyNodeSettings — totalSettings.showNodeValues is the functional one
+    this.settings.sankeyNodeSettings.showNodeValues.visible = false;
+    // sankeyNodeSettings.nodeLabelFontSize visible only when totalSettings.showNodeValues is on
+    this.settings.sankeyNodeSettings.nodeLabelFontSize.visible = showNodeValues;
 
     // Link label sub-settings hidden when showLinkLabels is off
     const showLinkLabels = this.settings.linkLabelSettings.showLinkLabels.value;

@@ -110,7 +110,6 @@ const MARGIN_DEFAULT: Margin = { top: 8, right: 12, bottom: 36, left: 44 };
 const MARGIN_SECONDARY_Y: Margin = { top: 8, right: 44, bottom: 36, left: 44 };
 const LEGEND_HEIGHT_MIN = 28;
 const MIN_BAR_WIDTH = 2;
-const LINE_DOT_RADIUS = 4;
 
 // ── Visual ──────────────────────────────────────────────────────────
 
@@ -190,6 +189,7 @@ export class BarChartProVisual implements IVisual {
     s.lineSettings.showLineDataLabels.visible = isCombo;
     s.lineSettings.lineGradientFill.visible = isCombo;
     s.lineSettings.lineGradientOpacity.visible = isCombo && s.lineSettings.lineGradientFill.value;
+    s.lineSettings.lineDotRadius.visible = isCombo && s.lineSettings.showDots.value;
 
     // Secondary Axis — hide title when showSecondaryYAxis is off or not combo
     s.secondaryAxisSettings.secondaryYAxisTitle.visible = s.secondaryAxisSettings.showSecondaryYAxis.value && isCombo;
@@ -1560,7 +1560,7 @@ export class BarChartProVisual implements IVisual {
             .attr('class', 'bar-chart-line-dot')
             .attr('cx', d.x)
             .attr('cy', d.y)
-            .attr('r', LINE_DOT_RADIUS)
+            .attr('r', s.lineSettings.lineDotRadius.value)
             .attr('fill', sf.color)
             .attr('opacity', sf.opacity / 100);
 

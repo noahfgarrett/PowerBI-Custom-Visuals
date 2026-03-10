@@ -76,6 +76,7 @@ export function renderChartTitle(
 
   const fontFamily = resolveDropdown(settings.titleFontFamily) || "'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif";
   const textAlign = resolveDropdown(settings.titleAlignment) ?? 'center';
+  const titleWeight = resolveDropdown(settings.titleFontWeight) ?? 'bold';
 
   const el = document.createElement('div');
   el.className = 'chart-title';
@@ -83,7 +84,7 @@ export function renderChartTitle(
   el.style.fontSize = `${settings.titleFontSize.value}px`;
   el.style.color = resolveColor(settings.titleFontColor, DEFAULT_TITLE_COLOR);
   el.style.textAlign = textAlign;
-  el.style.fontWeight = '600';
+  el.style.fontWeight = titleWeight === 'bold' ? '600' : '400';
   el.style.marginBottom = '4px';
   el.style.lineHeight = '1.3';
   el.style.fontFamily = fontFamily;
@@ -93,14 +94,17 @@ export function renderChartTitle(
   // Render subtitle after the title if provided
   const subtitleText = settings.subtitleText.value;
   if (subtitleText) {
+    const subtitleFontFamily = resolveDropdown(settings.subtitleFontFamily) || fontFamily;
+    const subtitleWeight = resolveDropdown(settings.subtitleFontWeight) ?? 'normal';
+
     const sub = document.createElement('div');
     sub.className = 'chart-subtitle';
     sub.textContent = subtitleText;
     sub.style.fontSize = `${settings.subtitleFontSize.value}px`;
     sub.style.color = resolveColor(settings.subtitleFontColor, '#64748B');
-    sub.style.fontFamily = fontFamily;
+    sub.style.fontFamily = subtitleFontFamily;
     sub.style.textAlign = textAlign;
-    sub.style.fontWeight = '400';
+    sub.style.fontWeight = subtitleWeight === 'bold' ? '600' : '400';
     sub.style.marginBottom = '4px';
     sub.style.lineHeight = '1.3';
 
@@ -185,12 +189,14 @@ export function applyAxisFormatting(
   const lineWidth = settings.axisLineWidth.value;
 
   const labelFontFamily = resolveDropdown(settings.axisLabelFontFamily) || '';
+  const labelFontWeight = resolveDropdown(settings.axisLabelFontWeight) ?? 'normal';
 
   // Style all text elements (axis labels) — covers D3 .tick text AND raw SVG text
   const texts = axisGroup.querySelectorAll<SVGTextElement>('text');
   for (const text of texts) {
     text.style.setProperty('fill', labelColor);
     text.style.setProperty('font-size', `${labelSize}px`);
+    text.style.setProperty('font-weight', labelFontWeight);
     if (labelFontFamily) {
       text.style.setProperty('font-family', labelFontFamily);
     }
@@ -364,6 +370,8 @@ export interface LegendConfig {
   onItemHover?: (item: LegendItem | null, index: number) => void;
   /** Optional font family override. Falls back to Segoe UI system stack. */
   fontFamily?: string;
+  /** Optional font weight override. Falls back to 'normal'. */
+  fontWeight?: string;
 }
 
 /**
@@ -392,6 +400,7 @@ export function renderLegend(
   legend.style.padding = '4px 8px';
   legend.style.fontSize = `${config.fontSize}px`;
   legend.style.fontFamily = config.fontFamily || "'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif";
+  legend.style.fontWeight = config.fontWeight || 'normal';
   legend.style.userSelect = 'none';
 
   for (let i = 0; i < config.items.length; i++) {

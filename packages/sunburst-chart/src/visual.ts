@@ -135,9 +135,13 @@ export class SunburstChartVisual implements IVisual {
     // Hide animation duration when animations are disabled
     this.settings.animationSettings.duration.visible = this.settings.animationSettings.enabled.value;
 
+    // Hide shared showDataLabels — local sunburstSettings.showLabels is the functional toggle
+    this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
+    // Hide local labelColor — let the shared DataLabelFormattingCard handle label styling
+    this.settings.sunburstSettings.labelColor.visible = false;
+
     // Hide label sub-settings when showLabels is off
     this.settings.sunburstSettings.labelMinAngle.visible = this.settings.sunburstSettings.showLabels.value;
-    this.settings.sunburstSettings.labelColor.visible = this.settings.sunburstSettings.showLabels.value;
 
     // Extract hierarchical data
     const useChartPalette = this.settings.colorSettings.useChartPalette.value;

@@ -180,9 +180,15 @@ class ProgressMilestoneSettings extends formattingSettings.SimpleCard {
     placeholder: '25,50,75',
   });
 
+  milestoneColor = new formattingSettings.ColorPicker({
+    name: 'milestoneColor',
+    displayName: 'Milestone Color',
+    value: { value: '#94A3B8' },
+  });
+
   name = 'progressMilestone';
   displayName = 'Milestones';
-  slices = [this.show, this.milestones];
+  slices = [this.show, this.milestones, this.milestoneColor];
 }
 
 // -- Progress Gradient Settings ------------------------------------------------

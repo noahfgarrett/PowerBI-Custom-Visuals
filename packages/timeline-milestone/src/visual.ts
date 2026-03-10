@@ -104,6 +104,10 @@ export class TimelineMilestoneVisual implements IVisual {
     // Hide animation duration when animations are disabled
     this.settings.animationSettings.duration.visible = this.settings.animationSettings.enabled.value;
 
+    // Hide duration bar sub-settings when duration bars are off
+    this.settings.timelineLayoutSettings.durationBarOpacity.visible = this.settings.timelineLayoutSettings.showDurationBars.value;
+    this.settings.timelineLayoutSettings.durationBarHeight.visible = this.settings.timelineLayoutSettings.showDurationBars.value;
+
     // Extract data
     const milestones = this.extractData(dataView);
 
@@ -625,26 +629,30 @@ export class TimelineMilestoneVisual implements IVisual {
           const xStart2 = n > 1 ? padding + i * ((svgWidth - padding * 2) / (n - 1)) : svgWidth / 2;
           const xEnd2 = n > 1 ? padding + (i + 1) * ((svgWidth - padding * 2) / (n - 1)) : svgWidth / 2;
           const barY = svgHeight / 2 + markerSize + 2;
+          const durBarHeight = s.timelineLayoutSettings.durationBarHeight.value;
+          const durBarOpacity = s.timelineLayoutSettings.durationBarOpacity.value / 100;
           durationGroup.append('rect')
             .attr('x', xStart2)
             .attr('y', barY)
             .attr('width', Math.max(0, xEnd2 - xStart2))
-            .attr('height', 4)
+            .attr('height', durBarHeight)
             .attr('rx', 2)
             .attr('fill', barColor)
-            .attr('fill-opacity', 0.3);
+            .attr('fill-opacity', durBarOpacity);
         } else {
           const yStart2 = n > 1 ? padding + i * ((svgHeight - padding * 2) / (n - 1)) : svgHeight / 2;
           const yEnd2 = n > 1 ? padding + (i + 1) * ((svgHeight - padding * 2) / (n - 1)) : svgHeight / 2;
           const barX = svgWidth / 2 + markerSize + 2;
+          const durBarHeight = s.timelineLayoutSettings.durationBarHeight.value;
+          const durBarOpacity = s.timelineLayoutSettings.durationBarOpacity.value / 100;
           durationGroup.append('rect')
             .attr('x', barX)
             .attr('y', yStart2)
-            .attr('width', 4)
+            .attr('width', durBarHeight)
             .attr('height', Math.max(0, yEnd2 - yStart2))
             .attr('rx', 2)
             .attr('fill', barColor)
-            .attr('fill-opacity', 0.3);
+            .attr('fill-opacity', durBarOpacity);
         }
       }
     }

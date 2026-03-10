@@ -48,6 +48,12 @@ class ArcSettings extends formattingSettings.SimpleCard {
 
   });
 
+  trackColor = new formattingSettings.ColorPicker({
+    name: 'trackColor',
+    displayName: 'Track Color',
+    value: { value: '#94A3B8' },
+  });
+
   roundedCaps = new formattingSettings.ToggleSwitch({
     name: 'roundedCaps',
     displayName: 'Rounded Caps',
@@ -66,7 +72,7 @@ class ArcSettings extends formattingSettings.SimpleCard {
 
   name = 'arcSettings';
   displayName = 'Arc';
-  slices = [this.thickness, this.trackOpacity, this.zoneBorderWidth, this.zoneBorderOpacity, this.roundedCaps, this.startAngle];
+  slices = [this.thickness, this.trackColor, this.trackOpacity, this.zoneBorderWidth, this.zoneBorderOpacity, this.roundedCaps, this.startAngle];
 }
 
 class ZoneSettings extends formattingSettings.SimpleCard {
@@ -124,9 +130,47 @@ class ValueSettings extends formattingSettings.SimpleCard {
     value: { value: '' }, // empty = use theme default
   });
 
+  deltaPositiveColor = new formattingSettings.ColorPicker({
+    name: 'deltaPositiveColor',
+    displayName: 'Delta Positive Color',
+    value: { value: '#22C55E' },
+  });
+
+  deltaNegativeColor = new formattingSettings.ColorPicker({
+    name: 'deltaNegativeColor',
+    displayName: 'Delta Negative Color',
+    value: { value: '#EF4444' },
+  });
+
+  fontFamily = new formattingSettings.ItemDropdown({
+    name: 'fontFamily',
+    displayName: 'Font Family',
+    items: [
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Arial', displayName: 'Arial' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Helvetica', displayName: 'Helvetica' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
+      { value: 'Verdana', displayName: 'Verdana' },
+      { value: 'Georgia', displayName: 'Georgia' },
+    ],
+    value: { value: 'Segoe UI', displayName: 'Segoe UI' },
+  });
+
+  fontWeight = new formattingSettings.ItemDropdown({
+    name: 'fontWeight',
+    displayName: 'Font Weight',
+    items: [
+      { value: 'normal', displayName: 'Normal' },
+      { value: 'bold', displayName: 'Bold' },
+      { value: '600', displayName: 'Semi-Bold' },
+    ],
+    value: { value: 'normal', displayName: 'Normal' },
+  });
+
   name = 'valueSettings';
   displayName = 'Value';
-  slices = [this.fontSize, this.fontColor];
+  slices = [this.fontSize, this.fontColor, this.fontFamily, this.fontWeight, this.deltaPositiveColor, this.deltaNegativeColor];
 }
 
 class TargetSettings extends formattingSettings.SimpleCard {
@@ -258,9 +302,21 @@ class GaugeScaleSettings extends formattingSettings.SimpleCard {
     value: 2,
   });
 
+  majorTickColor = new formattingSettings.ColorPicker({
+    name: 'majorTickColor',
+    displayName: 'Major Tick Color',
+    value: { value: '#64748B' },
+  });
+
+  minorTickColor = new formattingSettings.ColorPicker({
+    name: 'minorTickColor',
+    displayName: 'Minor Tick Color',
+    value: { value: '#94A3B8' },
+  });
+
   name = 'gaugeScaleSettings';
   displayName = 'Scale';
-  slices = [this.showTicks, this.showLabels, this.majorTicks, this.minorTicks];
+  slices = [this.showTicks, this.showLabels, this.majorTicks, this.minorTicks, this.majorTickColor, this.minorTickColor];
 }
 
 // ── Gauge Arc Settings ──────────────────────────────────────────

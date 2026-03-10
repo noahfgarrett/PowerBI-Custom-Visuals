@@ -43,6 +43,44 @@ class ClusterSettings extends formattingSettings.SimpleCard {
     value: true,
   });
 
+  labelFontSize = new formattingSettings.NumUpDown({
+    name: 'labelFontSize',
+    displayName: 'Label Font Size',
+    value: 11,
+  });
+
+  labelFontColor = new formattingSettings.ColorPicker({
+    name: 'labelFontColor',
+    displayName: 'Label Font Color',
+    value: { value: '' },
+  });
+
+  labelFontFamily = new formattingSettings.ItemDropdown({
+    name: 'labelFontFamily',
+    displayName: 'Label Font Family',
+    items: [
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Arial', displayName: 'Arial' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Helvetica', displayName: 'Helvetica' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
+      { value: 'Verdana', displayName: 'Verdana' },
+      { value: 'Georgia', displayName: 'Georgia' },
+    ],
+    value: { value: 'Segoe UI', displayName: 'Segoe UI' },
+  });
+
+  labelFontWeight = new formattingSettings.ItemDropdown({
+    name: 'labelFontWeight',
+    displayName: 'Label Font Weight',
+    items: [
+      { value: 'normal', displayName: 'Normal' },
+      { value: 'bold', displayName: 'Bold' },
+      { value: '600', displayName: 'Semi-Bold' },
+    ],
+    value: { value: 'normal', displayName: 'Normal' },
+  });
+
 
   trackOpacity = new formattingSettings.NumUpDown({
 
@@ -69,6 +107,10 @@ class ClusterSettings extends formattingSettings.SimpleCard {
     this.maxValue,
     this.showLabels,
     this.showValues,
+    this.labelFontSize,
+    this.labelFontColor,
+    this.labelFontFamily,
+    this.labelFontWeight,
     this.trackOpacity,
     this.roundedCaps,
   ];

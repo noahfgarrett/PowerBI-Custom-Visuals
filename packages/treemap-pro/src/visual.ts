@@ -142,8 +142,10 @@ export class TreemapProVisual implements IVisual {
     // Hide animation duration when animations are disabled
     this.settings.animationSettings.duration.visible = this.settings.animationSettings.enabled.value;
 
-    // Hide label-related settings when showLabels is off
-    this.settings.treemapSettings.labelColor.visible = this.settings.treemapSettings.showLabels.value;
+    // Hide shared showDataLabels — local treemapSettings.showLabels is the functional toggle
+    this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
+    // Hide local labelColor — let the shared DataLabelFormattingCard handle label styling
+    this.settings.treemapSettings.labelColor.visible = false;
 
     // Extract data
     const data = this.extractData(dataView);

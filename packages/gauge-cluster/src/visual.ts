@@ -469,11 +469,20 @@ export class GaugeClusterVisual implements IVisual {
         // Position label below the arc
         const labelY = outerRadius + 6;
 
-        g.append('text')
+        const labelEl = g.append('text')
           .attr('class', 'gauge-label')
           .attr('x', 0)
           .attr('y', labelY)
           .text(item.label);
+
+        const labelFontSize = s.clusterSettings.labelFontSize.value;
+        if (labelFontSize) labelEl.attr('font-size', `${labelFontSize}px`);
+        const labelFontColor = s.clusterSettings.labelFontColor.value?.value;
+        if (labelFontColor) labelEl.attr('fill', labelFontColor);
+        const labelFontFamily = resolveDropdown(s.clusterSettings.labelFontFamily);
+        if (labelFontFamily) labelEl.attr('font-family', labelFontFamily);
+        const labelFontWeight = resolveDropdown(s.clusterSettings.labelFontWeight);
+        if (labelFontWeight) labelEl.attr('font-weight', labelFontWeight);
       }
 
       // ── Subtitle ────────────────────────────────────────────

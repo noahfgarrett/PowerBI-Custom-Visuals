@@ -93,12 +93,16 @@ export class HeatmapCalendarVisual implements IVisual {
     this.settings.axisFormattingCard.gridLineWidth.visible = false;
     this.settings.axisFormattingCard.gridLineOpacity.visible = false;
 
+    // Hide local labelColor — let axisFormattingCard.axisLabelColor be the single source of truth
+    this.settings.calendarSettings.labelColor.visible = false;
+
     // Conditional visibility: hide child settings when parent toggle is off
     const colorMode = (this.settings.calendarScaleSettings.colorMode.value as unknown as { value?: string })?.value ?? 'continuous';
     this.settings.colorSettings.midColor.visible = this.settings.colorSettings.showMidColor.value;
     this.settings.colorSettings.midPoint.visible = this.settings.colorSettings.showMidColor.value;
     this.settings.calendarScaleSettings.bins.visible = colorMode !== 'continuous';
     this.settings.calendarStreakSettings.threshold.visible = this.settings.calendarStreakSettings.show.value;
+    this.settings.calendarStreakSettings.streakOutlineColor.visible = this.settings.calendarStreakSettings.show.value;
     this.settings.colorSettings.legendPosition.visible = this.settings.colorSettings.showLegend.value;
 
     const data = this.extractData(dataView);
@@ -827,7 +831,8 @@ export class HeatmapCalendarVisual implements IVisual {
     for (const cell of cells) {
       const key = cell.dataset.dateKey;
       if (key !== undefined && streakDateKeys.has(key)) {
-        cell.style.outline = '2px solid #F59E0B';
+        const streakColor = this.settings.calendarStreakSettings.streakOutlineColor.value?.value ?? '#F59E0B';
+        cell.style.outline = `2px solid ${streakColor}`;
         cell.style.outlineOffset = '-1px';
         cell.style.zIndex = '1';
       }

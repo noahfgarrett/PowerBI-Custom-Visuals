@@ -133,6 +133,7 @@ export class MorphingAreaChartVisual implements IVisual {
     this.settings.lineStrokeFormattingCard.lineWidth.visible = false;
     this.settings.axisFormattingCard.showXAxis.visible = false;
     this.settings.axisFormattingCard.showYAxis.visible = false;
+    this.settings.axisFormattingCard.showGridLines.visible = false;
     // xAxisTitle and yAxisTitle are kept visible so users can set axis titles
     this.settings.axisFormattingCard.axisLabelFontFamily.visible = false;
     this.settings.axisFormattingCard.axisLabelRotation.visible = false;

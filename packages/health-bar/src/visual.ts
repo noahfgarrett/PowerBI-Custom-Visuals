@@ -576,11 +576,15 @@ export class HealthBarVisual implements IVisual {
     if (showCategoryLabels) {
       const catColor = s.categoryLabelSettings.fontColor.value?.value || '#64748B';
       const catSize = s.categoryLabelSettings.fontSize.value;
+      const catFontFamily = resolveDropdown(s.categoryLabelSettings.fontFamily);
+      const catFontWeight = resolveDropdown(s.categoryLabelSettings.fontWeight);
       const catLabels = this.container.querySelectorAll('.health-bar-label');
       for (const el of catLabels) {
         if (el instanceof SVGElement) {
           el.style.setProperty('fill', catColor);
           el.style.setProperty('font-size', `${catSize}px`);
+          if (catFontFamily) el.style.setProperty('font-family', catFontFamily);
+          if (catFontWeight) el.style.setProperty('font-weight', catFontWeight);
         }
       }
     }

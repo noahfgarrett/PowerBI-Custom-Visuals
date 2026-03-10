@@ -11,6 +11,11 @@ import { COLOR_THEMES, type ColorThemeName } from './colors';
 
 // ── Font Family Options ──────────────────────────────────────────────
 
+const FONT_WEIGHT_ITEMS = [
+  { value: 'normal', displayName: 'Normal' },
+  { value: 'bold', displayName: 'Bold' },
+];
+
 const FONT_FAMILY_ITEMS = [
   { value: '', displayName: 'Default' },
   { value: 'Arial', displayName: 'Arial' },
@@ -72,6 +77,13 @@ export class AxisFormattingCard extends formattingSettings.SimpleCard {
     displayName: 'Label Font',
     items: FONT_FAMILY_ITEMS,
     value: { value: '', displayName: 'Default' },
+  });
+
+  axisLabelFontWeight = new formattingSettings.ItemDropdown({
+    name: 'axisLabelFontWeight',
+    displayName: 'Label Font Weight',
+    items: FONT_WEIGHT_ITEMS,
+    value: { value: 'normal', displayName: 'Normal' },
   });
 
   axisLabelRotation = new formattingSettings.NumUpDown({
@@ -148,6 +160,7 @@ export class AxisFormattingCard extends formattingSettings.SimpleCard {
     this.axisLabelColor,
     this.axisLabelSize,
     this.axisLabelFontFamily,
+    this.axisLabelFontWeight,
     this.axisLabelRotation,
     this.yAxisMin,
     this.yAxisMax,
@@ -201,6 +214,13 @@ export class LegendFormattingCard extends formattingSettings.SimpleCard {
     value: { value: '', displayName: 'Default' },
   });
 
+  legendFontWeight = new formattingSettings.ItemDropdown({
+    name: 'legendFontWeight',
+    displayName: 'Font Weight',
+    items: FONT_WEIGHT_ITEMS,
+    value: { value: 'normal', displayName: 'Normal' },
+  });
+
   name = 'legendFormatting';
   displayName = 'Legend';
   slices = [
@@ -209,6 +229,7 @@ export class LegendFormattingCard extends formattingSettings.SimpleCard {
     this.legendFontSize,
     this.legendFontColor,
     this.legendFontFamily,
+    this.legendFontWeight,
   ];
 }
 
@@ -321,6 +342,13 @@ export class TitleFormattingCard extends formattingSettings.SimpleCard {
     value: { value: '', displayName: 'Default' },
   });
 
+  titleFontWeight = new formattingSettings.ItemDropdown({
+    name: 'titleFontWeight',
+    displayName: 'Font Weight',
+    items: FONT_WEIGHT_ITEMS,
+    value: { value: 'bold', displayName: 'Bold' },
+  });
+
   subtitleText = new formattingSettings.TextInput({
     name: 'subtitleText',
     displayName: 'Subtitle',
@@ -340,6 +368,20 @@ export class TitleFormattingCard extends formattingSettings.SimpleCard {
     value: { value: '' },
   });
 
+  subtitleFontFamily = new formattingSettings.ItemDropdown({
+    name: 'subtitleFontFamily',
+    displayName: 'Subtitle Font',
+    items: FONT_FAMILY_ITEMS,
+    value: { value: '', displayName: 'Default' },
+  });
+
+  subtitleFontWeight = new formattingSettings.ItemDropdown({
+    name: 'subtitleFontWeight',
+    displayName: 'Subtitle Font Weight',
+    items: FONT_WEIGHT_ITEMS,
+    value: { value: 'normal', displayName: 'Normal' },
+  });
+
   name = 'titleFormatting';
   displayName = 'Chart Title';
   slices = [
@@ -348,10 +390,13 @@ export class TitleFormattingCard extends formattingSettings.SimpleCard {
     this.titleFontSize,
     this.titleFontColor,
     this.titleFontFamily,
+    this.titleFontWeight,
     this.titleAlignment,
     this.subtitleText,
     this.subtitleFontSize,
     this.subtitleFontColor,
+    this.subtitleFontFamily,
+    this.subtitleFontWeight,
   ];
 }
 
@@ -1240,6 +1285,7 @@ export const CAPABILITIES_TEMPLATES: Record<string, Record<string, unknown>> = {
       axisLabelColor: { displayName: 'Label Color', type: { fill: { solid: { color: true } } } },
       axisLabelSize: { displayName: 'Label Font Size', type: { numeric: true } },
       axisLabelFontFamily: { displayName: 'Label Font', type: { enumeration: FONT_FAMILY_ITEMS } },
+      axisLabelFontWeight: { displayName: 'Label Font Weight', type: { enumeration: FONT_WEIGHT_ITEMS } },
       axisLabelRotation: { displayName: 'X-Label Rotation (°)', type: { numeric: true } },
       yAxisMin: { displayName: 'Y-Axis Min', type: { numeric: true } },
       yAxisMax: { displayName: 'Y-Axis Max', type: { numeric: true } },
@@ -1260,6 +1306,7 @@ export const CAPABILITIES_TEMPLATES: Record<string, Record<string, unknown>> = {
       legendFontSize: { displayName: 'Font Size', type: { numeric: true } },
       legendFontColor: { displayName: 'Font Color', type: { fill: { solid: { color: true } } } },
       legendFontFamily: { displayName: 'Font', type: { enumeration: FONT_FAMILY_ITEMS } },
+      legendFontWeight: { displayName: 'Font Weight', type: { enumeration: FONT_WEIGHT_ITEMS } },
     },
   },
   dataLabelFormatting: {
@@ -1281,10 +1328,13 @@ export const CAPABILITIES_TEMPLATES: Record<string, Record<string, unknown>> = {
       titleFontSize: { displayName: 'Font Size', type: { numeric: true } },
       titleFontColor: { displayName: 'Font Color', type: { fill: { solid: { color: true } } } },
       titleFontFamily: { displayName: 'Font', type: { enumeration: FONT_FAMILY_ITEMS } },
+      titleFontWeight: { displayName: 'Font Weight', type: { enumeration: FONT_WEIGHT_ITEMS } },
       titleAlignment: { displayName: 'Alignment', type: { enumeration: [{ value: 'left', displayName: 'Left' }, { value: 'center', displayName: 'Center' }, { value: 'right', displayName: 'Right' }] } },
       subtitleText: { displayName: 'Subtitle', type: { text: true } },
       subtitleFontSize: { displayName: 'Subtitle Font Size', type: { numeric: true } },
       subtitleFontColor: { displayName: 'Subtitle Color', type: { fill: { solid: { color: true } } } },
+      subtitleFontFamily: { displayName: 'Subtitle Font', type: { enumeration: FONT_FAMILY_ITEMS } },
+      subtitleFontWeight: { displayName: 'Subtitle Font Weight', type: { enumeration: FONT_WEIGHT_ITEMS } },
     },
   },
   numberFormatting: {

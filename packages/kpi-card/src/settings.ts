@@ -19,9 +19,35 @@ class ValueSettings extends formattingSettings.SimpleCard {
     value: { value: '' }, // empty = use theme default
   });
 
+  fontFamily = new formattingSettings.ItemDropdown({
+    name: 'fontFamily',
+    displayName: 'Font Family',
+    items: [
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Arial', displayName: 'Arial' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Helvetica', displayName: 'Helvetica' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
+      { value: 'Verdana', displayName: 'Verdana' },
+      { value: 'Georgia', displayName: 'Georgia' },
+    ],
+    value: { value: 'Segoe UI', displayName: 'Segoe UI' },
+  });
+
+  fontWeight = new formattingSettings.ItemDropdown({
+    name: 'fontWeight',
+    displayName: 'Font Weight',
+    items: [
+      { value: 'normal', displayName: 'Normal' },
+      { value: 'bold', displayName: 'Bold' },
+      { value: '600', displayName: 'Semi-Bold' },
+    ],
+    value: { value: 'normal', displayName: 'Normal' },
+  });
+
   name = 'valueSettings';
   displayName = 'Value';
-  slices = [this.fontSize, this.fontColor];
+  slices = [this.fontSize, this.fontColor, this.fontFamily, this.fontWeight];
 }
 
 class LabelSettings extends formattingSettings.SimpleCard {
@@ -50,9 +76,35 @@ class LabelSettings extends formattingSettings.SimpleCard {
     placeholder: 'Override label text',
   });
 
+  fontFamily = new formattingSettings.ItemDropdown({
+    name: 'fontFamily',
+    displayName: 'Font Family',
+    items: [
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Arial', displayName: 'Arial' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Helvetica', displayName: 'Helvetica' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
+      { value: 'Verdana', displayName: 'Verdana' },
+      { value: 'Georgia', displayName: 'Georgia' },
+    ],
+    value: { value: 'Segoe UI', displayName: 'Segoe UI' },
+  });
+
+  fontWeight = new formattingSettings.ItemDropdown({
+    name: 'fontWeight',
+    displayName: 'Font Weight',
+    items: [
+      { value: 'normal', displayName: 'Normal' },
+      { value: 'bold', displayName: 'Bold' },
+      { value: '600', displayName: 'Semi-Bold' },
+    ],
+    value: { value: 'normal', displayName: 'Normal' },
+  });
+
   name = 'labelSettings';
   displayName = 'Label';
-  slices = [this.show, this.fontSize, this.fontColor, this.customText];
+  slices = [this.show, this.fontSize, this.fontColor, this.fontFamily, this.fontWeight, this.customText];
 }
 
 class TrendSettings extends formattingSettings.SimpleCard {

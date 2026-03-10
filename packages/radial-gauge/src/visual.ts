@@ -258,7 +258,7 @@ export class RadialGaugeVisual implements IVisual {
         startAngle: startAngleRad,
         endAngle: endAngleRad,
       }))
-      .attr('fill', '#94A3B8')
+      .attr('fill', s.arcSettings.trackColor.value?.value ?? '#94A3B8')
       .attr('opacity', this.settings.arcSettings.trackOpacity.value / 100);
 
     // ── Color Zones ─────────────────────────────────────────────
@@ -322,7 +322,7 @@ export class RadialGaugeVisual implements IVisual {
         g.append('path')
           .attr('class', 'radial-gauge-segment')
           .attr('d', segArcGen({ startAngle: segStart, endAngle: segEnd }))
-          .attr('fill', isLit ? valueColor : '#94A3B8')
+          .attr('fill', isLit ? valueColor : (s.arcSettings.trackColor.value?.value ?? '#94A3B8'))
           .attr('opacity', isLit ? 1 : (s.arcSettings.trackOpacity.value / 100));
       }
     } else {
@@ -474,12 +474,18 @@ export class RadialGaugeVisual implements IVisual {
     // Offset the text upward for half-circle mode so it sits inside the arc
     const textOffsetY = rangeKey === 'half' ? -outerRadius * 0.15 : outerRadius * 0.05;
 
+    const valueFontFamily = resolveDropdown(s.valueSettings.fontFamily);
+    const valueFontWeight = resolveDropdown(s.valueSettings.fontWeight);
+
     const valueText = g.append('text')
       .attr('class', 'radial-gauge-value-text')
       .attr('x', 0)
       .attr('y', textOffsetY)
       .attr('font-size', `${fontSize}px`)
       .attr('fill', fontColor);
+
+    if (valueFontFamily) valueText.attr('font-family', valueFontFamily);
+    if (valueFontWeight) valueText.attr('font-weight', valueFontWeight);
 
     if (s.animationSettings.enabled.value) {
       const from = this.previousValue ?? min;
@@ -515,7 +521,7 @@ export class RadialGaugeVisual implements IVisual {
           .attr('y1', (outerRadius + 3) * sinA)
           .attr('x2', (outerRadius + 8) * cosA)
           .attr('y2', (outerRadius + 8) * sinA)
-          .attr('stroke', '#64748B')
+          .attr('stroke', s.gaugeScaleSettings.majorTickColor.value?.value ?? '#64748B')
           .attr('stroke-width', 1.5);
 
         // Scale label
@@ -545,7 +551,7 @@ export class RadialGaugeVisual implements IVisual {
               .attr('y1', (outerRadius + 3) * minorSin)
               .attr('x2', (outerRadius + 5) * minorCos)
               .attr('y2', (outerRadius + 5) * minorSin)
-              .attr('stroke', '#94A3B8')
+              .attr('stroke', s.gaugeScaleSettings.minorTickColor.value?.value ?? '#94A3B8')
               .attr('stroke-width', 0.75);
           }
         }
@@ -563,7 +569,7 @@ export class RadialGaugeVisual implements IVisual {
         .attr('text-anchor', 'middle')
         .attr('dominant-baseline', 'central')
         .attr('font-size', `${Math.max(10, fontSize * 0.45)}px`)
-        .attr('fill', delta >= 0 ? '#22C55E' : '#EF4444');
+        .attr('fill', delta >= 0 ? (s.valueSettings.deltaPositiveColor.value?.value ?? '#22C55E') : (s.valueSettings.deltaNegativeColor.value?.value ?? '#EF4444'));
       deltaText.text(`${sign}${formatWithSettings(delta, this.settings.numberFormattingCard)}`);
     }
 
