@@ -4,7 +4,7 @@
     "displayName": "Sunburst Chart",
     "guid": "sunburstChart_8A1B2C3D4E5F",
     "visualClassName": "SunburstChartVisual",
-    "version": "1.0.0.0",
+    "version": "1.0.1.0",
     "description": "Hierarchical sunburst chart with sweepArc animation and drill-down zoom.",
     "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
     "gitHubUrl": "https://github.com/noahgarrett/PowerBI"

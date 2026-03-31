@@ -5,8 +5,73 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard, NumberFormattingCard } from '../../core/src';
-class SunburstSettings extends formattingSettings.SimpleCard {
+import { LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard, NumberFormattingCard,
+  DateFilterFormattingCard,
+} from '../../core/src';
+
+// ── Segment Appearance (extracted stroke settings from old Sunburst card) ──
+class SegmentAppearanceSettings extends formattingSettings.SimpleCard {
+  segmentStrokeColor = new formattingSettings.ColorPicker({
+    name: 'segmentStrokeColor',
+    displayName: 'Segment Stroke Color',
+    value: { value: '' },
+  });
+
+  segmentStrokeWidth = new formattingSettings.NumUpDown({
+    name: 'segmentStrokeWidth',
+    displayName: 'Segment Stroke Width',
+    value: 1,
+  });
+
+  useChartPalette = new formattingSettings.ToggleSwitch({
+    name: 'useChartPalette',
+    displayName: 'Use Chart Palette',
+    value: true,
+  });
+
+  segmentOpacity = new formattingSettings.NumUpDown({
+    name: 'segmentOpacity',
+    displayName: 'Segment Opacity (%)',
+    value: 100,
+  });
+
+  name = 'sunburstSettings';
+  displayName = 'Segment Appearance';
+  slices = [this.segmentStrokeColor, this.segmentStrokeWidth, this.useChartPalette, this.segmentOpacity];
+}
+
+// ── Geometry (renamed from Sunburst Display — innerRadius, startAngle, sortOrder) ──
+class GeometrySettings extends formattingSettings.SimpleCard {
+  innerRadius = new formattingSettings.NumUpDown({
+    name: 'innerRadius',
+    displayName: 'Inner Radius',
+    value: 0,
+  });
+
+  startAngle = new formattingSettings.NumUpDown({
+    name: 'startAngle',
+    displayName: 'Start Angle',
+    value: 0,
+  });
+
+  sortOrder = new formattingSettings.ItemDropdown({
+    name: 'sortOrder',
+    displayName: 'Sort Order',
+    items: [
+      { value: 'descending', displayName: 'Descending (largest first)' },
+      { value: 'ascending', displayName: 'Ascending (smallest first)' },
+      { value: 'none', displayName: 'Data Order' },
+    ],
+    value: { value: 'descending', displayName: 'Descending (largest first)' },
+  });
+
+  name = 'sunburstDisplaySettings';
+  displayName = 'Geometry';
+  slices = [this.innerRadius, this.startAngle, this.sortOrder];
+}
+
+// ── Labels & Percentages (consolidated from Sunburst + Sunburst Display) ──
+class LabelsAndPercentagesSettings extends formattingSettings.SimpleCard {
   showLabels = new formattingSettings.ToggleSwitch({
     name: 'showLabels',
     displayName: 'Show Labels',
@@ -19,60 +84,38 @@ class SunburstSettings extends formattingSettings.SimpleCard {
     value: 5,
   });
 
-
-  segmentStrokeColor = new formattingSettings.ColorPicker({
-
-    name: 'segmentStrokeColor',
-
-    displayName: 'Segment Stroke Color',
-
-    value: { value: '' },
-
+  showPercentages = new formattingSettings.ToggleSwitch({
+    name: 'showPercentages',
+    displayName: 'Show Percentages',
+    value: false,
   });
 
-  segmentStrokeWidth = new formattingSettings.NumUpDown({
-
-    name: 'segmentStrokeWidth',
-
-    displayName: 'Segment Stroke Width',
-
-    value: 1,
-
+  percentOf = new formattingSettings.ItemDropdown({
+    name: 'percentOf',
+    displayName: 'Percent Of',
+    items: [
+      { value: 'parent', displayName: 'Parent' },
+      { value: 'total', displayName: 'Total' },
+    ],
+    value: { value: 'parent', displayName: 'Parent' },
   });
 
-  labelColor = new formattingSettings.ColorPicker({
-
-    name: 'labelColor',
-
-    displayName: 'Label Color',
-
-    value: { value: '' },
-
-  });
-
-
-  name = 'sunburstSettings';
-  displayName = 'Sunburst';
-  slices = [this.showLabels, this.labelMinAngle, this.segmentStrokeColor, this.segmentStrokeWidth, this.labelColor];
-}
-
-class ColorSettings extends formattingSettings.SimpleCard {
-  useChartPalette = new formattingSettings.ToggleSwitch({
-    name: 'useChartPalette',
-    displayName: 'Use Chart Palette',
-    value: true,
-  });
-
-  name = 'colorSettings';
-  displayName = 'Colors';
-  slices = [this.useChartPalette];
+  name = 'labelsAndPercentagesSettings';
+  displayName = 'Labels & Percentages';
+  slices = [this.showLabels, this.labelMinAngle, this.showPercentages, this.percentOf];
 }
 
 class CardStyleSettings extends formattingSettings.SimpleCard {
-  enableGlass = new formattingSettings.ToggleSwitch({
-    name: 'enableGlass',
-    displayName: 'Glass Effect',
-    value: true,
+  cardStyleMode = new formattingSettings.ItemDropdown({
+    name: 'cardStyleMode',
+    displayName: 'Card Style',
+    items: [
+      { value: 'none', displayName: 'None' },
+      { value: 'glass', displayName: 'Glass' },
+      { value: 'elevated', displayName: 'Elevated' },
+      { value: 'neumorphic', displayName: 'Neumorphic' },
+    ],
+    value: { value: 'glass', displayName: 'Glass' },
   });
 
   backgroundColor = new formattingSettings.ColorPicker({
@@ -95,7 +138,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.cardStyleMode, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 class CenterContentSettings extends formattingSettings.SimpleCard {
@@ -148,6 +191,32 @@ class CenterContentSettings extends formattingSettings.SimpleCard {
     value: 11,
   });
 
+  fontFamily = new formattingSettings.ItemDropdown({
+    name: 'fontFamily',
+    displayName: 'Font Family',
+    items: [
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Arial', displayName: 'Arial' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Helvetica', displayName: 'Helvetica' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
+      { value: 'Verdana', displayName: 'Verdana' },
+      { value: 'Georgia', displayName: 'Georgia' },
+    ],
+    value: { value: 'Segoe UI', displayName: 'Segoe UI' },
+  });
+
+  fontWeight = new formattingSettings.ItemDropdown({
+    name: 'fontWeight',
+    displayName: 'Font Weight',
+    items: [
+      { value: 'normal', displayName: 'Normal' },
+      { value: 'bold', displayName: 'Bold' },
+      { value: '600', displayName: 'Semi-Bold' },
+    ],
+    value: { value: 'normal', displayName: 'Normal' },
+  });
+
   name = 'centerContentSettings';
   displayName = 'Center Content';
   slices = [
@@ -156,6 +225,8 @@ class CenterContentSettings extends formattingSettings.SimpleCard {
     this.customText,
     this.fontSize,
     this.fontColor,
+    this.fontFamily,
+    this.fontWeight,
     this.showLabel,
     this.labelFontSize,
   ];
@@ -209,61 +280,14 @@ class DrillDownSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.showBreadcrumb, this.breadcrumbFontSize, this.breadcrumbColor];
 }
 
-// ── Sunburst Display Settings ──────────────────────────────────
-
-class SunburstDisplaySettings extends formattingSettings.SimpleCard {
-  showPercentages = new formattingSettings.ToggleSwitch({
-    name: 'showPercentages',
-    displayName: 'Show Percentages',
-    value: false,
-  });
-
-  percentOf = new formattingSettings.ItemDropdown({
-    name: 'percentOf',
-    displayName: 'Percent Of',
-    items: [
-      { value: 'parent', displayName: 'Parent' },
-      { value: 'total', displayName: 'Total' },
-    ],
-    value: { value: 'parent', displayName: 'Parent' },
-  });
-
-  innerRadius = new formattingSettings.NumUpDown({
-    name: 'innerRadius',
-    displayName: 'Inner Radius',
-    value: 0,
-  });
-
-  startAngle = new formattingSettings.NumUpDown({
-    name: 'startAngle',
-    displayName: 'Start Angle',
-    value: 0,
-  });
-
-  sortOrder = new formattingSettings.ItemDropdown({
-    name: 'sortOrder',
-    displayName: 'Sort Order',
-    items: [
-      { value: 'descending', displayName: 'Descending (largest first)' },
-      { value: 'ascending', displayName: 'Ascending (smallest first)' },
-      { value: 'none', displayName: 'Data Order' },
-    ],
-    value: { value: 'descending', displayName: 'Descending (largest first)' },
-  });
-
-  name = 'sunburstDisplaySettings';
-  displayName = 'Sunburst Display';
-  slices = [this.showPercentages, this.percentOf, this.innerRadius, this.startAngle, this.sortOrder];
-}
-
 export class SunburstChartSettings extends formattingSettings.Model {
-  sunburstSettings = new SunburstSettings();
-  colorSettings = new ColorSettings();
+  sunburstSettings = new SegmentAppearanceSettings();
+  sunburstDisplaySettings = new GeometrySettings();
+  labelsAndPercentagesSettings = new LabelsAndPercentagesSettings();
   centerContentSettings = new CenterContentSettings();
-  cardSettings = new CardStyleSettings();
-  animationSettings = new AnimationSettings();
   drillDownSettings = new DrillDownSettingsCard();
-  sunburstDisplaySettings = new SunburstDisplaySettings();
+  animationSettings = new AnimationSettings();
+  cardSettings = new CardStyleSettings();
 
   legendFormattingCard = new LegendFormattingCard();
   dataLabelFormattingCard = new DataLabelFormattingCard();
@@ -273,20 +297,22 @@ export class SunburstChartSettings extends formattingSettings.Model {
 
   colorThemeFormattingCard = new ColorThemeFormattingCard();
   numberFormattingCard = new NumberFormattingCard();
+  dateFilterFormattingCard = new DateFilterFormattingCard();
   cards = [
     this.sunburstSettings,
-    this.colorSettings,
-    this.centerContentSettings,
-    this.cardSettings,
-    this.animationSettings,
-    this.drillDownSettings,
     this.sunburstDisplaySettings,
+    this.labelsAndPercentagesSettings,
+    this.centerContentSettings,
+    this.drillDownSettings,
+    this.animationSettings,
+    this.titleFormattingCard,
     this.legendFormattingCard,
     this.dataLabelFormattingCard,
-    this.titleFormattingCard,
     this.conditionalFormattingCard,
-    this.accessibilityFormattingCard,
-    this.colorThemeFormattingCard,
     this.numberFormattingCard,
+    this.cardSettings,
+    this.colorThemeFormattingCard,
+    this.dateFilterFormattingCard,
+    this.accessibilityFormattingCard,
   ];
 }

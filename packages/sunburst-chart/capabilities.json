@@ -69,7 +69,7 @@
           ],
           "dataReductionAlgorithm": {
             "top": {
-              "count": 1000
+              "count": 30000
             }
           }
         },
@@ -87,20 +87,8 @@
   ],
   "objects": {
     "sunburstSettings": {
-      "displayName": "Sunburst",
+      "displayName": "Segment Appearance",
       "properties": {
-        "showLabels": {
-          "displayName": "Show Labels",
-          "type": {
-            "bool": true
-          }
-        },
-        "labelMinAngle": {
-          "displayName": "Label Min Angle",
-          "type": {
-            "numeric": true
-          }
-        },
         "segmentStrokeColor": {
           "displayName": "Segment Stroke Color",
           "type": {
@@ -117,25 +105,16 @@
             "numeric": true
           }
         },
-        "labelColor": {
-          "displayName": "Label Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        }
-      }
-    },
-    "colorSettings": {
-      "displayName": "Colors",
-      "properties": {
         "useChartPalette": {
           "displayName": "Use Chart Palette",
           "type": {
             "bool": true
+          }
+        },
+        "segmentOpacity": {
+          "displayName": "Segment Opacity (%)",
+          "type": {
+            "numeric": true
           }
         }
       }
@@ -204,6 +183,60 @@
           "displayName": "Label Font Size",
           "type": {
             "numeric": true
+          }
+        },
+        "fontFamily": {
+          "displayName": "Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Helvetica",
+                "displayName": "Helvetica"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              }
+            ]
+          }
+        },
+        "fontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold"
+              }
+            ]
           }
         }
       }
@@ -341,6 +374,12 @@
                 "displayName": "Bold"
               }
             ]
+          }
+        },
+        "legendAliases": {
+          "displayName": "Rename Labels",
+          "type": {
+            "text": true
           }
         }
       }
@@ -741,38 +780,34 @@
             "numeric": true
           }
         },
-        "enableGlass": {
+        "cardStyleMode": {
+          "displayName": "Card Style",
           "type": {
-            "bool": true
-          },
-          "displayName": "Glass Effect"
+            "enumeration": [
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "glass",
+                "displayName": "Glass"
+              },
+              {
+                "value": "elevated",
+                "displayName": "Elevated"
+              },
+              {
+                "value": "neumorphic",
+                "displayName": "Neumorphic"
+              }
+            ]
+          }
         }
       }
     },
     "sunburstDisplaySettings": {
-      "displayName": "Sunburst Display",
+      "displayName": "Geometry",
       "properties": {
-        "showPercentages": {
-          "displayName": "Show Percentages",
-          "type": {
-            "bool": true
-          }
-        },
-        "percentOf": {
-          "displayName": "Percent Of",
-          "type": {
-            "enumeration": [
-              {
-                "value": "parent",
-                "displayName": "Parent"
-              },
-              {
-                "value": "total",
-                "displayName": "Total"
-              }
-            ]
-          }
-        },
         "innerRadius": {
           "displayName": "Inner Radius",
           "type": {
@@ -800,6 +835,44 @@
               {
                 "value": "none",
                 "displayName": "Data Order"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "labelsAndPercentagesSettings": {
+      "displayName": "Labels & Percentages",
+      "properties": {
+        "showLabels": {
+          "displayName": "Show Labels",
+          "type": {
+            "bool": true
+          }
+        },
+        "labelMinAngle": {
+          "displayName": "Label Min Angle",
+          "type": {
+            "numeric": true
+          }
+        },
+        "showPercentages": {
+          "displayName": "Show Percentages",
+          "type": {
+            "bool": true
+          }
+        },
+        "percentOf": {
+          "displayName": "Percent Of",
+          "type": {
+            "enumeration": [
+              {
+                "value": "parent",
+                "displayName": "Parent"
+              },
+              {
+                "value": "total",
+                "displayName": "Total"
               }
             ]
           }
@@ -974,6 +1047,35 @@
         }
       },
       "displayName": "Color Theme"
+    },
+    "dateFilterFormatting": {
+      "displayName": "Date Filter",
+      "properties": {
+        "enableDateFilter": {
+          "displayName": "Enable Date Filter",
+          "type": {
+            "bool": true
+          }
+        },
+        "startDate": {
+          "displayName": "Start Date",
+          "type": {
+            "text": true
+          }
+        },
+        "endAtCurrentDate": {
+          "displayName": "End at Current Date",
+          "type": {
+            "bool": true
+          }
+        },
+        "endDate": {
+          "displayName": "End Date",
+          "type": {
+            "text": true
+          }
+        }
+      }
     }
   },
   "supportsKeyboardFocus": true,
