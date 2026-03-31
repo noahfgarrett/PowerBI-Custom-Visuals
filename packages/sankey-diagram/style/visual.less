@@ -9,19 +9,20 @@
   box-sizing: border-box;
 }
 
-.sankey-container svg {
+.sankey-container > svg {
   display: block;
-  width: 100%;
-  height: 100%;
 }
 
 .sankey-node rect {
   cursor: pointer;
-  transition: filter 0.15s ease;
+  transition: filter 0.2s ease, transform 0.2s ease;
+  transform-origin: center center;
+  transform-box: fill-box;
 }
 
 .sankey-node rect:hover {
-  filter: brightness(1.08);
+  filter: brightness(1.12) drop-shadow(0 0 6px rgba(255, 255, 255, 0.4));
+  transform: scale(1.03);
 }
 
 .sankey-node-label {
@@ -33,7 +34,11 @@
   fill: none;
   stroke-linecap: butt;
   cursor: pointer;
-  transition: stroke-opacity 0.15s ease;
+  transition: stroke-opacity 0.15s ease, filter 0.15s ease;
+}
+
+.sankey-link:hover {
+  filter: brightness(1.25);
 }
 
 .sankey-link-label {

@@ -50,7 +50,7 @@
           ],
           "dataReductionAlgorithm": {
             "top": {
-              "count": 2000
+              "count": 30000
             }
           }
         },
@@ -99,16 +99,6 @@
           "type": {
             "numeric": true
           }
-        },
-        "labelColor": {
-          "displayName": "Label Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
         }
       }
     },
@@ -136,6 +126,70 @@
           "displayName": "Font Size",
           "type": {
             "numeric": true
+          }
+        },
+        "fontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "fontFamily": {
+          "displayName": "Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Helvetica",
+                "displayName": "Helvetica"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              }
+            ]
+          }
+        },
+        "fontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold"
+              }
+            ]
           }
         }
       }
@@ -646,7 +700,7 @@
           }
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (°)",
+          "displayName": "X-Label Rotation (\u00b0)",
           "type": {
             "numeric": true
           }
@@ -801,6 +855,12 @@
               }
             ]
           }
+        },
+        "pauseDuration": {
+          "displayName": "Pause Duration (ms)",
+          "type": {
+            "numeric": true
+          }
         }
       }
     },
@@ -829,11 +889,34 @@
             "numeric": true
           }
         },
+        "cardStyleMode": {
+          "displayName": "Card Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "glass",
+                "displayName": "Glass"
+              },
+              {
+                "value": "elevated",
+                "displayName": "Elevated"
+              },
+              {
+                "value": "neumorphic",
+                "displayName": "Neumorphic"
+              }
+            ]
+          }
+        },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "Glass Effect"
+          "displayName": "(Deprecated) Enable Glass"
         }
       }
     },
@@ -942,6 +1025,12 @@
             "numeric": true
           }
         },
+        "referenceBandWidth": {
+          "displayName": "Band Width (%)",
+          "type": {
+            "numeric": true
+          }
+        },
         "referenceLineAxis": {
           "displayName": "Target Axis",
           "type": {
@@ -1024,7 +1113,7 @@
           }
         },
         "showR2": {
-          "displayName": "Show R²",
+          "displayName": "Show R\u00b2",
           "type": {
             "bool": true
           }
@@ -1124,19 +1213,19 @@
           }
         },
         "annotation1Category": {
-          "displayName": "Annotation 1 — Category",
+          "displayName": "Annotation 1 \u2014 Category",
           "type": {
             "text": true
           }
         },
         "annotation1Text": {
-          "displayName": "Annotation 1 — Text",
+          "displayName": "Annotation 1 \u2014 Text",
           "type": {
             "text": true
           }
         },
         "annotation1Position": {
-          "displayName": "Annotation 1 — Position",
+          "displayName": "Annotation 1 \u2014 Position",
           "type": {
             "enumeration": [
               {
@@ -1159,19 +1248,19 @@
           }
         },
         "annotation2Category": {
-          "displayName": "Annotation 2 — Category",
+          "displayName": "Annotation 2 \u2014 Category",
           "type": {
             "text": true
           }
         },
         "annotation2Text": {
-          "displayName": "Annotation 2 — Text",
+          "displayName": "Annotation 2 \u2014 Text",
           "type": {
             "text": true
           }
         },
         "annotation2Position": {
-          "displayName": "Annotation 2 — Position",
+          "displayName": "Annotation 2 \u2014 Position",
           "type": {
             "enumeration": [
               {
@@ -1194,19 +1283,19 @@
           }
         },
         "annotation3Category": {
-          "displayName": "Annotation 3 — Category",
+          "displayName": "Annotation 3 \u2014 Category",
           "type": {
             "text": true
           }
         },
         "annotation3Text": {
-          "displayName": "Annotation 3 — Text",
+          "displayName": "Annotation 3 \u2014 Text",
           "type": {
             "text": true
           }
         },
         "annotation3Position": {
-          "displayName": "Annotation 3 — Position",
+          "displayName": "Annotation 3 \u2014 Position",
           "type": {
             "enumeration": [
               {
@@ -1287,16 +1376,69 @@
           "type": {
             "numeric": true
           }
-        }
-      }
-    },
-    "racePlayback": {
-      "displayName": "Race Playback",
-      "properties": {
-        "pauseDuration": {
-          "displayName": "Pause Duration (ms)",
+        },
+        "labelColor": {
+          "displayName": "Label Color",
           "type": {
-            "numeric": true
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "fontFamily": {
+          "displayName": "Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Helvetica",
+                "displayName": "Helvetica"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              }
+            ]
+          }
+        },
+        "fontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold"
+              }
+            ]
           }
         }
       }
@@ -1385,6 +1527,161 @@
         },
         "valueSuffix": {
           "displayName": "Suffix",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "legendFormatting": {
+      "displayName": "Legend",
+      "properties": {
+        "showLegend": {
+          "displayName": "Show Legend",
+          "type": {
+            "bool": true
+          }
+        },
+        "legendPosition": {
+          "displayName": "Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "bottom",
+                "displayName": "Bottom"
+              },
+              {
+                "value": "top",
+                "displayName": "Top"
+              },
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        },
+        "legendFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "legendFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "legendFontFamily": {
+          "displayName": "Font",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              }
+            ]
+          }
+        },
+        "legendFontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
+            ]
+          }
+        },
+        "legendAliases": {
+          "displayName": "Rename Labels",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "dateFilterFormatting": {
+      "displayName": "Date Filter",
+      "properties": {
+        "enableDateFilter": {
+          "displayName": "Enable Date Filter",
+          "type": {
+            "bool": true
+          }
+        },
+        "startDate": {
+          "displayName": "Start Date",
+          "type": {
+            "text": true
+          }
+        },
+        "endAtCurrentDate": {
+          "displayName": "End at Current Date",
+          "type": {
+            "bool": true
+          }
+        },
+        "endDate": {
+          "displayName": "End Date",
           "type": {
             "text": true
           }

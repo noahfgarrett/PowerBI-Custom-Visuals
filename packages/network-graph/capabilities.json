@@ -50,7 +50,7 @@
           ],
           "dataReductionAlgorithm": {
             "top": {
-              "count": 500
+              "count": 30000
             }
           }
         },
@@ -67,29 +67,6 @@
     }
   ],
   "objects": {
-    "forceSettings": {
-      "displayName": "Force Physics",
-      "properties": {
-        "strength": {
-          "displayName": "Link Strength",
-          "type": {
-            "numeric": true
-          }
-        },
-        "linkDistance": {
-          "displayName": "Link Distance",
-          "type": {
-            "numeric": true
-          }
-        },
-        "chargeStrength": {
-          "displayName": "Charge Strength",
-          "type": {
-            "numeric": true
-          }
-        }
-      }
-    },
     "nodeSettings": {
       "displayName": "Nodes",
       "properties": {
@@ -120,24 +97,88 @@
           "type": {
             "numeric": true
           }
+        },
+        "sizeByDegree": {
+          "displayName": "Size by Degree",
+          "type": {
+            "bool": true
+          }
+        },
+        "fontSize": {
+          "displayName": "Label Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "fontColor": {
+          "displayName": "Label Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "fontFamily": {
+          "displayName": "Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Helvetica",
+                "displayName": "Helvetica"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              }
+            ]
+          }
+        },
+        "fontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold"
+              }
+            ]
+          }
         }
       }
     },
     "linkSettings": {
       "displayName": "Links",
       "properties": {
-        "opacity": {
-          "displayName": "Opacity (%)",
-          "type": {
-            "numeric": true
-          }
-        },
-        "showArrows": {
-          "displayName": "Show Arrows",
-          "type": {
-            "bool": true
-          }
-        },
         "linkColor": {
           "displayName": "Link Color",
           "type": {
@@ -153,14 +194,50 @@
           "type": {
             "numeric": true
           }
+        },
+        "opacity": {
+          "displayName": "Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "showArrows": {
+          "displayName": "Show Arrows",
+          "type": {
+            "bool": true
+          }
+        },
+        "widthByWeight": {
+          "displayName": "Width by Weight",
+          "type": {
+            "bool": true
+          }
+        },
+        "minWidth": {
+          "displayName": "Min Link Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "maxWidth": {
+          "displayName": "Max Link Width",
+          "type": {
+            "numeric": true
+          }
         }
       }
     },
     "colorSettings": {
-      "displayName": "Colors",
+      "displayName": "Colors & Theme",
       "properties": {
         "useChartPalette": {
           "displayName": "Use Chart Palette",
+          "type": {
+            "bool": true
+          }
+        },
+        "enableClustering": {
+          "displayName": "Cluster Detection & Coloring",
           "type": {
             "bool": true
           }
@@ -185,9 +262,27 @@
       }
     },
     "zoomSettings": {
-      "displayName": "Zoom & Pan",
+      "displayName": "Interaction",
       "properties": {
-        "enabled": {
+        "enableDrag": {
+          "displayName": "Enable Node Drag",
+          "type": {
+            "bool": true
+          }
+        },
+        "enableSearch": {
+          "displayName": "Enable Search",
+          "type": {
+            "bool": true
+          }
+        },
+        "highlightNeighbors": {
+          "displayName": "Highlight Neighbors on Hover",
+          "type": {
+            "bool": true
+          }
+        },
+        "enableZoom": {
           "displayName": "Enable Zoom & Pan",
           "type": {
             "bool": true
@@ -203,6 +298,41 @@
           "displayName": "Max Zoom",
           "type": {
             "numeric": true
+          }
+        }
+      }
+    },
+    "forceSettings": {
+      "displayName": "Physics & Layout",
+      "properties": {
+        "strength": {
+          "displayName": "Link Strength",
+          "type": {
+            "numeric": true
+          }
+        },
+        "linkDistance": {
+          "displayName": "Link Distance",
+          "type": {
+            "numeric": true
+          }
+        },
+        "chargeStrength": {
+          "displayName": "Charge Strength",
+          "type": {
+            "numeric": true
+          }
+        },
+        "enableCollision": {
+          "displayName": "Collision Prevention",
+          "type": {
+            "bool": true
+          }
+        },
+        "edgeBundling": {
+          "displayName": "Edge Bundling",
+          "type": {
+            "bool": true
           }
         }
       }
@@ -545,6 +675,56 @@
         }
       }
     },
+    "numberFormatting": {
+      "displayName": "Number Format",
+      "properties": {
+        "displayUnits": {
+          "displayName": "Display Units",
+          "type": {
+            "enumeration": [
+              {
+                "value": "auto",
+                "displayName": "Auto"
+              },
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "thousands",
+                "displayName": "Thousands (K)"
+              },
+              {
+                "value": "millions",
+                "displayName": "Millions (M)"
+              },
+              {
+                "value": "billions",
+                "displayName": "Billions (B)"
+              }
+            ]
+          }
+        },
+        "decimalPlaces": {
+          "displayName": "Decimal Places",
+          "type": {
+            "numeric": true
+          }
+        },
+        "valuePrefix": {
+          "displayName": "Prefix",
+          "type": {
+            "text": true
+          }
+        },
+        "valueSuffix": {
+          "displayName": "Suffix",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
     "cardSettings": {
       "displayName": "Card Style",
       "properties": {
@@ -570,86 +750,34 @@
             "numeric": true
           }
         },
+        "cardStyleMode": {
+          "displayName": "Card Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "glass",
+                "displayName": "Glass"
+              },
+              {
+                "value": "elevated",
+                "displayName": "Elevated"
+              },
+              {
+                "value": "neumorphic",
+                "displayName": "Neumorphic"
+              }
+            ]
+          }
+        },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "Glass Effect"
-        }
-      }
-    },
-    "networkLayoutSettings": {
-      "displayName": "Layout Features",
-      "properties": {
-        "enableClustering": {
-          "displayName": "Cluster Detection & Coloring",
-          "type": {
-            "bool": true
-          }
-        },
-        "sizeByDegree": {
-          "displayName": "Size by Degree",
-          "type": {
-            "bool": true
-          }
-        },
-        "enableCollision": {
-          "displayName": "Collision Prevention",
-          "type": {
-            "bool": true
-          }
-        },
-        "edgeBundling": {
-          "displayName": "Edge Bundling",
-          "type": {
-            "bool": true
-          }
-        }
-      }
-    },
-    "networkInteractionSettings": {
-      "displayName": "Interaction Features",
-      "properties": {
-        "enableDrag": {
-          "displayName": "Enable Node Drag",
-          "type": {
-            "bool": true
-          }
-        },
-        "enableSearch": {
-          "displayName": "Enable Search",
-          "type": {
-            "bool": true
-          }
-        },
-        "highlightNeighbors": {
-          "displayName": "Highlight Neighbors on Hover",
-          "type": {
-            "bool": true
-          }
-        }
-      }
-    },
-    "networkLinkSettings": {
-      "displayName": "Link Features",
-      "properties": {
-        "widthByWeight": {
-          "displayName": "Width by Weight",
-          "type": {
-            "bool": true
-          }
-        },
-        "minWidth": {
-          "displayName": "Min Link Width",
-          "type": {
-            "numeric": true
-          }
-        },
-        "maxWidth": {
-          "displayName": "Max Link Width",
-          "type": {
-            "numeric": true
-          }
+          "displayName": "(Deprecated) Enable Glass"
         }
       }
     },
@@ -772,50 +900,155 @@
       },
       "displayName": "Color Theme"
     },
-    "numberFormatting": {
-      "displayName": "Number Format",
+    "legendFormatting": {
+      "displayName": "Legend",
       "properties": {
-        "displayUnits": {
-          "displayName": "Display Units",
+        "showLegend": {
+          "displayName": "Show Legend",
+          "type": {
+            "bool": true
+          }
+        },
+        "legendPosition": {
+          "displayName": "Position",
           "type": {
             "enumeration": [
               {
-                "value": "auto",
-                "displayName": "Auto"
+                "value": "bottom",
+                "displayName": "Bottom"
               },
               {
-                "value": "none",
-                "displayName": "None"
+                "value": "top",
+                "displayName": "Top"
               },
               {
-                "value": "thousands",
-                "displayName": "Thousands (K)"
+                "value": "left",
+                "displayName": "Left"
               },
               {
-                "value": "millions",
-                "displayName": "Millions (M)"
-              },
-              {
-                "value": "billions",
-                "displayName": "Billions (B)"
+                "value": "right",
+                "displayName": "Right"
               }
             ]
           }
         },
-        "decimalPlaces": {
-          "displayName": "Decimal Places",
+        "legendFontSize": {
+          "displayName": "Font Size",
           "type": {
             "numeric": true
           }
         },
-        "valuePrefix": {
-          "displayName": "Prefix",
+        "legendFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "legendFontFamily": {
+          "displayName": "Font",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              }
+            ]
+          }
+        },
+        "legendFontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
+            ]
+          }
+        },
+        "legendAliases": {
+          "displayName": "Rename Labels",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "dateFilterFormatting": {
+      "displayName": "Date Filter",
+      "properties": {
+        "enableDateFilter": {
+          "displayName": "Enable Date Filter",
+          "type": {
+            "bool": true
+          }
+        },
+        "startDate": {
+          "displayName": "Start Date",
           "type": {
             "text": true
           }
         },
-        "valueSuffix": {
-          "displayName": "Suffix",
+        "endAtCurrentDate": {
+          "displayName": "End at Current Date",
+          "type": {
+            "bool": true
+          }
+        },
+        "endDate": {
+          "displayName": "End Date",
           "type": {
             "text": true
           }

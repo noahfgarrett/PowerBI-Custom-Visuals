@@ -5,9 +5,11 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard, NumberFormattingCard } from '../../core/src';
-// -- Treemap Layout Settings --------------------------------------------------
+import { LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard, NumberFormattingCard,
+  DateFilterFormattingCard,
+} from '../../core/src';
 
+// ── Treemap (core settings — tiling, labels, values, padding) ──
 class TreemapSettings extends formattingSettings.SimpleCard {
   tiling = new formattingSettings.ItemDropdown({
     name: 'tiling',
@@ -33,74 +35,162 @@ class TreemapSettings extends formattingSettings.SimpleCard {
     value: true,
   });
 
-
-  tileStrokeColor = new formattingSettings.ColorPicker({
-
-    name: 'tileStrokeColor',
-
-    displayName: 'Tile Stroke Color',
-
-    value: { value: '' },
-
-  });
-
-  tileStrokeWidth = new formattingSettings.NumUpDown({
-
-    name: 'tileStrokeWidth',
-
-    displayName: 'Tile Stroke Width',
-
-    value: 2,
-
-  });
-
   tilePadding = new formattingSettings.NumUpDown({
-
     name: 'tilePadding',
-
     displayName: 'Tile Padding',
-
     value: 2,
-
   });
 
-  labelColor = new formattingSettings.ColorPicker({
+  fontSize = new formattingSettings.NumUpDown({
+    name: 'fontSize',
+    displayName: 'Label Font Size',
+    value: 11,
+  });
 
-    name: 'labelColor',
-
-    displayName: 'Label Color',
-
+  fontColor = new formattingSettings.ColorPicker({
+    name: 'fontColor',
+    displayName: 'Label Font Color',
     value: { value: '' },
-
   });
 
+  fontFamily = new formattingSettings.ItemDropdown({
+    name: 'fontFamily',
+    displayName: 'Font Family',
+    items: [
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Arial', displayName: 'Arial' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Helvetica', displayName: 'Helvetica' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
+      { value: 'Verdana', displayName: 'Verdana' },
+      { value: 'Georgia', displayName: 'Georgia' },
+    ],
+    value: { value: 'Segoe UI', displayName: 'Segoe UI' },
+  });
+
+  fontWeight = new formattingSettings.ItemDropdown({
+    name: 'fontWeight',
+    displayName: 'Font Weight',
+    items: [
+      { value: 'normal', displayName: 'Normal' },
+      { value: 'bold', displayName: 'Bold' },
+      { value: '600', displayName: 'Semi-Bold' },
+    ],
+    value: { value: 'normal', displayName: 'Normal' },
+  });
 
   name = 'treemapSettings';
   displayName = 'Treemap';
-  slices = [this.tiling, this.showLabels, this.showValues, this.tileStrokeColor, this.tileStrokeWidth, this.tilePadding, this.labelColor];
+  slices = [this.tiling, this.showLabels, this.showValues, this.tilePadding, this.fontSize, this.fontColor, this.fontFamily, this.fontWeight];
 }
 
-// -- Color Settings -----------------------------------------------------------
+// ── Tile Appearance (merged: Colors + Heat Coloring + stroke + colorByDepth) ──
+class TileAppearanceSettings extends formattingSettings.SimpleCard {
+  tileStrokeColor = new formattingSettings.ColorPicker({
+    name: 'tileStrokeColor',
+    displayName: 'Tile Stroke Color',
+    value: { value: '' },
+  });
 
-class ColorSettings extends formattingSettings.SimpleCard {
+  tileStrokeWidth = new formattingSettings.NumUpDown({
+    name: 'tileStrokeWidth',
+    displayName: 'Tile Stroke Width',
+    value: 2,
+  });
+
   useChartPalette = new formattingSettings.ToggleSwitch({
     name: 'useChartPalette',
     displayName: 'Use Chart Palette',
     value: true,
   });
 
-  name = 'colorSettings';
-  displayName = 'Colors';
-  slices = [this.useChartPalette];
+  colorByDepth = new formattingSettings.ToggleSwitch({
+    name: 'colorByDepth',
+    displayName: 'Color Variation by Depth',
+    value: false,
+  });
+
+  heatEnabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Heat Coloring',
+    value: false,
+  });
+
+  startColor = new formattingSettings.ColorPicker({
+    name: 'startColor',
+    displayName: 'Heat Start Color',
+    value: { value: '#E2E8F0' },
+  });
+
+  endColor = new formattingSettings.ColorPicker({
+    name: 'endColor',
+    displayName: 'Heat End Color',
+    value: { value: '#EF4444' },
+  });
+
+  tileOpacity = new formattingSettings.NumUpDown({
+    name: 'tileOpacity',
+    displayName: 'Tile Opacity (%)',
+    value: 100,
+  });
+
+  tileCornerRadius = new formattingSettings.NumUpDown({
+    name: 'tileCornerRadius',
+    displayName: 'Tile Corner Radius',
+    value: 3,
+  });
+
+  name = 'tileAppearanceSettings';
+  displayName = 'Tile Appearance';
+  slices = [this.tileStrokeColor, this.tileStrokeWidth, this.tileCornerRadius, this.useChartPalette, this.colorByDepth, this.tileOpacity, this.heatEnabled, this.startColor, this.endColor];
+}
+
+// ── Display (reduced — only percentage and label overflow) ──
+class TreemapDisplaySettings extends formattingSettings.SimpleCard {
+  showPercentage = new formattingSettings.ToggleSwitch({
+    name: 'showPercentage',
+    displayName: 'Show Percentage',
+    value: false,
+  });
+
+  percentOf = new formattingSettings.ItemDropdown({
+    name: 'percentOf',
+    displayName: 'Percent Of',
+    items: [
+      { value: 'total', displayName: 'Total' },
+      { value: 'parent', displayName: 'Parent' },
+    ],
+    value: { value: 'total', displayName: 'Total' },
+  });
+
+  labelOverflow = new formattingSettings.ItemDropdown({
+    name: 'labelOverflow',
+    displayName: 'Label Overflow',
+    items: [
+      { value: 'truncate', displayName: 'Truncate' },
+      { value: 'hide', displayName: 'Hide' },
+    ],
+    value: { value: 'truncate', displayName: 'Truncate' },
+  });
+
+  name = 'treemapDisplaySettings';
+  displayName = 'Display';
+  slices = [this.showPercentage, this.percentOf, this.labelOverflow];
 }
 
 // -- Card Style Settings ------------------------------------------------------
 
 class CardStyleSettings extends formattingSettings.SimpleCard {
-  enableGlass = new formattingSettings.ToggleSwitch({
-    name: 'enableGlass',
-    displayName: 'Glass Effect',
-    value: true,
+  cardStyleMode = new formattingSettings.ItemDropdown({
+    name: 'cardStyleMode',
+    displayName: 'Card Style',
+    items: [
+      { value: 'none', displayName: 'None' },
+      { value: 'glass', displayName: 'Glass' },
+      { value: 'elevated', displayName: 'Elevated' },
+      { value: 'neumorphic', displayName: 'Neumorphic' },
+    ],
+    value: { value: 'glass', displayName: 'Glass' },
   });
 
   backgroundColor = new formattingSettings.ColorPicker({
@@ -112,7 +202,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
   backgroundOpacity = new formattingSettings.NumUpDown({
     name: 'backgroundOpacity',
     displayName: 'Background Opacity (%)',
-    value: 35,
+    value: 85,
   });
 
   borderRadius = new formattingSettings.NumUpDown({
@@ -123,7 +213,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.cardStyleMode, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 // -- Animation Settings -------------------------------------------------------
@@ -173,87 +263,46 @@ class DrillDownSettingsCard extends formattingSettings.SimpleCard {
     value: { value: '#64748B' },
   });
 
+  breadcrumbFontFamily = new formattingSettings.ItemDropdown({
+    name: 'breadcrumbFontFamily',
+    displayName: 'Breadcrumb Font Family',
+    items: [
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Arial', displayName: 'Arial' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Helvetica', displayName: 'Helvetica' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
+      { value: 'Verdana', displayName: 'Verdana' },
+      { value: 'Georgia', displayName: 'Georgia' },
+    ],
+    value: { value: 'Segoe UI', displayName: 'Segoe UI' },
+  });
+
+  breadcrumbFontWeight = new formattingSettings.ItemDropdown({
+    name: 'breadcrumbFontWeight',
+    displayName: 'Breadcrumb Font Weight',
+    items: [
+      { value: 'normal', displayName: 'Normal' },
+      { value: 'bold', displayName: 'Bold' },
+      { value: '600', displayName: 'Semi-Bold' },
+    ],
+    value: { value: 'normal', displayName: 'Normal' },
+  });
+
   name = 'drillDownSettings';
   displayName = 'Drill-Down';
-  slices = [this.enabled, this.showBreadcrumb, this.breadcrumbFontSize, this.breadcrumbColor];
-}
-
-// -- Heat Coloring Settings ---------------------------------------------------
-
-class TreemapHeatSettings extends formattingSettings.SimpleCard {
-  enabled = new formattingSettings.ToggleSwitch({
-    name: 'enabled',
-    displayName: 'Enable Heat Coloring',
-    value: false,
-  });
-
-  startColor = new formattingSettings.ColorPicker({
-    name: 'startColor',
-    displayName: 'Start Color',
-    value: { value: '#E2E8F0' },
-  });
-
-  endColor = new formattingSettings.ColorPicker({
-    name: 'endColor',
-    displayName: 'End Color',
-    value: { value: '#EF4444' },
-  });
-
-  name = 'treemapHeatSettings';
-  displayName = 'Heat Coloring';
-  slices = [this.enabled, this.startColor, this.endColor];
-}
-
-// -- Treemap Display Settings -------------------------------------------------
-
-class TreemapDisplaySettings extends formattingSettings.SimpleCard {
-  showPercentage = new formattingSettings.ToggleSwitch({
-    name: 'showPercentage',
-    displayName: 'Show Percentage',
-    value: false,
-  });
-
-  percentOf = new formattingSettings.ItemDropdown({
-    name: 'percentOf',
-    displayName: 'Percent Of',
-    items: [
-      { value: 'total', displayName: 'Total' },
-      { value: 'parent', displayName: 'Parent' },
-    ],
-    value: { value: 'total', displayName: 'Total' },
-  });
-
-  labelOverflow = new formattingSettings.ItemDropdown({
-    name: 'labelOverflow',
-    displayName: 'Label Overflow',
-    items: [
-      { value: 'truncate', displayName: 'Truncate' },
-      { value: 'hide', displayName: 'Hide' },
-    ],
-    value: { value: 'truncate', displayName: 'Truncate' },
-  });
-
-  colorByDepth = new formattingSettings.ToggleSwitch({
-    name: 'colorByDepth',
-    displayName: 'Color Variation by Depth',
-    value: false,
-  });
-
-  name = 'treemapDisplaySettings';
-  displayName = 'Display';
-  slices = [this.showPercentage, this.percentOf, this.labelOverflow, this.colorByDepth];
+  slices = [this.enabled, this.showBreadcrumb, this.breadcrumbFontSize, this.breadcrumbColor, this.breadcrumbFontFamily, this.breadcrumbFontWeight];
 }
 
 // -- Root Model ---------------------------------------------------------------
 
 export class TreemapProSettings extends formattingSettings.Model {
   treemapSettings = new TreemapSettings();
-  colorSettings = new ColorSettings();
+  tileAppearanceSettings = new TileAppearanceSettings();
+  treemapDisplaySettings = new TreemapDisplaySettings();
+  drillDownSettings = new DrillDownSettingsCard();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettingsCard();
-  drillDownSettings = new DrillDownSettingsCard();
-  treemapHeatSettings = new TreemapHeatSettings();
-  treemapDisplaySettings = new TreemapDisplaySettings();
 
   legendFormattingCard = new LegendFormattingCard();
   dataLabelFormattingCard = new DataLabelFormattingCard();
@@ -263,20 +312,21 @@ export class TreemapProSettings extends formattingSettings.Model {
 
   colorThemeFormattingCard = new ColorThemeFormattingCard();
   numberFormattingCard = new NumberFormattingCard();
+  dateFilterFormattingCard = new DateFilterFormattingCard();
   cards = [
     this.treemapSettings,
-    this.colorSettings,
+    this.tileAppearanceSettings,
+    this.treemapDisplaySettings,
+    this.drillDownSettings,
+    this.dataLabelFormattingCard,
+    this.legendFormattingCard,
+    this.titleFormattingCard,
     this.cardSettings,
     this.animationSettings,
-    this.drillDownSettings,
-    this.treemapHeatSettings,
-    this.treemapDisplaySettings,
-    this.legendFormattingCard,
-    this.dataLabelFormattingCard,
-    this.titleFormattingCard,
-    this.conditionalFormattingCard,
-    this.accessibilityFormattingCard,
-    this.colorThemeFormattingCard,
     this.numberFormattingCard,
+    this.conditionalFormattingCard,
+    this.colorThemeFormattingCard,
+    this.dateFilterFormattingCard,
+    this.accessibilityFormattingCard,
   ];
 }

@@ -10,7 +10,7 @@
       "displayName": "Value",
       "name": "measure",
       "kind": "Measure",
-      "description": "Actual value — the main bar"
+      "description": "Actual value \u2014 the main bar"
     },
     {
       "displayName": "Target",
@@ -72,7 +72,7 @@
           ],
           "dataReductionAlgorithm": {
             "top": {
-              "count": 10
+              "count": 100
             }
           }
         },
@@ -140,6 +140,21 @@
           "displayName": "Range Opacity (%)",
           "type": {
             "numeric": true
+          }
+        },
+        "orientation": {
+          "displayName": "Orientation",
+          "type": {
+            "enumeration": [
+              {
+                "value": "horizontal",
+                "displayName": "Horizontal"
+              },
+              {
+                "value": "vertical",
+                "displayName": "Vertical"
+              }
+            ]
           }
         }
       }
@@ -305,7 +320,7 @@
           }
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (°)",
+          "displayName": "X-Label Rotation (\u00b0)",
           "type": {
             "numeric": true
           }
@@ -761,11 +776,34 @@
             "numeric": true
           }
         },
+        "cardStyleMode": {
+          "displayName": "Card Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "glass",
+                "displayName": "Glass"
+              },
+              {
+                "value": "elevated",
+                "displayName": "Elevated"
+              },
+              {
+                "value": "neumorphic",
+                "displayName": "Neumorphic"
+              }
+            ]
+          }
+        },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "Glass Effect"
+          "displayName": "(Deprecated) Enable Glass"
         }
       }
     },
@@ -891,6 +929,12 @@
             "numeric": true
           }
         },
+        "referenceBandWidth": {
+          "displayName": "Band Width (%)",
+          "type": {
+            "numeric": true
+          }
+        },
         "referenceLineAxis": {
           "displayName": "Target Axis",
           "type": {
@@ -973,7 +1017,7 @@
           }
         },
         "showR2": {
-          "displayName": "Show R²",
+          "displayName": "Show R\u00b2",
           "type": {
             "bool": true
           }
@@ -1073,19 +1117,19 @@
           }
         },
         "annotation1Category": {
-          "displayName": "Annotation 1 — Category",
+          "displayName": "Annotation 1 \u2014 Category",
           "type": {
             "text": true
           }
         },
         "annotation1Text": {
-          "displayName": "Annotation 1 — Text",
+          "displayName": "Annotation 1 \u2014 Text",
           "type": {
             "text": true
           }
         },
         "annotation1Position": {
-          "displayName": "Annotation 1 — Position",
+          "displayName": "Annotation 1 \u2014 Position",
           "type": {
             "enumeration": [
               {
@@ -1108,19 +1152,19 @@
           }
         },
         "annotation2Category": {
-          "displayName": "Annotation 2 — Category",
+          "displayName": "Annotation 2 \u2014 Category",
           "type": {
             "text": true
           }
         },
         "annotation2Text": {
-          "displayName": "Annotation 2 — Text",
+          "displayName": "Annotation 2 \u2014 Text",
           "type": {
             "text": true
           }
         },
         "annotation2Position": {
-          "displayName": "Annotation 2 — Position",
+          "displayName": "Annotation 2 \u2014 Position",
           "type": {
             "enumeration": [
               {
@@ -1143,19 +1187,19 @@
           }
         },
         "annotation3Category": {
-          "displayName": "Annotation 3 — Category",
+          "displayName": "Annotation 3 \u2014 Category",
           "type": {
             "text": true
           }
         },
         "annotation3Text": {
-          "displayName": "Annotation 3 — Text",
+          "displayName": "Annotation 3 \u2014 Text",
           "type": {
             "text": true
           }
         },
         "annotation3Position": {
-          "displayName": "Annotation 3 — Position",
+          "displayName": "Annotation 3 \u2014 Position",
           "type": {
             "enumeration": [
               {
@@ -1216,28 +1260,8 @@
         }
       }
     },
-    "bulletLayout": {
-      "displayName": "Layout",
-      "properties": {
-        "orientation": {
-          "displayName": "Orientation",
-          "type": {
-            "enumeration": [
-              {
-                "value": "horizontal",
-                "displayName": "Horizontal"
-              },
-              {
-                "value": "vertical",
-                "displayName": "Vertical"
-              }
-            ]
-          }
-        }
-      }
-    },
-    "bulletForecast": {
-      "displayName": "Forecast",
+    "bulletMarkers": {
+      "displayName": "Markers & Overlays",
       "properties": {
         "show": {
           "displayName": "Show Forecast",
@@ -1256,13 +1280,8 @@
           "type": {
             "numeric": true
           }
-        }
-      }
-    },
-    "bulletComparison": {
-      "displayName": "Comparison",
-      "properties": {
-        "show": {
+        },
+        "showComparative": {
           "displayName": "Show Comparative",
           "type": {
             "bool": true
@@ -1276,6 +1295,28 @@
                 "color": true
               }
             }
+          }
+        },
+        "forecastColor": {
+          "displayName": "Forecast Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "targetMarkerWidth": {
+          "displayName": "Target Marker Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "comparativeMarkerWidth": {
+          "displayName": "Comparative Marker Width",
+          "type": {
+            "numeric": true
           }
         }
       }
@@ -1329,6 +1370,201 @@
           }
         }
       }
+    },
+    "legendFormatting": {
+      "displayName": "Legend",
+      "properties": {
+        "showLegend": {
+          "displayName": "Show Legend",
+          "type": {
+            "bool": true
+          }
+        },
+        "legendPosition": {
+          "displayName": "Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "bottom",
+                "displayName": "Bottom"
+              },
+              {
+                "value": "top",
+                "displayName": "Top"
+              },
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        },
+        "legendFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "legendFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "legendFontFamily": {
+          "displayName": "Font",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              }
+            ]
+          }
+        },
+        "legendFontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
+            ]
+          }
+        },
+        "legendAliases": {
+          "displayName": "Rename Labels",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "dateFilterFormatting": {
+      "displayName": "Date Filter",
+      "properties": {
+        "enableDateFilter": {
+          "displayName": "Enable Date Filter",
+          "type": {
+            "bool": true
+          }
+        },
+        "startDate": {
+          "displayName": "Start Date",
+          "type": {
+            "text": true
+          }
+        },
+        "endAtCurrentDate": {
+          "displayName": "End at Current Date",
+          "type": {
+            "bool": true
+          }
+        },
+        "endDate": {
+          "displayName": "End Date",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "colorThemeFormatting": {
+      "properties": {
+        "colorTheme": {
+          "displayName": "Theme",
+          "type": {
+            "enumeration": [
+              {
+                "value": "default",
+                "displayName": "Default"
+              },
+              {
+                "value": "ocean",
+                "displayName": "Ocean"
+              },
+              {
+                "value": "sunset",
+                "displayName": "Sunset"
+              },
+              {
+                "value": "forest",
+                "displayName": "Forest"
+              },
+              {
+                "value": "berry",
+                "displayName": "Berry"
+              },
+              {
+                "value": "monochrome",
+                "displayName": "Monochrome"
+              },
+              {
+                "value": "earth",
+                "displayName": "Earth"
+              }
+            ]
+          }
+        }
+      },
+      "displayName": "Color Theme"
     }
   },
   "supportsKeyboardFocus": true,

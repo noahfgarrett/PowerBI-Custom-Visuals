@@ -12,16 +12,45 @@ import {
   SortFormattingCard,
   ConditionalFormattingCard,
   AccessibilityFormattingCard,
-  ColorThemeFormattingCard,
   NumberFormattingCard,
+  DateFilterFormattingCard,
 } from '../../core/src';
-class ChordSettings extends formattingSettings.SimpleCard {
+
+// ── Chord Layout ────────────────────────────────────────────────────
+
+class ChordLayoutSettings extends formattingSettings.SimpleCard {
   padding = new formattingSettings.NumUpDown({
     name: 'padding',
     displayName: 'Padding',
     value: 10,
   });
 
+  minArcAngle = new formattingSettings.NumUpDown({
+    name: 'minArcAngle',
+    displayName: 'Min Arc Angle (degrees)',
+    value: 0,
+  });
+
+  arcStrokeColor = new formattingSettings.ColorPicker({
+    name: 'arcStrokeColor',
+    displayName: 'Arc Stroke Color',
+    value: { value: '' },
+  });
+
+  arcThickness = new formattingSettings.NumUpDown({
+    name: 'arcThickness',
+    displayName: 'Arc Thickness',
+    value: 15,
+  });
+
+  name = 'chordSettings';
+  displayName = 'Chord Layout';
+  slices = [this.padding, this.minArcAngle, this.arcStrokeColor, this.arcThickness];
+}
+
+// ── Ribbons ─────────────────────────────────────────────────────────
+
+class ChordRibbonSettings extends formattingSettings.SimpleCard {
   ribbonOpacity = new formattingSettings.NumUpDown({
     name: 'ribbonOpacity',
     displayName: 'Ribbon Opacity (%)',
@@ -34,50 +63,97 @@ class ChordSettings extends formattingSettings.SimpleCard {
     value: 90,
   });
 
-
-  arcStrokeColor = new formattingSettings.ColorPicker({
-
-    name: 'arcStrokeColor',
-
-    displayName: 'Arc Stroke Color',
-
-    value: { value: '' },
-
-  });
-
   dimOpacity = new formattingSettings.NumUpDown({
-
     name: 'dimOpacity',
-
     displayName: 'Dim Opacity (%)',
-
     value: 8,
-
   });
 
+  gradientRibbons = new formattingSettings.ToggleSwitch({
+    name: 'gradientRibbons',
+    displayName: 'Gradient Ribbons',
+    value: false,
+  });
 
-  name = 'chordSettings';
-  displayName = 'Chord';
-  slices = [this.padding, this.ribbonOpacity, this.hoverOpacity, this.arcStrokeColor, this.dimOpacity];
+  directional = new formattingSettings.ToggleSwitch({
+    name: 'directional',
+    displayName: 'Directional Ribbons',
+    value: false,
+  });
+
+  name = 'chordRibbonSettings';
+  displayName = 'Ribbons';
+  slices = [this.ribbonOpacity, this.hoverOpacity, this.dimOpacity, this.gradientRibbons, this.directional];
 }
 
-class ColorSettings extends formattingSettings.SimpleCard {
+// ── Interaction ─────────────────────────────────────────────────────
+
+class ChordInteractionSettings extends formattingSettings.SimpleCard {
+  enableFiltering = new formattingSettings.ToggleSwitch({
+    name: 'enableFiltering',
+    displayName: 'Enable Chord Filtering',
+    value: false,
+  });
+
+  showFlowLabels = new formattingSettings.ToggleSwitch({
+    name: 'showFlowLabels',
+    displayName: 'Show Flow Labels on Hover',
+    value: false,
+  });
+
+  showEntityValues = new formattingSettings.ToggleSwitch({
+    name: 'showEntityValues',
+    displayName: 'Show Entity Values',
+    value: false,
+  });
+
+  name = 'chordInteractionSettings';
+  displayName = 'Interaction';
+  slices = [this.enableFiltering, this.showFlowLabels, this.showEntityValues];
+}
+
+// ── Color Theme ─────────────────────────────────────────────────────
+
+class ChordColorThemeSettings extends formattingSettings.SimpleCard {
   useChartPalette = new formattingSettings.ToggleSwitch({
     name: 'useChartPalette',
     displayName: 'Use Chart Palette',
     value: true,
   });
 
-  name = 'colorSettings';
-  displayName = 'Color';
-  slices = [this.useChartPalette];
+  colorTheme = new formattingSettings.ItemDropdown({
+    name: 'colorTheme',
+    displayName: 'Theme',
+    items: [
+      { value: 'default', displayName: 'Default' },
+      { value: 'ocean', displayName: 'Ocean' },
+      { value: 'sunset', displayName: 'Sunset' },
+      { value: 'forest', displayName: 'Forest' },
+      { value: 'berry', displayName: 'Berry' },
+      { value: 'monochrome', displayName: 'Monochrome' },
+      { value: 'earth', displayName: 'Earth' },
+    ],
+    value: { value: 'default', displayName: 'Default' },
+  });
+
+  name = 'colorThemeFormatting';
+  displayName = 'Color Theme';
+  slices = [this.useChartPalette, this.colorTheme];
 }
 
+// ── Card Style ──────────────────────────────────────────────────────
+
 class CardStyleSettings extends formattingSettings.SimpleCard {
-  enableGlass = new formattingSettings.ToggleSwitch({
-    name: 'enableGlass',
-    displayName: 'Glass Effect',
-    value: true,
+  cardStyleMode = new formattingSettings.ItemDropdown({
+    name: 'cardStyleMode',
+    displayName: 'Card Style',
+    items: [
+      { value: 'none', displayName: 'None' },
+      { value: 'glass', displayName: 'Glass' },
+      { value: 'elevated', displayName: 'Elevated' },
+      { value: 'neumorphic', displayName: 'Neumorphic' },
+    ],
+    value: { value: 'glass', displayName: 'Glass' },
   });
 
   backgroundColor = new formattingSettings.ColorPicker({
@@ -100,8 +176,10 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.cardStyleMode, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
+
+// ── Animation Settings ──────────────────────────────────────────────
 
 class AnimationSettings extends formattingSettings.SimpleCard {
   enabled = new formattingSettings.ToggleSwitch({
@@ -121,97 +199,41 @@ class AnimationSettings extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
-class ChordInteractionSettings extends formattingSettings.SimpleCard {
-  enableFiltering = new formattingSettings.ToggleSwitch({
-    name: 'enableFiltering',
-    displayName: 'Enable Chord Filtering',
-    value: false,
-  });
-
-  showFlowLabels = new formattingSettings.ToggleSwitch({
-    name: 'showFlowLabels',
-    displayName: 'Show Flow Labels on Hover',
-    value: false,
-  });
-
-  name = 'chordInteractionSettings';
-  displayName = 'Interaction Features';
-  slices = [this.enableFiltering, this.showFlowLabels];
-}
-
-class ChordRibbonSettings extends formattingSettings.SimpleCard {
-  gradientRibbons = new formattingSettings.ToggleSwitch({
-    name: 'gradientRibbons',
-    displayName: 'Gradient Ribbons',
-    value: false,
-  });
-
-  directional = new formattingSettings.ToggleSwitch({
-    name: 'directional',
-    displayName: 'Directional Ribbons',
-    value: false,
-  });
-
-  minArcAngle = new formattingSettings.NumUpDown({
-    name: 'minArcAngle',
-    displayName: 'Min Arc Angle (degrees)',
-    value: 0,
-  });
-
-  name = 'chordRibbonSettings';
-  displayName = 'Ribbon Features';
-  slices = [this.gradientRibbons, this.directional, this.minArcAngle];
-}
-
-class ChordLabelSettings extends formattingSettings.SimpleCard {
-  showEntityValues = new formattingSettings.ToggleSwitch({
-    name: 'showEntityValues',
-    displayName: 'Show Entity Values',
-    value: false,
-  });
-
-  name = 'chordLabelSettings';
-  displayName = 'Label Features';
-  slices = [this.showEntityValues];
-}
+// ── Root Model ──────────────────────────────────────────────────────
 
 export class ChordDiagramSettings extends formattingSettings.Model {
-  chordSettings = new ChordSettings();
-  colorSettings = new ColorSettings();
-  cardSettings = new CardStyleSettings();
-  animationSettings = new AnimationSettings();
-
-  chordInteractionSettings = new ChordInteractionSettings();
+  chordSettings = new ChordLayoutSettings();
   chordRibbonSettings = new ChordRibbonSettings();
-  chordLabelSettings = new ChordLabelSettings();
+  chordInteractionSettings = new ChordInteractionSettings();
+  colorThemeFormattingCard = new ChordColorThemeSettings();
 
   dataLabelFormattingCard = new DataLabelFormattingCard();
-
   titleFormattingCard = new TitleFormattingCard();
-
   legendFormattingCard = new LegendFormattingCard();
 
+  numberFormattingCard = new NumberFormattingCard();
   sortFormattingCard = new SortFormattingCard();
   conditionalFormattingCard = new ConditionalFormattingCard();
+
+  animationSettings = new AnimationSettings();
+  cardSettings = new CardStyleSettings();
+  dateFilterFormattingCard = new DateFilterFormattingCard();
   accessibilityFormattingCard = new AccessibilityFormattingCard();
 
-  colorThemeFormattingCard = new ColorThemeFormattingCard();
-  numberFormattingCard = new NumberFormattingCard();
   cards = [
     this.chordSettings,
-    this.colorSettings,
-    this.cardSettings,
-    this.animationSettings,
-    this.chordInteractionSettings,
     this.chordRibbonSettings,
-    this.chordLabelSettings,
+    this.chordInteractionSettings,
+    this.colorThemeFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.legendFormattingCard,
+    this.numberFormattingCard,
     this.sortFormattingCard,
     this.conditionalFormattingCard,
+    this.animationSettings,
+    this.cardSettings,
+    this.dateFilterFormattingCard,
     this.accessibilityFormattingCard,
-    this.colorThemeFormattingCard,
-    this.numberFormattingCard,
   ];
 }

@@ -14,8 +14,12 @@ import {
   AccessibilityFormattingCard,
   ColorThemeFormattingCard,
   NumberFormattingCard,
+  DateFilterFormattingCard,
 } from '../../core/src';
-class NodeSettings extends formattingSettings.SimpleCard {
+
+// ── Node Shape ──────────────────────────────────────────────────────
+
+class NodeShapeSettings extends formattingSettings.SimpleCard {
   width = new formattingSettings.NumUpDown({
     name: 'width',
     displayName: 'Node Width',
@@ -26,43 +30,6 @@ class NodeSettings extends formattingSettings.SimpleCard {
     name: 'padding',
     displayName: 'Node Padding',
     value: 16,
-  });
-
-  labelPosition = new formattingSettings.ItemDropdown({
-    name: 'labelPosition',
-    displayName: 'Label Position',
-    items: [
-      { value: 'inside', displayName: 'Inside' },
-      { value: 'beside', displayName: 'Beside' },
-      { value: 'above', displayName: 'Above' },
-      { value: 'below', displayName: 'Below' },
-      { value: 'none', displayName: 'None (Hover)' },
-    ],
-    value: { value: 'beside', displayName: 'Beside' },
-  });
-
-  labelFontSize = new formattingSettings.NumUpDown({
-    name: 'labelFontSize',
-    displayName: 'Label Font Size',
-    value: 12,
-  });
-
-  labelColor = new formattingSettings.ColorPicker({
-    name: 'labelColor',
-    displayName: 'Label Color',
-    value: { value: '' }, // empty = use theme default
-  });
-
-  nodeBorderColor = new formattingSettings.ColorPicker({
-    name: 'nodeBorderColor',
-    displayName: 'Node Border Color',
-    value: { value: '' },
-  });
-
-  nodeBorderWidth = new formattingSettings.NumUpDown({
-    name: 'nodeBorderWidth',
-    displayName: 'Node Border Width',
-    value: 0,
   });
 
   cornerRadius = new formattingSettings.NumUpDown({
@@ -81,6 +48,106 @@ class NodeSettings extends formattingSettings.SimpleCard {
     name: 'minHeight',
     displayName: 'Minimum Height',
     value: 1,
+  });
+
+  nodeBorderColor = new formattingSettings.ColorPicker({
+    name: 'nodeBorderColor',
+    displayName: 'Node Border Color',
+    value: { value: '' },
+  });
+
+  nodeBorderWidth = new formattingSettings.NumUpDown({
+    name: 'nodeBorderWidth',
+    displayName: 'Node Border Width',
+    value: 0,
+  });
+
+  name = 'nodeSettings';
+  displayName = 'Node Shape';
+  slices = [
+    this.width, this.padding, this.cornerRadius, this.opacity, this.minHeight,
+    this.nodeBorderColor, this.nodeBorderWidth,
+  ];
+}
+
+// ── Node Colors ─────────────────────────────────────────────────────
+
+class NodeColorSettings extends formattingSettings.SimpleCard {
+  colorMode = new formattingSettings.ItemDropdown({
+    name: 'colorMode',
+    displayName: 'Color Mode',
+    items: [
+      { value: 'auto', displayName: 'Auto (Theme)' },
+      { value: 'byLayer', displayName: 'By Layer' },
+    ],
+    value: { value: 'auto', displayName: 'Auto (Theme)' },
+  });
+
+  sourceColor = new formattingSettings.ColorPicker({
+    name: 'sourceColor',
+    displayName: 'Source Color',
+    value: { value: '#3B82F6' },
+  });
+
+  step2Color = new formattingSettings.ColorPicker({
+    name: 'step2Color',
+    displayName: 'Step 2 Color',
+    value: { value: '#8B5CF6' },
+  });
+
+  step3Color = new formattingSettings.ColorPicker({
+    name: 'step3Color',
+    displayName: 'Step 3 Color',
+    value: { value: '#EC4899' },
+  });
+
+  step4Color = new formattingSettings.ColorPicker({
+    name: 'step4Color',
+    displayName: 'Step 4 Color',
+    value: { value: '#F59E0B' },
+  });
+
+  step5Color = new formattingSettings.ColorPicker({
+    name: 'step5Color',
+    displayName: 'Step 5 Color',
+    value: { value: '#10B981' },
+  });
+
+  targetColor = new formattingSettings.ColorPicker({
+    name: 'targetColor',
+    displayName: 'Target Color',
+    value: { value: '#EF4444' },
+  });
+
+  name = 'nodeColorSettings';
+  displayName = 'Node Colors';
+  slices = [
+    this.colorMode,
+    this.sourceColor, this.step2Color, this.step3Color,
+    this.step4Color, this.step5Color, this.targetColor,
+  ];
+}
+
+// ── Node Labels ─────────────────────────────────────────────────────
+
+class NodeLabelSettings extends formattingSettings.SimpleCard {
+  labelPosition = new formattingSettings.ItemDropdown({
+    name: 'labelPosition',
+    displayName: 'Label Position',
+    items: [
+      { value: 'inside', displayName: 'Inside' },
+      { value: 'beside', displayName: 'Beside' },
+      { value: 'above', displayName: 'Above' },
+      { value: 'below', displayName: 'Below' },
+      { value: 'none', displayName: 'None (Hover)' },
+    ],
+    value: { value: 'beside', displayName: 'Beside' },
+  });
+
+  labelFontSize = new formattingSettings.NumUpDown({
+    name: 'labelFontSize',
+    displayName: 'Label Font Size',
+    value: 12,
   });
 
   labelFontFamily = new formattingSettings.ItemDropdown({
@@ -123,15 +190,60 @@ class NodeSettings extends formattingSettings.SimpleCard {
     value: { value: 'normal', displayName: 'Normal' },
   });
 
-  name = 'nodeSettings';
-  displayName = 'Nodes';
+  labelColor = new formattingSettings.ColorPicker({
+    name: 'labelColor',
+    displayName: 'Label Color (All)',
+    value: { value: '' },
+  });
+
+  sourceLabelColor = new formattingSettings.ColorPicker({
+    name: 'sourceLabelColor',
+    displayName: 'Source Label Color',
+    value: { value: '' },
+  });
+
+  step2LabelColor = new formattingSettings.ColorPicker({
+    name: 'step2LabelColor',
+    displayName: 'Step 2 Label Color',
+    value: { value: '' },
+  });
+
+  step3LabelColor = new formattingSettings.ColorPicker({
+    name: 'step3LabelColor',
+    displayName: 'Step 3 Label Color',
+    value: { value: '' },
+  });
+
+  step4LabelColor = new formattingSettings.ColorPicker({
+    name: 'step4LabelColor',
+    displayName: 'Step 4 Label Color',
+    value: { value: '' },
+  });
+
+  step5LabelColor = new formattingSettings.ColorPicker({
+    name: 'step5LabelColor',
+    displayName: 'Step 5 Label Color',
+    value: { value: '' },
+  });
+
+  targetLabelColor = new formattingSettings.ColorPicker({
+    name: 'targetLabelColor',
+    displayName: 'Target Label Color',
+    value: { value: '' },
+  });
+
+  name = 'nodeLabelSettings';
+  displayName = 'Node Labels';
   slices = [
-    this.width, this.padding, this.labelPosition,
+    this.labelPosition,
     this.labelFontSize, this.labelFontFamily, this.labelFontWeight, this.labelFontStyle,
-    this.labelColor, this.nodeBorderColor, this.nodeBorderWidth,
-    this.cornerRadius, this.opacity, this.minHeight,
+    this.labelColor,
+    this.sourceLabelColor, this.step2LabelColor, this.step3LabelColor,
+    this.step4LabelColor, this.step5LabelColor, this.targetLabelColor,
   ];
 }
+
+// ── Links (merged with Link Features) ───────────────────────────────
 
 class LinkSettings extends formattingSettings.SimpleCard {
   opacity = new formattingSettings.NumUpDown({
@@ -176,10 +288,27 @@ class LinkSettings extends formattingSettings.SimpleCard {
     value: 50,
   });
 
+  gradientLinks = new formattingSettings.ToggleSwitch({
+    name: 'gradientLinks',
+    displayName: 'Gradient Links',
+    value: true,
+  });
+
+  opacityByValue = new formattingSettings.ToggleSwitch({
+    name: 'opacityByValue',
+    displayName: 'Opacity by Value',
+    value: false,
+  });
+
   name = 'linkSettings';
   displayName = 'Links';
-  slices = [this.opacity, this.hoverOpacity, this.colorMode, this.customColor, this.curvature, this.dimOpacity];
+  slices = [
+    this.opacity, this.hoverOpacity, this.colorMode, this.customColor, this.curvature,
+    this.dimOpacity, this.gradientLinks, this.opacityByValue,
+  ];
 }
+
+// ── Link Labels (showFlowLabels moved here from Link Features) ──────
 
 class LinkLabelSettings extends formattingSettings.SimpleCard {
   showLinkLabels = new formattingSettings.ToggleSwitch({
@@ -198,6 +327,26 @@ class LinkLabelSettings extends formattingSettings.SimpleCard {
     name: 'linkLabelFontColor',
     displayName: 'Font Color',
     value: { value: '#333333' },
+  });
+
+  linkLabelFontFamily = new formattingSettings.ItemDropdown({
+    name: 'linkLabelFontFamily',
+    displayName: 'Font Family',
+    items: [
+      { value: '', displayName: 'Default' },
+      { value: 'Arial', displayName: 'Arial' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Cambria', displayName: 'Cambria' },
+      { value: 'Courier New', displayName: 'Courier New' },
+      { value: 'Georgia', displayName: 'Georgia' },
+      { value: 'Helvetica Neue', displayName: 'Helvetica Neue' },
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Tahoma', displayName: 'Tahoma' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
+      { value: 'Trebuchet MS', displayName: 'Trebuchet MS' },
+      { value: 'Verdana', displayName: 'Verdana' },
+    ],
+    value: { value: '', displayName: 'Default' },
   });
 
   linkLabelFontWeight = new formattingSettings.ItemDropdown({
@@ -221,10 +370,18 @@ class LinkLabelSettings extends formattingSettings.SimpleCard {
     value: { value: 'value', displayName: 'Value' },
   });
 
+  showFlowLabels = new formattingSettings.ToggleSwitch({
+    name: 'showFlowLabels',
+    displayName: 'Show Flow Labels on Hover',
+    value: false,
+  });
+
   name = 'linkLabelSettings';
   displayName = 'Link Labels';
-  slices = [this.showLinkLabels, this.linkLabelFontSize, this.linkLabelFontColor, this.linkLabelFontWeight, this.linkLabelFormat];
+  slices = [this.showLinkLabels, this.linkLabelFontSize, this.linkLabelFontColor, this.linkLabelFontFamily, this.linkLabelFontWeight, this.linkLabelFormat, this.showFlowLabels];
 }
+
+// ── Totals ──────────────────────────────────────────────────────────
 
 class TotalSettings extends formattingSettings.SimpleCard {
   showNodeValues = new formattingSettings.ToggleSwitch({
@@ -272,14 +429,47 @@ class TotalSettings extends formattingSettings.SimpleCard {
     value: { value: '' },
   });
 
+  totalFontFamily = new formattingSettings.ItemDropdown({
+    name: 'totalFontFamily',
+    displayName: 'Font Family',
+    items: [
+      { value: '', displayName: 'Default' },
+      { value: 'Arial', displayName: 'Arial' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Cambria', displayName: 'Cambria' },
+      { value: 'Courier New', displayName: 'Courier New' },
+      { value: 'Georgia', displayName: 'Georgia' },
+      { value: 'Helvetica Neue', displayName: 'Helvetica Neue' },
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Tahoma', displayName: 'Tahoma' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
+      { value: 'Trebuchet MS', displayName: 'Trebuchet MS' },
+      { value: 'Verdana', displayName: 'Verdana' },
+    ],
+    value: { value: '', displayName: 'Default' },
+  });
+
+  totalFontWeight = new formattingSettings.ItemDropdown({
+    name: 'totalFontWeight',
+    displayName: 'Font Weight',
+    items: [
+      { value: 'normal', displayName: 'Normal' },
+      { value: 'bold', displayName: 'Bold' },
+      { value: '600', displayName: 'Semi-Bold' },
+    ],
+    value: { value: '600', displayName: 'Semi-Bold' },
+  });
+
   name = 'totalSettings';
   displayName = 'Totals';
   slices = [
     this.showNodeValues, this.nodeValueFormat,
     this.showLayerTotals, this.layerTotalPosition,
-    this.totalFontSize, this.totalFontColor,
+    this.totalFontSize, this.totalFontColor, this.totalFontFamily, this.totalFontWeight,
   ];
 }
+
+// ── Layout ──────────────────────────────────────────────────────────
 
 class LayoutSettings extends formattingSettings.SimpleCard {
   nodeAlign = new formattingSettings.ItemDropdown({
@@ -317,6 +507,8 @@ class LayoutSettings extends formattingSettings.SimpleCard {
   slices = [this.nodeAlign, this.sortOrder, this.iterations];
 }
 
+// ── Tooltips ────────────────────────────────────────────────────────
+
 class TooltipSettings extends formattingSettings.SimpleCard {
   showTooltips = new formattingSettings.ToggleSwitch({
     name: 'showTooltips',
@@ -346,11 +538,19 @@ class TooltipSettings extends formattingSettings.SimpleCard {
   slices = [this.showTooltips, this.showPercentage, this.valueFormat];
 }
 
+// ── Card Style ──────────────────────────────────────────────────────
+
 class CardStyleSettings extends formattingSettings.SimpleCard {
-  enableGlass = new formattingSettings.ToggleSwitch({
-    name: 'enableGlass',
-    displayName: 'Glass Effect',
-    value: true,
+  cardStyleMode = new formattingSettings.ItemDropdown({
+    name: 'cardStyleMode',
+    displayName: 'Card Style',
+    items: [
+      { value: 'none', displayName: 'None' },
+      { value: 'glass', displayName: 'Glass' },
+      { value: 'elevated', displayName: 'Elevated' },
+      { value: 'neumorphic', displayName: 'Neumorphic' },
+    ],
+    value: { value: 'glass', displayName: 'Glass' },
   });
 
   backgroundColor = new formattingSettings.ColorPicker({
@@ -362,7 +562,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
   backgroundOpacity = new formattingSettings.NumUpDown({
     name: 'backgroundOpacity',
     displayName: 'Background Opacity (%)',
-    value: 35,
+    value: 85,
   });
 
   borderRadius = new formattingSettings.NumUpDown({
@@ -373,8 +573,10 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.cardStyleMode, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
+
+// ── Animation ───────────────────────────────────────────────────────
 
 class AnimationSettings extends formattingSettings.SimpleCard {
   enabled = new formattingSettings.ToggleSwitch({
@@ -393,6 +595,8 @@ class AnimationSettings extends formattingSettings.SimpleCard {
   displayName = 'Animation';
   slices = [this.enabled, this.duration];
 }
+
+// ── Interaction ─────────────────────────────────────────────────────
 
 class SankeyInteractionSettings extends formattingSettings.SimpleCard {
   highlightFlows = new formattingSettings.ToggleSwitch({
@@ -418,50 +622,12 @@ class SankeyInteractionSettings extends formattingSettings.SimpleCard {
   slices = [this.highlightFlows, this.enableDrag, this.enableFiltering];
 }
 
-class SankeyLinkSettings extends formattingSettings.SimpleCard {
-  gradientLinks = new formattingSettings.ToggleSwitch({
-    name: 'gradientLinks',
-    displayName: 'Gradient Links',
-    value: true,
-  });
-
-  opacityByValue = new formattingSettings.ToggleSwitch({
-    name: 'opacityByValue',
-    displayName: 'Opacity by Value',
-    value: false,
-  });
-
-  showFlowLabels = new formattingSettings.ToggleSwitch({
-    name: 'showFlowLabels',
-    displayName: 'Show Flow Labels on Hover',
-    value: false,
-  });
-
-  name = 'sankeyLinkSettings';
-  displayName = 'Link Features';
-  slices = [this.gradientLinks, this.opacityByValue, this.showFlowLabels];
-}
-
-class SankeyNodeSettings extends formattingSettings.SimpleCard {
-  showNodeValues = new formattingSettings.ToggleSwitch({
-    name: 'showNodeValues',
-    displayName: 'Show Node Values',
-    value: false,
-  });
-
-  nodeLabelFontSize = new formattingSettings.NumUpDown({
-    name: 'nodeLabelFontSize',
-    displayName: 'Node Label Font Size',
-    value: 11,
-  });
-
-  name = 'sankeyNodeSettings';
-  displayName = 'Node Features';
-  slices = [];
-}
+// ── Root Model ──────────────────────────────────────────────────────
 
 export class SankeyDiagramSettings extends formattingSettings.Model {
-  nodeSettings = new NodeSettings();
+  nodeSettings = new NodeShapeSettings();
+  nodeColorSettings = new NodeColorSettings();
+  nodeLabelSettings = new NodeLabelSettings();
   linkSettings = new LinkSettings();
   linkLabelSettings = new LinkLabelSettings();
   totalSettings = new TotalSettings();
@@ -471,8 +637,6 @@ export class SankeyDiagramSettings extends formattingSettings.Model {
   animationSettings = new AnimationSettings();
 
   sankeyInteractionSettings = new SankeyInteractionSettings();
-  sankeyLinkSettings = new SankeyLinkSettings();
-  sankeyNodeSettings = new SankeyNodeSettings();
 
   legendFormattingCard = new LegendFormattingCard();
 
@@ -490,8 +654,11 @@ export class SankeyDiagramSettings extends formattingSettings.Model {
 
   colorThemeFormattingCard = new ColorThemeFormattingCard();
   numberFormattingCard = new NumberFormattingCard();
+  dateFilterFormattingCard = new DateFilterFormattingCard();
   cards = [
     this.nodeSettings,
+    this.nodeColorSettings,
+    this.nodeLabelSettings,
     this.linkSettings,
     this.linkLabelSettings,
     this.totalSettings,
@@ -500,8 +667,6 @@ export class SankeyDiagramSettings extends formattingSettings.Model {
     this.cardSettings,
     this.animationSettings,
     this.sankeyInteractionSettings,
-    this.sankeyLinkSettings,
-    this.sankeyNodeSettings,
     this.legendFormattingCard,
     this.dataLabelFormattingCard,
     this.scrollFormattingCard,
@@ -510,5 +675,6 @@ export class SankeyDiagramSettings extends formattingSettings.Model {
     this.accessibilityFormattingCard,
     this.colorThemeFormattingCard,
     this.numberFormattingCard,
+    this.dateFilterFormattingCard,
   ];
 }

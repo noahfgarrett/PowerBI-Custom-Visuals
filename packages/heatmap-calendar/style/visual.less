@@ -32,14 +32,18 @@
 
 .heatmap-cell {
   border-radius: 2px;
-  transition: opacity 0.15s ease;
+  transition: filter 0.15s ease, outline-color 0.15s ease, box-shadow 0.15s ease;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  position: relative;
+
   &:hover {
-    outline: 1px solid rgba(0,0,0,0.2);
+    filter: brightness(1.2);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+    z-index: 2;
   }
 }
 

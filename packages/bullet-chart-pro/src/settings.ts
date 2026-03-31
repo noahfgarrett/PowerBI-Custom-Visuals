@@ -5,7 +5,10 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AnnotationFormattingCard, AccessibilityFormattingCard, NumberFormattingCard } from '../../core/src';
+import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AnnotationFormattingCard, AccessibilityFormattingCard, NumberFormattingCard,
+  ColorThemeFormattingCard,
+  DateFilterFormattingCard,
+} from '../../core/src';
 // ── Bullet Settings ─────────────────────────────────────────────────
 
 class BulletSettings extends formattingSettings.SimpleCard {
@@ -27,31 +30,31 @@ class BulletSettings extends formattingSettings.SimpleCard {
     value: true,
   });
 
-
   barCornerRadius = new formattingSettings.NumUpDown({
-
     name: 'barCornerRadius',
-
     displayName: 'Bar Corner Radius',
-
     value: 2,
-
   });
 
   rangeOpacity = new formattingSettings.NumUpDown({
-
     name: 'rangeOpacity',
-
     displayName: 'Range Opacity (%)',
-
     value: 15,
-
   });
 
+  orientation = new formattingSettings.ItemDropdown({
+    name: 'orientation',
+    displayName: 'Orientation',
+    items: [
+      { value: 'horizontal', displayName: 'Horizontal' },
+      { value: 'vertical', displayName: 'Vertical' },
+    ],
+    value: { value: 'horizontal', displayName: 'Horizontal' },
+  });
 
   name = 'bulletSettings';
   displayName = 'Bullet Settings';
-  slices = [this.barHeight, this.showTarget, this.showLabels, this.barCornerRadius, this.rangeOpacity];
+  slices = [this.barHeight, this.showTarget, this.showLabels, this.barCornerRadius, this.rangeOpacity, this.orientation];
 }
 
 // ── Range Colors ────────────────────────────────────────────────────
@@ -86,13 +89,75 @@ class RangeSettings extends formattingSettings.SimpleCard {
   slices = [this.poorColor, this.satisfactoryColor, this.goodColor, this.barColor];
 }
 
+// ── Markers & Overlays ──────────────────────────────────────────────
+
+class BulletMarkersSettings extends formattingSettings.SimpleCard {
+  showForecast = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Forecast',
+    value: false,
+  });
+
+  forecastValue = new formattingSettings.NumUpDown({
+    name: 'forecastValue',
+    displayName: 'Forecast Value',
+    value: 0,
+  });
+
+  bandWidth = new formattingSettings.NumUpDown({
+    name: 'bandWidth',
+    displayName: 'Band Width',
+    value: 10,
+  });
+
+  showComparative = new formattingSettings.ToggleSwitch({
+    name: 'showComparative',
+    displayName: 'Show Comparative',
+    value: false,
+  });
+
+  comparativeColor = new formattingSettings.ColorPicker({
+    name: 'comparativeColor',
+    displayName: 'Comparative Color',
+    value: { value: '#94A3B8' },
+  });
+
+  forecastColor = new formattingSettings.ColorPicker({
+    name: 'forecastColor',
+    displayName: 'Forecast Color',
+    value: { value: '#6366F1' },
+  });
+
+  targetMarkerWidth = new formattingSettings.NumUpDown({
+    name: 'targetMarkerWidth',
+    displayName: 'Target Marker Width',
+    value: 2,
+  });
+
+  comparativeMarkerWidth = new formattingSettings.NumUpDown({
+    name: 'comparativeMarkerWidth',
+    displayName: 'Comparative Marker Width',
+    value: 3,
+  });
+
+  name = 'bulletMarkers';
+  displayName = 'Markers & Overlays';
+  slices = [this.showForecast, this.forecastValue, this.bandWidth, this.forecastColor, this.showComparative, this.comparativeColor, this.targetMarkerWidth, this.comparativeMarkerWidth];
+}
+
 // ── Card Style ──────────────────────────────────────────────────────
 
 class CardStyleSettings extends formattingSettings.SimpleCard {
-  enableGlass = new formattingSettings.ToggleSwitch({
-    name: 'enableGlass',
-    displayName: 'Glass Effect',
-    value: true,
+  cardStyleMode = new formattingSettings.ItemDropdown({
+    name: 'cardStyleMode',
+    displayName: 'Card Style',
+    items: [
+      { value: 'none', displayName: 'None' },
+      { value: 'glass', displayName: 'Glass' },
+      { value: 'elevated', displayName: 'Elevated' },
+      { value: 'neumorphic', displayName: 'Neumorphic' },
+    ],
+    value: { value: 'glass', displayName: 'Glass' },
   });
 
   backgroundColor = new formattingSettings.ColorPicker({
@@ -104,7 +169,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
   backgroundOpacity = new formattingSettings.NumUpDown({
     name: 'backgroundOpacity',
     displayName: 'Background Opacity (%)',
-    value: 35,
+    value: 85,
   });
 
   borderRadius = new formattingSettings.NumUpDown({
@@ -115,7 +180,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.cardStyleMode, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 // ── Animation Settings ──────────────────────────────────────────────
@@ -138,84 +203,16 @@ class AnimationSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
-// ── Bullet Layout Settings ──────────────────────────────────────────
-
-class BulletLayoutSettings extends formattingSettings.SimpleCard {
-  orientation = new formattingSettings.ItemDropdown({
-    name: 'orientation',
-    displayName: 'Orientation',
-    items: [
-      { value: 'horizontal', displayName: 'Horizontal' },
-      { value: 'vertical', displayName: 'Vertical' },
-    ],
-    value: { value: 'horizontal', displayName: 'Horizontal' },
-  });
-
-  name = 'bulletLayout';
-  displayName = 'Layout';
-  slices = [this.orientation];
-}
-
-// ── Bullet Forecast Settings ────────────────────────────────────────
-
-class BulletForecastSettings extends formattingSettings.SimpleCard {
-  show = new formattingSettings.ToggleSwitch({
-    name: 'show',
-    displayName: 'Show Forecast',
-    value: false,
-  });
-
-  forecastValue = new formattingSettings.NumUpDown({
-    name: 'forecastValue',
-    displayName: 'Forecast Value',
-    value: 0,
-  });
-
-  bandWidth = new formattingSettings.NumUpDown({
-    name: 'bandWidth',
-    displayName: 'Band Width',
-    value: 10,
-  });
-
-  name = 'bulletForecast';
-  displayName = 'Forecast';
-  slices = [this.show, this.forecastValue, this.bandWidth];
-}
-
-// ── Bullet Comparison Settings ──────────────────────────────────────
-
-class BulletComparisonSettings extends formattingSettings.SimpleCard {
-  show = new formattingSettings.ToggleSwitch({
-    name: 'show',
-    displayName: 'Show Comparative',
-    value: false,
-  });
-
-  comparativeColor = new formattingSettings.ColorPicker({
-    name: 'comparativeColor',
-    displayName: 'Comparative Color',
-    value: { value: '#94A3B8' },
-  });
-
-  name = 'bulletComparison';
-  displayName = 'Comparison';
-  slices = [this.show, this.comparativeColor];
-}
-
 // ── Root Model ──────────────────────────────────────────────────────
 
 export class BulletChartProSettings extends formattingSettings.Model {
   bulletSettings = new BulletSettings();
   rangeSettings = new RangeSettings();
-  cardSettings = new CardStyleSettings();
-  animationSettings = new AnimationSettingsCard();
+  bulletMarkers = new BulletMarkersSettings();
 
   axisFormattingCard = new AxisFormattingCard();
-
   dataLabelFormattingCard = new DataLabelFormattingCard();
-
   titleFormattingCard = new TitleFormattingCard();
-
   scrollFormattingCard = new ScrollFormattingCard();
 
   constructor() {
@@ -223,34 +220,36 @@ export class BulletChartProSettings extends formattingSettings.Model {
     this.scrollFormattingCard.minCategoryWidth.value = 30;
   }
 
+  numberFormattingCard = new NumberFormattingCard();
   referenceLineFormattingCard = new ReferenceLineFormattingCard();
   trendLineFormattingCard = new TrendLineFormattingCard();
   conditionalFormattingCard = new ConditionalFormattingCard();
   annotationFormattingCard = new AnnotationFormattingCard();
+  animationSettings = new AnimationSettingsCard();
+  cardSettings = new CardStyleSettings();
+  legendFormattingCard = new LegendFormattingCard();
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
+  dateFilterFormattingCard = new DateFilterFormattingCard();
   accessibilityFormattingCard = new AccessibilityFormattingCard();
-
-  bulletLayout = new BulletLayoutSettings();
-  bulletForecast = new BulletForecastSettings();
-  bulletComparison = new BulletComparisonSettings();
-  numberFormattingCard = new NumberFormattingCard();
 
   cards = [
     this.bulletSettings,
     this.rangeSettings,
-    this.cardSettings,
-    this.animationSettings,
+    this.bulletMarkers,
     this.axisFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.scrollFormattingCard,
+    this.numberFormattingCard,
     this.referenceLineFormattingCard,
     this.trendLineFormattingCard,
     this.conditionalFormattingCard,
     this.annotationFormattingCard,
+    this.animationSettings,
+    this.cardSettings,
+    this.legendFormattingCard,
+    this.colorThemeFormattingCard,
+    this.dateFilterFormattingCard,
     this.accessibilityFormattingCard,
-    this.bulletLayout,
-    this.bulletForecast,
-    this.bulletComparison,
-    this.numberFormattingCard,
   ];
 }

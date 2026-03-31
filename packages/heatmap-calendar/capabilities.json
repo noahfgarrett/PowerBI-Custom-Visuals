@@ -32,7 +32,7 @@
           },
           "dataReductionAlgorithm": {
             "top": {
-              "count": 1000
+              "count": 30000
             }
           }
         },
@@ -49,8 +49,8 @@
     }
   ],
   "objects": {
-    "calendarSettings": {
-      "displayName": "Calendar",
+    "calendarLayoutSettings": {
+      "displayName": "Calendar Layout",
       "properties": {
         "cellSize": {
           "displayName": "Cell Size",
@@ -64,6 +64,40 @@
             "numeric": true
           }
         },
+        "granularity": {
+          "displayName": "Granularity",
+          "type": {
+            "enumeration": [
+              {
+                "value": "day",
+                "displayName": "Day"
+              },
+              {
+                "value": "week",
+                "displayName": "Week"
+              },
+              {
+                "value": "month",
+                "displayName": "Month"
+              }
+            ]
+          }
+        },
+        "weekStart": {
+          "displayName": "Week Start Day",
+          "type": {
+            "enumeration": [
+              {
+                "value": "sunday",
+                "displayName": "Sunday"
+              },
+              {
+                "value": "monday",
+                "displayName": "Monday"
+              }
+            ]
+          }
+        },
         "showMonthLabels": {
           "displayName": "Show Month Labels",
           "type": {
@@ -74,6 +108,77 @@
           "displayName": "Show Day Labels",
           "type": {
             "bool": true
+          }
+        },
+        "enableScrolling": {
+          "displayName": "Enable Scrolling",
+          "type": {
+            "bool": true
+          }
+        },
+        "labelFontFamily": {
+          "displayName": "Label Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Helvetica",
+                "displayName": "Helvetica"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              }
+            ]
+          }
+        },
+        "labelFontWeight": {
+          "displayName": "Label Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "cellStyleSettings": {
+      "displayName": "Cell Style",
+      "properties": {
+        "cellCornerRadius": {
+          "displayName": "Cell Corner Radius",
+          "type": {
+            "numeric": true
           }
         },
         "cellStrokeColor": {
@@ -91,27 +196,11 @@
           "type": {
             "numeric": true
           }
-        },
-        "cellCornerRadius": {
-          "displayName": "Cell Corner Radius",
-          "type": {
-            "numeric": true
-          }
-        },
-        "labelColor": {
-          "displayName": "Label Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
         }
       }
     },
-    "colorSettings": {
-      "displayName": "Colors",
+    "colorScaleSettings": {
+      "displayName": "Color Scale",
       "properties": {
         "lowColor": {
           "displayName": "Low Color",
@@ -155,6 +244,27 @@
             "numeric": true
           }
         },
+        "colorMode": {
+          "displayName": "Color Mode",
+          "type": {
+            "enumeration": [
+              {
+                "value": "continuous",
+                "displayName": "Continuous"
+              },
+              {
+                "value": "discrete",
+                "displayName": "Discrete"
+              }
+            ]
+          }
+        },
+        "bins": {
+          "displayName": "Discrete Bins",
+          "type": {
+            "numeric": true
+          }
+        },
         "emptyColor": {
           "displayName": "Empty Cell Color",
           "type": {
@@ -164,7 +274,12 @@
               }
             }
           }
-        },
+        }
+      }
+    },
+    "legendSettings": {
+      "displayName": "Legend",
+      "properties": {
         "showLegend": {
           "displayName": "Show Color Legend",
           "type": {
@@ -188,6 +303,21 @@
                 "displayName": "Right"
               }
             ]
+          }
+        }
+      }
+    },
+    "calendarSettings": {
+      "displayName": "Calendar (Legacy)",
+      "properties": {
+        "labelColor": {
+          "displayName": "Label Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
           }
         }
       }
@@ -646,7 +776,7 @@
           }
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (°)",
+          "displayName": "X-Label Rotation (\u00b0)",
           "type": {
             "numeric": true
           }
@@ -764,35 +894,34 @@
             "numeric": true
           }
         },
+        "cardStyleMode": {
+          "displayName": "Card Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "glass",
+                "displayName": "Glass"
+              },
+              {
+                "value": "elevated",
+                "displayName": "Elevated"
+              },
+              {
+                "value": "neumorphic",
+                "displayName": "Neumorphic"
+              }
+            ]
+          }
+        },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "Glass Effect"
-        }
-      }
-    },
-    "calendarGranularitySettings": {
-      "displayName": "Granularity",
-      "properties": {
-        "granularity": {
-          "displayName": "Granularity",
-          "type": {
-            "enumeration": [
-              {
-                "value": "day",
-                "displayName": "Day"
-              },
-              {
-                "value": "week",
-                "displayName": "Week"
-              },
-              {
-                "value": "month",
-                "displayName": "Month"
-              }
-            ]
-          }
+          "displayName": "(Deprecated) Enable Glass"
         }
       }
     },
@@ -810,46 +939,15 @@
           "type": {
             "numeric": true
           }
-        }
-      }
-    },
-    "calendarScaleSettings": {
-      "displayName": "Color Scale",
-      "properties": {
-        "colorMode": {
-          "displayName": "Color Mode",
-          "type": {
-            "enumeration": [
-              {
-                "value": "continuous",
-                "displayName": "Continuous"
-              },
-              {
-                "value": "discrete",
-                "displayName": "Discrete"
-              }
-            ]
-          }
         },
-        "bins": {
-          "displayName": "Discrete Bins",
+        "streakOutlineColor": {
+          "displayName": "Streak Outline Color",
           "type": {
-            "numeric": true
-          }
-        },
-        "weekStart": {
-          "displayName": "Week Start Day",
-          "type": {
-            "enumeration": [
-              {
-                "value": "sunday",
-                "displayName": "Sunday"
-              },
-              {
-                "value": "monday",
-                "displayName": "Monday"
+            "fill": {
+              "solid": {
+                "color": true
               }
-            ]
+            }
           }
         }
       }
@@ -982,6 +1080,75 @@
           }
         }
       }
+    },
+    "dateFilterFormatting": {
+      "displayName": "Date Filter",
+      "properties": {
+        "enableDateFilter": {
+          "displayName": "Enable Date Filter",
+          "type": {
+            "bool": true
+          }
+        },
+        "startDate": {
+          "displayName": "Start Date",
+          "type": {
+            "text": true
+          }
+        },
+        "endAtCurrentDate": {
+          "displayName": "End at Current Date",
+          "type": {
+            "bool": true
+          }
+        },
+        "endDate": {
+          "displayName": "End Date",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "colorThemeFormatting": {
+      "properties": {
+        "colorTheme": {
+          "displayName": "Theme",
+          "type": {
+            "enumeration": [
+              {
+                "value": "default",
+                "displayName": "Default"
+              },
+              {
+                "value": "ocean",
+                "displayName": "Ocean"
+              },
+              {
+                "value": "sunset",
+                "displayName": "Sunset"
+              },
+              {
+                "value": "forest",
+                "displayName": "Forest"
+              },
+              {
+                "value": "berry",
+                "displayName": "Berry"
+              },
+              {
+                "value": "monochrome",
+                "displayName": "Monochrome"
+              },
+              {
+                "value": "earth",
+                "displayName": "Earth"
+              }
+            ]
+          }
+        }
+      },
+      "displayName": "Color Theme"
     }
   },
   "supportsKeyboardFocus": true,

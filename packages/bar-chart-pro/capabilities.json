@@ -1824,6 +1824,12 @@
               }
             ]
           }
+        },
+        "enableGlass": {
+          "type": {
+            "bool": true
+          },
+          "displayName": "(Deprecated) Enable Glass"
         }
       }
     },

@@ -1,47 +1,55 @@
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard, NumberFormattingCard } from '../../core/src';
-class GanttSettings extends formattingSettings.SimpleCard {
+import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard,
+  DateFilterFormattingCard, NumberFormattingCard,
+} from '../../core/src';
+
+// ── Task Bars ────────────────────────────────────────────────────────
+
+class TaskBarSettingsCard extends formattingSettings.SimpleCard {
   barHeight = new formattingSettings.NumUpDown({ name: 'barHeight', displayName: 'Bar Height', value: 24 });
-  showProgress = new formattingSettings.ToggleSwitch({ name: 'showProgress', displayName: 'Show Progress', value: true });
+  barOpacity = new formattingSettings.NumUpDown({ name: 'barOpacity', displayName: 'Bar Opacity (%)', value: 70 });
+  barCornerRadius = new formattingSettings.NumUpDown({ name: 'barCornerRadius', displayName: 'Bar Corner Radius', value: 4 });
+  rowGap = new formattingSettings.NumUpDown({ name: 'rowGap', displayName: 'Row Gap', value: 4 });
+  labelWidth = new formattingSettings.NumUpDown({ name: 'labelWidth', displayName: 'Label Width', value: 120 });
   showLabels = new formattingSettings.ToggleSwitch({ name: 'showLabels', displayName: 'Show Labels', value: true });
+  showProgress = new formattingSettings.ToggleSwitch({ name: 'showProgress', displayName: 'Show Progress', value: true });
+  taskBorderColor = new formattingSettings.ColorPicker({ name: 'taskBorderColor', displayName: 'Task Border Color', value: { value: '' } });
+  taskBorderWidth = new formattingSettings.NumUpDown({ name: 'taskBorderWidth', displayName: 'Task Border Width', value: 0 });
 
-  barOpacity = new formattingSettings.NumUpDown({
-    name: 'barOpacity',
-    displayName: 'Bar Opacity (%)',
-    value: 70,
+  labelFontSize = new formattingSettings.NumUpDown({ name: 'labelFontSize', displayName: 'Label Font Size', value: 11 });
+  labelFontColor = new formattingSettings.ColorPicker({ name: 'labelFontColor', displayName: 'Label Font Color', value: { value: '' } });
+  labelFontFamily = new formattingSettings.ItemDropdown({
+    name: 'labelFontFamily',
+    displayName: 'Label Font Family',
+    items: [
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Arial', displayName: 'Arial' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Helvetica', displayName: 'Helvetica' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
+      { value: 'Verdana', displayName: 'Verdana' },
+      { value: 'Georgia', displayName: 'Georgia' },
+    ],
+    value: { value: 'Segoe UI', displayName: 'Segoe UI' },
   });
-  barCornerRadius = new formattingSettings.NumUpDown({
-    name: 'barCornerRadius',
-    displayName: 'Bar Corner Radius',
-    value: 4,
-  });
-  rowGap = new formattingSettings.NumUpDown({
-    name: 'rowGap',
-    displayName: 'Row Gap',
-    value: 4,
-  });
-  labelWidth = new formattingSettings.NumUpDown({
-    name: 'labelWidth',
-    displayName: 'Label Width',
-    value: 120,
-  });
-  todayLineWidth = new formattingSettings.NumUpDown({
-    name: 'todayLineWidth',
-    displayName: 'Today Line Width',
-    value: 2,
-  });
-  todayLineStyle = new formattingSettings.ItemDropdown({
-    name: 'todayLineStyle',
-    displayName: 'Today Line Style',
-    items: [{ value: 'solid', displayName: 'Solid' }, { value: 'dashed', displayName: 'Dashed' }],
-    value: { value: 'dashed', displayName: 'Dashed' },
+  labelFontWeight = new formattingSettings.ItemDropdown({
+    name: 'labelFontWeight',
+    displayName: 'Label Font Weight',
+    items: [
+      { value: 'normal', displayName: 'Normal' },
+      { value: 'bold', displayName: 'Bold' },
+      { value: '600', displayName: 'Semi-Bold' },
+    ],
+    value: { value: 'normal', displayName: 'Normal' },
   });
 
-  name = 'ganttSettings';
-  displayName = 'Gantt';
-  slices = [this.barHeight, this.showProgress, this.showLabels, this.barOpacity, this.barCornerRadius, this.rowGap, this.labelWidth, this.todayLineWidth, this.todayLineStyle];
+  name = 'taskBarSettings';
+  displayName = 'Task Bars';
+  slices = [this.barHeight, this.barOpacity, this.barCornerRadius, this.rowGap, this.labelWidth, this.showLabels, this.showProgress, this.taskBorderColor, this.taskBorderWidth, this.labelFontSize, this.labelFontColor, this.labelFontFamily, this.labelFontWeight];
 }
+
+// ── Colors ───────────────────────────────────────────────────────────
 
 class ColorSettings extends formattingSettings.SimpleCard {
   barColor = new formattingSettings.ColorPicker({ name: 'barColor', displayName: 'Bar Color', value: { value: '#3B82F6' } });
@@ -51,25 +59,40 @@ class ColorSettings extends formattingSettings.SimpleCard {
   slices = [this.barColor, this.progressColor];
 }
 
-class CardStyleSettings extends formattingSettings.SimpleCard {
-  enableGlass = new formattingSettings.ToggleSwitch({ name: 'enableGlass', displayName: 'Glass Effect', value: true });
-  backgroundColor = new formattingSettings.ColorPicker({ name: 'backgroundColor', displayName: 'Background Color', value: { value: '' } });
-  backgroundOpacity = new formattingSettings.NumUpDown({ name: 'backgroundOpacity', displayName: 'Background Opacity (%)', value: 35 });
-  borderRadius = new formattingSettings.NumUpDown({ name: 'borderRadius', displayName: 'Border Radius', value: 12 });
-  name = 'cardSettings';
-  displayName = 'Card Style';
-  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+// ── Today Marker (consolidated) ─────────────────────────────────────
+
+class TodayMarkerSettingsCard extends formattingSettings.SimpleCard {
+  showTodayLine = new formattingSettings.ToggleSwitch({
+    name: 'showTodayLine',
+    displayName: 'Show Today Line',
+    value: true,
+  });
+
+  lineColor = new formattingSettings.ColorPicker({
+    name: 'lineColor',
+    displayName: 'Today Line Color',
+    value: { value: '#EF4444' },
+  });
+
+  todayLineWidth = new formattingSettings.NumUpDown({
+    name: 'todayLineWidth',
+    displayName: 'Today Line Width',
+    value: 2,
+  });
+
+  todayLineStyle = new formattingSettings.ItemDropdown({
+    name: 'todayLineStyle',
+    displayName: 'Today Line Style',
+    items: [{ value: 'solid', displayName: 'Solid' }, { value: 'dashed', displayName: 'Dashed' }],
+    value: { value: 'dashed', displayName: 'Dashed' },
+  });
+
+  name = 'ganttTodaySettings';
+  displayName = 'Today Marker';
+  slices = [this.showTodayLine, this.lineColor, this.todayLineWidth, this.todayLineStyle];
 }
 
-class HierarchySettingsCard extends formattingSettings.SimpleCard {
-  indentWidth = new formattingSettings.NumUpDown({ name: 'indentWidth', displayName: 'Indent Width', value: 20 });
-  showToggle = new formattingSettings.ToggleSwitch({ name: 'showToggle', displayName: 'Show Toggle', value: true });
-  collapseByDefault = new formattingSettings.ToggleSwitch({ name: 'collapseByDefault', displayName: 'Collapse By Default', value: false });
-
-  name = 'hierarchySettings';
-  displayName = 'Hierarchy';
-  slices = [this.indentWidth, this.showToggle, this.collapseByDefault];
-}
+// ── Dependencies ─────────────────────────────────────────────────────
 
 class DependencySettingsCard extends formattingSettings.SimpleCard {
   show = new formattingSettings.ToggleSwitch({ name: 'show', displayName: 'Show Dependencies', value: true });
@@ -88,23 +111,10 @@ class DependencySettingsCard extends formattingSettings.SimpleCard {
   slices = [this.show, this.lineColor, this.lineWidth, this.arrowSize, this.lineStyle];
 }
 
-class AnimationSettings extends formattingSettings.SimpleCard {
-  enabled = new formattingSettings.ToggleSwitch({ name: 'enabled', displayName: 'Enable Animations', value: true });
-  duration = new formattingSettings.NumUpDown({ name: 'duration', displayName: 'Duration (ms)', value: 600 });
-  name = 'animationSettings';
-  displayName = 'Animation';
-  slices = [this.enabled, this.duration];
-}
-
-// -- Gantt Milestone Settings -------------------------------------------------
+// ── Milestones ───────────────────────────────────────────────────────
 
 class GanttMilestoneSettings extends formattingSettings.SimpleCard {
-  show = new formattingSettings.ToggleSwitch({
-    name: 'show',
-    displayName: 'Show Milestones',
-    value: false,
-  });
-
+  show = new formattingSettings.ToggleSwitch({ name: 'show', displayName: 'Show Milestones', value: false });
   shape = new formattingSettings.ItemDropdown({
     name: 'shape',
     displayName: 'Milestone Shape',
@@ -115,150 +125,128 @@ class GanttMilestoneSettings extends formattingSettings.SimpleCard {
     ],
     value: { value: 'diamond', displayName: 'Diamond' },
   });
-
-  color = new formattingSettings.ColorPicker({
-    name: 'color',
-    displayName: 'Milestone Color',
-    value: { value: '#F59E0B' },
-  });
+  color = new formattingSettings.ColorPicker({ name: 'color', displayName: 'Milestone Color', value: { value: '#F59E0B' } });
 
   name = 'ganttMilestoneSettings';
   displayName = 'Milestones';
   slices = [this.show, this.shape, this.color];
 }
 
-// -- Gantt Critical Path Settings ---------------------------------------------
+// ── Critical Path ────────────────────────────────────────────────────
 
 class GanttCriticalPathSettings extends formattingSettings.SimpleCard {
-  show = new formattingSettings.ToggleSwitch({
-    name: 'show',
-    displayName: 'Show Critical Path',
-    value: false,
-  });
-
-  color = new formattingSettings.ColorPicker({
-    name: 'color',
-    displayName: 'Critical Path Color',
-    value: { value: '#EF4444' },
-  });
-
-  lineWidth = new formattingSettings.NumUpDown({
-    name: 'lineWidth',
-    displayName: 'Line Width',
-    value: 3,
-  });
+  show = new formattingSettings.ToggleSwitch({ name: 'show', displayName: 'Show Critical Path', value: false });
+  color = new formattingSettings.ColorPicker({ name: 'color', displayName: 'Critical Path Color', value: { value: '#EF4444' } });
+  lineWidth = new formattingSettings.NumUpDown({ name: 'lineWidth', displayName: 'Line Width', value: 3 });
 
   name = 'ganttCriticalPathSettings';
   displayName = 'Critical Path';
   slices = [this.show, this.color, this.lineWidth];
 }
 
-// -- Gantt Baseline Settings --------------------------------------------------
+// ── Baseline ─────────────────────────────────────────────────────────
 
 class GanttBaselineSettings extends formattingSettings.SimpleCard {
-  show = new formattingSettings.ToggleSwitch({
-    name: 'show',
-    displayName: 'Show Baseline',
-    value: false,
-  });
-
-  color = new formattingSettings.ColorPicker({
-    name: 'color',
-    displayName: 'Baseline Color',
-    value: { value: '#94A3B8' },
-  });
-
-  opacity = new formattingSettings.NumUpDown({
-    name: 'opacity',
-    displayName: 'Baseline Opacity (%)',
-    value: 40,
-  });
+  show = new formattingSettings.ToggleSwitch({ name: 'show', displayName: 'Show Baseline', value: false });
+  color = new formattingSettings.ColorPicker({ name: 'color', displayName: 'Baseline Color', value: { value: '#94A3B8' } });
+  opacity = new formattingSettings.NumUpDown({ name: 'opacity', displayName: 'Baseline Opacity (%)', value: 40 });
 
   name = 'ganttBaselineSettings';
   displayName = 'Baseline';
   slices = [this.show, this.color, this.opacity];
 }
 
-// -- Gantt Group Settings -----------------------------------------------------
+// ── Hierarchy & Grouping (merged) ────────────────────────────────────
 
-class GanttGroupSettings extends formattingSettings.SimpleCard {
-  enableGrouping = new formattingSettings.ToggleSwitch({
-    name: 'enableGrouping',
-    displayName: 'Enable Grouping',
-    value: false,
-  });
+class HierarchyGroupingSettingsCard extends formattingSettings.SimpleCard {
+  enableGrouping = new formattingSettings.ToggleSwitch({ name: 'enableGrouping', displayName: 'Enable Grouping', value: false });
+  collapsibleGroups = new formattingSettings.ToggleSwitch({ name: 'collapsibleGroups', displayName: 'Collapsible Groups', value: true });
+  indentWidth = new formattingSettings.NumUpDown({ name: 'indentWidth', displayName: 'Indent Width', value: 20 });
+  showToggle = new formattingSettings.ToggleSwitch({ name: 'showToggle', displayName: 'Show Toggle', value: true });
+  collapseByDefault = new formattingSettings.ToggleSwitch({ name: 'collapseByDefault', displayName: 'Collapse By Default', value: false });
 
-  collapsibleGroups = new formattingSettings.ToggleSwitch({
-    name: 'collapsibleGroups',
-    displayName: 'Collapsible Groups',
-    value: true,
-  });
-
-  name = 'ganttGroupSettings';
-  displayName = 'Task Grouping';
-  slices = [this.enableGrouping, this.collapsibleGroups];
+  name = 'hierarchyGroupingSettings';
+  displayName = 'Hierarchy & Grouping';
+  slices = [this.enableGrouping, this.collapsibleGroups, this.indentWidth, this.showToggle, this.collapseByDefault];
 }
 
-// -- Gantt Today Settings -----------------------------------------------------
+// ── Card Style ───────────────────────────────────────────────────────
 
-class GanttTodaySettings extends formattingSettings.SimpleCard {
-  showTodayLine = new formattingSettings.ToggleSwitch({
-    name: 'showTodayLine',
-    displayName: 'Show Today Line',
-    value: true,
+class CardStyleSettings extends formattingSettings.SimpleCard {
+  cardStyleMode = new formattingSettings.ItemDropdown({
+    name: 'cardStyleMode',
+    displayName: 'Card Style',
+    items: [
+      { value: 'none', displayName: 'None' },
+      { value: 'glass', displayName: 'Glass' },
+      { value: 'elevated', displayName: 'Elevated' },
+      { value: 'neumorphic', displayName: 'Neumorphic' },
+    ],
+    value: { value: 'glass', displayName: 'Glass' },
   });
-
-  lineColor = new formattingSettings.ColorPicker({
-    name: 'lineColor',
-    displayName: 'Today Line Color',
-    value: { value: '#EF4444' },
-  });
-
-  name = 'ganttTodaySettings';
-  displayName = 'Today Marker';
-  slices = [this.showTodayLine, this.lineColor];
+  backgroundColor = new formattingSettings.ColorPicker({ name: 'backgroundColor', displayName: 'Background Color', value: { value: '' } });
+  backgroundOpacity = new formattingSettings.NumUpDown({ name: 'backgroundOpacity', displayName: 'Background Opacity (%)', value: 85 });
+  borderRadius = new formattingSettings.NumUpDown({ name: 'borderRadius', displayName: 'Border Radius', value: 12 });
+  name = 'cardSettings';
+  displayName = 'Card Style';
+  slices = [this.cardStyleMode, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
+
+// ── Animation ────────────────────────────────────────────────────────
+
+class AnimationSettings extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({ name: 'enabled', displayName: 'Enable Animations', value: true });
+  duration = new formattingSettings.NumUpDown({ name: 'duration', displayName: 'Duration (ms)', value: 600 });
+  name = 'animationSettings';
+  displayName = 'Animation';
+  slices = [this.enabled, this.duration];
+}
+
+// ── Root Model ───────────────────────────────────────────────────────
 
 export class GanttChartProSettings extends formattingSettings.Model {
-  ganttSettings = new GanttSettings();
+  taskBarSettings = new TaskBarSettingsCard();
   colorSettings = new ColorSettings();
-  cardSettings = new CardStyleSettings();
-  animationSettings = new AnimationSettings();
+  ganttTodaySettings = new TodayMarkerSettingsCard();
   dependencySettings = new DependencySettingsCard();
-  hierarchySettings = new HierarchySettingsCard();
   ganttMilestoneSettings = new GanttMilestoneSettings();
   ganttCriticalPathSettings = new GanttCriticalPathSettings();
   ganttBaselineSettings = new GanttBaselineSettings();
-  ganttGroupSettings = new GanttGroupSettings();
-  ganttTodaySettings = new GanttTodaySettings();
-  legendFormattingCard = new LegendFormattingCard();
-  dataLabelFormattingCard = new DataLabelFormattingCard();
+  hierarchyGroupingSettings = new HierarchyGroupingSettingsCard();
+
   titleFormattingCard = new TitleFormattingCard();
+  dataLabelFormattingCard = new DataLabelFormattingCard();
+  legendFormattingCard = new LegendFormattingCard();
   axisFormattingCard = new AxisFormattingCard();
-  conditionalFormattingCard = new ConditionalFormattingCard();
-  accessibilityFormattingCard = new AccessibilityFormattingCard();
 
   colorThemeFormattingCard = new ColorThemeFormattingCard();
+  animationSettings = new AnimationSettings();
+  cardSettings = new CardStyleSettings();
+
   numberFormattingCard = new NumberFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  dateFilterFormattingCard = new DateFilterFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
+
   cards = [
-    this.ganttSettings,
+    this.taskBarSettings,
     this.colorSettings,
-    this.cardSettings,
-    this.animationSettings,
+    this.ganttTodaySettings,
     this.dependencySettings,
-    this.hierarchySettings,
     this.ganttMilestoneSettings,
     this.ganttCriticalPathSettings,
     this.ganttBaselineSettings,
-    this.ganttGroupSettings,
-    this.ganttTodaySettings,
-    this.legendFormattingCard,
-    this.dataLabelFormattingCard,
+    this.hierarchyGroupingSettings,
     this.titleFormattingCard,
+    this.dataLabelFormattingCard,
+    this.legendFormattingCard,
     this.axisFormattingCard,
-    this.conditionalFormattingCard,
-    this.accessibilityFormattingCard,
     this.colorThemeFormattingCard,
+    this.animationSettings,
+    this.cardSettings,
     this.numberFormattingCard,
+    this.conditionalFormattingCard,
+    this.dateFilterFormattingCard,
+    this.accessibilityFormattingCard,
   ];
 }

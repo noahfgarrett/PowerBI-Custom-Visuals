@@ -4,7 +4,7 @@
     "displayName": "Gauge Cluster",
     "guid": "gaugeCluster_7B1C3D5E9F2A",
     "visualClassName": "GaugeClusterVisual",
-    "version": "1.0.0.0",
+    "version": "1.0.1.0",
     "description": "Grid of animated mini gauges with sweep arcs, value count-up, and color zones. Glassmorphic styling.",
     "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
     "gitHubUrl": "https://github.com/noahgarrett/PowerBI"

@@ -5,7 +5,9 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard, NumberFormattingCard } from '../../core/src';
+import { LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard, NumberFormattingCard,
+  DateFilterFormattingCard,
+} from '../../core/src';
 
 // ── Top N / Others ──────────────────────────────────────────────────
 
@@ -164,18 +166,50 @@ class ValueSettings extends formattingSettings.SimpleCard {
     value: 0,
   });
 
+  fontFamily = new formattingSettings.ItemDropdown({
+    name: 'fontFamily',
+    displayName: 'Font Family',
+    items: [
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Arial', displayName: 'Arial' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Helvetica', displayName: 'Helvetica' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
+      { value: 'Verdana', displayName: 'Verdana' },
+      { value: 'Georgia', displayName: 'Georgia' },
+    ],
+    value: { value: 'Segoe UI', displayName: 'Segoe UI' },
+  });
+
+  fontWeight = new formattingSettings.ItemDropdown({
+    name: 'fontWeight',
+    displayName: 'Font Weight',
+    items: [
+      { value: 'normal', displayName: 'Normal' },
+      { value: 'bold', displayName: 'Bold' },
+      { value: '600', displayName: 'Semi-Bold' },
+    ],
+    value: { value: 'normal', displayName: 'Normal' },
+  });
+
   name = 'valueSettings';
   displayName = 'Center Value';
-  slices = [this.fontSize, this.fontColor, this.prefix, this.suffix, this.decimalPlaces];
+  slices = [this.fontSize, this.fontColor, this.fontFamily, this.fontWeight, this.prefix, this.suffix, this.decimalPlaces];
 }
 
 // ── Card Style ──────────────────────────────────────────────────────
 
 class CardStyleSettings extends formattingSettings.SimpleCard {
-  enableGlass = new formattingSettings.ToggleSwitch({
-    name: 'enableGlass',
-    displayName: 'Glass Effect',
-    value: true,
+  cardStyleMode = new formattingSettings.ItemDropdown({
+    name: 'cardStyleMode',
+    displayName: 'Card Style',
+    items: [
+      { value: 'none', displayName: 'None' },
+      { value: 'glass', displayName: 'Glass' },
+      { value: 'elevated', displayName: 'Elevated' },
+      { value: 'neumorphic', displayName: 'Neumorphic' },
+    ],
+    value: { value: 'glass', displayName: 'Glass' },
   });
 
   backgroundColor = new formattingSettings.ColorPicker({
@@ -187,7 +221,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
   backgroundOpacity = new formattingSettings.NumUpDown({
     name: 'backgroundOpacity',
     displayName: 'Background Opacity (%)',
-    value: 35,
+    value: 85,
   });
 
   borderRadius = new formattingSettings.NumUpDown({
@@ -198,7 +232,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.cardStyleMode, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 // ── Animation Settings ──────────────────────────────────────────────
@@ -283,9 +317,35 @@ class DonutLabelSettings extends formattingSettings.SimpleCard {
     value: false,
   });
 
+  fontFamily = new formattingSettings.ItemDropdown({
+    name: 'fontFamily',
+    displayName: 'Font Family',
+    items: [
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Arial', displayName: 'Arial' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Helvetica', displayName: 'Helvetica' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
+      { value: 'Verdana', displayName: 'Verdana' },
+      { value: 'Georgia', displayName: 'Georgia' },
+    ],
+    value: { value: 'Segoe UI', displayName: 'Segoe UI' },
+  });
+
+  fontWeight = new formattingSettings.ItemDropdown({
+    name: 'fontWeight',
+    displayName: 'Font Weight',
+    items: [
+      { value: 'normal', displayName: 'Normal' },
+      { value: 'bold', displayName: 'Bold' },
+      { value: '600', displayName: 'Semi-Bold' },
+    ],
+    value: { value: 'normal', displayName: 'Normal' },
+  });
+
   name = 'donutLabelSettings';
   displayName = 'Label Format';
-  slices = [this.format, this.connectorLines];
+  slices = [this.format, this.connectorLines, this.fontFamily, this.fontWeight];
 }
 
 // ── Root Model ──────────────────────────────────────────────────────
@@ -308,21 +368,23 @@ export class AnimatedDonutProSettings extends formattingSettings.Model {
 
   colorThemeFormattingCard = new ColorThemeFormattingCard();
   numberFormattingCard = new NumberFormattingCard();
+  dateFilterFormattingCard = new DateFilterFormattingCard();
   cards = [
     this.donutSettings,
     this.valueSettings,
-    this.cardSettings,
-    this.animationSettings,
-    this.topNSettings,
-    this.donutNestedSettings,
-    this.donutExplodeSettings,
     this.donutLabelSettings,
+    this.colorThemeFormattingCard,
+    this.topNSettings,
+    this.animationSettings,
     this.legendFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
-    this.conditionalFormattingCard,
-    this.accessibilityFormattingCard,
-    this.colorThemeFormattingCard,
     this.numberFormattingCard,
+    this.cardSettings,
+    this.donutNestedSettings,
+    this.donutExplodeSettings,
+    this.conditionalFormattingCard,
+    this.dateFilterFormattingCard,
+    this.accessibilityFormattingCard,
   ];
 }

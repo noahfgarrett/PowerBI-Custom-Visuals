@@ -17,7 +17,8 @@ import {
   DURATION,
   formatNumber,
   formatWithSettings,
-  getGlassStyle,
+  applyCardStyle,
+  type CardStyleMode,
   getHostChartColor,
   withOpacity,
   renderChartTitle,
@@ -43,6 +44,9 @@ import {
   type TrendType,
   resolveSeriesFormatting,
   SeriesFormattingGroup,
+  getDateFilterIndices,
+  isDateColumn,
+  type DateFilterConfig,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -68,6 +72,7 @@ interface BoxStats {
   outliers: number[];
   rawValues: number[];
   selectionId: ISelectionId;
+  highlighted: boolean;
 }
 
 interface BoxPlotData {
@@ -75,6 +80,8 @@ interface BoxPlotData {
   globalMin: number;
   globalMax: number;
   isEmpty: boolean;
+  /** Whether cross-highlight data is present from another visual/slicer */
+  hasHighlights: boolean;
 }
 
 interface Margin {
@@ -100,7 +107,6 @@ function seededRandom(seed: number): number {
 
 const MARGIN_DEFAULT: Margin = { top: 12, right: 16, bottom: 36, left: 48 };
 const WHISKER_CAP_WIDTH = 0.4; // fraction of box width
-const MEDIAN_STROKE_WIDTH = 2.5;
 const LEGEND_HEIGHT = 28;
 
 // -- Statistics -----------------------------------------------------------
@@ -111,7 +117,7 @@ function computeStats(
   category: string,
   values: number[],
   whiskerCalc: WhiskerCalcMethod = 'iqr',
-): Omit<BoxStats, 'selectionId'> | null {
+): Omit<BoxStats, 'selectionId' | 'highlighted'> | null {
   if (values.length === 0) return null;
 
   const sorted = [...values].sort((a, b) => a - b);
@@ -189,6 +195,9 @@ export class BoxPlotVisual implements IVisual {
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
 
+  /** Cached data for cross-highlight support. */
+  private currentData: BoxPlotData | null = null;
+
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
     this.selectionManager = options.host.createSelectionManager();
@@ -212,14 +221,34 @@ export class BoxPlotVisual implements IVisual {
       );
     }
 
+    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+    if (legacyCardObj) {
+      const legacyGlass = legacyCardObj['enableGlass'];
+      if (legacyGlass === false) {
+        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      }
+    }
+
     // Hide shared axis toggles that are shadowed by local settings
+
+    // Date filter: hide start/end when disabled
+    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
     this.settings.axisFormattingCard.showXAxis.visible = false;
     this.settings.axisFormattingCard.showYAxis.visible = false;
     this.settings.axisFormattingCard.showGridLines.visible = false;
-    this.settings.axisFormattingCard.xAxisTitle.visible = false;
-    this.settings.axisFormattingCard.yAxisTitle.visible = false;
-    this.settings.axisFormattingCard.yAxisMin.visible = false;
-    this.settings.axisFormattingCard.yAxisMax.visible = false;
+
+    // Card Style — hide sub-settings when mode is 'none'
+    const cardMode = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    this.settings.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
+    this.settings.cardSettings.backgroundColor.visible = cardMode !== 'none';
+
+    // Hide dual-axis-only properties (no combo/dual-axis support)
+    this.settings.referenceLineFormattingCard.referenceLineAxis.visible = false;
+    this.settings.referenceLineFormattingCard.referenceBandWidth.visible = false;
+    this.settings.trendLineFormattingCard.trendLineAxis.visible = false;
 
     // ── Conditional visibility ──────────────────────────────────────
     // Mean marker sub-settings: hide when showMean off
@@ -227,6 +256,7 @@ export class BoxPlotVisual implements IVisual {
     this.settings.meanMarkerSettings.shape.visible = meanOn;
     this.settings.meanMarkerSettings.color.visible = meanOn;
     this.settings.meanMarkerSettings.size.visible = meanOn;
+    this.settings.meanMarkerSettings.strokeWidth.visible = meanOn;
 
     // Jitter (data points) sub-settings: hide when showDataPoints off
     const jitterOn = this.settings.jitterSettings.show.value;
@@ -243,12 +273,10 @@ export class BoxPlotVisual implements IVisual {
 
     // Extract data
     const data = this.extractData(dataView);
+    this.currentData = data;
 
     // Populate per-series formatting groups
     this.populateSeriesGroups(data);
-
-    // Apply glass effect
-    this.applyCardStyle();
 
     // Render
     if (data.isEmpty) {
@@ -256,6 +284,12 @@ export class BoxPlotVisual implements IVisual {
     } else {
       this.render(data, options.viewport);
     }
+
+    // Apply cross-highlight dimming after render
+    this.applySelectionHighlight();
+
+    // Apply card styling AFTER render — render clears the container, which would destroy the glass backdrop div.
+    this.applyCardStyle();
   }
 
   // -- Series Formatting ----------------------------------------------------
@@ -266,7 +300,7 @@ export class BoxPlotVisual implements IVisual {
     card.groups = [];
     if (data.isEmpty) return;
     const boxColor = this.settings.colorSettings.boxColor.value?.value ?? '#3B82F6';
-    const perCategory = this.settings.boxPlotColorSettings.perCategoryColors.value;
+    const perCategory = this.settings.colorSettings.perCategoryColors.value;
     for (let i = 0; i < data.boxes.length; i++) {
       const group = new SeriesFormattingGroup({
         name: `series_${i}`,
@@ -287,6 +321,7 @@ export class BoxPlotVisual implements IVisual {
       globalMin: 0,
       globalMax: 0,
       isEmpty: true,
+      hasHighlights: false,
     };
 
     if (!dataView?.categorical) return empty;
@@ -297,12 +332,21 @@ export class BoxPlotVisual implements IVisual {
 
     if (!categoryColumn || !valuesColumns || valuesColumns.length === 0) return empty;
 
+    const dateConfig: DateFilterConfig = {
+      enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
+      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
+      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+    };
+    const dateIndices = isDateColumn(categoryColumn.source) ? getDateFilterIndices(categoryColumn.values, dateConfig) : null;
+
     // Group raw values by category
     const categoryLabels = categoryColumn.values;
-    const groupMap = new Map<string, { values: number[]; selectionId: ISelectionId }>();
+    const groupMap = new Map<string, { values: number[]; selectionId: ISelectionId; hasHighlight: boolean }>();
 
     // Collect values per category across all value columns
     for (let rowIdx = 0; rowIdx < categoryLabels.length; rowIdx++) {
+      if (dateIndices && !dateIndices.has(rowIdx)) continue;
       const catLabel = categoryLabels[rowIdx];
       const key = catLabel !== null && catLabel !== undefined ? String(catLabel) : '';
 
@@ -312,6 +356,7 @@ export class BoxPlotVisual implements IVisual {
           selectionId: this.host.createSelectionIdBuilder()
             .withCategory(categoryColumn, rowIdx)
             .createSelectionId(),
+          hasHighlight: false,
         });
       }
       const group = groupMap.get(key)!;
@@ -323,6 +368,11 @@ export class BoxPlotVisual implements IVisual {
         const v = col.values[rowIdx];
         if (typeof v === 'number' && !Number.isNaN(v)) {
           group.values.push(v);
+        }
+
+        const hlRaw = (col as unknown as { highlights?: unknown[] }).highlights as unknown[] | undefined;
+        if (hlRaw && hlRaw[rowIdx] !== null && hlRaw[rowIdx] !== undefined) {
+          group.hasHighlight = true;
         }
       }
     }
@@ -336,6 +386,7 @@ export class BoxPlotVisual implements IVisual {
         boxes.push({
           ...stats,
           selectionId: group.selectionId,
+          highlighted: group.hasHighlight,
         });
       }
     }
@@ -356,11 +407,13 @@ export class BoxPlotVisual implements IVisual {
       globalMax += 1;
     }
 
+    const hasHighlights = boxes.some((b) => b.highlighted);
     return {
       boxes,
       globalMin,
       globalMax,
       isEmpty: false,
+      hasHighlights,
     };
   }
 
@@ -368,20 +421,17 @@ export class BoxPlotVisual implements IVisual {
 
   private applyCardStyle(): void {
     const s = this.settings.cardSettings;
-    if (s.enableGlass.value) {
-      const glass = getGlassStyle({
-        mode: 'light',
+    const mode = (resolveDropdown(s.cardStyleMode) ?? 'glass') as CardStyleMode;
+    applyCardStyle(
+      this.container,
+      {
+        mode,
         opacity: s.backgroundOpacity.value / 100,
         backgroundColor: s.backgroundColor.value?.value,
         borderRadius: s.borderRadius.value,
-      });
-      Object.assign(this.container.style, glass);
-    } else {
-      this.container.style.background = '';
-      this.container.style.backdropFilter = '';
-      (this.container.style as unknown as Record<string, string>)['WebkitBackdropFilter'] = '';
-      this.container.style.border = '';
-      this.container.style.boxShadow = '';
+      },
+    );
+    if (mode === 'none') {
       this.container.style.borderRadius = `${s.borderRadius.value}px`;
     }
   }
@@ -418,12 +468,12 @@ export class BoxPlotVisual implements IVisual {
     const margin: Margin = { ...MARGIN_DEFAULT };
     if (isHorizontal) {
       // Horizontal: categories on Y-axis, values on X-axis
-      if (!s.axisSettings.showXAxis.value) margin.bottom = 8;
-      if (!s.axisSettings.showYAxis.value) margin.left = 8;
+      if (!s.axisFormattingCard.showXAxis.value) margin.bottom = 8;
+      if (!s.axisFormattingCard.showYAxis.value) margin.left = 8;
       else margin.left = 80; // more room for category labels on Y-axis
     } else {
-      if (!s.axisSettings.showXAxis.value) margin.bottom = 8;
-      if (!s.axisSettings.showYAxis.value) margin.left = 8;
+      if (!s.axisFormattingCard.showXAxis.value) margin.bottom = 8;
+      if (!s.axisFormattingCard.showYAxis.value) margin.left = 8;
     }
     if (legendPos === 'top') margin.top += legendReserve;
     if (legendPos === 'right') margin.right += 80;
@@ -491,7 +541,7 @@ export class BoxPlotVisual implements IVisual {
     const yScale = valScale;
 
     // Grid lines
-    if (s.axisSettings.gridLines.value) {
+    if (s.axisFormattingCard.showGridLines.value) {
       if (isHorizontal) {
         chartGroup.append('g')
           .attr('class', 'box-plot-grid')
@@ -516,13 +566,13 @@ export class BoxPlotVisual implements IVisual {
     // Axes
     if (isHorizontal) {
       // Horizontal: categories on left Y-axis, values on bottom X-axis
-      if (s.axisSettings.showYAxis.value) {
+      if (s.axisFormattingCard.showYAxis.value) {
         chartGroup.append('g')
           .attr('class', 'box-plot-axis box-plot-axis-x')
           .call(d3.axisLeft(catScale).tickSize(0))
           .select('.domain').remove();
       }
-      if (s.axisSettings.showXAxis.value) {
+      if (s.axisFormattingCard.showXAxis.value) {
         chartGroup.append('g')
           .attr('class', 'box-plot-axis')
           .attr('transform', `translate(0,${chartHeight})`)
@@ -535,14 +585,14 @@ export class BoxPlotVisual implements IVisual {
       }
     } else {
       // Vertical: categories on bottom X-axis, values on left Y-axis
-      if (s.axisSettings.showXAxis.value) {
+      if (s.axisFormattingCard.showXAxis.value) {
         chartGroup.append('g')
           .attr('class', 'box-plot-axis box-plot-axis-x')
           .attr('transform', `translate(0,${chartHeight})`)
           .call(d3.axisBottom(catScale).tickSize(0))
           .select('.domain').remove();
       }
-      if (s.axisSettings.showYAxis.value) {
+      if (s.axisFormattingCard.showYAxis.value) {
         chartGroup.append('g')
           .attr('class', 'box-plot-axis')
           .call(
@@ -569,6 +619,7 @@ export class BoxPlotVisual implements IVisual {
     const boxColor = s.colorSettings.boxColor.value?.value ?? '#3B82F6';
     const whiskerColor = s.colorSettings.whiskerColor.value?.value ?? '#64748B';
     const medianColor = s.boxSettings.medianColor.value?.value ?? '#6366F1';
+    const medianLineWidth = s.boxSettings.medianLineWidth.value;
     const showOutliers = s.boxSettings.showOutliers.value;
     const showMedianLine = s.boxSettings.showMedianLine.value;
     const showDataLabels = s.dataLabelFormattingCard.showDataLabels.value;
@@ -586,6 +637,7 @@ export class BoxPlotVisual implements IVisual {
     const meanShape = s.meanMarkerSettings.shape.value?.value ?? 'diamond';
     const meanColor = s.meanMarkerSettings.color.value?.value ?? '#F59E0B';
     const meanSize = s.meanMarkerSettings.size.value;
+    const meanStrokeWidth = s.meanMarkerSettings.strokeWidth.value;
 
     // Jitter settings
     const showJitter = s.jitterSettings.show.value;
@@ -736,6 +788,7 @@ export class BoxPlotVisual implements IVisual {
 
       const boxRect = chartGroup.append('rect')
         .attr('class', 'box-plot-box')
+        .attr('data-selection-key', box.selectionId.getKey())
         .attr('x', boxX)
         .attr('y', boxY)
         .attr('width', boxW)
@@ -752,7 +805,9 @@ export class BoxPlotVisual implements IVisual {
         .style('cursor', 'pointer')
         .on('click', (event: MouseEvent) => {
           event.stopPropagation();
-          void this.selectionManager.select(box.selectionId, event.ctrlKey || event.metaKey);
+          void this.selectionManager.select(box.selectionId, event.ctrlKey || event.metaKey).then(() => {
+            this.applySelectionHighlight();
+          });
         })
         .on('contextmenu', (event: MouseEvent) => {
           event.preventDefault();
@@ -821,14 +876,14 @@ export class BoxPlotVisual implements IVisual {
               .attr('x1', vMedian).attr('x2', vMedian)
               .attr('y1', bandCenter - halfBox).attr('y2', bandCenter + halfBox)
               .attr('stroke', medianColor)
-              .attr('stroke-width', MEDIAN_STROKE_WIDTH)
+              .attr('stroke-width', medianLineWidth)
               .attr('stroke-linecap', 'round')
           : chartGroup.append('line')
               .attr('class', 'box-plot-median')
               .attr('x1', bandCenter - halfBox).attr('x2', bandCenter + halfBox)
               .attr('y1', vMedian).attr('y2', vMedian)
               .attr('stroke', medianColor)
-              .attr('stroke-width', MEDIAN_STROKE_WIDTH)
+              .attr('stroke-width', medianLineWidth)
               .attr('stroke-linecap', 'round');
 
         if (animEnabled) {
@@ -876,12 +931,12 @@ export class BoxPlotVisual implements IVisual {
           crossGroup.append('line')
             .attr('x1', meanCx - half).attr('x2', meanCx + half)
             .attr('y1', meanCy).attr('y2', meanCy)
-            .attr('stroke', meanColor).attr('stroke-width', 2);
+            .attr('stroke', meanColor).attr('stroke-width', meanStrokeWidth);
 
           crossGroup.append('line')
             .attr('x1', meanCx).attr('x2', meanCx)
             .attr('y1', meanCy - half).attr('y2', meanCy + half)
-            .attr('stroke', meanColor).attr('stroke-width', 2);
+            .attr('stroke', meanColor).attr('stroke-width', meanStrokeWidth);
 
           if (animEnabled) {
             const groupNode = crossGroup.node();
@@ -931,7 +986,9 @@ export class BoxPlotVisual implements IVisual {
             .style('cursor', 'pointer')
             .on('click', (event: MouseEvent) => {
               event.stopPropagation();
-              void this.selectionManager.select(box.selectionId, event.ctrlKey || event.metaKey);
+              void this.selectionManager.select(box.selectionId, event.ctrlKey || event.metaKey).then(() => {
+                this.applySelectionHighlight();
+              });
             })
             .on('contextmenu', (event: MouseEvent) => {
               event.preventDefault();
@@ -1131,7 +1188,7 @@ export class BoxPlotVisual implements IVisual {
     const legendFontSize = legendFmtCard.legendFontSize.value;
 
     const boxColor = this.settings.colorSettings.boxColor.value?.value ?? '#3B82F6';
-    const perCategory = this.settings.boxPlotColorSettings.perCategoryColors.value;
+    const perCategory = this.settings.colorSettings.perCategoryColors.value;
 
     const items: LegendItem[] = data.boxes.map((box, idx) => ({
       label: box.category,
@@ -1146,6 +1203,7 @@ export class BoxPlotVisual implements IVisual {
       fontSize: legendFontSize,
       fontColor: legendFontColor,
       fontFamily: rawLegendFontFamily,
+      aliases: legendFmtCard.legendAliases.value,
     });
   }
 
@@ -1297,7 +1355,7 @@ export class BoxPlotVisual implements IVisual {
     data: BoxPlotData,
   ): void {
     const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
-    if (!this.settings.boxPlotColorSettings.perCategoryColors.value) return;
+    if (!this.settings.colorSettings.perCategoryColors.value) return;
 
     const boxNodes = chartGroup.selectAll<SVGRectElement, unknown>('.box-plot-box').nodes();
     for (let i = 0; i < boxNodes.length; i++) {
@@ -1379,7 +1437,41 @@ export class BoxPlotVisual implements IVisual {
 
   private handleBackgroundClick = (): void => {
     void this.selectionManager.clear();
+    this.applySelectionHighlight();
   };
+
+  // -- Selection & Cross-Highlight ------------------------------------------
+
+  private applySelectionHighlight(): void {
+    const hasSelection = this.selectionManager.hasSelection();
+    const selectedIds = this.selectionManager.getSelectionIds() as ISelectionId[];
+    const selectedKeys = new Set(selectedIds.map((id) => id.getKey()));
+
+    const data = this.currentData;
+    const hasHighlights = data?.hasHighlights ?? false;
+    const highlightedKeys = new Set<string>();
+    if (hasHighlights && data) {
+      for (const box of data.boxes) {
+        if (box.highlighted) {
+          highlightedKeys.add(box.selectionId.getKey());
+        }
+      }
+    }
+
+    const boxes = this.container.querySelectorAll<SVGRectElement>('.box-plot-box');
+    const shouldDim = hasSelection || hasHighlights;
+
+    for (const el of boxes) {
+      if (shouldDim) {
+        const elKey = el.getAttribute('data-selection-key');
+        const isSelected = hasSelection && elKey !== null && selectedKeys.has(elKey);
+        const isHighlighted = hasHighlights && elKey !== null && highlightedKeys.has(elKey);
+        el.style.opacity = (isSelected || isHighlighted) ? '' : '0.3';
+      } else {
+        el.style.opacity = '';
+      }
+    }
+  }
 
   // -- Cleanup ------------------------------------------------------------
 

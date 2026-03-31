@@ -4,7 +4,7 @@
     "displayName": "Treemap Pro",
     "guid": "treemapPro_2C3D4E5F6A7B",
     "visualClassName": "TreemapProVisual",
-    "version": "1.0.0.0",
+    "version": "1.0.1.0",
     "description": "Hierarchical treemap with drill-down zoom and entrance animations.",
     "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
     "gitHubUrl": "https://github.com/noahgarrett/PowerBI"

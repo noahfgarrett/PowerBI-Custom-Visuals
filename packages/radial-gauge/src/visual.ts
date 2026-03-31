@@ -13,7 +13,8 @@ import {
   countUp,
   sweepArc,
   fadeSlideIn,
-  getGlassStyle,
+  applyCardStyle,
+  type CardStyleMode,
   withOpacity,
   renderChartTitle,
   applyDataLabelFormatting,
@@ -22,6 +23,13 @@ import {
   resolveDropdown,
   applyChartAria,
   ensureFocusRingStyles,
+  renderLegend,
+  type LegendItem,
+  getDateFilterIndices,
+  isDateColumn,
+  type DateFilterConfig,
+  resolveColorTheme,
+  getHostChartColor,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -29,6 +37,7 @@ import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import IVisual = powerbi.extensibility.visual.IVisual;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import DataView = powerbi.DataView;
+import ISelectionId = powerbi.visuals.ISelectionId;
 import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 
 import '../style/visual.less';
@@ -53,24 +62,38 @@ interface RadialGaugeData {
   min: number;
   max: number;
   trend: number[];
+  selectionId: ISelectionId | null;
+  /** Whether the value measure is cross-highlighted from another visual. */
+  highlighted: boolean;
+  /** Whether cross-highlight data is present from another visual/slicer. */
+  hasHighlights: boolean;
 }
 
 // ── Visual Class ─────────────────────────────────────────────────────
 
 export class RadialGaugeVisual implements IVisual {
   private host: IVisualHost;
+  private selectionManager: powerbi.extensibility.ISelectionManager;
   private container: HTMLElement;
   private settings: RadialGaugeSettings;
   private formattingSettingsService: FormattingSettingsService;
   private previousValue: number | null = null;
   private cancelAnimations: Array<() => void> = [];
+  private currentData: RadialGaugeData | null = null;
+  private handleBackgroundClick: () => void;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
+    this.selectionManager = options.host.createSelectionManager();
     this.container = options.element;
     this.settings = new RadialGaugeSettings();
     this.formattingSettingsService = new FormattingSettingsService();
     this.container.classList.add('radial-gauge-container');
+
+    this.handleBackgroundClick = (): void => {
+      void this.selectionManager.clear();
+    };
+    this.container.addEventListener('click', this.handleBackgroundClick);
   }
 
   public update(options: VisualUpdateOptions): void {
@@ -87,7 +110,22 @@ export class RadialGaugeVisual implements IVisual {
       );
     }
 
+    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+    if (legacyCardObj) {
+      const legacyGlass = legacyCardObj['enableGlass'];
+      if (legacyGlass === false) {
+        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      }
+    }
+
+    // Date filter: hide start/end when disabled
+    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
+
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
+    this.settings.dataLabelFormattingCard.dataLabelPosition.visible = false;
 
     // Conditional visibility: hide needle sub-settings when showNeedle is off
     this.settings.needleSettings.color.visible = this.settings.needleSettings.show.value;
@@ -96,23 +134,23 @@ export class RadialGaugeVisual implements IVisual {
     this.settings.needleSettings.hubRadius.visible = this.settings.needleSettings.show.value;
 
     // Conditional visibility: hide segment count when LED segments is off
-    this.settings.gaugeArcSettings.segmentCount.visible = this.settings.gaugeArcSettings.segmented.value;
+    this.settings.arcSettings.segmentCount.visible = this.settings.arcSettings.segmented.value;
+
+    // Card Style — hide sub-settings when mode is 'none'
+    const cardMode = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    this.settings.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
+    this.settings.cardSettings.backgroundColor.visible = cardMode !== 'none';
 
     // Conditional visibility: hide delta/sparkline are independent toggles (no sub-settings to hide)
     // But we can hide target color when showTarget is off
     this.settings.targetSettings.color.visible = this.settings.targetSettings.show.value;
+    this.settings.targetSettings.lineWidth.visible = this.settings.targetSettings.show.value;
 
     // Extract data
     const data = this.extractData(dataView);
+    this.currentData = data;
 
-    this.notifyRenderStarted();
-    try {
-      this.render(data, options.viewport);
-      this.notifyRenderFinished();
-    } catch (error) {
-      this.notifyRenderFailed(error);
-      throw error;
-    }
+    this.render(data, options.viewport);
   }
 
   private extractData(dataView: DataView | undefined): RadialGaugeData {
@@ -122,9 +160,21 @@ export class RadialGaugeVisual implements IVisual {
       min: 0,
       max: 100,
       trend: [],
+      selectionId: null,
+      highlighted: false,
+      hasHighlights: false,
     };
 
     if (!dataView?.categorical) return result;
+
+    const categoryColumn = dataView.categorical.categories?.[0];
+    const dateConfig: DateFilterConfig = {
+      enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
+      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
+      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+    };
+    const dateIndices = categoryColumn && isDateColumn(categoryColumn.source) ? getDateFilterIndices(categoryColumn.values, dateConfig) : null;
 
     const values = dataView.categorical.values;
     if (!values) return result;
@@ -138,7 +188,23 @@ export class RadialGaugeVisual implements IVisual {
         result.value = typeof lastVal === 'number' ? lastVal : null;
         // Collect all value rows for trend sparkline
         result.trend = col.values
-          .filter((v): v is number => typeof v === 'number');
+          .filter((v, i): v is number => typeof v === 'number' && (!dateIndices || dateIndices.has(i)));
+
+        // Build a selectionId from the measure column
+        result.selectionId = this.host.createSelectionIdBuilder()
+          .withMeasure(col.source.queryName ?? '')
+          .createSelectionId();
+
+        // Cross-highlight: check if the value measure has highlight data
+        const hlRaw = (col as unknown as { highlights?: unknown }).highlights as unknown[] | undefined;
+        if (hlRaw) {
+          const hasAnyHighlight = hlRaw.some(h => h !== null && h !== undefined);
+          if (hasAnyHighlight) {
+            result.hasHighlights = true;
+            const lastHl = hlRaw[hlRaw.length - 1];
+            result.highlighted = lastHl !== null && lastHl !== undefined;
+          }
+        }
       }
 
       if (role['target'] && col.values.length > 0) {
@@ -176,24 +242,17 @@ export class RadialGaugeVisual implements IVisual {
 
     const s = this.settings;
 
-    // Apply glass card background
-    if (s.cardSettings.enableGlass.value) {
-      const glass = getGlassStyle({
-        mode: 'light',
+    // Apply card style
+    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    applyCardStyle(
+      this.container,
+      {
+        mode: cardMode,
         opacity: s.cardSettings.backgroundOpacity.value / 100,
         backgroundColor: s.cardSettings.backgroundColor.value?.value,
         borderRadius: s.cardSettings.borderRadius.value,
-      });
-      Object.assign(this.container.style, glass);
-    } else {
-      // Reset glass styles when disabled
-      this.container.style.background = '';
-      this.container.style.backdropFilter = '';
-      (this.container.style as unknown as Record<string, unknown>)['WebkitBackdropFilter'] = '';
-      this.container.style.border = '';
-      this.container.style.boxShadow = '';
-      this.container.style.borderRadius = '';
-    }
+      },
+    );
 
     // Empty state: no value provided
     if (data.value === null) {
@@ -224,7 +283,7 @@ export class RadialGaugeVisual implements IVisual {
     const arcPreset = resolveDropdown(s.arcSettings.startAngle);
     const arcRangeDefault = 270;
     const presetRange = arcPreset === 'full' ? 360 : 180;
-    const rawArcRange = s.gaugeArcSettings.arcRange.value;
+    const rawArcRange = s.arcSettings.arcRange.value;
     const effectiveRange = rawArcRange !== arcRangeDefault ? rawArcRange : presetRange;
     const customArcRange = Math.max(30, Math.min(360, effectiveRange));
     const halfSweep = customArcRange / 2;
@@ -258,8 +317,8 @@ export class RadialGaugeVisual implements IVisual {
         startAngle: startAngleRad,
         endAngle: endAngleRad,
       }))
-      .attr('fill', s.arcSettings.trackColor.value?.value ?? '#94A3B8')
-      .attr('opacity', this.settings.arcSettings.trackOpacity.value / 100);
+      .attr('fill', s.arcColorSettings.trackColor.value?.value ?? '#94A3B8')
+      .attr('opacity', this.settings.arcColorSettings.trackOpacity.value / 100);
 
     // ── Color Zones ─────────────────────────────────────────────
     const { min, max } = data;
@@ -270,9 +329,16 @@ export class RadialGaugeVisual implements IVisual {
     const zone1Pct = Math.max(0, Math.min(100, s.zoneSettings.zone1Threshold.value)) / 100;
     const zone2Pct = Math.max(0, Math.min(100, s.zoneSettings.zone2Threshold.value)) / 100;
 
-    const zone1Color = s.zoneSettings.zone1Color.value?.value ?? '#F87171';
-    const zone2Color = s.zoneSettings.zone2Color.value?.value ?? '#FBBF24';
-    const zone3Color = s.zoneSettings.zone3Color.value?.value ?? '#34D399';
+    const themeName = resolveColorTheme(s.colorThemeFormattingCard);
+    const zone1Color = themeName !== 'default'
+      ? getHostChartColor(this.host.colorPalette, 0, themeName)
+      : (s.zoneSettings.zone1Color.value?.value ?? '#F87171');
+    const zone2Color = themeName !== 'default'
+      ? getHostChartColor(this.host.colorPalette, 1, themeName)
+      : (s.zoneSettings.zone2Color.value?.value ?? '#FBBF24');
+    const zone3Color = themeName !== 'default'
+      ? getHostChartColor(this.host.colorPalette, 2, themeName)
+      : (s.zoneSettings.zone3Color.value?.value ?? '#34D399');
 
     // Determine which color the current value falls into
     const zoneColor = normalizedValue <= zone1Pct
@@ -299,8 +365,8 @@ export class RadialGaugeVisual implements IVisual {
     const valueEndAngle = startAngleRad + totalSweep * normalizedValue;
 
     // Render value arc — optionally as LED-style segments
-    const isSegmented = s.gaugeArcSettings.segmented.value;
-    const segmentCount = Math.max(2, Math.min(100, s.gaugeArcSettings.segmentCount.value));
+    const isSegmented = s.arcSettings.segmented.value;
+    const segmentCount = Math.max(2, Math.min(100, s.arcSettings.segmentCount.value));
 
     if (isSegmented) {
       // LED-style segmented arc: draw individual segment arcs
@@ -322,8 +388,8 @@ export class RadialGaugeVisual implements IVisual {
         g.append('path')
           .attr('class', 'radial-gauge-segment')
           .attr('d', segArcGen({ startAngle: segStart, endAngle: segEnd }))
-          .attr('fill', isLit ? valueColor : (s.arcSettings.trackColor.value?.value ?? '#94A3B8'))
-          .attr('opacity', isLit ? 1 : (s.arcSettings.trackOpacity.value / 100));
+          .attr('fill', isLit ? valueColor : (s.arcColorSettings.trackColor.value?.value ?? '#94A3B8'))
+          .attr('opacity', isLit ? 1 : (s.arcColorSettings.trackOpacity.value / 100));
       }
     } else {
       // Continuous value arc
@@ -331,15 +397,35 @@ export class RadialGaugeVisual implements IVisual {
         .attr('class', 'radial-gauge-zone')
         .attr('fill', valueColor)
         .attr('stroke', 'none');
+      // Hover: brightness boost + inner glow
       valueArcPath
+        .style('transition', 'filter 0.2s ease')
+        .style('cursor', 'pointer')
         .on('mouseenter', (event: MouseEvent) => {
+          valueArcPath.style('filter', `brightness(1.18) drop-shadow(0 0 4px ${valueColor})`);
           this.showGaugeTooltip(data, event);
         })
         .on('mousemove', (event: MouseEvent) => {
           this.moveTooltip(event);
         })
         .on('mouseleave', () => {
+          valueArcPath.style('filter', 'none');
           this.hideTooltip();
+        })
+        .on('click', (event: MouseEvent) => {
+          event.stopPropagation();
+          if (data.selectionId) {
+            void this.selectionManager.select(data.selectionId, event.ctrlKey || event.metaKey);
+          }
+        })
+        .on('contextmenu', (event: MouseEvent) => {
+          event.preventDefault();
+          if (data.selectionId) {
+            void this.selectionManager.showContextMenu(data.selectionId, {
+              x: event.clientX,
+              y: event.clientY,
+            });
+          }
         });
 
       if (s.animationSettings.enabled.value) {
@@ -381,8 +467,8 @@ export class RadialGaugeVisual implements IVisual {
         .attr('y1', tickInner * Math.sin(angle - Math.PI / 2))
         .attr('x2', tickOuter * Math.cos(angle - Math.PI / 2))
         .attr('y2', tickOuter * Math.sin(angle - Math.PI / 2))
-        .attr('stroke', withOpacity(color, this.settings.arcSettings.zoneBorderOpacity.value / 100))
-        .attr('stroke-width', this.settings.arcSettings.zoneBorderWidth.value);
+        .attr('stroke', withOpacity(color, this.settings.arcColorSettings.zoneBorderOpacity.value / 100))
+        .attr('stroke-width', this.settings.arcColorSettings.zoneBorderWidth.value);
     };
 
     drawZoneBoundary(zone1Pct, zone1Color);
@@ -409,7 +495,7 @@ export class RadialGaugeVisual implements IVisual {
         .attr('x2', (midRadius + tickLength) * cosA)
         .attr('y2', (midRadius + tickLength) * sinA)
         .attr('stroke', targetColor)
-        .attr('stroke-width', 3);
+        .attr('stroke-width', s.targetSettings.lineWidth.value);
     }
 
     // ── Needle ───────────────────────────────────────────────────
@@ -569,7 +655,7 @@ export class RadialGaugeVisual implements IVisual {
         .attr('text-anchor', 'middle')
         .attr('dominant-baseline', 'central')
         .attr('font-size', `${Math.max(10, fontSize * 0.45)}px`)
-        .attr('fill', delta >= 0 ? (s.valueSettings.deltaPositiveColor.value?.value ?? '#22C55E') : (s.valueSettings.deltaNegativeColor.value?.value ?? '#EF4444'));
+        .attr('fill', delta >= 0 ? (s.gaugeComparisonSettings.deltaPositiveColor.value?.value ?? '#22C55E') : (s.gaugeComparisonSettings.deltaNegativeColor.value?.value ?? '#EF4444'));
       deltaText.text(`${sign}${formatWithSettings(delta, this.settings.numberFormattingCard)}`);
     }
 
@@ -642,6 +728,43 @@ export class RadialGaugeVisual implements IVisual {
     // Apply shared formatting settings
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.radial-gauge-value-text');
 
+    // Legend — zone colors
+    const legendCard = this.settings.legendFormattingCard;
+    if (legendCard.showLegend.value) {
+      const legendPos = resolveDropdown(legendCard.legendPosition) ?? 'bottom';
+      const rawFontColor = legendCard.legendFontColor.value?.value;
+      const legendItems: LegendItem[] = [
+        { label: 'Zone 1', color: zone1Color },
+        { label: 'Zone 2', color: zone2Color },
+        { label: 'Zone 3', color: zone3Color },
+      ];
+      renderLegend(this.container, {
+        items: legendItems,
+        position: legendPos as 'top' | 'bottom' | 'left' | 'right',
+        fontSize: legendCard.legendFontSize.value,
+        fontColor: rawFontColor && rawFontColor.length > 0 ? rawFontColor : '#64748B',
+        fontFamily: resolveDropdown(legendCard.legendFontFamily) || undefined,
+        fontWeight: resolveDropdown(legendCard.legendFontWeight) || 'normal',
+        aliases: legendCard.legendAliases.value,
+      });
+    }
+
+    // Apply cross-highlight dimming
+    this.applyCrossHighlight();
+  }
+
+  // ── Cross-Highlight ──────────────────────────────────────────────
+
+  private applyCrossHighlight(): void {
+    const data = this.currentData;
+    if (!data || !data.hasHighlights) return;
+
+    // Dim the value arc and segments if the gauge is not highlighted
+    const dimOpacity = data.highlighted ? '' : '0.3';
+    const arcs = this.container.querySelectorAll<SVGPathElement>('.radial-gauge-zone, .radial-gauge-segment');
+    for (const el of Array.from(arcs)) {
+      el.style.opacity = dimOpacity;
+    }
   }
 
   public getFormattingModel(): powerbi.visuals.FormattingModel {
@@ -684,31 +807,13 @@ export class RadialGaugeVisual implements IVisual {
     return typeof locale === 'string' && locale.length > 0 ? locale : undefined;
   }
 
-  private notifyRenderStarted(): void {
-    const eventService = (this.host as unknown as {
-      eventService?: { renderingStarted?: () => void };
-    }).eventService;
-    eventService?.renderingStarted?.();
-  }
-
-  private notifyRenderFinished(): void {
-    const eventService = (this.host as unknown as {
-      eventService?: { renderingFinished?: () => void };
-    }).eventService;
-    eventService?.renderingFinished?.();
-  }
-
-  private notifyRenderFailed(error: unknown): void {
-    const eventService = (this.host as unknown as {
-      eventService?: { renderingFailed?: (reason: string) => void };
-    }).eventService;
-    const reason = error instanceof Error ? error.message : 'render failure';
-    eventService?.renderingFailed?.(reason);
-  }
+  // Render lifecycle notifications removed — Power BI's eventService.renderingStarted()
+  // requires VisualUpdateOptions with updateId, and calling without args crashes the visual.
 
   public destroy(): void {
     this.hideTooltip();
     this.cancelAnimations.forEach((cancel) => cancel());
     this.cancelAnimations = [];
+    this.container.removeEventListener('click', this.handleBackgroundClick);
   }
 }

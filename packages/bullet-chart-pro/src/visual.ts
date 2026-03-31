@@ -15,7 +15,8 @@ import {
   growBar,
   fadeSlideIn,
   withOpacity,
-  getGlassStyle,
+  applyCardStyle,
+  type CardStyleMode,
   renderChartTitle,
   applyDataLabelFormatting,
   createScrollableChart,
@@ -33,6 +34,13 @@ import {
   type TrendType,
   renderAnnotations,
   buildAnnotationConfig,
+  renderLegend,
+  type LegendItem,
+  getDateFilterIndices,
+  isDateColumn,
+  type DateFilterConfig,
+  resolveColorTheme,
+  getHostChartColor,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -55,11 +63,14 @@ interface BulletItem {
   satisfactory: number;
   good: number;
   selectionId: ISelectionId;
+  highlighted: boolean;
 }
 
 interface BulletData {
   items: BulletItem[];
   isEmpty: boolean;
+  /** Whether cross-highlight data is present from another visual/slicer */
+  hasHighlights: boolean;
 }
 
 // ── Constants ───────────────────────────────────────────────────────
@@ -85,6 +96,9 @@ export class BulletChartProVisual implements IVisual {
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
 
+  /** Cached data for cross-highlight support. */
+  private currentData: BulletData | null = null;
+
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
     this.selectionManager = options.host.createSelectionManager();
@@ -108,6 +122,25 @@ export class BulletChartProVisual implements IVisual {
       );
     }
 
+    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+    if (legacyCardObj) {
+      const legacyGlass = legacyCardObj['enableGlass'];
+      if (legacyGlass === false) {
+        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      }
+    }
+
+    // Date filter: hide start/end when disabled
+    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
+
+    // Card Style — hide sub-settings when mode is 'none'
+    const cardMode = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    this.settings.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
+    this.settings.cardSettings.backgroundColor.visible = cardMode !== 'none';
+
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
 
     // Hide dead axis/grid properties — bullet-chart-pro has its own minimal axis
@@ -127,20 +160,24 @@ export class BulletChartProVisual implements IVisual {
     this.settings.axisFormattingCard.gridLineWidth.visible = false;
     this.settings.axisFormattingCard.gridLineOpacity.visible = false;
 
+    // Hide dual-axis-only properties (no combo/dual-axis support)
+    this.settings.referenceLineFormattingCard.referenceLineAxis.visible = false;
+    this.settings.referenceLineFormattingCard.referenceBandWidth.visible = false;
+    this.settings.trendLineFormattingCard.trendLineAxis.visible = false;
+
     // ── Conditional visibility ──────────────────────────────────────
     // Forecast sub-settings: hide when show off
-    const forecastOn = this.settings.bulletForecast.show.value;
-    this.settings.bulletForecast.forecastValue.visible = forecastOn;
-    this.settings.bulletForecast.bandWidth.visible = forecastOn;
+    const forecastOn = this.settings.bulletMarkers.showForecast.value;
+    this.settings.bulletMarkers.forecastValue.visible = forecastOn;
+    this.settings.bulletMarkers.bandWidth.visible = forecastOn;
+    this.settings.bulletMarkers.forecastColor.visible = forecastOn;
 
     // Comparison sub-settings: hide when show off
-    this.settings.bulletComparison.comparativeColor.visible = this.settings.bulletComparison.show.value;
+    this.settings.bulletMarkers.comparativeColor.visible = this.settings.bulletMarkers.showComparative.value;
 
     // Extract data
     const data = this.extractData(dataView);
-
-    // Apply glass effect
-    this.applyCardStyle();
+    this.currentData = data;
 
     // Render
     if (data.isEmpty) {
@@ -148,12 +185,18 @@ export class BulletChartProVisual implements IVisual {
     } else {
       this.render(data, options.viewport);
     }
+
+    // Apply cross-highlight dimming after render
+    this.applySelectionHighlight();
+
+    // Apply card styling AFTER render — render clears the container, which would destroy the glass backdrop div.
+    this.applyCardStyle();
   }
 
   // ── Data Extraction ─────────────────────────────────────────────
 
   private extractData(dataView: DataView | undefined): BulletData {
-    const empty: BulletData = { items: [], isEmpty: true };
+    const empty: BulletData = { items: [], isEmpty: true, hasHighlights: false };
 
     if (!dataView?.categorical) return empty;
 
@@ -188,9 +231,22 @@ export class BulletChartProVisual implements IVisual {
 
     if (!measureCol) return empty;
 
+    const hlRaw = (measureCol as unknown as { highlights?: unknown[] }).highlights as unknown[] | undefined;
+
     const items: BulletItem[] = [];
 
+
+    const dateConfig: DateFilterConfig = {
+      enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
+      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
+      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+    };
+    const dateIndices = isDateColumn(categoryColumn.source) ? getDateFilterIndices(categoryColumn.values, dateConfig) : null;
+
     for (let i = 0; i < categories.length; i++) {
+      if (dateIndices && !dateIndices.has(i)) continue;
+
       const value = typeof measureCol.values[i] === 'number'
         ? (measureCol.values[i] as number)
         : 0;
@@ -211,6 +267,8 @@ export class BulletChartProVisual implements IVisual {
         ? (goodCol.values[i] as number)
         : value * 1.2;
 
+      const highlighted = hlRaw ? hlRaw[i] !== null && hlRaw[i] !== undefined : false;
+
       items.push({
         label: categories[i],
         value,
@@ -221,30 +279,29 @@ export class BulletChartProVisual implements IVisual {
         selectionId: this.host.createSelectionIdBuilder()
           .withCategory(categoryColumn, i)
           .createSelectionId(),
+        highlighted,
       });
     }
 
-    return { items, isEmpty: items.length === 0 };
+    const hasHighlights = items.some((item) => item.highlighted);
+    return { items, isEmpty: items.length === 0, hasHighlights };
   }
 
   // ── Card Style ────────────────────────────────────────────────────
 
   private applyCardStyle(): void {
     const s = this.settings.cardSettings;
-    if (s.enableGlass.value) {
-      const glass = getGlassStyle({
-        mode: 'light',
+    const mode = (resolveDropdown(s.cardStyleMode) ?? 'glass') as CardStyleMode;
+    applyCardStyle(
+      this.container,
+      {
+        mode,
         opacity: s.backgroundOpacity.value / 100,
         backgroundColor: s.backgroundColor.value?.value,
         borderRadius: s.borderRadius.value,
-      });
-      Object.assign(this.container.style, glass);
-    } else {
-      this.container.style.background = '';
-      this.container.style.backdropFilter = '';
-      (this.container.style as unknown as Record<string, string>)['WebkitBackdropFilter'] = '';
-      this.container.style.border = '';
-      this.container.style.boxShadow = '';
+      },
+    );
+    if (mode === 'none') {
       this.container.style.borderRadius = `${s.borderRadius.value}px`;
     }
   }
@@ -274,13 +331,22 @@ export class BulletChartProVisual implements IVisual {
     const barHeight = Math.max(8, s.bulletSettings.barHeight.value);
     const showTarget = s.bulletSettings.showTarget.value;
     const showLabels = s.bulletSettings.showLabels.value;
-    const isVertical = (resolveDropdown(s.bulletLayout.orientation) ?? 'horizontal') === 'vertical';
+    const isVertical = (resolveDropdown(s.bulletSettings.orientation) ?? 'horizontal') === 'vertical';
 
-    // Colors
-    const poorColor = s.rangeSettings.poorColor.value?.value ?? '#FCA5A5';
-    const satColor = s.rangeSettings.satisfactoryColor.value?.value ?? '#FDE68A';
-    const goodColor = s.rangeSettings.goodColor.value?.value ?? '#BBF7D0';
-    const barColor = s.rangeSettings.barColor.value?.value ?? '#1E293B';
+    // Colors — theme overrides when non-default
+    const themeName = resolveColorTheme(s.colorThemeFormattingCard);
+    const poorColor = themeName !== 'default'
+      ? getHostChartColor(this.host.colorPalette, 0, themeName)
+      : (s.rangeSettings.poorColor.value?.value ?? '#FCA5A5');
+    const satColor = themeName !== 'default'
+      ? getHostChartColor(this.host.colorPalette, 1, themeName)
+      : (s.rangeSettings.satisfactoryColor.value?.value ?? '#FDE68A');
+    const goodColor = themeName !== 'default'
+      ? getHostChartColor(this.host.colorPalette, 2, themeName)
+      : (s.rangeSettings.goodColor.value?.value ?? '#BBF7D0');
+    const barColor = themeName !== 'default'
+      ? getHostChartColor(this.host.colorPalette, 3, themeName)
+      : (s.rangeSettings.barColor.value?.value ?? '#1E293B');
 
     // Bullet settings
     const rangeOpacity = s.bulletSettings.rangeOpacity.value / 100;
@@ -291,13 +357,20 @@ export class BulletChartProVisual implements IVisual {
     const animDuration = s.animationSettings.duration.value;
 
     // Forecast settings
-    const showForecast = s.bulletForecast.show.value;
-    const forecastValue = s.bulletForecast.forecastValue.value;
-    const forecastBandWidth = s.bulletForecast.bandWidth.value;
+    const showForecast = s.bulletMarkers.showForecast.value;
+    const forecastValue = s.bulletMarkers.forecastValue.value;
+    const forecastBandWidth = s.bulletMarkers.bandWidth.value;
+
+    // Forecast color
+    const forecastColor = s.bulletMarkers.forecastColor.value?.value ?? '#6366F1';
 
     // Comparison settings
-    const showComparative = s.bulletComparison.show.value;
-    const comparativeColor = s.bulletComparison.comparativeColor.value?.value ?? '#94A3B8';
+    const showComparative = s.bulletMarkers.showComparative.value;
+    const comparativeColor = s.bulletMarkers.comparativeColor.value?.value ?? '#94A3B8';
+
+    // Marker stroke widths
+    const targetMarkerWidth = s.bulletMarkers.targetMarkerWidth.value;
+    const comparativeMarkerWidth = s.bulletMarkers.comparativeMarkerWidth.value;
 
     // Layout calculations
     const svgWidth = viewport.width - CONTAINER_PADDING * 2;
@@ -393,6 +466,7 @@ export class BulletChartProVisual implements IVisual {
 
         const valueRect = colGroup.append('rect')
           .attr('class', 'bullet-value-bar')
+          .attr('data-selection-key', item.selectionId.getKey())
           .attr('x', valBarX).attr('y', valBarTop)
           .attr('width', valBarWidth).attr('height', valBarH)
           .attr('fill', barColor)
@@ -402,7 +476,9 @@ export class BulletChartProVisual implements IVisual {
         valueRect.style('cursor', 'pointer')
           .on('click', (event: MouseEvent) => {
             event.stopPropagation();
-            void this.selectionManager.select(item.selectionId, event.ctrlKey || event.metaKey);
+            void this.selectionManager.select(item.selectionId, event.ctrlKey || event.metaKey).then(() => {
+              this.applySelectionHighlight();
+            });
           })
           .on('contextmenu', (event: MouseEvent) => {
             event.preventDefault(); event.stopPropagation();
@@ -426,7 +502,7 @@ export class BulletChartProVisual implements IVisual {
             .attr('class', 'bullet-target')
             .attr('x1', -halfBar).attr('x2', halfBar)
             .attr('y1', targetY).attr('y2', targetY)
-            .attr('stroke', barColor).attr('stroke-width', 2);
+            .attr('stroke', barColor).attr('stroke-width', targetMarkerWidth);
           if (animEnabled) {
             const markerNode = markerGroup.node();
             if (markerNode) {
@@ -444,7 +520,7 @@ export class BulletChartProVisual implements IVisual {
             .attr('class', 'bullet-comparative')
             .attr('x1', -halfBar * 0.6).attr('x2', halfBar * 0.6)
             .attr('y1', compY).attr('y2', compY)
-            .attr('stroke', comparativeColor).attr('stroke-width', 3);
+            .attr('stroke', comparativeColor).attr('stroke-width', comparativeMarkerWidth);
         }
 
         // Forecast marker
@@ -455,13 +531,13 @@ export class BulletChartProVisual implements IVisual {
             .attr('class', 'bullet-forecast-band')
             .attr('x', -halfBar).attr('y', fcY - bandHalf)
             .attr('width', barHeight).attr('height', forecastBandWidth)
-            .attr('fill', withOpacity('#6366F1', 0.2))
+            .attr('fill', withOpacity(forecastColor, 0.2))
             .style('pointer-events', 'none');
           colGroup.append('line')
             .attr('class', 'bullet-forecast')
             .attr('x1', -halfBar).attr('x2', halfBar)
             .attr('y1', fcY).attr('y2', fcY)
-            .attr('stroke', '#6366F1').attr('stroke-width', 2)
+            .attr('stroke', forecastColor).attr('stroke-width', 2)
             .attr('stroke-dasharray', '4,3');
         }
 
@@ -626,6 +702,7 @@ export class BulletChartProVisual implements IVisual {
 
       const valueRect = rowGroup.append('rect')
         .attr('class', 'bullet-value-bar')
+        .attr('data-selection-key', item.selectionId.getKey())
         .attr('x', valueBarX)
         .attr('y', valueBarY)
         .attr('width', valueBarW)
@@ -640,7 +717,9 @@ export class BulletChartProVisual implements IVisual {
         .style('cursor', 'pointer')
         .on('click', (event: MouseEvent) => {
           event.stopPropagation();
-          void this.selectionManager.select(item.selectionId, event.ctrlKey || event.metaKey);
+          void this.selectionManager.select(item.selectionId, event.ctrlKey || event.metaKey).then(() => {
+            this.applySelectionHighlight();
+          });
         })
         .on('contextmenu', (event: MouseEvent) => {
           event.preventDefault();
@@ -674,7 +753,7 @@ export class BulletChartProVisual implements IVisual {
           .attr('y1', 0)
           .attr('y2', barHeight)
           .attr('stroke', barColor)
-          .attr('stroke-width', 2);
+          .attr('stroke-width', targetMarkerWidth);
 
         // Animate target marker with fadeSlideIn
         if (animEnabled) {
@@ -702,7 +781,7 @@ export class BulletChartProVisual implements IVisual {
           .attr('y1', barHeight * 0.15)
           .attr('y2', barHeight * 0.85)
           .attr('stroke', comparativeColor)
-          .attr('stroke-width', 3);
+          .attr('stroke-width', comparativeMarkerWidth);
       }
 
       // ── Forecast marker + band ──────────────────────────────────
@@ -716,7 +795,7 @@ export class BulletChartProVisual implements IVisual {
           .attr('y', 0)
           .attr('width', forecastBandWidth)
           .attr('height', barHeight)
-          .attr('fill', withOpacity('#6366F1', 0.2))
+          .attr('fill', withOpacity(forecastColor, 0.2))
           .style('pointer-events', 'none');
         // Forecast line
         rowGroup.append('line')
@@ -725,7 +804,7 @@ export class BulletChartProVisual implements IVisual {
           .attr('x2', fcX)
           .attr('y1', 0)
           .attr('y2', barHeight)
-          .attr('stroke', '#6366F1')
+          .attr('stroke', forecastColor)
           .attr('stroke-width', 2)
           .attr('stroke-dasharray', '4,3');
       }
@@ -791,6 +870,27 @@ export class BulletChartProVisual implements IVisual {
       const y = idx * rowHeight + barHeight / 2;
       return { x, y };
     });
+
+    // Legend
+    const legendCard = this.settings.legendFormattingCard;
+    if (legendCard.showLegend.value) {
+      const legendPos = resolveDropdown(legendCard.legendPosition) ?? 'bottom';
+      const rawFontColor = legendCard.legendFontColor.value?.value;
+      const legendItems: LegendItem[] = [
+        { label: 'Poor', color: poorColor },
+        { label: 'Satisfactory', color: satColor },
+        { label: 'Good', color: goodColor },
+      ];
+      renderLegend(this.container, {
+        items: legendItems,
+        position: legendPos as 'top' | 'bottom' | 'left' | 'right',
+        fontSize: legendCard.legendFontSize.value,
+        fontColor: rawFontColor && rawFontColor.length > 0 ? rawFontColor : '#64748B',
+        fontFamily: resolveDropdown(legendCard.legendFontFamily) || undefined,
+        fontWeight: resolveDropdown(legendCard.legendFontWeight) || 'normal',
+        aliases: legendCard.legendAliases.value,
+      });
+    }
 
     // Accessibility
     this.applyAccessibility(data);
@@ -862,7 +962,41 @@ export class BulletChartProVisual implements IVisual {
 
   private handleBackgroundClick = (): void => {
     void this.selectionManager.clear();
+    this.applySelectionHighlight();
   };
+
+  // ── Selection & Cross-Highlight ─────────────────────────────────
+
+  private applySelectionHighlight(): void {
+    const hasSelection = this.selectionManager.hasSelection();
+    const selectedIds = this.selectionManager.getSelectionIds() as ISelectionId[];
+    const selectedKeys = new Set(selectedIds.map((id) => id.getKey()));
+
+    const data = this.currentData;
+    const hasHighlights = data?.hasHighlights ?? false;
+    const highlightedKeys = new Set<string>();
+    if (hasHighlights && data) {
+      for (const item of data.items) {
+        if (item.highlighted) {
+          highlightedKeys.add(item.selectionId.getKey());
+        }
+      }
+    }
+
+    const bars = this.container.querySelectorAll<SVGRectElement>('.bullet-value-bar');
+    const shouldDim = hasSelection || hasHighlights;
+
+    for (const el of bars) {
+      if (shouldDim) {
+        const elKey = el.getAttribute('data-selection-key');
+        const isSelected = hasSelection && elKey !== null && selectedKeys.has(elKey);
+        const isHighlighted = hasHighlights && elKey !== null && highlightedKeys.has(elKey);
+        el.style.opacity = (isSelected || isHighlighted) ? '' : '0.3';
+      } else {
+        el.style.opacity = '';
+      }
+    }
+  }
 
   // ── Conditional Formatting ────────────────────────────────────────
 

@@ -1,7 +1,14 @@
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, NumberFormattingCard } from '../../core/src';
-class CalendarSettings extends formattingSettings.SimpleCard {
+import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, NumberFormattingCard,
+  ColorThemeFormattingCard,
+  DateFilterFormattingCard,
+} from '../../core/src';
+
+// ── Calendar Layout Settings ──────────────────────────────────────────────────
+// Merged: CalendarSettings (layout portion), CalendarGranularitySettings, weekStart from CalendarScaleSettings
+
+class CalendarLayoutSettings extends formattingSettings.SimpleCard {
   cellSize = new formattingSettings.NumUpDown({
     name: 'cellSize',
     displayName: 'Cell Size',
@@ -12,6 +19,27 @@ class CalendarSettings extends formattingSettings.SimpleCard {
     name: 'cellGap',
     displayName: 'Cell Gap',
     value: 2,
+  });
+
+  granularity = new formattingSettings.ItemDropdown({
+    name: 'granularity',
+    displayName: 'Granularity',
+    items: [
+      { value: 'day', displayName: 'Day' },
+      { value: 'week', displayName: 'Week' },
+      { value: 'month', displayName: 'Month' },
+    ],
+    value: { value: 'day', displayName: 'Day' },
+  });
+
+  weekStart = new formattingSettings.ItemDropdown({
+    name: 'weekStart',
+    displayName: 'Week Start Day',
+    items: [
+      { value: 'sunday', displayName: 'Sunday' },
+      { value: 'monday', displayName: 'Monday' },
+    ],
+    value: { value: 'monday', displayName: 'Monday' },
   });
 
   showMonthLabels = new formattingSettings.ToggleSwitch({
@@ -26,54 +54,75 @@ class CalendarSettings extends formattingSettings.SimpleCard {
     value: true,
   });
 
+  enableScrolling = new formattingSettings.ToggleSwitch({
+    name: 'enableScrolling',
+    displayName: 'Enable Scrolling',
+    value: false,
+  });
+
+  labelFontFamily = new formattingSettings.ItemDropdown({
+    name: 'labelFontFamily',
+    displayName: 'Label Font Family',
+    items: [
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Arial', displayName: 'Arial' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Helvetica', displayName: 'Helvetica' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
+      { value: 'Verdana', displayName: 'Verdana' },
+      { value: 'Georgia', displayName: 'Georgia' },
+    ],
+    value: { value: 'Segoe UI', displayName: 'Segoe UI' },
+  });
+
+  labelFontWeight = new formattingSettings.ItemDropdown({
+    name: 'labelFontWeight',
+    displayName: 'Label Font Weight',
+    items: [
+      { value: 'normal', displayName: 'Normal' },
+      { value: 'bold', displayName: 'Bold' },
+      { value: '600', displayName: 'Semi-Bold' },
+    ],
+    value: { value: 'normal', displayName: 'Normal' },
+  });
+
+  name = 'calendarLayoutSettings';
+  displayName = 'Calendar Layout';
+  slices = [this.cellSize, this.cellGap, this.granularity, this.weekStart, this.showMonthLabels, this.showDayLabels, this.enableScrolling, this.labelFontFamily, this.labelFontWeight];
+}
+
+// ── Cell Style Settings ───────────────────────────────────────────────────────
+// Extracted from CalendarSettings: cell stroke and corner radius
+
+class CellStyleSettings extends formattingSettings.SimpleCard {
+  cellCornerRadius = new formattingSettings.NumUpDown({
+    name: 'cellCornerRadius',
+    displayName: 'Cell Corner Radius',
+    value: 2,
+  });
 
   cellStrokeColor = new formattingSettings.ColorPicker({
-
     name: 'cellStrokeColor',
-
     displayName: 'Cell Stroke Color',
-
     value: { value: '' },
-
   });
 
   cellStrokeWidth = new formattingSettings.NumUpDown({
-
     name: 'cellStrokeWidth',
-
     displayName: 'Cell Stroke Width',
-
     value: 1,
-
   });
 
-  cellCornerRadius = new formattingSettings.NumUpDown({
-
-    name: 'cellCornerRadius',
-
-    displayName: 'Cell Corner Radius',
-
-    value: 2,
-
-  });
-
-  labelColor = new formattingSettings.ColorPicker({
-
-    name: 'labelColor',
-
-    displayName: 'Label Color',
-
-    value: { value: '' },
-
-  });
-
-
-  name = 'calendarSettings';
-  displayName = 'Calendar';
-  slices = [this.cellSize, this.cellGap, this.showMonthLabels, this.showDayLabels, this.cellStrokeColor, this.cellStrokeWidth, this.cellCornerRadius, this.labelColor];
+  name = 'cellStyleSettings';
+  displayName = 'Cell Style';
+  slices = [this.cellCornerRadius, this.cellStrokeColor, this.cellStrokeWidth];
 }
 
-class ColorSettings extends formattingSettings.SimpleCard {
+// ── Color Scale Settings ──────────────────────────────────────────────────────
+// Merged: ColorSettings (colors) + CalendarScaleSettings (colorMode, bins)
+// weekStart moved to CalendarLayoutSettings
+
+class ColorScaleSettings extends formattingSettings.SimpleCard {
   lowColor = new formattingSettings.ColorPicker({
     name: 'lowColor',
     displayName: 'Low Color',
@@ -104,12 +153,46 @@ class ColorSettings extends formattingSettings.SimpleCard {
     value: 50,
   });
 
+  colorMode = new formattingSettings.ItemDropdown({
+    name: 'colorMode',
+    displayName: 'Color Mode',
+    items: [
+      { value: 'continuous', displayName: 'Continuous' },
+      { value: 'discrete', displayName: 'Discrete' },
+    ],
+    value: { value: 'continuous', displayName: 'Continuous' },
+  });
+
+  bins = new formattingSettings.NumUpDown({
+    name: 'bins',
+    displayName: 'Discrete Bins',
+    value: 5,
+  });
+
   emptyColor = new formattingSettings.ColorPicker({
     name: 'emptyColor',
     displayName: 'Empty Cell Color',
     value: { value: '#F1F5F9' },
   });
 
+  name = 'colorScaleSettings';
+  displayName = 'Color Scale';
+  slices = [
+    this.lowColor,
+    this.highColor,
+    this.showMidColor,
+    this.midColor,
+    this.midPoint,
+    this.colorMode,
+    this.bins,
+    this.emptyColor,
+  ];
+}
+
+// ── Legend Settings ────────────────────────────────────────────────────────────
+// Extracted from ColorSettings: legend toggles
+
+class LegendSettings extends formattingSettings.SimpleCard {
   showLegend = new formattingSettings.ToggleSwitch({
     name: 'showLegend',
     displayName: 'Show Color Legend',
@@ -127,25 +210,24 @@ class ColorSettings extends formattingSettings.SimpleCard {
     value: { value: 'bottom', displayName: 'Bottom' },
   });
 
-  name = 'colorSettings';
-  displayName = 'Colors';
-  slices = [
-    this.lowColor,
-    this.highColor,
-    this.showMidColor,
-    this.midColor,
-    this.midPoint,
-    this.emptyColor,
-    this.showLegend,
-    this.legendPosition,
-  ];
+  name = 'legendSettings';
+  displayName = 'Legend';
+  slices = [this.showLegend, this.legendPosition];
 }
 
+// ── Card Style Settings ──────────────────────────────────────────────────────
+
 class CardStyleSettings extends formattingSettings.SimpleCard {
-  enableGlass = new formattingSettings.ToggleSwitch({
-    name: 'enableGlass',
-    displayName: 'Glass Effect',
-    value: true,
+  cardStyleMode = new formattingSettings.ItemDropdown({
+    name: 'cardStyleMode',
+    displayName: 'Card Style',
+    items: [
+      { value: 'none', displayName: 'None' },
+      { value: 'glass', displayName: 'Glass' },
+      { value: 'elevated', displayName: 'Elevated' },
+      { value: 'neumorphic', displayName: 'Neumorphic' },
+    ],
+    value: { value: 'glass', displayName: 'Glass' },
   });
 
   backgroundColor = new formattingSettings.ColorPicker({
@@ -168,8 +250,10 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.cardStyleMode, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
+
+// ── Animation Settings ──────────────────────────────────────────────────────
 
 class AnimationSettings extends formattingSettings.SimpleCard {
   enabled = new formattingSettings.ToggleSwitch({
@@ -189,26 +273,7 @@ class AnimationSettings extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
-// -- Calendar Granularity Settings --------------------------------------------
-
-class CalendarGranularitySettings extends formattingSettings.SimpleCard {
-  granularity = new formattingSettings.ItemDropdown({
-    name: 'granularity',
-    displayName: 'Granularity',
-    items: [
-      { value: 'day', displayName: 'Day' },
-      { value: 'week', displayName: 'Week' },
-      { value: 'month', displayName: 'Month' },
-    ],
-    value: { value: 'day', displayName: 'Day' },
-  });
-
-  name = 'calendarGranularitySettings';
-  displayName = 'Granularity';
-  slices = [this.granularity];
-}
-
-// -- Calendar Streak Settings -------------------------------------------------
+// ── Calendar Streak Settings ────────────────────────────────────────────────
 
 class CalendarStreakSettings extends formattingSettings.SimpleCard {
   show = new formattingSettings.ToggleSwitch({
@@ -234,48 +299,32 @@ class CalendarStreakSettings extends formattingSettings.SimpleCard {
   slices = [this.show, this.threshold, this.streakOutlineColor];
 }
 
-// -- Calendar Scale Settings --------------------------------------------------
+// ── Kept for backwards-compat (labelColor hidden at runtime) ────────────────
 
-class CalendarScaleSettings extends formattingSettings.SimpleCard {
-  colorMode = new formattingSettings.ItemDropdown({
-    name: 'colorMode',
-    displayName: 'Color Mode',
-    items: [
-      { value: 'continuous', displayName: 'Continuous' },
-      { value: 'discrete', displayName: 'Discrete' },
-    ],
-    value: { value: 'continuous', displayName: 'Continuous' },
+/** @deprecated Hidden — use axisFormattingCard.axisLabelColor instead */
+class _LegacyCalendarSettings extends formattingSettings.SimpleCard {
+  labelColor = new formattingSettings.ColorPicker({
+    name: 'labelColor',
+    displayName: 'Label Color',
+    value: { value: '' },
   });
 
-  bins = new formattingSettings.NumUpDown({
-    name: 'bins',
-    displayName: 'Discrete Bins',
-    value: 5,
-  });
-
-  weekStart = new formattingSettings.ItemDropdown({
-    name: 'weekStart',
-    displayName: 'Week Start Day',
-    items: [
-      { value: 'sunday', displayName: 'Sunday' },
-      { value: 'monday', displayName: 'Monday' },
-    ],
-    value: { value: 'monday', displayName: 'Monday' },
-  });
-
-  name = 'calendarScaleSettings';
-  displayName = 'Color Scale';
-  slices = [this.colorMode, this.bins, this.weekStart];
+  name = 'calendarSettings';
+  displayName = 'Calendar (Legacy)';
+  slices: formattingSettings.Slice[] = [];
 }
 
 export class HeatmapCalendarSettings extends formattingSettings.Model {
-  calendarSettings = new CalendarSettings();
-  colorSettings = new ColorSettings();
+  calendarLayoutSettings = new CalendarLayoutSettings();
+  cellStyleSettings = new CellStyleSettings();
+  colorScaleSettings = new ColorScaleSettings();
+  legendSettings = new LegendSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
-  calendarGranularitySettings = new CalendarGranularitySettings();
   calendarStreakSettings = new CalendarStreakSettings();
-  calendarScaleSettings = new CalendarScaleSettings();
+
+  // Legacy card — kept for backward compat of labelColor property in capabilities.json
+  _legacyCalendarSettings = new _LegacyCalendarSettings();
 
   dataLabelFormattingCard = new DataLabelFormattingCard();
   titleFormattingCard = new TitleFormattingCard();
@@ -283,20 +332,24 @@ export class HeatmapCalendarSettings extends formattingSettings.Model {
   conditionalFormattingCard = new ConditionalFormattingCard();
   accessibilityFormattingCard = new AccessibilityFormattingCard();
   numberFormattingCard = new NumberFormattingCard();
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
+  dateFilterFormattingCard = new DateFilterFormattingCard();
 
   cards = [
-    this.calendarSettings,
-    this.colorSettings,
-    this.cardSettings,
-    this.animationSettings,
-    this.calendarGranularitySettings,
-    this.calendarStreakSettings,
-    this.calendarScaleSettings,
+    this.calendarLayoutSettings,
+    this.cellStyleSettings,
+    this.colorScaleSettings,
+    this.legendSettings,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
+    this.cardSettings,
+    this.animationSettings,
+    this.calendarStreakSettings,
     this.axisFormattingCard,
     this.conditionalFormattingCard,
     this.accessibilityFormattingCard,
     this.numberFormattingCard,
+    this.colorThemeFormattingCard,
+    this.dateFilterFormattingCard,
   ];
 }

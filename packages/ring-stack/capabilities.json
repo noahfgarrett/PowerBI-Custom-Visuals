@@ -188,6 +188,103 @@
           "type": {
             "bool": true
           }
+        },
+        "gradientEnabled": {
+          "displayName": "Enable Gradient Fill",
+          "type": {
+            "bool": true
+          }
+        },
+        "showArcLabels": {
+          "displayName": "Show Arc Labels (textPath)",
+          "type": {
+            "bool": true
+          }
+        },
+        "showOverflow": {
+          "displayName": "Show Overflow Indicator (>100%)",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "sideLabelSettings": {
+      "displayName": "Side Labels",
+      "properties": {
+        "fontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "fontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "fontFamily": {
+          "displayName": "Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              }
+            ]
+          }
+        },
+        "fontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold"
+              }
+            ]
+          }
         }
       }
     },
@@ -320,6 +417,60 @@
           "displayName": "Label Font Size",
           "type": {
             "numeric": true
+          }
+        },
+        "fontFamily": {
+          "displayName": "Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Helvetica",
+                "displayName": "Helvetica"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              }
+            ]
+          }
+        },
+        "fontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold"
+              }
+            ]
           }
         }
       }
@@ -480,6 +631,12 @@
                 "displayName": "Bold"
               }
             ]
+          }
+        },
+        "legendAliases": {
+          "displayName": "Rename Labels",
+          "type": {
+            "text": true
           }
         }
       }
@@ -847,11 +1004,34 @@
             "numeric": true
           }
         },
+        "cardStyleMode": {
+          "displayName": "Card Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "glass",
+                "displayName": "Glass"
+              },
+              {
+                "value": "elevated",
+                "displayName": "Elevated"
+              },
+              {
+                "value": "neumorphic",
+                "displayName": "Neumorphic"
+              }
+            ]
+          }
+        },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "Glass Effect"
+          "displayName": "(Deprecated) Enable Glass"
         }
       }
     },
@@ -883,34 +1063,6 @@
                 "displayName": "Name (Z-A)"
               }
             ]
-          }
-        }
-      }
-    },
-    "ringDisplaySettings": {
-      "displayName": "Ring Display",
-      "properties": {
-        "showArcLabels": {
-          "displayName": "Show Arc Labels (textPath)",
-          "type": {
-            "bool": true
-          }
-        },
-        "showOverflow": {
-          "displayName": "Show Overflow Indicator (>100%)",
-          "type": {
-            "bool": true
-          }
-        }
-      }
-    },
-    "ringGradientSettings": {
-      "displayName": "Ring Gradient",
-      "properties": {
-        "enabled": {
-          "displayName": "Enable Gradient Fill",
-          "type": {
-            "bool": true
           }
         }
       }
@@ -1083,9 +1235,40 @@
           }
         }
       }
+    },
+    "dateFilterFormatting": {
+      "displayName": "Date Filter",
+      "properties": {
+        "enableDateFilter": {
+          "displayName": "Enable Date Filter",
+          "type": {
+            "bool": true
+          }
+        },
+        "startDate": {
+          "displayName": "Start Date",
+          "type": {
+            "text": true
+          }
+        },
+        "endAtCurrentDate": {
+          "displayName": "End at Current Date",
+          "type": {
+            "bool": true
+          }
+        },
+        "endDate": {
+          "displayName": "End Date",
+          "type": {
+            "text": true
+          }
+        }
+      }
     }
   },
   "supportsKeyboardFocus": true,
+  "supportsHighlight": true,
+  "supportsMultiVisualSelection": true,
   "privileges": [],
   "suppressDefaultTitle": true
 }

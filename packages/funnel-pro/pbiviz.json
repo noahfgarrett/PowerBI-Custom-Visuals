@@ -4,7 +4,7 @@
     "displayName": "Funnel Pro",
     "guid": "funnelPro_9A1B3C5D7E2F",
     "visualClassName": "FunnelProVisual",
-    "version": "1.0.0.0",
+    "version": "1.0.1.0",
     "description": "Animated funnel chart with trapezoid segments, conversion rate labels, and glassmorphic styling.",
     "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
     "gitHubUrl": "https://github.com/noahgarrett/PowerBI"

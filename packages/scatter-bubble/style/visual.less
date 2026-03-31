@@ -14,8 +14,7 @@
 
 /* SVG chart area */
 .scatter-bubble-svg {
-  flex: 1;
-  width: 100%;
+  display: block;
   min-height: 0;
 }
 
@@ -41,33 +40,14 @@
 
 /* Bubble points */
 .scatter-bubble-point {
-  transition: opacity 0.15s ease, stroke-width 0.15s ease;
+  transition: opacity 0.15s ease, stroke-width 0.15s ease, filter 0.2s ease, transform 0.2s ease;
   cursor: pointer;
+  transform-origin: center center;
+  transform-box: fill-box;
 
   &:hover {
-    filter: brightness(1.1);
+    filter: brightness(1.15) drop-shadow(0 0 8px rgba(255, 255, 255, 0.35));
   }
-}
-
-/* Legend */
-.scatter-bubble-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 4px 0 6px 0;
-}
-
-.scatter-bubble-legend-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.scatter-bubble-legend-swatch {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
 }
 
 /* Tooltip */

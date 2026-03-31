@@ -6,7 +6,9 @@
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
 import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, NumberFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard,
-  SeriesFormattingCard, } from '../../core/src';
+  SeriesFormattingCard,
+  DateFilterFormattingCard,
+} from '../../core/src';
 
 // -- Box Settings ----------------------------------------------------------
 
@@ -33,6 +35,12 @@ class BoxSettingsCard extends formattingSettings.SimpleCard {
     name: 'medianColor',
     displayName: 'Median Color',
     value: { value: '#F28C38' },
+  });
+
+  medianLineWidth = new formattingSettings.NumUpDown({
+    name: 'medianLineWidth',
+    displayName: 'Median Line Width',
+    value: 2.5,
   });
 
 
@@ -79,7 +87,7 @@ class BoxSettingsCard extends formattingSettings.SimpleCard {
 
   name = 'boxSettings';
   displayName = 'Box Settings';
-  slices = [this.boxWidth, this.showOutliers, this.showMedianLine, this.medianColor, this.boxStrokeColor, this.boxStrokeWidth, this.whiskerWidth, this.outlierRadius];
+  slices = [this.boxWidth, this.showOutliers, this.showMedianLine, this.medianColor, this.medianLineWidth, this.boxStrokeColor, this.boxStrokeWidth, this.whiskerWidth, this.outlierRadius];
 }
 
 // -- Color Settings --------------------------------------------------------
@@ -97,9 +105,15 @@ class ColorSettingsCard extends formattingSettings.SimpleCard {
     value: { value: '#64748B' },
   });
 
+  perCategoryColors = new formattingSettings.ToggleSwitch({
+    name: 'perCategoryColors',
+    displayName: 'Per-Category Colors',
+    value: false,
+  });
+
   name = 'colorSettings';
   displayName = 'Colors';
-  slices = [this.boxColor, this.whiskerColor];
+  slices = [this.boxColor, this.whiskerColor, this.perCategoryColors];
 }
 
 // -- Axis Settings ---------------------------------------------------------
@@ -131,10 +145,16 @@ class AxisSettingsCard extends formattingSettings.SimpleCard {
 // -- Card Style ------------------------------------------------------------
 
 class CardStyleSettings extends formattingSettings.SimpleCard {
-  enableGlass = new formattingSettings.ToggleSwitch({
-    name: 'enableGlass',
-    displayName: 'Glass Effect',
-    value: true,
+  cardStyleMode = new formattingSettings.ItemDropdown({
+    name: 'cardStyleMode',
+    displayName: 'Card Style',
+    items: [
+      { value: 'none', displayName: 'None' },
+      { value: 'glass', displayName: 'Glass' },
+      { value: 'elevated', displayName: 'Elevated' },
+      { value: 'neumorphic', displayName: 'Neumorphic' },
+    ],
+    value: { value: 'glass', displayName: 'Glass' },
   });
 
   backgroundColor = new formattingSettings.ColorPicker({
@@ -146,7 +166,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
   backgroundOpacity = new formattingSettings.NumUpDown({
     name: 'backgroundOpacity',
     displayName: 'Background Opacity (%)',
-    value: 35,
+    value: 85,
   });
 
   borderRadius = new formattingSettings.NumUpDown({
@@ -157,7 +177,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.cardStyleMode, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 // -- Animation Settings ----------------------------------------------------
@@ -218,9 +238,15 @@ class MeanMarkerSettingsCard extends formattingSettings.SimpleCard {
     value: 8,
   });
 
+  strokeWidth = new formattingSettings.NumUpDown({
+    name: 'strokeWidth',
+    displayName: 'Stroke Width',
+    value: 2,
+  });
+
   name = 'meanMarkerSettings';
   displayName = 'Mean Marker';
-  slices = [this.show, this.shape, this.color, this.size];
+  slices = [this.show, this.shape, this.color, this.size, this.strokeWidth];
 }
 
 // -- Jitter (Data Points) Settings -----------------------------------------
@@ -297,79 +323,58 @@ class BoxPlotDisplaySettingsCard extends formattingSettings.SimpleCard {
   slices = [this.showViolin, this.showNotches, this.orientation, this.whiskerCalc];
 }
 
-// -- Box Plot Color Settings --------------------------------------------------
-
-class BoxPlotColorSettingsCard extends formattingSettings.SimpleCard {
-  perCategoryColors = new formattingSettings.ToggleSwitch({
-    name: 'perCategoryColors',
-    displayName: 'Per-Category Colors',
-    value: false,
-  });
-
-  name = 'boxPlotColorSettings';
-  displayName = 'Box Plot Colors';
-  slices = [this.perCategoryColors];
-}
-
 // -- Root Model ------------------------------------------------------------
 
 export class BoxPlotSettings extends formattingSettings.Model {
   boxSettings = new BoxSettingsCard();
+  boxPlotDisplaySettings = new BoxPlotDisplaySettingsCard();
   colorSettings = new ColorSettingsCard();
-  axisSettings = new AxisSettingsCard();
-  cardSettings = new CardStyleSettings();
-  animationSettings = new AnimationSettingsCard();
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
   meanMarkerSettings = new MeanMarkerSettingsCard();
   jitterSettings = new JitterSettingsCard();
-
-  boxPlotDisplaySettings = new BoxPlotDisplaySettingsCard();
-  boxPlotColorSettings = new BoxPlotColorSettingsCard();
-
+  animationSettings = new AnimationSettingsCard();
   axisFormattingCard = new AxisFormattingCard();
-
   legendFormattingCard = new LegendFormattingCard();
-
   dataLabelFormattingCard = new DataLabelFormattingCard();
-
   titleFormattingCard = new TitleFormattingCard();
-
+  numberFormattingCard = new NumberFormattingCard();
+  seriesFormattingCard = new SeriesFormattingCard();
+  cardSettings = new CardStyleSettings();
   scrollFormattingCard = new ScrollFormattingCard();
+  referenceLineFormattingCard = new ReferenceLineFormattingCard();
+  trendLineFormattingCard = new TrendLineFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  dateFilterFormattingCard = new DateFilterFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
+
+  /** Kept for backward compatibility — local Axes card (hidden from pane, superseded by axisFormattingCard) */
+  axisSettings = new AxisSettingsCard();
 
   constructor() {
     super();
     this.scrollFormattingCard.minCategoryWidth.value = 60;
   }
 
-  numberFormattingCard = new NumberFormattingCard();
-
-  referenceLineFormattingCard = new ReferenceLineFormattingCard();
-  trendLineFormattingCard = new TrendLineFormattingCard();
-  conditionalFormattingCard = new ConditionalFormattingCard();
-  accessibilityFormattingCard = new AccessibilityFormattingCard();
-
-  colorThemeFormattingCard = new ColorThemeFormattingCard();
-  seriesFormattingCard = new SeriesFormattingCard();
   cards = [
     this.boxSettings,
+    this.boxPlotDisplaySettings,
     this.colorSettings,
-    this.axisSettings,
-    this.cardSettings,
-    this.animationSettings,
+    this.colorThemeFormattingCard,
     this.meanMarkerSettings,
     this.jitterSettings,
-    this.boxPlotDisplaySettings,
-    this.boxPlotColorSettings,
+    this.animationSettings,
     this.axisFormattingCard,
     this.legendFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
-    this.scrollFormattingCard,
     this.numberFormattingCard,
+    this.seriesFormattingCard,
+    this.cardSettings,
+    this.scrollFormattingCard,
     this.referenceLineFormattingCard,
     this.trendLineFormattingCard,
     this.conditionalFormattingCard,
+    this.dateFilterFormattingCard,
     this.accessibilityFormattingCard,
-    this.seriesFormattingCard,
-    this.colorThemeFormattingCard,
   ];
 }

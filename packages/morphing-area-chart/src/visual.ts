@@ -50,6 +50,7 @@ import {
   renderAnnotations,
   buildAnnotationConfig,
   getDateFilterIndices,
+  isDateColumn,
   type DateFilterConfig,
   renderInlineLabels,
   type InlineLabelItem,
@@ -135,6 +136,15 @@ export class MorphingAreaChartVisual implements IVisual {
         MorphingAreaChartSettings,
         dataView,
       );
+    }
+
+    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+    if (legacyCardObj) {
+      const legacyGlass = legacyCardObj['enableGlass'];
+      if (legacyGlass === false) {
+        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      }
     }
 
     // Hide shared properties that are shadowed by local settings
@@ -249,7 +259,7 @@ export class MorphingAreaChartVisual implements IVisual {
       endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
       endDate: this.settings.dateFilterFormattingCard.endDate.value,
     };
-    const dateIndices = getDateFilterIndices(categoryColumn.values, dateConfig);
+    const dateIndices = isDateColumn(categoryColumn.source) ? getDateFilterIndices(categoryColumn.values, dateConfig) : null;
 
     // Extract category labels
     const categories = categoryColumn.values.map((v) =>

@@ -4,7 +4,7 @@
     "displayName": "Radial Gauge Pro",
     "guid": "radialGaugePro_7A3C5D2E1F4B",
     "visualClassName": "RadialGaugeVisual",
-    "version": "1.0.0.0",
+    "version": "1.0.1.0",
     "description": "Radial gauge with color zones, target tick, count-up animation, and glassmorphic card styling.",
     "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
     "gitHubUrl": "https://github.com/noahgarrett/PowerBI"

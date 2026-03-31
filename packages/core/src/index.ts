@@ -142,6 +142,7 @@ export {
   type HoverDimConfig,
   type SparklineConfig,
   getDateFilterIndices,
+  isDateColumn,
   type DateFilterConfig,
   renderInlineLabels,
   type InlineLabelItem,

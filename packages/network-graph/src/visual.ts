@@ -33,6 +33,7 @@ import {
   renderLegend,
   type LegendItem,
   getDateFilterIndices,
+  isDateColumn,
   type DateFilterConfig,
   formatWithSettings,
 } from '../../core/src';
@@ -117,6 +118,15 @@ export class NetworkGraphVisual implements IVisual {
         NetworkGraphSettings,
         dataView
       );
+    }
+
+    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+    if (legacyCardObj) {
+      const legacyGlass = legacyCardObj['enableGlass'];
+      if (legacyGlass === false) {
+        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      }
     }
 
     // Date filter: hide start/end when disabled
@@ -220,7 +230,7 @@ export class NetworkGraphVisual implements IVisual {
       endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
       endDate: this.settings.dateFilterFormattingCard.endDate.value,
     };
-    const dateIndices = getDateFilterIndices(sourceColumn.values, dateConfig);
+    const dateIndices = isDateColumn(sourceColumn.source) ? getDateFilterIndices(sourceColumn.values, dateConfig) : null;
 
     for (let i = 0; i < rowCount; i++) {
       if (dateIndices && !dateIndices.has(i)) continue;

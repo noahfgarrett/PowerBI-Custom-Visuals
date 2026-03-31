@@ -14,8 +14,7 @@
 
 /* SVG chart area */
 .box-plot-svg {
-  flex: 1;
-  width: 100%;
+  display: block;
   min-height: 0;
 }
 
@@ -45,11 +44,12 @@
 
 /* Box (Q1-Q3 rect) */
 .box-plot-box {
-  transition: opacity 0.15s ease, filter 0.15s ease;
+  transition: filter 0.2s ease, opacity 0.2s ease;
   cursor: pointer;
 
   &:hover {
-    filter: brightness(1.12);
+    filter: brightness(1.15) drop-shadow(0 0 4px rgba(0, 0, 0, 0.15));
+    transition: filter 0.2s ease;
   }
 }
 
@@ -84,27 +84,6 @@
   font-variant-numeric: tabular-nums;
   pointer-events: none;
   text-anchor: middle;
-}
-
-/* Legend */
-.box-plot-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  padding: 6px 0;
-}
-
-.box-plot-legend-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.box-plot-legend-swatch {
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-  flex-shrink: 0;
 }
 
 /* Empty state */

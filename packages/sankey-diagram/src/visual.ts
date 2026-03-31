@@ -25,7 +25,9 @@ import {
   DURATION,
   getTheme,
   getHostChartColor,
-  getGlassStyle,
+  generateColorVariations,
+  applyCardStyle,
+  type CardStyleMode,
   renderChartTitle,
   applyDataLabelFormatting,
   ensureScrollStyles,
@@ -40,6 +42,9 @@ import {
   renderLegend,
   type LegendItem,
   type ColorThemeName,
+  getDateFilterIndices,
+  isDateColumn,
+  type DateFilterConfig,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -48,6 +53,7 @@ import IVisual = powerbi.extensibility.visual.IVisual;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import DataView = powerbi.DataView;
 import ISelectionId = powerbi.visuals.ISelectionId;
+import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 
 import '../style/visual.less';
 
@@ -58,6 +64,8 @@ interface SankeyNodeDatum {
   name: string;
   index: number;
   selectionId: ISelectionId;
+  /** Whether this node is cross-highlighted from another visual. */
+  highlighted: boolean;
 }
 
 /** Minimal link datum for the sankey layout. */
@@ -66,6 +74,8 @@ interface SankeyLinkDatum {
   target: number;
   value: number;
   selectionId: ISelectionId;
+  /** Whether this link is cross-highlighted from another visual. */
+  highlighted: boolean;
 }
 
 /** Fully laid-out node (after sankey computation). */
@@ -78,6 +88,10 @@ type LayoutLink = SankeyLink<SankeyNodeDatum, SankeyLinkDatum>;
 interface SankeyData {
   nodes: SankeyNodeDatum[];
   links: SankeyLinkDatum[];
+  /** Number of active layers (e.g. 2 for Source+Target, 3 for Source+Step2+Target, etc.) */
+  layerCount: number;
+  /** Whether cross-highlight data is present from another visual/slicer. */
+  hasHighlights: boolean;
 }
 
 type LinkColorMode = 'source' | 'target' | 'gradient' | 'custom';
@@ -86,7 +100,7 @@ type LinkColorMode = 'source' | 'target' | 'gradient' | 'custom';
 
 const BASE_MARGIN = { top: 8, right: 8, bottom: 8, left: 8 };
 const EMPTY_STATE_TEXT =
-  'Add Source, Target, and Weight fields to build the Sankey diagram. Optionally add Step 2, Step 3, Step 4, and Step 5 for multi-level flows.';
+  'Add Source and Target fields to build the Sankey diagram. Optionally add Weight for sized flows, and Step 2–5 for multi-level paths.';
 
 // ── Visual ───────────────────────────────────────────────────────
 
@@ -100,8 +114,11 @@ export class SankeyDiagramVisual implements IVisual {
   private svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null;
   private filteredNodeIndex: number | null = null;
   private currentData: SankeyData | null = null;
+  private resolveNodeColor: (d: { depth?: number; index?: number }) => string = () => '#64748B';
   private currentViewport: powerbi.IViewport = { width: 0, height: 0 };
-  private instanceId = Math.random().toString(36).slice(2, 10);
+  private instanceId = (typeof crypto !== 'undefined' && crypto.getRandomValues
+    ? Array.from(crypto.getRandomValues(new Uint8Array(5)), (b) => b.toString(36)).join('')
+    : Date.now().toString(36));
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
@@ -126,7 +143,23 @@ export class SankeyDiagramVisual implements IVisual {
       );
     }
 
+    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+    if (legacyCardObj) {
+      const legacyGlass = legacyCardObj['enableGlass'];
+      if (legacyGlass === false) {
+        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      }
+    }
+
+    // Date filter: hide start/end when disabled
+    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
+
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
+    // Hide data label position — position is determined by chart geometry
+    this.settings.dataLabelFormattingCard.dataLabelPosition.visible = false;
 
     // ── Conditional Visibility ──────────────────────────────────
     const linkColorMode = resolveDropdown(this.settings.linkSettings.colorMode) ?? 'gradient';
@@ -145,18 +178,20 @@ export class SankeyDiagramVisual implements IVisual {
     this.settings.totalSettings.totalFontColor.visible = anyTotalsVisible;
     this.settings.totalSettings.nodeValueFormat.visible = showNodeValues;
     this.settings.totalSettings.layerTotalPosition.visible = showLayerTotals;
+    const showTotals = showNodeValues || showLayerTotals;
+    this.settings.totalSettings.totalFontFamily.visible = showTotals;
+    this.settings.totalSettings.totalFontWeight.visible = showTotals;
 
-    // Hide duplicate showNodeValues toggle in sankeyNodeSettings — totalSettings.showNodeValues is the functional one
-    this.settings.sankeyNodeSettings.showNodeValues.visible = false;
     // Link label sub-settings hidden when showLinkLabels is off
     const showLinkLabels = this.settings.linkLabelSettings.showLinkLabels.value;
     this.settings.linkLabelSettings.linkLabelFontSize.visible = showLinkLabels;
     this.settings.linkLabelSettings.linkLabelFontColor.visible = showLinkLabels;
+    this.settings.linkLabelSettings.linkLabelFontFamily.visible = showLinkLabels;
     this.settings.linkLabelSettings.linkLabelFontWeight.visible = showLinkLabels;
     this.settings.linkLabelSettings.linkLabelFormat.visible = showLinkLabels;
 
     // Hide gradientLinks toggle when colorMode is already 'gradient' (redundant)
-    this.settings.sankeyLinkSettings.gradientLinks.visible = linkColorMode !== 'gradient';
+    this.settings.linkSettings.gradientLinks.visible = linkColorMode !== 'gradient';
 
     // Animation duration hidden when animations are disabled
     this.settings.animationSettings.duration.visible = this.settings.animationSettings.enabled.value;
@@ -200,11 +235,31 @@ export class SankeyDiagramVisual implements IVisual {
     this.settings.conditionalFormattingCard.conditionalColor3.visible = showCond;
 
     // Card style sub-settings
-    const glassOn = this.settings.cardSettings.enableGlass.value;
-    this.settings.cardSettings.backgroundOpacity.visible = glassOn;
+    const cardMode = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    this.settings.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
+    this.settings.cardSettings.backgroundColor.visible = cardMode !== 'none';
 
     // Extract data
     const data = this.extractData(dataView);
+
+    // Node color visibility — show per-layer pickers only in 'byLayer' mode
+    const nodeColorMode = resolveDropdown(this.settings.nodeColorSettings.colorMode) ?? 'auto';
+    const isByLayer = nodeColorMode === 'byLayer';
+    const layerCount = data?.layerCount ?? 2;
+    this.settings.nodeColorSettings.sourceColor.visible = isByLayer;
+    this.settings.nodeColorSettings.step2Color.visible = isByLayer && layerCount > 2;
+    this.settings.nodeColorSettings.step3Color.visible = isByLayer && layerCount > 3;
+    this.settings.nodeColorSettings.step4Color.visible = isByLayer && layerCount > 4;
+    this.settings.nodeColorSettings.step5Color.visible = isByLayer && layerCount > 5;
+    this.settings.nodeColorSettings.targetColor.visible = isByLayer;
+
+    // Per-layer label color visibility — show only for active layers
+    this.settings.nodeLabelSettings.sourceLabelColor.visible = true; // always visible (Source is always present)
+    this.settings.nodeLabelSettings.step2LabelColor.visible = layerCount > 2;
+    this.settings.nodeLabelSettings.step3LabelColor.visible = layerCount > 3;
+    this.settings.nodeLabelSettings.step4LabelColor.visible = layerCount > 4;
+    this.settings.nodeLabelSettings.step5LabelColor.visible = layerCount > 5;
+    this.settings.nodeLabelSettings.targetLabelColor.visible = true; // always visible (Target is always present)
 
     // Render
     this.render(data, options.viewport);
@@ -219,7 +274,7 @@ export class SankeyDiagramVisual implements IVisual {
     const categories = categorical.categories;
     const values = categorical.values;
 
-    if (!categories || categories.length < 2 || !values || values.length < 1) return null;
+    if (!categories || categories.length < 2) return null;
 
     // Discover columns by role
     let sourceColumn: powerbi.DataViewCategoryColumn | undefined;
@@ -241,13 +296,15 @@ export class SankeyDiagramVisual implements IVisual {
       if (roles['target']) targetColumn = cat;
     }
 
-    for (const val of values) {
-      const roles = val.source.roles;
-      if (!roles) continue;
-      if (roles['weight']) weightColumn = val;
+    if (values) {
+      for (const val of values) {
+        const roles = val.source.roles;
+        if (!roles) continue;
+        if (roles['weight']) weightColumn = val;
+      }
     }
 
-    if (!sourceColumn || !targetColumn || !weightColumn) return null;
+    if (!sourceColumn || !targetColumn) return null;
 
     const rowCount = sourceColumn.values.length;
     if (rowCount === 0) return null;
@@ -263,12 +320,16 @@ export class SankeyDiagramVisual implements IVisual {
     const nodeMap = new Map<string, number>();
     const nodes: SankeyNodeDatum[] = [];
 
-    const getOrCreateNode = (name: string, level: number, selectionId: ISelectionId): number => {
+    const getOrCreateNode = (name: string, level: number, selectionId: ISelectionId, highlighted: boolean): number => {
       const key = `${level}:${name}`;
       const existing = nodeMap.get(key);
-      if (existing !== undefined) return existing;
+      if (existing !== undefined) {
+        // If any row for this node is highlighted, mark it as highlighted
+        if (highlighted) nodes[existing].highlighted = true;
+        return existing;
+      }
       const idx = nodes.length;
-      nodes.push({ name, index: idx, selectionId });
+      nodes.push({ name, index: idx, selectionId, highlighted });
       nodeMap.set(key, idx);
       return idx;
     };
@@ -276,15 +337,47 @@ export class SankeyDiagramVisual implements IVisual {
     // Build links with deduplication
     const linkMap = new Map<string, SankeyLinkDatum>();
 
+    // Cross-highlight: read highlight values from weight column (or source category)
+    const weightHlRaw = weightColumn
+      ? (weightColumn as unknown as { highlights?: unknown }).highlights as unknown[] | undefined
+      : undefined;
+    // If no weight column, try source category highlights
+    const sourceHlRaw = !weightHlRaw
+      ? (sourceColumn as unknown as { highlights?: unknown }).highlights as unknown[] | undefined
+      : undefined;
+    let hasHighlights = false;
+
+    const dateConfig: DateFilterConfig = {
+      enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
+      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
+      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+    };
+    const dateIndices = isDateColumn(sourceColumn.source) ? getDateFilterIndices(sourceColumn.values, dateConfig) : null;
+
     for (let i = 0; i < rowCount; i++) {
+      if (dateIndices && !dateIndices.has(i)) continue;
+
       const sourceVal = sourceColumn.values[i];
       const targetVal = targetColumn.values[i];
-      const weightVal = weightColumn.values[i];
 
-      // Validate: source, target, and weight must be present; weight must be positive
-      if (sourceVal == null || targetVal == null || weightVal == null) continue;
-      const weight = typeof weightVal === 'number' ? weightVal : Number(weightVal);
-      if (!Number.isFinite(weight) || weight <= 0) continue;
+      // Validate: source and target must be present
+      if (sourceVal == null || targetVal == null) continue;
+
+      // Weight: use bound measure if available, otherwise count each row as 1
+      let weight = 1;
+      if (weightColumn) {
+        const weightVal = weightColumn.values[i];
+        if (weightVal == null) continue;
+        weight = typeof weightVal === 'number' ? weightVal : Number(weightVal);
+        if (!Number.isFinite(weight) || weight <= 0) continue;
+      }
+
+      // Determine if this row is cross-highlighted
+      const rowHighlighted = weightHlRaw
+        ? (weightHlRaw[i] !== null && weightHlRaw[i] !== undefined)
+        : (sourceHlRaw ? (sourceHlRaw[i] !== null && sourceHlRaw[i] !== undefined) : false);
+      if (rowHighlighted) hasHighlights = true;
 
       // Build the chain: [source, step2?, step3?, step4?, step5?, target]
       const chain: Array<{ name: string; level: number }> = [];
@@ -331,8 +424,8 @@ export class SankeyDiagramVisual implements IVisual {
         const tgt = chain[j + 1];
 
         // Create nodes first — same name at different levels produces distinct nodes
-        const srcIdx = getOrCreateNode(src.name, src.level, rowSelectionId);
-        const tgtIdx = getOrCreateNode(tgt.name, tgt.level, rowSelectionId);
+        const srcIdx = getOrCreateNode(src.name, src.level, rowSelectionId, rowHighlighted);
+        const tgtIdx = getOrCreateNode(tgt.name, tgt.level, rowSelectionId, rowHighlighted);
 
         // Skip true self-loops (same node), not same-name cross-level nodes
         if (srcIdx === tgtIdx) continue;
@@ -342,12 +435,14 @@ export class SankeyDiagramVisual implements IVisual {
         const existing = linkMap.get(linkKey);
         if (existing) {
           existing.value += weight;
+          if (rowHighlighted) existing.highlighted = true;
         } else {
           linkMap.set(linkKey, {
             source: srcIdx,
             target: tgtIdx,
             value: weight,
             selectionId: rowSelectionId,
+            highlighted: rowHighlighted,
           });
         }
       }
@@ -355,7 +450,7 @@ export class SankeyDiagramVisual implements IVisual {
 
     if (nodes.length === 0 || linkMap.size === 0) return null;
 
-    return { nodes, links: Array.from(linkMap.values()) };
+    return { nodes, links: Array.from(linkMap.values()), layerCount: targetLevel + 1, hasHighlights };
   }
 
   // ── Rendering ────────────────────────────────────────────────
@@ -363,6 +458,7 @@ export class SankeyDiagramVisual implements IVisual {
   private render(data: SankeyData | null, viewport: powerbi.IViewport): void {
     this.currentData = data;
     this.currentViewport = viewport;
+    this.host.tooltipService.hide({ immediately: true, isTouchEvent: false });
     const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
     const dimOpacity = this.settings.linkSettings.dimOpacity.value / 100;
     this.container.removeEventListener('click', this.handleBackgroundClick);
@@ -374,16 +470,16 @@ export class SankeyDiagramVisual implements IVisual {
 
     const s = this.settings;
 
-    // Apply glass card style
-    if (s.cardSettings.enableGlass.value) {
-      const glass = getGlassStyle({
-        mode: 'light',
-        opacity: s.cardSettings.backgroundOpacity.value / 100,
-        backgroundColor: ((s.cardSettings as unknown as Record<string, { value?: { value?: string } }>).backgroundColor)?.value?.value
-          ?? ((s.cardSettings as unknown as Record<string, { value?: { value?: string } }>).bgColor)?.value?.value,
-        borderRadius: s.cardSettings.borderRadius.value,
-      });
-      Object.assign(this.container.style, glass);
+    // Apply card style
+    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    applyCardStyle(this.container, {
+      mode: cardMode,
+      opacity: s.cardSettings.backgroundOpacity.value / 100,
+      backgroundColor: s.cardSettings.backgroundColor?.value?.value,
+      borderRadius: s.cardSettings.borderRadius.value,
+    });
+    if (cardMode === 'none') {
+      this.container.style.borderRadius = `${s.cardSettings.borderRadius.value}px`;
     }
 
     // Handle empty/null data
@@ -393,12 +489,18 @@ export class SankeyDiagramVisual implements IVisual {
     }
 
     // Dynamic margins based on label position and layer totals
-    const labelPos = s.nodeSettings.labelPosition.value?.value ?? 'beside';
+    const labelPos = resolveDropdown(s.nodeLabelSettings.labelPosition) ?? 'beside';
+    const labelFontSizeVal = s.nodeLabelSettings.labelFontSize.value;
+    // Extra bottom margin so bottom node labels aren't clipped
+    const extraBottom = labelPos === 'below'
+      ? labelFontSizeVal + 4
+      : labelPos === 'none' ? 0 : Math.ceil(labelFontSizeVal / 2) + 2;
+    const besidePad = Math.max(16, labelFontSizeVal * 3);
     const MARGIN = {
       top: s.totalSettings.showLayerTotals.value ? BASE_MARGIN.top + 20 : BASE_MARGIN.top,
-      right: labelPos === 'beside' ? 80 : BASE_MARGIN.right,
-      bottom: BASE_MARGIN.bottom,
-      left: labelPos === 'beside' ? 80 : BASE_MARGIN.left,
+      right: labelPos === 'beside' ? besidePad : BASE_MARGIN.right,
+      bottom: BASE_MARGIN.bottom + extraBottom,
+      left: labelPos === 'beside' ? besidePad : BASE_MARGIN.left,
     };
 
     const baseWidth = viewport.width;
@@ -413,7 +515,7 @@ export class SankeyDiagramVisual implements IVisual {
 
     // Build a configured sankey layout factory
     const alignFn = this.getAlignmentFunction();
-    const sortOrder = s.layoutSettings.sortOrder.value?.value ?? 'auto';
+    const sortOrder = resolveDropdown(s.layoutSettings.sortOrder) ?? 'auto';
 
     const buildLayout = (w: number, h: number) => {
       const layout = sankey<SankeyNodeDatum, SankeyLinkDatum>()
@@ -496,15 +598,15 @@ export class SankeyDiagramVisual implements IVisual {
     // Gradient definitions for links
     const defs = svg.append('defs');
     const colorMode = this.getLinkColorMode();
-    const useGradientLinks = s.sankeyLinkSettings.gradientLinks.value;
+    const useGradientLinks = s.linkSettings.gradientLinks.value;
 
     if (colorMode === 'gradient' || useGradientLinks) {
       layoutLinks.forEach((link) => {
         const sourceNode = link.source as LayoutNode;
         const targetNode = link.target as LayoutNode;
         const gradId = `${sourceNode.index ?? 0}-${targetNode.index ?? 0}`;
-        const sourceColor = getHostChartColor(this.host.colorPalette, sourceNode.index ?? 0, themeName);
-        const targetColor = getHostChartColor(this.host.colorPalette, targetNode.index ?? 0, themeName);
+        const sourceColor = this.resolveNodeColor(sourceNode);
+        const targetColor = this.resolveNodeColor(targetNode);
 
         const grad = defs.append('linearGradient')
           .attr('id', `sankey-grad-${this.instanceId}-${gradId}`)
@@ -525,7 +627,7 @@ export class SankeyDiagramVisual implements IVisual {
     const linkOpacity = s.linkSettings.opacity.value / 100;
     const hoverOpacity = s.linkSettings.hoverOpacity.value / 100;
     const curvature = s.linkSettings.curvature.value;
-    const opacityByValue = s.sankeyLinkSettings.opacityByValue.value;
+    const opacityByValue = s.linkSettings.opacityByValue.value;
     const maxLinkValue = Math.max(1, ...layoutLinks.map((l) => l.value));
 
     // Flow filtering: if a node is filtered, only show connected flows
@@ -547,6 +649,8 @@ export class SankeyDiagramVisual implements IVisual {
       .data(filteredLinks)
       .join('path')
       .attr('class', 'sankey-link')
+      .attr('data-link-highlighted', (d) => d.highlighted ? 'true' : 'false')
+      .attr('data-selection-key', (d) => d.selectionId ? d.selectionId.getKey() : '')
       .attr('d', linkPathGenerator as unknown as (d: LayoutLink) => string | null)
       .attr('fill', 'none')
       .attr('stroke-width', (d) => Math.max(1, d.width ?? 0))
@@ -605,6 +709,8 @@ export class SankeyDiagramVisual implements IVisual {
       .data(visibleNodes)
       .join('g')
       .attr('class', 'sankey-node')
+      .attr('data-node-highlighted', (d) => d.highlighted ? 'true' : 'false')
+      .attr('data-selection-key', (d) => d.selectionId ? d.selectionId.getKey() : '')
       .style('cursor', 'pointer')
       .on('click', (event: MouseEvent, d) => {
         event.stopPropagation();
@@ -633,6 +739,50 @@ export class SankeyDiagramVisual implements IVisual {
         }
       });
 
+    // Build per-layer node color resolver
+    const ncMode = resolveDropdown(s.nodeColorSettings.colorMode) ?? 'auto';
+    const ncMaxDepth = data.layerCount - 1;
+    const layerColorPickers = [
+      s.nodeColorSettings.sourceColor.value?.value,
+      s.nodeColorSettings.step2Color.value?.value,
+      s.nodeColorSettings.step3Color.value?.value,
+      s.nodeColorSettings.step4Color.value?.value,
+      s.nodeColorSettings.step5Color.value?.value,
+    ];
+
+    // Pre-build variation palettes per layer: Map<depth, Map<nodeIndex, color>>
+    const nodeColorMap = new Map<number, string>();
+    if (ncMode === 'byLayer') {
+      // Group visible nodes by depth
+      const depthGroups = new Map<number, number[]>();
+      for (const node of visibleNodes) {
+        const depth = node.depth ?? 0;
+        const group = depthGroups.get(depth);
+        if (group) {
+          group.push(node.index ?? 0);
+        } else {
+          depthGroups.set(depth, [node.index ?? 0]);
+        }
+      }
+      // Generate variations for each layer
+      for (const [depth, indices] of depthGroups) {
+        const baseColor = depth === ncMaxDepth
+          ? (s.nodeColorSettings.targetColor.value?.value ?? '#EF4444')
+          : (layerColorPickers[depth] ?? '#3B82F6');
+        const variations = generateColorVariations(baseColor, indices.length);
+        for (let i = 0; i < indices.length; i++) {
+          nodeColorMap.set(indices[i], variations[i]);
+        }
+      }
+    }
+
+    this.resolveNodeColor = (d: { depth?: number; index?: number }): string => {
+      if (ncMode === 'byLayer') {
+        return nodeColorMap.get(d.index ?? 0) ?? '#3B82F6';
+      }
+      return getHostChartColor(this.host.colorPalette, d.index ?? 0, themeName);
+    };
+
     nodeGroups.append('rect')
       .attr('x', (d) => d.x0 ?? 0)
       .attr('y', (d) => d.y0 ?? 0)
@@ -640,7 +790,7 @@ export class SankeyDiagramVisual implements IVisual {
       .attr('height', (d) => Math.max(nodeMinHeight, (d.y1 ?? 0) - (d.y0 ?? 0)))
       .attr('rx', nodeCornerRadius)
       .attr('ry', nodeCornerRadius)
-      .attr('fill', (d) => getHostChartColor(this.host.colorPalette, d.index ?? 0, themeName))
+      .attr('fill', (d) => this.resolveNodeColor(d))
       .attr('fill-opacity', nodeOpacity)
       .attr('stroke', borderColor !== 'none' ? borderColor : null)
       .attr('stroke-width', borderWidth > 0 ? borderWidth : null);
@@ -649,12 +799,45 @@ export class SankeyDiagramVisual implements IVisual {
     const labelsHidden = labelPos === 'none';
     // When 'none', use 'beside' positioning but start hidden (revealed on hover)
     const effectiveLabelPos = labelsHidden ? 'beside' : labelPos;
-    const labelFontSize = s.nodeSettings.labelFontSize.value;
-    const labelColor = s.nodeSettings.labelColor.value?.value || undefined;
-    const labelFontFamily = s.nodeSettings.labelFontFamily.value?.value ?? 'Segoe UI';
-    const labelFontWeight = s.nodeSettings.labelFontWeight.value?.value ?? 'normal';
-    const labelFontStyle = s.nodeSettings.labelFontStyle.value?.value ?? 'normal';
+    const labelFontSize = s.nodeLabelSettings.labelFontSize.value;
+    const globalLabelColor = s.nodeLabelSettings.labelColor.value?.value || undefined;
+    const labelFontFamily = resolveDropdown(s.nodeLabelSettings.labelFontFamily) ?? 'Segoe UI';
+    const labelFontWeight = resolveDropdown(s.nodeLabelSettings.labelFontWeight) ?? 'normal';
+    const labelFontStyle = resolveDropdown(s.nodeLabelSettings.labelFontStyle) ?? 'normal';
     const theme = getTheme('light');
+
+    // Per-layer label colors: depth → color (empty string = use global/theme fallback)
+    const layerCount = data.layerCount;
+    const maxDepth = layerCount - 1; // target layer depth
+    const perLayerColors: Array<string | undefined> = [];
+    // Layer color settings indexed by layer position: [source, step2, step3, step4, step5, target]
+    const layerColorSettings = [
+      s.nodeLabelSettings.sourceLabelColor.value?.value,
+      s.nodeLabelSettings.step2LabelColor.value?.value,
+      s.nodeLabelSettings.step3LabelColor.value?.value,
+      s.nodeLabelSettings.step4LabelColor.value?.value,
+      s.nodeLabelSettings.step5LabelColor.value?.value,
+    ];
+    // Map each depth to the correct layer color
+    for (let depth = 0; depth < layerCount; depth++) {
+      if (depth === maxDepth) {
+        // Target layer — always the last
+        const tc = s.nodeLabelSettings.targetLabelColor.value?.value;
+        perLayerColors.push(tc && tc.length > 0 ? tc : undefined);
+      } else {
+        // Source (depth 0) or intermediate step
+        const lc = layerColorSettings[depth];
+        perLayerColors.push(lc && lc.length > 0 ? lc : undefined);
+      }
+    }
+
+    /** Resolve the fill color for a node label based on its depth. */
+    const resolveLabelColor = (depth: number): string => {
+      const layerColor = perLayerColors[depth];
+      if (layerColor) return layerColor;
+      if (globalLabelColor) return globalLabelColor;
+      return theme.text.primary;
+    };
 
     nodeGroups.append('text')
       .attr('class', 'sankey-node-label')
@@ -685,7 +868,7 @@ export class SankeyDiagramVisual implements IVisual {
       .attr('font-family', labelFontFamily)
       .attr('font-weight', labelFontWeight)
       .attr('font-style', labelFontStyle)
-      .attr('fill', labelColor ?? theme.text.primary)
+      .attr('fill', (d) => resolveLabelColor(d.depth ?? 0))
       .text((d) => d.name ?? '');
 
     // When labels are hidden, start them invisible with a fade transition
@@ -732,38 +915,75 @@ export class SankeyDiagramVisual implements IVisual {
       this.renderLinkLabels(g, layoutLinks, totalWeight);
     }
 
-    // Link tooltips (title elements)
+    // Link & node tooltips via PBI tooltipService
     if (s.tooltipSettings.showTooltips.value) {
-      const valueFormat = String(s.tooltipSettings.valueFormat.value?.value ?? 'auto');
+      const valueFormat = resolveDropdown(s.tooltipSettings.valueFormat) ?? 'auto';
       const showPct = s.tooltipSettings.showPercentage.value;
 
-      linkPaths.append('title')
-        .text((d) => {
+      linkPaths
+        .on('mouseenter.tooltip', (event: MouseEvent, d: LayoutLink) => {
           const src = (d.source as LayoutNode).name ?? '';
           const tgt = (d.target as LayoutNode).name ?? '';
-          const val = this.formatTooltipValue(d.value, valueFormat);
-          let text = `${src} \u2192 ${tgt}: ${val}`;
+          const tooltipItems: VisualTooltipDataItem[] = [
+            { displayName: 'Source', value: src },
+            { displayName: 'Target', value: tgt },
+            { displayName: 'Value', value: this.formatTooltipValue(d.value, valueFormat) },
+          ];
           if (showPct && totalWeight > 0) {
-            text += ` (${formatPercent(d.value / totalWeight)})`;
+            tooltipItems.push({ displayName: '% of Total', value: formatPercent(d.value / totalWeight) });
           }
-          return text;
+          this.host.tooltipService.show({
+            dataItems: tooltipItems,
+            identities: d.selectionId ? [d.selectionId] : [],
+            coordinates: [event.clientX, event.clientY],
+            isTouchEvent: false,
+          });
+        })
+        .on('mousemove.tooltip', (event: MouseEvent) => {
+          this.host.tooltipService.move({
+            dataItems: [],
+            identities: [],
+            coordinates: [event.clientX, event.clientY],
+            isTouchEvent: false,
+          });
+        })
+        .on('mouseleave.tooltip', () => {
+          this.host.tooltipService.hide({ immediately: true, isTouchEvent: false });
         });
 
       // Node tooltips
-      nodeGroups.append('title')
-        .text((d) => {
-          const total = d.value ?? 0;
-          const val = this.formatTooltipValue(total, valueFormat);
-          let text = `${d.name}: ${val}`;
+      nodeGroups
+        .on('mouseenter.tooltip', (event: MouseEvent, d: LayoutNode) => {
+          const nodeValue = d.value ?? 0;
+          const tooltipItems: VisualTooltipDataItem[] = [
+            { displayName: 'Node', value: d.name },
+            { displayName: 'Value', value: this.formatTooltipValue(nodeValue, valueFormat) },
+          ];
           if (showPct && totalWeight > 0) {
-            text += ` (${formatPercent(total / totalWeight)})`;
+            tooltipItems.push({ displayName: '% of Total', value: formatPercent(nodeValue / totalWeight) });
           }
-          return text;
+          this.host.tooltipService.show({
+            dataItems: tooltipItems,
+            identities: d.selectionId ? [d.selectionId] : [],
+            coordinates: [event.clientX, event.clientY],
+            isTouchEvent: false,
+          });
+        })
+        .on('mousemove.tooltip', (event: MouseEvent) => {
+          this.host.tooltipService.move({
+            dataItems: [],
+            identities: [],
+            coordinates: [event.clientX, event.clientY],
+            isTouchEvent: false,
+          });
+        })
+        .on('mouseleave.tooltip', () => {
+          this.host.tooltipService.hide({ immediately: true, isTouchEvent: false });
         });
     }
 
     // Flow value labels on hover (show value at link midpoint on hover)
-    if (s.sankeyLinkSettings.showFlowLabels.value) {
+    if (s.linkLabelSettings.showFlowLabels.value) {
       const flowLabelGroup = g.append('g').attr('class', 'sankey-flow-labels');
       linkPaths
         .on('mouseenter.flowlabel', (_event: MouseEvent, d: LayoutLink) => {
@@ -833,10 +1053,11 @@ export class SankeyDiagramVisual implements IVisual {
     // Legend
     this.renderSankeyLegend(visibleNodes, themeName);
 
+    // Cross-highlight dimming
+    this.applyCrossHighlight();
+
     this.container.addEventListener('click', this.handleBackgroundClick);
   }
-
-  // ── Link Labels ────────────────────────────────────────────────
 
   // ── Legend ──────────────────────────────────────────────────────
 
@@ -847,12 +1068,9 @@ export class SankeyDiagramVisual implements IVisual {
     const rawFontColor = legendFmtCard.legendFontColor.value?.value;
     const legendFontColor = rawFontColor != null && rawFontColor.length > 0 ? rawFontColor : '#475569';
     const legendFontSize = legendFmtCard.legendFontSize.value;
-    const legendPosRaw = legendFmtCard.legendPosition.value;
-    const position = (typeof legendPosRaw === 'string'
-      ? legendPosRaw
-      : (legendPosRaw as { value?: string } | undefined)?.value) ?? 'bottom';
-    const legendPos = position === 'top' || position === 'bottom' || position === 'left' || position === 'right'
-      ? position
+    const resolvedPos = resolveDropdown(legendFmtCard.legendPosition) ?? 'bottom';
+    const legendPos = resolvedPos === 'top' || resolvedPos === 'bottom' || resolvedPos === 'left' || resolvedPos === 'right'
+      ? resolvedPos
       : 'bottom';
 
     // Deduplicate nodes by name to build legend items
@@ -864,7 +1082,7 @@ export class SankeyDiagramVisual implements IVisual {
       seen.add(name);
       items.push({
         label: name,
-        color: getHostChartColor(this.host.colorPalette, node.index ?? 0, themeName),
+        color: this.resolveNodeColor(node),
       });
     }
 
@@ -877,6 +1095,7 @@ export class SankeyDiagramVisual implements IVisual {
       fontColor: legendFontColor,
       fontFamily: rawLegendFontFamily,
       fontWeight: resolveDropdown(legendFmtCard.legendFontWeight) || 'normal',
+      aliases: legendFmtCard.legendAliases.value,
     });
   }
 
@@ -888,12 +1107,13 @@ export class SankeyDiagramVisual implements IVisual {
     const s = this.settings.linkLabelSettings;
     const fontSize = s.linkLabelFontSize.value;
     const fontColor = s.linkLabelFontColor.value?.value || '#333333';
-    const fontWeight = s.linkLabelFontWeight.value?.value ?? 'normal';
-    const labelFormat = s.linkLabelFormat.value?.value ?? 'value';
+    const fontFamily = resolveDropdown(s.linkLabelFontFamily) || '';
+    const fontWeight = resolveDropdown(s.linkLabelFontWeight) ?? 'normal';
+    const labelFormat = resolveDropdown(s.linkLabelFormat) ?? 'value';
 
     const labelGroup = g.append('g').attr('class', 'sankey-link-labels');
 
-    labelGroup.selectAll<SVGTextElement, LayoutLink>('.sankey-link-label')
+    const linkLabelSelection = labelGroup.selectAll<SVGTextElement, LayoutLink>('.sankey-link-label')
       .data(layoutLinks)
       .join('text')
       .attr('class', 'sankey-link-label')
@@ -909,7 +1129,13 @@ export class SankeyDiagramVisual implements IVisual {
       .attr('text-anchor', 'middle')
       .attr('font-size', fontSize)
       .attr('font-weight', fontWeight)
-      .attr('fill', fontColor)
+      .attr('fill', fontColor);
+
+    if (fontFamily) {
+      linkLabelSelection.attr('font-family', fontFamily);
+    }
+
+    linkLabelSelection
       .text((d) => {
         const val = formatWithSettings(d.value, this.settings.numberFormattingCard);
         if (labelFormat === 'percent' && totalWeight > 0) {
@@ -934,7 +1160,9 @@ export class SankeyDiagramVisual implements IVisual {
     const ts = this.settings.totalSettings;
     const fontSize = ts.totalFontSize.value;
     const fontColor = ts.totalFontColor.value?.value || '';
-    const valueFormat = ts.nodeValueFormat.value?.value ?? 'value';
+    const nodeFontFamily = resolveDropdown(ts.totalFontFamily) || '';
+    const nodeFontWeight = resolveDropdown(ts.totalFontWeight) || '600';
+    const valueFormat = resolveDropdown(ts.nodeValueFormat) ?? 'value';
     const theme = getTheme('light');
     const numFmt = this.settings.numberFormattingCard;
 
@@ -953,15 +1181,20 @@ export class SankeyDiagramVisual implements IVisual {
         text = formatWithSettings(nodeValue, numFmt);
       }
 
-      group.append('text')
+      const valueLabel = group.append('text')
         .attr('class', 'sankey-node-value')
         .attr('x', label.attr('x'))
         .attr('y', Number(label.attr('y')) + fontSize + 2)
         .attr('dy', label.attr('dy'))
         .attr('text-anchor', label.attr('text-anchor'))
         .attr('font-size', fontSize)
+        .attr('font-weight', nodeFontWeight)
         .attr('fill', fontColor || theme.text.secondary)
         .text(text);
+
+      if (nodeFontFamily) {
+        valueLabel.attr('font-family', nodeFontFamily);
+      }
     });
   }
 
@@ -980,7 +1213,7 @@ export class SankeyDiagramVisual implements IVisual {
     const ts = this.settings.totalSettings;
     const fontSize = ts.totalFontSize.value;
     const fontColor = ts.totalFontColor.value?.value || '';
-    const position = ts.layerTotalPosition.value?.value ?? 'top';
+    const position = resolveDropdown(ts.layerTotalPosition) ?? 'top';
     const theme = getTheme('light');
 
     // Group nodes by layer (depth)
@@ -995,6 +1228,8 @@ export class SankeyDiagramVisual implements IVisual {
       }
     }
 
+    const totalFontFamily = resolveDropdown(ts.totalFontFamily) || '';
+    const totalFontWeight = resolveDropdown(ts.totalFontWeight) || '600';
     const totalGroup = g.append('g').attr('class', 'sankey-layer-totals');
     const resolvedColor = fontColor || theme.text.secondary;
 
@@ -1012,15 +1247,19 @@ export class SankeyDiagramVisual implements IVisual {
 
       const text = formatWithSettings(layerTotal, this.settings.numberFormattingCard);
 
-      totalGroup.append('text')
+      const totalLabel = totalGroup.append('text')
         .attr('class', 'sankey-layer-total')
         .attr('x', x)
         .attr('y', y)
         .attr('text-anchor', 'middle')
         .attr('font-size', fontSize)
-        .attr('font-weight', '600')
+        .attr('font-weight', totalFontWeight)
         .attr('fill', resolvedColor)
         .text(text);
+
+      if (totalFontFamily) {
+        totalLabel.attr('font-family', totalFontFamily);
+      }
     }
   }
 
@@ -1036,7 +1275,7 @@ export class SankeyDiagramVisual implements IVisual {
   // ── Layout Alignment ──────────────────────────────────────────
 
   private getAlignmentFunction(): (node: SankeyNode<SankeyNodeDatum, SankeyLinkDatum>, n: number) => number {
-    const align = this.settings.layoutSettings.nodeAlign.value?.value ?? 'justify';
+    const align = resolveDropdown(this.settings.layoutSettings.nodeAlign) ?? 'justify';
     type AlignFn = (node: SankeyNode<SankeyNodeDatum, SankeyLinkDatum>, n: number) => number;
     switch (align) {
       case 'left': return sankeyLeft as AlignFn;
@@ -1065,21 +1304,20 @@ export class SankeyDiagramVisual implements IVisual {
   // ── Link Color Helpers ───────────────────────────────────────
 
   private getLinkColorMode(): LinkColorMode {
-    const raw = this.settings.linkSettings.colorMode.value?.value;
+    const raw = resolveDropdown(this.settings.linkSettings.colorMode);
     if (raw === 'source' || raw === 'target' || raw === 'gradient' || raw === 'custom') return raw;
     return 'gradient';
   }
 
   private getLinkStroke(link: LayoutLink, _index: number, mode: LinkColorMode): string {
-    const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
     switch (mode) {
       case 'source': {
         const sourceNode = link.source as LayoutNode;
-        return getHostChartColor(this.host.colorPalette, sourceNode.index ?? 0, themeName);
+        return this.resolveNodeColor(sourceNode);
       }
       case 'target': {
         const targetNode = link.target as LayoutNode;
-        return getHostChartColor(this.host.colorPalette, targetNode.index ?? 0, themeName);
+        return this.resolveNodeColor(targetNode);
       }
       case 'gradient': {
         const src = link.source as LayoutNode;
@@ -1358,6 +1596,35 @@ export class SankeyDiagramVisual implements IVisual {
     return this.formattingSettingsService.buildFormattingModel(this.settings);
   }
 
+  // ── Cross-Highlight ──────────────────────────────────────────────
+
+  private applyCrossHighlight(): void {
+    const data = this.currentData;
+    if (!data || !data.hasHighlights) return;
+
+    const hasSelection = this.selectionManager.hasSelection();
+    const selectedIds = this.selectionManager.getSelectionIds() as ISelectionId[];
+    const selectedKeys = new Set(selectedIds.map((id) => id.getKey()));
+
+    // Dim links
+    const links = this.container.querySelectorAll<SVGPathElement>('.sankey-link');
+    for (const el of Array.from(links)) {
+      const isHighlighted = el.getAttribute('data-link-highlighted') === 'true';
+      const elKey = el.getAttribute('data-selection-key');
+      const isSelected = hasSelection && elKey !== null && selectedKeys.has(elKey);
+      el.style.opacity = (isHighlighted || isSelected) ? '' : '0.3';
+    }
+
+    // Dim node groups (rect + labels together)
+    const nodeGroups = this.container.querySelectorAll<SVGGElement>('.sankey-node');
+    for (const group of Array.from(nodeGroups)) {
+      const isHighlighted = group.getAttribute('data-node-highlighted') === 'true';
+      const nodeKey = group.getAttribute('data-selection-key');
+      const isSelected = hasSelection && nodeKey !== null && selectedKeys.has(nodeKey);
+      (group as SVGGElement).style.opacity = (isHighlighted || isSelected) ? '' : '0.3';
+    }
+  }
+
   private handleBackgroundClick = (): void => {
     const wasFiltered = this.filteredNodeIndex != null;
     this.filteredNodeIndex = null;
@@ -1371,6 +1638,7 @@ export class SankeyDiagramVisual implements IVisual {
 
   public destroy(): void {
     this.container.removeEventListener('click', this.handleBackgroundClick);
+    this.host.tooltipService.hide({ immediately: true, isTouchEvent: false });
     this.cancelAnimations.forEach((cancel) => cancel());
     this.cancelAnimations = [];
     this.svg = null;

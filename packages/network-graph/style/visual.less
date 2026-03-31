@@ -12,8 +12,6 @@
 
 .network-container svg {
   display: block;
-  width: 100%;
-  height: 100%;
 }
 
 .network-empty {
@@ -28,17 +26,29 @@
 
 .network-node {
   cursor: grab;
-  transition: filter 0.15s ease;
+  transition: filter 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+  transform-box: fill-box;
+  transform-origin: center;
 
   &:active {
     cursor: grabbing;
   }
 
   &:hover {
-    filter: brightness(1.15);
+    filter: url(#node-glow);
+    transform: scale(1.15);
+  }
+}
+
+.network-link {
+  transition: opacity 0.15s ease, filter 0.15s ease;
+
+  &:hover {
+    filter: brightness(1.3);
   }
 }
 
 .network-label {
   pointer-events: none;
+  transition: opacity 0.15s ease;
 }

@@ -50,7 +50,7 @@
           ],
           "dataReductionAlgorithm": {
             "top": {
-              "count": 500
+              "count": 30000
             }
           }
         },
@@ -68,7 +68,7 @@
   ],
   "objects": {
     "chordSettings": {
-      "displayName": "Chord",
+      "displayName": "Chord Layout",
       "properties": {
         "padding": {
           "displayName": "Padding",
@@ -76,14 +76,8 @@
             "numeric": true
           }
         },
-        "ribbonOpacity": {
-          "displayName": "Ribbon Opacity (%)",
-          "type": {
-            "numeric": true
-          }
-        },
-        "hoverOpacity": {
-          "displayName": "Hover Opacity (%)",
+        "minArcAngle": {
+          "displayName": "Min Arc Angle (degrees)",
           "type": {
             "numeric": true
           }
@@ -98,21 +92,10 @@
             }
           }
         },
-        "dimOpacity": {
-          "displayName": "Dim Opacity (%)",
+        "arcThickness": {
+          "displayName": "Arc Thickness",
           "type": {
             "numeric": true
-          }
-        }
-      }
-    },
-    "colorSettings": {
-      "displayName": "Color",
-      "properties": {
-        "useChartPalette": {
-          "displayName": "Use Chart Palette",
-          "type": {
-            "bool": true
           }
         }
       }
@@ -589,6 +572,12 @@
               }
             ]
           }
+        },
+        "legendAliases": {
+          "displayName": "Rename Labels",
+          "type": {
+            "text": true
+          }
         }
       }
     },
@@ -617,16 +606,74 @@
             "numeric": true
           }
         },
+        "cardStyleMode": {
+          "displayName": "Card Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "glass",
+                "displayName": "Glass"
+              },
+              {
+                "value": "elevated",
+                "displayName": "Elevated"
+              },
+              {
+                "value": "neumorphic",
+                "displayName": "Neumorphic"
+              }
+            ]
+          }
+        },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "Glass Effect"
+          "displayName": "(Deprecated) Enable Glass"
+        }
+      }
+    },
+    "chordRibbonSettings": {
+      "displayName": "Ribbons",
+      "properties": {
+        "ribbonOpacity": {
+          "displayName": "Ribbon Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "hoverOpacity": {
+          "displayName": "Hover Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "dimOpacity": {
+          "displayName": "Dim Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "gradientRibbons": {
+          "displayName": "Gradient Ribbons",
+          "type": {
+            "bool": true
+          }
+        },
+        "directional": {
+          "displayName": "Directional Ribbons",
+          "type": {
+            "bool": true
+          }
         }
       }
     },
     "chordInteractionSettings": {
-      "displayName": "Interaction Features",
+      "displayName": "Interaction",
       "properties": {
         "enableFiltering": {
           "displayName": "Enable Chord Filtering",
@@ -639,35 +686,7 @@
           "type": {
             "bool": true
           }
-        }
-      }
-    },
-    "chordRibbonSettings": {
-      "displayName": "Ribbon Features",
-      "properties": {
-        "gradientRibbons": {
-          "displayName": "Gradient Ribbons",
-          "type": {
-            "bool": true
-          }
         },
-        "directional": {
-          "displayName": "Directional Ribbons",
-          "type": {
-            "bool": true
-          }
-        },
-        "minArcAngle": {
-          "displayName": "Min Arc Angle (degrees)",
-          "type": {
-            "numeric": true
-          }
-        }
-      }
-    },
-    "chordLabelSettings": {
-      "displayName": "Label Features",
-      "properties": {
         "showEntityValues": {
           "displayName": "Show Entity Values",
           "type": {
@@ -789,6 +808,12 @@
     },
     "colorThemeFormatting": {
       "properties": {
+        "useChartPalette": {
+          "displayName": "Use Chart Palette",
+          "type": {
+            "bool": true
+          }
+        },
         "colorTheme": {
           "displayName": "Theme",
           "type": {
@@ -871,6 +896,35 @@
         },
         "valueSuffix": {
           "displayName": "Suffix",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "dateFilterFormatting": {
+      "displayName": "Date Filter",
+      "properties": {
+        "enableDateFilter": {
+          "displayName": "Enable Date Filter",
+          "type": {
+            "bool": true
+          }
+        },
+        "startDate": {
+          "displayName": "Start Date",
+          "type": {
+            "text": true
+          }
+        },
+        "endAtCurrentDate": {
+          "displayName": "End at Current Date",
+          "type": {
+            "bool": true
+          }
+        },
+        "endDate": {
+          "displayName": "End Date",
           "type": {
             "text": true
           }

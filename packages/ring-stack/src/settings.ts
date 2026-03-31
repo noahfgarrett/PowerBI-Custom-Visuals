@@ -5,7 +5,12 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, SortFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard, NumberFormattingCard } from '../../core/src';
+import { LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, SortFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard, NumberFormattingCard,
+  DateFilterFormattingCard,
+} from '../../core/src';
+
+// -- Ring Settings: layout + gradient toggle (absorbed from RingGradient) ------
+
 class RingSettings extends formattingSettings.SimpleCard {
   thickness = new formattingSettings.NumUpDown({
     name: 'thickness',
@@ -31,35 +36,22 @@ class RingSettings extends formattingSettings.SimpleCard {
     value: true,
   });
 
-
   trackColor = new formattingSettings.ColorPicker({
-
     name: 'trackColor',
-
     displayName: 'Track Color',
-
     value: { value: '' },
-
   });
 
   trackOpacity = new formattingSettings.NumUpDown({
-
     name: 'trackOpacity',
-
     displayName: 'Track Opacity (%)',
-
     value: 15,
-
   });
 
   ringStrokeColor = new formattingSettings.ColorPicker({
-
     name: 'ringStrokeColor',
-
     displayName: 'Ring Stroke Color',
-
     value: { value: '' },
-
   });
 
   roundedCaps = new formattingSettings.ToggleSwitch({
@@ -68,9 +60,27 @@ class RingSettings extends formattingSettings.SimpleCard {
     value: true,
   });
 
+  gradientEnabled = new formattingSettings.ToggleSwitch({
+    name: 'gradientEnabled',
+    displayName: 'Enable Gradient Fill',
+    value: false,
+  });
+
+  showArcLabels = new formattingSettings.ToggleSwitch({
+    name: 'showArcLabels',
+    displayName: 'Show Arc Labels (textPath)',
+    value: false,
+  });
+
+  showOverflow = new formattingSettings.ToggleSwitch({
+    name: 'showOverflow',
+    displayName: 'Show Overflow Indicator (>100%)',
+    value: false,
+  });
+
   name = 'ringSettings';
   displayName = 'Ring';
-  slices = [this.thickness, this.gap, this.maxValue, this.showLabels, this.trackColor, this.trackOpacity, this.ringStrokeColor, this.roundedCaps];
+  slices = [this.thickness, this.gap, this.maxValue, this.showLabels, this.trackColor, this.trackOpacity, this.ringStrokeColor, this.roundedCaps, this.gradientEnabled, this.showArcLabels, this.showOverflow];
 }
 
 class ColorSettings extends formattingSettings.SimpleCard {
@@ -123,10 +133,16 @@ class ColorSettings extends formattingSettings.SimpleCard {
 }
 
 class CardStyleSettings extends formattingSettings.SimpleCard {
-  enableGlass = new formattingSettings.ToggleSwitch({
-    name: 'enableGlass',
-    displayName: 'Glass Effect',
-    value: true,
+  cardStyleMode = new formattingSettings.ItemDropdown({
+    name: 'cardStyleMode',
+    displayName: 'Card Style',
+    items: [
+      { value: 'none', displayName: 'None' },
+      { value: 'glass', displayName: 'Glass' },
+      { value: 'elevated', displayName: 'Elevated' },
+      { value: 'neumorphic', displayName: 'Neumorphic' },
+    ],
+    value: { value: 'glass', displayName: 'Glass' },
   });
 
   backgroundColor = new formattingSettings.ColorPicker({
@@ -149,7 +165,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.cardStyleMode, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 class CenterContentSettings extends formattingSettings.SimpleCard {
@@ -202,6 +218,32 @@ class CenterContentSettings extends formattingSettings.SimpleCard {
     value: 11,
   });
 
+  fontFamily = new formattingSettings.ItemDropdown({
+    name: 'fontFamily',
+    displayName: 'Font Family',
+    items: [
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Arial', displayName: 'Arial' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Helvetica', displayName: 'Helvetica' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
+      { value: 'Verdana', displayName: 'Verdana' },
+      { value: 'Georgia', displayName: 'Georgia' },
+    ],
+    value: { value: 'Segoe UI', displayName: 'Segoe UI' },
+  });
+
+  fontWeight = new formattingSettings.ItemDropdown({
+    name: 'fontWeight',
+    displayName: 'Font Weight',
+    items: [
+      { value: 'normal', displayName: 'Normal' },
+      { value: 'bold', displayName: 'Bold' },
+      { value: '600', displayName: 'Semi-Bold' },
+    ],
+    value: { value: 'normal', displayName: 'Normal' },
+  });
+
   name = 'centerContentSettings';
   displayName = 'Center Content';
   slices = [
@@ -210,6 +252,8 @@ class CenterContentSettings extends formattingSettings.SimpleCard {
     this.customText,
     this.fontSize,
     this.fontColor,
+    this.fontFamily,
+    this.fontWeight,
     this.showLabel,
     this.labelFontSize,
   ];
@@ -240,6 +284,53 @@ class PerRingMaxSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.maxValues, this.showPercentage];
 }
 
+// ── Side Label Settings ────────────────────────────────────────────────
+
+class SideLabelSettings extends formattingSettings.SimpleCard {
+  fontSize = new formattingSettings.NumUpDown({
+    name: 'fontSize',
+    displayName: 'Font Size',
+    value: 12,
+  });
+
+  fontColor = new formattingSettings.ColorPicker({
+    name: 'fontColor',
+    displayName: 'Font Color',
+    value: { value: '' },
+  });
+
+  fontFamily = new formattingSettings.ItemDropdown({
+    name: 'fontFamily',
+    displayName: 'Font Family',
+    items: [
+      { value: '', displayName: 'Default' },
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Arial', displayName: 'Arial' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Helvetica Neue', displayName: 'Helvetica Neue' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
+      { value: 'Verdana', displayName: 'Verdana' },
+      { value: 'Georgia', displayName: 'Georgia' },
+    ],
+    value: { value: '', displayName: 'Default' },
+  });
+
+  fontWeight = new formattingSettings.ItemDropdown({
+    name: 'fontWeight',
+    displayName: 'Font Weight',
+    items: [
+      { value: 'normal', displayName: 'Normal' },
+      { value: 'bold', displayName: 'Bold' },
+      { value: '600', displayName: 'Semi-Bold' },
+    ],
+    value: { value: 'normal', displayName: 'Normal' },
+  });
+
+  name = 'sideLabelSettings';
+  displayName = 'Side Labels';
+  slices = [this.fontSize, this.fontColor, this.fontFamily, this.fontWeight];
+}
+
 class AnimationSettings extends formattingSettings.SimpleCard {
   enabled = new formattingSettings.ToggleSwitch({
     name: 'enabled',
@@ -258,49 +349,14 @@ class AnimationSettings extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
-// ── Ring Display Settings ───────────────────────────────────────
-
-class RingDisplaySettings extends formattingSettings.SimpleCard {
-  showArcLabels = new formattingSettings.ToggleSwitch({
-    name: 'showArcLabels',
-    displayName: 'Show Arc Labels (textPath)',
-    value: false,
-  });
-
-  showOverflow = new formattingSettings.ToggleSwitch({
-    name: 'showOverflow',
-    displayName: 'Show Overflow Indicator (>100%)',
-    value: false,
-  });
-
-  name = 'ringDisplaySettings';
-  displayName = 'Ring Display';
-  slices = [this.showArcLabels, this.showOverflow];
-}
-
-// ── Ring Gradient Settings ──────────────────────────────────────
-
-class RingGradientSettings extends formattingSettings.SimpleCard {
-  enabled = new formattingSettings.ToggleSwitch({
-    name: 'enabled',
-    displayName: 'Enable Gradient Fill',
-    value: false,
-  });
-
-  name = 'ringGradientSettings';
-  displayName = 'Ring Gradient';
-  slices = [this.enabled];
-}
-
 export class RingStackSettings extends formattingSettings.Model {
   ringSettings = new RingSettings();
   colorSettings = new ColorSettings();
   centerContentSettings = new CenterContentSettings();
   cardSettings = new CardStyleSettings();
+  sideLabelSettings = new SideLabelSettings();
   animationSettings = new AnimationSettings();
   perRingMaxSettings = new PerRingMaxSettingsCard();
-  ringDisplaySettings = new RingDisplaySettings();
-  ringGradientSettings = new RingGradientSettings();
 
   legendFormattingCard = new LegendFormattingCard();
   dataLabelFormattingCard = new DataLabelFormattingCard();
@@ -312,22 +368,23 @@ export class RingStackSettings extends formattingSettings.Model {
   colorThemeFormattingCard = new ColorThemeFormattingCard();
   numberFormattingCard = new NumberFormattingCard();
 
+  dateFilterFormattingCard = new DateFilterFormattingCard();
   cards = [
     this.ringSettings,
     this.colorSettings,
     this.centerContentSettings,
+    this.titleFormattingCard,
+    this.legendFormattingCard,
+    this.conditionalFormattingCard,
     this.cardSettings,
+    this.sideLabelSettings,
+    this.colorThemeFormattingCard,
+    this.sortFormattingCard,
     this.animationSettings,
     this.perRingMaxSettings,
-    this.ringDisplaySettings,
-    this.ringGradientSettings,
-    this.legendFormattingCard,
-    this.dataLabelFormattingCard,
-    this.titleFormattingCard,
-    this.sortFormattingCard,
-    this.conditionalFormattingCard,
-    this.accessibilityFormattingCard,
-    this.colorThemeFormattingCard,
     this.numberFormattingCard,
+    this.dataLabelFormattingCard,
+    this.dateFilterFormattingCard,
+    this.accessibilityFormattingCard,
   ];
 }

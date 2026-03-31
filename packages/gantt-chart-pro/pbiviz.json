@@ -4,7 +4,7 @@
     "displayName": "Gantt Chart Pro",
     "guid": "ganttChartPro_2F3A4B5C6D7E",
     "visualClassName": "GanttChartProVisual",
-    "version": "1.0.0.0",
+    "version": "1.0.1.0",
     "description": "Gantt chart with animated task bars, progress fill, and today marker.",
     "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
     "gitHubUrl": "https://github.com/noahgarrett/PowerBI"

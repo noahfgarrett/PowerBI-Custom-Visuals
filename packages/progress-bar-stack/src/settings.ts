@@ -5,8 +5,13 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AnnotationFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard, NumberFormattingCard } from '../../core/src';
-class BarSettings extends formattingSettings.SimpleCard {
+import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AnnotationFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard, NumberFormattingCard,
+  DateFilterFormattingCard,
+} from '../../core/src';
+
+// -- Bar Layout: dimensional properties only ----------------------------------
+
+class BarLayoutSettings extends formattingSettings.SimpleCard {
   barHeight = new formattingSettings.NumUpDown({
     name: 'barHeight',
     displayName: 'Bar Height',
@@ -25,6 +30,12 @@ class BarSettings extends formattingSettings.SimpleCard {
     value: 8,
   });
 
+  barCornerRadius = new formattingSettings.NumUpDown({
+    name: 'barCornerRadius',
+    displayName: 'Bar Corner Radius',
+    value: 6,
+  });
+
   showValue = new formattingSettings.ToggleSwitch({
     name: 'showValue',
     displayName: 'Show Value',
@@ -37,44 +48,31 @@ class BarSettings extends formattingSettings.SimpleCard {
     value: true,
   });
 
-
-  barCornerRadius = new formattingSettings.NumUpDown({
-
-    name: 'barCornerRadius',
-
-    displayName: 'Bar Corner Radius',
-
-    value: 6,
-
+  showLabels = new formattingSettings.ToggleSwitch({
+    name: 'showLabels',
+    displayName: 'Show Labels',
+    value: true,
   });
 
-  trackColor = new formattingSettings.ColorPicker({
-
-    name: 'trackColor',
-
-    displayName: 'Track Color',
-
-    value: { value: '' },
-
+  labelPosition = new formattingSettings.ItemDropdown({
+    name: 'labelPosition',
+    displayName: 'Label Position',
+    items: [
+      { value: 'left', displayName: 'Left' },
+      { value: 'right', displayName: 'Right' },
+      { value: 'above', displayName: 'Above' },
+    ],
+    value: { value: 'left', displayName: 'Left' },
   });
-
-  labelColor = new formattingSettings.ColorPicker({
-
-    name: 'labelColor',
-
-    displayName: 'Label Color',
-
-    value: { value: '' },
-
-  });
-
 
   name = 'barSettings';
-  displayName = 'Bar Settings';
-  slices = [this.barHeight, this.gap, this.cornerRadius, this.showValue, this.showPercent, this.barCornerRadius, this.trackColor, this.labelColor];
+  displayName = 'Bar Layout';
+  slices = [this.barHeight, this.gap, this.cornerRadius, this.barCornerRadius, this.showValue, this.showPercent, this.showLabels, this.labelPosition];
 }
 
-class ColorSettings extends formattingSettings.SimpleCard {
+// -- Bar Appearance: all color controls consolidated --------------------------
+
+class BarAppearanceSettings extends formattingSettings.SimpleCard {
   barColor = new formattingSettings.ColorPicker({
     name: 'barColor',
     displayName: 'Bar Color',
@@ -87,9 +85,65 @@ class ColorSettings extends formattingSettings.SimpleCard {
     value: { value: '#E2E8F0' },
   });
 
-  name = 'colorSettings';
-  displayName = 'Colors';
-  slices = [this.barColor, this.trackColor];
+  labelColor = new formattingSettings.ColorPicker({
+    name: 'labelColor',
+    displayName: 'Label Color',
+    value: { value: '' },
+  });
+
+  labelFontSize = new formattingSettings.NumUpDown({
+    name: 'labelFontSize',
+    displayName: 'Label Font Size',
+    value: 12,
+  });
+
+  labelFontFamily = new formattingSettings.ItemDropdown({
+    name: 'labelFontFamily',
+    displayName: 'Label Font Family',
+    items: [
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Arial', displayName: 'Arial' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Helvetica', displayName: 'Helvetica' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
+      { value: 'Verdana', displayName: 'Verdana' },
+      { value: 'Georgia', displayName: 'Georgia' },
+    ],
+    value: { value: 'Segoe UI', displayName: 'Segoe UI' },
+  });
+
+  labelFontWeight = new formattingSettings.ItemDropdown({
+    name: 'labelFontWeight',
+    displayName: 'Label Font Weight',
+    items: [
+      { value: 'normal', displayName: 'Normal' },
+      { value: 'bold', displayName: 'Bold' },
+      { value: '600', displayName: 'Semi-Bold' },
+    ],
+    value: { value: 'normal', displayName: 'Normal' },
+  });
+
+  gradientEnabled = new formattingSettings.ToggleSwitch({
+    name: 'gradientEnabled',
+    displayName: 'Enable Gradient',
+    value: false,
+  });
+
+  gradientStartColor = new formattingSettings.ColorPicker({
+    name: 'gradientStartColor',
+    displayName: 'Gradient Start Color',
+    value: { value: '#3B82F6' },
+  });
+
+  gradientEndColor = new formattingSettings.ColorPicker({
+    name: 'gradientEndColor',
+    displayName: 'Gradient End Color',
+    value: { value: '#8B5CF6' },
+  });
+
+  name = 'barAppearance';
+  displayName = 'Bar Appearance';
+  slices = [this.barColor, this.trackColor, this.labelColor, this.labelFontSize, this.labelFontFamily, this.labelFontWeight, this.gradientEnabled, this.gradientStartColor, this.gradientEndColor];
 }
 
 class TargetSettings extends formattingSettings.SimpleCard {
@@ -117,10 +171,16 @@ class TargetSettings extends formattingSettings.SimpleCard {
 }
 
 class CardStyleSettings extends formattingSettings.SimpleCard {
-  enableGlass = new formattingSettings.ToggleSwitch({
-    name: 'enableGlass',
-    displayName: 'Glass Effect',
-    value: true,
+  cardStyleMode = new formattingSettings.ItemDropdown({
+    name: 'cardStyleMode',
+    displayName: 'Card Style',
+    items: [
+      { value: 'none', displayName: 'None' },
+      { value: 'glass', displayName: 'Glass' },
+      { value: 'elevated', displayName: 'Elevated' },
+      { value: 'neumorphic', displayName: 'Neumorphic' },
+    ],
+    value: { value: 'glass', displayName: 'Glass' },
   });
 
   backgroundColor = new formattingSettings.ColorPicker({
@@ -143,7 +203,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.cardStyleMode, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 class AnimationSettings extends formattingSettings.SimpleCard {
@@ -191,35 +251,9 @@ class ProgressMilestoneSettings extends formattingSettings.SimpleCard {
   slices = [this.show, this.milestones, this.milestoneColor];
 }
 
-// -- Progress Gradient Settings ------------------------------------------------
-
-class ProgressGradientSettings extends formattingSettings.SimpleCard {
-  enabled = new formattingSettings.ToggleSwitch({
-    name: 'enabled',
-    displayName: 'Enable Gradient',
-    value: false,
-  });
-
-  startColor = new formattingSettings.ColorPicker({
-    name: 'startColor',
-    displayName: 'Start Color',
-    value: { value: '#3B82F6' },
-  });
-
-  endColor = new formattingSettings.ColorPicker({
-    name: 'endColor',
-    displayName: 'End Color',
-    value: { value: '#8B5CF6' },
-  });
-
-  name = 'progressGradient';
-  displayName = 'Gradient Fill';
-  slices = [this.enabled, this.startColor, this.endColor];
-}
-
 export class ProgressBarStackSettings extends formattingSettings.Model {
-  barSettings = new BarSettings();
-  colorSettings = new ColorSettings();
+  barSettings = new BarLayoutSettings();
+  barAppearance = new BarAppearanceSettings();
   targetSettings = new TargetSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
@@ -237,27 +271,27 @@ export class ProgressBarStackSettings extends formattingSettings.Model {
   accessibilityFormattingCard = new AccessibilityFormattingCard();
 
   progressMilestone = new ProgressMilestoneSettings();
-  progressGradient = new ProgressGradientSettings();
 
   colorThemeFormattingCard = new ColorThemeFormattingCard();
   numberFormattingCard = new NumberFormattingCard();
+  dateFilterFormattingCard = new DateFilterFormattingCard();
   cards = [
     this.barSettings,
-    this.colorSettings,
+    this.barAppearance,
     this.targetSettings,
-    this.cardSettings,
-    this.animationSettings,
-    this.dataLabelFormattingCard,
+    this.progressMilestone,
     this.titleFormattingCard,
-    this.axisFormattingCard,
+    this.conditionalFormattingCard,
+    this.cardSettings,
+    this.colorThemeFormattingCard,
+    this.animationSettings,
     this.referenceLineFormattingCard,
     this.trendLineFormattingCard,
-    this.conditionalFormattingCard,
     this.annotationFormattingCard,
+    this.axisFormattingCard,
+    this.dataLabelFormattingCard,
+    this.dateFilterFormattingCard,
     this.accessibilityFormattingCard,
-    this.progressMilestone,
-    this.progressGradient,
-    this.colorThemeFormattingCard,
     this.numberFormattingCard,
   ];
 }

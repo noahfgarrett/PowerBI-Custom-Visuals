@@ -47,6 +47,7 @@ import {
   lineStyleToDashArray,
   resolveColorTheme,
   getDateFilterIndices,
+  isDateColumn,
   type DateFilterConfig,
   createHoverDim,
   renderInlineLabels,
@@ -165,6 +166,15 @@ export class BarChartProVisual implements IVisual {
         BarChartProSettings,
         dataView,
       );
+    }
+
+    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+    if (legacyCardObj) {
+      const legacyGlass = legacyCardObj['enableGlass'];
+      if (legacyGlass === false) {
+        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      }
     }
 
     // Extract data
@@ -432,7 +442,7 @@ export class BarChartProVisual implements IVisual {
       endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
       endDate: this.settings.dateFilterFormattingCard.endDate.value,
     };
-    const dateIndices = getDateFilterIndices(categoryColumn.values, dateConfig);
+    const dateIndices = isDateColumn(categoryColumn.source) ? getDateFilterIndices(categoryColumn.values, dateConfig) : null;
 
     const hasSubCategory = subCategoryColumn !== null;
 

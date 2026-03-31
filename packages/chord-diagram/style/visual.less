@@ -1,3 +1,5 @@
+/* Chord Diagram — styles injected via pbiviz build */
+
 .chord-container {
   display: flex;
   align-items: center;
@@ -17,13 +19,26 @@
 
 .chord-group-arc {
   cursor: pointer;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.15s ease, filter 0.25s ease;
+
+  &:hover {
+    filter: brightness(1.15) drop-shadow(0 0 6px rgba(99, 102, 241, 0.35));
+  }
 }
 
 .chord-ribbon {
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease, filter 0.25s ease;
+
+  &:hover {
+    filter: brightness(1.12) drop-shadow(0 0 4px rgba(99, 102, 241, 0.3));
+  }
 }
 
 .chord-label {
   pointer-events: none;
+}
+
+.chord-entity-value {
+  pointer-events: none;
+  transition: opacity 0.2s ease;
 }

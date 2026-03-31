@@ -16,7 +16,8 @@ import {
   cubicOut,
   DURATION,
   formatWithSettings,
-  getGlassStyle,
+  applyCardStyle,
+  type CardStyleMode,
   withOpacity,
   renderChartTitle,
   applyDataLabelFormatting,
@@ -39,6 +40,13 @@ import {
   resolveSeriesFormatting,
   populateSeriesFormattingGroups,
   lineStyleToDashArray,
+  renderLegend,
+  type LegendItem,
+  getDateFilterIndices,
+  isDateColumn,
+  type DateFilterConfig,
+  resolveColorTheme,
+  getHostChartColor,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -47,6 +55,7 @@ import IVisual = powerbi.extensibility.visual.IVisual;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import DataView = powerbi.DataView;
 import ISelectionId = powerbi.visuals.ISelectionId;
+import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 
 import '../style/visual.less';
 
@@ -57,6 +66,7 @@ interface SlopeItem {
   startValue: number;
   endValue: number;
   selectionId: ISelectionId;
+  highlighted: boolean;
 }
 
 // ── Constants ────────────────────────────────────────────────────
@@ -75,6 +85,7 @@ export class SlopeChartVisual implements IVisual {
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
   private svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null;
+  private currentHasHighlights = false;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
@@ -99,11 +110,29 @@ export class SlopeChartVisual implements IVisual {
       );
     }
 
+    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+    if (legacyCardObj) {
+      const legacyGlass = legacyCardObj['enableGlass'];
+      if (legacyGlass === false) {
+        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      }
+    }
+
+    // Date filter: hide start/end when disabled
+    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
+
+    // Card Style — hide sub-settings when mode is 'none'
+    const cardStyleMode = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    this.settings.cardSettings.backgroundOpacity.visible = cardStyleMode !== 'none';
+    this.settings.cardSettings.backgroundColor.visible = cardStyleMode !== 'none';
+
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
 
     // Hide dead axis/grid properties — slope-chart has its own axis rendering
     this.settings.axisFormattingCard.xAxisTitle.visible = false;
-    this.settings.axisFormattingCard.yAxisTitle.visible = false;
     this.settings.axisFormattingCard.yAxisMin.visible = false;
     this.settings.axisFormattingCard.yAxisMax.visible = false;
     this.settings.axisFormattingCard.axisLabelFontFamily.visible = false;
@@ -112,14 +141,21 @@ export class SlopeChartVisual implements IVisual {
     this.settings.axisFormattingCard.axisLineWidth.visible = false;
     this.settings.axisFormattingCard.showGridLines.visible = false;
     this.settings.axisFormattingCard.gridLineColor.visible = false;
+    this.settings.axisFormattingCard.gridLineWidth.visible = false;
+    this.settings.axisFormattingCard.gridLineOpacity.visible = false;
+
+    // Hide dual-axis-only properties (no combo/dual-axis support)
+    this.settings.referenceLineFormattingCard.referenceLineAxis.visible = false;
+    this.settings.referenceLineFormattingCard.referenceBandWidth.visible = false;
+    this.settings.trendLineFormattingCard.trendLineAxis.visible = false;
 
     // ── Conditional Visibility ──────────────────────────────────
     this.settings.slopeSettings.fillOpacity.visible = this.settings.slopeSettings.showArea.value;
 
-    const colorByDir = this.settings.slopeSettings.colorByDirection.value;
-    this.settings.slopeSettings.positiveColor.visible = colorByDir;
-    this.settings.slopeSettings.negativeColor.visible = colorByDir;
-    this.settings.slopeSettings.neutralColor.visible = colorByDir;
+    const colorByDir = this.settings.directionColorSettings.colorByDirection.value;
+    this.settings.directionColorSettings.positiveColor.visible = colorByDir;
+    this.settings.directionColorSettings.negativeColor.visible = colorByDir;
+    this.settings.directionColorSettings.neutralColor.visible = colorByDir;
 
     const thresholdShow = this.settings.slopeThresholdSettings.show.value;
     this.settings.slopeThresholdSettings.threshold.visible = thresholdShow;
@@ -128,11 +164,16 @@ export class SlopeChartVisual implements IVisual {
     const changeLabelShow = this.settings.changeLabelSettings.show.value;
     this.settings.changeLabelSettings.fontSize.visible = changeLabelShow;
     this.settings.changeLabelSettings.fontColor.visible = changeLabelShow;
+    this.settings.changeLabelSettings.fontFamily.visible = changeLabelShow;
+    this.settings.changeLabelSettings.fontWeight.visible = changeLabelShow;
     this.settings.changeLabelSettings.format.visible = changeLabelShow;
     this.settings.changeLabelSettings.position.visible = changeLabelShow;
 
     // Extract data
     let data = this.extractData(dataView);
+
+    // Track cross-highlight state
+    this.currentHasHighlights = data !== null && data.some((d) => d.highlighted);
 
     // Sort by magnitude of change if enabled
     if (data && this.settings.slopeDisplaySettings.sortByMagnitude.value) {
@@ -191,8 +232,23 @@ export class SlopeChartVisual implements IVisual {
     const rowCount = categoryColumn.values.length;
     if (rowCount === 0) return null;
 
+    // Read cross-highlight data
+    const startHighlights = startColumn.highlights as unknown[] | undefined;
+    const endHighlights = endColumn.highlights as unknown[] | undefined;
+
     const items: SlopeItem[] = [];
+
+    const dateConfig: DateFilterConfig = {
+      enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
+      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
+      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+    };
+    const dateIndices = isDateColumn(categoryColumn.source) ? getDateFilterIndices(categoryColumn.values, dateConfig) : null;
+
     for (let i = 0; i < rowCount; i++) {
+      if (dateIndices && !dateIndices.has(i)) continue;
+
       const catVal = categoryColumn.values[i];
       const startVal = startColumn.values[i];
       const endVal = endColumn.values[i];
@@ -204,6 +260,11 @@ export class SlopeChartVisual implements IVisual {
 
       if (!Number.isFinite(startNum) || !Number.isFinite(endNum)) continue;
 
+      // A point is highlighted if its highlight value is non-null in either column
+      const startHl = startHighlights ? startHighlights[i] : undefined;
+      const endHl = endHighlights ? endHighlights[i] : undefined;
+      const isHighlighted = startHl != null || endHl != null;
+
       items.push({
         category: String(catVal),
         startValue: startNum,
@@ -211,6 +272,7 @@ export class SlopeChartVisual implements IVisual {
         selectionId: this.host.createSelectionIdBuilder()
           .withCategory(categoryColumn, i)
           .createSelectionId(),
+        highlighted: isHighlighted,
       });
     }
 
@@ -231,15 +293,16 @@ export class SlopeChartVisual implements IVisual {
 
     const s = this.settings;
 
-    // Apply glass card style
-    if (s.cardSettings.enableGlass.value) {
-      const glass = getGlassStyle({
-        mode: 'light',
-        opacity: s.cardSettings.backgroundOpacity.value / 100,
-        backgroundColor: s.cardSettings.backgroundColor.value?.value,
-        borderRadius: s.cardSettings.borderRadius.value,
-      });
-      Object.assign(this.container.style, glass);
+    // Apply card style
+    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    applyCardStyle(this.container, {
+      mode: cardMode,
+      opacity: s.cardSettings.backgroundOpacity.value / 100,
+      backgroundColor: s.cardSettings.backgroundColor.value?.value,
+      borderRadius: s.cardSettings.borderRadius.value,
+    });
+    if (cardMode === 'none') {
+      this.container.style.borderRadius = `${s.cardSettings.borderRadius.value}px`;
     }
 
     // Handle empty/null data
@@ -283,12 +346,19 @@ export class SlopeChartVisual implements IVisual {
     // Settings
     const lineWidth = s.slopeSettings.lineWidth.value;
     const dotRadius = s.slopeSettings.dotRadius.value;
-    const colorByDirection = s.slopeSettings.colorByDirection.value;
-    const positiveColor = s.slopeSettings.positiveColor.value.value;
-    const negativeColor = s.slopeSettings.negativeColor.value.value;
-    const neutralColor = s.slopeSettings.neutralColor.value.value;
-    const leftLabel = s.columnSettings.leftLabel.value;
-    const rightLabel = s.columnSettings.rightLabel.value;
+    const colorByDirection = s.directionColorSettings.colorByDirection.value;
+    const themeName = resolveColorTheme(s.colorThemeFormattingCard);
+    const positiveColor = themeName !== 'default'
+      ? getHostChartColor(this.host.colorPalette, 0, themeName)
+      : (s.directionColorSettings.positiveColor.value?.value || '#34D399');
+    const negativeColor = themeName !== 'default'
+      ? getHostChartColor(this.host.colorPalette, 1, themeName)
+      : (s.directionColorSettings.negativeColor.value?.value || '#F87171');
+    const neutralColor = themeName !== 'default'
+      ? getHostChartColor(this.host.colorPalette, 2, themeName)
+      : (s.directionColorSettings.neutralColor.value?.value || '#94A3B8');
+    const leftLabel = s.changeLabelSettings.leftLabel.value;
+    const rightLabel = s.changeLabelSettings.rightLabel.value;
     const animEnabled = s.animationSettings.enabled.value;
     const animDuration = s.animationSettings.duration.value;
 
@@ -318,7 +388,7 @@ export class SlopeChartVisual implements IVisual {
     const gridDash = gridLineStyle === 'dashed' ? '4 3' : gridLineStyle === 'dotted' ? '2 2' : 'none';
 
     // Label color — apply setting if set, otherwise fall back to axisLabelColor
-    const labelColorValue = s.slopeSettings.labelColor.value?.value;
+    const labelColorValue = s.changeLabelSettings.labelColor.value?.value;
     const labelColor = labelColorValue && labelColorValue.length > 0 ? labelColorValue : axisLabelColor;
     // Value tspan uses the resolved axis label color (respects user setting)
     const valueLabelColor = axisLabelColor;
@@ -487,9 +557,38 @@ export class SlopeChartVisual implements IVisual {
         path.attr('stroke-dasharray', dashArray);
       }
 
-      // Add tooltip
-      path.append('title')
-        .text(`${item.category}: ${formatWithSettings(item.startValue, this.settings.numberFormattingCard)} -> ${formatWithSettings(item.endValue, this.settings.numberFormattingCard)}`);
+      // Tooltip via tooltipService
+      const slopeHost = this.host;
+      const slopeCategory = item.category;
+      const slopeStartStr = formatWithSettings(item.startValue, this.settings.numberFormattingCard);
+      const slopeEndStr = formatWithSettings(item.endValue, this.settings.numberFormattingCard);
+      const slopeDelta = item.endValue - item.startValue;
+      const slopeDeltaStr = (slopeDelta >= 0 ? '+' : '') + formatWithSettings(slopeDelta, this.settings.numberFormattingCard);
+      path.on('mouseover', (event: MouseEvent) => {
+        const tooltipItems: VisualTooltipDataItem[] = [
+          { displayName: 'Category', value: slopeCategory },
+          { displayName: 'Start', value: slopeStartStr },
+          { displayName: 'End', value: slopeEndStr },
+          { displayName: 'Change', value: slopeDeltaStr },
+        ];
+        slopeHost.tooltipService.show({
+          dataItems: tooltipItems,
+          identities: [],
+          coordinates: [event.clientX, event.clientY],
+          isTouchEvent: false,
+        });
+      });
+      path.on('mousemove', (event: MouseEvent) => {
+        slopeHost.tooltipService.move({
+          dataItems: [],
+          identities: [],
+          coordinates: [event.clientX, event.clientY],
+          isTouchEvent: false,
+        });
+      });
+      path.on('mouseout', () => {
+        slopeHost.tooltipService.hide({ immediately: true, isTouchEvent: false });
+      });
       this.attachSelection(path, item.selectionId);
 
       const pathNode = path.node();
@@ -502,6 +601,7 @@ export class SlopeChartVisual implements IVisual {
 
     const dotGroup = g.append('g').attr('class', 'slope-dots');
     const dots: SVGElement[] = [];
+    const showDotsToggle = s.slopeSettings.showDots.value;
 
     data.forEach((item, i) => {
       const y1 = yScale(item.startValue);
@@ -509,39 +609,41 @@ export class SlopeChartVisual implements IVisual {
       const color = getLineColor(item);
       const fmt = resolveSeriesFormatting(this.settings.seriesFormattingCard, i, color);
 
-      // Start dot
-      const startDot = dotGroup.append('circle')
-        .attr('class', 'slope-dot')
-        .attr('data-series', String(i))
-        .attr('cx', leftX)
-        .attr('cy', y1)
-        .attr('r', dotRadius)
-        .attr('fill', fmt.color)
-        .attr('stroke', dotStrokeColor)
-        .attr('stroke-width', 1.5)
-        .attr('opacity', fmt.opacity / 100)
-        .style('transition', 'opacity 0.15s ease');
-      this.attachSelection(startDot, item.selectionId);
+      if (showDotsToggle) {
+        // Start dot
+        const startDot = dotGroup.append('circle')
+          .attr('class', 'slope-dot')
+          .attr('data-series', String(i))
+          .attr('cx', leftX)
+          .attr('cy', y1)
+          .attr('r', dotRadius)
+          .attr('fill', fmt.color)
+          .attr('stroke', dotStrokeColor)
+          .attr('stroke-width', 1.5)
+          .attr('opacity', fmt.opacity / 100)
+          .style('transition', 'opacity 0.15s ease');
+        this.attachSelection(startDot, item.selectionId);
 
-      const startDotNode = startDot.node();
-      if (startDotNode) dots.push(startDotNode);
+        const startDotNode = startDot.node();
+        if (startDotNode) dots.push(startDotNode);
 
-      // End dot
-      const endDot = dotGroup.append('circle')
-        .attr('class', 'slope-dot')
-        .attr('data-series', String(i))
-        .attr('cx', rightX)
-        .attr('cy', y2)
-        .attr('r', dotRadius)
-        .attr('fill', fmt.color)
-        .attr('stroke', dotStrokeColor)
-        .attr('stroke-width', 1.5)
-        .attr('opacity', fmt.opacity / 100)
-        .style('transition', 'opacity 0.15s ease');
-      this.attachSelection(endDot, item.selectionId);
+        // End dot
+        const endDot = dotGroup.append('circle')
+          .attr('class', 'slope-dot')
+          .attr('data-series', String(i))
+          .attr('cx', rightX)
+          .attr('cy', y2)
+          .attr('r', dotRadius)
+          .attr('fill', fmt.color)
+          .attr('stroke', dotStrokeColor)
+          .attr('stroke-width', 1.5)
+          .attr('opacity', fmt.opacity / 100)
+          .style('transition', 'opacity 0.15s ease');
+        this.attachSelection(endDot, item.selectionId);
 
-      const endDotNode = endDot.node();
-      if (endDotNode) dots.push(endDotNode);
+        const endDotNode = endDot.node();
+        if (endDotNode) dots.push(endDotNode);
+      }
     });
 
     // ── Labels ──────────────────────────────────────────────────
@@ -606,7 +708,7 @@ export class SlopeChartVisual implements IVisual {
 
     // ── Percent Change Labels (at right end) ──────────────────────
 
-    if (s.slopeDisplaySettings.showPercentChange.value) {
+    if (s.changeLabelSettings.showPercentChange.value) {
       const pctGroup = g.append('g').attr('class', 'slope-pct-change-labels');
       data.forEach((item, i) => {
         const y2 = yScale(item.endValue);
@@ -725,6 +827,8 @@ export class SlopeChartVisual implements IVisual {
       const clFontSize = s.changeLabelSettings.fontSize.value;
       const clFontColorValue = s.changeLabelSettings.fontColor.value?.value;
       const clHasCustomColor = clFontColorValue != null && clFontColorValue.length > 0;
+      const clFontFamily = resolveDropdown(s.changeLabelSettings.fontFamily) || '';
+      const clFontWeight = resolveDropdown(s.changeLabelSettings.fontWeight) || '600';
 
       const clFormatValue = s.changeLabelSettings.format.value;
       const clFormat: string = typeof clFormatValue === 'string'
@@ -810,10 +914,15 @@ export class SlopeChartVisual implements IVisual {
           .attr('dy', '0.35em')
           .attr('text-anchor', 'middle')
           .attr('font-size', clFontSize)
-          .attr('font-weight', '600')
+          .attr('font-weight', clFontWeight)
           .attr('fill', textColor)
-          .style('transition', 'opacity 0.15s ease')
-          .text(labelText);
+          .style('transition', 'opacity 0.15s ease');
+
+        if (clFontFamily) {
+          changeLabel.attr('font-family', clFontFamily);
+        }
+
+        changeLabel.text(labelText);
 
         this.attachSelection(changeLabel, item.selectionId);
 
@@ -901,18 +1010,41 @@ export class SlopeChartVisual implements IVisual {
     }
 
     // ── Entrance Animations ─────────────────────────────────────
-
-    if (animEnabled) {
+    // Skip animation when cross-highlighting is active to avoid overwriting dimmed opacity
+    if (animEnabled && !this.currentHasHighlights) {
       this.animateEntrance(paths, dots, labels, animDuration, changeLabelElements);
     }
     // Apply shared formatting settings
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.slope-label');
+
+    // Legend
+    const legendCard = this.settings.legendFormattingCard;
+    if (legendCard.showLegend.value) {
+      const legendPos = resolveDropdown(legendCard.legendPosition) ?? 'bottom';
+      const rawFontColor = legendCard.legendFontColor.value?.value;
+      const legendItems: LegendItem[] = [
+        { label: 'Increase', color: positiveColor },
+        { label: 'Decrease', color: negativeColor },
+      ];
+      renderLegend(this.container, {
+        items: legendItems,
+        position: legendPos as 'top' | 'bottom' | 'left' | 'right',
+        fontSize: legendCard.legendFontSize.value,
+        fontColor: rawFontColor && rawFontColor.length > 0 ? rawFontColor : '#64748B',
+        fontFamily: resolveDropdown(legendCard.legendFontFamily) || undefined,
+        fontWeight: resolveDropdown(legendCard.legendFontWeight) || 'normal',
+        aliases: legendCard.legendAliases.value,
+      });
+    }
 
     // ── Accessibility ─────────────────────────────────────────────
 
     this.applyAccessibility(data.length);
 
     this.container.addEventListener('click', this.handleBackgroundClick);
+
+    // Apply cross-highlight dimming
+    this.applyCrossHighlight(data);
   }
 
   // ── Empty State ──────────────────────────────────────────────
@@ -1112,6 +1244,30 @@ export class SlopeChartVisual implements IVisual {
   private handleBackgroundClick = (): void => {
     void this.selectionManager.clear();
   };
+
+  // ── Cross-Highlight ───────────────────────────────────────────
+
+  private applyCrossHighlight(data: SlopeItem[]): void {
+    if (!this.currentHasHighlights) return;
+
+    // Build a set of highlighted series indices
+    const highlightedSeries = new Set<string>();
+    data.forEach((item, i) => {
+      if (item.highlighted) highlightedSeries.add(String(i));
+    });
+
+    // Dim non-highlighted elements (lines, dots, labels, areas, etc.)
+    const svgNode = this.svg?.node();
+    if (!svgNode) return;
+
+    const seriesElements = svgNode.querySelectorAll('[data-series]');
+    for (const el of Array.from(seriesElements)) {
+      const seriesIdx = el.getAttribute('data-series');
+      if (seriesIdx !== null) {
+        (el as SVGElement).style.opacity = highlightedSeries.has(seriesIdx) ? '' : '0.3';
+      }
+    }
+  }
 
   // ── Lifecycle ────────────────────────────────────────────────
 

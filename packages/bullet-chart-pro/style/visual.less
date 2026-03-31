@@ -12,7 +12,6 @@
 
 /* SVG chart area */
 .bullet-svg {
-  width: 100%;
   display: block;
 }
 
@@ -30,21 +29,38 @@
 /* Qualitative range rectangles */
 .bullet-range {
   pointer-events: none;
+  transition: filter 0.2s ease;
 }
 
 /* Actual value bar */
 .bullet-value-bar {
   cursor: pointer;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.15s ease, filter 0.25s ease, box-shadow 0.25s ease;
 
   &:hover {
-    filter: brightness(1.12);
+    filter: brightness(1.15) drop-shadow(0 1px 3px rgba(0, 0, 0, 0.18));
   }
 }
 
 /* Target marker line */
 .bullet-target {
   pointer-events: none;
+  transition: stroke-width 0.2s ease;
+}
+
+/* Comparative marker */
+.bullet-comparative {
+  transition: stroke-width 0.2s ease, filter 0.2s ease;
+}
+
+/* Forecast band */
+.bullet-forecast-band {
+  transition: opacity 0.2s ease;
+}
+
+/* Forecast line */
+.bullet-forecast {
+  transition: stroke-width 0.2s ease;
 }
 
 /* Empty state */

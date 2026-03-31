@@ -54,7 +54,7 @@
           ],
           "dataReductionAlgorithm": {
             "top": {
-              "count": 500
+              "count": 30000
             }
           }
         },
@@ -120,31 +120,8 @@
         }
       }
     },
-    "axisSettings": {
-      "displayName": "Axes",
-      "properties": {
-        "showXAxis": {
-          "displayName": "Show X-Axis",
-          "type": {
-            "bool": true
-          }
-        },
-        "showYAxis": {
-          "displayName": "Show Y-Axis",
-          "type": {
-            "bool": true
-          }
-        },
-        "gridLines": {
-          "displayName": "Grid Lines",
-          "type": {
-            "bool": true
-          }
-        }
-      }
-    },
     "animationSettings": {
-      "displayName": "Animation",
+      "displayName": "Animation & Playback",
       "properties": {
         "enabled": {
           "displayName": "Enable Animations",
@@ -154,6 +131,24 @@
         },
         "duration": {
           "displayName": "Duration (ms)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "enableTransitions": {
+          "displayName": "Animated Transitions",
+          "type": {
+            "bool": true
+          }
+        },
+        "enablePlayAxis": {
+          "displayName": "Enable Play Axis",
+          "type": {
+            "bool": true
+          }
+        },
+        "playSpeed": {
+          "displayName": "Play Speed (ms)",
           "type": {
             "numeric": true
           }
@@ -252,10 +247,118 @@
             "numeric": true
           }
         },
+        "labelFontColor": {
+          "displayName": "Label Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "labelFontFamily": {
+          "displayName": "Label Font",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              }
+            ]
+          }
+        },
+        "labelFontWeight": {
+          "displayName": "Label Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold"
+              }
+            ]
+          }
+        },
         "zoneFillOpacity": {
           "displayName": "Zone Fill Opacity",
           "type": {
             "numeric": true
+          }
+        },
+        "zone1Color": {
+          "displayName": "Top-Left Zone Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "zone2Color": {
+          "displayName": "Top-Right Zone Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "zone3Color": {
+          "displayName": "Bottom-Left Zone Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "zone4Color": {
+          "displayName": "Bottom-Right Zone Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
           }
         }
       }
@@ -340,7 +443,7 @@
           }
         },
         "showR2": {
-          "displayName": "Show R²",
+          "displayName": "Show R\u00b2",
           "type": {
             "bool": true
           }
@@ -499,7 +602,7 @@
           }
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (°)",
+          "displayName": "X-Label Rotation (\u00b0)",
           "type": {
             "numeric": true
           }
@@ -661,6 +764,12 @@
                 "displayName": "Bold"
               }
             ]
+          }
+        },
+        "legendAliases": {
+          "displayName": "Rename Labels",
+          "type": {
+            "text": true
           }
         }
       }
@@ -1004,7 +1113,7 @@
       }
     },
     "scatterClusterSettings": {
-      "displayName": "Clustering",
+      "displayName": "Analytics",
       "properties": {
         "enabled": {
           "displayName": "Enable Clustering",
@@ -1023,35 +1132,7 @@
           "type": {
             "bool": true
           }
-        }
-      }
-    },
-    "scatterAnimationSettings": {
-      "displayName": "Scatter Animation",
-      "properties": {
-        "enableTransitions": {
-          "displayName": "Animated Transitions",
-          "type": {
-            "bool": true
-          }
         },
-        "enablePlayAxis": {
-          "displayName": "Enable Play Axis",
-          "type": {
-            "bool": true
-          }
-        },
-        "playSpeed": {
-          "displayName": "Play Speed (ms)",
-          "type": {
-            "numeric": true
-          }
-        }
-      }
-    },
-    "scatterZoomSettings": {
-      "displayName": "Zoom & Pan",
-      "properties": {
         "enableZoom": {
           "displayName": "Enable Zoom",
           "type": {
@@ -1211,94 +1292,13 @@
             "numeric": true
           }
         },
+        "referenceBandWidth": {
+          "displayName": "Band Width (%)",
+          "type": {
+            "numeric": true
+          }
+        },
         "referenceLineAxis": {
-          "displayName": "Target Axis",
-          "type": {
-            "enumeration": [
-              {
-                "value": "primary",
-                "displayName": "Primary"
-              },
-              {
-                "value": "secondary",
-                "displayName": "Secondary"
-              }
-            ]
-          }
-        }
-      }
-    },
-    "trendLineFormatting": {
-      "displayName": "Trend Line",
-      "properties": {
-        "showTrendLine": {
-          "displayName": "Show Trend Line",
-          "type": {
-            "bool": true
-          }
-        },
-        "trendLineType": {
-          "displayName": "Type",
-          "type": {
-            "enumeration": [
-              {
-                "value": "linear",
-                "displayName": "Linear"
-              },
-              {
-                "value": "polynomial",
-                "displayName": "Polynomial"
-              },
-              {
-                "value": "exponential",
-                "displayName": "Exponential"
-              },
-              {
-                "value": "logarithmic",
-                "displayName": "Logarithmic"
-              },
-              {
-                "value": "power",
-                "displayName": "Power"
-              }
-            ]
-          }
-        },
-        "polynomialOrder": {
-          "displayName": "Polynomial Order",
-          "type": {
-            "numeric": true
-          }
-        },
-        "trendLineColor": {
-          "displayName": "Line Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        },
-        "trendLineWidth": {
-          "displayName": "Line Width",
-          "type": {
-            "numeric": true
-          }
-        },
-        "showEquation": {
-          "displayName": "Show Equation",
-          "type": {
-            "bool": true
-          }
-        },
-        "showR2": {
-          "displayName": "Show R²",
-          "type": {
-            "bool": true
-          }
-        },
-        "trendLineAxis": {
           "displayName": "Target Axis",
           "type": {
             "enumeration": [
@@ -1419,11 +1419,34 @@
             "numeric": true
           }
         },
+        "cardStyleMode": {
+          "displayName": "Card Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "glass",
+                "displayName": "Glass"
+              },
+              {
+                "value": "elevated",
+                "displayName": "Elevated"
+              },
+              {
+                "value": "neumorphic",
+                "displayName": "Neumorphic"
+              }
+            ]
+          }
+        },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "Glass Effect"
+          "displayName": "(Deprecated) Enable Glass"
         }
       }
     },
@@ -1562,6 +1585,35 @@
           "displayName": "Line Width",
           "type": {
             "numeric": true
+          }
+        }
+      }
+    },
+    "dateFilterFormatting": {
+      "displayName": "Date Filter",
+      "properties": {
+        "enableDateFilter": {
+          "displayName": "Enable Date Filter",
+          "type": {
+            "bool": true
+          }
+        },
+        "startDate": {
+          "displayName": "Start Date",
+          "type": {
+            "text": true
+          }
+        },
+        "endAtCurrentDate": {
+          "displayName": "End at Current Date",
+          "type": {
+            "bool": true
+          }
+        },
+        "endDate": {
+          "displayName": "End Date",
+          "type": {
+            "text": true
           }
         }
       }

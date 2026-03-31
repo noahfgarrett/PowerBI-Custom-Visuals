@@ -859,6 +859,12 @@
               }
             ]
           }
+        },
+        "enableGlass": {
+          "type": {
+            "bool": true
+          },
+          "displayName": "(Deprecated) Enable Glass"
         }
       }
     },
@@ -1012,15 +1018,26 @@
           }
         },
         "showGoalText": {
-          "type": { "bool": true },
+          "type": {
+            "bool": true
+          },
           "displayName": "Show Goal Text"
         },
         "goalTextAlignment": {
           "type": {
             "enumeration": [
-              { "value": "left", "displayName": "Left" },
-              { "value": "center", "displayName": "Center" },
-              { "value": "right", "displayName": "Right" }
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "center",
+                "displayName": "Center"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
             ]
           },
           "displayName": "Goal Text Alignment"

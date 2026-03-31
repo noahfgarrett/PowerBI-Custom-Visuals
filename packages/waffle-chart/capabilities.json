@@ -65,6 +65,35 @@
             "numeric": true
           }
         },
+        "fillDirection": {
+          "displayName": "Fill Direction",
+          "type": {
+            "enumeration": [
+              {
+                "value": "lr",
+                "displayName": "Left to Right"
+              },
+              {
+                "value": "bt",
+                "displayName": "Bottom to Top"
+              },
+              {
+                "value": "diagonal",
+                "displayName": "Diagonal"
+              },
+              {
+                "value": "radial",
+                "displayName": "Radial"
+              }
+            ]
+          }
+        },
+        "autoFitCells": {
+          "displayName": "Auto-Fit Cell Size",
+          "type": {
+            "bool": true
+          }
+        },
         "shape": {
           "displayName": "Cell Shape",
           "type": {
@@ -80,30 +109,10 @@
             ]
           }
         },
-        "cellStrokeColor": {
-          "displayName": "Cell Stroke Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        },
         "cellCornerRadius": {
           "displayName": "Cell Corner Radius",
           "type": {
             "numeric": true
-          }
-        },
-        "emptyColor": {
-          "displayName": "Empty Cell Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
           }
         }
       }
@@ -123,6 +132,16 @@
         },
         "emptyColor": {
           "displayName": "Empty Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "cellStrokeColor": {
+          "displayName": "Cell Stroke Color",
           "type": {
             "fill": {
               "solid": {
@@ -156,6 +175,60 @@
                 "color": true
               }
             }
+          }
+        },
+        "fontFamily": {
+          "displayName": "Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Helvetica",
+                "displayName": "Helvetica"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              }
+            ]
+          }
+        },
+        "fontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold"
+              }
+            ]
           }
         }
       }
@@ -632,6 +705,12 @@
               }
             ]
           }
+        },
+        "legendAliases": {
+          "displayName": "Rename Labels",
+          "type": {
+            "text": true
+          }
         }
       }
     },
@@ -686,6 +765,33 @@
           "type": {
             "numeric": true
           }
+        },
+        "iconSet": {
+          "displayName": "Icon Set",
+          "type": {
+            "enumeration": [
+              {
+                "value": "default",
+                "displayName": "Default"
+              },
+              {
+                "value": "weather",
+                "displayName": "Weather"
+              },
+              {
+                "value": "arrows",
+                "displayName": "Arrows"
+              },
+              {
+                "value": "shapes",
+                "displayName": "Shapes"
+              },
+              {
+                "value": "status",
+                "displayName": "Status"
+              }
+            ]
+          }
         }
       }
     },
@@ -714,77 +820,34 @@
             "numeric": true
           }
         },
-        "enableGlass": {
-          "type": {
-            "bool": true
-          },
-          "displayName": "Glass Effect"
-        }
-      }
-    },
-    "waffleLayoutSettings": {
-      "displayName": "Layout",
-      "properties": {
-        "fillDirection": {
-          "displayName": "Fill Direction",
+        "cardStyleMode": {
+          "displayName": "Card Style",
           "type": {
             "enumeration": [
               {
-                "value": "lr",
-                "displayName": "Left to Right"
+                "value": "none",
+                "displayName": "None"
               },
               {
-                "value": "bt",
-                "displayName": "Bottom to Top"
+                "value": "glass",
+                "displayName": "Glass"
               },
               {
-                "value": "diagonal",
-                "displayName": "Diagonal"
+                "value": "elevated",
+                "displayName": "Elevated"
               },
               {
-                "value": "radial",
-                "displayName": "Radial"
+                "value": "neumorphic",
+                "displayName": "Neumorphic"
               }
             ]
           }
         },
-        "autoFitCells": {
-          "displayName": "Auto-Fit Cell Size",
+        "enableGlass": {
           "type": {
             "bool": true
-          }
-        }
-      }
-    },
-    "waffleIconSettings": {
-      "displayName": "Icon Library",
-      "properties": {
-        "iconSet": {
-          "displayName": "Icon Set",
-          "type": {
-            "enumeration": [
-              {
-                "value": "default",
-                "displayName": "Default"
-              },
-              {
-                "value": "weather",
-                "displayName": "Weather"
-              },
-              {
-                "value": "arrows",
-                "displayName": "Arrows"
-              },
-              {
-                "value": "shapes",
-                "displayName": "Shapes"
-              },
-              {
-                "value": "status",
-                "displayName": "Status"
-              }
-            ]
-          }
+          },
+          "displayName": "(Deprecated) Enable Glass"
         }
       }
     },
@@ -867,6 +930,46 @@
         }
       }
     },
+    "colorThemeFormatting": {
+      "properties": {
+        "colorTheme": {
+          "displayName": "Theme",
+          "type": {
+            "enumeration": [
+              {
+                "value": "default",
+                "displayName": "Default"
+              },
+              {
+                "value": "ocean",
+                "displayName": "Ocean"
+              },
+              {
+                "value": "sunset",
+                "displayName": "Sunset"
+              },
+              {
+                "value": "forest",
+                "displayName": "Forest"
+              },
+              {
+                "value": "berry",
+                "displayName": "Berry"
+              },
+              {
+                "value": "monochrome",
+                "displayName": "Monochrome"
+              },
+              {
+                "value": "earth",
+                "displayName": "Earth"
+              }
+            ]
+          }
+        }
+      },
+      "displayName": "Color Theme"
+    },
     "numberFormatting": {
       "displayName": "Number Format",
       "properties": {
@@ -917,48 +1020,39 @@
         }
       }
     },
-    "colorThemeFormatting": {
+    "dateFilterFormatting": {
+      "displayName": "Date Filter",
       "properties": {
-        "colorTheme": {
-          "displayName": "Theme",
+        "enableDateFilter": {
+          "displayName": "Enable Date Filter",
           "type": {
-            "enumeration": [
-              {
-                "value": "default",
-                "displayName": "Default"
-              },
-              {
-                "value": "ocean",
-                "displayName": "Ocean"
-              },
-              {
-                "value": "sunset",
-                "displayName": "Sunset"
-              },
-              {
-                "value": "forest",
-                "displayName": "Forest"
-              },
-              {
-                "value": "berry",
-                "displayName": "Berry"
-              },
-              {
-                "value": "monochrome",
-                "displayName": "Monochrome"
-              },
-              {
-                "value": "earth",
-                "displayName": "Earth"
-              }
-            ]
+            "bool": true
+          }
+        },
+        "startDate": {
+          "displayName": "Start Date",
+          "type": {
+            "text": true
+          }
+        },
+        "endAtCurrentDate": {
+          "displayName": "End at Current Date",
+          "type": {
+            "bool": true
+          }
+        },
+        "endDate": {
+          "displayName": "End Date",
+          "type": {
+            "text": true
           }
         }
-      },
-      "displayName": "Color Theme"
+      }
     }
   },
   "supportsKeyboardFocus": true,
+  "supportsHighlight": true,
+  "supportsMultiVisualSelection": true,
   "privileges": [],
   "suppressDefaultTitle": true
 }

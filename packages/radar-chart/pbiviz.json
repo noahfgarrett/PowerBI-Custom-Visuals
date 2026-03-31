@@ -4,10 +4,10 @@
     "displayName": "Radar Chart",
     "guid": "radarChart_8C9D1E2F3A4B",
     "visualClassName": "RadarChartVisual",
-    "version": "1.0.0.0",
+    "version": "1.0.1.0",
     "description": "Radar/spider chart with animated polygon series and web grid.",
-    "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
-    "gitHubUrl": "https://github.com/noahgarrett/PowerBI"
+    "supportUrl": "https://github.com/noahfgarrett/PowerBI/issues",
+    "gitHubUrl": "https://github.com/noahfgarrett/PowerBI"
   },
   "apiVersion": "5.3.0",
   "author": {

@@ -4,7 +4,7 @@
     "displayName": "Polar Nightingale Chart",
     "guid": "polarChart_5A3B7C2D1E9F",
     "visualClassName": "PolarChartVisual",
-    "version": "1.0.0.0",
+    "version": "1.0.1.0",
     "description": "Nightingale rose chart with sweeping petal animations, bloom hover effect, and glassmorphic styling.",
     "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
     "gitHubUrl": "https://github.com/noahgarrett/PowerBI"

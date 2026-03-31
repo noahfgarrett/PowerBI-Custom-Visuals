@@ -4,7 +4,7 @@
     "displayName": "Chord Diagram",
     "guid": "chordDiagram_3D4E5F6A7B8C",
     "visualClassName": "ChordDiagramVisual",
-    "version": "1.0.0.0",
+    "version": "1.0.1.0",
     "description": "Chord diagram showing relationships between entities with animated ribbons.",
     "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
     "gitHubUrl": "https://github.com/noahgarrett/PowerBI"

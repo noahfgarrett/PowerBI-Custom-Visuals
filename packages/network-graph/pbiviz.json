@@ -4,7 +4,7 @@
     "displayName": "Network Graph",
     "guid": "networkGraph_4E5F6A7B8C9D",
     "visualClassName": "NetworkGraphVisual",
-    "version": "1.0.0.0",
+    "version": "1.0.1.0",
     "description": "Force-directed network graph with spring physics and drag interaction.",
     "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
     "gitHubUrl": "https://github.com/noahgarrett/PowerBI"

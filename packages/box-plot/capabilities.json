@@ -10,7 +10,7 @@
       "displayName": "Values",
       "name": "values",
       "kind": "Measure",
-      "description": "Raw values — the visual computes min/Q1/median/Q3/max internally"
+      "description": "Raw values \u2014 the visual computes min/Q1/median/Q3/max internally"
     }
   ],
   "dataViewMappings": [
@@ -36,7 +36,7 @@
           ],
           "dataReductionAlgorithm": {
             "top": {
-              "count": 1000
+              "count": 30000
             }
           }
         },
@@ -82,6 +82,12 @@
                 "color": true
               }
             }
+          }
+        },
+        "medianLineWidth": {
+          "displayName": "Median Line Width",
+          "type": {
+            "numeric": true
           }
         },
         "boxStrokeColor": {
@@ -135,6 +141,12 @@
                 "color": true
               }
             }
+          }
+        },
+        "perCategoryColors": {
+          "displayName": "Per-Category Colors",
+          "type": {
+            "bool": true
           }
         }
       }
@@ -225,6 +237,12 @@
         },
         "size": {
           "displayName": "Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "strokeWidth": {
+          "displayName": "Stroke Width",
           "type": {
             "numeric": true
           }
@@ -410,7 +428,7 @@
           }
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (°)",
+          "displayName": "X-Label Rotation (\u00b0)",
           "type": {
             "numeric": true
           }
@@ -572,6 +590,12 @@
                 "displayName": "Bold"
               }
             ]
+          }
+        },
+        "legendAliases": {
+          "displayName": "Rename Labels",
+          "type": {
+            "text": true
           }
         }
       }
@@ -1019,6 +1043,12 @@
             "numeric": true
           }
         },
+        "referenceBandWidth": {
+          "displayName": "Band Width (%)",
+          "type": {
+            "numeric": true
+          }
+        },
         "referenceLineAxis": {
           "displayName": "Target Axis",
           "type": {
@@ -1101,7 +1131,7 @@
           }
         },
         "showR2": {
-          "displayName": "Show R²",
+          "displayName": "Show R\u00b2",
           "type": {
             "bool": true
           }
@@ -1257,17 +1287,6 @@
         }
       }
     },
-    "boxPlotColorSettings": {
-      "displayName": "Box Plot Colors",
-      "properties": {
-        "perCategoryColors": {
-          "displayName": "Per-Category Colors",
-          "type": {
-            "bool": true
-          }
-        }
-      }
-    },
     "cardSettings": {
       "displayName": "Card Style",
       "properties": {
@@ -1293,11 +1312,34 @@
             "numeric": true
           }
         },
+        "cardStyleMode": {
+          "displayName": "Card Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "glass",
+                "displayName": "Glass"
+              },
+              {
+                "value": "elevated",
+                "displayName": "Elevated"
+              },
+              {
+                "value": "neumorphic",
+                "displayName": "Neumorphic"
+              }
+            ]
+          }
+        },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "Glass Effect"
+          "displayName": "(Deprecated) Enable Glass"
         }
       }
     },
@@ -1419,16 +1461,6 @@
             }
           }
         },
-        "seriesLineStyle": {
-          "type": {
-            "text": true
-          }
-        },
-        "seriesLineWidth": {
-          "type": {
-            "numeric": true
-          }
-        },
         "seriesOpacity": {
           "type": {
             "numeric": true
@@ -1463,6 +1495,35 @@
           "displayName": "Line Width",
           "type": {
             "numeric": true
+          }
+        }
+      }
+    },
+    "dateFilterFormatting": {
+      "displayName": "Date Filter",
+      "properties": {
+        "enableDateFilter": {
+          "displayName": "Enable Date Filter",
+          "type": {
+            "bool": true
+          }
+        },
+        "startDate": {
+          "displayName": "Start Date",
+          "type": {
+            "text": true
+          }
+        },
+        "endAtCurrentDate": {
+          "displayName": "End at Current Date",
+          "type": {
+            "bool": true
+          }
+        },
+        "endDate": {
+          "displayName": "End Date",
+          "type": {
+            "text": true
           }
         }
       }

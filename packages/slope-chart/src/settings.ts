@@ -19,7 +19,11 @@ import {
   AccessibilityFormattingCard,
   SeriesFormattingCard,
   NumberFormattingCard,
+  ColorThemeFormattingCard,
+  DateFilterFormattingCard,
 } from '../../core/src';
+
+// ── Slope Lines ─────────────────────────────────────────────────────
 
 class SlopeSettings extends formattingSettings.SimpleCard {
   lineWidth = new formattingSettings.NumUpDown({
@@ -34,6 +38,45 @@ class SlopeSettings extends formattingSettings.SimpleCard {
     value: 5,
   });
 
+  dotStrokeColor = new formattingSettings.ColorPicker({
+    name: 'dotStrokeColor',
+    displayName: 'Dot Stroke Color',
+    value: { value: '' },
+  });
+
+  showArea = new formattingSettings.ToggleSwitch({
+    name: 'showArea',
+    displayName: 'Show Area Fill',
+    value: false,
+  });
+
+  fillOpacity = new formattingSettings.NumUpDown({
+    name: 'fillOpacity',
+    displayName: 'Fill Opacity',
+    value: 30,
+  });
+
+  showDots = new formattingSettings.ToggleSwitch({
+    name: 'showDots',
+    displayName: 'Show Dots',
+    value: true,
+  });
+
+  name = 'slopeSettings';
+  displayName = 'Slope Lines';
+  slices = [
+    this.lineWidth,
+    this.showDots,
+    this.dotRadius,
+    this.dotStrokeColor,
+    this.showArea,
+    this.fillOpacity,
+  ];
+}
+
+// ── Direction Colors ────────────────────────────────────────────────
+
+class DirectionColorSettings extends formattingSettings.SimpleCard {
   colorByDirection = new formattingSettings.ToggleSwitch({
     name: 'colorByDirection',
     displayName: 'Color by Direction',
@@ -58,58 +101,14 @@ class SlopeSettings extends formattingSettings.SimpleCard {
     value: { value: '#94A3B8' },
   });
 
-
-  dotStrokeColor = new formattingSettings.ColorPicker({
-
-    name: 'dotStrokeColor',
-
-    displayName: 'Dot Stroke Color',
-
-    value: { value: '' },
-
-  });
-
-  labelColor = new formattingSettings.ColorPicker({
-
-    name: 'labelColor',
-
-    displayName: 'Label Color',
-
-    value: { value: '' },
-
-  });
-
-  showArea = new formattingSettings.ToggleSwitch({
-    name: 'showArea',
-    displayName: 'Show Area Fill',
-    value: false,
-  });
-
-  fillOpacity = new formattingSettings.NumUpDown({
-    name: 'fillOpacity',
-    displayName: 'Fill Opacity',
-    value: 30,
-  });
-
-
-  name = 'slopeSettings';
-  displayName = 'Slope Lines';
-  slices = [
-    this.lineWidth,
-    this.dotRadius,
-    this.colorByDirection,
-    this.positiveColor,
-    this.negativeColor,
-    this.neutralColor,
-    this.dotStrokeColor,
-    this.labelColor,
-    this.showArea,
-    this.fillOpacity,
-
-  ];
+  name = 'directionColorSettings';
+  displayName = 'Direction Colors';
+  slices = [this.colorByDirection, this.positiveColor, this.negativeColor, this.neutralColor];
 }
 
-class ColumnSettings extends formattingSettings.SimpleCard {
+// ── Labels & Change (merged Columns + Change Labels + labelColor + showPercentChange) ──
+
+class LabelsChangeSettings extends formattingSettings.SimpleCard {
   leftLabel = new formattingSettings.TextInput({
     name: 'leftLabel',
     displayName: 'Left Label',
@@ -124,42 +123,12 @@ class ColumnSettings extends formattingSettings.SimpleCard {
     placeholder: 'After',
   });
 
-  name = 'columnSettings';
-  displayName = 'Columns';
-  slices = [this.leftLabel, this.rightLabel];
-}
-
-class CardStyleSettings extends formattingSettings.SimpleCard {
-  enableGlass = new formattingSettings.ToggleSwitch({
-    name: 'enableGlass',
-    displayName: 'Glass Effect',
-    value: true,
-  });
-
-  backgroundColor = new formattingSettings.ColorPicker({
-    name: 'backgroundColor',
-    displayName: 'Background Color',
+  labelColor = new formattingSettings.ColorPicker({
+    name: 'labelColor',
+    displayName: 'Label Color',
     value: { value: '' },
   });
 
-  backgroundOpacity = new formattingSettings.NumUpDown({
-    name: 'backgroundOpacity',
-    displayName: 'Background Opacity (%)',
-    value: 35,
-  });
-
-  borderRadius = new formattingSettings.NumUpDown({
-    name: 'borderRadius',
-    displayName: 'Border Radius',
-    value: 12,
-  });
-
-  name = 'cardSettings';
-  displayName = 'Card Style';
-  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
-}
-
-class ChangeLabelSettings extends formattingSettings.SimpleCard {
   show = new formattingSettings.ToggleSwitch({
     name: 'show',
     displayName: 'Show Change Labels',
@@ -176,6 +145,33 @@ class ChangeLabelSettings extends formattingSettings.SimpleCard {
     name: 'fontColor',
     displayName: 'Font Color',
     value: { value: '' },
+  });
+
+  fontFamily = new formattingSettings.ItemDropdown({
+    name: 'fontFamily',
+    displayName: 'Font',
+    items: [
+      { value: '', displayName: 'Default' },
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Arial', displayName: 'Arial' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Helvetica Neue', displayName: 'Helvetica Neue' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
+      { value: 'Verdana', displayName: 'Verdana' },
+      { value: 'Georgia', displayName: 'Georgia' },
+    ],
+    value: { value: '', displayName: 'Default' },
+  });
+
+  fontWeight = new formattingSettings.ItemDropdown({
+    name: 'fontWeight',
+    displayName: 'Font Weight',
+    items: [
+      { value: 'normal', displayName: 'Normal' },
+      { value: 'bold', displayName: 'Bold' },
+      { value: '600', displayName: 'Semi-Bold' },
+    ],
+    value: { value: '600', displayName: 'Semi-Bold' },
   });
 
   format = new formattingSettings.ItemDropdown({
@@ -200,38 +196,24 @@ class ChangeLabelSettings extends formattingSettings.SimpleCard {
     value: { value: 'center', displayName: 'Center' },
   });
 
-  name = 'changeLabelSettings';
-  displayName = 'Change Labels';
-  slices = [this.show, this.fontSize, this.fontColor, this.format, this.position];
-}
-
-class AnimationSettings extends formattingSettings.SimpleCard {
-  enabled = new formattingSettings.ToggleSwitch({
-    name: 'enabled',
-    displayName: 'Enable Animations',
-    value: true,
-  });
-
-  duration = new formattingSettings.NumUpDown({
-    name: 'duration',
-    displayName: 'Duration (ms)',
-    value: 600,
-  });
-
-  name = 'animationSettings';
-  displayName = 'Animation';
-  slices = [this.enabled, this.duration];
-}
-
-// ── Slope Display Settings ──────────────────────────────────────────
-
-class SlopeDisplaySettingsCard extends formattingSettings.SimpleCard {
   showPercentChange = new formattingSettings.ToggleSwitch({
     name: 'showPercentChange',
     displayName: 'Show Percentage Change Labels',
     value: false,
   });
 
+  name = 'changeLabelSettings';
+  displayName = 'Labels & Change';
+  slices = [
+    this.leftLabel, this.rightLabel, this.labelColor,
+    this.show, this.fontSize, this.fontColor, this.fontFamily, this.fontWeight, this.format, this.position,
+    this.showPercentChange,
+  ];
+}
+
+// ── Slope Behavior (remaining from Slope Display) ───────────────────
+
+class SlopeBehaviorSettings extends formattingSettings.SimpleCard {
   sortByMagnitude = new formattingSettings.ToggleSwitch({
     name: 'sortByMagnitude',
     displayName: 'Sort by Change Magnitude',
@@ -245,11 +227,11 @@ class SlopeDisplaySettingsCard extends formattingSettings.SimpleCard {
   });
 
   name = 'slopeDisplaySettings';
-  displayName = 'Slope Display';
-  slices = [this.showPercentChange, this.sortByMagnitude, this.showConfidenceInterval];
+  displayName = 'Slope Behavior';
+  slices = [this.sortByMagnitude, this.showConfidenceInterval];
 }
 
-// ── Slope Threshold Settings ────────────────────────────────────────
+// ── Threshold Highlight ─────────────────────────────────────────────
 
 class SlopeThresholdSettingsCard extends formattingSettings.SimpleCard {
   show = new formattingSettings.ToggleSwitch({
@@ -275,19 +257,78 @@ class SlopeThresholdSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.show, this.threshold, this.glowColor];
 }
 
+// ── Card Style ──────────────────────────────────────────────────────
+
+class CardStyleSettings extends formattingSettings.SimpleCard {
+  cardStyleMode = new formattingSettings.ItemDropdown({
+    name: 'cardStyleMode',
+    displayName: 'Card Style',
+    items: [
+      { value: 'none', displayName: 'None' },
+      { value: 'glass', displayName: 'Glass' },
+      { value: 'elevated', displayName: 'Elevated' },
+      { value: 'neumorphic', displayName: 'Neumorphic' },
+    ],
+    value: { value: 'glass', displayName: 'Glass' },
+  });
+
+  backgroundColor = new formattingSettings.ColorPicker({
+    name: 'backgroundColor',
+    displayName: 'Background Color',
+    value: { value: '' },
+  });
+
+  backgroundOpacity = new formattingSettings.NumUpDown({
+    name: 'backgroundOpacity',
+    displayName: 'Background Opacity (%)',
+    value: 35,
+  });
+
+  borderRadius = new formattingSettings.NumUpDown({
+    name: 'borderRadius',
+    displayName: 'Border Radius',
+    value: 12,
+  });
+
+  name = 'cardSettings';
+  displayName = 'Card Style';
+  slices = [this.cardStyleMode, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+}
+
+// ── Animation ───────────────────────────────────────────────────────
+
+class AnimationSettings extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Animations',
+    value: true,
+  });
+
+  duration = new formattingSettings.NumUpDown({
+    name: 'duration',
+    displayName: 'Duration (ms)',
+    value: 600,
+  });
+
+  name = 'animationSettings';
+  displayName = 'Animation';
+  slices = [this.enabled, this.duration];
+}
+
+// ── Root Model ──────────────────────────────────────────────────────
+
 export class SlopeChartSettings extends formattingSettings.Model {
   slopeSettings = new SlopeSettings();
-  columnSettings = new ColumnSettings();
+  directionColorSettings = new DirectionColorSettings();
+  changeLabelSettings = new LabelsChangeSettings();
   cardSettings = new CardStyleSettings();
-  changeLabelSettings = new ChangeLabelSettings();
   animationSettings = new AnimationSettings();
 
-  // New feature cards
-  slopeDisplaySettings = new SlopeDisplaySettingsCard();
+  // Feature cards
+  slopeDisplaySettings = new SlopeBehaviorSettings();
   slopeThresholdSettings = new SlopeThresholdSettingsCard();
 
   // Shared formatting cards from core
-  legendFormattingCard = new LegendFormattingCard();
   seriesFormattingCard = new SeriesFormattingCard();
   dataLabelFormattingCard = new DataLabelFormattingCard();
   titleFormattingCard = new TitleFormattingCard();
@@ -301,15 +342,16 @@ export class SlopeChartSettings extends formattingSettings.Model {
   accessibilityFormattingCard = new AccessibilityFormattingCard();
   numberFormattingCard = new NumberFormattingCard();
 
+  legendFormattingCard = new LegendFormattingCard();
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
+  dateFilterFormattingCard = new DateFilterFormattingCard();
   cards = [
     this.slopeSettings,
-    this.columnSettings,
+    this.directionColorSettings,
     this.changeLabelSettings,
-    this.cardSettings,
-    this.animationSettings,
     this.slopeDisplaySettings,
     this.slopeThresholdSettings,
-    this.legendFormattingCard,
+    this.animationSettings,
     this.seriesFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
@@ -322,5 +364,9 @@ export class SlopeChartSettings extends formattingSettings.Model {
     this.annotationFormattingCard,
     this.accessibilityFormattingCard,
     this.numberFormattingCard,
+    this.cardSettings,
+    this.legendFormattingCard,
+    this.colorThemeFormattingCard,
+    this.dateFilterFormattingCard,
   ];
 }

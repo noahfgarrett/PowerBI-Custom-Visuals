@@ -11,7 +11,8 @@ import * as d3 from 'd3';
 import {
   popIn,
   fadeSlideIn,
-  getGlassStyle,
+  applyCardStyle,
+  type CardStyleMode,
   getHostChartColor,
   DURATION,
   renderChartTitle,
@@ -23,6 +24,12 @@ import {
   buildConditionalConfig,
   resolveConditionalColor,
   attachKeyboardNav,
+  renderLegend,
+  formatWithSettings,
+  type LegendItem,
+  getDateFilterIndices,
+  isDateColumn,
+  type DateFilterConfig,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -43,6 +50,12 @@ interface Milestone {
   label: string;
   category: string;
   selectionId: ISelectionId;
+  highlighted: boolean;
+}
+
+interface TimelineData {
+  milestones: Milestone[];
+  hasHighlights: boolean;
 }
 
 // ── Date formatting helpers ─────────────────────────────────────────
@@ -68,6 +81,7 @@ export class TimelineMilestoneVisual implements IVisual {
   private settings: TimelineMilestoneSettings;
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
+  private currentTimelineData: TimelineData | null = null;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
@@ -92,42 +106,62 @@ export class TimelineMilestoneVisual implements IVisual {
       );
     }
 
+    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+    if (legacyCardObj) {
+      const legacyGlass = legacyCardObj['enableGlass'];
+      if (legacyGlass === false) {
+        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      }
+    }
+
     // Conditional visibility: hide date format when showDates is off
+
+    // Date filter: hide start/end when disabled
+    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
     this.settings.timelineSettings.dateFormat.visible = this.settings.timelineSettings.showDates.value;
 
-    // Hide today line color when showTodayLine is off
+    // Hide today line settings when showTodayLine is off
     this.settings.timelineMarkerSettings.todayLineColor.visible = this.settings.timelineMarkerSettings.showTodayLine.value;
+    this.settings.timelineMarkerSettings.todayLineWidth.visible = this.settings.timelineMarkerSettings.showTodayLine.value;
+    this.settings.timelineMarkerSettings.todayLineOpacity.visible = this.settings.timelineMarkerSettings.showTodayLine.value;
 
     // Hide cluster threshold when clusterNearby is off
     this.settings.timelineMarkerSettings.clusterThresholdDays.visible = this.settings.timelineMarkerSettings.clusterNearby.value;
+
+    // Hide data label position — position is determined by chart geometry
+    this.settings.dataLabelFormattingCard.dataLabelPosition.visible = false;
 
     // Hide animation duration when animations are disabled
     this.settings.animationSettings.duration.visible = this.settings.animationSettings.enabled.value;
 
     // Hide duration bar sub-settings when duration bars are off
-    this.settings.timelineLayoutSettings.durationBarOpacity.visible = this.settings.timelineLayoutSettings.showDurationBars.value;
-    this.settings.timelineLayoutSettings.durationBarHeight.visible = this.settings.timelineLayoutSettings.showDurationBars.value;
+    this.settings.spineAndConnectorsSettings.durationBarOpacity.visible = this.settings.spineAndConnectorsSettings.showDurationBars.value;
+    this.settings.spineAndConnectorsSettings.durationBarHeight.visible = this.settings.spineAndConnectorsSettings.showDurationBars.value;
+
+    // Card Style — hide sub-settings when mode is 'none'
+    const cardModeVis = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    this.settings.cardSettings.backgroundOpacity.visible = cardModeVis !== 'none';
+    this.settings.cardSettings.backgroundColor.visible = cardModeVis !== 'none';
 
     // Extract data
-    const milestones = this.extractData(dataView);
+    const timelineData = this.extractData(dataView);
+    this.currentTimelineData = timelineData;
 
-    this.notifyRenderStarted();
-    try {
-      this.render(milestones, options.viewport);
-      this.notifyRenderFinished();
-    } catch (error) {
-      this.notifyRenderFailed(error);
-      throw error;
-    }
+    this.render(timelineData.milestones, options.viewport);
   }
 
-  private extractData(dataView: DataView | undefined): Milestone[] {
+  private extractData(dataView: DataView | undefined): TimelineData {
+    const emptyResult: TimelineData = { milestones: [], hasHighlights: false };
+    if (!dataView?.categorical) return emptyResult;
+
     const result: Milestone[] = [];
-    if (!dataView?.categorical) return result;
 
     const categorical = dataView.categorical;
     const allCategories = categorical.categories;
-    if (!allCategories || allCategories.length === 0) return result;
+    if (!allCategories || allCategories.length === 0) return emptyResult;
 
     // Find date, label, and category columns from categories
     let dateCol: powerbi.DataViewCategoryColumn | undefined;
@@ -145,7 +179,35 @@ export class TimelineMilestoneVisual implements IVisual {
     const categories = dateCol ?? allCategories[0];
     const count = categories.values.length;
 
+    // Cross-highlight detection: check value columns for highlights
+    const valuesGroup = categorical.values;
+    const highlightedIndices = new Set<number>();
+    let hasHighlights = false;
+    if (valuesGroup) {
+      for (const col of valuesGroup) {
+        const hlRaw = col.highlights as unknown[] | undefined;
+        if (hlRaw) {
+          hlRaw.forEach((h, i) => {
+            if (h !== null && h !== undefined) {
+              highlightedIndices.add(i);
+              hasHighlights = true;
+            }
+          });
+        }
+      }
+    }
+
+    const dateConfig: DateFilterConfig = {
+      enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
+      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
+      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+    };
+    const dateIndices = isDateColumn(categories.source) ? getDateFilterIndices(categories.values, dateConfig) : null;
+
     for (let i = 0; i < count; i++) {
+      if (dateIndices && !dateIndices.has(i)) continue;
+
       const rawDate = categories.values[i];
       let date: Date | null = null;
       let dateStr = '';
@@ -173,7 +235,9 @@ export class TimelineMilestoneVisual implements IVisual {
         .withCategory(categories, i)
         .createSelectionId();
 
-      result.push({ date, dateStr, label, category, selectionId });
+      const highlighted = hasHighlights ? highlightedIndices.has(i) : false;
+
+      result.push({ date, dateStr, label, category, selectionId, highlighted });
     }
 
     // Sort by date
@@ -202,22 +266,24 @@ export class TimelineMilestoneVisual implements IVisual {
         if (group.length > 1) {
           // Merge into a cluster milestone: combine labels, keep earliest date
           const labels = group.map((m) => m.label).join(', ');
+          const clusterHighlighted = group.some((m) => m.highlighted);
           clustered.push({
             date: group[0].date,
             dateStr: group[0].dateStr,
             label: `[${group.length}] ${labels}`,
             category: group[0].category,
             selectionId: group[0].selectionId,
+            highlighted: clusterHighlighted,
           });
         } else {
           clustered.push(group[0]);
         }
         i = j;
       }
-      return clustered;
+      return { milestones: clustered, hasHighlights };
     }
 
-    return result;
+    return { milestones: result, hasHighlights };
   }
 
   private render(milestones: Milestone[], viewport: powerbi.IViewport): void {
@@ -240,22 +306,23 @@ export class TimelineMilestoneVisual implements IVisual {
     const colorByCat = s.markerSettings.colorByCategory.value;
     const animEnabled = s.animationSettings.enabled.value;
     const animDuration = s.animationSettings.duration.value;
-    const timelineLineWidth = s.timelineSettings.lineWidth.value;
-    const markerStrokeColorValue = s.timelineSettings.markerStrokeColor.value?.value;
+    const timelineLineWidth = s.spineAndConnectorsSettings.lineWidth.value;
+    const markerStrokeColorValue = s.markerSettings.markerStrokeColor.value?.value;
+    const markerStrokeWidth = Math.max(0, s.markerSettings.markerStrokeWidth.value);
     const markerStroke = markerStrokeColorValue && markerStrokeColorValue.length > 0 ? markerStrokeColorValue : '#fff';
-    const lineColorValue = s.timelineSettings.lineColor.value?.value;
-    const labelColorValue = s.timelineSettings.labelColor.value?.value;
+    const lineColorValue = s.spineAndConnectorsSettings.lineColor.value?.value;
+    const labelColorValue = s.spineAndConnectorsSettings.labelColor.value?.value;
     const isHorizontal = orientation === 'horizontal';
 
     // Layout setting: alternating, top, bottom, staggered
-    const layoutModeRaw = s.timelineLayoutSettings.layout.value;
+    const layoutModeRaw = s.timelineSettings.layout.value;
     const layoutMode: string = (typeof layoutModeRaw === 'string'
       ? layoutModeRaw
       : (layoutModeRaw as { value?: string } | undefined)?.value) ?? 'alternating';
 
-    const showSwimlanes = s.timelineLayoutSettings.showSwimlanes.value;
-    const showDurationBars = s.timelineLayoutSettings.showDurationBars.value;
-    const showConnectors = s.timelineLayoutSettings.showConnectors.value;
+    const showSwimlanes = s.spineAndConnectorsSettings.showSwimlanes.value;
+    const showDurationBars = s.spineAndConnectorsSettings.showDurationBars.value;
+    const showConnectors = s.spineAndConnectorsSettings.showConnectors.value;
 
     const locale = this.getHostLocale();
     const highContrast = this.getHighContrastColors();
@@ -288,23 +355,17 @@ export class TimelineMilestoneVisual implements IVisual {
     s.axisFormattingCard.gridLineWidth.visible = false;
     s.axisFormattingCard.gridLineOpacity.visible = false;
 
-    // Apply glass style
-    if (s.cardSettings.enableGlass.value) {
-      const glass = getGlassStyle({
-        mode: 'light',
+    // Apply card style
+    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    applyCardStyle(
+      this.container,
+      {
+        mode: cardMode,
         opacity: s.cardSettings.backgroundOpacity.value / 100,
         backgroundColor: s.cardSettings.backgroundColor.value?.value,
         borderRadius: s.cardSettings.borderRadius.value,
-      });
-      Object.assign(this.container.style, glass);
-    } else {
-      this.container.style.background = '';
-      this.container.style.backdropFilter = '';
-      (this.container.style as unknown as Record<string, string>)['WebkitBackdropFilter'] = '';
-      this.container.style.border = '';
-      this.container.style.boxShadow = '';
-      this.container.style.borderRadius = '';
-    }
+      },
+    );
     if (highContrast.enabled) {
       this.container.style.backgroundColor = highContrast.background;
       this.container.style.color = highContrast.foreground;
@@ -435,11 +496,15 @@ export class TimelineMilestoneVisual implements IVisual {
         }
 
         // Marker
-        const marker = this.createSvgMarker(svg, cx, cy, markerSize, markerShape, color, markerStroke);
+        const marker = this.createSvgMarker(svg, cx, cy, markerSize, markerShape, color, markerStroke, markerStrokeWidth);
+        if (marker) {
+          marker.attr('data-milestone-idx', String(i));
+        }
 
         // Label text
         const labelY = isAbove ? y2 - 4 : y2 + 12;
-        const labelGroup = svg.append('g');
+        const labelGroup = svg.append('g')
+          .attr('data-milestone-idx', String(i));
 
         if (showDataLabels) {
           labelGroup.append('text')
@@ -467,7 +532,8 @@ export class TimelineMilestoneVisual implements IVisual {
         this.attachSelection(marker, labelGroup, ms, dateFormatVal, locale);
 
         // Animations
-        if (animEnabled && marker) {
+        // Skip animation when cross-highlighting is active to avoid overwriting dimmed opacity
+        if (animEnabled && marker && !this.currentTimelineData?.hasHighlights) {
           const markerNode = marker.node();
           if (markerNode) {
             const cancel = popIn(markerNode as unknown as HTMLElement, i * 80, animDuration);
@@ -475,7 +541,7 @@ export class TimelineMilestoneVisual implements IVisual {
           }
         }
 
-        if (animEnabled && showDataLabels) {
+        if (animEnabled && showDataLabels && !this.currentTimelineData?.hasHighlights) {
           const labelNode = labelGroup.node();
           if (labelNode) {
             const dir = isAbove ? 'down' as const : 'up' as const;
@@ -566,12 +632,16 @@ export class TimelineMilestoneVisual implements IVisual {
         }
 
         // Marker
-        const marker = this.createSvgMarker(svg, cx, my, markerSize, markerShape, color, markerStroke);
+        const marker = this.createSvgMarker(svg, cx, my, markerSize, markerShape, color, markerStroke, markerStrokeWidth);
+        if (marker) {
+          marker.attr('data-milestone-idx', String(i));
+        }
 
         // Label text
         const labelX = isLeft ? x2 - 4 : x2 + 4;
         const anchor = isLeft ? 'end' : 'start';
-        const labelGroup = svg.append('g');
+        const labelGroup = svg.append('g')
+          .attr('data-milestone-idx', String(i));
 
         if (showDataLabels) {
           labelGroup.append('text')
@@ -598,7 +668,8 @@ export class TimelineMilestoneVisual implements IVisual {
         this.attachSelection(marker, labelGroup, ms, dateFormatVal, locale);
 
         // Animations
-        if (animEnabled && marker) {
+        // Skip animation when cross-highlighting is active to avoid overwriting dimmed opacity
+        if (animEnabled && marker && !this.currentTimelineData?.hasHighlights) {
           const markerNode = marker.node();
           if (markerNode) {
             const cancel = popIn(markerNode as unknown as HTMLElement, i * 80, animDuration);
@@ -606,7 +677,7 @@ export class TimelineMilestoneVisual implements IVisual {
           }
         }
 
-        if (animEnabled && showDataLabels) {
+        if (animEnabled && showDataLabels && !this.currentTimelineData?.hasHighlights) {
           const labelNode = labelGroup.node();
           if (labelNode) {
             const dir = isLeft ? 'right' as const : 'left' as const;
@@ -629,8 +700,8 @@ export class TimelineMilestoneVisual implements IVisual {
           const xStart2 = n > 1 ? padding + i * ((svgWidth - padding * 2) / (n - 1)) : svgWidth / 2;
           const xEnd2 = n > 1 ? padding + (i + 1) * ((svgWidth - padding * 2) / (n - 1)) : svgWidth / 2;
           const barY = svgHeight / 2 + markerSize + 2;
-          const durBarHeight = s.timelineLayoutSettings.durationBarHeight.value;
-          const durBarOpacity = s.timelineLayoutSettings.durationBarOpacity.value / 100;
+          const durBarHeight = s.spineAndConnectorsSettings.durationBarHeight.value;
+          const durBarOpacity = s.spineAndConnectorsSettings.durationBarOpacity.value / 100;
           durationGroup.append('rect')
             .attr('x', xStart2)
             .attr('y', barY)
@@ -643,8 +714,8 @@ export class TimelineMilestoneVisual implements IVisual {
           const yStart2 = n > 1 ? padding + i * ((svgHeight - padding * 2) / (n - 1)) : svgHeight / 2;
           const yEnd2 = n > 1 ? padding + (i + 1) * ((svgHeight - padding * 2) / (n - 1)) : svgHeight / 2;
           const barX = svgWidth / 2 + markerSize + 2;
-          const durBarHeight = s.timelineLayoutSettings.durationBarHeight.value;
-          const durBarOpacity = s.timelineLayoutSettings.durationBarOpacity.value / 100;
+          const durBarHeight = s.spineAndConnectorsSettings.durationBarHeight.value;
+          const durBarOpacity = s.spineAndConnectorsSettings.durationBarOpacity.value / 100;
           durationGroup.append('rect')
             .attr('x', barX)
             .attr('y', yStart2)
@@ -660,8 +731,49 @@ export class TimelineMilestoneVisual implements IVisual {
     // Today line
     this.renderTodayLine(svg, milestones, viewport, isHorizontal, padding);
 
+    // Legend — milestone category colors
+    const legendCard = this.settings.legendFormattingCard;
+    if (legendCard.showLegend.value && colorByCat && catColorMap.size > 0) {
+      const legendPos = resolveDropdown(legendCard.legendPosition) ?? 'bottom';
+      const rawFontColor = legendCard.legendFontColor.value?.value;
+      const legendItems: LegendItem[] = Array.from(catColorMap.entries()).map(([cat, color]) => ({
+        label: cat,
+        color,
+      }));
+      renderLegend(this.container, {
+        items: legendItems,
+        position: legendPos as 'top' | 'bottom' | 'left' | 'right',
+        fontSize: legendCard.legendFontSize.value,
+        fontColor: rawFontColor && rawFontColor.length > 0 ? rawFontColor : '#64748B',
+        fontFamily: resolveDropdown(legendCard.legendFontFamily) || undefined,
+        fontWeight: resolveDropdown(legendCard.legendFontWeight) || 'normal',
+        aliases: legendCard.legendAliases.value,
+      });
+    }
+
+    // Apply cross-highlight dimming
+    this.applyCrossHighlight(milestones);
+
     this.applyAccessibility();
     this.container.addEventListener('click', this.handleBackgroundClick);
+  }
+
+  // ── Cross-Highlight Dimming ─────────────────────────────────────
+
+  private applyCrossHighlight(milestones: Milestone[]): void {
+    const data = this.currentTimelineData;
+    if (!data || !data.hasHighlights) return;
+
+    const elements = this.container.querySelectorAll<SVGElement>('[data-milestone-idx]');
+    for (const el of elements) {
+      const idxStr = el.getAttribute('data-milestone-idx');
+      if (idxStr === null) continue;
+      const idx = parseInt(idxStr, 10);
+      const ms = milestones[idx];
+      if (ms && !ms.highlighted) {
+        el.style.opacity = '0.3';
+      }
+    }
   }
 
   private createSvgMarker(
@@ -672,6 +784,7 @@ export class TimelineMilestoneVisual implements IVisual {
     shape: string,
     color: string,
     strokeColor: string,
+    strokeWidth: number = 2,
   ): d3.Selection<SVGElement, unknown, null, undefined> | null {
     const half = size / 2;
 
@@ -680,7 +793,7 @@ export class TimelineMilestoneVisual implements IVisual {
         .attr('cx', cx).attr('cy', cy)
         .attr('r', half)
         .attr('fill', color)
-        .attr('stroke', strokeColor).attr('stroke-width', 2) as unknown as d3.Selection<SVGElement, unknown, null, undefined>;
+        .attr('stroke', strokeColor).attr('stroke-width', strokeWidth) as unknown as d3.Selection<SVGElement, unknown, null, undefined>;
     }
 
     if (shape === 'square') {
@@ -689,7 +802,7 @@ export class TimelineMilestoneVisual implements IVisual {
         .attr('width', size).attr('height', size)
         .attr('rx', 2)
         .attr('fill', color)
-        .attr('stroke', strokeColor).attr('stroke-width', 2) as unknown as d3.Selection<SVGElement, unknown, null, undefined>;
+        .attr('stroke', strokeColor).attr('stroke-width', strokeWidth) as unknown as d3.Selection<SVGElement, unknown, null, undefined>;
     }
 
     if (shape === 'diamond') {
@@ -697,7 +810,7 @@ export class TimelineMilestoneVisual implements IVisual {
       return svg.append('polygon')
         .attr('points', pts)
         .attr('fill', color)
-        .attr('stroke', strokeColor).attr('stroke-width', 2) as unknown as d3.Selection<SVGElement, unknown, null, undefined>;
+        .attr('stroke', strokeColor).attr('stroke-width', strokeWidth) as unknown as d3.Selection<SVGElement, unknown, null, undefined>;
     }
 
     return null;
@@ -822,27 +935,8 @@ export class TimelineMilestoneVisual implements IVisual {
     };
   }
 
-  private notifyRenderStarted(): void {
-    const eventService = (this.host as unknown as {
-      eventService?: { renderingStarted?: () => void };
-    }).eventService;
-    eventService?.renderingStarted?.();
-  }
-
-  private notifyRenderFinished(): void {
-    const eventService = (this.host as unknown as {
-      eventService?: { renderingFinished?: () => void };
-    }).eventService;
-    eventService?.renderingFinished?.();
-  }
-
-  private notifyRenderFailed(error: unknown): void {
-    const eventService = (this.host as unknown as {
-      eventService?: { renderingFailed?: (reason: string) => void };
-    }).eventService;
-    const reason = error instanceof Error ? error.message : 'render failure';
-    eventService?.renderingFailed?.(reason);
-  }
+  // Render lifecycle notifications removed — Power BI's eventService.renderingStarted()
+  // requires VisualUpdateOptions with updateId, and calling without args crashes the visual.
 
   private handleBackgroundClick = (): void => {
     void this.selectionManager.clear();
@@ -872,6 +966,8 @@ export class TimelineMilestoneVisual implements IVisual {
 
     const frac = (now - minTime) / (maxTime - minTime);
     const color = markerSettings.todayLineColor.value?.value ?? '#EF4444';
+    const todayWidth = markerSettings.todayLineWidth.value;
+    const todayOpacity = markerSettings.todayLineOpacity.value / 100;
 
     if (isHorizontal) {
       const xStart = padding;
@@ -881,9 +977,9 @@ export class TimelineMilestoneVisual implements IVisual {
         .attr('x1', x).attr('y1', 0)
         .attr('x2', x).attr('y2', viewport.height)
         .attr('stroke', color)
-        .attr('stroke-width', 2)
+        .attr('stroke-width', todayWidth)
         .attr('stroke-dasharray', '4,3')
-        .attr('opacity', 0.7);
+        .attr('opacity', todayOpacity);
     } else {
       const yStart = padding;
       const yEnd = viewport.height - padding;
@@ -892,9 +988,9 @@ export class TimelineMilestoneVisual implements IVisual {
         .attr('x1', 0).attr('y1', y)
         .attr('x2', viewport.width).attr('y2', y)
         .attr('stroke', color)
-        .attr('stroke-width', 2)
+        .attr('stroke-width', todayWidth)
         .attr('stroke-dasharray', '4,3')
-        .attr('opacity', 0.7);
+        .attr('opacity', todayOpacity);
     }
   }
 

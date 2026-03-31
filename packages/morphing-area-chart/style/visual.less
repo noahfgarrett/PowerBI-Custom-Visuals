@@ -12,7 +12,7 @@
 
 /* SVG chart area */
 .area-chart-svg {
-  width: 100%;
+  display: block;
   min-height: 0;
 }
 
@@ -31,7 +31,7 @@
 }
 
 .area-axis-x .tick text {
-  text-anchor: end;
+  text-anchor: middle;
 }
 
 /* Grid lines */
@@ -43,40 +43,29 @@
 /* Area fill */
 .area-fill {
   pointer-events: none;
+  transition: filter 0.2s ease;
 }
 
-/* Line path */
+/* Line path — hover brightens line directly */
 .area-line {
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
+  transition: filter 0.2s ease;
+
+  &:hover {
+    filter: brightness(1.2);
+  }
 }
 
 /* Dots */
 .area-dot {
   cursor: pointer;
-  transition: r 0.15s ease;
-}
+  transition: r 0.15s ease, filter 0.15s ease;
 
-/* Legend */
-.area-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  padding: 6px 0;
-}
-
-.area-legend-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.area-legend-swatch {
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-  flex-shrink: 0;
+  &:hover {
+    filter: brightness(1.2) drop-shadow(0 0 3px rgba(0, 0, 0, 0.2));
+  }
 }
 
 /* Empty state */

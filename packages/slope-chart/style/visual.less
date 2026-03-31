@@ -11,8 +11,6 @@
 
 .slope-container svg {
   display: block;
-  width: 100%;
-  height: 100%;
 }
 
 .slope-header {
@@ -26,16 +24,22 @@
 
 .slope-line {
   cursor: pointer;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.15s ease, filter 0.2s ease, stroke-width 0.2s ease;
+
+  &:hover {
+    filter: brightness(1.2);
+    stroke-width: 3.5;
+  }
 }
 
 .slope-dot {
   cursor: pointer;
-  transition: r 0.15s ease, filter 0.15s ease;
-}
+  transition: r 0.2s ease, filter 0.2s ease, stroke-width 0.2s ease;
 
-.slope-dot:hover {
-  filter: brightness(1.15);
+  &:hover {
+    filter: brightness(1.2) drop-shadow(0 0 4px rgba(255, 255, 255, 0.3));
+    stroke-width: 2.5;
+  }
 }
 
 .slope-label {

@@ -77,7 +77,7 @@
           },
           "dataReductionAlgorithm": {
             "top": {
-              "count": 200
+              "count": 5000
             }
           }
         },
@@ -119,25 +119,13 @@
     }
   ],
   "objects": {
-    "ganttSettings": {
-      "displayName": "Gantt",
+    "taskBarSettings": {
+      "displayName": "Task Bars",
       "properties": {
         "barHeight": {
           "displayName": "Bar Height",
           "type": {
             "numeric": true
-          }
-        },
-        "showProgress": {
-          "displayName": "Show Progress",
-          "type": {
-            "bool": true
-          }
-        },
-        "showLabels": {
-          "displayName": "Show Labels",
-          "type": {
-            "bool": true
           }
         },
         "barOpacity": {
@@ -164,23 +152,100 @@
             "numeric": true
           }
         },
-        "todayLineWidth": {
-          "displayName": "Today Line Width",
+        "showLabels": {
+          "displayName": "Show Labels",
+          "type": {
+            "bool": true
+          }
+        },
+        "showProgress": {
+          "displayName": "Show Progress",
+          "type": {
+            "bool": true
+          }
+        },
+        "taskBorderColor": {
+          "displayName": "Task Border Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "taskBorderWidth": {
+          "displayName": "Task Border Width",
           "type": {
             "numeric": true
           }
         },
-        "todayLineStyle": {
-          "displayName": "Today Line Style",
+        "labelFontSize": {
+          "displayName": "Label Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "labelFontColor": {
+          "displayName": "Label Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "labelFontFamily": {
+          "displayName": "Label Font Family",
           "type": {
             "enumeration": [
               {
-                "value": "solid",
-                "displayName": "Solid"
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
               },
               {
-                "value": "dashed",
-                "displayName": "Dashed"
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Helvetica",
+                "displayName": "Helvetica"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              }
+            ]
+          }
+        },
+        "labelFontWeight": {
+          "displayName": "Label Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold"
               }
             ]
           }
@@ -345,6 +410,12 @@
                 "displayName": "Bold"
               }
             ]
+          }
+        },
+        "legendAliases": {
+          "displayName": "Rename Labels",
+          "type": {
+            "text": true
           }
         }
       }
@@ -833,7 +904,7 @@
           }
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (°)",
+          "displayName": "X-Label Rotation (\u00b0)",
           "type": {
             "numeric": true
           }
@@ -927,9 +998,21 @@
         }
       }
     },
-    "hierarchySettings": {
-      "displayName": "Hierarchy",
+    "hierarchyGroupingSettings": {
+      "displayName": "Hierarchy & Grouping",
       "properties": {
+        "enableGrouping": {
+          "displayName": "Enable Grouping",
+          "type": {
+            "bool": true
+          }
+        },
+        "collapsibleGroups": {
+          "displayName": "Collapsible Groups",
+          "type": {
+            "bool": true
+          }
+        },
         "indentWidth": {
           "displayName": "Indent Width",
           "type": {
@@ -975,11 +1058,34 @@
             "numeric": true
           }
         },
+        "cardStyleMode": {
+          "displayName": "Card Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "glass",
+                "displayName": "Glass"
+              },
+              {
+                "value": "elevated",
+                "displayName": "Elevated"
+              },
+              {
+                "value": "neumorphic",
+                "displayName": "Neumorphic"
+              }
+            ]
+          }
+        },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "Glass Effect"
+          "displayName": "(Deprecated) Enable Glass"
         }
       }
     },
@@ -1077,23 +1183,6 @@
         }
       }
     },
-    "ganttGroupSettings": {
-      "displayName": "Task Grouping",
-      "properties": {
-        "enableGrouping": {
-          "displayName": "Enable Grouping",
-          "type": {
-            "bool": true
-          }
-        },
-        "collapsibleGroups": {
-          "displayName": "Collapsible Groups",
-          "type": {
-            "bool": true
-          }
-        }
-      }
-    },
     "ganttTodaySettings": {
       "displayName": "Today Marker",
       "properties": {
@@ -1111,6 +1200,27 @@
                 "color": true
               }
             }
+          }
+        },
+        "todayLineWidth": {
+          "displayName": "Today Line Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "todayLineStyle": {
+          "displayName": "Today Line Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "solid",
+                "displayName": "Solid"
+              },
+              {
+                "value": "dashed",
+                "displayName": "Dashed"
+              }
+            ]
           }
         }
       }
@@ -1233,6 +1343,35 @@
         }
       },
       "displayName": "Color Theme"
+    },
+    "dateFilterFormatting": {
+      "displayName": "Date Filter",
+      "properties": {
+        "enableDateFilter": {
+          "displayName": "Enable Date Filter",
+          "type": {
+            "bool": true
+          }
+        },
+        "startDate": {
+          "displayName": "Start Date",
+          "type": {
+            "text": true
+          }
+        },
+        "endAtCurrentDate": {
+          "displayName": "End at Current Date",
+          "type": {
+            "bool": true
+          }
+        },
+        "endDate": {
+          "displayName": "End Date",
+          "type": {
+            "text": true
+          }
+        }
+      }
     },
     "numberFormatting": {
       "displayName": "Number Format",

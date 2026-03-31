@@ -8,7 +8,12 @@
 }
 
 .stream-layer {
-  transition: opacity 0.15s;
+  transition: opacity 0.2s ease, filter 0.2s ease;
+
+  &:hover {
+    filter: brightness(1.15);
+    opacity: 0.95 !important;
+  }
 }
 
 .stream-empty-state {

@@ -25,6 +25,7 @@ import {
   getHostChartColor,
   resolveColorTheme,
   getDateFilterIndices,
+  isDateColumn,
   type DateFilterConfig,
 } from '../../core/src';
 
@@ -98,6 +99,15 @@ export class KpiCardVisual implements IVisual {
         KpiCardSettings,
         settingsView
       );
+    }
+
+    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+    const legacyCardObj = settingsView?.metadata?.objects?.['cardSettings'];
+    if (legacyCardObj) {
+      const legacyGlass = legacyCardObj['enableGlass'];
+      if (legacyGlass === false) {
+        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      }
     }
   }
 
@@ -202,7 +212,7 @@ export class KpiCardVisual implements IVisual {
       endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
       endDate: this.settings.dateFilterFormattingCard.endDate.value,
     };
-    const dateIndices = categoryColumn ? getDateFilterIndices(categoryColumn.values, dateConfig) : null;
+    const dateIndices = categoryColumn && isDateColumn(categoryColumn.source) ? getDateFilterIndices(categoryColumn.values, dateConfig) : null;
 
     // Find measure and target columns by role
     let measureCol: powerbi.DataViewValueColumn | undefined;

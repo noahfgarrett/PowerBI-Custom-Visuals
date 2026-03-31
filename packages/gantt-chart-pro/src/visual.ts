@@ -10,12 +10,14 @@ import { GanttChartProSettings } from './settings';
 import {
   growBar,
   fadeSlideIn,
-  getGlassStyle,
+  applyCardStyle,
+  type CardStyleMode,
   getHostChartColor,
   DURATION,
   renderChartTitle,
   applyDataLabelFormatting,
   formatPercent,
+  formatWithSettings,
   applyChartAria,
   attachKeyboardNav,
   ensureFocusRingStyles,
@@ -25,6 +27,9 @@ import {
   resolveConditionalColor,
   renderLegend,
   type LegendItem,
+  getDateFilterIndices,
+  isDateColumn,
+  type DateFilterConfig,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -52,6 +57,7 @@ interface GanttTask {
   progress: number; // 0-100
   category: string;
   selectionId: ISelectionId;
+  highlighted: boolean;
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────
@@ -83,6 +89,8 @@ export class GanttChartProVisual implements IVisual {
   private collapsedGroups: Set<string> = new Set();
   private collapseDefaultApplied = false;
   private lastUpdateOptions: VisualUpdateOptions | null = null;
+  private currentTasks: GanttTask[] = [];
+  private hasHighlights = false;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
@@ -109,7 +117,29 @@ export class GanttChartProVisual implements IVisual {
       );
     }
 
+    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+    if (legacyCardObj) {
+      const legacyGlass = legacyCardObj['enableGlass'];
+      if (legacyGlass === false) {
+        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      }
+    }
+
     // Hide dead axis/grid properties — gantt-chart-pro has its own axis rendering
+
+    // Date filter: hide start/end when disabled
+    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
+
+    // Card Style — hide sub-settings when mode is 'none'
+    {
+      const cm = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+      this.settings.cardSettings.backgroundOpacity.visible = cm !== 'none';
+      this.settings.cardSettings.backgroundColor.visible = cm !== 'none';
+    }
+
     this.settings.axisFormattingCard.xAxisTitle.visible = false;
     this.settings.axisFormattingCard.yAxisTitle.visible = false;
     this.settings.axisFormattingCard.yAxisMin.visible = false;
@@ -124,6 +154,7 @@ export class GanttChartProVisual implements IVisual {
     this.settings.axisFormattingCard.showYAxis.visible = false;
     this.settings.axisFormattingCard.gridLineWidth.visible = false;
     this.settings.axisFormattingCard.gridLineOpacity.visible = false;
+    this.settings.axisFormattingCard.axisLabelFontWeight.visible = false;
 
     // Conditional visibility: hide child settings when parent toggle is off
     // Milestones: hide shape/color when show is off
@@ -141,27 +172,24 @@ export class GanttChartProVisual implements IVisual {
     this.settings.dependencySettings.arrowSize.visible = this.settings.dependencySettings.show.value;
     this.settings.dependencySettings.lineStyle.visible = this.settings.dependencySettings.show.value;
     // Grouping: hide collapsibleGroups when enableGrouping is false
-    this.settings.ganttGroupSettings.collapsibleGroups.visible = this.settings.ganttGroupSettings.enableGrouping.value;
+    this.settings.hierarchyGroupingSettings.collapsibleGroups.visible = this.settings.hierarchyGroupingSettings.enableGrouping.value;
     // Today line: hide lineColor when showTodayLine is off
     this.settings.ganttTodaySettings.lineColor.visible = this.settings.ganttTodaySettings.showTodayLine.value;
     // Also hide todayLineWidth/todayLineStyle on main gantt card when showTodayLine is off
-    this.settings.ganttSettings.todayLineWidth.visible = this.settings.ganttTodaySettings.showTodayLine.value;
-    this.settings.ganttSettings.todayLineStyle.visible = this.settings.ganttTodaySettings.showTodayLine.value;
+    this.settings.ganttTodaySettings.todayLineWidth.visible = this.settings.ganttTodaySettings.showTodayLine.value;
+    this.settings.ganttTodaySettings.todayLineStyle.visible = this.settings.ganttTodaySettings.showTodayLine.value;
 
     // Extract data
     const allTasks = this.extractData(dataView);
+    this.currentTasks = allTasks;
 
     // Build visible task list: skip tasks whose any ancestor is collapsed
     const visibleTasks = this.filterVisibleTasks(allTasks);
 
-    this.notifyRenderStarted();
-    try {
-      this.render(visibleTasks, options.viewport, allTasks);
-      this.notifyRenderFinished();
-    } catch (error) {
-      this.notifyRenderFailed(error);
-      throw error;
-    }
+    this.render(visibleTasks, options.viewport, allTasks);
+
+    // Apply cross-highlight dimming after render
+    this.applySelectionHighlight();
   }
 
   private extractData(dataView: DataView | undefined): GanttTask[] {
@@ -183,6 +211,10 @@ export class GanttChartProVisual implements IVisual {
     let depCol: powerbi.DataViewValueColumn | undefined;
     let parentCol: powerbi.DataViewValueColumn | undefined;
 
+    // Cross-highlight support: track highlights from any value column
+    let hlRaw: unknown[] | undefined;
+    let anyHighlight = false;
+
     if (values) {
       for (const col of values) {
         const role = col.source.roles;
@@ -194,9 +226,28 @@ export class GanttChartProVisual implements IVisual {
         if (role['dependency']) depCol = col;
         if (role['parentTask']) parentCol = col;
       }
+      // Read highlights from the first value column that has them
+      for (const col of values) {
+        const colHl = (col as unknown as { highlights?: unknown[] }).highlights as unknown[] | undefined;
+        if (colHl) {
+          hlRaw = colHl;
+          break;
+        }
+      }
     }
 
+
+    const dateConfig: DateFilterConfig = {
+      enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
+      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
+      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+    };
+    const dateIndices = isDateColumn(categories.source) ? getDateFilterIndices(categories.values, dateConfig) : null;
+
     for (let i = 0; i < count; i++) {
+      if (dateIndices && !dateIndices.has(i)) continue;
+
       const name = String(categories.values[i] ?? '');
       const startDate = startCol ? parseDate(startCol.values[i]) : null;
       const endDate = endCol ? parseDate(endCol.values[i]) : null;
@@ -225,12 +276,18 @@ export class GanttChartProVisual implements IVisual {
       // Use name as the task ID; if a category column exists, concatenate for uniqueness
       const taskId = category ? `${category}::${name}` : name;
 
+      const isHighlighted = hlRaw != null && hlRaw[i] != null;
+      if (isHighlighted) anyHighlight = true;
+
       tasks.push({
         name, taskId, dependencyId, parentId,
         depth: 0, isCollapsed: false, hasChildren: false,
         startDate, endDate, progress, category, selectionId,
+        highlighted: isHighlighted,
       });
     }
+
+    this.hasHighlights = anyHighlight;
 
     // Sort by start date
     tasks.sort((a, b) => {
@@ -296,7 +353,7 @@ export class GanttChartProVisual implements IVisual {
     }
 
     // Apply collapse-by-default on first render (or when setting changes)
-    const collapseByDefault = this.settings.hierarchySettings.collapseByDefault.value;
+    const collapseByDefault = this.settings.hierarchyGroupingSettings.collapseByDefault.value;
     if (collapseByDefault && !this.collapseDefaultApplied) {
       this.collapseDefaultApplied = true;
       for (const t of tasks) {
@@ -390,35 +447,32 @@ export class GanttChartProVisual implements IVisual {
     this.container.removeEventListener('click', this.handleBackgroundClick);
 
     const s = this.settings;
-    const barHeight = Math.max(8, s.ganttSettings.barHeight.value);
-    const showProgress = s.ganttSettings.showProgress.value;
+    const barHeight = Math.max(8, s.taskBarSettings.barHeight.value);
+    const showProgress = s.taskBarSettings.showProgress.value;
     const showToday = s.ganttTodaySettings.showTodayLine.value;
-    const showLabels = s.ganttSettings.showLabels.value;
+    const showLabels = s.taskBarSettings.showLabels.value;
     const barColor = s.colorSettings.barColor.value?.value ?? '#3B82F6';
     const progressColor = s.colorSettings.progressColor.value?.value ?? '#10B981';
     const todayColor = s.ganttTodaySettings.lineColor.value?.value || '#EF4444';
     const animEnabled = s.animationSettings.enabled.value;
     const animDuration = s.animationSettings.duration.value;
     const showDataLabels = s.dataLabelFormattingCard.showDataLabels.value;
-    const indentWidth = s.hierarchySettings.indentWidth.value;
-    const showToggle = s.hierarchySettings.showToggle.value;
+    const indentWidth = s.hierarchyGroupingSettings.indentWidth.value;
+    const showToggle = s.hierarchyGroupingSettings.showToggle.value;
 
-    // Apply glass style
-    if (s.cardSettings.enableGlass.value) {
-      const glass = getGlassStyle({
-        mode: 'light',
+    // Apply card style
+    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    applyCardStyle(
+      this.container,
+      {
+        mode: cardMode,
         opacity: s.cardSettings.backgroundOpacity.value / 100,
         backgroundColor: s.cardSettings.backgroundColor.value?.value,
         borderRadius: s.cardSettings.borderRadius.value,
-      });
-      Object.assign(this.container.style, glass);
-    } else {
-      this.container.style.background = '';
-      this.container.style.backdropFilter = '';
-      (this.container.style as unknown as Record<string, string>)['WebkitBackdropFilter'] = '';
-      this.container.style.border = '';
-      this.container.style.boxShadow = '';
-      this.container.style.borderRadius = '';
+      },
+    );
+    if (cardMode === 'none') {
+      this.container.style.borderRadius = `${s.cardSettings.borderRadius.value}px`;
     }
 
     // Empty state
@@ -464,10 +518,10 @@ export class GanttChartProVisual implements IVisual {
     });
 
     // Layout
-    const labelWidth = showLabels ? this.settings.ganttSettings.labelWidth.value : 0;
+    const labelWidth = showLabels ? this.settings.taskBarSettings.labelWidth.value : 0;
     const padding = 8;
     const chartWidth = viewport.width - labelWidth - padding * 2;
-    const rowGap = this.settings.ganttSettings.rowGap.value;
+    const rowGap = this.settings.taskBarSettings.rowGap.value;
     const rowHeight = barHeight + rowGap;
 
     // Wrapper
@@ -503,8 +557,8 @@ export class GanttChartProVisual implements IVisual {
     rowsContainer.style.width = `${labelWidth + chartWidth}px`;
 
     // ── Grouping ──────────────────────────────────────────────────
-    const enableGrouping = s.ganttGroupSettings.enableGrouping.value;
-    const collapsibleGroups = s.ganttGroupSettings.collapsibleGroups.value;
+    const enableGrouping = s.hierarchyGroupingSettings.enableGrouping.value;
+    const collapsibleGroups = s.hierarchyGroupingSettings.collapsibleGroups.value;
 
     // Build grouped task list when grouping is enabled
     let displayTasks = validTasks;
@@ -579,6 +633,7 @@ export class GanttChartProVisual implements IVisual {
     displayTasks.forEach((task, idx) => {
       const row = document.createElement('div');
       row.className = 'gantt-task-row';
+      row.dataset.selectionKey = task.selectionId.getKey();
       row.style.height = `${rowHeight}px`;
       row.style.cursor = 'pointer';
       row.addEventListener('mouseenter', (event) => this.showTaskTooltip(task, event));
@@ -676,8 +731,16 @@ export class GanttChartProVisual implements IVisual {
       bar.style.width = `${barWidth}px`;
       bar.style.height = `${barHeight}px`;
       bar.style.backgroundColor = color;
-      bar.style.opacity = String(this.settings.ganttSettings.barOpacity.value / 100);
-      bar.style.borderRadius = `${s.ganttSettings.barCornerRadius.value}px`;
+      bar.style.opacity = String(this.settings.taskBarSettings.barOpacity.value / 100);
+      bar.style.borderRadius = `${s.taskBarSettings.barCornerRadius.value}px`;
+
+      // Task bar border stroke
+      const taskBorderWidth = s.taskBarSettings.taskBorderWidth.value;
+      if (taskBorderWidth > 0) {
+        const taskBorderColor = s.taskBarSettings.taskBorderColor.value?.value || '#000000';
+        bar.style.border = `${taskBorderWidth}px solid ${taskBorderColor}`;
+        bar.style.boxSizing = 'border-box';
+      }
 
       track.appendChild(bar);
 
@@ -689,7 +752,7 @@ export class GanttChartProVisual implements IVisual {
         prog.style.width = `${barWidth * (task.progress / 100)}px`;
         prog.style.height = `${barHeight}px`;
         prog.style.backgroundColor = progressColor;
-        prog.style.borderRadius = `${s.ganttSettings.barCornerRadius.value}px`;
+        prog.style.borderRadius = `${s.taskBarSettings.barCornerRadius.value}px`;
 
         track.appendChild(prog);
       }
@@ -751,9 +814,9 @@ export class GanttChartProVisual implements IVisual {
         const todayLine = document.createElement('div');
         todayLine.className = 'gantt-today-line';
         todayLine.style.left = `${labelWidth + todayFrac * chartWidth}px`;
-        todayLine.style.width = `${s.ganttSettings.todayLineWidth.value}px`;
+        todayLine.style.width = `${s.ganttTodaySettings.todayLineWidth.value}px`;
 
-        const todayStyleValue = s.ganttSettings.todayLineStyle.value;
+        const todayStyleValue = s.ganttTodaySettings.todayLineStyle.value;
         const todayStyle = typeof todayStyleValue === 'string'
           ? todayStyleValue
           : (todayStyleValue as { value?: string } | undefined)?.value ?? 'dashed';
@@ -1005,11 +1068,17 @@ export class GanttChartProVisual implements IVisual {
       tick.style.fontSize = `${labelSize}px`;
     }
 
-    // Style task labels
+    // Style task labels — use dedicated task label font settings when available
+    const taskLabelFontSize = this.settings.taskBarSettings.labelFontSize.value;
+    const taskLabelFontColor = this.settings.taskBarSettings.labelFontColor.value?.value;
+    const taskLabelFontFamily = resolveDropdown(this.settings.taskBarSettings.labelFontFamily);
+    const taskLabelFontWeight = resolveDropdown(this.settings.taskBarSettings.labelFontWeight);
     const taskLabels = this.container.querySelectorAll<HTMLElement>('.gantt-task-label');
     for (const label of taskLabels) {
-      label.style.color = labelColor;
-      label.style.fontSize = `${labelSize}px`;
+      label.style.color = (taskLabelFontColor && taskLabelFontColor.length > 0) ? taskLabelFontColor : labelColor;
+      label.style.fontSize = `${taskLabelFontSize}px`;
+      if (taskLabelFontFamily) label.style.fontFamily = taskLabelFontFamily;
+      label.style.fontWeight = taskLabelFontWeight || 'normal';
     }
 
     // Style header bottom border (axis line)
@@ -1067,12 +1136,21 @@ export class GanttChartProVisual implements IVisual {
     const locale = this.getHostLocale();
     const tooltipData: VisualTooltipDataItem[] = [
       { displayName: 'Task', value: task.name },
-      {
-        displayName: 'Range',
-        value: `${formatShortDate(task.startDate!, locale)} - ${formatShortDate(task.endDate!, locale)}`,
-      },
-      { displayName: 'Progress', value: `${Math.round(task.progress)}%` },
     ];
+
+    if (task.startDate) {
+      tooltipData.push({ displayName: 'Start', value: formatShortDate(task.startDate, locale) });
+    }
+    if (task.endDate) {
+      tooltipData.push({ displayName: 'End', value: formatShortDate(task.endDate, locale) });
+    }
+    if (task.startDate && task.endDate) {
+      const diffMs = task.endDate.getTime() - task.startDate.getTime();
+      const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+      tooltipData.push({ displayName: 'Duration', value: `${diffDays} day${diffDays !== 1 ? 's' : ''}` });
+    }
+
+    tooltipData.push({ displayName: 'Progress', value: formatWithSettings(task.progress, this.settings.numberFormattingCard) + '%' });
 
     this.host.tooltipService.show({
       dataItems: tooltipData,
@@ -1100,30 +1178,44 @@ export class GanttChartProVisual implements IVisual {
     return typeof locale === 'string' && locale.length > 0 ? locale : undefined;
   }
 
-  private notifyRenderStarted(): void {
-    const eventService = (this.host as unknown as {
-      eventService?: { renderingStarted?: () => void };
-    }).eventService;
-    eventService?.renderingStarted?.();
-  }
+  // Render lifecycle notifications removed — Power BI's eventService.renderingStarted()
+  // requires VisualUpdateOptions with updateId, and calling without args crashes the visual.
 
-  private notifyRenderFinished(): void {
-    const eventService = (this.host as unknown as {
-      eventService?: { renderingFinished?: () => void };
-    }).eventService;
-    eventService?.renderingFinished?.();
-  }
+  // -- Selection & Cross-Highlight --------------------------------------------
 
-  private notifyRenderFailed(error: unknown): void {
-    const eventService = (this.host as unknown as {
-      eventService?: { renderingFailed?: (reason: string) => void };
-    }).eventService;
-    const reason = error instanceof Error ? error.message : 'render failure';
-    eventService?.renderingFailed?.(reason);
+  private applySelectionHighlight(): void {
+    const hasSelection = this.selectionManager.hasSelection();
+    const selectedIds = this.selectionManager.getSelectionIds() as ISelectionId[];
+    const selectedKeys = new Set(selectedIds.map((id) => id.getKey()));
+
+    // Build set of highlighted keys from cross-highlight data
+    const highlightedKeys = new Set<string>();
+    if (this.hasHighlights) {
+      for (const task of this.currentTasks) {
+        if (task.highlighted) {
+          highlightedKeys.add(task.selectionId.getKey());
+        }
+      }
+    }
+
+    const rows = this.container.querySelectorAll<HTMLElement>('.gantt-task-row');
+
+    const shouldDim = hasSelection || this.hasHighlights;
+    for (const el of Array.from(rows)) {
+      if (shouldDim) {
+        const elKey = el.dataset.selectionKey;
+        const isSelected = hasSelection && elKey && selectedKeys.has(elKey);
+        const isHighlighted = this.hasHighlights && elKey && highlightedKeys.has(elKey);
+        el.style.opacity = (isSelected || isHighlighted) ? '' : '0.3';
+      } else {
+        el.style.opacity = '';
+      }
+    }
   }
 
   private handleBackgroundClick = (): void => {
     void this.selectionManager.clear();
+    this.applySelectionHighlight();
   };
 
   // -- Milestone Markers -------------------------------------------------------
@@ -1306,6 +1398,7 @@ export class GanttChartProVisual implements IVisual {
       fontSize: legendFontSize,
       fontColor: legendFontColor,
       fontFamily: rawLegendFontFamily,
+      aliases: legendFmtCard.legendAliases.value,
     });
   }
 

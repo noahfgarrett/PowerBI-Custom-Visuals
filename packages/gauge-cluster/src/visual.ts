@@ -14,7 +14,8 @@ import {
   fadeSlideIn,
   formatNumber,
   formatWithSettings,
-  getGlassStyle,
+  applyCardStyle,
+  type CardStyleMode,
   renderChartTitle,
   applyDataLabelFormatting,
   resolveConditionalColor,
@@ -25,6 +26,13 @@ import {
   attachKeyboardNav,
   ensureFocusRingStyles,
   renderSparkline,
+  renderLegend,
+  type LegendItem,
+  getDateFilterIndices,
+  isDateColumn,
+  type DateFilterConfig,
+  resolveColorTheme,
+  getHostChartColor,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -54,7 +62,14 @@ interface GaugeItem {
   label: string;
   value: number;
   target: number | null;
+  highlighted: boolean;
   selectionId: ISelectionId;
+}
+
+/** Whether cross-highlight data is present from another visual/slicer. */
+interface GaugeData {
+  items: GaugeItem[];
+  hasHighlights: boolean;
 }
 
 // ── Visual Class ─────────────────────────────────────────────────────
@@ -92,36 +107,48 @@ export class GaugeClusterVisual implements IVisual {
       );
     }
 
+    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+    if (legacyCardObj) {
+      const legacyGlass = legacyCardObj['enableGlass'];
+      if (legacyGlass === false) {
+        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      }
+    }
+
     // Conditional visibility: hide child settings when parent toggle is off
     const s = this.settings;
-    s.clusterLabelSettings.subtitleField.visible = s.clusterLabelSettings.showSubtitle.value;
+    s.labelsSettings.subtitleField.visible = s.labelsSettings.showSubtitle.value;
     s.animationSettings.duration.visible = s.animationSettings.enabled.value;
     s.targetSettings.color.visible = s.targetSettings.show.value;
     s.targetSettings.lineWidth.visible = s.targetSettings.show.value;
 
-    // Extract data
-    const items = this.extractData(dataView);
+    // Card Style — hide sub-settings when mode is 'none'
+    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    s.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
+    s.cardSettings.backgroundColor.visible = cardMode !== 'none';
 
-    this.notifyRenderStarted();
-    try {
-      this.render(items, options.viewport);
-      this.notifyRenderFinished();
-    } catch (error) {
-      this.notifyRenderFailed(error);
-      throw error;
-    }
+    // Extract data
+
+    // Date filter: hide start/end when disabled
+    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
+    const data = this.extractData(dataView);
+
+    this.render(data, options.viewport);
   }
 
-  private extractData(dataView: DataView | undefined): GaugeItem[] {
+  private extractData(dataView: DataView | undefined): GaugeData {
     const items: GaugeItem[] = [];
 
-    if (!dataView?.categorical) return items;
+    if (!dataView?.categorical) return { items, hasHighlights: false };
 
     const categorical = dataView.categorical;
     const categories = categorical.categories;
     const values = categorical.values;
 
-    if (!categories || categories.length === 0) return items;
+    if (!categories || categories.length === 0) return { items, hasHighlights: false };
 
     const categoryColumn = categories[0];
     const categoryValues = categoryColumn.values;
@@ -139,9 +166,27 @@ export class GaugeClusterVisual implements IVisual {
       }
     }
 
+    // Read cross-highlight data from the measure column
+    const measureHighlights = measureColumn
+      ? (measureColumn.highlights as unknown[] | undefined)
+      : undefined;
+
     // Build gauge items from each category row
     const count = Math.min(categoryValues.length, 8);
+
+    const dateConfig: DateFilterConfig = {
+      enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
+      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
+      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+    };
+    const dateIndices = isDateColumn(categoryColumn.source) ? getDateFilterIndices(categoryValues, dateConfig) : null;
+
+    let hasHighlights = false;
+
     for (let i = 0; i < count; i++) {
+      if (dateIndices && !dateIndices.has(i)) continue;
+
       const label = categoryValues[i] != null ? String(categoryValues[i]) : `Gauge ${i + 1}`;
 
       let value = 0;
@@ -156,17 +201,21 @@ export class GaugeClusterVisual implements IVisual {
         target = typeof raw === 'number' ? raw : null;
       }
 
+      const highlighted = measureHighlights ? measureHighlights[i] !== null : false;
+      if (highlighted) hasHighlights = true;
+
       const selectionId = this.host.createSelectionIdBuilder()
         .withCategory(categoryColumn, i)
         .createSelectionId();
 
-      items.push({ label, value, target, selectionId });
+      items.push({ label, value, target, highlighted, selectionId });
     }
 
-    return items;
+    return { items, hasHighlights };
   }
 
-  private render(items: GaugeItem[], viewport: powerbi.IViewport): void {
+  private render(data: GaugeData, viewport: powerbi.IViewport): void {
+    const items = data.items;
     // Clear container (no innerHTML)
     while (this.container.firstChild) {
       this.container.removeChild(this.container.firstChild);
@@ -176,22 +225,19 @@ export class GaugeClusterVisual implements IVisual {
 
     const s = this.settings;
 
-    // Apply glass card background
-    if (s.cardSettings.enableGlass.value) {
-      const glass = getGlassStyle({
-        mode: 'light',
+    // Apply card style
+    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    applyCardStyle(
+      this.container,
+      {
+        mode: cardMode,
         opacity: s.cardSettings.backgroundOpacity.value / 100,
         backgroundColor: s.cardSettings.backgroundColor.value?.value,
         borderRadius: s.cardSettings.borderRadius.value,
-      });
-      Object.assign(this.container.style, glass);
-    } else {
-      this.container.style.background = '';
-      this.container.style.backdropFilter = '';
-      (this.container.style as unknown as Record<string, unknown>)['WebkitBackdropFilter'] = '';
-      this.container.style.border = '';
-      this.container.style.boxShadow = '';
-      this.container.style.borderRadius = '';
+      },
+    );
+    if (cardMode === 'none') {
+      this.container.style.borderRadius = `${s.cardSettings.borderRadius.value}px`;
     }
 
     // Empty state: no data
@@ -204,26 +250,33 @@ export class GaugeClusterVisual implements IVisual {
     }
 
     // ── Grid Layout ──────────────────────────────────────────────
-    const gaugesPerRow = Math.max(1, Math.min(8, s.clusterSettings.gaugesPerRow.value));
+    const gaugesPerRow = Math.max(1, Math.min(8, s.gridLayoutSettings.gaugesPerRow.value));
     const grid = document.createElement('div');
     grid.className = 'gauge-grid';
     grid.style.gridTemplateColumns = `repeat(${gaugesPerRow}, 1fr)`;
     this.container.appendChild(grid);
 
     // ── Settings ─────────────────────────────────────────────────
-    const arcRangeDeg = Math.max(60, Math.min(350, s.clusterSettings.arcRange.value));
-    const minVal = s.clusterSettings.minValue.value;
-    const maxVal = s.clusterSettings.maxValue.value;
+    const arcRangeDeg = Math.max(60, Math.min(350, s.arcAppearanceSettings.arcRange.value));
+    const minVal = s.valueRangeSettings.minValue.value;
+    const maxVal = s.valueRangeSettings.maxValue.value;
     const totalRange = maxVal > minVal ? maxVal - minVal : 100;
-    const showLabels = s.clusterSettings.showLabels.value;
-    const showValues = s.clusterSettings.showValues.value && s.dataLabelFormattingCard.showDataLabels.value;
+    const showLabels = s.labelsSettings.showLabels.value;
+    const showValues = s.labelsSettings.showValues.value && s.dataLabelFormattingCard.showDataLabels.value;
 
     // Zone thresholds (as fraction 0..1)
     const lowThresholdPct = Math.max(0, Math.min(100, s.zoneSettings.lowThreshold.value)) / 100;
     const highThresholdPct = Math.max(0, Math.min(100, s.zoneSettings.highThreshold.value)) / 100;
-    const lowColor = s.zoneSettings.lowColor.value?.value ?? '#F87171';
-    const midColor = s.zoneSettings.midColor.value?.value ?? '#FBBF24';
-    const highColor = s.zoneSettings.highColor.value?.value ?? '#34D399';
+    const themeName = resolveColorTheme(s.colorThemeFormattingCard);
+    const lowColor = themeName !== 'default'
+      ? getHostChartColor(this.host.colorPalette, 0, themeName)
+      : (s.zoneSettings.lowColor.value?.value ?? '#F87171');
+    const midColor = themeName !== 'default'
+      ? getHostChartColor(this.host.colorPalette, 1, themeName)
+      : (s.zoneSettings.midColor.value?.value ?? '#FBBF24');
+    const highColor = themeName !== 'default'
+      ? getHostChartColor(this.host.colorPalette, 2, themeName)
+      : (s.zoneSettings.highColor.value?.value ?? '#34D399');
 
     const animEnabled = s.animationSettings.enabled.value;
     const animDuration = s.animationSettings.duration.value;
@@ -242,14 +295,15 @@ export class GaugeClusterVisual implements IVisual {
     const cx = svgSize / 2;
     const cy = svgSize / 2;
     const outerRadius = svgSize * 0.40;
-    const arcWidth = outerRadius * ARC_THICKNESS;
+    const arcThicknessPct = Math.max(5, Math.min(50, s.arcAppearanceSettings.arcThickness.value)) / 100;
+    const arcWidth = outerRadius * arcThicknessPct;
     const innerRadius = outerRadius - arcWidth;
 
     // D3 arc generator (optionally with rounded ends)
     const arcGen = d3.arc<{ startAngle: number; endAngle: number }>()
       .innerRadius(innerRadius)
       .outerRadius(outerRadius)
-      .cornerRadius(s.clusterSettings.roundedCaps.value ? arcWidth / 2 : 0);
+      .cornerRadius(s.arcAppearanceSettings.roundedCaps.value ? arcWidth / 2 : 0);
 
     // ── Conditional Formatting Config ───────────────────────────
     const cc = s.conditionalFormattingCard;
@@ -264,7 +318,7 @@ export class GaugeClusterVisual implements IVisual {
     );
 
     // ── Sort by value if enabled ─────────────────────────────────
-    const sortedItems = s.clusterDisplaySettings.sortByValue.value
+    const sortedItems = s.gridLayoutSettings.sortByValue.value
       ? [...items].sort((a, b) => b.value - a.value)
       : items;
 
@@ -304,14 +358,15 @@ export class GaugeClusterVisual implements IVisual {
         .attr('transform', `translate(${cx}, ${cy})`);
 
       // ── Background Track ─────────────────────────────────────
+      const trackColor = s.arcAppearanceSettings.trackColor.value?.value || '#94A3B8';
       g.append('path')
         .attr('class', 'gauge-track')
         .attr('d', arcGen({
           startAngle: startAngleRad,
           endAngle: endAngleRad,
         }))
-        .attr('fill', '#94A3B8')
-        .attr('opacity', s.clusterSettings.trackOpacity.value / 100);
+        .attr('fill', trackColor)
+        .attr('opacity', s.arcAppearanceSettings.trackOpacity.value / 100);
 
       // ── Value Computation ────────────────────────────────────
       const clampedValue = Math.max(minVal, Math.min(maxVal, item.value));
@@ -438,7 +493,7 @@ export class GaugeClusterVisual implements IVisual {
       }
 
       // ── Needle / Pointer ────────────────────────────────────
-      if (s.clusterDisplaySettings.showNeedle.value) {
+      if (s.arcAppearanceSettings.showNeedle.value) {
         const needleAngle = startAngleRad + totalSweepRad * normalizedValue;
         const needleLength = outerRadius - 4;
         // d3.arc uses 12-o'clock origin; rotate by -PI/2 for Math.cos/sin
@@ -475,19 +530,19 @@ export class GaugeClusterVisual implements IVisual {
           .attr('y', labelY)
           .text(item.label);
 
-        const labelFontSize = s.clusterSettings.labelFontSize.value;
+        const labelFontSize = s.labelsSettings.labelFontSize.value;
         if (labelFontSize) labelEl.attr('font-size', `${labelFontSize}px`);
-        const labelFontColor = s.clusterSettings.labelFontColor.value?.value;
+        const labelFontColor = s.labelsSettings.labelFontColor.value?.value;
         if (labelFontColor) labelEl.attr('fill', labelFontColor);
-        const labelFontFamily = resolveDropdown(s.clusterSettings.labelFontFamily);
+        const labelFontFamily = resolveDropdown(s.labelsSettings.labelFontFamily);
         if (labelFontFamily) labelEl.attr('font-family', labelFontFamily);
-        const labelFontWeight = resolveDropdown(s.clusterSettings.labelFontWeight);
+        const labelFontWeight = resolveDropdown(s.labelsSettings.labelFontWeight);
         if (labelFontWeight) labelEl.attr('font-weight', labelFontWeight);
       }
 
       // ── Subtitle ────────────────────────────────────────────
-      if (s.clusterLabelSettings.showSubtitle.value) {
-        const subtitleText = s.clusterLabelSettings.subtitleField.value || '';
+      if (s.labelsSettings.showSubtitle.value) {
+        const subtitleText = s.labelsSettings.subtitleField.value || '';
         if (subtitleText.length > 0) {
           const subtitleY = outerRadius + (showLabels ? 16 : 6);
           g.append('text')
@@ -503,7 +558,7 @@ export class GaugeClusterVisual implements IVisual {
       }
 
       // ── Sparkline ───────────────────────────────────────────
-      if (s.clusterDisplaySettings.showSparklines.value) {
+      if (s.labelsSettings.showSparklines.value) {
         // Track history for sparkline (keep up to 20 points)
         const history = this.sparklineHistory.get(item.label) ?? [];
         history.push(item.value);
@@ -528,7 +583,9 @@ export class GaugeClusterVisual implements IVisual {
       }
 
       // ── Cell Entrance Animation ──────────────────────────────
-      if (animEnabled) {
+      // Skip animation for cells that will be dimmed by cross-highlighting
+      const shouldDimCell = data.hasHighlights && !item.highlighted;
+      if (animEnabled && !shouldDimCell) {
         const cellEl = cell as HTMLElement;
         cellEl.style.opacity = '0';
         cellEl.style.transform = 'translateY(10px)';
@@ -584,6 +641,37 @@ export class GaugeClusterVisual implements IVisual {
       this.cancelAnimations.push(cleanup);
     }
 
+    // Cross-highlight dimming: dim non-highlighted gauges
+    if (data.hasHighlights) {
+      const cells = this.container.querySelectorAll<HTMLElement>('.gauge-cell');
+      cells.forEach((cell, i) => {
+        if (i < sortedItems.length && !sortedItems[i].highlighted) {
+          cell.style.opacity = '0.3';
+        }
+      });
+    }
+
+    // Legend
+    const legendCard = this.settings.legendFormattingCard;
+    if (legendCard.showLegend.value) {
+      const legendPos = resolveDropdown(legendCard.legendPosition) ?? 'bottom';
+      const rawFontColor = legendCard.legendFontColor.value?.value;
+      const legendItems: LegendItem[] = [
+        { label: 'Low', color: lowColor },
+        { label: 'Mid', color: midColor },
+        { label: 'High', color: highColor },
+      ];
+      renderLegend(this.container, {
+        items: legendItems,
+        position: legendPos as 'top' | 'bottom' | 'left' | 'right',
+        fontSize: legendCard.legendFontSize.value,
+        fontColor: rawFontColor && rawFontColor.length > 0 ? rawFontColor : '#64748B',
+        fontFamily: resolveDropdown(legendCard.legendFontFamily) || undefined,
+        fontWeight: resolveDropdown(legendCard.legendFontWeight) || 'normal',
+        aliases: legendCard.legendAliases.value,
+      });
+    }
+
     this.container.addEventListener('click', this.handleBackgroundClick);
   }
 
@@ -631,27 +719,8 @@ export class GaugeClusterVisual implements IVisual {
     return typeof locale === 'string' && locale.length > 0 ? locale : undefined;
   }
 
-  private notifyRenderStarted(): void {
-    const eventService = (this.host as unknown as {
-      eventService?: { renderingStarted?: () => void };
-    }).eventService;
-    eventService?.renderingStarted?.();
-  }
-
-  private notifyRenderFinished(): void {
-    const eventService = (this.host as unknown as {
-      eventService?: { renderingFinished?: () => void };
-    }).eventService;
-    eventService?.renderingFinished?.();
-  }
-
-  private notifyRenderFailed(error: unknown): void {
-    const eventService = (this.host as unknown as {
-      eventService?: { renderingFailed?: (reason: string) => void };
-    }).eventService;
-    const reason = error instanceof Error ? error.message : 'render failure';
-    eventService?.renderingFailed?.(reason);
-  }
+  // Render lifecycle notifications removed — Power BI's eventService.renderingStarted()
+  // requires VisualUpdateOptions with updateId, and calling without args crashes the visual.
 
   private handleBackgroundClick = (): void => {
     void this.selectionManager.clear();

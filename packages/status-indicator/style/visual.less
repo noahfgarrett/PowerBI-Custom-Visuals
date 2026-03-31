@@ -26,10 +26,23 @@
   gap: 8px;
   padding: 4px 8px;
   border-radius: 6px;
-  transition: background 0.15s ease;
-  &:hover { background: rgba(0,0,0,0.03); }
+  transition: background 0.15s ease, transform 0.2s ease, filter 0.2s ease;
+
+  &:hover {
+    background: rgba(0,0,0,0.04);
+    filter: brightness(1.05);
+    transform: scale(1.015);
+  }
 }
 
-.status-shape { flex-shrink: 0; }
+.status-shape {
+  flex-shrink: 0;
+  transition: filter 0.2s ease;
+}
+
+.status-row:hover .status-shape {
+  filter: brightness(1.15);
+}
+
 .status-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .status-value { margin-left: auto; white-space: nowrap; }

@@ -1,12 +1,19 @@
 /**
  * Waffle Chart — Formatting model (properties pane).
  * Defines all user-configurable options that appear in the PBI format pane.
+ *
+ * Reorganized: 16 → 11 cards
+ * - Merged "Layout" into "Grid" (fillDirection, autoFitCells now in Grid)
+ * - Merged "Icon Library" into "Pictogram" (iconSet now in Pictogram)
+ * - Removed duplicate emptyColor from Grid (Colors card is canonical)
  */
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { DataLabelFormattingCard, LegendFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard, NumberFormattingCard } from '../../core/src';
-// ── Grid Settings ────────────────────────────────────────────────────
+import { DataLabelFormattingCard, LegendFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard,
+  DateFilterFormattingCard, NumberFormattingCard,
+} from '../../core/src';
+// ── Grid Settings (merged with Layout) ──────────────────────────────
 
 class GridSettings extends formattingSettings.SimpleCard {
   rows = new formattingSettings.NumUpDown({
@@ -27,6 +34,24 @@ class GridSettings extends formattingSettings.SimpleCard {
     value: 3,
   });
 
+  fillDirection = new formattingSettings.ItemDropdown({
+    name: 'fillDirection',
+    displayName: 'Fill Direction',
+    items: [
+      { value: 'lr', displayName: 'Left to Right' },
+      { value: 'bt', displayName: 'Bottom to Top' },
+      { value: 'diagonal', displayName: 'Diagonal' },
+      { value: 'radial', displayName: 'Radial' },
+    ],
+    value: { value: 'bt', displayName: 'Bottom to Top' },
+  });
+
+  autoFitCells = new formattingSettings.ToggleSwitch({
+    name: 'autoFitCells',
+    displayName: 'Auto-Fit Cell Size',
+    value: false,
+  });
+
   shape = new formattingSettings.ItemDropdown({
     name: 'shape',
     displayName: 'Cell Shape',
@@ -37,44 +62,18 @@ class GridSettings extends formattingSettings.SimpleCard {
     value: { value: 'square', displayName: 'Square' },
   });
 
-
-  cellStrokeColor = new formattingSettings.ColorPicker({
-
-    name: 'cellStrokeColor',
-
-    displayName: 'Cell Stroke Color',
-
-    value: { value: '' },
-
-  });
-
   cellCornerRadius = new formattingSettings.NumUpDown({
-
     name: 'cellCornerRadius',
-
     displayName: 'Cell Corner Radius',
-
     value: 2,
-
   });
-
-  emptyColor = new formattingSettings.ColorPicker({
-
-    name: 'emptyColor',
-
-    displayName: 'Empty Color',
-
-    value: { value: '' },
-
-  });
-
 
   name = 'gridSettings';
   displayName = 'Grid';
-  slices = [this.rows, this.cols, this.gap, this.shape, this.cellStrokeColor, this.cellCornerRadius, this.emptyColor];
+  slices = [this.rows, this.cols, this.gap, this.fillDirection, this.autoFitCells, this.shape, this.cellCornerRadius];
 }
 
-// ── Color Settings ───────────────────────────────────────────────────
+// ── Color Settings (canonical location for fill/empty/stroke) ───────
 
 class ColorSettings extends formattingSettings.SimpleCard {
   fillColor = new formattingSettings.ColorPicker({
@@ -89,9 +88,15 @@ class ColorSettings extends formattingSettings.SimpleCard {
     value: { value: '#E2E8F0' },
   });
 
+  cellStrokeColor = new formattingSettings.ColorPicker({
+    name: 'cellStrokeColor',
+    displayName: 'Cell Stroke Color',
+    value: { value: '' },
+  });
+
   name = 'colorSettings';
   displayName = 'Colors';
-  slices = [this.fillColor, this.emptyColor];
+  slices = [this.fillColor, this.emptyColor, this.cellStrokeColor];
 }
 
 // ── Value Display Settings ───────────────────────────────────────────
@@ -115,64 +120,38 @@ class ValueSettings extends formattingSettings.SimpleCard {
     value: { value: '' }, // empty = use theme default
   });
 
+  fontFamily = new formattingSettings.ItemDropdown({
+    name: 'fontFamily',
+    displayName: 'Font Family',
+    items: [
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Arial', displayName: 'Arial' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Helvetica', displayName: 'Helvetica' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
+      { value: 'Verdana', displayName: 'Verdana' },
+      { value: 'Georgia', displayName: 'Georgia' },
+    ],
+    value: { value: 'Segoe UI', displayName: 'Segoe UI' },
+  });
+
+  fontWeight = new formattingSettings.ItemDropdown({
+    name: 'fontWeight',
+    displayName: 'Font Weight',
+    items: [
+      { value: 'normal', displayName: 'Normal' },
+      { value: 'bold', displayName: 'Bold' },
+      { value: '600', displayName: 'Semi-Bold' },
+    ],
+    value: { value: 'normal', displayName: 'Normal' },
+  });
+
   name = 'valueSettings';
   displayName = 'Value Display';
-  slices = [this.show, this.fontSize, this.fontColor];
+  slices = [this.show, this.fontSize, this.fontColor, this.fontFamily, this.fontWeight];
 }
 
-// ── Card Style Settings ──────────────────────────────────────────────
-
-class CardStyleSettings extends formattingSettings.SimpleCard {
-  enableGlass = new formattingSettings.ToggleSwitch({
-    name: 'enableGlass',
-    displayName: 'Glass Effect',
-    value: true,
-  });
-
-  backgroundColor = new formattingSettings.ColorPicker({
-    name: 'backgroundColor',
-    displayName: 'Background Color',
-    value: { value: '' },
-  });
-
-  backgroundOpacity = new formattingSettings.NumUpDown({
-    name: 'backgroundOpacity',
-    displayName: 'Background Opacity (%)',
-    value: 35,
-  });
-
-  borderRadius = new formattingSettings.NumUpDown({
-    name: 'borderRadius',
-    displayName: 'Border Radius',
-    value: 12,
-  });
-
-  name = 'cardSettings';
-  displayName = 'Card Style';
-  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
-}
-
-// ── Animation Settings ───────────────────────────────────────────────
-
-class AnimationSettings extends formattingSettings.SimpleCard {
-  enabled = new formattingSettings.ToggleSwitch({
-    name: 'enabled',
-    displayName: 'Enable Animations',
-    value: true,
-  });
-
-  duration = new formattingSettings.NumUpDown({
-    name: 'duration',
-    displayName: 'Duration (ms)',
-    value: 600,
-  });
-
-  name = 'animationSettings';
-  displayName = 'Animation';
-  slices = [this.enabled, this.duration];
-}
-
-// ── Pictogram Settings ──────────────────────────────────────────────
+// ── Pictogram Settings (merged with Icon Library) ───────────────────
 
 class PictogramSettingsCard extends formattingSettings.SimpleCard {
   enabled = new formattingSettings.ToggleSwitch({
@@ -195,6 +174,19 @@ class PictogramSettingsCard extends formattingSettings.SimpleCard {
     value: { value: 'person', displayName: 'Person' },
   });
 
+  iconSet = new formattingSettings.ItemDropdown({
+    name: 'iconSet',
+    displayName: 'Icon Set',
+    items: [
+      { value: 'default', displayName: 'Default' },
+      { value: 'weather', displayName: 'Weather' },
+      { value: 'arrows', displayName: 'Arrows' },
+      { value: 'shapes', displayName: 'Shapes' },
+      { value: 'status', displayName: 'Status' },
+    ],
+    value: { value: 'default', displayName: 'Default' },
+  });
+
   iconSize = new formattingSettings.NumUpDown({
     name: 'iconSize',
     displayName: 'Icon Size (%)',
@@ -209,94 +201,100 @@ class PictogramSettingsCard extends formattingSettings.SimpleCard {
 
   name = 'pictogramSettings';
   displayName = 'Pictogram';
-  slices = [this.enabled, this.iconShape, this.iconSize, this.outlineOpacity];
+  slices = [this.enabled, this.iconShape, this.iconSet, this.iconSize, this.outlineOpacity];
 }
 
-// ── Top-level Model ──────────────────────────────────────────────────
+// ── Card Style Settings ──────────────────────────────────────────────
 
-// ── Waffle Layout Settings ──────────────────────────────────────
-
-class WaffleLayoutSettings extends formattingSettings.SimpleCard {
-  fillDirection = new formattingSettings.ItemDropdown({
-    name: 'fillDirection',
-    displayName: 'Fill Direction',
+class CardStyleSettings extends formattingSettings.SimpleCard {
+  cardStyleMode = new formattingSettings.ItemDropdown({
+    name: 'cardStyleMode',
+    displayName: 'Card Style',
     items: [
-      { value: 'lr', displayName: 'Left to Right' },
-      { value: 'bt', displayName: 'Bottom to Top' },
-      { value: 'diagonal', displayName: 'Diagonal' },
-      { value: 'radial', displayName: 'Radial' },
+      { value: 'none', displayName: 'None' },
+      { value: 'glass', displayName: 'Glass' },
+      { value: 'elevated', displayName: 'Elevated' },
+      { value: 'neumorphic', displayName: 'Neumorphic' },
     ],
-    value: { value: 'bt', displayName: 'Bottom to Top' },
+    value: { value: 'glass', displayName: 'Glass' },
   });
 
-  autoFitCells = new formattingSettings.ToggleSwitch({
-    name: 'autoFitCells',
-    displayName: 'Auto-Fit Cell Size',
-    value: false,
+  backgroundColor = new formattingSettings.ColorPicker({
+    name: 'backgroundColor',
+    displayName: 'Background Color',
+    value: { value: '' },
   });
 
-  name = 'waffleLayoutSettings';
-  displayName = 'Layout';
-  slices = [this.fillDirection, this.autoFitCells];
+  backgroundOpacity = new formattingSettings.NumUpDown({
+    name: 'backgroundOpacity',
+    displayName: 'Background Opacity (%)',
+    value: 35,
+  });
+
+  borderRadius = new formattingSettings.NumUpDown({
+    name: 'borderRadius',
+    displayName: 'Border Radius',
+    value: 12,
+  });
+
+  name = 'cardSettings';
+  displayName = 'Card Style';
+  slices = [this.cardStyleMode, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
-// ── Waffle Icon Settings ────────────────────────────────────────
+// ── Animation Settings ───────────────────────────────────────────────
 
-class WaffleIconSettings extends formattingSettings.SimpleCard {
-  iconSet = new formattingSettings.ItemDropdown({
-    name: 'iconSet',
-    displayName: 'Icon Set',
-    items: [
-      { value: 'default', displayName: 'Default' },
-      { value: 'weather', displayName: 'Weather' },
-      { value: 'arrows', displayName: 'Arrows' },
-      { value: 'shapes', displayName: 'Shapes' },
-      { value: 'status', displayName: 'Status' },
-    ],
-    value: { value: 'default', displayName: 'Default' },
+class AnimationSettings extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Animations',
+    value: true,
   });
 
-  name = 'waffleIconSettings';
-  displayName = 'Icon Library';
-  slices = [this.iconSet];
+  duration = new formattingSettings.NumUpDown({
+    name: 'duration',
+    displayName: 'Duration (ms)',
+    value: 600,
+  });
+
+  name = 'animationSettings';
+  displayName = 'Animation';
+  slices = [this.enabled, this.duration];
 }
 
-// ── Top-level Model ──────────────────────────────────────────────────
+// ── Top-level Model (11 cards) ──────────────────────────────────────
 
 export class WaffleChartSettings extends formattingSettings.Model {
   gridSettings = new GridSettings();
   colorSettings = new ColorSettings();
   valueSettings = new ValueSettings();
+  pictogramSettings = new PictogramSettingsCard();
+  legendFormattingCard = new LegendFormattingCard();
+  titleFormattingCard = new TitleFormattingCard();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
-  pictogramSettings = new PictogramSettingsCard();
-  waffleLayoutSettings = new WaffleLayoutSettings();
-  waffleIconSettings = new WaffleIconSettings();
-
   dataLabelFormattingCard = new DataLabelFormattingCard();
-  titleFormattingCard = new TitleFormattingCard();
-  legendFormattingCard = new LegendFormattingCard();
+
   conditionalFormattingCard = new ConditionalFormattingCard();
   accessibilityFormattingCard = new AccessibilityFormattingCard();
-
   colorThemeFormattingCard = new ColorThemeFormattingCard();
+  dateFilterFormattingCard = new DateFilterFormattingCard();
   numberFormattingCard = new NumberFormattingCard();
 
   cards = [
     this.gridSettings,
     this.colorSettings,
     this.valueSettings,
+    this.pictogramSettings,
+    this.legendFormattingCard,
+    this.titleFormattingCard,
     this.cardSettings,
     this.animationSettings,
-    this.pictogramSettings,
-    this.waffleLayoutSettings,
-    this.waffleIconSettings,
     this.dataLabelFormattingCard,
-    this.titleFormattingCard,
-    this.legendFormattingCard,
+    this.numberFormattingCard,
     this.conditionalFormattingCard,
     this.accessibilityFormattingCard,
     this.colorThemeFormattingCard,
-    this.numberFormattingCard,
+    this.dateFilterFormattingCard,
   ];
 }

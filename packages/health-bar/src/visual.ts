@@ -9,17 +9,17 @@ import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructor
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import DataView = powerbi.DataView;
 import ISelectionId = powerbi.visuals.ISelectionId;
+import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 
 import { FormattingSettingsService } from 'powerbi-visuals-utils-formattingmodel';
 import * as d3 from 'd3';
 
 import {
-  getGlassStyle,
+  applyCardStyle,
+  type CardStyleMode,
   formatPercent,
-  formatNumber,
   formatWithSettings,
   growBar,
-  countUp,
   fadeSlideIn,
   DURATION,
   renderChartTitle,
@@ -42,6 +42,13 @@ import {
   type TrendType,
   renderAnnotations,
   buildAnnotationConfig,
+  renderLegend,
+  type LegendItem,
+  getDateFilterIndices,
+  isDateColumn,
+  type DateFilterConfig,
+  resolveColorTheme,
+  getHostChartColor,
 } from '../../core/src';
 
 import { HealthBarSettings } from './settings';
@@ -61,7 +68,14 @@ interface HealthBarItem {
   value: number;
   pct: number; // clamped 0-1
   target: number | null;
+  highlighted: boolean;
   selectionId: ISelectionId;
+}
+
+/** Whether cross-highlight data is present from another visual/slicer. */
+interface HealthBarData {
+  items: HealthBarItem[];
+  hasHighlights: boolean;
 }
 
 // ── Visual ───────────────────────────────────────────────────────────
@@ -97,15 +111,33 @@ export class HealthBarVisual implements IVisual {
       dataView,
     );
 
+    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+    if (legacyCardObj) {
+      const legacyGlass = legacyCardObj['enableGlass'];
+      if (legacyGlass === false) {
+        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      }
+    }
+
     // Hide inapplicable shared axis properties — health-bar only uses axisLabelColor and axisLabelSize
+
+    // Date filter: hide start/end when disabled
+    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
     this.settings.axisFormattingCard.showXAxis.visible = false;
     this.settings.axisFormattingCard.showYAxis.visible = false;
     this.settings.axisFormattingCard.xAxisTitle.visible = false;
-    this.settings.axisFormattingCard.yAxisTitle.visible = false;
     this.settings.axisFormattingCard.axisLabelFontFamily.visible = false;
     this.settings.axisFormattingCard.axisLabelRotation.visible = false;
     this.settings.axisFormattingCard.yAxisMin.visible = false;
     this.settings.axisFormattingCard.yAxisMax.visible = false;
+
+    // Hide dual-axis-only properties (no combo/dual-axis support)
+    this.settings.referenceLineFormattingCard.referenceLineAxis.visible = false;
+    this.settings.referenceLineFormattingCard.referenceBandWidth.visible = false;
+    this.settings.trendLineFormattingCard.trendLineAxis.visible = false;
 
     // Conditional visibility: hide child settings when parent toggle is off
     this.settings.animationSettings.duration.visible = this.settings.animationSettings.enabled.value;
@@ -113,27 +145,28 @@ export class HealthBarVisual implements IVisual {
     this.settings.targetSettings.color.visible = this.settings.targetSettings.show.value;
     this.settings.targetSettings.lineWidth.visible = this.settings.targetSettings.show.value;
     this.settings.targetSettings.markerStyle.visible = this.settings.targetSettings.show.value;
-    this.settings.healthBarSettings.showPercent.visible = this.settings.healthBarSettings.showValue.value;
+    this.settings.valueLabelsSettings.showPercent.visible = this.settings.valueLabelsSettings.showValue.value;
 
     // Extract data and apply user-configured sort order
+    const extracted = this.extractData(dataView);
     const items = applySortOrder(
-      this.extractData(dataView).map((d) => ({ ...d, name: d.label })),
+      extracted.items.map((d) => ({ ...d, name: d.label })),
       this.settings.sortFormattingCard,
     );
-    this.render(items, options.viewport);
+    this.render(items, options.viewport, extracted.hasHighlights);
   }
 
   // ── Data Extraction ─────────────────────────────────────────────────
 
-  private extractData(dataView: DataView | undefined): HealthBarItem[] {
+  private extractData(dataView: DataView | undefined): HealthBarData {
     if (!dataView?.categorical?.categories?.[0] || !dataView.categorical.values) {
-      return [];
+      return { items: [], hasHighlights: false };
     }
 
     const categories = dataView.categorical.categories[0];
     const allValues = dataView.categorical.values;
-    const maxVal = this.settings.healthBarSettings.maxValue.value || 100;
-    const minVal = this.settings.healthBarScale.minValue.value ?? 0;
+    const maxVal = this.settings.scaleRangeSettings.maxValue.value ?? 100;
+    const minVal = this.settings.scaleRangeSettings.minValue.value ?? 0;
     const scaleRange = maxVal - minVal;
     const items: HealthBarItem[] = [];
 
@@ -148,9 +181,24 @@ export class HealthBarVisual implements IVisual {
       if (role['target']) targetColumn = col;
     }
 
-    if (!measureColumn) return items;
+    if (!measureColumn) return { items, hasHighlights: false };
+
+    // Read cross-highlight data from the measure column
+    const measureHighlights = measureColumn.highlights as unknown[] | undefined;
+
+    const dateConfig: DateFilterConfig = {
+      enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
+      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
+      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+    };
+    const dateIndices = isDateColumn(categories.source) ? getDateFilterIndices(categories.values, dateConfig) : null;
+
+    let hasHighlights = false;
 
     for (let i = 0; i < categories.values.length; i++) {
+      if (dateIndices && !dateIndices.has(i)) continue;
+
       const label = String(categories.values[i] ?? '');
       const rawValue = Number(measureColumn.values[i] ?? 0);
 
@@ -165,20 +213,23 @@ export class HealthBarVisual implements IVisual {
         target = typeof raw === 'number' ? raw : null;
       }
 
+      const highlighted = measureHighlights ? measureHighlights[i] !== null : false;
+      if (highlighted) hasHighlights = true;
+
       const selectionId = this.host
         .createSelectionIdBuilder()
         .withCategory(categories, i)
         .createSelectionId();
 
-      items.push({ label, value: clamped, pct, target, selectionId });
+      items.push({ label, value: clamped, pct, target, highlighted, selectionId });
     }
 
-    return items;
+    return { items, hasHighlights };
   }
 
   // ── Render ──────────────────────────────────────────────────────────
 
-  private render(items: HealthBarItem[], viewport: powerbi.IViewport): void {
+  private render(items: HealthBarItem[], viewport: powerbi.IViewport, hasHighlights?: boolean): void {
     // Clear
     while (this.container.firstChild) {
       this.container.removeChild(this.container.firstChild);
@@ -186,23 +237,21 @@ export class HealthBarVisual implements IVisual {
 
     const s = this.settings;
 
-    // Glass effect
-    if (s.cardSettings.enableGlass.value) {
-      const glass = getGlassStyle({
-        mode: 'light',
-        opacity: s.cardSettings.backgroundOpacity.value / 100,
-        backgroundColor: s.cardSettings.backgroundColor?.value?.value,
-        borderRadius: s.cardSettings.borderRadius.value,
-      });
-      Object.assign(this.container.style, glass);
-    } else {
-      this.container.style.background = '';
-      this.container.style.backdropFilter = '';
-      (this.container.style as unknown as Record<string, string>).WebkitBackdropFilter = '';
-      this.container.style.border = '';
-      this.container.style.boxShadow = '';
+    // Card style
+    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    applyCardStyle(this.container, {
+      mode: cardMode,
+      opacity: s.cardSettings.backgroundOpacity.value / 100,
+      backgroundColor: s.cardSettings.backgroundColor?.value?.value,
+      borderRadius: s.cardSettings.borderRadius.value,
+    });
+    if (cardMode === 'none') {
       this.container.style.borderRadius = `${s.cardSettings.borderRadius.value}px`;
     }
+
+    // Conditional visibility for card style sub-settings
+    s.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
+    s.cardSettings.backgroundColor.visible = cardMode !== 'none';
 
     // Title
     renderChartTitle(this.container, s.titleFormattingCard);
@@ -230,13 +279,13 @@ export class HealthBarVisual implements IVisual {
     if (chartHeight <= 0) return;
 
     // Y-axis
-    const showYAxis = s.healthBarSettings.showYAxis.value;
+    const showYAxis = s.scaleRangeSettings.showYAxis.value;
     const leftMargin = showYAxis ? Y_AXIS_WIDTH : 0;
     const barAreaWidth = svgWidth - leftMargin;
 
     // Bar layout
-    const gap = s.healthBarSettings.gap.value;
-    const maxBarWidth = s.healthBarSettings.barWidth.value;
+    const gap = s.barShapeSettings.gap.value;
+    const maxBarWidth = s.barShapeSettings.barWidth.value;
     const barCount = items.length;
     const totalGap = Math.max(0, barCount - 1) * gap;
     const availWidth = barAreaWidth - totalGap;
@@ -262,22 +311,29 @@ export class HealthBarVisual implements IVisual {
     const offsetX = leftMargin + (effectiveBarAreaWidth - totalBarsWidth) / 2;
 
     // Settings
-    const cornerRadius = s.healthBarSettings.barCornerRadius.value;
-    const showValue = s.healthBarSettings.showValue.value && s.dataLabelFormattingCard.showDataLabels.value;
-    const showPercent = s.healthBarSettings.showPercent.value;
+    const cornerRadius = s.barShapeSettings.barCornerRadius.value;
+    const showValue = s.valueLabelsSettings.showValue.value && s.dataLabelFormattingCard.showDataLabels.value;
+    const showPercent = s.valueLabelsSettings.showPercent.value;
     const animEnabled = s.animationSettings.enabled.value;
     const animDuration = s.animationSettings.duration.value;
     const staggerDelay = s.animationSettings.staggerDelay.value;
 
-    // Colors
-    const lowColor = s.colorSettings.lowColor.value?.value || '#EF4444';
-    const midColor = s.colorSettings.midColor.value?.value || '#F59E0B';
-    const highColor = s.colorSettings.highColor.value?.value || '#22C55E';
+    // Colors — theme overrides when non-default
+    const themeName = resolveColorTheme(s.colorThemeFormattingCard);
+    const lowColor = themeName !== 'default'
+      ? getHostChartColor(this.host.colorPalette, 0, themeName)
+      : (s.colorSettings.lowColor.value?.value || '#EF4444');
+    const midColor = themeName !== 'default'
+      ? getHostChartColor(this.host.colorPalette, 1, themeName)
+      : (s.colorSettings.midColor.value?.value || '#F59E0B');
+    const highColor = themeName !== 'default'
+      ? getHostChartColor(this.host.colorPalette, 2, themeName)
+      : (s.colorSettings.highColor.value?.value || '#22C55E');
     const trackColor = s.colorSettings.trackColor.value?.value || '#E2E8F0';
     const trackOpacity = s.colorSettings.trackOpacity.value / 100;
 
     // Fill mode
-    const fillModeVal = (s.healthBarSettings.fillMode?.value as unknown as { value?: string })?.value;
+    const fillModeVal = (s.barShapeSettings.fillMode?.value as unknown as { value?: string })?.value;
     const useGradient = fillModeVal !== 'solid';
 
     // Create SVG
@@ -449,6 +505,36 @@ export class HealthBarVisual implements IVisual {
         });
       });
 
+      // Tooltip
+      const host = this.host;
+      const tooltipItems: VisualTooltipDataItem[] = [
+        { displayName: 'Category', value: item.label },
+        { displayName: 'Value', value: formatWithSettings(item.value, this.settings.numberFormattingCard) },
+        { displayName: '% Complete', value: `${Math.round(item.pct * 100)}%` },
+      ];
+      if (item.target !== null) {
+        tooltipItems.push({ displayName: 'Target', value: formatWithSettings(item.target, this.settings.numberFormattingCard) });
+      }
+      fill.addEventListener('mouseover', (event: MouseEvent) => {
+        host.tooltipService.show({
+          dataItems: tooltipItems,
+          identities: [],
+          coordinates: [event.clientX, event.clientY],
+          isTouchEvent: false,
+        });
+      });
+      fill.addEventListener('mousemove', (event: MouseEvent) => {
+        host.tooltipService.move({
+          dataItems: [],
+          identities: [],
+          coordinates: [event.clientX, event.clientY],
+          isTouchEvent: false,
+        });
+      });
+      fill.addEventListener('mouseout', () => {
+        host.tooltipService.hide({ immediately: true, isTouchEvent: false });
+      });
+
       // Animate fill bar
       if (animEnabled) {
         const delay = i * staggerDelay;
@@ -458,8 +544,11 @@ export class HealthBarVisual implements IVisual {
 
       // ── Target Marker ─────────────────────────────────────────
       if (s.targetSettings.show.value && item.target !== null) {
-        const maxValue = s.healthBarSettings.maxValue.value || 100;
-        const targetPct = maxValue > 0 ? Math.max(0, Math.min(item.target, maxValue)) / maxValue : 0;
+        const maxValue = s.scaleRangeSettings.maxValue.value ?? 100;
+        const minValue = s.scaleRangeSettings.minValue.value ?? 0;
+        const range = maxValue - minValue;
+        const clampedTarget = Math.max(minValue, Math.min(item.target, maxValue));
+        const targetPct = range > 0 ? (clampedTarget - minValue) / range : 0;
         const targetY = chartHeight - chartHeight * targetPct;
         const targetColor = s.targetSettings.color.value?.value ?? '#0F172A';
         const targetLineWidth = s.targetSettings.lineWidth.value;
@@ -505,7 +594,7 @@ export class HealthBarVisual implements IVisual {
           ? formatPercent(item.pct, { decimals: 0 })
           : formatWithSettings(item.value, this.settings.numberFormattingCard);
 
-        const valuePosition = resolveDropdown(s.healthBarValuePosition.position) ?? 'above';
+        const valuePosition = resolveDropdown(s.valueLabelsSettings.position) ?? 'above';
 
         const text = document.createElementNS(SVG_NS, 'text');
         text.setAttribute('class', 'health-bar-value');
@@ -572,6 +661,23 @@ export class HealthBarVisual implements IVisual {
     // Apply shared formatting
     applyDataLabelFormatting(this.container, s.dataLabelFormattingCard, '.health-bar-value');
 
+    // Apply value label font overrides
+    if (showValue) {
+      const vlFontSize = s.valueLabelsSettings.fontSize.value;
+      const vlFontColor = s.valueLabelsSettings.fontColor.value?.value;
+      const vlFontFamily = resolveDropdown(s.valueLabelsSettings.fontFamily);
+      const vlFontWeight = resolveDropdown(s.valueLabelsSettings.fontWeight);
+      const valueLabels = this.container.querySelectorAll('.health-bar-value');
+      for (const el of valueLabels) {
+        if (el instanceof SVGElement) {
+          el.style.setProperty('font-size', `${vlFontSize}px`);
+          if (vlFontColor && vlFontColor.length > 0) el.style.setProperty('fill', vlFontColor);
+          if (vlFontFamily) el.style.setProperty('font-family', vlFontFamily);
+          if (vlFontWeight) el.style.setProperty('font-weight', vlFontWeight);
+        }
+      }
+    }
+
     // Apply category label formatting
     if (showCategoryLabels) {
       const catColor = s.categoryLabelSettings.fontColor.value?.value || '#64748B';
@@ -593,8 +699,9 @@ export class HealthBarVisual implements IVisual {
     const d3ChartGroup = d3.select(chartGroup as unknown as SVGGElement);
 
     // Build y scale for reference / trend overlays (value → pixel)
-    const maxVal = s.healthBarSettings.maxValue.value || 100;
-    const yScale = d3.scaleLinear().domain([0, maxVal]).range([chartHeight, 0]);
+    const maxVal = s.scaleRangeSettings.maxValue.value ?? 100;
+    const minVal = s.scaleRangeSettings.minValue.value ?? 0;
+    const yScale = d3.scaleLinear().domain([minVal, maxVal]).range([chartHeight, 0]);
     const allValues = items.map((d) => d.value);
 
     // Reference line
@@ -616,6 +723,41 @@ export class HealthBarVisual implements IVisual {
       const y = yScale(items[idx].value);
       return { x, y };
     });
+
+    // Legend — show zone colors if zones are enabled
+    const legendCard = this.settings.legendFormattingCard;
+    if (legendCard.showLegend.value && s.healthBarZone.show.value) {
+      const legendPos = resolveDropdown(legendCard.legendPosition) ?? 'bottom';
+      const rawFontColor = legendCard.legendFontColor.value?.value;
+      const zoneColorsRaw = s.healthBarZone.zoneColors.value || '';
+      const zoneLegendColors = zoneColorsRaw.split(',').map((c: string) => c.trim()).filter((c: string) => c.length > 0);
+      const zoneLabels = ['High', 'Mid', 'Low'];
+      const legendItems: LegendItem[] = zoneLegendColors.map((color: string, idx: number) => ({
+        label: idx < zoneLabels.length ? zoneLabels[idx] : `Zone ${idx + 1}`,
+        color,
+      }));
+      if (legendItems.length > 0) {
+        renderLegend(this.container, {
+          items: legendItems,
+          position: legendPos as 'top' | 'bottom' | 'left' | 'right',
+          fontSize: legendCard.legendFontSize.value,
+          fontColor: rawFontColor && rawFontColor.length > 0 ? rawFontColor : '#64748B',
+          fontFamily: resolveDropdown(legendCard.legendFontFamily) || undefined,
+          fontWeight: resolveDropdown(legendCard.legendFontWeight) || 'normal',
+          aliases: legendCard.legendAliases.value,
+        });
+      }
+    }
+
+    // Cross-highlight dimming: dim non-highlighted bars
+    if (hasHighlights) {
+      const fillBars = this.container.querySelectorAll<SVGRectElement>('.health-bar-fill');
+      fillBars.forEach((el, i) => {
+        if (i < items.length && !items[i].highlighted) {
+          el.style.opacity = '0.3';
+        }
+      });
+    }
 
     // Accessibility
     this.applyAccessibility(items);

@@ -5,6 +5,7 @@
   height: 100%;
   overflow: hidden;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 8px;
@@ -26,10 +27,11 @@
 /* Segment hover cursor */
 .donut-segment {
   cursor: pointer;
-  transition: filter 0.15s ease;
+  transition: filter 0.2s ease, opacity 0.2s ease;
 
   &:hover {
-    filter: brightness(1.1);
+    filter: brightness(1.15) drop-shadow(0 0 4px rgba(0, 0, 0, 0.15));
+    transition: filter 0.2s ease;
   }
 }
 

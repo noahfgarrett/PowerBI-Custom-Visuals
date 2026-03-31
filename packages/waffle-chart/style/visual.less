@@ -18,7 +18,12 @@
 }
 
 .waffle-cell {
-  transition: opacity 0.15s ease;
+  transition: opacity 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    filter: brightness(1.15);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+  }
 }
 
 .waffle-value {

@@ -15,7 +15,8 @@ import {
   DURATION,
   formatNumber,
   formatWithSettings,
-  getGlassStyle,
+  applyCardStyle,
+  type CardStyleMode,
   getHostChartColor,
   renderChartTitle,
   applyDataLabelFormatting,
@@ -34,6 +35,9 @@ import {
   renderAnnotations,
   buildAnnotationConfig,
   resolveDropdown,
+  getDateFilterIndices,
+  isDateColumn,
+  type DateFilterConfig,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -42,6 +46,7 @@ import IVisual = powerbi.extensibility.visual.IVisual;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import DataView = powerbi.DataView;
 import ISelectionId = powerbi.visuals.ISelectionId;
+import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 
 import '../style/visual.less';
 
@@ -50,6 +55,12 @@ interface ProgressBarRow {
   value: number;
   target: number;
   selectionId: ISelectionId;
+  highlighted: boolean;
+}
+
+interface ProgressBarData {
+  rows: ProgressBarRow[];
+  hasHighlights: boolean;
 }
 
 export class ProgressBarStackVisual implements IVisual {
@@ -60,6 +71,7 @@ export class ProgressBarStackVisual implements IVisual {
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
   private keyboardNavCleanup: (() => void) | null = null;
+  private currentProgressData: ProgressBarData | null = null;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
@@ -84,7 +96,21 @@ export class ProgressBarStackVisual implements IVisual {
       );
     }
 
+    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+    if (legacyCardObj) {
+      const legacyGlass = legacyCardObj['enableGlass'];
+      if (legacyGlass === false) {
+        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      }
+    }
+
     // Hide inapplicable shared axis properties — progress-bar-stack only uses axisLabelColor and axisLabelSize
+
+    // Date filter: hide start/end when disabled
+    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
     this.settings.axisFormattingCard.showXAxis.visible = false;
     this.settings.axisFormattingCard.showYAxis.visible = false;
     this.settings.axisFormattingCard.xAxisTitle.visible = false;
@@ -100,14 +126,20 @@ export class ProgressBarStackVisual implements IVisual {
     this.settings.axisFormattingCard.gridLineStyle.visible = false;
     this.settings.axisFormattingCard.gridLineWidth.visible = false;
     this.settings.axisFormattingCard.gridLineOpacity.visible = false;
+    this.settings.axisFormattingCard.axisLabelFontWeight.visible = false;
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
 
-    // Hide duplicate trackColor — barSettings.trackColor is the single source
-    this.settings.colorSettings.trackColor.visible = false;
+    // Hide dual-axis-only properties (no combo/dual-axis support)
+    this.settings.referenceLineFormattingCard.referenceLineAxis.visible = false;
+    this.settings.referenceLineFormattingCard.referenceBandWidth.visible = false;
+    this.settings.trendLineFormattingCard.trendLineAxis.visible = false;
+
+    // Hide data label position — position is determined by bar geometry
+    this.settings.dataLabelFormattingCard.dataLabelPosition.visible = false;
 
     // Conditional visibility: hide gradient colors when gradient is disabled
-    this.settings.progressGradient.startColor.visible = this.settings.progressGradient.enabled.value;
-    this.settings.progressGradient.endColor.visible = this.settings.progressGradient.enabled.value;
+    this.settings.barAppearance.gradientStartColor.visible = this.settings.barAppearance.gradientEnabled.value;
+    this.settings.barAppearance.gradientEndColor.visible = this.settings.barAppearance.gradientEnabled.value;
 
     // Conditional visibility: hide milestone CSV and color when milestones are off
     this.settings.progressMilestone.milestones.visible = this.settings.progressMilestone.show.value;
@@ -117,27 +149,33 @@ export class ProgressBarStackVisual implements IVisual {
     this.settings.targetSettings.color.visible = this.settings.targetSettings.show.value;
     this.settings.targetSettings.lineWidth.visible = this.settings.targetSettings.show.value;
 
+    // Card Style — hide sub-settings when mode is 'none'
+    const cardModeVis = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    this.settings.cardSettings.backgroundOpacity.visible = cardModeVis !== 'none';
+    this.settings.cardSettings.backgroundColor.visible = cardModeVis !== 'none';
+
     // Extract data
-    const rows = this.extractData(dataView);
+    const progressData = this.extractData(dataView);
+    this.currentProgressData = progressData;
 
     // Render
-    this.render(rows, options.viewport);
+    this.render(progressData.rows, options.viewport);
   }
 
-  private extractData(dataView: DataView | undefined): ProgressBarRow[] {
-    const rows: ProgressBarRow[] = [];
+  private extractData(dataView: DataView | undefined): ProgressBarData {
+    const emptyResult: ProgressBarData = { rows: [], hasHighlights: false };
 
-    if (!dataView?.categorical) return rows;
+    if (!dataView?.categorical) return emptyResult;
 
     const categorical = dataView.categorical;
     const categories = categorical.categories;
     const values = categorical.values;
 
-    if (!categories || categories.length === 0 || !values) return rows;
+    if (!categories || categories.length === 0 || !values) return emptyResult;
 
     // Find the category column
     const categoryColumn = categories[0];
-    if (!categoryColumn) return rows;
+    if (!categoryColumn) return emptyResult;
 
     // Find measure and target columns
     let measureColumn: powerbi.DataViewValueColumn | undefined;
@@ -150,7 +188,29 @@ export class ProgressBarStackVisual implements IVisual {
       if (role['target']) targetColumn = col;
     }
 
-    if (!measureColumn) return rows;
+    if (!measureColumn) return emptyResult;
+
+    // Cross-highlight detection: read highlights from the measure column
+    const hlRaw = measureColumn.highlights as unknown[] | undefined;
+    let hasHighlights = false;
+    if (hlRaw) {
+      for (const h of hlRaw) {
+        if (h !== null && h !== undefined) {
+          hasHighlights = true;
+          break;
+        }
+      }
+    }
+
+    const rows: ProgressBarRow[] = [];
+
+    const dateConfig: DateFilterConfig = {
+      enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
+      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
+      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+    };
+    const dateIndices = isDateColumn(categoryColumn.source) ? getDateFilterIndices(categoryColumn.values, dateConfig) : null;
 
     const count = categoryColumn.values.length;
 
@@ -168,6 +228,7 @@ export class ProgressBarStackVisual implements IVisual {
 
     // Second pass: build row data
     for (let i = 0; i < count; i++) {
+      if (dateIndices && !dateIndices.has(i)) continue;
       const label = String(categoryColumn.values[i] ?? '');
       const value = typeof measureColumn.values[i] === 'number'
         ? (measureColumn.values[i] as number)
@@ -187,10 +248,12 @@ export class ProgressBarStackVisual implements IVisual {
         .withCategory(categoryColumn, i)
         .createSelectionId();
 
-      rows.push({ label, value, target, selectionId });
+      const highlighted = hasHighlights ? (hlRaw !== undefined && hlRaw[i] !== null && hlRaw[i] !== undefined) : false;
+
+      rows.push({ label, value, target, selectionId, highlighted });
     }
 
-    return rows;
+    return { rows, hasHighlights };
   }
 
   private render(rows: ProgressBarRow[], viewport: powerbi.IViewport): void {
@@ -201,28 +264,22 @@ export class ProgressBarStackVisual implements IVisual {
     }
     renderChartTitle(this.container, this.settings.titleFormattingCard);
 
+    this.container.removeEventListener('click', this.handleBackgroundClick);
     this.container.addEventListener('click', this.handleBackgroundClick);
 
     const s = this.settings;
 
-    // Apply glass effect if enabled
-    if (s.cardSettings.enableGlass.value) {
-      const glass = getGlassStyle({
-        mode: 'light',
+    // Apply card style
+    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    applyCardStyle(
+      this.container,
+      {
+        mode: cardMode,
         opacity: s.cardSettings.backgroundOpacity.value / 100,
         backgroundColor: s.cardSettings.backgroundColor.value?.value,
         borderRadius: s.cardSettings.borderRadius.value,
-      });
-      Object.assign(this.container.style, glass);
-    } else {
-      // Reset glass styles when disabled
-      this.container.style.background = '';
-      this.container.style.backdropFilter = '';
-      (this.container.style as unknown as Record<string, string>)['WebkitBackdropFilter'] = '';
-      this.container.style.border = '';
-      this.container.style.boxShadow = '';
-      this.container.style.borderRadius = '';
-    }
+      },
+    );
 
     // Empty data — show placeholder
     if (rows.length === 0) {
@@ -245,9 +302,12 @@ export class ProgressBarStackVisual implements IVisual {
     const barHeight = s.barSettings.barHeight.value;
     const cornerRadius = s.barSettings.cornerRadius.value;
     const barCornerRadius = s.barSettings.barCornerRadius.value;
-    const barColor = s.colorSettings.barColor.value?.value ?? '#3B82F6';
-    const trackColor = s.barSettings.trackColor.value?.value || s.colorSettings.trackColor.value?.value || '#E2E8F0';
-    const labelColor = s.barSettings.labelColor.value?.value;
+    const barColor = s.barAppearance.barColor.value?.value ?? '#3B82F6';
+    const trackColor = s.barAppearance.trackColor.value?.value || '#E2E8F0';
+    const labelColor = s.barAppearance.labelColor.value?.value;
+    const labelFontSize = s.barAppearance.labelFontSize.value;
+    const labelFontFamily = resolveDropdown(s.barAppearance.labelFontFamily);
+    const labelFontWeight = resolveDropdown(s.barAppearance.labelFontWeight);
     const animEnabled = s.animationSettings.enabled.value;
     const animDuration = s.animationSettings.duration.value;
 
@@ -274,11 +334,25 @@ export class ProgressBarStackVisual implements IVisual {
       });
 
       // Label
-      const labelEl = document.createElement('div');
-      labelEl.className = 'progress-label';
-      labelEl.textContent = row.label;
-      labelEl.title = row.label; // tooltip for truncated text
-      rowEl.appendChild(labelEl);
+      const showLabelsToggle = s.barSettings.showLabels.value;
+      const labelPos = resolveDropdown(s.barSettings.labelPosition) ?? 'left';
+
+      if (showLabelsToggle && labelPos === 'above') {
+        const aboveLabelEl = document.createElement('div');
+        aboveLabelEl.className = 'progress-label';
+        aboveLabelEl.textContent = row.label;
+        aboveLabelEl.title = row.label;
+        aboveLabelEl.style.width = '100%';
+        rowEl.appendChild(aboveLabelEl);
+      }
+
+      if (showLabelsToggle && labelPos === 'left') {
+        const leftLabelEl = document.createElement('div');
+        leftLabelEl.className = 'progress-label';
+        leftLabelEl.textContent = row.label;
+        leftLabelEl.title = row.label;
+        rowEl.appendChild(leftLabelEl);
+      }
 
       // Track (background bar)
       const trackEl = document.createElement('div');
@@ -292,23 +366,52 @@ export class ProgressBarStackVisual implements IVisual {
       fillEl.className = 'progress-fill';
       fillEl.style.width = `${pct * 100}%`;
       const conditionalColor = this.getConditionalBarColor(pct * 100);
-      const gradientSettings = s.progressGradient;
-      if (gradientSettings.enabled.value) {
-        const gStart = gradientSettings.startColor.value?.value ?? '#3B82F6';
-        const gEnd = gradientSettings.endColor.value?.value ?? '#8B5CF6';
+      if (s.barAppearance.gradientEnabled.value) {
+        const gStart = s.barAppearance.gradientStartColor.value?.value ?? '#3B82F6';
+        const gEnd = s.barAppearance.gradientEndColor.value?.value ?? '#8B5CF6';
         fillEl.style.background = `linear-gradient(to right, ${gStart}, ${gEnd})`;
       } else {
         fillEl.style.backgroundColor = conditionalColor ?? (barColor === '#3B82F6' ? getHostChartColor(this.host.colorPalette, i, themeName) : barColor);
       }
       fillEl.style.borderRadius = `${barCornerRadius}px`;
-      fillEl.style.transition = 'opacity 0.15s ease';
+      fillEl.style.transition = 'filter 0.2s ease, transform 0.2s ease';
 
-      // Hover: increase opacity slightly
+      // Hover: brightness boost + subtle scale-up
       fillEl.addEventListener('mouseenter', () => {
-        fillEl.style.opacity = '0.85';
+        fillEl.style.filter = 'brightness(1.15)';
+        fillEl.style.transform = 'scaleY(1.08)';
       });
       fillEl.addEventListener('mouseleave', () => {
-        fillEl.style.opacity = '1';
+        fillEl.style.filter = 'brightness(1)';
+        fillEl.style.transform = 'scaleY(1)';
+      });
+
+      // Tooltip
+      const host = this.host;
+      const tooltipItems: VisualTooltipDataItem[] = [
+        { displayName: 'Category', value: row.label },
+        { displayName: 'Value', value: formatWithSettings(row.value, this.settings.numberFormattingCard) },
+        { displayName: 'Target', value: formatWithSettings(row.target, this.settings.numberFormattingCard) },
+        { displayName: '% Complete', value: `${Math.round(pct * 100)}%` },
+      ];
+      fillEl.addEventListener('mouseover', (event: MouseEvent) => {
+        host.tooltipService.show({
+          dataItems: tooltipItems,
+          identities: [],
+          coordinates: [event.clientX, event.clientY],
+          isTouchEvent: false,
+        });
+      });
+      fillEl.addEventListener('mousemove', (event: MouseEvent) => {
+        host.tooltipService.move({
+          dataItems: [],
+          identities: [],
+          coordinates: [event.clientX, event.clientY],
+          isTouchEvent: false,
+        });
+      });
+      fillEl.addEventListener('mouseout', () => {
+        host.tooltipService.hide({ immediately: true, isTouchEvent: false });
       });
 
       trackEl.appendChild(fillEl);
@@ -377,6 +480,9 @@ export class ProgressBarStackVisual implements IVisual {
         if (labelColor) {
           valueEl.style.color = labelColor;
         }
+        valueEl.style.fontSize = `${labelFontSize}px`;
+        if (labelFontFamily) valueEl.style.fontFamily = labelFontFamily;
+        valueEl.style.fontWeight = labelFontWeight || 'normal';
 
         const parts: string[] = [];
 
@@ -441,6 +547,15 @@ export class ProgressBarStackVisual implements IVisual {
         rowEl.appendChild(valueEl);
       }
 
+      // Right-positioned label (after value)
+      if (showLabelsToggle && labelPos === 'right') {
+        const rightLabelEl = document.createElement('div');
+        rightLabelEl.className = 'progress-label';
+        rightLabelEl.textContent = row.label;
+        rightLabelEl.title = row.label;
+        rowEl.appendChild(rightLabelEl);
+      }
+
       wrapper.appendChild(rowEl);
 
       // Animate bar growth
@@ -473,8 +588,26 @@ export class ProgressBarStackVisual implements IVisual {
     const pctValues = rows.map((r) => Math.min(r.value / r.target, 1) * 100);
     this.renderSvgOverlay(rows, pctValues, viewport);
 
+    // ── Cross-Highlight Dimming ──────────────────────────────────────
+    this.applyCrossHighlight(rows);
+
     // ── Accessibility ────────────────────────────────────────────────
     this.applyAccessibility(rows);
+  }
+
+  // ── Cross-Highlight Dimming ─────────────────────────────────────
+
+  private applyCrossHighlight(rows: ProgressBarRow[]): void {
+    const data = this.currentProgressData;
+    if (!data || !data.hasHighlights) return;
+
+    const rowEls = this.container.querySelectorAll<HTMLElement>('.progress-row');
+    rowEls.forEach((el, i) => {
+      const row = rows[i];
+      if (row && !row.highlighted) {
+        el.style.opacity = '0.3';
+      }
+    });
   }
 
   /**
@@ -562,7 +695,7 @@ export class ProgressBarStackVisual implements IVisual {
 
       const refColor = ref.referenceLineColor.value?.value ?? '#EF4444';
       const refStyle = resolveDropdown(ref.referenceLineStyle) ?? 'dashed';
-      const labelText = ref.referenceLabelText.value.length > 0
+      const labelText = (ref.referenceLabelText.value?.length ?? 0) > 0
         ? ref.referenceLabelText.value
         : `${Math.round(refValue)}%`;
 

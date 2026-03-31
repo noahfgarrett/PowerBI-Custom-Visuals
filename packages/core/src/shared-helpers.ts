@@ -841,6 +841,16 @@ export interface DateFilterConfig {
 }
 
 /**
+ * Returns true if the column's type descriptor indicates a date/datetime column.
+ * Use this to guard `getDateFilterIndices` — text columns whose values happen to
+ * parse as dates (e.g. "2024", "May", "01/02") should never be date-filtered.
+ */
+export function isDateColumn(source: { type?: { dateTime?: boolean; temporal?: unknown } } | undefined): boolean {
+  if (!source?.type) return false;
+  return source.type.dateTime === true || source.type.temporal != null;
+}
+
+/**
  * Returns a Set of row indices that pass the date filter.
  * The `categoryValues` array is the raw category column values from the dataView.
  * If the filter is disabled or both dates are empty, returns null (meaning "include all").

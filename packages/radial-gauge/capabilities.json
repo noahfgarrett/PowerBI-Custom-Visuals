@@ -78,7 +78,7 @@
   ],
   "objects": {
     "arcSettings": {
-      "displayName": "Arc",
+      "displayName": "Arc Shape",
       "properties": {
         "thickness": {
           "displayName": "Thickness",
@@ -97,24 +97,6 @@
                 "displayName": "Thick"
               }
             ]
-          }
-        },
-        "trackOpacity": {
-          "displayName": "Track Opacity (%)",
-          "type": {
-            "numeric": true
-          }
-        },
-        "zoneBorderWidth": {
-          "displayName": "Zone Border Width",
-          "type": {
-            "numeric": true
-          }
-        },
-        "zoneBorderOpacity": {
-          "displayName": "Zone Border Opacity (%)",
-          "type": {
-            "numeric": true
           }
         },
         "roundedCaps": {
@@ -136,6 +118,57 @@
                 "displayName": "Full Circle"
               }
             ]
+          }
+        },
+        "arcRange": {
+          "displayName": "Arc Range (degrees)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "segmented": {
+          "displayName": "LED-Style Segments",
+          "type": {
+            "bool": true
+          }
+        },
+        "segmentCount": {
+          "displayName": "Segment Count",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "arcColorSettings": {
+      "displayName": "Arc Colors",
+      "properties": {
+        "trackColor": {
+          "displayName": "Track Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "trackOpacity": {
+          "displayName": "Track Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "zoneBorderWidth": {
+          "displayName": "Zone Border Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "zoneBorderOpacity": {
+          "displayName": "Zone Border Opacity (%)",
+          "type": {
+            "numeric": true
           }
         }
       }
@@ -188,7 +221,7 @@
       }
     },
     "valueSettings": {
-      "displayName": "Value",
+      "displayName": "Center Value",
       "properties": {
         "fontSize": {
           "displayName": "Font Size",
@@ -279,6 +312,12 @@
                 "color": true
               }
             }
+          }
+        },
+        "lineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
           }
         }
       }
@@ -702,11 +741,34 @@
             "numeric": true
           }
         },
+        "cardStyleMode": {
+          "displayName": "Card Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "glass",
+                "displayName": "Glass"
+              },
+              {
+                "value": "elevated",
+                "displayName": "Elevated"
+              },
+              {
+                "value": "neumorphic",
+                "displayName": "Neumorphic"
+              }
+            ]
+          }
+        },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "Glass Effect"
+          "displayName": "(Deprecated) Enable Glass"
         }
       }
     },
@@ -736,28 +798,25 @@
           "type": {
             "numeric": true
           }
-        }
-      }
-    },
-    "gaugeArcSettings": {
-      "displayName": "Arc Display",
-      "properties": {
-        "arcRange": {
-          "displayName": "Arc Range (degrees)",
+        },
+        "majorTickColor": {
+          "displayName": "Major Tick Color",
           "type": {
-            "numeric": true
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
           }
         },
-        "segmented": {
-          "displayName": "LED-Style Segments",
+        "minorTickColor": {
+          "displayName": "Minor Tick Color",
           "type": {
-            "bool": true
-          }
-        },
-        "segmentCount": {
-          "displayName": "Segment Count",
-          "type": {
-            "numeric": true
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
           }
         }
       }
@@ -769,6 +828,26 @@
           "displayName": "Show Delta Indicator",
           "type": {
             "bool": true
+          }
+        },
+        "deltaPositiveColor": {
+          "displayName": "Delta Positive Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "deltaNegativeColor": {
+          "displayName": "Delta Negative Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
           }
         },
         "showSparkline": {
@@ -907,9 +986,206 @@
           }
         }
       }
+    },
+    "legendFormatting": {
+      "displayName": "Legend",
+      "properties": {
+        "showLegend": {
+          "displayName": "Show Legend",
+          "type": {
+            "bool": true
+          }
+        },
+        "legendPosition": {
+          "displayName": "Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "bottom",
+                "displayName": "Bottom"
+              },
+              {
+                "value": "top",
+                "displayName": "Top"
+              },
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        },
+        "legendFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "legendFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "legendFontFamily": {
+          "displayName": "Font",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              }
+            ]
+          }
+        },
+        "legendFontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
+            ]
+          }
+        },
+        "legendAliases": {
+          "displayName": "Rename Labels",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "dateFilterFormatting": {
+      "displayName": "Date Filter",
+      "properties": {
+        "enableDateFilter": {
+          "displayName": "Enable Date Filter",
+          "type": {
+            "bool": true
+          }
+        },
+        "startDate": {
+          "displayName": "Start Date",
+          "type": {
+            "text": true
+          }
+        },
+        "endAtCurrentDate": {
+          "displayName": "End at Current Date",
+          "type": {
+            "bool": true
+          }
+        },
+        "endDate": {
+          "displayName": "End Date",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "colorThemeFormatting": {
+      "properties": {
+        "colorTheme": {
+          "displayName": "Theme",
+          "type": {
+            "enumeration": [
+              {
+                "value": "default",
+                "displayName": "Default"
+              },
+              {
+                "value": "ocean",
+                "displayName": "Ocean"
+              },
+              {
+                "value": "sunset",
+                "displayName": "Sunset"
+              },
+              {
+                "value": "forest",
+                "displayName": "Forest"
+              },
+              {
+                "value": "berry",
+                "displayName": "Berry"
+              },
+              {
+                "value": "monochrome",
+                "displayName": "Monochrome"
+              },
+              {
+                "value": "earth",
+                "displayName": "Earth"
+              }
+            ]
+          }
+        }
+      },
+      "displayName": "Color Theme"
     }
   },
   "supportsKeyboardFocus": true,
+  "supportsHighlight": true,
+  "supportsMultiVisualSelection": true,
   "privileges": [],
   "suppressDefaultTitle": true
 }

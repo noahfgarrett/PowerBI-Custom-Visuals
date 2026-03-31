@@ -36,6 +36,7 @@ import {
   attachKeyboardNav,
   ensureFocusRingStyles,
   getDateFilterIndices,
+  isDateColumn,
   type DateFilterConfig,
 } from '../../core/src';
 
@@ -103,6 +104,15 @@ export class PolarChartVisual implements IVisual {
         PolarChartSettings,
         dataView
       );
+    }
+
+    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+    if (legacyCardObj) {
+      const legacyGlass = legacyCardObj['enableGlass'];
+      if (legacyGlass === false) {
+        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      }
     }
 
     // Hide inapplicable shared axis properties — polar-chart doesn't use titles/rotation/min/max
@@ -185,7 +195,7 @@ export class PolarChartVisual implements IVisual {
       endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
       endDate: this.settings.dateFilterFormattingCard.endDate.value,
     };
-    const dateIndices = getDateFilterIndices(categoryColumn.values, dateConfig);
+    const dateIndices = isDateColumn(categoryColumn.source) ? getDateFilterIndices(categoryColumn.values, dateConfig) : null;
 
     const result: PetalDatum[] = [];
     let hasHighlights = false;

@@ -14,7 +14,8 @@ import {
   DURATION,
   formatNumber,
   formatWithSettings,
-  getGlassStyle,
+  applyCardStyle,
+  type CardStyleMode,
   withOpacity,
   renderChartTitle,
   applyDataLabelFormatting,
@@ -29,6 +30,9 @@ import {
   attachKeyboardNav,
   ensureFocusRingStyles,
   type LegendItem,
+  getDateFilterIndices,
+  isDateColumn,
+  type DateFilterConfig,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -75,6 +79,17 @@ interface RingDatum {
   name: string;
   /** Max value used for this ring (may differ per ring when per-ring scale is enabled). */
   ringMax: number;
+  /** Selection id for cross-filtering. */
+  selectionId: powerbi.visuals.ISelectionId;
+  /** Whether this ring is cross-highlighted from another visual. */
+  highlighted: boolean;
+}
+
+/** Top-level ring stack data container. */
+interface RingStackData {
+  rings: RingDatum[];
+  /** Whether cross-highlight data is present from another visual/slicer. */
+  hasHighlights: boolean;
 }
 
 /**
@@ -99,13 +114,22 @@ export class RingStackVisual implements IVisual {
   private settings: RingStackSettings;
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
+  private selectionManager: powerbi.extensibility.ISelectionManager;
+  private currentData: RingStackData | null = null;
+  private handleBackgroundClick: () => void;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
     this.container = options.element;
     this.settings = new RingStackSettings();
     this.formattingSettingsService = new FormattingSettingsService();
+    this.selectionManager = options.host.createSelectionManager();
     this.container.classList.add('ring-stack-container');
+
+    this.handleBackgroundClick = (): void => {
+      void this.selectionManager.clear();
+    };
+    this.container.addEventListener('click', this.handleBackgroundClick);
   }
 
   public update(options: VisualUpdateOptions): void {
@@ -122,16 +146,47 @@ export class RingStackVisual implements IVisual {
       );
     }
 
+    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+    if (legacyCardObj) {
+      const legacyGlass = legacyCardObj['enableGlass'];
+      if (legacyGlass === false) {
+        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      }
+    }
+
+    // Date filter: hide start/end when disabled
+    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
+
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
+    // Hide data label position — position is determined by chart geometry
+    this.settings.dataLabelFormattingCard.dataLabelPosition.visible = false;
 
     // ── Conditional Visibility ──────────────────────────────────
     const displayModeVal = (typeof this.settings.centerContentSettings.displayMode.value === 'string'
       ? this.settings.centerContentSettings.displayMode.value
       : (this.settings.centerContentSettings.displayMode.value as { value?: string })?.value) ?? 'total';
     this.settings.centerContentSettings.customText.visible = displayModeVal === 'custom';
+    const showCenterContent = this.settings.centerContentSettings.show.value;
+    this.settings.centerContentSettings.fontFamily.visible = showCenterContent;
+    this.settings.centerContentSettings.fontWeight.visible = showCenterContent;
 
     this.settings.perRingMaxSettings.maxValues.visible = this.settings.perRingMaxSettings.enabled.value;
     this.settings.perRingMaxSettings.showPercentage.visible = this.settings.perRingMaxSettings.enabled.value;
+
+    // Side label font controls — only visible when showLabels is on
+    const showSideLabels = this.settings.ringSettings.showLabels.value;
+    this.settings.sideLabelSettings.fontSize.visible = showSideLabels;
+    this.settings.sideLabelSettings.fontColor.visible = showSideLabels;
+    this.settings.sideLabelSettings.fontFamily.visible = showSideLabels;
+    this.settings.sideLabelSettings.fontWeight.visible = showSideLabels;
+
+    // Card Style — hide sub-settings when mode is 'none'
+    const cardModeVis = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    this.settings.cardSettings.backgroundOpacity.visible = cardModeVis !== 'none';
+    this.settings.cardSettings.backgroundColor.visible = cardModeVis !== 'none';
 
     // Extract ring data and apply user-configured sort order
     const rings = applySortOrder(
@@ -139,20 +194,27 @@ export class RingStackVisual implements IVisual {
       this.settings.sortFormattingCard,
     );
 
-    this.notifyRenderStarted();
-    try {
-      this.render(rings, options.viewport);
-      this.notifyRenderFinished();
-    } catch (error) {
-      this.notifyRenderFailed(error);
-      throw error;
-    }
+    // Compute cross-highlight state
+    const hasHighlights = rings.some(r => r.highlighted);
+    this.currentData = { rings, hasHighlights };
+
+    this.render(rings, options.viewport);
   }
 
   private extractData(dataView: DataView | undefined): RingDatum[] {
     const rings: RingDatum[] = [];
 
     if (!dataView?.categorical?.values) return rings;
+
+    // Date filter (applied if a category column is present)
+    const categoryColumn = dataView.categorical.categories?.[0];
+    const dateConfig: DateFilterConfig = {
+      enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
+      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
+      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+    };
+    const _dateIndices = categoryColumn && isDateColumn(categoryColumn.source) ? getDateFilterIndices(categoryColumn.values, dateConfig) : null;
 
     const values = dataView.categorical.values;
     const s = this.settings;
@@ -214,6 +276,11 @@ export class RingStackVisual implements IVisual {
       const percentage = Math.max(0, Math.min(1, numVal / ringMax));
       const endAngle = START_ANGLE + TWO_PI * percentage;
 
+      // Cross-highlight: check if this measure column has highlight data
+      const hlRaw = (col as unknown as { highlights?: unknown }).highlights as unknown[] | undefined;
+      const lastHl = hlRaw ? hlRaw[hlRaw.length - 1] : undefined;
+      const isHighlighted = lastHl !== null && lastHl !== undefined;
+
       rings.push({
         value: numVal,
         percentage,
@@ -222,6 +289,10 @@ export class RingStackVisual implements IVisual {
         index: ringIndex,
         name: col.source.displayName ?? `Ring ${ringIndex + 1}`,
         ringMax,
+        selectionId: this.host.createSelectionIdBuilder()
+          .withMeasure(col.source.queryName ?? '')
+          .createSelectionId(),
+        highlighted: isHighlighted,
       });
 
       ringIndex++;
@@ -241,23 +312,17 @@ export class RingStackVisual implements IVisual {
 
     const s = this.settings;
 
-    // Apply glass card background
-    if (s.cardSettings.enableGlass.value) {
-      const glass = getGlassStyle({
-        mode: 'light',
+    // Apply card style
+    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    applyCardStyle(
+      this.container,
+      {
+        mode: cardMode,
         opacity: s.cardSettings.backgroundOpacity.value / 100,
         backgroundColor: s.cardSettings.backgroundColor.value?.value,
         borderRadius: s.cardSettings.borderRadius.value,
-      });
-      Object.assign(this.container.style, glass);
-    } else {
-      this.container.style.background = '';
-      this.container.style.backdropFilter = '';
-      (this.container.style as unknown as Record<string, unknown>)['WebkitBackdropFilter'] = '';
-      this.container.style.border = '';
-      this.container.style.boxShadow = '';
-      this.container.style.borderRadius = '';
-    }
+      },
+    );
 
     // Empty state: no measures bound
     if (rings.length === 0) {
@@ -304,7 +369,7 @@ export class RingStackVisual implements IVisual {
       .attr('transform', `translate(${centerX}, ${centerY})`);
 
     // ── Gradient Defs (if enabled) ──────────────────────────────
-    const gradientEnabled = s.ringGradientSettings.enabled.value;
+    const gradientEnabled = s.ringSettings.gradientEnabled.value;
     if (gradientEnabled) {
       const defs = svg.append('defs');
       rings.forEach((ring, i) => {
@@ -361,19 +426,42 @@ export class RingStackVisual implements IVisual {
       const ringStrokeColor = s.ringSettings.ringStrokeColor.value?.value;
       const arcPath = g.append('path')
         .attr('class', 'ring-stack-arc')
+        .attr('data-ring-index', i)
         .attr('fill', arcFillColor);
       if (ringStrokeColor) {
         arcPath.attr('stroke', ringStrokeColor).attr('stroke-width', 1);
       }
+      // Hover: brightness boost + pop-out (scale outward)
       arcPath
+        .style('transition', 'filter 0.2s ease, transform 0.2s ease')
+        .style('transform-origin', 'center')
+        .style('cursor', 'pointer')
+        .style('pointer-events', 'all')
         .on('mouseenter', (event: MouseEvent) => {
+          arcPath
+            .style('filter', `brightness(1.18) drop-shadow(0 0 4px ${ring.color})`)
+            .style('transform', 'scale(1.04)');
           this.showRingTooltip(ring, event);
         })
         .on('mousemove', (event: MouseEvent) => {
           this.moveTooltip(event);
         })
         .on('mouseleave', () => {
+          arcPath
+            .style('filter', 'none')
+            .style('transform', 'scale(1)');
           this.hideTooltip();
+        })
+        .on('click', (event: MouseEvent) => {
+          event.stopPropagation();
+          void this.selectionManager.select(ring.selectionId, event.ctrlKey || event.metaKey);
+        })
+        .on('contextmenu', (event: MouseEvent) => {
+          event.preventDefault();
+          void this.selectionManager.showContextMenu(ring.selectionId, {
+            x: event.clientX,
+            y: event.clientY,
+          });
         });
 
       if (animEnabled) {
@@ -414,7 +502,7 @@ export class RingStackVisual implements IVisual {
       }
 
       // ── Arc Labels (textPath) ─────────────────────────────────
-      if (s.ringDisplaySettings.showArcLabels.value) {
+      if (s.ringSettings.showArcLabels.value) {
         const midRadius = (ringInner + ringOuter) / 2;
         // Create an arc path for the text to follow (half-circle at midRadius)
         const arcId = `ring-arc-label-${i}`;
@@ -445,7 +533,7 @@ export class RingStackVisual implements IVisual {
       }
 
       // ── Overflow Indicator (>100%) ────────────────────────────
-      if (s.ringDisplaySettings.showOverflow.value && ring.value > ring.ringMax) {
+      if (s.ringSettings.showOverflow.value && ring.value > ring.ringMax) {
         const overflowPct = (ring.value - ring.ringMax) / ring.ringMax;
         const overflowAngle = START_ANGLE + TWO_PI * Math.min(overflowPct, 1);
         const overflowArcGen = d3.arc<{ startAngle: number; endAngle: number }>()
@@ -477,6 +565,8 @@ export class RingStackVisual implements IVisual {
       const average = count > 0 ? total / count : 0;
 
       const ccFontColor = cc.fontColor.value?.value || '';
+      const ccFontFamily = resolveDropdown(cc.fontFamily);
+      const ccFontWeight = resolveDropdown(cc.fontWeight);
 
       if (mode === 'custom') {
         // Custom mode: show customText as the main text, no label below
@@ -487,9 +577,10 @@ export class RingStackVisual implements IVisual {
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', 'central')
           .attr('font-size', `${cc.fontSize.value}px`)
-          .attr('font-weight', '600')
+          .attr('font-weight', ccFontWeight || '600')
           .attr('pointer-events', 'none')
           .text(cc.customText.value || '');
+        if (ccFontFamily) centerText.style('font-family', ccFontFamily);
         if (ccFontColor) {
           centerText.attr('fill', ccFontColor);
         }
@@ -519,9 +610,10 @@ export class RingStackVisual implements IVisual {
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', 'central')
           .attr('font-size', `${cc.fontSize.value}px`)
-          .attr('font-weight', '600')
+          .attr('font-weight', ccFontWeight || '600')
           .attr('pointer-events', 'none')
           .text(formattedValue);
+        if (ccFontFamily) valueText.style('font-family', ccFontFamily);
         if (ccFontColor) {
           valueText.attr('fill', ccFontColor);
         }
@@ -540,6 +632,7 @@ export class RingStackVisual implements IVisual {
             .attr('opacity', 0.7)
             .attr('pointer-events', 'none')
             .text(labelText);
+          if (ccFontFamily) labelEl.style('font-family', ccFontFamily);
           if (ccFontColor) {
             labelEl.attr('fill', ccFontColor);
           }
@@ -570,6 +663,17 @@ export class RingStackVisual implements IVisual {
         const pctSpan = document.createElement('span');
         pctSpan.className = 'ring-label-pct';
         pctSpan.style.color = ring.color;
+
+        // Apply side label font settings
+        const sl = s.sideLabelSettings;
+        pctSpan.style.fontSize = `${sl.fontSize.value}px`;
+        const slFontColor = sl.fontColor.value?.value;
+        if (slFontColor && slFontColor.length > 0) pctSpan.style.color = slFontColor;
+        const slFontFamily = resolveDropdown(sl.fontFamily);
+        if (slFontFamily) pctSpan.style.fontFamily = slFontFamily;
+        const slFontWeight = resolveDropdown(sl.fontWeight);
+        if (slFontWeight) pctSpan.style.fontWeight = slFontWeight;
+
         labelRow.appendChild(pctSpan);
 
         labelContainer.appendChild(labelRow);
@@ -668,6 +772,38 @@ export class RingStackVisual implements IVisual {
 
     // Accessibility
     this.applyAccessibility(rings.length);
+
+    // Cross-highlight dimming
+    this.applyCrossHighlight();
+  }
+
+  // ── Cross-Highlight ──────────────────────────────────────────────
+
+  private applyCrossHighlight(): void {
+    const data = this.currentData;
+    if (!data) return;
+
+    const hasSelection = this.selectionManager.hasSelection();
+    const shouldDim = hasSelection || data.hasHighlights;
+    if (!shouldDim) return;
+
+    const selectedIds = this.selectionManager.getSelectionIds() as powerbi.visuals.ISelectionId[];
+    const selectedKeys = new Set(selectedIds.map((id) => id.getKey()));
+
+    const arcs = this.container.querySelectorAll<SVGPathElement>('.ring-stack-arc');
+    for (const el of Array.from(arcs)) {
+      if (shouldDim) {
+        const ringIdx = parseInt(el.getAttribute('data-ring-index') ?? '-1', 10);
+        const ring = data.rings[ringIdx];
+        const isHighlighted = ring ? ring.highlighted : false;
+        const isSelected = hasSelection && ring
+          ? selectedKeys.has(ring.selectionId.getKey())
+          : false;
+        el.style.opacity = (isHighlighted || isSelected) ? '' : '0.3';
+      } else {
+        el.style.opacity = '';
+      }
+    }
   }
 
   private getConditionalColor(value: number): string | undefined {
@@ -730,6 +866,7 @@ export class RingStackVisual implements IVisual {
       fontSize: legendFontSize,
       fontColor: legendFontColor,
       fontFamily: rawLegendFontFamily,
+      aliases: legendFmtCard.legendAliases.value,
     });
 
     // Entrance fade for legend
@@ -786,31 +923,13 @@ export class RingStackVisual implements IVisual {
     return typeof locale === 'string' && locale.length > 0 ? locale : undefined;
   }
 
-  private notifyRenderStarted(): void {
-    const eventService = (this.host as unknown as {
-      eventService?: { renderingStarted?: () => void };
-    }).eventService;
-    eventService?.renderingStarted?.();
-  }
-
-  private notifyRenderFinished(): void {
-    const eventService = (this.host as unknown as {
-      eventService?: { renderingFinished?: () => void };
-    }).eventService;
-    eventService?.renderingFinished?.();
-  }
-
-  private notifyRenderFailed(error: unknown): void {
-    const eventService = (this.host as unknown as {
-      eventService?: { renderingFailed?: (reason: string) => void };
-    }).eventService;
-    const reason = error instanceof Error ? error.message : 'render failure';
-    eventService?.renderingFailed?.(reason);
-  }
+  // Render lifecycle notifications removed — Power BI's eventService.renderingStarted()
+  // requires VisualUpdateOptions with updateId, and calling without args crashes the visual.
 
   public destroy(): void {
     this.hideTooltip();
     this.cancelAnimations.forEach((cancel) => cancel());
     this.cancelAnimations = [];
+    this.container.removeEventListener('click', this.handleBackgroundClick);
   }
 }

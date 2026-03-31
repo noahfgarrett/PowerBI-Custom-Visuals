@@ -1,13 +1,15 @@
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
 import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard,
-  SeriesFormattingCard, NumberFormattingCard, } from '../../core/src';
-class RadarSettings extends formattingSettings.SimpleCard {
+  SeriesFormattingCard, NumberFormattingCard,
+  DateFilterFormattingCard,
+} from '../../core/src';
+
+// -- Grid & Web: grid configuration and web stroke settings -------------------
+
+class RadarLayoutSettings extends formattingSettings.SimpleCard {
   showGrid = new formattingSettings.ToggleSwitch({ name: 'showGrid', displayName: 'Show Grid', value: true });
   gridLevels = new formattingSettings.NumUpDown({ name: 'gridLevels', displayName: 'Grid Levels', value: 5 });
-  fillOpacity = new formattingSettings.NumUpDown({ name: 'fillOpacity', displayName: 'Fill Opacity (%)', value: 25 });
-  showDots = new formattingSettings.ToggleSwitch({ name: 'showDots', displayName: 'Show Dots', value: true });
-  dotRadius = new formattingSettings.NumUpDown({ name: 'dotRadius', displayName: 'Dot Radius', value: 4 });
 
   gridShape = new formattingSettings.ItemDropdown({
     name: 'gridShape',
@@ -34,32 +36,105 @@ class RadarSettings extends formattingSettings.SimpleCard {
     displayName: 'Web Fill Opacity (%)',
     value: 15,
   });
+
+  showAxisLabels = new formattingSettings.ToggleSwitch({
+    name: 'showAxisLabels',
+    displayName: 'Show Axis Labels',
+    value: true,
+  });
+
+  showAxisValues = new formattingSettings.ToggleSwitch({
+    name: 'showAxisValues',
+    displayName: 'Show Axis Values',
+    value: false,
+  });
+
+  startAngle = new formattingSettings.NumUpDown({
+    name: 'startAngle',
+    displayName: 'Start Angle (degrees)',
+    value: 0,
+  });
+
+  independentScales = new formattingSettings.ToggleSwitch({
+    name: 'independentScales',
+    displayName: 'Independent Axis Scales',
+    value: false,
+  });
+
+  name = 'radarSettings';
+  displayName = 'Grid & Web';
+  slices = [this.showGrid, this.gridLevels, this.gridShape, this.webStrokeColor, this.webStrokeWidth, this.webFillOpacity, this.showAxisLabels, this.showAxisValues, this.startAngle, this.independentScales];
+}
+
+// -- Series Appearance: fill, dots, area, palette -----------------------------
+
+class RadarAppearanceSettings extends formattingSettings.SimpleCard {
+  fillOpacity = new formattingSettings.NumUpDown({ name: 'fillOpacity', displayName: 'Fill Opacity (%)', value: 25 });
   areaOpacity = new formattingSettings.NumUpDown({
     name: 'areaOpacity',
     displayName: 'Area Opacity (%)',
     value: 30,
   });
-
-  name = 'radarSettings';
-  displayName = 'Radar';
-  slices = [this.showGrid, this.gridLevels, this.gridShape, this.fillOpacity, this.showDots, this.dotRadius, this.webStrokeColor, this.webStrokeWidth, this.webFillOpacity, this.areaOpacity];
-}
-
-class ColorSettings extends formattingSettings.SimpleCard {
+  lineWidth = new formattingSettings.NumUpDown({
+    name: 'lineWidth',
+    displayName: 'Line Width',
+    value: 2,
+  });
+  showDots = new formattingSettings.ToggleSwitch({ name: 'showDots', displayName: 'Show Dots', value: true });
+  dotRadius = new formattingSettings.NumUpDown({ name: 'dotRadius', displayName: 'Dot Radius', value: 4 });
+  dotBorderColor = new formattingSettings.ColorPicker({
+    name: 'dotBorderColor',
+    displayName: 'Dot Border Color',
+    value: { value: '#FFFFFF' },
+  });
+  dotBorderWidth = new formattingSettings.NumUpDown({
+    name: 'dotBorderWidth',
+    displayName: 'Dot Border Width',
+    value: 1,
+  });
   useChartPalette = new formattingSettings.ToggleSwitch({ name: 'useChartPalette', displayName: 'Use Chart Palette', value: true });
-  name = 'colorSettings';
-  displayName = 'Colors';
-  slices = [this.useChartPalette];
+
+  name = 'radarAppearance';
+  displayName = 'Series Appearance';
+  slices = [this.fillOpacity, this.areaOpacity, this.lineWidth, this.showDots, this.dotRadius, this.dotBorderColor, this.dotBorderWidth, this.useChartPalette];
 }
+
+// -- Card Style ---------------------------------------------------------------
 
 class CardStyleSettings extends formattingSettings.SimpleCard {
-  enableGlass = new formattingSettings.ToggleSwitch({ name: 'enableGlass', displayName: 'Glass Effect', value: true });
-  backgroundColor = new formattingSettings.ColorPicker({ name: 'backgroundColor', displayName: 'Background Color', value: { value: '' } });
-  backgroundOpacity = new formattingSettings.NumUpDown({ name: 'backgroundOpacity', displayName: 'Background Opacity (%)', value: 35 });
-  borderRadius = new formattingSettings.NumUpDown({ name: 'borderRadius', displayName: 'Border Radius', value: 12 });
+  cardStyleMode = new formattingSettings.ItemDropdown({
+    name: 'cardStyleMode',
+    displayName: 'Card Style',
+    items: [
+      { value: 'none', displayName: 'None' },
+      { value: 'glass', displayName: 'Glass' },
+      { value: 'elevated', displayName: 'Elevated' },
+      { value: 'neumorphic', displayName: 'Neumorphic' },
+    ],
+    value: { value: 'glass', displayName: 'Glass' },
+  });
+
+  backgroundColor = new formattingSettings.ColorPicker({
+    name: 'backgroundColor',
+    displayName: 'Background Color',
+    value: { value: '' },
+  });
+
+  backgroundOpacity = new formattingSettings.NumUpDown({
+    name: 'backgroundOpacity',
+    displayName: 'Background Opacity (%)',
+    value: 85,
+  });
+
+  borderRadius = new formattingSettings.NumUpDown({
+    name: 'borderRadius',
+    displayName: 'Border Radius',
+    value: 12,
+  });
+
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.cardStyleMode, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 class AnimationSettings extends formattingSettings.SimpleCard {
@@ -96,35 +171,15 @@ class RadarBenchmarkSettings extends formattingSettings.SimpleCard {
     value: { value: '#94A3B8' },
   });
 
+  lineWidth = new formattingSettings.NumUpDown({
+    name: 'lineWidth',
+    displayName: 'Line Width',
+    value: 2,
+  });
+
   name = 'radarBenchmarkSettings';
   displayName = 'Benchmark';
-  slices = [this.show, this.dashPattern, this.color];
-}
-
-// -- Radar Display Settings ---------------------------------------------------
-
-class RadarDisplaySettings extends formattingSettings.SimpleCard {
-  showAxisValues = new formattingSettings.ToggleSwitch({
-    name: 'showAxisValues',
-    displayName: 'Show Axis Values',
-    value: false,
-  });
-
-  startAngle = new formattingSettings.NumUpDown({
-    name: 'startAngle',
-    displayName: 'Start Angle (degrees)',
-    value: 0,
-  });
-
-  independentScales = new formattingSettings.ToggleSwitch({
-    name: 'independentScales',
-    displayName: 'Independent Axis Scales',
-    value: false,
-  });
-
-  name = 'radarDisplaySettings';
-  displayName = 'Radar Display';
-  slices = [this.showAxisValues, this.startAngle, this.independentScales];
+  slices = [this.show, this.dashPattern, this.color, this.lineWidth];
 }
 
 // -- Radar Interaction Settings -----------------------------------------------
@@ -142,12 +197,11 @@ class RadarInteractionSettings extends formattingSettings.SimpleCard {
 }
 
 export class RadarChartSettings extends formattingSettings.Model {
-  radarSettings = new RadarSettings();
-  colorSettings = new ColorSettings();
+  radarSettings = new RadarLayoutSettings();
+  radarAppearance = new RadarAppearanceSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
   radarBenchmarkSettings = new RadarBenchmarkSettings();
-  radarDisplaySettings = new RadarDisplaySettings();
   radarInteractionSettings = new RadarInteractionSettings();
   axisFormattingCard = new AxisFormattingCard();
   legendFormattingCard = new LegendFormattingCard();
@@ -159,22 +213,23 @@ export class RadarChartSettings extends formattingSettings.Model {
   colorThemeFormattingCard = new ColorThemeFormattingCard();
   seriesFormattingCard = new SeriesFormattingCard();
   numberFormattingCard = new NumberFormattingCard();
+  dateFilterFormattingCard = new DateFilterFormattingCard();
   cards = [
     this.radarSettings,
-    this.colorSettings,
-    this.cardSettings,
-    this.animationSettings,
-    this.radarBenchmarkSettings,
-    this.radarDisplaySettings,
-    this.radarInteractionSettings,
+    this.radarAppearance,
     this.axisFormattingCard,
+    this.radarBenchmarkSettings,
+    this.titleFormattingCard,
     this.legendFormattingCard,
     this.dataLabelFormattingCard,
-    this.titleFormattingCard,
     this.conditionalFormattingCard,
-    this.accessibilityFormattingCard,
     this.seriesFormattingCard,
+    this.cardSettings,
     this.colorThemeFormattingCard,
+    this.animationSettings,
+    this.radarInteractionSettings,
     this.numberFormattingCard,
+    this.dateFilterFormattingCard,
+    this.accessibilityFormattingCard,
   ];
 }

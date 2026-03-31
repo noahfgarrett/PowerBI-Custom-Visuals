@@ -21,16 +21,21 @@
   fill: none;
   stroke-linecap: round;
   cursor: pointer;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.15s ease, filter 0.25s ease, stroke-width 0.2s ease;
+
+  &:hover {
+    filter: brightness(1.15) drop-shadow(0 0 4px rgba(99, 102, 241, 0.35));
+    stroke-width: 4;
+  }
 }
 
 .bump-dot {
   cursor: pointer;
-  transition: r 0.15s ease, filter 0.15s ease;
-}
+  transition: r 0.2s ease, filter 0.25s ease, opacity 0.15s ease;
 
-.bump-dot:hover {
-  filter: brightness(1.15);
+  &:hover {
+    filter: brightness(1.2) drop-shadow(0 0 5px rgba(99, 102, 241, 0.4));
+  }
 }
 
 .bump-rank-label {
@@ -39,3 +44,7 @@
   pointer-events: none;
 }
 
+.bump-area {
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}

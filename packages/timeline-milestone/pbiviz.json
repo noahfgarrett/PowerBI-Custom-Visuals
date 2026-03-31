@@ -4,7 +4,7 @@
     "displayName": "Timeline Milestone",
     "guid": "timelineMilestone_1E2F3A4B5C6D",
     "visualClassName": "TimelineMilestoneVisual",
-    "version": "1.0.0.0",
+    "version": "1.0.1.0",
     "description": "Horizontal timeline with milestone markers, animated spine and alternating labels.",
     "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
     "gitHubUrl": "https://github.com/noahgarrett/PowerBI"

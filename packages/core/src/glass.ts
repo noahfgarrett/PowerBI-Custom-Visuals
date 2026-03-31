@@ -113,15 +113,66 @@ function clampColor(value: number): number {
   return Math.max(0, Math.min(255, Math.round(value)));
 }
 
+/** Class name for the glass backdrop layer created by applyGlassStyle. */
+const GLASS_BACKDROP_CLASS = 'pbi-glass-backdrop';
+
 /**
- * Applies glassmorphic styles directly to an HTML element.
+ * Applies glassmorphic styles to a container using a layered approach.
+ *
+ * `backdrop-filter` forces GPU compositing of **all** children, which degrades
+ * SVG text/label crispness.  To avoid this, the blur + tinted background are
+ * placed on a separate absolutely-positioned div behind the content, while the
+ * container itself only receives border, shadow, and border-radius.
+ *
+ * Pass `null` for options to reset / remove glass styles.
  */
 export function applyGlassStyle(
   element: HTMLElement,
-  options: GlassStyleOptions
+  options: GlassStyleOptions | null,
 ): void {
+  // Remove any previous glass backdrop layer
+  const prev = element.querySelector(`.${GLASS_BACKDROP_CLASS}`);
+  if (prev) prev.remove();
+
+  if (options === null) {
+    // Reset all glass styles on the container
+    element.style.background = '';
+    element.style.backdropFilter = '';
+    (element.style as unknown as Record<string, string>)['WebkitBackdropFilter'] = '';
+    element.style.border = '';
+    element.style.boxShadow = '';
+    element.style.isolation = '';
+    element.style.overflow = '';
+    return;
+  }
+
   const styles = getGlassStyle(options);
-  Object.assign(element.style, styles);
+
+  // Container keeps border, shadow, radius — but NOT backdrop-filter
+  element.style.border = styles.border;
+  element.style.boxShadow = styles.boxShadow;
+  element.style.borderRadius = styles.borderRadius;
+  element.style.overflow = 'hidden';
+  element.style.background = 'transparent';
+  element.style.backdropFilter = '';
+  (element.style as unknown as Record<string, string>)['WebkitBackdropFilter'] = '';
+  element.style.position = 'relative';
+  // Create a stacking context so the z-index:-1 backdrop stays scoped
+  // inside this container rather than escaping to the parent context.
+  element.style.isolation = 'isolate';
+
+  // Backdrop div carries the blur + tinted background behind the content
+  const bg = document.createElement('div');
+  bg.className = GLASS_BACKDROP_CLASS;
+  bg.style.position = 'absolute';
+  bg.style.inset = '0';
+  bg.style.zIndex = '-1';
+  bg.style.borderRadius = styles.borderRadius;
+  bg.style.background = styles.background;
+  bg.style.backdropFilter = styles.backdropFilter;
+  (bg.style as unknown as Record<string, string>)['WebkitBackdropFilter'] = styles.WebkitBackdropFilter;
+  bg.style.pointerEvents = 'none';
+  element.insertBefore(bg, element.firstChild);
 }
 
 /**

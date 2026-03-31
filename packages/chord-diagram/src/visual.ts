@@ -19,20 +19,24 @@ import {
   getChartColor,
   getHostChartColor,
   withOpacity,
-  getGlassStyle,
+  applyCardStyle,
+  type CardStyleMode,
   renderChartTitle,
   applyDataLabelFormatting,
   applySortOrder,
   renderLegend,
+  type ColorThemeName,
   applyChartAria,
   applyDataPointAria,
   attachKeyboardNav,
   ensureFocusRingStyles,
   type LegendItem,
-  resolveColorTheme,
   buildConditionalConfig,
   resolveConditionalColor,
   resolveDropdown,
+  getDateFilterIndices,
+  isDateColumn,
+  type DateFilterConfig,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -41,6 +45,7 @@ import IVisual = powerbi.extensibility.visual.IVisual;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import DataView = powerbi.DataView;
 import ISelectionId = powerbi.visuals.ISelectionId;
+import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 
 import '../style/visual.less';
 
@@ -52,6 +57,7 @@ interface ChordTriple {
   target: string;
   value: number;
   selectionId: ISelectionId;
+  highlighted: boolean;
 }
 
 /** Extracted and processed chord data. */
@@ -60,6 +66,12 @@ interface ChordData {
   matrix: number[][];
   groupSelectionIds: Map<string, ISelectionId>;
   chordSelectionIds: Map<string, ISelectionId>;
+  /** Whether cross-highlight data is present from another visual/slicer */
+  hasHighlights: boolean;
+  /** Set of entity names that have highlighted data */
+  highlightedNames: Set<string>;
+  /** Set of chord keys (si|ti) that have highlighted data */
+  highlightedChordKeys: Set<string>;
 }
 
 // ── Constants ────────────────────────────────────────────────────
@@ -79,6 +91,7 @@ export class ChordDiagramVisual implements IVisual {
   private cancelAnimations: Array<() => void> = [];
   private svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null;
   private filteredGroupIndex: number | null = null;
+  private currentData: ChordData | null = null;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
@@ -103,14 +116,34 @@ export class ChordDiagramVisual implements IVisual {
       );
     }
 
+    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+    if (legacyCardObj) {
+      const legacyGlass = legacyCardObj['enableGlass'];
+      if (legacyGlass === false) {
+        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      }
+    }
+
+    // Date filter: hide start/end when disabled
+    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
+
+    // Card Style — hide sub-settings when mode is 'none'
+    const cardStyleMode = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    this.settings.cardSettings.backgroundOpacity.visible = cardStyleMode !== 'none';
+    this.settings.cardSettings.backgroundColor.visible = cardStyleMode !== 'none';
+
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
 
     // Conditional visibility: hide child settings when parent toggle is off
     // Chord interaction: hide dimOpacity when filtering is disabled
-    this.settings.chordSettings.dimOpacity.visible = this.settings.chordInteractionSettings.enableFiltering.value;
+    this.settings.chordRibbonSettings.dimOpacity.visible = this.settings.chordInteractionSettings.enableFiltering.value;
 
     // Extract data and apply user-configured sort order to entities
     const data = this.sortChordData(this.extractData(dataView));
+    this.currentData = data;
 
     // Render
     this.render(data, options.viewport);
@@ -155,7 +188,22 @@ export class ChordDiagramVisual implements IVisual {
     const nameSet = new Set<string>();
     const groupSelectionIds = new Map<string, ISelectionId>();
 
+    // Cross-highlight support: read highlights from measure column
+    const hlRaw = (measureColumn as unknown as { highlights?: unknown[] }).highlights as unknown[] | undefined;
+    let anyHighlight = false;
+    const highlightedNames = new Set<string>();
+
+    const dateConfig: DateFilterConfig = {
+      enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
+      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
+      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+    };
+    const dateIndices = isDateColumn(sourceColumn.source) ? getDateFilterIndices(sourceColumn.values, dateConfig) : null;
+
     for (let i = 0; i < rowCount; i++) {
+      if (dateIndices && !dateIndices.has(i)) continue;
+
       const sourceVal = sourceColumn.values[i];
       const targetVal = targetColumn.values[i];
       const measureVal = measureColumn.values[i];
@@ -185,6 +233,13 @@ export class ChordDiagramVisual implements IVisual {
             .createSelectionId(),
         );
       }
+      const isRowHighlighted = hlRaw != null && hlRaw[i] != null;
+      if (isRowHighlighted) {
+        anyHighlight = true;
+        highlightedNames.add(sourceName);
+        highlightedNames.add(targetName);
+      }
+
       triples.push({
         source: sourceName,
         target: targetName,
@@ -193,6 +248,7 @@ export class ChordDiagramVisual implements IVisual {
           .withCategory(sourceColumn, i)
           .withCategory(targetColumn, i)
           .createSelectionId(),
+        highlighted: isRowHighlighted,
       });
     }
 
@@ -207,6 +263,7 @@ export class ChordDiagramVisual implements IVisual {
     const matrix: number[][] = Array.from({ length: n }, () => Array(n).fill(0) as number[]);
     const chordSelectionIds = new Map<string, ISelectionId>();
 
+    const highlightedChordKeys = new Set<string>();
     for (const triple of triples) {
       const si = nameIndex.get(triple.source);
       const ti = nameIndex.get(triple.target);
@@ -216,10 +273,13 @@ export class ChordDiagramVisual implements IVisual {
         if (!chordSelectionIds.has(key)) {
           chordSelectionIds.set(key, triple.selectionId);
         }
+        if (triple.highlighted) {
+          highlightedChordKeys.add(key);
+        }
       }
     }
 
-    return { names, matrix, groupSelectionIds, chordSelectionIds };
+    return { names, matrix, groupSelectionIds, chordSelectionIds, hasHighlights: anyHighlight, highlightedNames, highlightedChordKeys };
   }
 
   // ── Sort Entities ────────────────────────────────────────────
@@ -266,12 +326,17 @@ export class ChordDiagramVisual implements IVisual {
     indexMap.forEach((oldIdx, newIdx) => reverseMap.set(oldIdx, newIdx));
 
     const sortedChordSelectionIds = new Map<string, ISelectionId>();
+    const sortedHighlightedChordKeys = new Set<string>();
     for (const [key, id] of data.chordSelectionIds) {
       const [oldSi, oldTi] = key.split('|').map(Number);
       const newSi = reverseMap.get(oldSi);
       const newTi = reverseMap.get(oldTi);
       if (newSi !== undefined && newTi !== undefined) {
-        sortedChordSelectionIds.set(`${newSi}|${newTi}`, id);
+        const newKey = `${newSi}|${newTi}`;
+        sortedChordSelectionIds.set(newKey, id);
+        if (data.highlightedChordKeys.has(key)) {
+          sortedHighlightedChordKeys.add(newKey);
+        }
       }
     }
 
@@ -280,13 +345,17 @@ export class ChordDiagramVisual implements IVisual {
       matrix: sortedMatrix,
       groupSelectionIds: sortedGroupSelectionIds,
       chordSelectionIds: sortedChordSelectionIds,
+      hasHighlights: data.hasHighlights,
+      highlightedNames: data.highlightedNames,
+      highlightedChordKeys: sortedHighlightedChordKeys,
     };
   }
 
   // ── Rendering ────────────────────────────────────────────────
 
   private render(data: ChordData | null, viewport: powerbi.IViewport): void {
-    const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
+    const themeRaw = resolveDropdown(this.settings.colorThemeFormattingCard.colorTheme) ?? 'default';
+    const themeName = themeRaw as ColorThemeName;
     // Clear existing DOM (no innerHTML)
     this.container.removeEventListener('click', this.handleBackgroundClick);
     while (this.container.firstChild) {
@@ -298,27 +367,16 @@ export class ChordDiagramVisual implements IVisual {
     const s = this.settings;
     const numFmtCard = s.numberFormattingCard;
 
-    // Apply glass card style
-    if (s.cardSettings.enableGlass.value) {
-      const glass = getGlassStyle({
-        mode: 'light',
-        opacity: s.cardSettings.backgroundOpacity.value / 100,
-        backgroundColor: s.cardSettings.backgroundColor.value?.value,
-        borderRadius: s.cardSettings.borderRadius.value,
-      });
-      this.container.style.background = glass.background;
-      this.container.style.backdropFilter = glass.backdropFilter;
-      (this.container.style as unknown as Record<string, string>)['WebkitBackdropFilter'] = glass.WebkitBackdropFilter;
-      this.container.style.border = glass.border;
-      this.container.style.boxShadow = glass.boxShadow;
-      this.container.style.borderRadius = glass.borderRadius;
-    } else {
-      this.container.style.background = '';
-      this.container.style.backdropFilter = '';
-      (this.container.style as unknown as Record<string, string>)['WebkitBackdropFilter'] = '';
-      this.container.style.border = '';
-      this.container.style.boxShadow = '';
-      this.container.style.borderRadius = '';
+    // Apply card style
+    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    applyCardStyle(this.container, {
+      mode: cardMode,
+      opacity: s.cardSettings.backgroundOpacity.value / 100,
+      backgroundColor: s.cardSettings.backgroundColor.value?.value,
+      borderRadius: s.cardSettings.borderRadius.value,
+    });
+    if (cardMode === 'none') {
+      this.container.style.borderRadius = `${s.cardSettings.borderRadius.value}px`;
     }
 
     // Handle empty/null data
@@ -335,7 +393,8 @@ export class ChordDiagramVisual implements IVisual {
     if (innerWidth <= 0 || innerHeight <= 0) return;
 
     const radius = Math.min(innerWidth, innerHeight) / 2;
-    const innerRadius = radius * 0.85;
+    const arcThicknessVal = Math.max(1, Math.min(50, s.chordSettings.arcThickness.value));
+    const innerRadius = radius * (1 - arcThicknessVal / 100);
     const outerRadius = radius;
 
     // Create SVG
@@ -350,7 +409,7 @@ export class ChordDiagramVisual implements IVisual {
       .attr('transform', `translate(${width / 2},${height / 2})`);
 
     // Build chord layout
-    const minArcAngleDeg = s.chordRibbonSettings.minArcAngle.value;
+    const minArcAngleDeg = s.chordSettings.minArcAngle.value;
     const minArcAngleRad = (minArcAngleDeg * Math.PI) / 180;
     const isDirectional = s.chordRibbonSettings.directional.value;
 
@@ -382,12 +441,12 @@ export class ChordDiagramVisual implements IVisual {
       ? ribbonArrowFactory().radius(innerRadius)
       : d3.ribbon<d3.Chord, d3.ChordSubgroup>().radius(innerRadius);
 
-    const ribbonOpacity = s.chordSettings.ribbonOpacity.value / 100;
-    const hoverOpacity = s.chordSettings.hoverOpacity.value / 100;
-    const dimOpacity = s.chordSettings.dimOpacity.value / 100;
+    const ribbonOpacity = s.chordRibbonSettings.ribbonOpacity.value / 100;
+    const hoverOpacity = s.chordRibbonSettings.hoverOpacity.value / 100;
+    const dimOpacity = s.chordRibbonSettings.dimOpacity.value / 100;
 
     // Color resolver: host palette when useChartPalette is on, built-in palette otherwise
-    const useChartPalette = s.colorSettings.useChartPalette.value;
+    const useChartPalette = s.colorThemeFormattingCard.useChartPalette.value;
     const resolveColor = (index: number): string =>
       useChartPalette
         ? getHostChartColor(this.host.colorPalette, index, themeName)
@@ -422,6 +481,7 @@ export class ChordDiagramVisual implements IVisual {
       .join('path')
       .attr('class', 'chord-group-arc')
       .attr('d', arcGen)
+      .attr('data-group-index', (_d, i) => String(i))
       .attr('fill', (_d, i) => resolveColor(i))
       .attr('stroke', (_d, i) => s.chordSettings.arcStrokeColor.value?.value || withOpacity(resolveColor(i), 0.8))
       .style('cursor', 'pointer')
@@ -440,7 +500,7 @@ export class ChordDiagramVisual implements IVisual {
         const groupName = data.names[d.index];
         const selectionId = groupName ? data.groupSelectionIds.get(groupName) : undefined;
         if (selectionId) {
-          void this.selectionManager.select(selectionId, event.ctrlKey || event.metaKey);
+          void this.selectionManager.select(selectionId, event.ctrlKey || event.metaKey).then(() => { this.applySelectionHighlight(); });
         }
       })
       .on('contextmenu', (event: MouseEvent, d) => {
@@ -456,13 +516,32 @@ export class ChordDiagramVisual implements IVisual {
         }
       });
 
-    // Group arc tooltips
-    groupArcs.each(function (_d, i) {
-      const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-      const name = data.names[i] ?? '';
-      const total = _d.value;
-      title.textContent = `${name}: ${formatWithSettings(total, numFmtCard)}`;
-      this.appendChild(title);
+    // Group arc tooltips via tooltipService
+    const arcHost = this.host;
+    groupArcs.on('mouseover', (event: MouseEvent, d) => {
+      const name = data.names[d.index] ?? '';
+      const total = d.value;
+      const tooltipItems: VisualTooltipDataItem[] = [
+        { displayName: 'Entity', value: name },
+        { displayName: 'Total Flow', value: formatWithSettings(total, numFmtCard) },
+      ];
+      arcHost.tooltipService.show({
+        dataItems: tooltipItems,
+        identities: [],
+        coordinates: [event.clientX, event.clientY],
+        isTouchEvent: false,
+      });
+    });
+    groupArcs.on('mousemove', (event: MouseEvent) => {
+      arcHost.tooltipService.move({
+        dataItems: [],
+        identities: [],
+        coordinates: [event.clientX, event.clientY],
+        isTouchEvent: false,
+      });
+    });
+    groupArcs.on('mouseout', () => {
+      arcHost.tooltipService.hide({ immediately: true, isTouchEvent: false });
     });
 
     // Render labels on outer arcs
@@ -488,7 +567,7 @@ export class ChordDiagramVisual implements IVisual {
       });
 
     // Entity value labels on arcs
-    if (s.chordLabelSettings.showEntityValues.value) {
+    if (s.chordInteractionSettings.showEntityValues.value) {
       labelGroup
         .selectAll<SVGTextElement, d3.ChordGroup>('.chord-entity-value')
         .data(chords.groups)
@@ -524,6 +603,7 @@ export class ChordDiagramVisual implements IVisual {
       .data(visibleChords)
       .join('path')
       .attr('class', 'chord-ribbon')
+      .attr('data-chord-key', (d) => `${d.source.index}|${d.target.index}`)
       .attr('d', ribbonGen as unknown as d3.ValueFn<SVGPathElement, d3.Chord, string | null>)
       .attr('fill', (d) => {
         if (useGradientRibbons) {
@@ -540,7 +620,7 @@ export class ChordDiagramVisual implements IVisual {
         const reverseKey = `${d.target.index}|${d.source.index}`;
         const selectionId = data.chordSelectionIds.get(key) ?? data.chordSelectionIds.get(reverseKey);
         if (selectionId) {
-          void this.selectionManager.select(selectionId, event.ctrlKey || event.metaKey);
+          void this.selectionManager.select(selectionId, event.ctrlKey || event.metaKey).then(() => { this.applySelectionHighlight(); });
         }
       })
       .on('contextmenu', (event: MouseEvent, d) => {
@@ -565,18 +645,42 @@ export class ChordDiagramVisual implements IVisual {
       }
     });
 
-    // Ribbon tooltips (rich: source, target, value, percentages)
+    // Ribbon tooltips via tooltipService
     const totalChordValue = chords.groups.reduce((sum, grp) => sum + grp.value, 0);
-    ribbonPaths.each(function (d) {
-      const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+    const ribbonHost = this.host;
+    ribbonPaths.on('mouseover.tooltip', (event: MouseEvent, d: d3.Chord) => {
       const srcName = data.names[d.source.index] ?? '';
       const tgtName = data.names[d.target.index] ?? '';
       const val = formatWithSettings(d.source.value, numFmtCard);
-      const pct = totalChordValue > 0 ? formatPercent(d.source.value / totalChordValue) : '';
+      const tooltipItems: VisualTooltipDataItem[] = [
+        { displayName: 'Source', value: srcName },
+        { displayName: 'Target', value: tgtName },
+        { displayName: 'Value', value: val },
+      ];
+      if (totalChordValue > 0) {
+        tooltipItems.push({ displayName: '% of Total', value: formatPercent(d.source.value / totalChordValue) });
+      }
       const srcTotal = chords.groups[d.source.index]?.value ?? 0;
-      const srcPct = srcTotal > 0 ? formatPercent(d.source.value / srcTotal) : '';
-      title.textContent = `${srcName} \u2192 ${tgtName}: ${val}${pct ? ` (${pct} of total)` : ''}${srcPct ? ` | ${srcPct} of ${srcName}` : ''}`;
-      this.appendChild(title);
+      if (srcTotal > 0) {
+        tooltipItems.push({ displayName: `% of ${srcName}`, value: formatPercent(d.source.value / srcTotal) });
+      }
+      ribbonHost.tooltipService.show({
+        dataItems: tooltipItems,
+        identities: [],
+        coordinates: [event.clientX, event.clientY],
+        isTouchEvent: false,
+      });
+    });
+    ribbonPaths.on('mousemove.tooltip', (event: MouseEvent) => {
+      ribbonHost.tooltipService.move({
+        dataItems: [],
+        identities: [],
+        coordinates: [event.clientX, event.clientY],
+        isTouchEvent: false,
+      });
+    });
+    ribbonPaths.on('mouseout.tooltip', () => {
+      ribbonHost.tooltipService.hide({ immediately: true, isTouchEvent: false });
     });
 
     // Flow labels on hover (show value at ribbon midpoint)
@@ -637,6 +741,7 @@ export class ChordDiagramVisual implements IVisual {
         fontSize: legendFontSize,
         fontColor: legendFontColor,
         fontFamily: rawLegendFontFamily,
+        aliases: legendFmtCard.legendAliases.value,
       });
     }
 
@@ -661,16 +766,20 @@ export class ChordDiagramVisual implements IVisual {
           );
         }
       });
-      attachKeyboardNav({
+      const kbCleanup = attachKeyboardNav({
         container: this.container,
         itemSelector: '.chord-group-arc',
         onActivate: (el) => {
           (el as HTMLElement).click();
         },
       });
+      this.cancelAnimations.push(kbCleanup);
     }
 
     this.container.addEventListener('click', this.handleBackgroundClick);
+
+    // Apply cross-highlight dimming after render
+    this.applySelectionHighlight();
   }
 
   private getConditionalColor(value: number): string | undefined {
@@ -877,11 +986,55 @@ export class ChordDiagramVisual implements IVisual {
     return this.formattingSettingsService.buildFormattingModel(this.settings);
   }
 
+  // ── Selection & Cross-Highlight ─────────────────────────────────
+
+  private applySelectionHighlight(): void {
+    const data = this.currentData;
+    if (!data) return;
+
+    const hasSelection = this.selectionManager.hasSelection();
+    const selectedIds = this.selectionManager.getSelectionIds() as ISelectionId[];
+    const selectedKeys = new Set(selectedIds.map((id) => id.getKey()));
+
+    const shouldDim = hasSelection || data.hasHighlights;
+
+    // Dim group arcs
+    const arcs = this.container.querySelectorAll<SVGPathElement>('.chord-group-arc');
+    for (const el of Array.from(arcs)) {
+      if (shouldDim) {
+        const groupIdx = Number(el.getAttribute('data-group-index'));
+        const groupName = data.names[groupIdx];
+        const selectionId = groupName ? data.groupSelectionIds.get(groupName) : undefined;
+        const isSelected = hasSelection && selectionId && selectedKeys.has(selectionId.getKey());
+        const isHighlighted = data.hasHighlights && groupName && data.highlightedNames.has(groupName);
+        el.style.opacity = (isSelected || isHighlighted) ? '' : '0.3';
+      } else {
+        el.style.opacity = '';
+      }
+    }
+
+    // Dim ribbons
+    const ribbons = this.container.querySelectorAll<SVGPathElement>('.chord-ribbon');
+    for (const el of Array.from(ribbons)) {
+      if (shouldDim) {
+        const chordKey = el.getAttribute('data-chord-key') ?? '';
+        const reverseKey = chordKey.split('|').reverse().join('|');
+        const selectionId = data.chordSelectionIds.get(chordKey) ?? data.chordSelectionIds.get(reverseKey);
+        const isSelected = hasSelection && selectionId && selectedKeys.has(selectionId.getKey());
+        const isHighlighted = data.hasHighlights && (data.highlightedChordKeys.has(chordKey) || data.highlightedChordKeys.has(reverseKey));
+        el.style.opacity = (isSelected || isHighlighted) ? '' : '0.3';
+      } else {
+        el.style.opacity = '';
+      }
+    }
+  }
+
   private handleBackgroundClick = (): void => {
     if (this.filteredGroupIndex != null) {
       this.filteredGroupIndex = null;
     }
     void this.selectionManager.clear();
+    this.applySelectionHighlight();
   };
 
   // ── Lifecycle ────────────────────────────────────────────────

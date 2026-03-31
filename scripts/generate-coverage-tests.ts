@@ -104,6 +104,7 @@ function getSharedCards(pkg: string): string[] {
   if (content.includes('TargetFormattingCard')) cards.push('targetFormatting');
   if (content.includes('SortFormattingCard')) cards.push('sortFormatting');
   if (content.includes('LineStrokeFormattingCard')) cards.push('lineStrokeFormatting');
+  if (content.includes('DateFilterFormattingCard')) cards.push('dateFilterFormatting');
   return cards;
 }
 
@@ -222,6 +223,16 @@ function buildExpectedPhantoms(pkg: string, sharedCards: string[]): string[] {
   // Conditional formatting (data-dependent)
   if (sharedCards.includes('conditionalFormatting')) {
     phantoms.push('conditionalFormatting.threshold1', 'conditionalFormatting.conditionalColor1', 'conditionalFormatting.conditionalColor2');
+  }
+
+  // Date filter (data-filtering, not visual)
+  if (sharedCards.includes('dateFilterFormatting')) {
+    phantoms.push(
+      'dateFilterFormatting.enableDateFilter',
+      'dateFilterFormatting.startDate',
+      'dateFilterFormatting.endAtCurrentDate',
+      'dateFilterFormatting.endDate',
+    );
   }
 
   return phantoms;

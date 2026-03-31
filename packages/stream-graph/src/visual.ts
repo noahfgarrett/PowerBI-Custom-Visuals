@@ -12,7 +12,8 @@ import {
   fadeSlideIn,
   cubicOut,
   DURATION,
-  getGlassStyle,
+  applyCardStyle,
+  type CardStyleMode,
   getHostChartColor,
   withOpacity,
   renderChartTitle,
@@ -20,7 +21,6 @@ import {
   applyGridFormatting,
   applyAllAxisFormatting,
   applyDataLabelFormatting,
-  applySortOrder,
   resolveDropdown,
   renderLegend,
   attachCrosshair,
@@ -42,6 +42,10 @@ import {
   buildAnnotationConfig,
   resolveSeriesFormatting,
   populateSeriesFormattingGroups,
+  getDateFilterIndices,
+  isDateColumn,
+  type DateFilterConfig,
+  formatWithSettings,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -50,6 +54,7 @@ import IVisual = powerbi.extensibility.visual.IVisual;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import DataView = powerbi.DataView;
 import ISelectionId = powerbi.visuals.ISelectionId;
+import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 
 import '../style/visual.less';
 
@@ -68,6 +73,10 @@ interface StreamData {
   seriesNames: string[];
   categoryLabels: string[];
   categorySelectionIds: ISelectionId[];
+  /** Whether cross-highlight data is present from another visual/slicer */
+  hasHighlights: boolean;
+  /** Per-series: true if any highlight is non-null for that series */
+  seriesHighlighted: boolean[];
 }
 
 type OffsetType = 'wiggle' | 'silhouette' | 'expand' | 'none';
@@ -130,12 +139,31 @@ export class StreamGraphVisual implements IVisual {
       );
     }
 
+    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+    if (legacyCardObj) {
+      const legacyGlass = legacyCardObj['enableGlass'];
+      if (legacyGlass === false) {
+        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      }
+    }
+
     // Hide shared axis toggles that are shadowed by local settings
+
+    // Date filter: hide start/end when disabled
+    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
     this.settings.axisFormattingCard.showXAxis.visible = false;
     this.settings.axisFormattingCard.showYAxis.visible = false;
     this.settings.axisFormattingCard.showGridLines.visible = false;
     this.settings.axisFormattingCard.yAxisMin.visible = false;
     this.settings.axisFormattingCard.yAxisMax.visible = false;
+
+    // Hide dual-axis-only properties (no combo/dual-axis support)
+    this.settings.referenceLineFormattingCard.referenceLineAxis.visible = false;
+    this.settings.referenceLineFormattingCard.referenceBandWidth.visible = false;
+    this.settings.trendLineFormattingCard.trendLineAxis.visible = false;
 
     // Conditional visibility: hide annotation sub-settings when annotations are off
     const annVisible = this.settings.annotationFormattingCard.showAnnotations.value;
@@ -158,7 +186,7 @@ export class StreamGraphVisual implements IVisual {
     // Populate per-series formatting groups from value columns
     if (data) {
       const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
-      const useChartPal = this.settings.colorSettings.useChartPalette.value;
+      const useChartPal = this.settings.streamSettings.useChartPalette.value;
       const defaultScheme = d3.scaleOrdinal(d3.schemeCategory10);
       const colorLookup = new Map<string, string>();
       data.seriesNames.forEach((name, i) => {
@@ -220,7 +248,18 @@ export class StreamGraphVisual implements IVisual {
     const rows: StreamRow[] = [];
     const categoryLabels: string[] = [];
 
+
+    const dateConfig: DateFilterConfig = {
+      enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
+      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
+      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+    };
+    const dateIndices = isDateColumn(categoryColumn.source) ? getDateFilterIndices(categoryColumn.values, dateConfig) : null;
+
     for (let i = 0; i < rowCount; i++) {
+      if (dateIndices && !dateIndices.has(i)) continue;
+
       const label = String(categoryColumn.values[i] ?? '');
       categoryLabels.push(label);
       categorySelectionIds.push(this.host.createSelectionIdBuilder()
@@ -241,7 +280,15 @@ export class StreamGraphVisual implements IVisual {
       rows.push(row);
     }
 
-    return { rows, seriesNames, categoryLabels, categorySelectionIds };
+    // Determine cross-highlight state per series
+    const seriesHighlighted: boolean[] = measureColumns.map((col) => {
+      const hlRaw = col.highlights as unknown[] | undefined;
+      if (!hlRaw) return false;
+      return hlRaw.some((h) => h != null);
+    });
+    const hasHighlights = seriesHighlighted.some((h) => h);
+
+    return { rows, seriesNames, categoryLabels, categorySelectionIds, hasHighlights, seriesHighlighted };
   }
 
   // ── Sort Series ──────────────────────────────────────────────
@@ -251,7 +298,7 @@ export class StreamGraphVisual implements IVisual {
     if (!data || data.seriesNames.length <= 1) return data;
 
     // Compute total value per series across all rows
-    const seriesTotals = data.seriesNames.map((seriesName) => {
+    const seriesTotals = data.seriesNames.map((seriesName, idx) => {
       let total = 0;
       let peak = 0;
       for (const row of data.rows) {
@@ -261,27 +308,32 @@ export class StreamGraphVisual implements IVisual {
           if (val > peak) peak = val;
         }
       }
-      return { name: seriesName, value: total, peak };
+      return { name: seriesName, value: total, peak, origIndex: idx };
     });
 
     // Apply stream-specific sort order if set
-    const streamSortOrder = resolveDropdown(this.settings.streamSortSettings.sortOrder) ?? 'inside-out';
+    const streamSortOrder = resolveDropdown(this.settings.streamDisplaySettings.sortOrder) ?? 'inside-out';
 
     if (streamSortOrder === 'by-peak') {
       // Sort by peak value (largest peak first for visual prominence)
       seriesTotals.sort((a, b) => b.peak - a.peak);
-      return { ...data, seriesNames: seriesTotals.map((s) => s.name) };
+      return {
+        ...data,
+        seriesNames: seriesTotals.map((s) => s.name),
+        seriesHighlighted: seriesTotals.map((s) => data.seriesHighlighted[s.origIndex]),
+      };
     } else if (streamSortOrder === 'appearance') {
       // Keep original data order (no sorting)
       return data;
     }
 
-    // Default 'inside-out': use the shared sort order utility
-    const sorted = applySortOrder(seriesTotals, this.settings.sortFormattingCard);
+    // Default 'inside-out': sort by total value descending (largest layers in center)
+    seriesTotals.sort((a, b) => b.value - a.value);
 
     return {
       ...data,
-      seriesNames: sorted.map((s) => s.name),
+      seriesNames: seriesTotals.map((s) => s.name),
+      seriesHighlighted: seriesTotals.map((s) => data.seriesHighlighted[s.origIndex]),
     };
   }
 
@@ -299,21 +351,19 @@ export class StreamGraphVisual implements IVisual {
 
     const s = this.settings;
 
-    // Apply glass card style
-    if (s.cardSettings.enableGlass.value) {
-      const glass = getGlassStyle({
-        mode: 'light',
+    // Apply card style
+    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    applyCardStyle(
+      this.container,
+      {
+        mode: cardMode,
         opacity: s.cardSettings.backgroundOpacity.value / 100,
         backgroundColor: s.cardSettings.backgroundColor.value?.value,
         borderRadius: s.cardSettings.borderRadius.value,
-      });
-      const styleRecord = this.container.style as unknown as Record<string, string>;
-      styleRecord['background'] = glass.background;
-      styleRecord['backdropFilter'] = glass.backdropFilter;
-      styleRecord['WebkitBackdropFilter'] = glass.WebkitBackdropFilter;
-      styleRecord['border'] = glass.border;
-      styleRecord['boxShadow'] = glass.boxShadow;
-      styleRecord['borderRadius'] = glass.borderRadius;
+      },
+    );
+    if (cardMode === 'none') {
+      this.container.style.borderRadius = `${s.cardSettings.borderRadius.value}px`;
     }
 
     // Handle empty/null data
@@ -330,7 +380,7 @@ export class StreamGraphVisual implements IVisual {
 
     const width = viewport.width;
     const height = viewport.height;
-    const showXAxis = s.axisVisibilitySettings.showXAxis.value;
+    const showXAxis = s.streamDisplaySettings.showXAxis.value;
     const showYAxis = s.streamDisplaySettings.showYAxis.value;
     const xAxisTitleText = s.axisFormattingCard.xAxisTitle.value;
     const yAxisTitleText = s.axisFormattingCard.yAxisTitle.value;
@@ -497,7 +547,7 @@ export class StreamGraphVisual implements IVisual {
     });
 
     // useChartPalette: when true, use host palette with theme; when false, use d3 default scheme
-    const useChartPalette = s.colorSettings.useChartPalette.value;
+    const useChartPalette = s.streamSettings.useChartPalette.value;
     const defaultColorScale = d3.scaleOrdinal(d3.schemeCategory10);
     const useGradient = s.streamSettings.useGradient.value;
     const gradientDefs = svg.append('defs');
@@ -561,20 +611,56 @@ export class StreamGraphVisual implements IVisual {
       .attr('d', (d) => areaGenerator(d) ?? '')
       .style('transition', 'opacity 0.15s ease');
 
-    // Tooltips — include percentage when showPercentages is enabled
+    // Tooltips via tooltipService
     const showPercentages = s.streamDisplaySettings.showPercentages.value;
-    if (showPercentages) {
-      // Compute grand total across all series for percentage calculation
-      const grandTotal = seriesTotals.reduce((sum, t) => sum + t, 0);
-      layers.append('title')
-        .text((d, i) => {
-          const pct = grandTotal > 0 ? ((seriesTotals[i] / grandTotal) * 100).toFixed(1) : '0.0';
-          return `${d.key}: ${pct}%`;
-        });
-    } else {
-      layers.append('title')
-        .text((d) => d.key);
-    }
+    const grandTotal = showPercentages ? seriesTotals.reduce((sum, t) => sum + t, 0) : 0;
+    const streamHost = this.host;
+    const streamNumberSettings = this.settings.numberFormattingCard;
+    const gNode = g.node();
+    layers.on('mouseover', (event: MouseEvent, d) => {
+      const seriesIdx = data.seriesNames.indexOf(d.key);
+      const tooltipItems: VisualTooltipDataItem[] = [
+        { displayName: 'Series', value: d.key },
+      ];
+      // Resolve the category index from the pointer position to show the actual value
+      if (gNode) {
+        const [mx] = d3.pointer(event, gNode);
+        const rawIdx = Math.round(xScale.invert(mx));
+        const catIdx = Math.max(0, Math.min(data.rows.length - 1, rawIdx));
+        const row = data.rows[catIdx];
+        if (row) {
+          const pointValue = row[d.key];
+          if (typeof pointValue === 'number') {
+            tooltipItems.push({ displayName: 'Value', value: formatWithSettings(pointValue, streamNumberSettings) });
+          }
+          if (data.categoryLabels[catIdx]) {
+            tooltipItems.push({ displayName: 'Category', value: data.categoryLabels[catIdx] });
+          }
+        }
+      }
+      if (showPercentages && grandTotal > 0) {
+        const total = seriesIdx >= 0 ? seriesTotals[seriesIdx] : 0;
+        const pct = ((total / grandTotal) * 100).toFixed(1);
+        tooltipItems.push({ displayName: '% of Total', value: `${pct}%` });
+      }
+      streamHost.tooltipService.show({
+        dataItems: tooltipItems,
+        identities: [],
+        coordinates: [event.clientX, event.clientY],
+        isTouchEvent: false,
+      });
+    });
+    layers.on('mousemove', (event: MouseEvent) => {
+      streamHost.tooltipService.move({
+        dataItems: [],
+        identities: [],
+        coordinates: [event.clientX, event.clientY],
+        isTouchEvent: false,
+      });
+    });
+    layers.on('mouseout', () => {
+      streamHost.tooltipService.hide({ immediately: true, isTouchEvent: false });
+    });
 
     const chartGroupNode = g.node();
     if (chartGroupNode) {
@@ -645,7 +731,7 @@ export class StreamGraphVisual implements IVisual {
           .style('opacity', '0')
           .style('pointer-events', 'none')
           .style('transition', 'opacity 0.15s ease')
-          .text(String(Math.round(layerTotal)));
+          .text(formatWithSettings(layerTotal, this.settings.numberFormattingCard));
       });
 
       applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.stream-value-label');
@@ -664,7 +750,7 @@ export class StreamGraphVisual implements IVisual {
         d3.axisLeft(yScale)
           .ticks(6)
           .tickSize(0)
-          .tickFormat((d) => String(Math.round(d as number))),
+          .tickFormat((d) => formatWithSettings(d as number, this.settings.numberFormattingCard)),
       );
       yAxisGroup.select('.domain').remove();
     }
@@ -769,7 +855,7 @@ export class StreamGraphVisual implements IVisual {
           lineWidth: s.crosshairFormattingCard.crosshairLineWidth.value,
           lineStyle: chStyleVal,
           showValues: s.crosshairFormattingCard.showCrosshairValues.value,
-          formatValue: (val: number) => String(Math.round(val * 100) / 100),
+          formatValue: (val: number) => formatWithSettings(val, this.settings.numberFormattingCard),
         }));
         this.cancelAnimations.push(crosshairCleanup);
       }
@@ -844,6 +930,9 @@ export class StreamGraphVisual implements IVisual {
     this.applyAccessibility(data.rows.length * data.seriesNames.length);
 
     this.container.addEventListener('click', this.handleBackgroundClick);
+
+    // ── Cross-Highlight Dimming ──────────────────────────────
+    this.applyCrossHighlight(data);
   }
 
   // ── Empty State ──────────────────────────────────────────────
@@ -881,6 +970,7 @@ export class StreamGraphVisual implements IVisual {
       fontSize: legendFmtCard.legendFontSize.value,
       fontColor,
       fontFamily: rawLegendFontFamily,
+      aliases: legendFmtCard.legendAliases.value,
     });
 
     // Animate legend entrance
@@ -1160,12 +1250,49 @@ export class StreamGraphVisual implements IVisual {
   // ── Formatting Pane ──────────────────────────────────────────
 
   public getFormattingModel(): powerbi.visuals.FormattingModel {
+    const s = this.settings;
+    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    s.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
+    s.cardSettings.backgroundColor.visible = cardMode !== 'none';
     return this.formattingSettingsService.buildFormattingModel(this.settings);
   }
 
   private handleBackgroundClick = (): void => {
     void this.selectionManager.clear();
   };
+
+  // ── Cross-Highlight ───────────────────────────────────────────
+
+  private applyCrossHighlight(data: StreamData): void {
+    if (!data.hasHighlights) return;
+
+    // Build a set of highlighted series indices
+    const highlightedSeries = new Set<string>();
+    data.seriesHighlighted.forEach((isHl, i) => {
+      if (isHl) highlightedSeries.add(String(i));
+    });
+
+    // Dim non-highlighted layers and associated elements
+    const svgNode = this.svg?.node();
+    if (!svgNode) return;
+
+    const layers = svgNode.querySelectorAll('.stream-layer[data-series]');
+    for (const el of Array.from(layers)) {
+      const seriesIdx = el.getAttribute('data-series');
+      if (seriesIdx !== null && !highlightedSeries.has(seriesIdx)) {
+        (el as SVGElement).style.opacity = '0.3';
+      }
+    }
+
+    // Also dim data labels and value labels for non-highlighted series
+    const labelEls = svgNode.querySelectorAll('.stream-data-label[data-series], .stream-value-label[data-series]');
+    for (const el of Array.from(labelEls)) {
+      const seriesIdx = el.getAttribute('data-series');
+      if (seriesIdx !== null && !highlightedSeries.has(seriesIdx)) {
+        (el as SVGElement).style.opacity = '0.3';
+      }
+    }
+  }
 
   // ── Lifecycle ────────────────────────────────────────────────
 

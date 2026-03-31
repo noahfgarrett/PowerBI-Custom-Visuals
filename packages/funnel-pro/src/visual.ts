@@ -17,7 +17,8 @@ import {
   DURATION,
   formatNumber,
   formatWithSettings,
-  getGlassStyle,
+  applyCardStyle,
+  type CardStyleMode,
   getHostChartColor,
   withOpacity,
   renderChartTitle,
@@ -37,6 +38,9 @@ import {
   type TrendType,
   renderLegend,
   type LegendItem,
+  getDateFilterIndices,
+  isDateColumn,
+  type DateFilterConfig,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -55,6 +59,7 @@ interface FunnelStage {
   label: string;
   value: number;
   selectionId: ISelectionId;
+  highlighted: boolean;
 }
 
 // ── Constants ────────────────────────────────────────────────────────
@@ -80,6 +85,8 @@ export class FunnelProVisual implements IVisual {
   private settings: FunnelProSettings;
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
+  private currentStages: FunnelStage[] = [];
+  private hasHighlights = false;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
@@ -103,7 +110,21 @@ export class FunnelProVisual implements IVisual {
       );
     }
 
+    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+    if (legacyCardObj) {
+      const legacyGlass = legacyCardObj['enableGlass'];
+      if (legacyGlass === false) {
+        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      }
+    }
+
     // Hide inapplicable shared axis properties — funnel-pro doesn't use titles/rotation/min/max/fontFamily/gridLineWidth/gridLineOpacity
+
+    // Date filter: hide start/end when disabled
+    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
     this.settings.axisFormattingCard.showXAxis.visible = false;
     this.settings.axisFormattingCard.showYAxis.visible = false;
     this.settings.axisFormattingCard.xAxisTitle.visible = false;
@@ -114,7 +135,13 @@ export class FunnelProVisual implements IVisual {
     this.settings.axisFormattingCard.yAxisMax.visible = false;
     this.settings.axisFormattingCard.gridLineWidth.visible = false;
     this.settings.axisFormattingCard.gridLineOpacity.visible = false;
+    this.settings.axisFormattingCard.axisLabelFontWeight.visible = false;
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
+
+    // Hide dual-axis-only properties (no combo/dual-axis support)
+    this.settings.referenceLineFormattingCard.referenceLineAxis.visible = false;
+    this.settings.referenceLineFormattingCard.referenceBandWidth.visible = false;
+    this.settings.trendLineFormattingCard.trendLineAxis.visible = false;
 
     // Conditional visibility: hide child settings when parent toggle is off
     // Comparison: hide drop-off sub-settings when comparison is disabled
@@ -125,13 +152,11 @@ export class FunnelProVisual implements IVisual {
 
     // Extract data
     const stages = this.extractData(dataView);
+    this.currentStages = stages;
 
     // Hide neckWidth/neckHeight when only 1-2 stages (neck is irrelevant)
-    this.settings.funnelLayoutSettings.neckWidth.visible = stages.length > 2;
-    this.settings.funnelLayoutSettings.neckHeight.visible = stages.length > 2;
-
-    // Apply glass effect
-    this.applyCardStyle();
+    this.settings.funnelShapeSettings.neckWidth.visible = stages.length > 2;
+    this.settings.funnelShapeSettings.neckHeight.visible = stages.length > 2;
 
     // Render
     if (stages.length === 0) {
@@ -139,6 +164,12 @@ export class FunnelProVisual implements IVisual {
     } else {
       this.render(stages, options.viewport);
     }
+
+    // Apply card styling AFTER render — render clears the container, which would destroy the glass backdrop div.
+    this.applyCardStyle();
+
+    // Apply cross-highlight dimming after render
+    this.applySelectionHighlight();
   }
 
   // ── Data Extraction ──────────────────────────────────────────────
@@ -157,9 +188,23 @@ export class FunnelProVisual implements IVisual {
 
     if (!categories || !values || categories.length === 0) return [];
 
+    // Cross-highlight support: read highlights from value column
+    const hlRaw = (valuesColumn as unknown as { highlights?: unknown[] }).highlights as unknown[] | undefined;
+    let anyHighlight = false;
+
     const stages: FunnelStage[] = [];
 
+    const dateConfig: DateFilterConfig = {
+      enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
+      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
+      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+    };
+    const dateIndices = isDateColumn(categoryColumn.source) ? getDateFilterIndices(categoryColumn.values, dateConfig) : null;
+
     for (let i = 0; i < categories.length; i++) {
+      if (dateIndices && !dateIndices.has(i)) continue;
+
       const label = categories[i] !== null && categories[i] !== undefined
         ? String(categories[i])
         : '';
@@ -169,15 +214,20 @@ export class FunnelProVisual implements IVisual {
       // Skip zero/negative values
       if (value <= 0) continue;
 
+      const isHighlighted = hlRaw != null && hlRaw[i] != null;
+      if (isHighlighted) anyHighlight = true;
+
       stages.push({
         label,
         value,
         selectionId: this.host.createSelectionIdBuilder()
           .withCategory(categoryColumn, i)
           .createSelectionId(),
+        highlighted: isHighlighted,
       });
     }
 
+    this.hasHighlights = anyHighlight;
     // Funnel order is data order — do NOT sort by value
     return stages;
   }
@@ -186,20 +236,17 @@ export class FunnelProVisual implements IVisual {
 
   private applyCardStyle(): void {
     const s = this.settings.cardSettings;
-    if (s.enableGlass.value) {
-      const glass = getGlassStyle({
-        mode: 'light',
+    const mode = (resolveDropdown(s.cardStyleMode) ?? 'glass') as CardStyleMode;
+    applyCardStyle(
+      this.container,
+      {
+        mode,
         opacity: s.backgroundOpacity.value / 100,
         backgroundColor: s.backgroundColor.value?.value,
         borderRadius: s.borderRadius.value,
-      });
-      Object.assign(this.container.style, glass);
-    } else {
-      this.container.style.background = '';
-      this.container.style.backdropFilter = '';
-      (this.container.style as unknown as Record<string, string>)['WebkitBackdropFilter'] = '';
-      this.container.style.border = '';
-      this.container.style.boxShadow = '';
+      },
+    );
+    if (mode === 'none') {
       this.container.style.borderRadius = `${s.borderRadius.value}px`;
     }
   }
@@ -222,11 +269,11 @@ export class FunnelProVisual implements IVisual {
     this.container.removeEventListener('click', this.handleBackgroundClick);
 
     const s = this.settings;
-    const funnelStyle = String(s.funnelSettings.style.value?.value ?? 'symmetric');
-    const showConversion = s.funnelSettings.showConversionRate.value;
-    const pyramidMode = s.funnelSettings.pyramidMode.value;
-    const gap = Math.max(0, s.funnelSettings.gap.value);
-    const showValues = s.funnelSettings.showValues.value;
+    const funnelStyle = String(s.funnelShapeSettings.style.value?.value ?? 'symmetric');
+    const showConversion = s.stageAppearanceSettings.showConversionRate.value;
+    const pyramidMode = s.funnelShapeSettings.pyramidMode.value;
+    const gap = Math.max(0, s.funnelShapeSettings.gap.value);
+    const showValues = s.stageAppearanceSettings.showValues.value;
     const useGradient = s.colorSettings.useGradient.value;
     const baseColor = s.colorSettings.baseColor.value?.value || '#3B82F6';
     const animEnabled = s.animationSettings.enabled.value;
@@ -260,9 +307,9 @@ export class FunnelProVisual implements IVisual {
     const firstValue = stages[0].value;
 
     // Layout settings
-    const neckWidthPct = Math.max(5, Math.min(100, s.funnelLayoutSettings.neckWidth.value)) / 100;
-    const neckHeightPct = Math.max(0, Math.min(80, s.funnelLayoutSettings.neckHeight.value)) / 100;
-    const dynamicHeight = s.funnelLayoutSettings.dynamicHeight.value;
+    const neckWidthPct = Math.max(5, Math.min(100, s.funnelShapeSettings.neckWidth.value)) / 100;
+    const neckHeightPct = Math.max(0, Math.min(80, s.funnelShapeSettings.neckHeight.value)) / 100;
+    const dynamicHeight = s.funnelShapeSettings.dynamicHeight.value;
 
     // Calculate total gaps and conversion label space
     const totalGaps = gap * (stageCount - 1);
@@ -375,7 +422,7 @@ export class FunnelProVisual implements IVisual {
       const bottomWidth = index < stageCount - 1 ? widths[index + 1] : topWidth;
 
       // Compute path with rounded corners
-      const borderRadius = Math.max(0, s.funnelLayoutSettings.borderRadius.value);
+      const borderRadius = Math.max(0, s.funnelShapeSettings.borderRadius.value);
       const pathD = this.computeTrapezoidPath(
         funnelStyle,
         centerX,
@@ -392,13 +439,14 @@ export class FunnelProVisual implements IVisual {
       const color = this.getConditionalSegmentColor(stage.value) ?? baseSegColor;
 
       // Draw path (trapezoid with optional rounded corners)
-      const segStrokeColor = s.funnelSettings.segmentStrokeColor.value?.value;
+      const segStrokeColor = s.stageAppearanceSettings.segmentStrokeColor.value?.value;
       const polygon = svg.append('path')
         .attr('class', 'funnel-stage')
+        .attr('data-selection-key', stage.selectionId.getKey())
         .attr('d', pathD)
         .attr('fill', color)
         .attr('stroke', segStrokeColor || withOpacity(color, 0.3))
-        .attr('stroke-width', s.funnelSettings.segmentStrokeWidth.value);
+        .attr('stroke-width', s.stageAppearanceSettings.segmentStrokeWidth.value);
 
       // Hover tooltip
       this.attachStageTooltip(polygon, stage, stages, index);
@@ -431,15 +479,25 @@ export class FunnelProVisual implements IVisual {
       const labelY = currentY + stageH / 2;
       const labelX = funnelStyle === 'symmetric' ? centerX : topWidth / 2;
 
-      const stageLabelColor = s.funnelSettings.labelColor.value?.value;
+      const stageLabelColor = s.stageAppearanceSettings.labelColor.value?.value;
+      const stageFontSize = s.stageAppearanceSettings.fontSize.value;
+      const stageFontFamily = resolveDropdown(s.stageAppearanceSettings.fontFamily);
+      const stageFontWeight = resolveDropdown(s.stageAppearanceSettings.fontWeight);
       const labelText = svg.append('text')
         .attr('class', 'funnel-stage-label')
         .attr('x', labelX)
         .attr('y', labelY)
+        .attr('font-size', `${stageFontSize}px`)
         .text(stage.label);
 
       if (stageLabelColor) {
         labelText.attr('fill', stageLabelColor);
+      }
+      if (stageFontFamily) {
+        labelText.attr('font-family', stageFontFamily);
+      }
+      if (stageFontWeight) {
+        labelText.attr('font-weight', stageFontWeight);
       }
 
       // Value label below stage label — local showValues controls visibility,
@@ -510,7 +568,7 @@ export class FunnelProVisual implements IVisual {
     this.renderDropOffHighlighting(svg, stages, widths, segmentHeights, gap, showConversion, funnelStyle, centerX);
 
     // ── Stage Annotations (conversion rates next to segments) ──────
-    if (s.funnelAnnotationSettings.show.value && stages.length >= 2) {
+    if (s.stageAppearanceSettings.showAnnotations.value && stages.length >= 2) {
       const annotGroup = svg.append('g').attr('class', 'funnel-annotations');
       let annotY = 0;
 
@@ -937,6 +995,7 @@ export class FunnelProVisual implements IVisual {
       fontSize: legendFontSize,
       fontColor: legendFontColor,
       fontFamily: rawLegendFontFamily,
+      aliases: legendFmtCard.legendAliases.value,
     });
   }
 
@@ -970,6 +1029,10 @@ export class FunnelProVisual implements IVisual {
   // ── Formatting Model ───────────────────────────────────────────
 
   public getFormattingModel(): powerbi.visuals.FormattingModel {
+    const s = this.settings;
+    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    s.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
+    s.cardSettings.backgroundColor.visible = cardMode !== 'none';
     return this.formattingSettingsService.buildFormattingModel(this.settings);
   }
 
@@ -982,8 +1045,41 @@ export class FunnelProVisual implements IVisual {
     }
   }
 
+  // ── Selection & Cross-Highlight ─────────────────────────────────
+
+  private applySelectionHighlight(): void {
+    const hasSelection = this.selectionManager.hasSelection();
+    const selectedIds = this.selectionManager.getSelectionIds() as ISelectionId[];
+    const selectedKeys = new Set(selectedIds.map((id) => id.getKey()));
+
+    // Build set of highlighted keys from cross-highlight data
+    const highlightedKeys = new Set<string>();
+    if (this.hasHighlights) {
+      for (const stage of this.currentStages) {
+        if (stage.highlighted) {
+          highlightedKeys.add(stage.selectionId.getKey());
+        }
+      }
+    }
+
+    const stageEls = this.container.querySelectorAll<SVGPathElement>('.funnel-stage');
+
+    const shouldDim = hasSelection || this.hasHighlights;
+    for (const el of Array.from(stageEls)) {
+      if (shouldDim) {
+        const elKey = el.getAttribute('data-selection-key');
+        const isSelected = hasSelection && elKey && selectedKeys.has(elKey);
+        const isHighlighted = this.hasHighlights && elKey && highlightedKeys.has(elKey);
+        el.style.opacity = (isSelected || isHighlighted) ? '' : '0.3';
+      } else {
+        el.style.opacity = '';
+      }
+    }
+  }
+
   private handleBackgroundClick = (): void => {
     void this.selectionManager.clear();
+    this.applySelectionHighlight();
   };
 
   private cancelAllAnimations(): void {

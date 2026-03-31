@@ -37,7 +37,7 @@
           },
           "dataReductionAlgorithm": {
             "top": {
-              "count": 100
+              "count": 1000
             }
           }
         },
@@ -54,8 +54,8 @@
     }
   ],
   "objects": {
-    "polarSettings": {
-      "displayName": "Polar",
+    "segmentSettings": {
+      "displayName": "Segments",
       "properties": {
         "innerRadius": {
           "displayName": "Inner Radius",
@@ -63,14 +63,20 @@
             "numeric": true
           }
         },
-        "showLabels": {
-          "displayName": "Show Labels",
-          "type": {
-            "bool": true
-          }
-        },
         "startAngle": {
           "displayName": "Start Angle",
+          "type": {
+            "numeric": true
+          }
+        },
+        "endAngle": {
+          "displayName": "End Angle",
+          "type": {
+            "numeric": true
+          }
+        },
+        "segmentPadding": {
+          "displayName": "Segment Padding",
           "type": {
             "numeric": true
           }
@@ -90,6 +96,50 @@
           "type": {
             "numeric": true
           }
+        }
+      }
+    },
+    "colorsAndFillSettings": {
+      "displayName": "Colors & Fill",
+      "properties": {
+        "baseColor": {
+          "displayName": "Base Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "enableGradientFill": {
+          "displayName": "Enable Gradient Fill",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "labelSettings": {
+      "displayName": "Labels",
+      "properties": {
+        "showLabels": {
+          "displayName": "Show Labels",
+          "type": {
+            "bool": true
+          }
+        },
+        "showRadialLabels": {
+          "displayName": "Show Radial Labels",
+          "type": {
+            "bool": true
+          }
+        },
+        "showInnerLabels": {
+          "displayName": "Show Inner Labels",
+          "type": {
+            "bool": true
+          }
         },
         "labelColor": {
           "displayName": "Label Color",
@@ -100,20 +150,65 @@
               }
             }
           }
-        }
-      }
-    },
-    "colorSettings": {
-      "displayName": "Colors",
-      "properties": {
-        "baseColor": {
-          "displayName": "Base Color",
+        },
+        "fontSize": {
+          "displayName": "Label Font Size",
           "type": {
-            "fill": {
-              "solid": {
-                "color": true
+            "numeric": true
+          }
+        },
+        "fontFamily": {
+          "displayName": "Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Helvetica",
+                "displayName": "Helvetica"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
               }
-            }
+            ]
+          }
+        },
+        "fontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold"
+              }
+            ]
           }
         }
       }
@@ -273,7 +368,7 @@
           }
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (°)",
+          "displayName": "X-Label Rotation (\u00b0)",
           "type": {
             "numeric": true
           }
@@ -774,6 +869,12 @@
               }
             ]
           }
+        },
+        "legendAliases": {
+          "displayName": "Rename Labels",
+          "type": {
+            "text": true
+          }
         }
       }
     },
@@ -802,11 +903,34 @@
             "numeric": true
           }
         },
+        "cardStyleMode": {
+          "displayName": "Card Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "glass",
+                "displayName": "Glass"
+              },
+              {
+                "value": "elevated",
+                "displayName": "Elevated"
+              },
+              {
+                "value": "neumorphic",
+                "displayName": "Neumorphic"
+              }
+            ]
+          }
+        },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "Glass Effect"
+          "displayName": "(Deprecated) Enable Glass"
         }
       }
     },
@@ -838,46 +962,6 @@
                 "displayName": "Name (Z-A)"
               }
             ]
-          }
-        }
-      }
-    },
-    "polarDisplaySettings": {
-      "displayName": "Polar Display",
-      "properties": {
-        "showRadialLabels": {
-          "displayName": "Show Radial Labels",
-          "type": {
-            "bool": true
-          }
-        },
-        "showInnerLabels": {
-          "displayName": "Show Inner Labels",
-          "type": {
-            "bool": true
-          }
-        },
-        "segmentPadding": {
-          "displayName": "Segment Padding",
-          "type": {
-            "numeric": true
-          }
-        },
-        "endAngle": {
-          "displayName": "End Angle",
-          "type": {
-            "numeric": true
-          }
-        }
-      }
-    },
-    "polarGradientSettings": {
-      "displayName": "Gradient Fill",
-      "properties": {
-        "enabled": {
-          "displayName": "Enable Gradient Fill",
-          "type": {
-            "bool": true
           }
         }
       }
@@ -1094,6 +1178,35 @@
         },
         "valueSuffix": {
           "displayName": "Suffix",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "dateFilterFormatting": {
+      "displayName": "Date Filter",
+      "properties": {
+        "enableDateFilter": {
+          "displayName": "Enable Date Filter",
+          "type": {
+            "bool": true
+          }
+        },
+        "startDate": {
+          "displayName": "Start Date",
+          "type": {
+            "text": true
+          }
+        },
+        "endAtCurrentDate": {
+          "displayName": "End at Current Date",
+          "type": {
+            "bool": true
+          }
+        },
+        "endDate": {
+          "displayName": "End Date",
           "type": {
             "text": true
           }

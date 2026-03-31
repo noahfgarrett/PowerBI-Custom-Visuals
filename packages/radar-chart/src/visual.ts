@@ -13,11 +13,11 @@ import {
   popIn,
   fadeSlideIn,
   DURATION,
-  getGlassStyle,
+  applyCardStyle,
+  type CardStyleMode,
   getHostChartColor,
   getChartColor,
   withOpacity,
-  formatNumber,
   formatWithSettings,
   renderChartTitle,
   applyDataLabelFormatting,
@@ -32,6 +32,9 @@ import {
   resolveSeriesFormatting,
   populateSeriesFormattingGroups,
   lineStyleToDashArray,
+  getDateFilterIndices,
+  isDateColumn,
+  type DateFilterConfig,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -50,6 +53,17 @@ interface RadarSeries {
   name: string;
   values: number[];
   color: string;
+  /** Per-axis highlight flags (true = this axis/value is cross-highlighted). */
+  highlights: boolean[];
+}
+
+/** Top-level radar chart data container. */
+interface RadarChartData {
+  categories: string[];
+  categorySelectionIds: ISelectionId[];
+  series: RadarSeries[];
+  /** Whether cross-highlight data is present from another visual/slicer. */
+  hasHighlights: boolean;
 }
 
 // ── Visual ───────────────────────────────────────────────────────────
@@ -61,6 +75,7 @@ export class RadarChartVisual implements IVisual {
   private settings: RadarChartSettings;
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
+  private currentData: RadarChartData | null = null;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
@@ -82,30 +97,58 @@ export class RadarChartVisual implements IVisual {
       );
     }
 
+    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+    if (legacyCardObj) {
+      const legacyGlass = legacyCardObj['enableGlass'];
+      if (legacyGlass === false) {
+        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      }
+    }
+
     // Hide inapplicable shared axis properties — radar-chart doesn't use titles/rotation/min/max
+
+    // Date filter: hide start/end when disabled
+    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
     this.settings.axisFormattingCard.showXAxis.visible = false;
     this.settings.axisFormattingCard.showYAxis.visible = false;
     this.settings.axisFormattingCard.xAxisTitle.visible = false;
     this.settings.axisFormattingCard.yAxisTitle.visible = false;
-    this.settings.axisFormattingCard.axisLabelFontFamily.visible = false;
     this.settings.axisFormattingCard.axisLabelRotation.visible = false;
     this.settings.axisFormattingCard.yAxisMin.visible = false;
     this.settings.axisFormattingCard.yAxisMax.visible = false;
     this.settings.axisFormattingCard.gridLineWidth.visible = false;
     this.settings.axisFormattingCard.gridLineOpacity.visible = false;
 
-    // Conditional visibility: hide dotRadius when showDots is off
-    this.settings.radarSettings.dotRadius.visible = this.settings.radarSettings.showDots.value;
+    // Card style: hide opacity when style is 'none'
+    const cardMode = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    this.settings.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
+    this.settings.cardSettings.backgroundColor.visible = cardMode !== 'none';
+
+    // Hide data label position — position is determined by chart geometry
+    this.settings.dataLabelFormattingCard.dataLabelPosition.visible = false;
+
+    // Conditional visibility: hide dot sub-settings when showDots is off
+    const dotsVisible = this.settings.radarAppearance.showDots.value;
+    this.settings.radarAppearance.dotRadius.visible = dotsVisible;
+    this.settings.radarAppearance.dotBorderColor.visible = dotsVisible;
+    this.settings.radarAppearance.dotBorderWidth.visible = dotsVisible;
 
     // Conditional visibility: hide benchmark sub-settings when showBenchmark is off
-    this.settings.radarBenchmarkSettings.dashPattern.visible = this.settings.radarBenchmarkSettings.show.value;
-    this.settings.radarBenchmarkSettings.color.visible = this.settings.radarBenchmarkSettings.show.value;
-
-    this.applyCardStyle();
+    const benchVisible = this.settings.radarBenchmarkSettings.show.value;
+    this.settings.radarBenchmarkSettings.dashPattern.visible = benchVisible;
+    this.settings.radarBenchmarkSettings.color.visible = benchVisible;
+    this.settings.radarBenchmarkSettings.lineWidth.visible = benchVisible;
 
     const categories = this.extractCategories(dataView);
     const categorySelectionIds = this.extractCategorySelectionIds(dataView, categories.length);
     const series = this.extractSeries(dataView, categories.length);
+
+    // Compute cross-highlight state
+    const hasHighlights = series.some(s => s.highlights.some(h => h));
+    this.currentData = { categories, categorySelectionIds, series, hasHighlights };
 
     // Populate per-series formatting groups
     {
@@ -121,50 +164,77 @@ export class RadarChartVisual implements IVisual {
       );
     }
 
-    this.notifyRenderStarted();
-    try {
-      if (categories.length < 3 || series.length === 0) {
-        this.renderEmpty();
-      } else {
-        this.render(categories, categorySelectionIds, series, options.viewport);
-      }
-      this.notifyRenderFinished();
-    } catch (error) {
-      this.notifyRenderFailed(error);
-      throw error;
+    if (categories.length < 3 || series.length === 0) {
+      this.renderEmpty();
+    } else {
+      this.render(categories, categorySelectionIds, series, options.viewport);
     }
+
+    // Apply card styling AFTER render — render clears the container, which would destroy the glass backdrop div.
+    this.applyCardStyling();
   }
 
   // ── Data Extraction ──────────────────────────────────────────────
 
   private extractCategories(dataView: DataView | undefined): string[] {
     if (!dataView?.categorical?.categories?.[0]) return [];
-    return dataView.categorical.categories[0].values.map((v) =>
-      v !== null && v !== undefined ? String(v) : '',
-    );
+    const catCol = dataView.categorical.categories[0];
+    const dateConfig: DateFilterConfig = {
+      enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
+      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
+      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+    };
+    const dateIndices = isDateColumn(catCol.source) ? getDateFilterIndices(catCol.values, dateConfig) : null;
+    return catCol.values
+      .map((v, i) => dateIndices && !dateIndices.has(i) ? null : (v !== null && v !== undefined ? String(v) : ''))
+      .filter((v): v is string => v !== null);
   }
 
   private extractSeries(dataView: DataView | undefined, numAxes: number): RadarSeries[] {
     const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
     if (!dataView?.categorical?.values || numAxes === 0) return [];
 
+    // Build filtered index map for date filter
+    const catCol = dataView.categorical?.categories?.[0];
+    const dateConfig: DateFilterConfig = {
+      enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
+      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
+      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+    };
+    const dateIndices = catCol && isDateColumn(catCol.source) ? getDateFilterIndices(catCol.values, dateConfig) : null;
+    const filteredIndices: number[] = [];
+    const totalRows = catCol ? catCol.values.length : numAxes;
+    for (let i = 0; i < totalRows; i++) {
+      if (dateIndices && !dateIndices.has(i)) continue;
+      filteredIndices.push(i);
+    }
+
     const result: RadarSeries[] = [];
     const valueColumns = dataView.categorical.values;
-    const useChartPalette = this.settings.colorSettings.useChartPalette.value;
+    const useChartPalette = this.settings.radarAppearance.useChartPalette.value;
 
     for (let si = 0; si < valueColumns.length; si++) {
       const col = valueColumns[si];
       const name = col.source.displayName ?? `Series ${si + 1}`;
       const values: number[] = [];
+      const highlights: boolean[] = [];
 
-      for (let i = 0; i < numAxes; i++) {
+      // Cross-highlight: read highlight values
+      const hlRaw = (col as unknown as { highlights?: unknown }).highlights as unknown[] | undefined;
+
+      for (let fi = 0; fi < numAxes; fi++) {
+        const i = filteredIndices[fi] ?? fi;
         const raw = col.values[i];
         values.push(typeof raw === 'number' && Number.isFinite(raw) ? raw : 0);
+        highlights.push(hlRaw ? hlRaw[i] !== null && hlRaw[i] !== undefined : false);
       }
 
       result.push({
         name,
         values,
+        highlights,
         color: useChartPalette
           ? getHostChartColor(this.host.colorPalette, si, themeName)
           : getChartColor(si, themeName),
@@ -189,22 +259,19 @@ export class RadarChartVisual implements IVisual {
 
   // ── Card Style ─────────────────────────────────────────────────
 
-  private applyCardStyle(): void {
+  private applyCardStyling(): void {
     const s = this.settings.cardSettings;
-    if (s.enableGlass.value) {
-      const glass = getGlassStyle({
-        mode: 'light',
+    const mode = (resolveDropdown(s.cardStyleMode) ?? 'glass') as CardStyleMode;
+    applyCardStyle(
+      this.container,
+      {
+        mode,
         opacity: s.backgroundOpacity.value / 100,
         backgroundColor: s.backgroundColor.value?.value,
         borderRadius: s.borderRadius.value,
-      });
-      Object.assign(this.container.style, glass);
-    } else {
-      this.container.style.background = '';
-      this.container.style.backdropFilter = '';
-      (this.container.style as unknown as Record<string, string>)['WebkitBackdropFilter'] = '';
-      this.container.style.border = '';
-      this.container.style.boxShadow = '';
+      },
+    );
+    if (mode === 'none') {
       this.container.style.borderRadius = `${s.borderRadius.value}px`;
     }
   }
@@ -233,14 +300,14 @@ export class RadarChartVisual implements IVisual {
     const s = this.settings;
     const showGrid = s.radarSettings.showGrid.value;
     const gridLevels = Math.max(1, s.radarSettings.gridLevels.value);
-    const fillOpacity = Math.max(0, Math.min(100, s.radarSettings.fillOpacity.value)) / 100;
-    const showDots = s.radarSettings.showDots.value;
-    const dotRadius = Math.max(1, s.radarSettings.dotRadius.value);
+    const fillOpacity = Math.max(0, Math.min(100, s.radarAppearance.fillOpacity.value)) / 100;
+    const showDots = s.radarAppearance.showDots.value;
+    const dotRadius = Math.max(1, s.radarAppearance.dotRadius.value);
     const gridShape = resolveDropdown(s.radarSettings.gridShape) ?? 'polygon';
     const webStrokeColor = s.radarSettings.webStrokeColor.value?.value || '#CBD5E1';
     const webStrokeWidth = Math.max(0.5, s.radarSettings.webStrokeWidth.value);
     const webFillOpacity = Math.max(0, Math.min(100, s.radarSettings.webFillOpacity.value)) / 100;
-    const areaOpacity = Math.max(0, Math.min(100, s.radarSettings.areaOpacity.value)) / 100;
+    const areaOpacity = Math.max(0, Math.min(100, s.radarAppearance.areaOpacity.value)) / 100;
     const showLegend = s.legendFormattingCard.showLegend.value;
     const animEnabled = s.animationSettings.enabled.value;
     const animDuration = s.animationSettings.duration.value;
@@ -248,24 +315,27 @@ export class RadarChartVisual implements IVisual {
     // Axis formatting
     const axisColor = s.axisFormattingCard.axisLabelColor.value?.value || '#1E293B';
     const axisLabelSize = s.axisFormattingCard.axisLabelSize.value;
+    const axisLabelFontFamily = resolveDropdown(s.axisFormattingCard.axisLabelFontFamily) || undefined;
+    const axisLabelFontWeight = resolveDropdown(s.axisFormattingCard.axisLabelFontWeight) || undefined;
     const axisLineColor = s.axisFormattingCard.axisLineColor.value?.value || '#CBD5E1';
     const axisLineWidth = Math.max(0.5, s.axisFormattingCard.axisLineWidth.value);
     const showGridLines = s.axisFormattingCard.showGridLines.value;
     const gridLineColor = s.axisFormattingCard.gridLineColor.value?.value || '#E2E8F0';
-    const gridLineStyleRaw = s.axisFormattingCard.gridLineStyle.value;
-    const gridLineStyle: string = (typeof gridLineStyleRaw === 'string'
-      ? gridLineStyleRaw
-      : (gridLineStyleRaw as { value?: string } | undefined)?.value) ?? 'dashed';
+    const gridLineStyle = resolveDropdown(s.axisFormattingCard.gridLineStyle) ?? 'dashed';
     const gridDashArray = gridLineStyle === 'dashed' ? '4 3' : 'none';
+    const showAxisLabels = s.radarSettings.showAxisLabels.value;
 
     // Legend formatting
     const legendFontColor = s.legendFormattingCard.legendFontColor.value?.value || '#1E293B';
     const legendFontSize = s.legendFormattingCard.legendFontSize.value;
     const legendFontFamily = resolveDropdown(s.legendFormattingCard.legendFontFamily) || undefined;
-    const legendPosRaw = s.legendFormattingCard.legendPosition.value;
-    const legendPos: string = (typeof legendPosRaw === 'string'
-      ? legendPosRaw
-      : (legendPosRaw as { value?: string } | undefined)?.value) ?? 'bottom';
+    const legendFontWeight = resolveDropdown(s.legendFormattingCard.legendFontWeight) || undefined;
+    const legendPos = resolveDropdown(s.legendFormattingCard.legendPosition) ?? 'bottom';
+
+    // Series appearance
+    const globalLineWidth = s.radarAppearance.lineWidth.value;
+    const dotBorderColor = s.radarAppearance.dotBorderColor.value?.value || '#FFFFFF';
+    const dotBorderWidth = s.radarAppearance.dotBorderWidth.value;
 
     // Data label formatting
     const showDataLabels = s.dataLabelFormattingCard.showDataLabels.value;
@@ -274,10 +344,10 @@ export class RadarChartVisual implements IVisual {
     const angleSlice = (2 * Math.PI) / numAxes;
 
     // User-configurable start angle offset (degrees -> radians)
-    const startAngleOffset = (s.radarDisplaySettings.startAngle.value * Math.PI) / 180;
+    const startAngleOffset = (s.radarSettings.startAngle.value * Math.PI) / 180;
 
     // Independent axis scales: when enabled, each axis gets its own max
-    const useIndependentScales = s.radarDisplaySettings.independentScales.value;
+    const useIndependentScales = s.radarSettings.independentScales.value;
 
     // Compute global max value across all series
     let maxVal = 0;
@@ -304,11 +374,10 @@ export class RadarChartVisual implements IVisual {
     const getAxisMax = (axisIndex: number): number =>
       useIndependentScales ? axisMaxValues[axisIndex] : maxVal;
 
-    const effectiveShowLegend = showLegend;
     const isLegendHorizontal = legendPos === 'top' || legendPos === 'bottom';
     const isLegendSide = legendPos === 'left' || legendPos === 'right';
-    const legendHeight = effectiveShowLegend && isLegendHorizontal ? 30 : 0;
-    const legendWidth = effectiveShowLegend && isLegendSide ? 80 : 0;
+    const legendHeight = showLegend && isLegendHorizontal ? 30 : 0;
+    const legendWidth = showLegend && isLegendSide ? 80 : 0;
     const margin = 40;
     const svgWidth = viewport.width - legendWidth;
     const svgHeight = viewport.height - legendHeight;
@@ -371,18 +440,25 @@ export class RadarChartVisual implements IVisual {
         .attr('stroke', axisLineColor)
         .attr('stroke-width', axisLineWidth);
 
-      const labelR = radius + 14;
-      const lx = labelR * Math.cos(angle);
-      const ly = labelR * Math.sin(angle);
+      if (showAxisLabels) {
+        const labelR = radius + 14;
+        const lx = labelR * Math.cos(angle);
+        const ly = labelR * Math.sin(angle);
+        // Intelligent text-anchor based on position around the chart
+        const anchor = Math.abs(lx) < 1 ? 'middle' : lx > 0 ? 'start' : 'end';
 
-      g.append('text')
-        .attr('class', 'radar-axis-label')
-        .attr('x', lx)
-        .attr('y', ly)
-        .attr('dy', '0.35em')
-        .attr('fill', axisColor)
-        .style('font-size', `${axisLabelSize}px`)
-        .text(categories[i]);
+        const labelEl = g.append('text')
+          .attr('class', 'radar-axis-label')
+          .attr('x', lx)
+          .attr('y', ly)
+          .attr('dy', '0.35em')
+          .attr('text-anchor', anchor)
+          .attr('fill', axisColor)
+          .style('font-size', `${axisLabelSize}px`);
+        if (axisLabelFontFamily) labelEl.style('font-family', axisLabelFontFamily);
+        if (axisLabelFontWeight) labelEl.style('font-weight', axisLabelFontWeight);
+        labelEl.text(categories[i]);
+      }
     }
 
     // ── Benchmark overlay (behind series, in front of grid) ──
@@ -396,7 +472,7 @@ export class RadarChartVisual implements IVisual {
       const seriesColor = sf.color;
       const seriesOpacity = sf.opacity / 100;
       const seriesLineStyle = lineStyleToDashArray(sf.lineStyle);
-      const seriesLineWidth = sf.lineWidth;
+      const seriesLineWidth = sf.lineWidth > 0 ? sf.lineWidth : globalLineWidth;
       const points: Array<[number, number]> = [];
 
       for (let i = 0; i < numAxes; i++) {
@@ -410,6 +486,7 @@ export class RadarChartVisual implements IVisual {
 
       const polygon = g.append('path')
         .attr('class', 'radar-polygon')
+        .attr('data-series-index', si)
         .attr('d', pathData)
         .attr('fill', withOpacity(seriesColor, fillOpacity * seriesOpacity))
         .attr('fill-opacity', areaOpacity)
@@ -417,14 +494,18 @@ export class RadarChartVisual implements IVisual {
         .attr('stroke-width', seriesLineWidth)
         .attr('stroke-dasharray', seriesLineStyle);
 
+      // Hover: brightness boost + soft glow
       polygon
+        .style('transition', 'filter 0.2s ease, opacity 0.15s ease')
         .on('mouseenter', (event: MouseEvent) => {
+          polygon.style('filter', `brightness(1.2) drop-shadow(0 0 6px ${seriesColor})`);
           this.showSeriesTooltip(ser, event);
         })
         .on('mousemove', (event: MouseEvent) => {
           this.moveTooltip(event);
         })
         .on('mouseleave', () => {
+          polygon.style('filter', 'none');
           this.hideTooltip();
         });
 
@@ -470,6 +551,10 @@ export class RadarChartVisual implements IVisual {
             .attr('cy', points[i][1])
             .attr('r', dotRadius)
             .attr('fill', dotConditionalFill ?? seriesColor)
+            .attr('stroke', dotBorderColor)
+            .attr('stroke-width', dotBorderWidth)
+            .attr('data-selection-key', categorySelectionIds[i]?.getKey() ?? '')
+            .attr('data-axis-index', i)
             .style('cursor', 'pointer');
 
           const pointCategory = categories[i];
@@ -520,8 +605,6 @@ export class RadarChartVisual implements IVisual {
           const labelR = (ser.values[i] / getAxisMax(i)) * radius + dotRadius + 6;
           const lx = labelR * Math.cos(angle);
           const ly = labelR * Math.sin(angle);
-          const locale = this.getHostLocale();
-
           const dataLabel = g.append('text')
             .attr('class', 'radar-data-label')
             .attr('x', lx)
@@ -553,7 +636,7 @@ export class RadarChartVisual implements IVisual {
 
     // ── Legend ──
 
-    if (effectiveShowLegend && series.length > 1) {
+    if (showLegend && series.length > 1) {
       const legend = document.createElement('div');
       legend.style.display = 'flex';
       legend.style.justifyContent = 'center';
@@ -582,6 +665,7 @@ export class RadarChartVisual implements IVisual {
         label.style.fontSize = `${legendFontSize}px`;
         label.style.color = legendFontColor;
         if (legendFontFamily) label.style.fontFamily = legendFontFamily;
+        if (legendFontWeight) label.style.fontWeight = legendFontWeight;
         label.textContent = ser.name;
 
         item.appendChild(swatch);
@@ -612,6 +696,7 @@ export class RadarChartVisual implements IVisual {
     // Axis values, hover behavior
     this.renderAxisValues(g, gridLevels, radius, maxVal, axisLineColor, axisLabelSize, startAngleOffset, numAxes, angleSlice, getAxisMax);
     this.applyHoverDimBehavior();
+    this.applyCrossHighlight();
     this.applyAccessibility();
     this.container.addEventListener('click', this.handleBackgroundClick);
   }
@@ -641,6 +726,8 @@ export class RadarChartVisual implements IVisual {
     while (this.container.firstChild) {
       this.container.removeChild(this.container.firstChild);
     }
+    // Reset flex layout so stale flexDirection from side-legends doesn't persist
+    this.container.style.flexDirection = 'column';
   }
 
   private cancelAllAnimations(): void {
@@ -648,8 +735,66 @@ export class RadarChartVisual implements IVisual {
     this.cancelAnimations = [];
   }
 
+  // ── Cross-Highlight ──────────────────────────────────────────────
+
+  private applyCrossHighlight(): void {
+    const data = this.currentData;
+    if (!data) return;
+
+    const hasHighlights = data.hasHighlights;
+    const hasSelection = this.selectionManager.hasSelection();
+    const selectedIds = this.selectionManager.getSelectionIds() as ISelectionId[];
+    const selectedKeys = new Set(selectedIds.map((id) => id.getKey()));
+
+    // Build set of highlighted axis indices from cross-highlight data
+    const highlightedAxisIndices = new Set<number>();
+    if (hasHighlights) {
+      for (const ser of data.series) {
+        ser.highlights.forEach((h, i) => { if (h) highlightedAxisIndices.add(i); });
+      }
+    }
+    const highlightedKeys = new Set<string>();
+    for (const idx of highlightedAxisIndices) {
+      if (data.categorySelectionIds[idx]) {
+        highlightedKeys.add(data.categorySelectionIds[idx].getKey());
+      }
+    }
+
+    // Determine if any series has ALL its axes highlighted (dim others)
+    const shouldDim = hasSelection || hasHighlights;
+
+    // Dim polygons: a polygon is highlighted if any of its axis points are highlighted
+    const polygons = this.container.querySelectorAll<SVGPathElement>('.radar-polygon');
+    for (const el of Array.from(polygons)) {
+      if (shouldDim) {
+        const seriesIdx = parseInt(el.getAttribute('data-series-index') ?? '-1', 10);
+        const ser = data.series[seriesIdx];
+        const seriesHasHighlight = hasHighlights && ser ? ser.highlights.some(h => h) : false;
+        const elKey = el.getAttribute('data-selection-key');
+        const isSelected = hasSelection && elKey !== null && selectedKeys.has(elKey);
+        el.style.opacity = (seriesHasHighlight || isSelected) ? '' : '0.3';
+      } else {
+        el.style.opacity = '';
+      }
+    }
+
+    // Dim dots
+    const dots = this.container.querySelectorAll<SVGCircleElement>('.radar-dot');
+    for (const el of Array.from(dots)) {
+      if (shouldDim) {
+        const elKey = el.getAttribute('data-selection-key');
+        const isSelected = hasSelection && elKey !== null && selectedKeys.has(elKey);
+        const isHighlighted = hasHighlights && elKey !== null && highlightedKeys.has(elKey);
+        el.style.opacity = (isSelected || isHighlighted) ? '' : '0.3';
+      } else {
+        el.style.opacity = '';
+      }
+    }
+  }
+
   private handleBackgroundClick = (): void => {
     void this.selectionManager.clear();
+    this.applyCrossHighlight();
   };
 
   private showSeriesTooltip(ser: RadarSeries, event: MouseEvent): void {
@@ -672,7 +817,6 @@ export class RadarChartVisual implements IVisual {
     selectionId: ISelectionId | undefined,
     event: MouseEvent,
   ): void {
-    const locale = this.getHostLocale();
     const tooltipData: VisualTooltipDataItem[] = [
       { displayName: 'Category', value: category },
       { displayName: 'Series', value: seriesName },
@@ -700,32 +844,8 @@ export class RadarChartVisual implements IVisual {
     this.host.tooltipService.hide({ immediately: true, isTouchEvent: false });
   }
 
-  private getHostLocale(): string | undefined {
-    const locale = (this.host as unknown as { locale?: unknown }).locale;
-    return typeof locale === 'string' && locale.length > 0 ? locale : undefined;
-  }
-
-  private notifyRenderStarted(): void {
-    const eventService = (this.host as unknown as {
-      eventService?: { renderingStarted?: () => void };
-    }).eventService;
-    eventService?.renderingStarted?.();
-  }
-
-  private notifyRenderFinished(): void {
-    const eventService = (this.host as unknown as {
-      eventService?: { renderingFinished?: () => void };
-    }).eventService;
-    eventService?.renderingFinished?.();
-  }
-
-  private notifyRenderFailed(error: unknown): void {
-    const eventService = (this.host as unknown as {
-      eventService?: { renderingFailed?: (reason: string) => void };
-    }).eventService;
-    const reason = error instanceof Error ? error.message : 'render failure';
-    eventService?.renderingFailed?.(reason);
-  }
+  // Render lifecycle notifications removed — Power BI's eventService.renderingStarted()
+  // requires VisualUpdateOptions with updateId, and calling without args crashes the visual.
 
   // ── Conditional Formatting ───────────────────────────────────
 
@@ -777,6 +897,7 @@ export class RadarChartVisual implements IVisual {
     const color = benchmarkSettings.color.value?.value ?? '#94A3B8';
     const dashStyle = resolveDropdown(benchmarkSettings.dashPattern) ?? 'dashed';
     const dashArray = lineStyleToDashArray(dashStyle);
+    const benchLineWidth = benchmarkSettings.lineWidth.value;
 
     const points: Array<[number, number]> = [];
     for (let i = 0; i < numAxes; i++) {
@@ -792,7 +913,7 @@ export class RadarChartVisual implements IVisual {
       .attr('d', pathData)
       .attr('fill', 'none')
       .attr('stroke', color)
-      .attr('stroke-width', 2)
+      .attr('stroke-width', benchLineWidth)
       .attr('stroke-dasharray', dashArray);
   }
 
@@ -810,7 +931,7 @@ export class RadarChartVisual implements IVisual {
     angleSlice: number = 0,
     getAxisMax: (i: number) => number = () => maxVal,
   ): void {
-    const displaySettings = this.settings.radarDisplaySettings;
+    const displaySettings = this.settings.radarSettings;
     if (!displaySettings.showAxisValues.value) return;
 
     const useIndependentScales = displaySettings.independentScales.value;

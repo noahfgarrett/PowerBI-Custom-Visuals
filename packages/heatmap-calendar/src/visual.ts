@@ -12,7 +12,8 @@ import {
   DURATION,
   formatNumber,
   formatWithSettings,
-  getGlassStyle,
+  applyCardStyle,
+  type CardStyleMode,
   renderChartTitle,
   applyDataLabelFormatting,
   resolveDropdown,
@@ -21,6 +22,11 @@ import {
   ensureFocusRingStyles,
   buildConditionalConfig,
   resolveConditionalColor,
+  getDateFilterIndices,
+  isDateColumn,
+  type DateFilterConfig,
+  resolveColorTheme,
+  getHostChartColor,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -29,6 +35,7 @@ import IVisual = powerbi.extensibility.visual.IVisual;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import DataView = powerbi.DataView;
 import ISelectionId = powerbi.visuals.ISelectionId;
+import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 
 import '../style/visual.less';
 
@@ -37,7 +44,14 @@ import '../style/visual.less';
 interface CalendarDatum {
   date: Date;
   value: number;
+  highlighted: boolean;
   selectionId: ISelectionId;
+}
+
+/** Whether cross-highlight data is present from another visual/slicer. */
+interface CalendarData {
+  items: CalendarDatum[];
+  hasHighlights: boolean;
 }
 
 // ── Constants ────────────────────────────────────────────────────────
@@ -76,7 +90,21 @@ export class HeatmapCalendarVisual implements IVisual {
       );
     }
 
+    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+    if (legacyCardObj) {
+      const legacyGlass = legacyCardObj['enableGlass'];
+      if (legacyGlass === false) {
+        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      }
+    }
+
     // Hide inapplicable shared axis properties — heatmap-calendar only uses axisLabelColor and axisLabelSize
+
+    // Date filter: hide start/end when disabled
+    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
     this.settings.axisFormattingCard.showXAxis.visible = false;
     this.settings.axisFormattingCard.showYAxis.visible = false;
     this.settings.axisFormattingCard.xAxisTitle.visible = false;
@@ -92,43 +120,61 @@ export class HeatmapCalendarVisual implements IVisual {
     this.settings.axisFormattingCard.gridLineStyle.visible = false;
     this.settings.axisFormattingCard.gridLineWidth.visible = false;
     this.settings.axisFormattingCard.gridLineOpacity.visible = false;
+    this.settings.axisFormattingCard.axisLabelFontWeight.visible = false;
 
-    // Hide local labelColor — let axisFormattingCard.axisLabelColor be the single source of truth
-    this.settings.calendarSettings.labelColor.visible = false;
+    // Hide legacy labelColor — axisFormattingCard.axisLabelColor is the single source of truth
+    this.settings._legacyCalendarSettings.labelColor.visible = false;
 
     // Conditional visibility: hide child settings when parent toggle is off
-    const colorMode = (this.settings.calendarScaleSettings.colorMode.value as unknown as { value?: string })?.value ?? 'continuous';
-    this.settings.colorSettings.midColor.visible = this.settings.colorSettings.showMidColor.value;
-    this.settings.colorSettings.midPoint.visible = this.settings.colorSettings.showMidColor.value;
-    this.settings.calendarScaleSettings.bins.visible = colorMode !== 'continuous';
+    const colorMode = (this.settings.colorScaleSettings.colorMode.value as unknown as { value?: string })?.value ?? 'continuous';
+    this.settings.colorScaleSettings.midColor.visible = this.settings.colorScaleSettings.showMidColor.value;
+    this.settings.colorScaleSettings.midPoint.visible = this.settings.colorScaleSettings.showMidColor.value;
+    this.settings.colorScaleSettings.bins.visible = colorMode !== 'continuous';
     this.settings.calendarStreakSettings.threshold.visible = this.settings.calendarStreakSettings.show.value;
     this.settings.calendarStreakSettings.streakOutlineColor.visible = this.settings.calendarStreakSettings.show.value;
-    this.settings.colorSettings.legendPosition.visible = this.settings.colorSettings.showLegend.value;
+    this.settings.legendSettings.legendPosition.visible = this.settings.legendSettings.showLegend.value;
 
-    const data = this.extractData(dataView);
-    this.applyCardStyle();
+    const calendarData = this.extractData(dataView);
 
-    if (data.length === 0) {
+    if (calendarData.items.length === 0) {
       this.renderEmpty();
     } else {
-      this.render(data);
+      this.render(calendarData.items, calendarData.hasHighlights);
     }
+
+    // Apply card styling AFTER render — render clears the container, which would destroy the glass backdrop div.
+    this.applyCardStyle();
   }
 
   // ── Data Extraction ──────────────────────────────────────────────
 
-  private extractData(dataView: DataView | undefined): CalendarDatum[] {
-    if (!dataView?.categorical) return [];
+  private extractData(dataView: DataView | undefined): CalendarData {
+    if (!dataView?.categorical) return { items: [], hasHighlights: false };
 
     const categorical = dataView.categorical;
     const categoryColumn = categorical.categories?.[0];
     const valuesColumn = categorical.values?.[0];
 
-    if (!categoryColumn || !valuesColumn) return [];
+    if (!categoryColumn || !valuesColumn) return { items: [], hasHighlights: false };
 
     const result: CalendarDatum[] = [];
 
+    // Read cross-highlight data from the values column
+    const valueHighlights = valuesColumn.highlights as unknown[] | undefined;
+
+    const dateConfig: DateFilterConfig = {
+      enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
+      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
+      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+    };
+    const dateIndices = isDateColumn(categoryColumn.source) ? getDateFilterIndices(categoryColumn.values, dateConfig) : null;
+
+    let hasHighlights = false;
+
     for (let i = 0; i < categoryColumn.values.length; i++) {
+      if (dateIndices && !dateIndices.has(i)) continue;
+
       const rawDate = categoryColumn.values[i];
       const rawVal = valuesColumn.values[i];
 
@@ -136,13 +182,16 @@ export class HeatmapCalendarVisual implements IVisual {
       if (!date) continue;
 
       const value = typeof rawVal === 'number' && Number.isFinite(rawVal) ? rawVal : 0;
+      const highlighted = valueHighlights ? valueHighlights[i] !== null : false;
+      if (highlighted) hasHighlights = true;
+
       const selectionId = this.host.createSelectionIdBuilder()
         .withCategory(categoryColumn, i)
         .createSelectionId();
-      result.push({ date, value, selectionId });
+      result.push({ date, value, highlighted, selectionId });
     }
 
-    return result;
+    return { items: result, hasHighlights };
   }
 
   private parseDate(raw: unknown): Date | null {
@@ -160,20 +209,17 @@ export class HeatmapCalendarVisual implements IVisual {
 
   private applyCardStyle(): void {
     const s = this.settings.cardSettings;
-    if (s.enableGlass.value) {
-      const glass = getGlassStyle({
-        mode: 'light',
+    const mode = (resolveDropdown(s.cardStyleMode) ?? 'glass') as CardStyleMode;
+    applyCardStyle(
+      this.container,
+      {
+        mode,
         opacity: s.backgroundOpacity.value / 100,
         backgroundColor: s.backgroundColor.value?.value,
         borderRadius: s.borderRadius.value,
-      });
-      Object.assign(this.container.style, glass);
-    } else {
-      this.container.style.background = '';
-      this.container.style.backdropFilter = '';
-      (this.container.style as unknown as Record<string, string>)['WebkitBackdropFilter'] = '';
-      this.container.style.border = '';
-      this.container.style.boxShadow = '';
+      },
+    );
+    if (mode === 'none') {
       this.container.style.borderRadius = `${s.borderRadius.value}px`;
     }
   }
@@ -190,41 +236,50 @@ export class HeatmapCalendarVisual implements IVisual {
 
   // ── Main Render ────────────────────────────────────────────────
 
-  private render(data: CalendarDatum[]): void {
+  private render(data: CalendarDatum[], hasHighlights?: boolean): void {
     this.clearContainer();
     renderChartTitle(this.container, this.settings.titleFormattingCard);
     this.container.removeEventListener('click', this.handleBackgroundClick);
 
     const s = this.settings;
-    const cellSize = Math.max(4, s.calendarSettings.cellSize.value);
-    const cellGap = Math.max(0, s.calendarSettings.cellGap.value);
-    const showMonthLabels = s.calendarSettings.showMonthLabels.value;
-    const showDayLabels = s.calendarSettings.showDayLabels.value;
-    const lowColor = s.colorSettings.lowColor.value?.value ?? '#E2E8F0';
-    const highColor = s.colorSettings.highColor.value?.value ?? '#3B82F6';
-    const showMidColor = s.colorSettings.showMidColor.value;
-    const midColor = s.colorSettings.midColor.value?.value ?? '#FBBF24';
-    const midPointPct = Math.max(0, Math.min(100, s.colorSettings.midPoint.value));
-    const emptyColor = s.colorSettings.emptyColor.value?.value ?? '#F1F5F9';
-    const showLegend = s.colorSettings.showLegend.value;
-    const legendPosition = resolveDropdown(s.colorSettings.legendPosition) ?? 'bottom';
-    const cellStrokeColor = s.calendarSettings.cellStrokeColor.value?.value || '';
-    const cellStrokeWidth = s.calendarSettings.cellStrokeWidth.value;
-    const cellCornerRadius = s.calendarSettings.cellCornerRadius.value;
-    const labelColor = s.calendarSettings.labelColor.value?.value || '';
+    const cellSize = Math.max(4, s.calendarLayoutSettings.cellSize.value);
+    const cellGap = Math.max(0, s.calendarLayoutSettings.cellGap.value);
+    const showMonthLabels = s.calendarLayoutSettings.showMonthLabels.value;
+    const showDayLabels = s.calendarLayoutSettings.showDayLabels.value;
+    const enableScrolling = s.calendarLayoutSettings.enableScrolling.value;
+    const themeName = resolveColorTheme(s.colorThemeFormattingCard);
+    const lowColor = themeName !== 'default'
+      ? getHostChartColor(this.host.colorPalette, 0, themeName)
+      : (s.colorScaleSettings.lowColor.value?.value ?? '#E2E8F0');
+    const highColor = themeName !== 'default'
+      ? getHostChartColor(this.host.colorPalette, 1, themeName)
+      : (s.colorScaleSettings.highColor.value?.value ?? '#3B82F6');
+    const showMidColor = s.colorScaleSettings.showMidColor.value;
+    const midColor = themeName !== 'default'
+      ? getHostChartColor(this.host.colorPalette, 2, themeName)
+      : (s.colorScaleSettings.midColor.value?.value ?? '#FBBF24');
+    const midPointPct = Math.max(0, Math.min(100, s.colorScaleSettings.midPoint.value));
+    const emptyColor = s.colorScaleSettings.emptyColor.value?.value ?? '#F1F5F9';
+    const showLegend = s.legendSettings.showLegend.value;
+    const legendPosition = resolveDropdown(s.legendSettings.legendPosition) ?? 'bottom';
+    const cellStrokeColor = s.cellStyleSettings.cellStrokeColor.value?.value || '';
+    const cellStrokeWidth = s.cellStyleSettings.cellStrokeWidth.value;
+    const cellCornerRadius = s.cellStyleSettings.cellCornerRadius.value;
+    const labelColor = s._legacyCalendarSettings.labelColor.value?.value || '';
     const animEnabled = s.animationSettings.enabled.value;
     const animDuration = s.animationSettings.duration.value;
     const showDataLabels = s.dataLabelFormattingCard.showDataLabels.value;
 
-    // Granularity & scale settings
-    const granularity = resolveDropdown(s.calendarGranularitySettings.granularity) ?? 'day';
-    const colorMode = resolveDropdown(s.calendarScaleSettings.colorMode) ?? 'continuous';
-    const discreteBins = Math.max(2, s.calendarScaleSettings.bins.value);
-    const weekStart = resolveDropdown(s.calendarScaleSettings.weekStart) ?? 'monday';
+    // Granularity & scale settings (now from merged cards)
+    const granularity = resolveDropdown(s.calendarLayoutSettings.granularity) ?? 'day';
+    const colorMode = resolveDropdown(s.colorScaleSettings.colorMode) ?? 'continuous';
+    const discreteBins = Math.max(2, s.colorScaleSettings.bins.value);
+    const weekStart = resolveDropdown(s.calendarLayoutSettings.weekStart) ?? 'monday';
 
-    // Build date→value map
+    // Build date→value map and highlight lookup
     const dateMap = new Map<string, number>();
     const selectionMap = new Map<string, ISelectionId>();
+    const highlightedDateKeys = new Set<string>();
     let minVal = Infinity;
     let maxVal = -Infinity;
 
@@ -236,6 +291,7 @@ export class HeatmapCalendarVisual implements IVisual {
       if (!selectionMap.has(key)) {
         selectionMap.set(key, d.selectionId);
       }
+      if (d.highlighted) highlightedDateKeys.add(key);
       if (val < minVal) minVal = val;
       if (val > maxVal) maxVal = val;
     }
@@ -306,6 +362,10 @@ export class HeatmapCalendarVisual implements IVisual {
 
       const gridWrapper = document.createElement('div');
       gridWrapper.className = 'heatmap-grid-wrapper';
+      if (enableScrolling) {
+        gridWrapper.style.flexShrink = '0';
+        gridWrapper.style.width = 'fit-content';
+      }
 
       // Day-of-week labels
       if (showDayLabels) {
@@ -328,6 +388,10 @@ export class HeatmapCalendarVisual implements IVisual {
       weeksContainer.style.display = 'flex';
       weeksContainer.style.gap = `${cellGap}px`;
       weeksContainer.style.position = 'relative';
+      if (enableScrolling) {
+        weeksContainer.style.flexShrink = '0';
+        weeksContainer.style.width = 'fit-content';
+      }
 
       // Month labels row
       const monthLabelRow = showMonthLabels ? document.createElement('div') : null;
@@ -335,6 +399,9 @@ export class HeatmapCalendarVisual implements IVisual {
         monthLabelRow.style.display = 'flex';
         monthLabelRow.style.gap = `${cellGap}px`;
         monthLabelRow.style.marginBottom = '2px';
+        if (enableScrolling) {
+          monthLabelRow.style.flexShrink = '0';
+        }
       }
 
       const startDate = new Date(year, 0, 1);
@@ -362,6 +429,9 @@ export class HeatmapCalendarVisual implements IVisual {
         weekCol.style.display = 'flex';
         weekCol.style.flexDirection = 'column';
         weekCol.style.gap = `${cellGap}px`;
+        if (enableScrolling) {
+          weekCol.style.flexShrink = '0';
+        }
 
         // Month label for this week
         if (monthLabelRow) {
@@ -381,6 +451,9 @@ export class HeatmapCalendarVisual implements IVisual {
         for (let dow = 0; dow < 7; dow++) {
           const cell = document.createElement('div');
           cell.className = 'heatmap-cell';
+          if (enableScrolling) {
+            cell.style.flexShrink = '0';
+          }
           cell.style.width = `${cellSize}px`;
           cell.style.height = `${cellSize}px`;
           if (cellCornerRadius > 0) {
@@ -412,7 +485,33 @@ export class HeatmapCalendarVisual implements IVisual {
                 : interpolateColor(t);
               cell.style.backgroundColor = conditionalColor ?? baseColor;
               cell.dataset.dateKey = key;
-              cell.title = `${this.formatDateStr(currentDate)}: ${formatWithSettings(val, this.settings.numberFormattingCard)}`;
+              // Tooltip via tooltipService
+              const tooltipDateStr = this.formatDateStr(currentDate);
+              const tooltipValStr = formatWithSettings(val, this.settings.numberFormattingCard);
+              const tooltipHost = this.host;
+              cell.addEventListener('mouseover', (event: MouseEvent) => {
+                const tooltipItems: VisualTooltipDataItem[] = [
+                  { displayName: 'Date', value: tooltipDateStr },
+                  { displayName: 'Value', value: tooltipValStr },
+                ];
+                tooltipHost.tooltipService.show({
+                  dataItems: tooltipItems,
+                  identities: [],
+                  coordinates: [event.clientX, event.clientY],
+                  isTouchEvent: false,
+                });
+              });
+              cell.addEventListener('mousemove', (event: MouseEvent) => {
+                tooltipHost.tooltipService.move({
+                  dataItems: [],
+                  identities: [],
+                  coordinates: [event.clientX, event.clientY],
+                  isTouchEvent: false,
+                });
+              });
+              cell.addEventListener('mouseout', () => {
+                tooltipHost.tooltipService.hide({ immediately: true, isTouchEvent: false });
+              });
               if (showDataLabels) {
                 const labelSpan = document.createElement('span');
                 labelSpan.className = 'heatmap-data-label';
@@ -454,10 +553,16 @@ export class HeatmapCalendarVisual implements IVisual {
         if (currentDate.getFullYear() > year && currentDate.getDay() === weekStartDay) break;
       }
 
+      // Wrap month labels + weeks in a vertical column inside gridWrapper
+      // so they align with (and are offset by) the day-of-week labels
+      const weeksCol = document.createElement('div');
+      weeksCol.style.display = 'flex';
+      weeksCol.style.flexDirection = 'column';
       if (monthLabelRow) {
-        this.container.appendChild(monthLabelRow);
+        weeksCol.appendChild(monthLabelRow);
       }
-      gridWrapper.appendChild(weeksContainer);
+      weeksCol.appendChild(weeksContainer);
+      gridWrapper.appendChild(weeksCol);
       this.container.appendChild(gridWrapper);
     }
 
@@ -494,6 +599,17 @@ export class HeatmapCalendarVisual implements IVisual {
       }
     }
 
+    // Cross-highlight dimming: dim non-highlighted cells
+    if (hasHighlights) {
+      const cells = this.container.querySelectorAll<HTMLElement>('.heatmap-cell[data-date-key]');
+      for (const cell of cells) {
+        const key = cell.dataset.dateKey;
+        if (key !== undefined && !highlightedDateKeys.has(key)) {
+          cell.style.opacity = '0.3';
+        }
+      }
+    }
+
     this.applyAccessibility();
     this.container.addEventListener('click', this.handleBackgroundClick);
   }
@@ -510,6 +626,8 @@ export class HeatmapCalendarVisual implements IVisual {
     const rawColor = axis.axisLabelColor.value?.value;
     const color = rawColor && rawColor.length > 0 ? rawColor : '#64748B';
     const size = axis.axisLabelSize.value;
+    const labelFontFamily = resolveDropdown(this.settings.calendarLayoutSettings.labelFontFamily);
+    const labelFontWeight = resolveDropdown(this.settings.calendarLayoutSettings.labelFontWeight);
 
     const selectors = '.heatmap-day-labels, .heatmap-month-label, .heatmap-year-label';
     const elements = this.container.querySelectorAll(selectors);
@@ -517,6 +635,8 @@ export class HeatmapCalendarVisual implements IVisual {
       if (el instanceof HTMLElement) {
         el.style.color = color;
         el.style.fontSize = `${size}px`;
+        if (labelFontFamily) el.style.fontFamily = labelFontFamily;
+        el.style.fontWeight = labelFontWeight || 'normal';
       }
     }
   }
@@ -542,7 +662,7 @@ export class HeatmapCalendarVisual implements IVisual {
 
   /**
    * Build a color interpolator that maps t in [0, 1] to an RGB color string.
-   * Supports 2-stop (low → high) and 3-stop (low → mid → high) gradients.
+   * Supports 2-stop (low -> high) and 3-stop (low -> mid -> high) gradients.
    */
   private buildColorInterpolator(
     lowColor: string,
@@ -737,6 +857,10 @@ export class HeatmapCalendarVisual implements IVisual {
   // ── Formatting Model ───────────────────────────────────────────
 
   public getFormattingModel(): powerbi.visuals.FormattingModel {
+    const s = this.settings;
+    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    s.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
+    s.cardSettings.backgroundColor.visible = cardMode !== 'none';
     return this.formattingSettingsService.buildFormattingModel(this.settings);
   }
 
@@ -875,13 +999,14 @@ export class HeatmapCalendarVisual implements IVisual {
     const a11y = this.settings.accessibilityFormattingCard;
     if (a11y.enableKeyboardNav.value) {
       ensureFocusRingStyles();
-      attachKeyboardNav({
+      const kbCleanup = attachKeyboardNav({
         container: this.container,
         itemSelector: '.heatmap-cell',
         onActivate: (el: Element) => {
           (el as HTMLElement).click();
         },
       });
+      this.cancelAnimations.push(kbCleanup);
     }
     applyChartAria(this.container, {
       chartType: 'heatmap calendar',

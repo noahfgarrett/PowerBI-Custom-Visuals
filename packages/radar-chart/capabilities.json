@@ -21,7 +21,7 @@
             "max": 1
           },
           "measure": {
-            "max": 5
+            "max": 10
           }
         }
       ],
@@ -32,7 +32,7 @@
           },
           "dataReductionAlgorithm": {
             "top": {
-              "count": 100
+              "count": 1000
             }
           }
         },
@@ -50,7 +50,7 @@
   ],
   "objects": {
     "radarSettings": {
-      "displayName": "Radar",
+      "displayName": "Grid & Web",
       "properties": {
         "showGrid": {
           "displayName": "Show Grid",
@@ -79,24 +79,6 @@
             ]
           }
         },
-        "fillOpacity": {
-          "displayName": "Fill Opacity (%)",
-          "type": {
-            "numeric": true
-          }
-        },
-        "showDots": {
-          "displayName": "Show Dots",
-          "type": {
-            "bool": true
-          }
-        },
-        "dotRadius": {
-          "displayName": "Dot Radius",
-          "type": {
-            "numeric": true
-          }
-        },
         "webStrokeColor": {
           "displayName": "Web Stroke Color",
           "type": {
@@ -119,17 +101,81 @@
             "numeric": true
           }
         },
+        "showAxisLabels": {
+          "displayName": "Show Axis Labels",
+          "type": {
+            "bool": true
+          }
+        },
+        "showAxisValues": {
+          "displayName": "Show Axis Values",
+          "type": {
+            "bool": true
+          }
+        },
+        "startAngle": {
+          "displayName": "Start Angle (degrees)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "independentScales": {
+          "displayName": "Independent Axis Scales",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "radarAppearance": {
+      "displayName": "Series Appearance",
+      "properties": {
+        "fillOpacity": {
+          "displayName": "Fill Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
         "areaOpacity": {
           "displayName": "Area Opacity (%)",
           "type": {
             "numeric": true
           }
-        }
-      }
-    },
-    "colorSettings": {
-      "displayName": "Colors",
-      "properties": {
+        },
+        "lineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "showDots": {
+          "displayName": "Show Dots",
+          "type": {
+            "bool": true
+          }
+        },
+        "dotRadius": {
+          "displayName": "Dot Radius",
+          "type": {
+            "numeric": true
+          }
+        },
+        "dotBorderColor": {
+          "displayName": "Dot Border Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "dotBorderWidth": {
+          "displayName": "Dot Border Width",
+          "type": {
+            "numeric": true
+          }
+        },
         "useChartPalette": {
           "displayName": "Use Chart Palette",
           "type": {
@@ -293,7 +339,7 @@
           }
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (°)",
+          "displayName": "X-Label Rotation (\u00b0)",
           "type": {
             "numeric": true
           }
@@ -455,6 +501,12 @@
                 "displayName": "Bold"
               }
             ]
+          }
+        },
+        "legendAliases": {
+          "displayName": "Rename Labels",
+          "type": {
+            "text": true
           }
         }
       }
@@ -800,6 +852,29 @@
     "cardSettings": {
       "displayName": "Card Style",
       "properties": {
+        "cardStyleMode": {
+          "displayName": "Card Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "glass",
+                "displayName": "Glass"
+              },
+              {
+                "value": "elevated",
+                "displayName": "Elevated"
+              },
+              {
+                "value": "neumorphic",
+                "displayName": "Neumorphic"
+              }
+            ]
+          }
+        },
         "backgroundColor": {
           "displayName": "Background Color",
           "type": {
@@ -826,7 +901,7 @@
           "type": {
             "bool": true
           },
-          "displayName": "Glass Effect"
+          "displayName": "(Deprecated) Enable Glass"
         }
       }
     },
@@ -867,28 +942,11 @@
               }
             }
           }
-        }
-      }
-    },
-    "radarDisplaySettings": {
-      "displayName": "Radar Display",
-      "properties": {
-        "showAxisValues": {
-          "displayName": "Show Axis Values",
-          "type": {
-            "bool": true
-          }
         },
-        "startAngle": {
-          "displayName": "Start Angle (degrees)",
+        "lineWidth": {
+          "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
-        },
-        "independentScales": {
-          "displayName": "Independent Axis Scales",
-          "type": {
-            "bool": true
           }
         }
       }
@@ -1084,16 +1142,6 @@
             }
           }
         },
-        "seriesLineStyle": {
-          "type": {
-            "text": true
-          }
-        },
-        "seriesLineWidth": {
-          "type": {
-            "numeric": true
-          }
-        },
         "seriesOpacity": {
           "type": {
             "numeric": true
@@ -1128,6 +1176,35 @@
           "displayName": "Line Width",
           "type": {
             "numeric": true
+          }
+        }
+      }
+    },
+    "dateFilterFormatting": {
+      "displayName": "Date Filter",
+      "properties": {
+        "enableDateFilter": {
+          "displayName": "Enable Date Filter",
+          "type": {
+            "bool": true
+          }
+        },
+        "startDate": {
+          "displayName": "Start Date",
+          "type": {
+            "text": true
+          }
+        },
+        "endAtCurrentDate": {
+          "displayName": "End at Current Date",
+          "type": {
+            "bool": true
+          }
+        },
+        "endDate": {
+          "displayName": "End Date",
+          "type": {
+            "text": true
           }
         }
       }

@@ -5,7 +5,9 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AnnotationFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard, NumberFormattingCard } from '../../core/src';
+import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AnnotationFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard, NumberFormattingCard,
+  DateFilterFormattingCard,
+} from '../../core/src';
 // ── Race Settings ──────────────────────────────────────────────────
 
 class RaceSettings extends formattingSettings.SimpleCard {
@@ -48,20 +50,9 @@ class RaceSettings extends formattingSettings.SimpleCard {
 
   });
 
-  labelColor = new formattingSettings.ColorPicker({
-
-    name: 'labelColor',
-
-    displayName: 'Label Color',
-
-    value: { value: '' },
-
-  });
-
-
   name = 'raceSettings';
   displayName = 'Race Settings';
-  slices = [this.topN, this.playSpeed, this.barHeight, this.barCornerRadius, this.barOpacity, this.labelColor];
+  slices = [this.topN, this.playSpeed, this.barHeight, this.barCornerRadius, this.barOpacity];
 }
 
 // ── Color Settings ─────────────────────────────────────────────────
@@ -93,18 +84,56 @@ class ValueSettings extends formattingSettings.SimpleCard {
     value: 11,
   });
 
+  fontColor = new formattingSettings.ColorPicker({
+    name: 'fontColor',
+    displayName: 'Font Color',
+    value: { value: '' },
+  });
+
+  fontFamily = new formattingSettings.ItemDropdown({
+    name: 'fontFamily',
+    displayName: 'Font Family',
+    items: [
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Arial', displayName: 'Arial' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Helvetica', displayName: 'Helvetica' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
+      { value: 'Verdana', displayName: 'Verdana' },
+      { value: 'Georgia', displayName: 'Georgia' },
+    ],
+    value: { value: 'Segoe UI', displayName: 'Segoe UI' },
+  });
+
+  fontWeight = new formattingSettings.ItemDropdown({
+    name: 'fontWeight',
+    displayName: 'Font Weight',
+    items: [
+      { value: 'normal', displayName: 'Normal' },
+      { value: 'bold', displayName: 'Bold' },
+      { value: '600', displayName: 'Semi-Bold' },
+    ],
+    value: { value: 'normal', displayName: 'Normal' },
+  });
+
   name = 'valueSettings';
   displayName = 'Values';
-  slices = [this.showValues, this.fontSize];
+  slices = [this.showValues, this.fontSize, this.fontColor, this.fontFamily, this.fontWeight];
 }
 
 // ── Card Style ─────────────────────────────────────────────────────
 
 class CardStyleSettings extends formattingSettings.SimpleCard {
-  enableGlass = new formattingSettings.ToggleSwitch({
-    name: 'enableGlass',
-    displayName: 'Glass Effect',
-    value: true,
+  cardStyleMode = new formattingSettings.ItemDropdown({
+    name: 'cardStyleMode',
+    displayName: 'Card Style',
+    items: [
+      { value: 'none', displayName: 'None' },
+      { value: 'glass', displayName: 'Glass' },
+      { value: 'elevated', displayName: 'Elevated' },
+      { value: 'neumorphic', displayName: 'Neumorphic' },
+    ],
+    value: { value: 'glass', displayName: 'Glass' },
   });
 
   backgroundColor = new formattingSettings.ColorPicker({
@@ -127,7 +156,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.cardStyleMode, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 // ── Animation Settings ─────────────────────────────────────────────
@@ -237,9 +266,15 @@ class PlaybackSettingsCard extends formattingSettings.SimpleCard {
     value: { value: 'bottom', displayName: 'Bottom' },
   });
 
+  pauseDuration = new formattingSettings.NumUpDown({
+    name: 'pauseDuration',
+    displayName: 'Pause Duration (ms)',
+    value: 0,
+  });
+
   name = 'playbackSettings';
   displayName = 'Playback';
-  slices = [this.autoPlay, this.showControls, this.speed, this.loop, this.controlPosition];
+  slices = [this.autoPlay, this.showControls, this.speed, this.loop, this.controlPosition, this.pauseDuration];
 }
 
 // ── Race Display Settings ───────────────────────────────────────────
@@ -263,72 +298,87 @@ class RaceDisplaySettings extends formattingSettings.SimpleCard {
     value: 14,
   });
 
-  name = 'raceDisplay';
-  displayName = 'Race Display';
-  slices = [this.showRankNumbers, this.showPeriodLabel, this.periodLabelSize];
-}
-
-// ── Race Playback Settings ──────────────────────────────────────────
-
-class RacePlaybackSettings extends formattingSettings.SimpleCard {
-  pauseDuration = new formattingSettings.NumUpDown({
-    name: 'pauseDuration',
-    displayName: 'Pause Duration (ms)',
-    value: 0,
+  labelColor = new formattingSettings.ColorPicker({
+    name: 'labelColor',
+    displayName: 'Label Color',
+    value: { value: '' },
   });
 
-  name = 'racePlayback';
-  displayName = 'Race Playback';
-  slices = [this.pauseDuration];
+  fontFamily = new formattingSettings.ItemDropdown({
+    name: 'fontFamily',
+    displayName: 'Font Family',
+    items: [
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Arial', displayName: 'Arial' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Helvetica', displayName: 'Helvetica' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
+      { value: 'Verdana', displayName: 'Verdana' },
+      { value: 'Georgia', displayName: 'Georgia' },
+    ],
+    value: { value: 'Segoe UI', displayName: 'Segoe UI' },
+  });
+
+  fontWeight = new formattingSettings.ItemDropdown({
+    name: 'fontWeight',
+    displayName: 'Font Weight',
+    items: [
+      { value: 'normal', displayName: 'Normal' },
+      { value: 'bold', displayName: 'Bold' },
+      { value: '600', displayName: 'Semi-Bold' },
+    ],
+    value: { value: 'normal', displayName: 'Normal' },
+  });
+
+  name = 'raceDisplay';
+  displayName = 'Race Display';
+  slices = [this.showRankNumbers, this.showPeriodLabel, this.periodLabelSize, this.labelColor, this.fontFamily, this.fontWeight];
 }
 
 // ── Root Model ─────────────────────────────────────────────────────
 
 export class BarRaceSettings extends formattingSettings.Model {
   raceSettings = new RaceSettings();
-  colorSettings = new ColorSettings();
-  valueSettings = new ValueSettings();
-  cardSettings = new CardStyleSettings();
-  animationSettings = new AnimationSettingsCard();
-  timestampSettings = new TimestampSettings();
   playbackSettings = new PlaybackSettingsCard();
-
-  dataLabelFormattingCard = new DataLabelFormattingCard();
-
-  titleFormattingCard = new TitleFormattingCard();
-
+  raceDisplay = new RaceDisplaySettings();
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
+  colorSettings = new ColorSettings();
+  timestampSettings = new TimestampSettings();
+  animationSettings = new AnimationSettingsCard();
   axisFormattingCard = new AxisFormattingCard();
-
+  valueSettings = new ValueSettings();
+  dataLabelFormattingCard = new DataLabelFormattingCard();
+  titleFormattingCard = new TitleFormattingCard();
+  numberFormattingCard = new NumberFormattingCard();
+  cardSettings = new CardStyleSettings();
   referenceLineFormattingCard = new ReferenceLineFormattingCard();
   trendLineFormattingCard = new TrendLineFormattingCard();
   conditionalFormattingCard = new ConditionalFormattingCard();
   annotationFormattingCard = new AnnotationFormattingCard();
+  legendFormattingCard = new LegendFormattingCard();
+  dateFilterFormattingCard = new DateFilterFormattingCard();
   accessibilityFormattingCard = new AccessibilityFormattingCard();
 
-  raceDisplay = new RaceDisplaySettings();
-  racePlayback = new RacePlaybackSettings();
-
-  colorThemeFormattingCard = new ColorThemeFormattingCard();
-  numberFormattingCard = new NumberFormattingCard();
   cards = [
     this.raceSettings,
-    this.colorSettings,
-    this.valueSettings,
-    this.cardSettings,
-    this.animationSettings,
-    this.timestampSettings,
     this.playbackSettings,
+    this.raceDisplay,
+    this.colorThemeFormattingCard,
+    this.colorSettings,
+    this.timestampSettings,
+    this.animationSettings,
+    this.axisFormattingCard,
+    this.valueSettings,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
-    this.axisFormattingCard,
+    this.numberFormattingCard,
+    this.cardSettings,
     this.referenceLineFormattingCard,
     this.trendLineFormattingCard,
     this.conditionalFormattingCard,
     this.annotationFormattingCard,
+    this.legendFormattingCard,
+    this.dateFilterFormattingCard,
     this.accessibilityFormattingCard,
-    this.raceDisplay,
-    this.racePlayback,
-    this.colorThemeFormattingCard,
-    this.numberFormattingCard,
   ];
 }

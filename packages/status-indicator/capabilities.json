@@ -50,7 +50,7 @@
           },
           "dataReductionAlgorithm": {
             "top": {
-              "count": 100
+              "count": 1000
             }
           }
         },
@@ -78,10 +78,10 @@
   ],
   "objects": {
     "indicatorSettings": {
-      "displayName": "Indicator",
+      "displayName": "Indicator Appearance",
       "properties": {
-        "shape": {
-          "displayName": "Shape",
+        "iconSet": {
+          "displayName": "Icon Set",
           "type": {
             "enumeration": [
               {
@@ -93,10 +93,36 @@
                 "displayName": "Square"
               },
               {
+                "value": "triangle",
+                "displayName": "Triangle"
+              },
+              {
                 "value": "diamond",
                 "displayName": "Diamond"
+              },
+              {
+                "value": "star",
+                "displayName": "Star"
+              },
+              {
+                "value": "heart",
+                "displayName": "Heart"
+              },
+              {
+                "value": "flag",
+                "displayName": "Flag"
+              },
+              {
+                "value": "check",
+                "displayName": "Check"
               }
             ]
+          }
+        },
+        "iconSize": {
+          "displayName": "Icon Size",
+          "type": {
+            "numeric": true
           }
         },
         "size": {
@@ -105,6 +131,21 @@
             "numeric": true
           }
         },
+        "labelColor": {
+          "displayName": "Label Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "layoutSettings": {
+      "displayName": "Layout",
+      "properties": {
         "layout": {
           "displayName": "Layout",
           "type": {
@@ -122,22 +163,6 @@
                 "displayName": "Grid"
               }
             ]
-          }
-        },
-        "iconSize": {
-          "displayName": "Icon Size",
-          "type": {
-            "numeric": true
-          }
-        },
-        "labelColor": {
-          "displayName": "Label Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
           }
         }
       }
@@ -208,6 +233,50 @@
             "numeric": true
           }
         },
+        "levelCount": {
+          "displayName": "Level Count",
+          "type": {
+            "enumeration": [
+              {
+                "value": "3",
+                "displayName": "3"
+              },
+              {
+                "value": "4",
+                "displayName": "4"
+              },
+              {
+                "value": "5",
+                "displayName": "5"
+              }
+            ]
+          }
+        },
+        "level4Color": {
+          "displayName": "Level 4 Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "level5Color": {
+          "displayName": "Level 5 Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "valueDisplaySettings": {
+      "displayName": "Value Display",
+      "properties": {
         "showValue": {
           "displayName": "Show Value",
           "type": {
@@ -219,14 +288,147 @@
           "type": {
             "numeric": true
           }
-        }
-      }
-    },
-    "pulseSettings": {
-      "displayName": "Pulse",
-      "properties": {
-        "enablePulse": {
-          "displayName": "Pulse Critical",
+        },
+        "valueFontFamily": {
+          "displayName": "Value Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              }
+            ]
+          }
+        },
+        "valueFontWeight": {
+          "displayName": "Value Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold"
+              }
+            ]
+          }
+        },
+        "showStatusText": {
+          "displayName": "Show Status Text",
+          "type": {
+            "bool": true
+          }
+        },
+        "statusFontSize": {
+          "displayName": "Status Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "statusFontColor": {
+          "displayName": "Status Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "statusFontFamily": {
+          "displayName": "Status Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              }
+            ]
+          }
+        },
+        "statusFontWeight": {
+          "displayName": "Status Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold"
+              }
+            ]
+          }
+        },
+        "showSparkline": {
+          "displayName": "Show Sparkline",
           "type": {
             "bool": true
           }
@@ -234,7 +436,7 @@
       }
     },
     "animationSettings": {
-      "displayName": "Animation",
+      "displayName": "Animation & Effects",
       "properties": {
         "enabled": {
           "displayName": "Enable Animations",
@@ -247,125 +449,11 @@
           "type": {
             "numeric": true
           }
-        }
-      }
-    },
-    "legendFormatting": {
-      "displayName": "Legend",
-      "properties": {
-        "showLegend": {
-          "displayName": "Show Legend",
+        },
+        "enablePulse": {
+          "displayName": "Pulse Critical",
           "type": {
             "bool": true
-          }
-        },
-        "legendPosition": {
-          "displayName": "Position",
-          "type": {
-            "enumeration": [
-              {
-                "value": "bottom",
-                "displayName": "Bottom"
-              },
-              {
-                "value": "top",
-                "displayName": "Top"
-              },
-              {
-                "value": "left",
-                "displayName": "Left"
-              },
-              {
-                "value": "right",
-                "displayName": "Right"
-              }
-            ]
-          }
-        },
-        "legendFontSize": {
-          "displayName": "Font Size",
-          "type": {
-            "numeric": true
-          }
-        },
-        "legendFontColor": {
-          "displayName": "Font Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        },
-        "legendFontFamily": {
-          "displayName": "Font",
-          "type": {
-            "enumeration": [
-              {
-                "value": "",
-                "displayName": "Default"
-              },
-              {
-                "value": "Arial",
-                "displayName": "Arial"
-              },
-              {
-                "value": "Calibri",
-                "displayName": "Calibri"
-              },
-              {
-                "value": "Cambria",
-                "displayName": "Cambria"
-              },
-              {
-                "value": "Courier New",
-                "displayName": "Courier New"
-              },
-              {
-                "value": "Georgia",
-                "displayName": "Georgia"
-              },
-              {
-                "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
-              },
-              {
-                "value": "Segoe UI",
-                "displayName": "Segoe UI"
-              },
-              {
-                "value": "Tahoma",
-                "displayName": "Tahoma"
-              },
-              {
-                "value": "Times New Roman",
-                "displayName": "Times New Roman"
-              },
-              {
-                "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
-              },
-              {
-                "value": "Verdana",
-                "displayName": "Verdana"
-              }
-            ]
-          }
-        },
-        "legendFontWeight": {
-          "displayName": "Font Weight",
-          "type": {
-            "enumeration": [
-              {
-                "value": "normal",
-                "displayName": "Normal"
-              },
-              {
-                "value": "bold",
-                "displayName": "Bold"
-              }
-            ]
           }
         }
       }
@@ -609,111 +697,34 @@
             "numeric": true
           }
         },
+        "cardStyleMode": {
+          "displayName": "Card Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "glass",
+                "displayName": "Glass"
+              },
+              {
+                "value": "elevated",
+                "displayName": "Elevated"
+              },
+              {
+                "value": "neumorphic",
+                "displayName": "Neumorphic"
+              }
+            ]
+          }
+        },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "Glass Effect"
-        }
-      }
-    },
-    "statusDisplaySettings": {
-      "displayName": "Status Display",
-      "properties": {
-        "showSparkline": {
-          "displayName": "Show Sparkline",
-          "type": {
-            "bool": true
-          }
-        },
-        "showStatusText": {
-          "displayName": "Show Status Text",
-          "type": {
-            "bool": true
-          }
-        },
-        "iconSet": {
-          "displayName": "Icon Set",
-          "type": {
-            "enumeration": [
-              {
-                "value": "circle",
-                "displayName": "Circle"
-              },
-              {
-                "value": "square",
-                "displayName": "Square"
-              },
-              {
-                "value": "triangle",
-                "displayName": "Triangle"
-              },
-              {
-                "value": "diamond",
-                "displayName": "Diamond"
-              },
-              {
-                "value": "star",
-                "displayName": "Star"
-              },
-              {
-                "value": "heart",
-                "displayName": "Heart"
-              },
-              {
-                "value": "flag",
-                "displayName": "Flag"
-              },
-              {
-                "value": "check",
-                "displayName": "Check"
-              }
-            ]
-          }
-        }
-      }
-    },
-    "statusLevelSettings": {
-      "displayName": "Status Levels",
-      "properties": {
-        "levelCount": {
-          "displayName": "Level Count",
-          "type": {
-            "enumeration": [
-              {
-                "value": "3",
-                "displayName": "3"
-              },
-              {
-                "value": "4",
-                "displayName": "4"
-              },
-              {
-                "value": "5",
-                "displayName": "5"
-              }
-            ]
-          }
-        },
-        "level4Color": {
-          "displayName": "Level 4 Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        },
-        "level5Color": {
-          "displayName": "Level 5 Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
+          "displayName": "(Deprecated) Enable Glass"
         }
       }
     },
@@ -845,6 +856,201 @@
           }
         }
       }
+    },
+    "legendFormatting": {
+      "displayName": "Legend",
+      "properties": {
+        "showLegend": {
+          "displayName": "Show Legend",
+          "type": {
+            "bool": true
+          }
+        },
+        "legendPosition": {
+          "displayName": "Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "bottom",
+                "displayName": "Bottom"
+              },
+              {
+                "value": "top",
+                "displayName": "Top"
+              },
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        },
+        "legendFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "legendFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "legendFontFamily": {
+          "displayName": "Font",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              }
+            ]
+          }
+        },
+        "legendFontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
+            ]
+          }
+        },
+        "legendAliases": {
+          "displayName": "Rename Labels",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "dateFilterFormatting": {
+      "displayName": "Date Filter",
+      "properties": {
+        "enableDateFilter": {
+          "displayName": "Enable Date Filter",
+          "type": {
+            "bool": true
+          }
+        },
+        "startDate": {
+          "displayName": "Start Date",
+          "type": {
+            "text": true
+          }
+        },
+        "endAtCurrentDate": {
+          "displayName": "End at Current Date",
+          "type": {
+            "bool": true
+          }
+        },
+        "endDate": {
+          "displayName": "End Date",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "colorThemeFormatting": {
+      "properties": {
+        "colorTheme": {
+          "displayName": "Theme",
+          "type": {
+            "enumeration": [
+              {
+                "value": "default",
+                "displayName": "Default"
+              },
+              {
+                "value": "ocean",
+                "displayName": "Ocean"
+              },
+              {
+                "value": "sunset",
+                "displayName": "Sunset"
+              },
+              {
+                "value": "forest",
+                "displayName": "Forest"
+              },
+              {
+                "value": "berry",
+                "displayName": "Berry"
+              },
+              {
+                "value": "monochrome",
+                "displayName": "Monochrome"
+              },
+              {
+                "value": "earth",
+                "displayName": "Earth"
+              }
+            ]
+          }
+        }
+      },
+      "displayName": "Color Theme"
     }
   },
   "supportsKeyboardFocus": true,

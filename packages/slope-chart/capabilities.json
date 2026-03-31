@@ -41,7 +41,7 @@
           },
           "dataReductionAlgorithm": {
             "top": {
-              "count": 20
+              "count": 5000
             }
           }
         },
@@ -78,6 +78,39 @@
             "numeric": true
           }
         },
+        "dotStrokeColor": {
+          "displayName": "Dot Stroke Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "showArea": {
+          "displayName": "Show Area Fill",
+          "type": {
+            "bool": true
+          }
+        },
+        "fillOpacity": {
+          "displayName": "Fill Opacity",
+          "type": {
+            "numeric": true
+          }
+        },
+        "showDots": {
+          "displayName": "Show Dots",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "directionColorSettings": {
+      "displayName": "Direction Colors",
+      "properties": {
         "colorByDirection": {
           "displayName": "Color by Direction",
           "type": {
@@ -113,15 +146,22 @@
               }
             }
           }
-        },
-        "dotStrokeColor": {
-          "displayName": "Dot Stroke Color",
+        }
+      }
+    },
+    "changeLabelSettings": {
+      "displayName": "Labels & Change",
+      "properties": {
+        "leftLabel": {
+          "displayName": "Left Label",
           "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
+            "text": true
+          }
+        },
+        "rightLabel": {
+          "displayName": "Right Label",
+          "type": {
+            "text": true
           }
         },
         "labelColor": {
@@ -134,33 +174,128 @@
             }
           }
         },
-        "showArea": {
-          "displayName": "Show Area Fill",
+        "show": {
+          "displayName": "Show Change Labels",
           "type": {
             "bool": true
           }
         },
-        "fillOpacity": {
-          "displayName": "Fill Opacity",
+        "fontSize": {
+          "displayName": "Font Size",
           "type": {
             "numeric": true
           }
-        }
-      }
-    },
-    "columnSettings": {
-      "displayName": "Columns",
-      "properties": {
-        "leftLabel": {
-          "displayName": "Left Label",
+        },
+        "fontColor": {
+          "displayName": "Font Color",
           "type": {
-            "text": true
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
           }
         },
-        "rightLabel": {
-          "displayName": "Right Label",
+        "fontFamily": {
+          "displayName": "Font",
           "type": {
-            "text": true
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              }
+            ]
+          }
+        },
+        "fontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold"
+              }
+            ]
+          }
+        },
+        "format": {
+          "displayName": "Format",
+          "type": {
+            "enumeration": [
+              {
+                "value": "percent",
+                "displayName": "Percent"
+              },
+              {
+                "value": "absolute",
+                "displayName": "Absolute"
+              },
+              {
+                "value": "both",
+                "displayName": "Both"
+              }
+            ]
+          }
+        },
+        "position": {
+          "displayName": "Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "center",
+                "displayName": "Center"
+              },
+              {
+                "value": "above",
+                "displayName": "Above"
+              },
+              {
+                "value": "below",
+                "displayName": "Below"
+              }
+            ]
+          }
+        },
+        "showPercentChange": {
+          "displayName": "Show Percentage Change Labels",
+          "type": {
+            "bool": true
           }
         }
       }
@@ -178,126 +313,6 @@
           "displayName": "Duration (ms)",
           "type": {
             "numeric": true
-          }
-        }
-      }
-    },
-    "legendFormatting": {
-      "displayName": "Legend",
-      "properties": {
-        "showLegend": {
-          "displayName": "Show Legend",
-          "type": {
-            "bool": true
-          }
-        },
-        "legendPosition": {
-          "displayName": "Position",
-          "type": {
-            "enumeration": [
-              {
-                "value": "bottom",
-                "displayName": "Bottom"
-              },
-              {
-                "value": "top",
-                "displayName": "Top"
-              },
-              {
-                "value": "left",
-                "displayName": "Left"
-              },
-              {
-                "value": "right",
-                "displayName": "Right"
-              }
-            ]
-          }
-        },
-        "legendFontSize": {
-          "displayName": "Font Size",
-          "type": {
-            "numeric": true
-          }
-        },
-        "legendFontColor": {
-          "displayName": "Font Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        },
-        "legendFontFamily": {
-          "displayName": "Font",
-          "type": {
-            "enumeration": [
-              {
-                "value": "",
-                "displayName": "Default"
-              },
-              {
-                "value": "Arial",
-                "displayName": "Arial"
-              },
-              {
-                "value": "Calibri",
-                "displayName": "Calibri"
-              },
-              {
-                "value": "Cambria",
-                "displayName": "Cambria"
-              },
-              {
-                "value": "Courier New",
-                "displayName": "Courier New"
-              },
-              {
-                "value": "Georgia",
-                "displayName": "Georgia"
-              },
-              {
-                "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
-              },
-              {
-                "value": "Segoe UI",
-                "displayName": "Segoe UI"
-              },
-              {
-                "value": "Tahoma",
-                "displayName": "Tahoma"
-              },
-              {
-                "value": "Times New Roman",
-                "displayName": "Times New Roman"
-              },
-              {
-                "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
-              },
-              {
-                "value": "Verdana",
-                "displayName": "Verdana"
-              }
-            ]
-          }
-        },
-        "legendFontWeight": {
-          "displayName": "Font Weight",
-          "type": {
-            "enumeration": [
-              {
-                "value": "normal",
-                "displayName": "Normal"
-              },
-              {
-                "value": "bold",
-                "displayName": "Bold"
-              }
-            ]
           }
         }
       }
@@ -808,7 +823,7 @@
           }
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (°)",
+          "displayName": "X-Label Rotation (\u00b0)",
           "type": {
             "numeric": true
           }
@@ -854,71 +869,6 @@
         }
       }
     },
-    "changeLabelSettings": {
-      "displayName": "Change Labels",
-      "properties": {
-        "show": {
-          "displayName": "Show Change Labels",
-          "type": {
-            "bool": true
-          }
-        },
-        "fontSize": {
-          "displayName": "Font Size",
-          "type": {
-            "numeric": true
-          }
-        },
-        "fontColor": {
-          "displayName": "Font Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        },
-        "format": {
-          "displayName": "Format",
-          "type": {
-            "enumeration": [
-              {
-                "value": "percent",
-                "displayName": "Percent"
-              },
-              {
-                "value": "absolute",
-                "displayName": "Absolute"
-              },
-              {
-                "value": "both",
-                "displayName": "Both"
-              }
-            ]
-          }
-        },
-        "position": {
-          "displayName": "Position",
-          "type": {
-            "enumeration": [
-              {
-                "value": "center",
-                "displayName": "Center"
-              },
-              {
-                "value": "above",
-                "displayName": "Above"
-              },
-              {
-                "value": "below",
-                "displayName": "Below"
-              }
-            ]
-          }
-        }
-      }
-    },
     "cardSettings": {
       "displayName": "Card Style",
       "properties": {
@@ -944,11 +894,34 @@
             "numeric": true
           }
         },
+        "cardStyleMode": {
+          "displayName": "Card Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "glass",
+                "displayName": "Glass"
+              },
+              {
+                "value": "elevated",
+                "displayName": "Elevated"
+              },
+              {
+                "value": "neumorphic",
+                "displayName": "Neumorphic"
+              }
+            ]
+          }
+        },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "Glass Effect"
+          "displayName": "(Deprecated) Enable Glass"
         }
       }
     },
@@ -1057,6 +1030,12 @@
             "numeric": true
           }
         },
+        "referenceBandWidth": {
+          "displayName": "Band Width (%)",
+          "type": {
+            "numeric": true
+          }
+        },
         "referenceLineAxis": {
           "displayName": "Target Axis",
           "type": {
@@ -1139,7 +1118,7 @@
           }
         },
         "showR2": {
-          "displayName": "Show R²",
+          "displayName": "Show R\u00b2",
           "type": {
             "bool": true
           }
@@ -1291,19 +1270,19 @@
           }
         },
         "annotation1Category": {
-          "displayName": "Annotation 1 — Category",
+          "displayName": "Annotation 1 \u2014 Category",
           "type": {
             "text": true
           }
         },
         "annotation1Text": {
-          "displayName": "Annotation 1 — Text",
+          "displayName": "Annotation 1 \u2014 Text",
           "type": {
             "text": true
           }
         },
         "annotation1Position": {
-          "displayName": "Annotation 1 — Position",
+          "displayName": "Annotation 1 \u2014 Position",
           "type": {
             "enumeration": [
               {
@@ -1326,19 +1305,19 @@
           }
         },
         "annotation2Category": {
-          "displayName": "Annotation 2 — Category",
+          "displayName": "Annotation 2 \u2014 Category",
           "type": {
             "text": true
           }
         },
         "annotation2Text": {
-          "displayName": "Annotation 2 — Text",
+          "displayName": "Annotation 2 \u2014 Text",
           "type": {
             "text": true
           }
         },
         "annotation2Position": {
-          "displayName": "Annotation 2 — Position",
+          "displayName": "Annotation 2 \u2014 Position",
           "type": {
             "enumeration": [
               {
@@ -1361,19 +1340,19 @@
           }
         },
         "annotation3Category": {
-          "displayName": "Annotation 3 — Category",
+          "displayName": "Annotation 3 \u2014 Category",
           "type": {
             "text": true
           }
         },
         "annotation3Text": {
-          "displayName": "Annotation 3 — Text",
+          "displayName": "Annotation 3 \u2014 Text",
           "type": {
             "text": true
           }
         },
         "annotation3Position": {
-          "displayName": "Annotation 3 — Position",
+          "displayName": "Annotation 3 \u2014 Position",
           "type": {
             "enumeration": [
               {
@@ -1435,14 +1414,8 @@
       }
     },
     "slopeDisplaySettings": {
-      "displayName": "Slope Display",
+      "displayName": "Slope Behavior",
       "properties": {
-        "showPercentChange": {
-          "displayName": "Show Percentage Change Labels",
-          "type": {
-            "bool": true
-          }
-        },
         "sortByMagnitude": {
           "displayName": "Sort by Change Magnitude",
           "type": {
@@ -1493,16 +1466,6 @@
                 "color": true
               }
             }
-          }
-        },
-        "seriesLineStyle": {
-          "type": {
-            "text": true
-          }
-        },
-        "seriesLineWidth": {
-          "type": {
-            "numeric": true
           }
         },
         "seriesOpacity": {
@@ -1592,6 +1555,201 @@
           }
         }
       }
+    },
+    "legendFormatting": {
+      "displayName": "Legend",
+      "properties": {
+        "showLegend": {
+          "displayName": "Show Legend",
+          "type": {
+            "bool": true
+          }
+        },
+        "legendPosition": {
+          "displayName": "Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "bottom",
+                "displayName": "Bottom"
+              },
+              {
+                "value": "top",
+                "displayName": "Top"
+              },
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        },
+        "legendFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "legendFontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "legendFontFamily": {
+          "displayName": "Font",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              }
+            ]
+          }
+        },
+        "legendFontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              }
+            ]
+          }
+        },
+        "legendAliases": {
+          "displayName": "Rename Labels",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "dateFilterFormatting": {
+      "displayName": "Date Filter",
+      "properties": {
+        "enableDateFilter": {
+          "displayName": "Enable Date Filter",
+          "type": {
+            "bool": true
+          }
+        },
+        "startDate": {
+          "displayName": "Start Date",
+          "type": {
+            "text": true
+          }
+        },
+        "endAtCurrentDate": {
+          "displayName": "End at Current Date",
+          "type": {
+            "bool": true
+          }
+        },
+        "endDate": {
+          "displayName": "End Date",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "colorThemeFormatting": {
+      "properties": {
+        "colorTheme": {
+          "displayName": "Theme",
+          "type": {
+            "enumeration": [
+              {
+                "value": "default",
+                "displayName": "Default"
+              },
+              {
+                "value": "ocean",
+                "displayName": "Ocean"
+              },
+              {
+                "value": "sunset",
+                "displayName": "Sunset"
+              },
+              {
+                "value": "forest",
+                "displayName": "Forest"
+              },
+              {
+                "value": "berry",
+                "displayName": "Berry"
+              },
+              {
+                "value": "monochrome",
+                "displayName": "Monochrome"
+              },
+              {
+                "value": "earth",
+                "displayName": "Earth"
+              }
+            ]
+          }
+        }
+      },
+      "displayName": "Color Theme"
     }
   },
   "supportsKeyboardFocus": true,

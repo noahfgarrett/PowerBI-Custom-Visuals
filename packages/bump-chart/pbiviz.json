@@ -4,7 +4,7 @@
     "displayName": "Bump Chart",
     "guid": "bumpChart_5F6A7B8C9D1E",
     "visualClassName": "BumpChartVisual",
-    "version": "1.0.0.0",
+    "version": "1.0.1.0",
     "description": "Bump chart showing rank changes over time with animated lines and dots.",
     "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
     "gitHubUrl": "https://github.com/noahgarrett/PowerBI"

@@ -11,7 +11,6 @@ import {
   DataLabelFormattingCard,
   TitleFormattingCard,
   LineStrokeFormattingCard,
-  SortFormattingCard,
   ReferenceLineFormattingCard,
   TrendLineFormattingCard,
   ConditionalFormattingCard,
@@ -20,6 +19,7 @@ import {
   AccessibilityFormattingCard,
   ColorThemeFormattingCard,
   SeriesFormattingCard,
+  DateFilterFormattingCard,
   NumberFormattingCard,
 } from '../../core/src';
 
@@ -85,42 +85,70 @@ class StreamSettings extends formattingSettings.SimpleCard {
     value: false,
   });
 
-  name = 'streamSettings';
-  displayName = 'Stream';
-  slices = [this.offset, this.curve, this.streamOpacity, this.streamStrokeColor, this.streamStrokeWidth, this.useGradient];
-}
-
-class ColorSettings extends formattingSettings.SimpleCard {
   useChartPalette = new formattingSettings.ToggleSwitch({
     name: 'useChartPalette',
     displayName: 'Use Chart Palette',
     value: true,
   });
 
-  name = 'colorSettings';
-  displayName = 'Colors';
-  slices = [this.useChartPalette];
+  name = 'streamSettings';
+  displayName = 'Stream';
+  slices = [this.offset, this.curve, this.streamOpacity, this.streamStrokeColor, this.streamStrokeWidth, this.useGradient, this.useChartPalette];
 }
 
-// ── Axis Visibility (unique properties not in shared AxisFormattingCard) ─
-
-class AxisVisibilitySettings extends formattingSettings.SimpleCard {
+// ── Stream Display (merged: Axis Visibility + Stream Display + Layer Sort) ─
+class StreamDisplaySettingsCard extends formattingSettings.SimpleCard {
   showXAxis = new formattingSettings.ToggleSwitch({
     name: 'showXAxis',
     displayName: 'Show X Axis',
     value: true,
   });
 
-  name = 'axisSettings';
-  displayName = 'Axis Visibility';
-  slices = [this.showXAxis];
+  showYAxis = new formattingSettings.ToggleSwitch({
+    name: 'showYAxis',
+    displayName: 'Show Y-Axis',
+    value: false,
+  });
+
+  showPercentages = new formattingSettings.ToggleSwitch({
+    name: 'showPercentages',
+    displayName: 'Show Percentages on Hover',
+    value: false,
+  });
+
+  showValues = new formattingSettings.ToggleSwitch({
+    name: 'showValues',
+    displayName: 'Show Layer Values on Hover',
+    value: false,
+  });
+
+  sortOrder = new formattingSettings.ItemDropdown({
+    name: 'sortOrder',
+    displayName: 'Layer Sort Order',
+    items: [
+      { value: 'inside-out', displayName: 'Inside-Out' },
+      { value: 'by-peak', displayName: 'By Peak Value' },
+      { value: 'appearance', displayName: 'Appearance Order' },
+    ],
+    value: { value: 'inside-out', displayName: 'Inside-Out' },
+  });
+
+  name = 'streamDisplaySettings';
+  displayName = 'Stream Display';
+  slices = [this.showXAxis, this.showYAxis, this.showPercentages, this.showValues, this.sortOrder];
 }
 
 class CardStyleSettings extends formattingSettings.SimpleCard {
-  enableGlass = new formattingSettings.ToggleSwitch({
-    name: 'enableGlass',
-    displayName: 'Glass Effect',
-    value: true,
+  cardStyleMode = new formattingSettings.ItemDropdown({
+    name: 'cardStyleMode',
+    displayName: 'Card Style',
+    items: [
+      { value: 'none', displayName: 'None' },
+      { value: 'glass', displayName: 'Glass' },
+      { value: 'elevated', displayName: 'Elevated' },
+      { value: 'neumorphic', displayName: 'Neumorphic' },
+    ],
+    value: { value: 'glass', displayName: 'Glass' },
   });
 
   backgroundColor = new formattingSettings.ColorPicker({
@@ -143,7 +171,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.cardStyleMode, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 class AnimationSettings extends formattingSettings.SimpleCard {
@@ -164,61 +192,13 @@ class AnimationSettings extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
-// ── Stream Display Settings ─────────────────────────────────────────
-
-class StreamDisplaySettingsCard extends formattingSettings.SimpleCard {
-  showYAxis = new formattingSettings.ToggleSwitch({
-    name: 'showYAxis',
-    displayName: 'Show Y-Axis',
-    value: false,
-  });
-
-  showPercentages = new formattingSettings.ToggleSwitch({
-    name: 'showPercentages',
-    displayName: 'Show Percentages on Hover',
-    value: false,
-  });
-
-  showValues = new formattingSettings.ToggleSwitch({
-    name: 'showValues',
-    displayName: 'Show Layer Values on Hover',
-    value: false,
-  });
-
-  name = 'streamDisplaySettings';
-  displayName = 'Stream Display';
-  slices = [this.showYAxis, this.showPercentages, this.showValues];
-}
-
-// ── Stream Sort Settings ────────────────────────────────────────────
-
-class StreamSortSettingsCard extends formattingSettings.SimpleCard {
-  sortOrder = new formattingSettings.ItemDropdown({
-    name: 'sortOrder',
-    displayName: 'Layer Sort Order',
-    items: [
-      { value: 'inside-out', displayName: 'Inside-Out' },
-      { value: 'by-peak', displayName: 'By Peak Value' },
-      { value: 'appearance', displayName: 'Appearance Order' },
-    ],
-    value: { value: 'inside-out', displayName: 'Inside-Out' },
-  });
-
-  name = 'streamSortSettings';
-  displayName = 'Layer Sort Order';
-  slices = [this.sortOrder];
-}
-
 export class StreamGraphSettings extends formattingSettings.Model {
   streamSettings = new StreamSettings();
-  colorSettings = new ColorSettings();
-  axisVisibilitySettings = new AxisVisibilitySettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
 
-  // New feature cards
+  // Merged display card (was: axisVisibilitySettings + streamDisplaySettings + streamSortSettings)
   streamDisplaySettings = new StreamDisplaySettingsCard();
-  streamSortSettings = new StreamSortSettingsCard();
 
   // Shared formatting cards from core
   axisFormattingCard = new AxisFormattingCard();
@@ -226,7 +206,6 @@ export class StreamGraphSettings extends formattingSettings.Model {
   dataLabelFormattingCard = new DataLabelFormattingCard();
   titleFormattingCard = new TitleFormattingCard();
   lineStrokeFormattingCard = new LineStrokeFormattingCard();
-  sortFormattingCard = new SortFormattingCard();
   referenceLineFormattingCard = new ReferenceLineFormattingCard();
   trendLineFormattingCard = new TrendLineFormattingCard();
   conditionalFormattingCard = new ConditionalFormattingCard();
@@ -236,29 +215,27 @@ export class StreamGraphSettings extends formattingSettings.Model {
 
   colorThemeFormattingCard = new ColorThemeFormattingCard();
   seriesFormattingCard = new SeriesFormattingCard();
+  dateFilterFormattingCard = new DateFilterFormattingCard();
   numberFormattingCard = new NumberFormattingCard();
   cards = [
     this.streamSettings,
-    this.colorSettings,
-    this.axisVisibilitySettings,
-    this.cardSettings,
-    this.animationSettings,
     this.streamDisplaySettings,
-    this.streamSortSettings,
-    this.axisFormattingCard,
+    this.animationSettings,
+    this.titleFormattingCard,
     this.legendFormattingCard,
     this.dataLabelFormattingCard,
-    this.titleFormattingCard,
+    this.seriesFormattingCard,
+    this.axisFormattingCard,
     this.lineStrokeFormattingCard,
-    this.sortFormattingCard,
     this.referenceLineFormattingCard,
     this.trendLineFormattingCard,
     this.conditionalFormattingCard,
     this.crosshairFormattingCard,
     this.annotationFormattingCard,
-    this.accessibilityFormattingCard,
-    this.seriesFormattingCard,
-    this.colorThemeFormattingCard,
+    this.cardSettings,
     this.numberFormattingCard,
+    this.colorThemeFormattingCard,
+    this.dateFilterFormattingCard,
+    this.accessibilityFormattingCard,
   ];
 }

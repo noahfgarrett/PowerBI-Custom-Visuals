@@ -32,7 +32,7 @@
           },
           "dataReductionAlgorithm": {
             "top": {
-              "count": 500
+              "count": 30000
             }
           }
         },
@@ -120,25 +120,9 @@
           "type": {
             "bool": true
           }
-        }
-      }
-    },
-    "colorSettings": {
-      "displayName": "Colors",
-      "properties": {
+        },
         "useChartPalette": {
           "displayName": "Use Chart Palette",
-          "type": {
-            "bool": true
-          }
-        }
-      }
-    },
-    "axisSettings": {
-      "displayName": "Axis",
-      "properties": {
-        "showXAxis": {
-          "displayName": "Show X Axis",
           "type": {
             "bool": true
           }
@@ -308,7 +292,7 @@
           }
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (°)",
+          "displayName": "X-Label Rotation (\u00b0)",
           "type": {
             "numeric": true
           }
@@ -470,6 +454,12 @@
                 "displayName": "Bold"
               }
             ]
+          }
+        },
+        "legendAliases": {
+          "displayName": "Rename Labels",
+          "type": {
+            "text": true
           }
         }
       }
@@ -891,6 +881,12 @@
           "type": {
             "bool": true
           }
+        },
+        "crosshairOpacity": {
+          "displayName": "Opacity (%)",
+          "type": {
+            "numeric": true
+          }
         }
       }
     },
@@ -999,6 +995,12 @@
             "numeric": true
           }
         },
+        "referenceBandWidth": {
+          "displayName": "Band Width (%)",
+          "type": {
+            "numeric": true
+          }
+        },
         "referenceLineAxis": {
           "displayName": "Target Axis",
           "type": {
@@ -1081,7 +1083,7 @@
           }
         },
         "showR2": {
-          "displayName": "Show R²",
+          "displayName": "Show R\u00b2",
           "type": {
             "bool": true
           }
@@ -1181,19 +1183,19 @@
           }
         },
         "annotation1Category": {
-          "displayName": "Annotation 1 — Category",
+          "displayName": "Annotation 1 \u2014 Category",
           "type": {
             "text": true
           }
         },
         "annotation1Text": {
-          "displayName": "Annotation 1 — Text",
+          "displayName": "Annotation 1 \u2014 Text",
           "type": {
             "text": true
           }
         },
         "annotation1Position": {
-          "displayName": "Annotation 1 — Position",
+          "displayName": "Annotation 1 \u2014 Position",
           "type": {
             "enumeration": [
               {
@@ -1216,19 +1218,19 @@
           }
         },
         "annotation2Category": {
-          "displayName": "Annotation 2 — Category",
+          "displayName": "Annotation 2 \u2014 Category",
           "type": {
             "text": true
           }
         },
         "annotation2Text": {
-          "displayName": "Annotation 2 — Text",
+          "displayName": "Annotation 2 \u2014 Text",
           "type": {
             "text": true
           }
         },
         "annotation2Position": {
-          "displayName": "Annotation 2 — Position",
+          "displayName": "Annotation 2 \u2014 Position",
           "type": {
             "enumeration": [
               {
@@ -1251,19 +1253,19 @@
           }
         },
         "annotation3Category": {
-          "displayName": "Annotation 3 — Category",
+          "displayName": "Annotation 3 \u2014 Category",
           "type": {
             "text": true
           }
         },
         "annotation3Text": {
-          "displayName": "Annotation 3 — Text",
+          "displayName": "Annotation 3 \u2014 Text",
           "type": {
             "text": true
           }
         },
         "annotation3Position": {
-          "displayName": "Annotation 3 — Position",
+          "displayName": "Annotation 3 \u2014 Position",
           "type": {
             "enumeration": [
               {
@@ -1327,6 +1329,12 @@
     "streamDisplaySettings": {
       "displayName": "Stream Display",
       "properties": {
+        "showXAxis": {
+          "displayName": "Show X Axis",
+          "type": {
+            "bool": true
+          }
+        },
         "showYAxis": {
           "displayName": "Show Y-Axis",
           "type": {
@@ -1344,12 +1352,7 @@
           "type": {
             "bool": true
           }
-        }
-      }
-    },
-    "streamSortSettings": {
-      "displayName": "Layer Sort Order",
-      "properties": {
+        },
         "sortOrder": {
           "displayName": "Layer Sort Order",
           "type": {
@@ -1396,43 +1399,34 @@
             "numeric": true
           }
         },
+        "cardStyleMode": {
+          "displayName": "Card Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "glass",
+                "displayName": "Glass"
+              },
+              {
+                "value": "elevated",
+                "displayName": "Elevated"
+              },
+              {
+                "value": "neumorphic",
+                "displayName": "Neumorphic"
+              }
+            ]
+          }
+        },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "Glass Effect"
-        }
-      }
-    },
-    "sortFormatting": {
-      "displayName": "Sort Order",
-      "properties": {
-        "sortBy": {
-          "displayName": "Sort By",
-          "type": {
-            "enumeration": [
-              {
-                "value": "dataOrder",
-                "displayName": "Data Order"
-              },
-              {
-                "value": "valueAsc",
-                "displayName": "Value (Ascending)"
-              },
-              {
-                "value": "valueDesc",
-                "displayName": "Value (Descending)"
-              },
-              {
-                "value": "nameAsc",
-                "displayName": "Name (A-Z)"
-              },
-              {
-                "value": "nameDesc",
-                "displayName": "Name (Z-A)"
-              }
-            ]
-          }
+          "displayName": "(Deprecated) Enable Glass"
         }
       }
     },
@@ -1475,6 +1469,55 @@
         }
       },
       "displayName": "Color Theme"
+    },
+    "seriesFormatting": {
+      "properties": {
+        "seriesColor": {
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "seriesOpacity": {
+          "type": {
+            "numeric": true
+          }
+        },
+        "showDataLabels": {
+          "displayName": "Show Data Labels",
+          "type": {
+            "bool": true
+          }
+        },
+        "lineStyle": {
+          "displayName": "Line Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "solid",
+                "displayName": "Solid"
+              },
+              {
+                "value": "dashed",
+                "displayName": "Dashed"
+              },
+              {
+                "value": "dotted",
+                "displayName": "Dotted"
+              }
+            ]
+          }
+        },
+        "lineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
     },
     "numberFormatting": {
       "displayName": "Number Format",
@@ -1526,61 +1569,31 @@
         }
       }
     },
-    "seriesFormatting": {
+    "dateFilterFormatting": {
+      "displayName": "Date Filter",
       "properties": {
-        "seriesColor": {
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        },
-        "seriesLineStyle": {
-          "type": {
-            "text": true
-          }
-        },
-        "seriesLineWidth": {
-          "type": {
-            "numeric": true
-          }
-        },
-        "seriesOpacity": {
-          "type": {
-            "numeric": true
-          }
-        },
-        "showDataLabels": {
-          "displayName": "Show Data Labels",
+        "enableDateFilter": {
+          "displayName": "Enable Date Filter",
           "type": {
             "bool": true
           }
         },
-        "lineStyle": {
-          "displayName": "Line Style",
+        "startDate": {
+          "displayName": "Start Date",
           "type": {
-            "enumeration": [
-              {
-                "value": "solid",
-                "displayName": "Solid"
-              },
-              {
-                "value": "dashed",
-                "displayName": "Dashed"
-              },
-              {
-                "value": "dotted",
-                "displayName": "Dotted"
-              }
-            ]
+            "text": true
           }
         },
-        "lineWidth": {
-          "displayName": "Line Width",
+        "endAtCurrentDate": {
+          "displayName": "End at Current Date",
           "type": {
-            "numeric": true
+            "bool": true
+          }
+        },
+        "endDate": {
+          "displayName": "End Date",
+          "type": {
+            "text": true
           }
         }
       }

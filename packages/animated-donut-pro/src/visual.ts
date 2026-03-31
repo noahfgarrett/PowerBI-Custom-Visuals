@@ -13,11 +13,10 @@ import {
   countUp,
   springScale,
   fadeSlideIn,
-  cubicOut,
-  DURATION,
   formatNumber,
   formatWithSettings,
-  getGlassStyle,
+  applyCardStyle,
+  type CardStyleMode,
   getHostChartColor,
   withOpacity,
   renderChartTitle,
@@ -31,6 +30,9 @@ import {
   applyChartAria,
   attachKeyboardNav,
   ensureFocusRingStyles,
+  getDateFilterIndices,
+  isDateColumn,
+  type DateFilterConfig,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -50,6 +52,12 @@ interface DonutSegment {
   value: number;
   color: string;
   selectionId: ISelectionId | null;
+  highlighted: boolean;
+}
+
+interface DonutData {
+  segments: DonutSegment[];
+  hasHighlights: boolean;
 }
 
 /** Segment for the nested inner ring */
@@ -90,6 +98,9 @@ export class AnimatedDonutProVisual implements IVisual {
   /** Refs to path elements for hover interactions. */
   private segmentPaths: SVGPathElement[] = [];
 
+  /** Cached data for cross-highlight support. */
+  private currentData: DonutData | null = null;
+
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
     this.selectionManager = options.host.createSelectionManager();
@@ -112,6 +123,15 @@ export class AnimatedDonutProVisual implements IVisual {
       );
     }
 
+    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+    if (legacyCardObj) {
+      const legacyGlass = legacyCardObj['enableGlass'];
+      if (legacyGlass === false) {
+        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      }
+    }
+
     // ── Conditional visibility ──────────────────────────────────────
     const s = this.settings;
 
@@ -119,6 +139,8 @@ export class AnimatedDonutProVisual implements IVisual {
     const showCenter = s.donutSettings.showCenter.value;
     s.valueSettings.fontSize.visible = showCenter;
     s.valueSettings.fontColor.visible = showCenter;
+    s.valueSettings.fontFamily.visible = showCenter;
+    s.valueSettings.fontWeight.visible = showCenter;
     s.valueSettings.prefix.visible = showCenter;
     s.valueSettings.suffix.visible = showCenter;
     s.valueSettings.decimalPlaces.visible = showCenter;
@@ -143,45 +165,79 @@ export class AnimatedDonutProVisual implements IVisual {
     const showLabels = s.donutSettings.showLabels.value;
     s.donutLabelSettings.format.visible = showLabels;
     s.donutLabelSettings.connectorLines.visible = showLabels;
+    s.donutLabelSettings.fontFamily.visible = showLabels;
+    s.donutLabelSettings.fontWeight.visible = showLabels;
 
     // Nested ring sub-settings: hide when nested rings are off
     s.donutNestedSettings.innerRingField.visible = s.donutNestedSettings.enabled.value;
 
     // Extract data
-    const rawSegments = this.extractData(dataView);
-    const segments = this.applyTopN(rawSegments);
 
-    // Apply glass effect
-    this.applyCardStyle();
+    // Date filter: hide start/end when disabled
+    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
+    const rawData = this.extractData(dataView);
+    const topNSegments = this.applyTopN(rawData.segments);
+    const data: DonutData = {
+      segments: topNSegments,
+      hasHighlights: rawData.hasHighlights,
+    };
+    this.currentData = data;
+
+    // Card style conditional visibility
+    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    s.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
+    s.cardSettings.backgroundColor.visible = cardMode !== 'none';
 
     // Render
-    if (segments.length === 0) {
+    if (data.segments.length === 0) {
       this.renderEmpty();
     } else {
-      this.render(segments, options.viewport, dataView);
+      this.render(data.segments, options.viewport, dataView);
     }
+
+    // Apply cross-highlight dimming after render
+    this.applySelectionHighlight();
+
+    // Apply card styling AFTER render — render clears the container, which would destroy the glass backdrop div.
+    this.applyCardStyling();
   }
 
   // ── Data Extraction ─────────────────────────────────────────────
 
-  private extractData(dataView: DataView | undefined): DonutSegment[] {
+  private extractData(dataView: DataView | undefined): DonutData {
+    const emptyData: DonutData = { segments: [], hasHighlights: false };
     const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
-    if (!dataView?.categorical) return [];
+    if (!dataView?.categorical) return emptyData;
 
     const categorical = dataView.categorical;
     const categoryColumn = categorical.categories?.[0];
     const valuesColumn = categorical.values?.[0];
 
-    if (!categoryColumn || !valuesColumn) return [];
+    if (!categoryColumn || !valuesColumn) return emptyData;
 
     const categories = categoryColumn.values;
     const values = valuesColumn.values;
 
-    if (!categories || !values || categories.length === 0) return [];
+    if (!categories || !values || categories.length === 0) return emptyData;
+
+    const hlRaw = (valuesColumn as unknown as { highlights?: unknown[] }).highlights as unknown[] | undefined;
 
     const segments: DonutSegment[] = [];
 
+
+    const dateConfig: DateFilterConfig = {
+      enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
+      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
+      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+    };
+    const dateIndices = isDateColumn(categoryColumn.source) ? getDateFilterIndices(categoryColumn.values, dateConfig) : null;
+
     for (let i = 0; i < categories.length; i++) {
+      if (dateIndices && !dateIndices.has(i)) continue;
+
       const label = categories[i] !== null && categories[i] !== undefined
         ? String(categories[i])
         : '';
@@ -191,6 +247,8 @@ export class AnimatedDonutProVisual implements IVisual {
       // Skip zero/negative values for donut chart
       if (value <= 0) continue;
 
+      const highlighted = hlRaw ? hlRaw[i] !== null && hlRaw[i] !== undefined : false;
+
       segments.push({
         label,
         value,
@@ -198,10 +256,12 @@ export class AnimatedDonutProVisual implements IVisual {
         selectionId: this.host.createSelectionIdBuilder()
           .withCategory(categoryColumn, i)
           .createSelectionId(),
+        highlighted,
       });
     }
 
-    return segments;
+    const hasHighlights = segments.some((s) => s.highlighted);
+    return { segments, hasHighlights };
   }
 
   // ── Top N Grouping ──────────────────────────────────────────
@@ -237,6 +297,7 @@ export class AnimatedDonutProVisual implements IVisual {
       value: othersValue,
       color: othersColor,
       selectionId: null,
+      highlighted: remaining.some((s) => s.highlighted),
     };
 
     return [...topSegments, othersSegment];
@@ -244,23 +305,16 @@ export class AnimatedDonutProVisual implements IVisual {
 
   // ── Card Style ────────────────────────────────────────────────
 
-  private applyCardStyle(): void {
+  private applyCardStyling(): void {
     const s = this.settings.cardSettings;
-    if (s.enableGlass.value) {
-      const glass = getGlassStyle({
-        mode: 'light',
-        opacity: s.backgroundOpacity.value / 100,
-        backgroundColor: s.backgroundColor.value?.value,
-        borderRadius: s.borderRadius.value,
-      });
-      Object.assign(this.container.style, glass);
-    } else {
-      // Reset glass styles
-      this.container.style.background = '';
-      this.container.style.backdropFilter = '';
-      (this.container.style as unknown as Record<string, string>)['WebkitBackdropFilter'] = '';
-      this.container.style.border = '';
-      this.container.style.boxShadow = '';
+    const cardMode = (resolveDropdown(s.cardStyleMode) ?? 'glass') as CardStyleMode;
+    applyCardStyle(this.container, {
+      mode: cardMode,
+      opacity: s.backgroundOpacity.value / 100,
+      backgroundColor: s.backgroundColor?.value?.value,
+      borderRadius: s.borderRadius.value,
+    });
+    if (cardMode === 'none') {
       this.container.style.borderRadius = `${s.borderRadius.value}px`;
     }
   }
@@ -279,7 +333,6 @@ export class AnimatedDonutProVisual implements IVisual {
 
   private render(segments: DonutSegment[], viewport: powerbi.IViewport, dataView?: DataView): void {
     this.clearContainer();
-    this.container.style.flexDirection = 'column';
     renderChartTitle(this.container, this.settings.titleFormattingCard);
     this.container.removeEventListener('click', this.handleBackgroundClick);
     this.segmentPaths = [];
@@ -420,6 +473,15 @@ export class AnimatedDonutProVisual implements IVisual {
         .attr('stroke', this.settings.donutSettings.segmentStrokeColor.value?.value || '#FFFFFF')
         .attr('stroke-width', this.settings.donutSettings.segmentStrokeWidth.value);
 
+      // Attach selection key for cross-highlight dimming
+      if (arc.segment.selectionId) {
+        path.attr('data-selection-key', arc.segment.selectionId.getKey());
+      }
+      // Mark highlighted state directly for segments without selectionId (e.g. "Others")
+      if (arc.segment.highlighted) {
+        path.attr('data-highlighted', 'true');
+      }
+
       if (explodeTransform) {
         path.attr('transform', explodeTransform);
       }
@@ -476,7 +538,9 @@ export class AnimatedDonutProVisual implements IVisual {
           .style('cursor', 'pointer')
           .on('click', (event: MouseEvent) => {
             event.stopPropagation();
-            void this.selectionManager.select(selId, event.ctrlKey || event.metaKey);
+            void this.selectionManager.select(selId, event.ctrlKey || event.metaKey).then(() => {
+              this.applySelectionHighlight();
+            });
           })
           .on('contextmenu', (event: MouseEvent) => {
             event.preventDefault();
@@ -601,6 +665,8 @@ export class AnimatedDonutProVisual implements IVisual {
   ): void {
     const showConnectors = this.settings.donutLabelSettings.connectorLines.value;
     const labelFormatRaw = resolveDropdown(this.settings.donutLabelSettings.format) ?? 'category';
+    const sliceFontFamily = resolveDropdown(this.settings.donutLabelSettings.fontFamily);
+    const sliceFontWeight = resolveDropdown(this.settings.donutLabelSettings.fontWeight);
 
     // When connector lines are on, place labels outside the donut
     const labelRadius = showConnectors
@@ -655,6 +721,8 @@ export class AnimatedDonutProVisual implements IVisual {
         .attr('fill', this.settings.donutSettings.labelColor.value?.value || '#475569')
         .attr('font-size', `${this.settings.donutSettings.labelFontSize.value}px`)
         .text(labelText);
+      if (sliceFontFamily) text.style('font-family', sliceFontFamily);
+      text.style('font-weight', sliceFontWeight || 'normal');
 
       // When labels are outside with connectors, align text based on side
       if (showConnectors) {
@@ -801,12 +869,16 @@ export class AnimatedDonutProVisual implements IVisual {
     const suffix = vs.suffix.value || '';
     const decimals = vs.decimalPlaces.value;
 
+    const valueFontFamily = resolveDropdown(vs.fontFamily);
+    const valueFontWeight = resolveDropdown(vs.fontWeight);
     const centerText = g.append('text')
       .attr('class', 'donut-center-value')
       .attr('x', 0)
       .attr('y', 0)
       .attr('font-size', `${fontSize}px`)
       .attr('fill', fontColor);
+    if (valueFontFamily) centerText.style('font-family', valueFontFamily);
+    centerText.style('font-weight', valueFontWeight || 'normal');
 
     if (animEnabled && animDuration > 0) {
       // Count-up animation
@@ -885,6 +957,7 @@ export class AnimatedDonutProVisual implements IVisual {
       fontSize: legendFontSize,
       fontColor: legendFontColor,
       fontFamily: rawLegendFontFamily,
+      aliases: legendFmtCard.legendAliases.value,
     });
 
     const animEnabled = this.settings.animationSettings.enabled.value;
@@ -983,7 +1056,44 @@ export class AnimatedDonutProVisual implements IVisual {
 
   private handleBackgroundClick = (): void => {
     void this.selectionManager.clear();
+    this.applySelectionHighlight();
   };
+
+  // ── Selection & Cross-Highlight ─────────────────────────────────
+
+  private applySelectionHighlight(): void {
+    const hasSelection = this.selectionManager.hasSelection();
+    const selectedIds = this.selectionManager.getSelectionIds() as ISelectionId[];
+    const selectedKeys = new Set(selectedIds.map((id) => id.getKey()));
+
+    const data = this.currentData;
+    const hasHighlights = data?.hasHighlights ?? false;
+    const highlightedKeys = new Set<string>();
+    if (hasHighlights && data) {
+      for (const seg of data.segments) {
+        if (seg.highlighted && seg.selectionId) {
+          highlightedKeys.add(seg.selectionId.getKey());
+        }
+      }
+    }
+
+    const paths = this.container.querySelectorAll<SVGPathElement>('.donut-segment');
+    const shouldDim = hasSelection || hasHighlights;
+
+    for (const el of paths) {
+      if (shouldDim) {
+        const elKey = el.getAttribute('data-selection-key');
+        const isSelected = hasSelection && elKey !== null && selectedKeys.has(elKey);
+        const isHighlighted = hasHighlights && (
+          (elKey !== null && highlightedKeys.has(elKey)) ||
+          el.getAttribute('data-highlighted') === 'true'
+        );
+        el.style.opacity = (isSelected || isHighlighted) ? '' : '0.3';
+      } else {
+        el.style.opacity = '';
+      }
+    }
+  }
 
   private cancelAllAnimations(): void {
     for (const cancel of this.cancelAnimations) {

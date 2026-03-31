@@ -106,7 +106,7 @@
           ],
           "dataReductionAlgorithm": {
             "top": {
-              "count": 1000
+              "count": 30000
             }
           }
         },
@@ -124,7 +124,7 @@
   ],
   "objects": {
     "nodeSettings": {
-      "displayName": "Nodes",
+      "displayName": "Node Shape",
       "properties": {
         "width": {
           "displayName": "Node Width",
@@ -138,6 +138,125 @@
             "numeric": true
           }
         },
+        "cornerRadius": {
+          "displayName": "Corner Radius",
+          "type": {
+            "numeric": true
+          }
+        },
+        "opacity": {
+          "displayName": "Node Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "minHeight": {
+          "displayName": "Minimum Height",
+          "type": {
+            "numeric": true
+          }
+        },
+        "nodeBorderColor": {
+          "displayName": "Node Border Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "nodeBorderWidth": {
+          "displayName": "Node Border Width",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "nodeColorSettings": {
+      "displayName": "Node Colors",
+      "properties": {
+        "colorMode": {
+          "displayName": "Color Mode",
+          "type": {
+            "enumeration": [
+              {
+                "value": "auto",
+                "displayName": "Auto (Theme)"
+              },
+              {
+                "value": "byLayer",
+                "displayName": "By Layer"
+              }
+            ]
+          }
+        },
+        "sourceColor": {
+          "displayName": "Source Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "step2Color": {
+          "displayName": "Step 2 Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "step3Color": {
+          "displayName": "Step 3 Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "step4Color": {
+          "displayName": "Step 4 Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "step5Color": {
+          "displayName": "Step 5 Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "targetColor": {
+          "displayName": "Target Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "nodeLabelSettings": {
+      "displayName": "Node Labels",
+      "properties": {
         "labelPosition": {
           "displayName": "Label Position",
           "type": {
@@ -167,50 +286,6 @@
         },
         "labelFontSize": {
           "displayName": "Label Font Size",
-          "type": {
-            "numeric": true
-          }
-        },
-        "labelColor": {
-          "displayName": "Label Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        },
-        "nodeBorderColor": {
-          "displayName": "Node Border Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        },
-        "nodeBorderWidth": {
-          "displayName": "Node Border Width",
-          "type": {
-            "numeric": true
-          }
-        },
-        "cornerRadius": {
-          "displayName": "Corner Radius",
-          "type": {
-            "numeric": true
-          }
-        },
-        "opacity": {
-          "displayName": "Node Opacity (%)",
-          "type": {
-            "numeric": true
-          }
-        },
-        "minHeight": {
-          "displayName": "Minimum Height",
           "type": {
             "numeric": true
           }
@@ -299,6 +374,76 @@
               }
             ]
           }
+        },
+        "labelColor": {
+          "displayName": "Label Color (All)",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "sourceLabelColor": {
+          "displayName": "Source Label Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "step2LabelColor": {
+          "displayName": "Step 2 Label Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "step3LabelColor": {
+          "displayName": "Step 3 Label Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "step4LabelColor": {
+          "displayName": "Step 4 Label Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "step5LabelColor": {
+          "displayName": "Step 5 Label Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "targetLabelColor": {
+          "displayName": "Target Label Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
         }
       }
     },
@@ -361,6 +506,18 @@
           "type": {
             "numeric": true
           }
+        },
+        "gradientLinks": {
+          "displayName": "Gradient Links",
+          "type": {
+            "bool": true
+          }
+        },
+        "opacityByValue": {
+          "displayName": "Opacity by Value",
+          "type": {
+            "bool": true
+          }
         }
       }
     },
@@ -387,6 +544,61 @@
                 "color": true
               }
             }
+          }
+        },
+        "linkLabelFontFamily": {
+          "displayName": "Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              }
+            ]
           }
         },
         "linkLabelFontWeight": {
@@ -421,6 +633,12 @@
                 "displayName": "Both"
               }
             ]
+          }
+        },
+        "showFlowLabels": {
+          "displayName": "Show Flow Labels on Hover",
+          "type": {
+            "bool": true
           }
         }
       }
@@ -488,6 +706,80 @@
                 "color": true
               }
             }
+          }
+        },
+        "totalFontFamily": {
+          "displayName": "Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              }
+            ]
+          }
+        },
+        "totalFontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold"
+              }
+            ]
           }
         }
       }
@@ -718,6 +1010,12 @@
                 "displayName": "Bold"
               }
             ]
+          }
+        },
+        "legendAliases": {
+          "displayName": "Rename Labels",
+          "type": {
+            "text": true
           }
         }
       }
@@ -1102,11 +1400,34 @@
             "numeric": true
           }
         },
+        "cardStyleMode": {
+          "displayName": "Card Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "glass",
+                "displayName": "Glass"
+              },
+              {
+                "value": "elevated",
+                "displayName": "Elevated"
+              },
+              {
+                "value": "neumorphic",
+                "displayName": "Neumorphic"
+              }
+            ]
+          }
+        },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "Glass Effect"
+          "displayName": "(Deprecated) Enable Glass"
         }
       }
     },
@@ -1129,46 +1450,6 @@
           "displayName": "Enable Flow Filtering",
           "type": {
             "bool": true
-          }
-        }
-      }
-    },
-    "sankeyLinkSettings": {
-      "displayName": "Link Features",
-      "properties": {
-        "gradientLinks": {
-          "displayName": "Gradient Links",
-          "type": {
-            "bool": true
-          }
-        },
-        "opacityByValue": {
-          "displayName": "Opacity by Value",
-          "type": {
-            "bool": true
-          }
-        },
-        "showFlowLabels": {
-          "displayName": "Show Flow Labels on Hover",
-          "type": {
-            "bool": true
-          }
-        }
-      }
-    },
-    "sankeyNodeSettings": {
-      "displayName": "Node Features",
-      "properties": {
-        "showNodeValues": {
-          "displayName": "Show Node Values",
-          "type": {
-            "bool": true
-          }
-        },
-        "nodeLabelFontSize": {
-          "displayName": "Node Label Font Size",
-          "type": {
-            "numeric": true
           }
         }
       }
@@ -1336,6 +1617,35 @@
         },
         "valueSuffix": {
           "displayName": "Suffix",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "dateFilterFormatting": {
+      "displayName": "Date Filter",
+      "properties": {
+        "enableDateFilter": {
+          "displayName": "Enable Date Filter",
+          "type": {
+            "bool": true
+          }
+        },
+        "startDate": {
+          "displayName": "Start Date",
+          "type": {
+            "text": true
+          }
+        },
+        "endAtCurrentDate": {
+          "displayName": "End at Current Date",
+          "type": {
+            "bool": true
+          }
+        },
+        "endDate": {
+          "displayName": "End Date",
           "type": {
             "text": true
           }

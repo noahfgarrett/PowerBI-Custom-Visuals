@@ -33,6 +33,7 @@ import {
   attachKeyboardNav,
   ensureFocusRingStyles,
   getDateFilterIndices,
+  isDateColumn,
   type DateFilterConfig,
 } from '../../core/src';
 
@@ -126,6 +127,15 @@ export class SunburstChartVisual implements IVisual {
       );
     }
 
+    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+    if (legacyCardObj) {
+      const legacyGlass = legacyCardObj['enableGlass'];
+      if (legacyGlass === false) {
+        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      }
+    }
+
     // Conditional visibility: center content sub-settings hidden when show is off
     const ccShow = this.settings.centerContentSettings.show.value;
     const ccMode = resolveDropdown(this.settings.centerContentSettings.displayMode) ?? 'total';
@@ -215,7 +225,7 @@ export class SunburstChartVisual implements IVisual {
       endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
       endDate: this.settings.dateFilterFormattingCard.endDate.value,
     };
-    const dateIndices = getDateFilterIndices(categories[0].values, dateConfig);
+    const dateIndices = isDateColumn(categories[0].source) ? getDateFilterIndices(categories[0].values, dateConfig) : null;
 
     for (let i = 0; i < rowCount; i++) {
       if (dateIndices && !dateIndices.has(i)) continue;

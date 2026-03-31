@@ -18,7 +18,8 @@ import {
   formatNumber,
   formatWithSettings,
   getDeltaColor,
-  getGlassStyle,
+  applyCardStyle,
+  type CardStyleMode,
   withOpacity,
   renderChartTitle,
   applyAxisFormatting,
@@ -45,6 +46,9 @@ import {
   type VerticalReferenceLineConfig,
   resolveSeriesFormatting,
   populateSeriesFormattingGroups,
+  getDateFilterIndices,
+  isDateColumn,
+  type DateFilterConfig,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -65,6 +69,7 @@ interface DumbbellRow {
   start: number;
   end: number;
   selectionId: ISelectionId;
+  highlighted: boolean;
 }
 
 interface Margin {
@@ -89,6 +94,8 @@ export class DumbbellChartVisual implements IVisual {
   private settings: DumbbellChartSettings;
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
+  private currentRows: DumbbellRow[] = [];
+  private hasHighlights = false;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
@@ -113,24 +120,51 @@ export class DumbbellChartVisual implements IVisual {
       );
     }
 
+    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+    if (legacyCardObj) {
+      const legacyGlass = legacyCardObj['enableGlass'];
+      if (legacyGlass === false) {
+        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      }
+    }
+
     // Hide dead axis properties — not wired to any axis rendering
-    this.settings.axisFormattingCard.xAxisTitle.visible = false;
-    this.settings.axisFormattingCard.yAxisTitle.visible = false;
+
+    // Date filter: hide start/end when disabled
+    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
+
+    // Card Style — hide sub-settings when mode is 'none'
+    const cardMode = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    this.settings.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
+    this.settings.cardSettings.backgroundColor.visible = cardMode !== 'none';
+
     this.settings.axisFormattingCard.yAxisMin.visible = false;
     this.settings.axisFormattingCard.yAxisMax.visible = false;
     this.settings.axisFormattingCard.axisLabelRotation.visible = false;
 
+    // Hide dual-axis-only properties (no combo/dual-axis support)
+    this.settings.referenceLineFormattingCard.referenceLineAxis.visible = false;
+    this.settings.referenceLineFormattingCard.referenceBandWidth.visible = false;
+    this.settings.trendLineFormattingCard.trendLineAxis.visible = false;
+
     // Conditional visibility: hide child settings when parent toggle is off
     // Display: hide autoDirectionalColor when showArrow is false
-    this.settings.dumbbellDisplaySettings.autoDirectionalColor.visible = this.settings.dumbbellDisplaySettings.showArrow.value;
+    this.settings.dumbbellConnectorSettings.autoDirectionalColor.visible = this.settings.dumbbellConnectorSettings.showArrow.value;
+    // Display: hide separator settings when grouping is disabled
+    const groupingOn = this.settings.dumbbellDisplaySettings.enableGrouping.value;
+    this.settings.dumbbellDisplaySettings.separatorColor.visible = groupingOn;
+    this.settings.dumbbellDisplaySettings.separatorWidth.visible = groupingOn;
     // Delta labels: hide sub-settings when show is false
-    this.settings.deltaLabelSettings.fontSize.visible = this.settings.deltaLabelSettings.show.value;
-    this.settings.deltaLabelSettings.fontColor.visible = this.settings.deltaLabelSettings.show.value;
-    this.settings.deltaLabelSettings.format.visible = this.settings.deltaLabelSettings.show.value;
-    this.settings.deltaLabelSettings.position.visible = this.settings.deltaLabelSettings.show.value;
-
-    // Apply glass effect
-    this.applyCardStyle();
+    const deltaShow = this.settings.deltaLabelSettings.show.value;
+    this.settings.deltaLabelSettings.fontSize.visible = deltaShow;
+    this.settings.deltaLabelSettings.fontColor.visible = deltaShow;
+    this.settings.deltaLabelSettings.fontFamily.visible = deltaShow;
+    this.settings.deltaLabelSettings.fontWeight.visible = deltaShow;
+    this.settings.deltaLabelSettings.format.visible = deltaShow;
+    this.settings.deltaLabelSettings.position.visible = deltaShow;
 
     // Extract data and apply user-configured sort order (sort by end value)
     const rows = applySortOrder(
@@ -148,12 +182,21 @@ export class DumbbellChartVisual implements IVisual {
       defaultColors,
     );
 
+    // Store rows for cross-highlight
+    this.currentRows = rows;
+
     // Render
     if (rows.length === 0) {
       this.renderEmpty();
     } else {
       this.render(rows, options.viewport);
     }
+
+    // Apply card styling AFTER render — render clears the container, which would destroy the glass backdrop div.
+    this.applyCardStyle();
+
+    // Apply cross-highlight dimming after render
+    this.applySelectionHighlight();
   }
 
   // -- Data Extraction --------------------------------------------------------
@@ -187,9 +230,24 @@ export class DumbbellChartVisual implements IVisual {
     }
     if (!startCol || !endCol) return [];
 
+    // Cross-highlight support: read highlights from value columns
+    const startHlRaw = (startCol as unknown as { highlights?: unknown[] }).highlights as unknown[] | undefined;
+    const endHlRaw = (endCol as unknown as { highlights?: unknown[] }).highlights as unknown[] | undefined;
+    let anyHighlight = false;
+
     const rows: DumbbellRow[] = [];
 
+    const dateConfig: DateFilterConfig = {
+      enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
+      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
+      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+    };
+    const dateIndices = isDateColumn(categoryColumn.source) ? getDateFilterIndices(categoryColumn.values, dateConfig) : null;
+
     for (let i = 0; i < categoryColumn.values.length; i++) {
+      if (dateIndices && !dateIndices.has(i)) continue;
+
       const label = categoryColumn.values[i];
       const startVal = startCol.values[i];
       const endVal = endCol.values[i];
@@ -202,6 +260,10 @@ export class DumbbellChartVisual implements IVisual {
         continue;
       }
 
+      const isHighlighted = (startHlRaw != null && startHlRaw[i] != null) ||
+        (endHlRaw != null && endHlRaw[i] != null);
+      if (isHighlighted) anyHighlight = true;
+
       rows.push({
         key: `${i}::${String(label)}`,
         label: String(label),
@@ -210,9 +272,11 @@ export class DumbbellChartVisual implements IVisual {
         selectionId: this.host.createSelectionIdBuilder()
           .withCategory(categoryColumn, i)
           .createSelectionId(),
+        highlighted: isHighlighted,
       });
     }
 
+    this.hasHighlights = anyHighlight;
     return rows;
   }
 
@@ -220,21 +284,17 @@ export class DumbbellChartVisual implements IVisual {
 
   private applyCardStyle(): void {
     const s = this.settings.cardSettings;
-    if (s.enableGlass.value) {
-      const glass = getGlassStyle({
-        mode: 'light',
+    const mode = (resolveDropdown(s.cardStyleMode) ?? 'glass') as CardStyleMode;
+    applyCardStyle(
+      this.container,
+      {
+        mode,
         opacity: s.backgroundOpacity.value / 100,
         backgroundColor: s.backgroundColor.value?.value,
         borderRadius: s.borderRadius.value,
-      });
-      Object.assign(this.container.style, glass);
-    } else {
-      // Reset glass styles
-      this.container.style.background = '';
-      this.container.style.backdropFilter = '';
-      (this.container.style as unknown as Record<string, string>)['WebkitBackdropFilter'] = '';
-      this.container.style.border = '';
-      this.container.style.boxShadow = '';
+      },
+    );
+    if (mode === 'none') {
       this.container.style.borderRadius = `${s.borderRadius.value}px`;
     }
   }
@@ -309,7 +369,7 @@ export class DumbbellChartVisual implements IVisual {
 
     // Settings values
     const dotRadius = s.dumbbellSettings.dotRadius.value;
-    const lineWidth = s.dumbbellSettings.lineWidth.value;
+    const lineWidth = s.dumbbellConnectorSettings.lineWidth.value;
     const themeName = resolveColorTheme(s.colorThemeFormattingCard);
     const userStartColor = s.dumbbellSettings.startColor.value?.value;
     const userEndColor = s.dumbbellSettings.endColor.value?.value;
@@ -341,6 +401,8 @@ export class DumbbellChartVisual implements IVisual {
     const deltaFontSize = s.deltaLabelSettings.fontSize.value;
     const deltaFontColorRaw = s.deltaLabelSettings.fontColor.value?.value;
     const deltaFontColor = deltaFontColorRaw && deltaFontColorRaw.length > 0 ? deltaFontColorRaw : '';
+    const deltaFontFamily = resolveDropdown(s.deltaLabelSettings.fontFamily) || '';
+    const deltaFontWeight = resolveDropdown(s.deltaLabelSettings.fontWeight) || 'normal';
     const deltaFormatRaw = s.deltaLabelSettings.format.value;
     const deltaFormat = (typeof deltaFormatRaw === 'string'
       ? deltaFormatRaw
@@ -351,7 +413,7 @@ export class DumbbellChartVisual implements IVisual {
       : (deltaPositionRaw as { value?: string })?.value) ?? 'above';
 
     // Dumbbell-specific settings — apply if set, otherwise use fallback
-    const lineColorValue = s.dumbbellSettings.lineColor.value?.value;
+    const lineColorValue = s.dumbbellConnectorSettings.lineColor.value?.value;
     const resolvedLineColor = lineColorValue && lineColorValue.length > 0 ? lineColorValue : withOpacity(endColor, 0.35);
     const dotStrokeColorValue = s.dumbbellSettings.dotStrokeColor.value?.value;
     const dotStrokeColor = dotStrokeColorValue && dotStrokeColorValue.length > 0 ? dotStrokeColorValue : '#FFFFFF';
@@ -413,7 +475,7 @@ export class DumbbellChartVisual implements IVisual {
     }
 
     // Render group sub-headers when grouping is enabled
-    const enableGrouping = s.dumbbellGroupSettings.enableGrouping.value;
+    const enableGrouping = s.dumbbellDisplaySettings.enableGrouping.value;
     if (enableGrouping) {
       let lastGroup = '';
       rows.forEach((row) => {
@@ -434,14 +496,16 @@ export class DumbbellChartVisual implements IVisual {
             .text(groupKey);
 
           // Draw a subtle separator line
+          const sepColor = s.dumbbellDisplaySettings.separatorColor.value?.value || '#E2E8F0';
+          const sepWidth = s.dumbbellDisplaySettings.separatorWidth.value;
           chartGroup.append('line')
             .attr('class', 'dumbbell-group-separator')
             .attr('x1', 0)
             .attr('y1', cy + 2)
             .attr('x2', chartWidth)
             .attr('y2', cy + 2)
-            .attr('stroke', '#E2E8F0')
-            .attr('stroke-width', 0.5)
+            .attr('stroke', sepColor)
+            .attr('stroke-width', sepWidth)
             .attr('stroke-dasharray', '3 2');
         }
       });
@@ -469,6 +533,7 @@ export class DumbbellChartVisual implements IVisual {
       const pathEl = chartGroup.append('path')
         .attr('class', 'dumbbell-line')
         .attr('data-series', seriesIdx)
+        .attr('data-selection-key', row.selectionId.getKey())
         .attr('d', `M${minX},${cy} L${maxX},${cy}`)
         .attr('stroke', conditionalColor ?? fmt.color)
         .attr('stroke-width', lineWidth)
@@ -497,6 +562,7 @@ export class DumbbellChartVisual implements IVisual {
       const startDot = chartGroup.append('circle')
         .attr('class', 'dumbbell-dot dumbbell-dot-start')
         .attr('data-series', seriesIdx)
+        .attr('data-selection-key', row.selectionId.getKey())
         .attr('cx', x1)
         .attr('cy', cy)
         .attr('r', dotRadius)
@@ -514,6 +580,7 @@ export class DumbbellChartVisual implements IVisual {
       const endDot = chartGroup.append('circle')
         .attr('class', 'dumbbell-dot dumbbell-dot-end')
         .attr('data-series', seriesIdx)
+        .attr('data-selection-key', row.selectionId.getKey())
         .attr('cx', x2)
         .attr('cy', cy)
         .attr('r', dotRadius)
@@ -605,7 +672,7 @@ export class DumbbellChartVisual implements IVisual {
           ? deltaFontColor
           : getDeltaColor(delta);
 
-        chartGroup.append('text')
+        const deltaLabel = chartGroup.append('text')
           .attr('class', 'dumbbell-delta-label')
           .attr('data-series', seriesIdx)
           .attr('x', centerX)
@@ -613,9 +680,15 @@ export class DumbbellChartVisual implements IVisual {
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', deltaPosition === 'center' ? 'central' : 'auto')
           .attr('font-size', `${deltaFontSize}px`)
+          .attr('font-weight', deltaFontWeight)
           .attr('fill', deltaColor)
-          .style('transition', 'opacity 0.15s ease')
-          .text(displayText);
+          .style('transition', 'opacity 0.15s ease');
+
+        if (deltaFontFamily) {
+          deltaLabel.attr('font-family', deltaFontFamily);
+        }
+
+        deltaLabel.text(displayText);
       }
 
       // Animate dots
@@ -795,6 +868,7 @@ export class DumbbellChartVisual implements IVisual {
       fontSize: legendFontSize,
       fontColor: legendFontColor,
       fontFamily: rawLegendFontFamily,
+      aliases: legendFmtCard.legendAliases.value,
     });
   }
 
@@ -841,7 +915,7 @@ export class DumbbellChartVisual implements IVisual {
     yScale: d3.ScaleBand<string>,
     bandMiddle: number,
   ): void {
-    if (!this.settings.dumbbellDisplaySettings.showArrow.value) return;
+    if (!this.settings.dumbbellConnectorSettings.showArrow.value) return;
 
     const dotRadius = this.settings.dumbbellSettings.dotRadius.value;
 
@@ -857,7 +931,7 @@ export class DumbbellChartVisual implements IVisual {
 
       const arrowPath = `M${arrowX},${cy} L${arrowX - direction * arrowSize},${cy - arrowSize} L${arrowX - direction * arrowSize},${cy + arrowSize} Z`;
 
-      const arrowColor = this.settings.dumbbellDisplaySettings.autoDirectionalColor.value
+      const arrowColor = this.settings.dumbbellConnectorSettings.autoDirectionalColor.value
         ? getDeltaColor(row.end - row.start)
         : (this.settings.dumbbellSettings.endColor.value?.value ?? '#3B82F6');
 
@@ -996,8 +1070,43 @@ export class DumbbellChartVisual implements IVisual {
     return this.formattingSettingsService.buildFormattingModel(this.settings);
   }
 
+  // -- Selection & Cross-Highlight --------------------------------------------
+
+  private applySelectionHighlight(): void {
+    const hasSelection = this.selectionManager.hasSelection();
+    const selectedIds = this.selectionManager.getSelectionIds() as ISelectionId[];
+    const selectedKeys = new Set(selectedIds.map((id) => id.getKey()));
+
+    // Build set of highlighted keys from cross-highlight data
+    const highlightedKeys = new Set<string>();
+    if (this.hasHighlights) {
+      for (const row of this.currentRows) {
+        if (row.highlighted) {
+          highlightedKeys.add(row.selectionId.getKey());
+        }
+      }
+    }
+
+    const lines = this.container.querySelectorAll<SVGPathElement>('.dumbbell-line');
+    const dots = this.container.querySelectorAll<SVGCircleElement>('.dumbbell-dot');
+
+    const shouldDim = hasSelection || this.hasHighlights;
+    const allElements = [...Array.from(lines), ...Array.from(dots)];
+    for (const el of allElements) {
+      if (shouldDim) {
+        const elKey = el.getAttribute('data-selection-key');
+        const isSelected = hasSelection && elKey && selectedKeys.has(elKey);
+        const isHighlighted = this.hasHighlights && elKey && highlightedKeys.has(elKey);
+        el.style.opacity = (isSelected || isHighlighted) ? '' : '0.3';
+      } else {
+        el.style.opacity = '';
+      }
+    }
+  }
+
   private handleBackgroundClick = (): void => {
     void this.selectionManager.clear();
+    this.applySelectionHighlight();
   };
 
   // -- Cleanup ----------------------------------------------------------------

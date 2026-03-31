@@ -5,11 +5,14 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, SortFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AnnotationFormattingCard, AccessibilityFormattingCard, NumberFormattingCard } from '../../core/src';
+import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, SortFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AnnotationFormattingCard, AccessibilityFormattingCard, NumberFormattingCard,
+  ColorThemeFormattingCard,
+  DateFilterFormattingCard,
+} from '../../core/src';
 
-// -- Health Bar Settings ------------------------------------------------------
+// ── Bar Shape ────────────────────────────────────────────────────────
 
-class HealthBarSettingsCard extends formattingSettings.SimpleCard {
+class BarShapeSettingsCard extends formattingSettings.SimpleCard {
   barWidth = new formattingSettings.NumUpDown({
     name: 'barWidth',
     displayName: 'Bar Width',
@@ -22,28 +25,10 @@ class HealthBarSettingsCard extends formattingSettings.SimpleCard {
     value: 6,
   });
 
-  showValue = new formattingSettings.ToggleSwitch({
-    name: 'showValue',
-    displayName: 'Show Value',
-    value: true,
-  });
-
-  showPercent = new formattingSettings.ToggleSwitch({
-    name: 'showPercent',
-    displayName: 'Show % Symbol',
-    value: true,
-  });
-
   gap = new formattingSettings.NumUpDown({
     name: 'gap',
     displayName: 'Gap Between Bars',
     value: 16,
-  });
-
-  maxValue = new formattingSettings.NumUpDown({
-    name: 'maxValue',
-    displayName: 'Max Value',
-    value: 100,
   });
 
   fillMode = new formattingSettings.ItemDropdown({
@@ -56,27 +41,38 @@ class HealthBarSettingsCard extends formattingSettings.SimpleCard {
     value: { value: 'gradient', displayName: 'Gradient' },
   });
 
+  name = 'barShapeSettings';
+  displayName = 'Bar Shape';
+  slices = [this.barWidth, this.barCornerRadius, this.gap, this.fillMode];
+}
+
+// ── Scale & Range (merged healthBarSettings.maxValue + healthBarScale.minValue + showYAxis) ──
+
+class ScaleRangeSettingsCard extends formattingSettings.SimpleCard {
+  minValue = new formattingSettings.NumUpDown({
+    name: 'minValue',
+    displayName: 'Min Value',
+    value: 0,
+  });
+
+  maxValue = new formattingSettings.NumUpDown({
+    name: 'maxValue',
+    displayName: 'Max Value',
+    value: 100,
+  });
+
   showYAxis = new formattingSettings.ToggleSwitch({
     name: 'showYAxis',
     displayName: 'Show Y-Axis Ticks',
     value: true,
   });
 
-  name = 'healthBarSettings';
-  displayName = 'Health Bar Settings';
-  slices = [
-    this.barWidth,
-    this.barCornerRadius,
-    this.showValue,
-    this.showPercent,
-    this.gap,
-    this.maxValue,
-    this.fillMode,
-    this.showYAxis,
-  ];
+  name = 'scaleRangeSettings';
+  displayName = 'Scale & Range';
+  slices = [this.minValue, this.maxValue, this.showYAxis];
 }
 
-// -- Color Settings -----------------------------------------------------------
+// ── Colors ───────────────────────────────────────────────────────────
 
 class ColorSettingsCard extends formattingSettings.SimpleCard {
   lowColor = new formattingSettings.ColorPicker({
@@ -114,102 +110,77 @@ class ColorSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.lowColor, this.midColor, this.highColor, this.trackColor, this.trackOpacity];
 }
 
-// -- Target Settings ----------------------------------------------------------
+// ── Value Labels (merged showValue, showPercent, valuePosition) ──────
 
-class TargetSettings extends formattingSettings.SimpleCard {
-  show = new formattingSettings.ToggleSwitch({
-    name: 'show',
-    displayName: 'Show Target',
+class ValueLabelsSettingsCard extends formattingSettings.SimpleCard {
+  showValue = new formattingSettings.ToggleSwitch({
+    name: 'showValue',
+    displayName: 'Show Value',
     value: true,
   });
 
-  color = new formattingSettings.ColorPicker({
-    name: 'color',
-    displayName: 'Target Color',
-    value: { value: '#0F172A' },
+  showPercent = new formattingSettings.ToggleSwitch({
+    name: 'showPercent',
+    displayName: 'Show % Symbol',
+    value: true,
   });
 
-  lineWidth = new formattingSettings.NumUpDown({
-    name: 'lineWidth',
-    displayName: 'Line Width',
-    value: 2,
-  });
-
-  markerStyle = new formattingSettings.ItemDropdown({
-    name: 'markerStyle',
-    displayName: 'Marker Style',
+  position = new formattingSettings.ItemDropdown({
+    name: 'position',
+    displayName: 'Value Position',
     items: [
-      { value: 'line', displayName: 'Line' },
-      { value: 'triangle', displayName: 'Triangle' },
-      { value: 'diamond', displayName: 'Diamond' },
+      { value: 'above', displayName: 'Above' },
+      { value: 'inside', displayName: 'Inside' },
+      { value: 'end', displayName: 'End' },
+      { value: 'right', displayName: 'Right' },
     ],
-    value: { value: 'line', displayName: 'Line' },
+    value: { value: 'above', displayName: 'Above' },
   });
 
-  name = 'targetSettings';
-  displayName = 'Target';
-  slices = [this.show, this.color, this.lineWidth, this.markerStyle];
-}
-
-// -- Card Style ---------------------------------------------------------------
-
-class CardStyleSettings extends formattingSettings.SimpleCard {
-  enableGlass = new formattingSettings.ToggleSwitch({
-    name: 'enableGlass',
-    displayName: 'Glass Effect',
-    value: true,
+  fontSize = new formattingSettings.NumUpDown({
+    name: 'fontSize',
+    displayName: 'Font Size',
+    value: 11,
   });
 
-  backgroundColor = new formattingSettings.ColorPicker({
-    name: 'backgroundColor',
-    displayName: 'Background Color',
+  fontColor = new formattingSettings.ColorPicker({
+    name: 'fontColor',
+    displayName: 'Font Color',
     value: { value: '' },
   });
 
-  backgroundOpacity = new formattingSettings.NumUpDown({
-    name: 'backgroundOpacity',
-    displayName: 'Background Opacity (%)',
-    value: 35,
+  fontFamily = new formattingSettings.ItemDropdown({
+    name: 'fontFamily',
+    displayName: 'Font Family',
+    items: [
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Arial', displayName: 'Arial' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Helvetica', displayName: 'Helvetica' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
+      { value: 'Verdana', displayName: 'Verdana' },
+      { value: 'Georgia', displayName: 'Georgia' },
+    ],
+    value: { value: 'Segoe UI', displayName: 'Segoe UI' },
   });
 
-  borderRadius = new formattingSettings.NumUpDown({
-    name: 'borderRadius',
-    displayName: 'Border Radius',
-    value: 12,
+  fontWeight = new formattingSettings.ItemDropdown({
+    name: 'fontWeight',
+    displayName: 'Font Weight',
+    items: [
+      { value: 'normal', displayName: 'Normal' },
+      { value: 'bold', displayName: 'Bold' },
+      { value: '600', displayName: 'Semi-Bold' },
+    ],
+    value: { value: 'normal', displayName: 'Normal' },
   });
 
-  name = 'cardSettings';
-  displayName = 'Card Style';
-  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  name = 'valueLabelsSettings';
+  displayName = 'Value Labels';
+  slices = [this.showValue, this.showPercent, this.position, this.fontSize, this.fontColor, this.fontFamily, this.fontWeight];
 }
 
-// -- Animation Settings -------------------------------------------------------
-
-class AnimationSettingsCard extends formattingSettings.SimpleCard {
-  enabled = new formattingSettings.ToggleSwitch({
-    name: 'enabled',
-    displayName: 'Enable Animations',
-    value: true,
-  });
-
-  duration = new formattingSettings.NumUpDown({
-    name: 'duration',
-    displayName: 'Duration (ms)',
-    value: 600,
-  });
-
-  staggerDelay = new formattingSettings.NumUpDown({
-    name: 'staggerDelay',
-    displayName: 'Stagger Delay (ms)',
-    value: 80,
-  });
-
-  name = 'animationSettings';
-  displayName = 'Animation';
-  slices = [this.enabled, this.duration, this.staggerDelay];
-}
-
-// -- Category Label Settings --------------------------------------------------
+// ── Category Labels ──────────────────────────────────────────────────
 
 class CategoryLabelSettingsCard extends formattingSettings.SimpleCard {
   show = new formattingSettings.ToggleSwitch({
@@ -261,7 +232,108 @@ class CategoryLabelSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.show, this.fontSize, this.fontColor, this.fontFamily, this.fontWeight];
 }
 
-// -- Health Bar Zone Settings -------------------------------------------------
+// ── Target ───────────────────────────────────────────────────────────
+
+class TargetSettings extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Target',
+    value: true,
+  });
+
+  color = new formattingSettings.ColorPicker({
+    name: 'color',
+    displayName: 'Target Color',
+    value: { value: '#0F172A' },
+  });
+
+  lineWidth = new formattingSettings.NumUpDown({
+    name: 'lineWidth',
+    displayName: 'Line Width',
+    value: 2,
+  });
+
+  markerStyle = new formattingSettings.ItemDropdown({
+    name: 'markerStyle',
+    displayName: 'Marker Style',
+    items: [
+      { value: 'line', displayName: 'Line' },
+      { value: 'triangle', displayName: 'Triangle' },
+      { value: 'diamond', displayName: 'Diamond' },
+    ],
+    value: { value: 'line', displayName: 'Line' },
+  });
+
+  name = 'targetSettings';
+  displayName = 'Target';
+  slices = [this.show, this.color, this.lineWidth, this.markerStyle];
+}
+
+// ── Card Style ───────────────────────────────────────────────────────
+
+class CardStyleSettings extends formattingSettings.SimpleCard {
+  cardStyleMode = new formattingSettings.ItemDropdown({
+    name: 'cardStyleMode',
+    displayName: 'Card Style',
+    items: [
+      { value: 'none', displayName: 'None' },
+      { value: 'glass', displayName: 'Glass' },
+      { value: 'elevated', displayName: 'Elevated' },
+      { value: 'neumorphic', displayName: 'Neumorphic' },
+    ],
+    value: { value: 'glass', displayName: 'Glass' },
+  });
+
+  backgroundColor = new formattingSettings.ColorPicker({
+    name: 'backgroundColor',
+    displayName: 'Background Color',
+    value: { value: '' },
+  });
+
+  backgroundOpacity = new formattingSettings.NumUpDown({
+    name: 'backgroundOpacity',
+    displayName: 'Background Opacity (%)',
+    value: 85,
+  });
+
+  borderRadius = new formattingSettings.NumUpDown({
+    name: 'borderRadius',
+    displayName: 'Border Radius',
+    value: 12,
+  });
+
+  name = 'cardSettings';
+  displayName = 'Card Style';
+  slices = [this.cardStyleMode, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+}
+
+// ── Animation ────────────────────────────────────────────────────────
+
+class AnimationSettingsCard extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Animations',
+    value: true,
+  });
+
+  duration = new formattingSettings.NumUpDown({
+    name: 'duration',
+    displayName: 'Duration (ms)',
+    value: 600,
+  });
+
+  staggerDelay = new formattingSettings.NumUpDown({
+    name: 'staggerDelay',
+    displayName: 'Stagger Delay (ms)',
+    value: 80,
+  });
+
+  name = 'animationSettings';
+  displayName = 'Animation';
+  slices = [this.enabled, this.duration, this.staggerDelay];
+}
+
+// ── Zone Background ─────────────────────────────────────────────────
 
 class HealthBarZoneSettings extends formattingSettings.SimpleCard {
   show = new formattingSettings.ToggleSwitch({
@@ -282,88 +354,60 @@ class HealthBarZoneSettings extends formattingSettings.SimpleCard {
   slices = [this.show, this.zoneColors];
 }
 
-// -- Health Bar Scale Settings ------------------------------------------------
-
-class HealthBarScaleSettings extends formattingSettings.SimpleCard {
-  minValue = new formattingSettings.NumUpDown({
-    name: 'minValue',
-    displayName: 'Min Value',
-    value: 0,
-  });
-
-  name = 'healthBarScale';
-  displayName = 'Scale';
-  slices = [this.minValue];
-}
-
-// -- Health Bar Value Position Settings ---------------------------------------
-
-class HealthBarValuePositionSettings extends formattingSettings.SimpleCard {
-  position = new formattingSettings.ItemDropdown({
-    name: 'position',
-    displayName: 'Value Position',
-    items: [
-      { value: 'above', displayName: 'Above' },
-      { value: 'inside', displayName: 'Inside' },
-      { value: 'end', displayName: 'End' },
-      { value: 'right', displayName: 'Right' },
-    ],
-    value: { value: 'above', displayName: 'Above' },
-  });
-
-  name = 'healthBarValuePosition';
-  displayName = 'Value Position';
-  slices = [this.position];
-}
-
-// -- Root Model ---------------------------------------------------------------
+// ── Root Model ───────────────────────────────────────────────────────
 
 export class HealthBarSettings extends formattingSettings.Model {
-  healthBarSettings = new HealthBarSettingsCard();
+  barShapeSettings = new BarShapeSettingsCard();
+  scaleRangeSettings = new ScaleRangeSettingsCard();
   colorSettings = new ColorSettingsCard();
+  valueLabelsSettings = new ValueLabelsSettingsCard();
+  categoryLabelSettings = new CategoryLabelSettingsCard();
   targetSettings = new TargetSettings();
+
+  titleFormattingCard = new TitleFormattingCard();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettingsCard();
 
-  categoryLabelSettings = new CategoryLabelSettingsCard();
   axisFormattingCard = new AxisFormattingCard();
   dataLabelFormattingCard = new DataLabelFormattingCard();
-  titleFormattingCard = new TitleFormattingCard();
   scrollFormattingCard = new ScrollFormattingCard();
-
   sortFormattingCard = new SortFormattingCard();
+  numberFormattingCard = new NumberFormattingCard();
 
   referenceLineFormattingCard = new ReferenceLineFormattingCard();
   trendLineFormattingCard = new TrendLineFormattingCard();
   conditionalFormattingCard = new ConditionalFormattingCard();
   annotationFormattingCard = new AnnotationFormattingCard();
+  healthBarZone = new HealthBarZoneSettings();
+  legendFormattingCard = new LegendFormattingCard();
+
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
+  dateFilterFormattingCard = new DateFilterFormattingCard();
   accessibilityFormattingCard = new AccessibilityFormattingCard();
 
-  healthBarZone = new HealthBarZoneSettings();
-  healthBarScale = new HealthBarScaleSettings();
-  healthBarValuePosition = new HealthBarValuePositionSettings();
-  numberFormattingCard = new NumberFormattingCard();
-
   cards = [
-    this.healthBarSettings,
+    this.barShapeSettings,
+    this.scaleRangeSettings,
     this.colorSettings,
+    this.valueLabelsSettings,
+    this.categoryLabelSettings,
     this.targetSettings,
+    this.titleFormattingCard,
     this.cardSettings,
     this.animationSettings,
-    this.categoryLabelSettings,
     this.axisFormattingCard,
     this.dataLabelFormattingCard,
-    this.titleFormattingCard,
     this.scrollFormattingCard,
     this.sortFormattingCard,
+    this.numberFormattingCard,
     this.referenceLineFormattingCard,
     this.trendLineFormattingCard,
     this.conditionalFormattingCard,
     this.annotationFormattingCard,
-    this.accessibilityFormattingCard,
     this.healthBarZone,
-    this.healthBarScale,
-    this.healthBarValuePosition,
-    this.numberFormattingCard,
+    this.legendFormattingCard,
+    this.colorThemeFormattingCard,
+    this.dateFilterFormattingCard,
+    this.accessibilityFormattingCard,
   ];
 }

@@ -176,6 +176,9 @@ const harnessConfig: HarnessConfig = {
     'trendSettings.neutralColor',
     // Goal: test data value 150 > goal 100, so unmetColor never applied
     'kpiGoalSettings.unmetColor',
+    // Vertical alignment affects inline justify-content on dynamically-created wrapper
+    'valueSettings.verticalAlignment',
+    'labelSettings.verticalAlignment',
   ],
 };
 

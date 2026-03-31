@@ -45,7 +45,7 @@
           ],
           "dataReductionAlgorithm": {
             "top": {
-              "count": 30
+              "count": 5000
             }
           }
         },
@@ -68,7 +68,7 @@
   ],
   "objects": {
     "dumbbellSettings": {
-      "displayName": "Dumbbell Settings",
+      "displayName": "Dumbbell Dots",
       "properties": {
         "dotRadius": {
           "displayName": "Dot Radius",
@@ -76,8 +76,18 @@
             "numeric": true
           }
         },
-        "lineWidth": {
-          "displayName": "Line Width",
+        "dotStrokeColor": {
+          "displayName": "Dot Stroke Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "dotStrokeWidth": {
+          "displayName": "Dot Stroke Width",
           "type": {
             "numeric": true
           }
@@ -101,19 +111,14 @@
               }
             }
           }
-        },
-        "dotStrokeColor": {
-          "displayName": "Dot Stroke Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        },
-        "dotStrokeWidth": {
-          "displayName": "Dot Stroke Width",
+        }
+      }
+    },
+    "dumbbellConnectorSettings": {
+      "displayName": "Connector Line",
+      "properties": {
+        "lineWidth": {
+          "displayName": "Line Width",
           "type": {
             "numeric": true
           }
@@ -126,6 +131,18 @@
                 "color": true
               }
             }
+          }
+        },
+        "showArrow": {
+          "displayName": "Connector Arrow",
+          "type": {
+            "bool": true
+          }
+        },
+        "autoDirectionalColor": {
+          "displayName": "Auto Directional Color",
+          "type": {
+            "bool": true
           }
         }
       }
@@ -293,7 +310,7 @@
           }
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (°)",
+          "displayName": "X-Label Rotation (\u00b0)",
           "type": {
             "numeric": true
           }
@@ -455,6 +472,12 @@
                 "displayName": "Bold"
               }
             ]
+          }
+        },
+        "legendAliases": {
+          "displayName": "Rename Labels",
+          "type": {
+            "text": true
           }
         }
       }
@@ -822,6 +845,64 @@
             }
           }
         },
+        "fontFamily": {
+          "displayName": "Font",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              }
+            ]
+          }
+        },
+        "fontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold"
+              }
+            ]
+          }
+        },
         "format": {
           "displayName": "Format",
           "type": {
@@ -863,7 +944,7 @@
       }
     },
     "dumbbellDisplaySettings": {
-      "displayName": "Dumbbell Display",
+      "displayName": "Display Options",
       "properties": {
         "showRanking": {
           "displayName": "Show Ranking",
@@ -871,27 +952,26 @@
             "bool": true
           }
         },
-        "showArrow": {
-          "displayName": "Connector Arrow",
-          "type": {
-            "bool": true
-          }
-        },
-        "autoDirectionalColor": {
-          "displayName": "Auto Directional Color",
-          "type": {
-            "bool": true
-          }
-        }
-      }
-    },
-    "dumbbellGroupSettings": {
-      "displayName": "Dumbbell Grouping",
-      "properties": {
         "enableGrouping": {
           "displayName": "Enable Grouping",
           "type": {
             "bool": true
+          }
+        },
+        "separatorColor": {
+          "displayName": "Separator Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "separatorWidth": {
+          "displayName": "Separator Width",
+          "type": {
+            "numeric": true
           }
         }
       }
@@ -1001,6 +1081,12 @@
             "numeric": true
           }
         },
+        "referenceBandWidth": {
+          "displayName": "Band Width (%)",
+          "type": {
+            "numeric": true
+          }
+        },
         "referenceLineAxis": {
           "displayName": "Target Axis",
           "type": {
@@ -1083,7 +1169,7 @@
           }
         },
         "showR2": {
-          "displayName": "Show R²",
+          "displayName": "Show R\u00b2",
           "type": {
             "bool": true
           }
@@ -1209,11 +1295,34 @@
             "numeric": true
           }
         },
+        "cardStyleMode": {
+          "displayName": "Card Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "glass",
+                "displayName": "Glass"
+              },
+              {
+                "value": "elevated",
+                "displayName": "Elevated"
+              },
+              {
+                "value": "neumorphic",
+                "displayName": "Neumorphic"
+              }
+            ]
+          }
+        },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "Glass Effect"
+          "displayName": "(Deprecated) Enable Glass"
         }
       }
     },
@@ -1399,6 +1508,35 @@
         },
         "valueSuffix": {
           "displayName": "Suffix",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "dateFilterFormatting": {
+      "displayName": "Date Filter",
+      "properties": {
+        "enableDateFilter": {
+          "displayName": "Enable Date Filter",
+          "type": {
+            "bool": true
+          }
+        },
+        "startDate": {
+          "displayName": "Start Date",
+          "type": {
+            "text": true
+          }
+        },
+        "endAtCurrentDate": {
+          "displayName": "End at Current Date",
+          "type": {
+            "bool": true
+          }
+        },
+        "endDate": {
+          "displayName": "End Date",
           "type": {
             "text": true
           }

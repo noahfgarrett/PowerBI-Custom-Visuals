@@ -15,7 +15,8 @@ import {
   cubicOut,
   animate,
   DURATION,
-  getGlassStyle,
+  applyCardStyle,
+  type CardStyleMode,
   getChartColor,
   getHostChartColor,
   renderChartTitle,
@@ -46,6 +47,10 @@ import {
   resolveSeriesFormatting,
   SeriesFormattingGroup,
   lineStyleToDashArray,
+  formatWithSettings,
+  getDateFilterIndices,
+  isDateColumn,
+  type DateFilterConfig,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -54,6 +59,7 @@ import IVisual = powerbi.extensibility.visual.IVisual;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import DataView = powerbi.DataView;
 import ISelectionId = powerbi.visuals.ISelectionId;
+import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 
 import '../style/visual.less';
 
@@ -70,6 +76,7 @@ interface BumpItem {
   color: string;
   points: RankPoint[];
   selectionId: ISelectionId;
+  highlighted: boolean;
 }
 
 // ── Constants ────────────────────────────────────────────────────
@@ -93,6 +100,8 @@ export class BumpChartVisual implements IVisual {
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
   private svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null;
+  private currentData: BumpItem[] | null = null;
+  private hasHighlights = false;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
@@ -117,7 +126,26 @@ export class BumpChartVisual implements IVisual {
       );
     }
 
+    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+    if (legacyCardObj) {
+      const legacyGlass = legacyCardObj['enableGlass'];
+      if (legacyGlass === false) {
+        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      }
+    }
+
     // Hide shared axis toggles that are shadowed by local settings
+
+    // Date filter: hide start/end when disabled
+    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
+    // Card Style — hide sub-settings when mode is 'none'
+    const cardStyleMode = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    this.settings.cardSettings.backgroundOpacity.visible = cardStyleMode !== 'none';
+    this.settings.cardSettings.backgroundColor.visible = cardStyleMode !== 'none';
+
     this.settings.axisFormattingCard.showXAxis.visible = false;
     this.settings.axisFormattingCard.showYAxis.visible = false;
     this.settings.axisFormattingCard.xAxisTitle.visible = false;
@@ -126,23 +154,46 @@ export class BumpChartVisual implements IVisual {
     this.settings.axisFormattingCard.yAxisMax.visible = false;
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
 
+    // Hide dead grid properties — bump-chart has no grid lines
+    this.settings.axisFormattingCard.showGridLines.visible = false;
+    this.settings.axisFormattingCard.gridLineColor.visible = false;
+    this.settings.axisFormattingCard.gridLineStyle.visible = false;
+    this.settings.axisFormattingCard.gridLineWidth.visible = false;
+    this.settings.axisFormattingCard.gridLineOpacity.visible = false;
+
+    // Hide dual-axis-only properties (no combo/dual-axis support)
+    this.settings.referenceLineFormattingCard.referenceLineAxis.visible = false;
+    this.settings.referenceLineFormattingCard.referenceBandWidth.visible = false;
+    this.settings.trendLineFormattingCard.trendLineAxis.visible = false;
+
     // Conditional visibility: hide child settings when parent toggle is off
     // Top N highlight: hide topN/showOthers when enabled is false
     this.settings.bumpHighlightSettings.topN.visible = this.settings.bumpHighlightSettings.enabled.value;
     this.settings.bumpHighlightSettings.showOthers.visible = this.settings.bumpHighlightSettings.enabled.value;
     // Area fill: hide areaOpacity when showArea is false
     this.settings.bumpSettings.areaOpacity.visible = this.settings.bumpSettings.showArea.value;
-    // Rank change: hide fontSize when show is false
-    this.settings.bumpRankChangeSettings.fontSize.visible = this.settings.bumpRankChangeSettings.show.value;
+    // Rank change: hide sub-settings when show is false
+    const rcShow = this.settings.bumpRankChangeSettings.show.value;
+    this.settings.bumpRankChangeSettings.fontSize.visible = rcShow;
+    this.settings.bumpRankChangeSettings.fontColor.visible = rcShow;
+    this.settings.bumpRankChangeSettings.fontFamily.visible = rcShow;
+    this.settings.bumpRankChangeSettings.fontWeight.visible = rcShow;
+    this.settings.bumpRankChangeSettings.positiveColor.visible = rcShow;
+    this.settings.bumpRankChangeSettings.negativeColor.visible = rcShow;
+    this.settings.bumpRankChangeSettings.showComparison.visible = rcShow;
 
     // Extract data
     const data = this.extractData(dataView);
+    this.currentData = data;
 
     // Populate per-series formatting groups
     this.populateSeriesGroups(data);
 
     // Render
     this.render(data, options.viewport);
+
+    // Apply cross-highlight dimming after render
+    this.applySelectionHighlight();
   }
 
   // ── Series Formatting ────────────────────────────────────────
@@ -196,12 +247,26 @@ export class BumpChartVisual implements IVisual {
     const rowCount = itemColumn.values.length;
     if (rowCount === 0) return null;
 
+    const dateConfig: DateFilterConfig = {
+      enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
+      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
+      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+    };
+    const dateIndices = isDateColumn(timeColumn.source) ? getDateFilterIndices(timeColumn.values, dateConfig) : null;
+
     // Build a pivot: Map<itemName, Map<timePeriod, value>>
     const pivot = new Map<string, Map<string, number>>();
     const itemFirstRowIndex = new Map<string, number>();
     const timePeriodsSet = new Set<string>();
 
+    // Cross-highlight support: read highlights from measure column
+    const hlRaw = (measureColumn as unknown as { highlights?: unknown[] }).highlights as unknown[] | undefined;
+    const itemHighlightedRows = new Map<string, boolean>();
+    let anyHighlight = false;
+
     for (let i = 0; i < rowCount; i++) {
+      if (dateIndices && !dateIndices.has(i)) continue;
       const itemVal = itemColumn.values[i];
       const timeVal = timeColumn.values[i];
       const measureVal = measureColumn.values[i];
@@ -223,6 +288,12 @@ export class BumpChartVisual implements IVisual {
         itemFirstRowIndex.set(itemName, i);
       }
       itemMap.set(timeName, numVal);
+
+      // Track highlight status per item
+      if (hlRaw && hlRaw[i] != null) {
+        itemHighlightedRows.set(itemName, true);
+        anyHighlight = true;
+      }
     }
 
     if (pivot.size === 0) return null;
@@ -274,7 +345,7 @@ export class BumpChartVisual implements IVisual {
     }
 
     // Build BumpItem array
-    const useChartPalette = this.settings.colorSettings.useChartPalette.value;
+    const useChartPalette = this.settings.bumpSettings.useChartPalette.value;
     const items: BumpItem[] = [];
     let colorIndex = 0;
 
@@ -303,11 +374,13 @@ export class BumpChartVisual implements IVisual {
         selectionId: this.host.createSelectionIdBuilder()
           .withCategory(itemColumn, selectionIndex)
           .createSelectionId(),
+        highlighted: itemHighlightedRows.get(itemName) ?? false,
       });
       colorIndex++;
     }
 
     if (items.length === 0) return null;
+    this.hasHighlights = anyHighlight;
     return items;
   }
 
@@ -324,27 +397,16 @@ export class BumpChartVisual implements IVisual {
 
     const s = this.settings;
 
-    // Apply glass card style
-    if (s.cardSettings.enableGlass.value) {
-      const glass = getGlassStyle({
-        mode: 'light',
-        opacity: s.cardSettings.backgroundOpacity.value / 100,
-        backgroundColor: s.cardSettings.backgroundColor.value?.value,
-        borderRadius: s.cardSettings.borderRadius.value,
-      });
-      this.container.style.background = glass.background;
-      this.container.style.backdropFilter = glass.backdropFilter;
-      (this.container.style as unknown as Record<string, string>)['WebkitBackdropFilter'] = glass.WebkitBackdropFilter;
-      this.container.style.border = glass.border;
-      this.container.style.boxShadow = glass.boxShadow;
-      this.container.style.borderRadius = glass.borderRadius;
-    } else {
-      this.container.style.background = '';
-      this.container.style.backdropFilter = '';
-      (this.container.style as unknown as Record<string, string>)['WebkitBackdropFilter'] = '';
-      this.container.style.border = '';
-      this.container.style.boxShadow = '';
-      this.container.style.borderRadius = '';
+    // Apply card style
+    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    applyCardStyle(this.container, {
+      mode: cardMode,
+      opacity: s.cardSettings.backgroundOpacity.value / 100,
+      backgroundColor: s.cardSettings.backgroundColor.value?.value,
+      borderRadius: s.cardSettings.borderRadius.value,
+    });
+    if (cardMode === 'none') {
+      this.container.style.borderRadius = `${s.cardSettings.borderRadius.value}px`;
     }
 
     // Handle empty/null data
@@ -420,7 +482,7 @@ export class BumpChartVisual implements IVisual {
 
     // ── X-Axis ──────────────────────────────────────────────────
 
-    const showXAxis = s.axisVisibilitySettings.showXAxis.value;
+    const showXAxis = s.bumpSettings.showXAxis.value;
 
     if (showXAxis) {
       const axisGroup = g.append('g')
@@ -557,6 +619,7 @@ export class BumpChartVisual implements IVisual {
       const path = lineGroup.append('path')
         .attr('class', 'bump-line')
         .attr('data-series', String(origIdx))
+        .attr('data-selection-key', item.selectionId.getKey())
         .attr('d', pathD)
         .attr('stroke', condColor || sf.color)
         .attr('stroke-width', sf.lineWidth || lineWidth)
@@ -589,9 +652,73 @@ export class BumpChartVisual implements IVisual {
           });
         });
 
-      // Tooltip
-      path.append('title')
-        .text(item.name);
+      // Tooltip via tooltipService — show nearest point's rank and value
+      const pathHost = this.host;
+      const pathItem = item;
+      const tooltipAnchor = path.node()?.closest('g') ?? path.node();
+      path.on('mouseover', (event: MouseEvent) => {
+        const tooltipItems: VisualTooltipDataItem[] = [
+          { displayName: 'Series', value: pathItem.name },
+        ];
+        // Find the nearest point by X position
+        if (tooltipAnchor) {
+          const [mx] = d3.pointer(event, tooltipAnchor);
+          let nearest = pathItem.points[0];
+          let minDist = Infinity;
+          for (const pt of pathItem.points) {
+            const px = xScale(pt.time) ?? 0;
+            const dist = Math.abs(px - mx);
+            if (dist < minDist) {
+              minDist = dist;
+              nearest = pt;
+            }
+          }
+          if (nearest) {
+            tooltipItems.push({ displayName: 'Time', value: nearest.time });
+            tooltipItems.push({ displayName: 'Rank', value: String(nearest.rank) });
+            tooltipItems.push({ displayName: 'Value', value: formatWithSettings(nearest.value, this.settings.numberFormattingCard) });
+          }
+        }
+        pathHost.tooltipService.show({
+          dataItems: tooltipItems,
+          identities: [],
+          coordinates: [event.clientX, event.clientY],
+          isTouchEvent: false,
+        });
+      });
+      path.on('mousemove', (event: MouseEvent) => {
+        // Update tooltip with nearest point on move
+        const moveItems: VisualTooltipDataItem[] = [
+          { displayName: 'Series', value: pathItem.name },
+        ];
+        if (tooltipAnchor) {
+          const [mx] = d3.pointer(event, tooltipAnchor);
+          let nearest = pathItem.points[0];
+          let minDist = Infinity;
+          for (const pt of pathItem.points) {
+            const px = xScale(pt.time) ?? 0;
+            const dist = Math.abs(px - mx);
+            if (dist < minDist) {
+              minDist = dist;
+              nearest = pt;
+            }
+          }
+          if (nearest) {
+            moveItems.push({ displayName: 'Time', value: nearest.time });
+            moveItems.push({ displayName: 'Rank', value: String(nearest.rank) });
+            moveItems.push({ displayName: 'Value', value: formatWithSettings(nearest.value, this.settings.numberFormattingCard) });
+          }
+        }
+        pathHost.tooltipService.show({
+          dataItems: moveItems,
+          identities: [],
+          coordinates: [event.clientX, event.clientY],
+          isTouchEvent: false,
+        });
+      });
+      path.on('mouseout', () => {
+        pathHost.tooltipService.hide({ immediately: true, isTouchEvent: false });
+      });
 
       const pathNode = path.node();
       if (pathNode) {
@@ -618,6 +745,7 @@ export class BumpChartVisual implements IVisual {
         const dot = dotGroup.append('circle')
           .attr('class', 'bump-dot')
           .attr('data-series', String(origIdx))
+          .attr('data-selection-key', item.selectionId.getKey())
           .attr('cx', cx)
           .attr('cy', cy)
           .attr('r', dotRadius)
@@ -643,8 +771,37 @@ export class BumpChartVisual implements IVisual {
           dot.style('opacity', '0.25');
         }
 
-        dot.append('title')
-          .text(`${item.name} — ${point.time}: Rank ${point.rank}`);
+        // Tooltip via tooltipService
+        const dotHost = this.host;
+        const dotItemName = item.name;
+        const dotPointTime = point.time;
+        const dotPointRank = point.rank;
+        const dotPointValue = point.value;
+        dot.on('mouseover', (event: MouseEvent) => {
+          const tooltipItems: VisualTooltipDataItem[] = [
+            { displayName: 'Series', value: dotItemName },
+            { displayName: 'Time', value: dotPointTime },
+            { displayName: 'Rank', value: String(dotPointRank) },
+            { displayName: 'Value', value: formatWithSettings(dotPointValue, this.settings.numberFormattingCard) },
+          ];
+          dotHost.tooltipService.show({
+            dataItems: tooltipItems,
+            identities: [],
+            coordinates: [event.clientX, event.clientY],
+            isTouchEvent: false,
+          });
+        });
+        dot.on('mousemove', (event: MouseEvent) => {
+          dotHost.tooltipService.move({
+            dataItems: [],
+            identities: [],
+            coordinates: [event.clientX, event.clientY],
+            isTouchEvent: false,
+          });
+        });
+        dot.on('mouseout', () => {
+          dotHost.tooltipService.hide({ immediately: true, isTouchEvent: false });
+        });
 
         const dotNode = dot.node();
         if (dotNode) dots.push(dotNode);
@@ -689,6 +846,12 @@ export class BumpChartVisual implements IVisual {
     if (s.bumpRankChangeSettings.show.value) {
       const rcGroup = g.append('g').attr('class', 'bump-rank-change-labels');
       const rcFontSize = s.bumpRankChangeSettings.fontSize.value;
+      const rcFontColorRaw = s.bumpRankChangeSettings.fontColor.value?.value;
+      const rcHasCustomColor = rcFontColorRaw != null && rcFontColorRaw.length > 0;
+      const rcPositiveColor = s.bumpRankChangeSettings.positiveColor.value?.value ?? '#22C55E';
+      const rcNegativeColor = s.bumpRankChangeSettings.negativeColor.value?.value ?? '#EF4444';
+      const rcFontFamily = resolveDropdown(s.bumpRankChangeSettings.fontFamily) || '';
+      const rcFontWeight = resolveDropdown(s.bumpRankChangeSettings.fontWeight) || 'bold';
 
       renderData.forEach((item) => {
         const origIdx = data.indexOf(item);
@@ -704,7 +867,7 @@ export class BumpChartVisual implements IVisual {
           const cy = yScale(curr.rank);
 
           // Negative delta = moved up in rank = improvement (green)
-          const color = delta < 0 ? '#22C55E' : '#EF4444';
+          const color = rcHasCustomColor ? rcFontColorRaw : (delta < 0 ? rcPositiveColor : rcNegativeColor);
           const label = delta > 0 ? `+${delta}` : String(delta);
 
           const text = rcGroup.append('text')
@@ -714,8 +877,13 @@ export class BumpChartVisual implements IVisual {
             .attr('y', cy - dotRadius - 2)
             .attr('font-size', `${rcFontSize}px`)
             .attr('fill', color)
-            .attr('font-weight', 'bold')
-            .text(label);
+            .attr('font-weight', rcFontWeight);
+
+          if (rcFontFamily) {
+            text.attr('font-family', rcFontFamily);
+          }
+
+          text.text(label);
 
           if (isDimmed) {
             text.style('opacity', '0.25');
@@ -726,7 +894,7 @@ export class BumpChartVisual implements IVisual {
 
     // ── Period Comparison Badges ─────────────────────────────────
 
-    if (s.bumpComparisonSettings.show.value) {
+    if (s.bumpRankChangeSettings.showComparison.value) {
       const compGroup = g.append('g').attr('class', 'bump-comparison-labels');
 
       renderData.forEach((item) => {
@@ -743,7 +911,9 @@ export class BumpChartVisual implements IVisual {
         if (cx === undefined) return;
         const cy = yScale(lastPoint.rank);
 
-        const color = delta < 0 ? '#22C55E' : delta > 0 ? '#EF4444' : (s.axisFormattingCard.axisLabelColor.value?.value || '#64748B');
+        const compPositiveColor = s.bumpRankChangeSettings.positiveColor.value?.value ?? '#22C55E';
+        const compNegativeColor = s.bumpRankChangeSettings.negativeColor.value?.value ?? '#EF4444';
+        const color = delta < 0 ? compPositiveColor : delta > 0 ? compNegativeColor : (s.axisFormattingCard.axisLabelColor.value?.value || '#64748B');
         const label = delta === 0 ? '=' : delta > 0 ? `+${delta}` : String(delta);
 
         const badge = compGroup.append('text')
@@ -910,6 +1080,7 @@ export class BumpChartVisual implements IVisual {
       fontSize: legendFmtCard.legendFontSize.value,
       fontColor,
       fontFamily: rawLegendFontFamily,
+      aliases: legendFmtCard.legendAliases.value,
     });
   }
 
@@ -1079,8 +1250,44 @@ export class BumpChartVisual implements IVisual {
     return this.formattingSettingsService.buildFormattingModel(this.settings);
   }
 
+  // ── Selection & Cross-Highlight ─────────────────────────────────
+
+  private applySelectionHighlight(): void {
+    const hasSelection = this.selectionManager.hasSelection();
+    const selectedIds = this.selectionManager.getSelectionIds() as ISelectionId[];
+    const selectedKeys = new Set(selectedIds.map((id) => id.getKey()));
+
+    // Build set of highlighted keys from cross-highlight data
+    const data = this.currentData;
+    const highlightedKeys = new Set<string>();
+    if (this.hasHighlights && data) {
+      for (const item of data) {
+        if (item.highlighted) {
+          highlightedKeys.add(item.selectionId.getKey());
+        }
+      }
+    }
+
+    const lines = this.container.querySelectorAll<SVGPathElement>('.bump-line');
+    const dots = this.container.querySelectorAll<SVGCircleElement>('.bump-dot');
+
+    const shouldDim = hasSelection || this.hasHighlights;
+    const allElements = [...Array.from(lines), ...Array.from(dots)];
+    for (const el of allElements) {
+      if (shouldDim) {
+        const elKey = el.getAttribute('data-selection-key');
+        const isSelected = hasSelection && elKey && selectedKeys.has(elKey);
+        const isHighlighted = this.hasHighlights && elKey && highlightedKeys.has(elKey);
+        el.style.opacity = (isSelected || isHighlighted) ? '' : '0.3';
+      } else {
+        el.style.opacity = '';
+      }
+    }
+  }
+
   private handleBackgroundClick = (): void => {
     void this.selectionManager.clear();
+    this.applySelectionHighlight();
   };
 
   // ── Lifecycle ────────────────────────────────────────────────

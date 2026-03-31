@@ -4,7 +4,7 @@
     "displayName": "Stream Graph",
     "guid": "streamGraph_2B3C4D5E6F7A",
     "visualClassName": "StreamGraphVisual",
-    "version": "1.0.0.0",
+    "version": "1.0.1.0",
     "description": "Stacked area layers flowing around a central baseline with animated entrance and glassmorphic styling.",
     "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
     "gitHubUrl": "https://github.com/noahgarrett/PowerBI"

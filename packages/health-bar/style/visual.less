@@ -1,9 +1,9 @@
 /* Health Bar — styles injected via pbiviz build */
 
 .health-bar-container {
-  width: 100%;
+  min-width: 100%;
   height: 100%;
-  overflow: hidden;
+  overflow: auto;
   padding: 12px;
   font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
   box-sizing: border-box;
@@ -18,7 +18,6 @@
 
 .health-bar-svg {
   display: block;
-  width: 100%;
   min-height: 0;
   margin: 0 auto;
 }
@@ -33,7 +32,7 @@
 }
 
 .health-bar-fill:hover {
-  opacity: 0.85;
+  filter: brightness(1.15) drop-shadow(0 0 4px rgba(0, 0, 0, 0.15));
 }
 
 .health-bar-value {
@@ -45,15 +44,6 @@
 .health-bar-label {
   text-anchor: middle;
   pointer-events: none;
-}
-
-.health-bar-tick-line {
-  pointer-events: none;
-}
-
-.health-bar-tick-label {
-  pointer-events: none;
-  font-variant-numeric: tabular-nums;
 }
 
 /* Empty state */

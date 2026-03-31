@@ -5,7 +5,10 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, NumberFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AnnotationFormattingCard, AccessibilityFormattingCard } from '../../core/src';
+import { AxisFormattingCard, LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, ScrollFormattingCard, NumberFormattingCard, ReferenceLineFormattingCard, TrendLineFormattingCard, ConditionalFormattingCard, AnnotationFormattingCard, AccessibilityFormattingCard,
+  ColorThemeFormattingCard,
+  DateFilterFormattingCard,
+} from '../../core/src';
 // -- Waterfall Settings -------------------------------------------------------
 
 class WaterfallSettingsCard extends formattingSettings.SimpleCard {
@@ -99,9 +102,41 @@ class ValueSettingsCard extends formattingSettings.SimpleCard {
     value: 11,
   });
 
+  fontFamily = new formattingSettings.ItemDropdown({
+    name: 'fontFamily',
+    displayName: 'Font Family',
+    items: [
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Arial', displayName: 'Arial' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Helvetica', displayName: 'Helvetica' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
+      { value: 'Verdana', displayName: 'Verdana' },
+      { value: 'Georgia', displayName: 'Georgia' },
+    ],
+    value: { value: 'Segoe UI', displayName: 'Segoe UI' },
+  });
+
+  fontWeight = new formattingSettings.ItemDropdown({
+    name: 'fontWeight',
+    displayName: 'Font Weight',
+    items: [
+      { value: 'normal', displayName: 'Normal' },
+      { value: 'bold', displayName: 'Bold' },
+      { value: '600', displayName: 'Semi-Bold' },
+    ],
+    value: { value: 'normal', displayName: 'Normal' },
+  });
+
+  fontColor = new formattingSettings.ColorPicker({
+    name: 'fontColor',
+    displayName: 'Font Color',
+    value: { value: '' },
+  });
+
   name = 'valueSettings';
   displayName = 'Value Labels';
-  slices = [this.show, this.fontSize];
+  slices = [this.show, this.fontSize, this.fontColor, this.fontFamily, this.fontWeight];
 }
 
 // -- Axis Settings ------------------------------------------------------------
@@ -127,10 +162,16 @@ class AxisSettingsCard extends formattingSettings.SimpleCard {
 // -- Card Style ---------------------------------------------------------------
 
 class CardStyleSettings extends formattingSettings.SimpleCard {
-  enableGlass = new formattingSettings.ToggleSwitch({
-    name: 'enableGlass',
-    displayName: 'Glass Effect',
-    value: true,
+  cardStyleMode = new formattingSettings.ItemDropdown({
+    name: 'cardStyleMode',
+    displayName: 'Card Style',
+    items: [
+      { value: 'none', displayName: 'None' },
+      { value: 'glass', displayName: 'Glass' },
+      { value: 'elevated', displayName: 'Elevated' },
+      { value: 'neumorphic', displayName: 'Neumorphic' },
+    ],
+    value: { value: 'glass', displayName: 'Glass' },
   });
 
   backgroundColor = new formattingSettings.ColorPicker({
@@ -153,7 +194,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.cardStyleMode, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 // -- Animation Settings -------------------------------------------------------
@@ -348,8 +389,6 @@ export class AnimatedWaterfallSettings extends formattingSettings.Model {
 
   axisFormattingCard = new AxisFormattingCard();
 
-  legendFormattingCard = new LegendFormattingCard();
-
   dataLabelFormattingCard = new DataLabelFormattingCard();
 
   titleFormattingCard = new TitleFormattingCard();
@@ -377,29 +416,33 @@ export class AnimatedWaterfallSettings extends formattingSettings.Model {
   waterfallSummary = new WaterfallSummarySettings();
   waterfallSort = new WaterfallSortSettings();
 
+  legendFormattingCard = new LegendFormattingCard();
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
+  dateFilterFormattingCard = new DateFilterFormattingCard();
   cards = [
     this.waterfallSettings,
     this.colorSettings,
-    this.valueSettings,
-    this.axisSettings,
-    this.cardSettings,
+    this.connectorSettings,
+    this.waterfallTotalBar,
+    this.subtotalSettings,
     this.animationSettings,
-    this.drillDownSettings,
     this.axisFormattingCard,
-    this.legendFormattingCard,
+    this.valueSettings,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
-    this.connectorSettings,
-    this.subtotalSettings,
-    this.scrollFormattingCard,
     this.numberFormattingCard,
+    this.waterfallSort,
+    this.waterfallSummary,
+    this.drillDownSettings,
+    this.cardSettings,
+    this.scrollFormattingCard,
     this.referenceLineFormattingCard,
     this.trendLineFormattingCard,
     this.conditionalFormattingCard,
     this.annotationFormattingCard,
+    this.legendFormattingCard,
+    this.colorThemeFormattingCard,
+    this.dateFilterFormattingCard,
     this.accessibilityFormattingCard,
-    this.waterfallTotalBar,
-    this.waterfallSummary,
-    this.waterfallSort,
   ];
 }

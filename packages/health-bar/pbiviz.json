@@ -4,10 +4,10 @@
     "displayName": "Health Bar",
     "guid": "healthBar_4F7A2B9E1C3D",
     "visualClassName": "HealthBarVisual",
-    "version": "1.0.0.0",
+    "version": "1.0.1.0",
     "description": "Vertical bar chart with red-to-green gradient showing health percentages",
-    "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
-    "gitHubUrl": "https://github.com/noahgarrett/PowerBI"
+    "supportUrl": "https://github.com/noahfgarrett/PowerBI/issues",
+    "gitHubUrl": "https://github.com/noahfgarrett/PowerBI"
   },
   "apiVersion": "5.3.0",
   "author": {

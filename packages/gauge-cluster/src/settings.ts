@@ -5,20 +5,78 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { DataLabelFormattingCard, TitleFormattingCard, NumberFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard } from '../../core/src';
-class ClusterSettings extends formattingSettings.SimpleCard {
+import { LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, NumberFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard,
+  ColorThemeFormattingCard,
+  DateFilterFormattingCard,
+} from '../../core/src';
+
+// ── Grid Layout ─────────────────────────────────────────────────────
+
+class GridLayoutSettingsCard extends formattingSettings.SimpleCard {
   gaugesPerRow = new formattingSettings.NumUpDown({
     name: 'gaugesPerRow',
     displayName: 'Gauges Per Row',
     value: 4,
   });
 
+  sortByValue = new formattingSettings.ToggleSwitch({
+    name: 'sortByValue',
+    displayName: 'Sort by Value',
+    value: false,
+  });
+
+  name = 'gridLayoutSettings';
+  displayName = 'Grid Layout';
+  slices = [this.gaugesPerRow, this.sortByValue];
+}
+
+// ── Arc Appearance ──────────────────────────────────────────────────
+
+class ArcAppearanceSettingsCard extends formattingSettings.SimpleCard {
   arcRange = new formattingSettings.NumUpDown({
     name: 'arcRange',
     displayName: 'Arc Range (\u00b0)',
     value: 240,
   });
 
+  roundedCaps = new formattingSettings.ToggleSwitch({
+    name: 'roundedCaps',
+    displayName: 'Rounded Caps',
+    value: true,
+  });
+
+  trackOpacity = new formattingSettings.NumUpDown({
+    name: 'trackOpacity',
+    displayName: 'Track Opacity (%)',
+    value: 15,
+  });
+
+  showNeedle = new formattingSettings.ToggleSwitch({
+    name: 'showNeedle',
+    displayName: 'Show Needle/Pointer',
+    value: false,
+  });
+
+  arcThickness = new formattingSettings.NumUpDown({
+    name: 'arcThickness',
+    displayName: 'Arc Thickness (% of radius)',
+    value: 20,
+  });
+
+  trackColor = new formattingSettings.ColorPicker({
+    name: 'trackColor',
+    displayName: 'Track Color',
+    value: { value: '#94A3B8' },
+  });
+
+  name = 'arcAppearanceSettings';
+  displayName = 'Arc Appearance';
+  slices = [this.arcRange, this.roundedCaps, this.trackOpacity, this.trackColor, this.showNeedle, this.arcThickness];
+}
+
+// ── Value Range ─────────────────────────────────────────────────────
+
+class ValueRangeSettingsCard extends formattingSettings.SimpleCard {
   minValue = new formattingSettings.NumUpDown({
     name: 'minValue',
     displayName: 'Min Value',
@@ -31,6 +89,78 @@ class ClusterSettings extends formattingSettings.SimpleCard {
     value: 100,
   });
 
+  name = 'valueRangeSettings';
+  displayName = 'Value Range';
+  slices = [this.minValue, this.maxValue];
+}
+
+// ── Color Zones ─────────────────────────────────────────────────────
+
+class ZoneSettings extends formattingSettings.SimpleCard {
+  lowThreshold = new formattingSettings.NumUpDown({
+    name: 'lowThreshold',
+    displayName: 'Low Threshold (%)',
+    value: 33,
+  });
+
+  highThreshold = new formattingSettings.NumUpDown({
+    name: 'highThreshold',
+    displayName: 'High Threshold (%)',
+    value: 66,
+  });
+
+  lowColor = new formattingSettings.ColorPicker({
+    name: 'lowColor',
+    displayName: 'Low Color',
+    value: { value: '#F87171' },
+  });
+
+  midColor = new formattingSettings.ColorPicker({
+    name: 'midColor',
+    displayName: 'Mid Color',
+    value: { value: '#FBBF24' },
+  });
+
+  highColor = new formattingSettings.ColorPicker({
+    name: 'highColor',
+    displayName: 'High Color',
+    value: { value: '#34D399' },
+  });
+
+  name = 'zoneSettings';
+  displayName = 'Color Zones';
+  slices = [this.lowThreshold, this.highThreshold, this.lowColor, this.midColor, this.highColor];
+}
+
+// ── Target ──────────────────────────────────────────────────────────
+
+class TargetSettings extends formattingSettings.SimpleCard {
+  show = new formattingSettings.ToggleSwitch({
+    name: 'show',
+    displayName: 'Show Target',
+    value: true,
+  });
+
+  color = new formattingSettings.ColorPicker({
+    name: 'color',
+    displayName: 'Target Color',
+    value: { value: '#0F172A' },
+  });
+
+  lineWidth = new formattingSettings.NumUpDown({
+    name: 'lineWidth',
+    displayName: 'Line Width',
+    value: 2,
+  });
+
+  name = 'targetSettings';
+  displayName = 'Target';
+  slices = [this.show, this.color, this.lineWidth];
+}
+
+// ── Labels (merged Cluster Display + Cluster Labels + label props) ──
+
+class LabelsSettingsCard extends formattingSettings.SimpleCard {
   showLabels = new formattingSettings.ToggleSwitch({
     name: 'showLabels',
     displayName: 'Show Labels',
@@ -81,88 +211,43 @@ class ClusterSettings extends formattingSettings.SimpleCard {
     value: { value: 'normal', displayName: 'Normal' },
   });
 
-
-  trackOpacity = new formattingSettings.NumUpDown({
-
-    name: 'trackOpacity',
-
-    displayName: 'Track Opacity (%)',
-
-    value: 15,
-
+  showSubtitle = new formattingSettings.ToggleSwitch({
+    name: 'showSubtitle',
+    displayName: 'Show Subtitle',
+    value: false,
   });
 
-  roundedCaps = new formattingSettings.ToggleSwitch({
-    name: 'roundedCaps',
-    displayName: 'Rounded Caps',
-    value: true,
+  subtitleField = new formattingSettings.TextInput({
+    name: 'subtitleField',
+    displayName: 'Subtitle Field',
+    value: '',
+    placeholder: 'e.g. Department',
   });
 
-  name = 'clusterSettings';
-  displayName = 'Cluster Layout';
-  slices = [
-    this.gaugesPerRow,
-    this.arcRange,
-    this.minValue,
-    this.maxValue,
-    this.showLabels,
-    this.showValues,
-    this.labelFontSize,
-    this.labelFontColor,
-    this.labelFontFamily,
-    this.labelFontWeight,
-    this.trackOpacity,
-    this.roundedCaps,
-  ];
+  showSparklines = new formattingSettings.ToggleSwitch({
+    name: 'showSparklines',
+    displayName: 'Show Mini Sparklines',
+    value: false,
+  });
+
+  name = 'labelsSettings';
+  displayName = 'Labels';
+  slices = [this.showLabels, this.showValues, this.labelFontSize, this.labelFontColor, this.labelFontFamily, this.labelFontWeight, this.showSubtitle, this.subtitleField, this.showSparklines];
 }
 
-class ZoneSettings extends formattingSettings.SimpleCard {
-  lowColor = new formattingSettings.ColorPicker({
-    name: 'lowColor',
-    displayName: 'Low Color',
-    value: { value: '#F87171' },
-  });
-
-  midColor = new formattingSettings.ColorPicker({
-    name: 'midColor',
-    displayName: 'Mid Color',
-    value: { value: '#FBBF24' },
-  });
-
-  highColor = new formattingSettings.ColorPicker({
-    name: 'highColor',
-    displayName: 'High Color',
-    value: { value: '#34D399' },
-  });
-
-  lowThreshold = new formattingSettings.NumUpDown({
-    name: 'lowThreshold',
-    displayName: 'Low Threshold (%)',
-    value: 33,
-  });
-
-  highThreshold = new formattingSettings.NumUpDown({
-    name: 'highThreshold',
-    displayName: 'High Threshold (%)',
-    value: 66,
-  });
-
-  name = 'zoneSettings';
-  displayName = 'Color Zones';
-  slices = [
-    this.lowColor,
-    this.midColor,
-    this.highColor,
-    this.lowThreshold,
-    this.highThreshold,
-  ];
-}
+// ── Card Style ──────────────────────────────────────────────────────
 
 class CardStyleSettings extends formattingSettings.SimpleCard {
-  enableGlass = new formattingSettings.ToggleSwitch({
-    name: 'enableGlass',
-    displayName: 'Glass Effect',
-    value: true,
+  cardStyleMode = new formattingSettings.ItemDropdown({
+    name: 'cardStyleMode',
+    displayName: 'Card Style',
+    items: [
+      { value: 'none', displayName: 'None' },
+      { value: 'glass', displayName: 'Glass' },
+      { value: 'elevated', displayName: 'Elevated' },
+      { value: 'neumorphic', displayName: 'Neumorphic' },
+    ],
+    value: { value: 'glass', displayName: 'Glass' },
   });
 
   backgroundColor = new formattingSettings.ColorPicker({
@@ -174,7 +259,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
   backgroundOpacity = new formattingSettings.NumUpDown({
     name: 'backgroundOpacity',
     displayName: 'Background Opacity (%)',
-    value: 35,
+    value: 85,
   });
 
   borderRadius = new formattingSettings.NumUpDown({
@@ -185,32 +270,10 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.cardStyleMode, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
-class TargetSettings extends formattingSettings.SimpleCard {
-  show = new formattingSettings.ToggleSwitch({
-    name: 'show',
-    displayName: 'Show Target',
-    value: true,
-  });
-
-  color = new formattingSettings.ColorPicker({
-    name: 'color',
-    displayName: 'Target Color',
-    value: { value: '#0F172A' },
-  });
-
-  lineWidth = new formattingSettings.NumUpDown({
-    name: 'lineWidth',
-    displayName: 'Line Width',
-    value: 2,
-  });
-
-  name = 'targetSettings';
-  displayName = 'Target';
-  slices = [this.show, this.color, this.lineWidth];
-}
+// ── Animation ───────────────────────────────────────────────────────
 
 class AnimationSettings extends formattingSettings.SimpleCard {
   enabled = new formattingSettings.ToggleSwitch({
@@ -230,80 +293,45 @@ class AnimationSettings extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
-// ── Cluster Display Settings ────────────────────────────────────
-
-class ClusterDisplaySettings extends formattingSettings.SimpleCard {
-  showSparklines = new formattingSettings.ToggleSwitch({
-    name: 'showSparklines',
-    displayName: 'Show Mini Sparklines',
-    value: false,
-  });
-
-  showNeedle = new formattingSettings.ToggleSwitch({
-    name: 'showNeedle',
-    displayName: 'Show Needle/Pointer',
-    value: false,
-  });
-
-  sortByValue = new formattingSettings.ToggleSwitch({
-    name: 'sortByValue',
-    displayName: 'Sort by Value',
-    value: false,
-  });
-
-  name = 'clusterDisplaySettings';
-  displayName = 'Cluster Display';
-  slices = [this.showSparklines, this.showNeedle, this.sortByValue];
-}
-
-// ── Cluster Label Settings ──────────────────────────────────────
-
-class ClusterLabelSettings extends formattingSettings.SimpleCard {
-  showSubtitle = new formattingSettings.ToggleSwitch({
-    name: 'showSubtitle',
-    displayName: 'Show Subtitle',
-    value: false,
-  });
-
-  subtitleField = new formattingSettings.TextInput({
-    name: 'subtitleField',
-    displayName: 'Subtitle Field',
-    value: '',
-    placeholder: 'e.g. Department',
-  });
-
-  name = 'clusterLabelSettings';
-  displayName = 'Cluster Labels';
-  slices = [this.showSubtitle, this.subtitleField];
-}
+// ── Root Model ──────────────────────────────────────────────────────
 
 export class GaugeClusterSettings extends formattingSettings.Model {
-  clusterSettings = new ClusterSettings();
+  gridLayoutSettings = new GridLayoutSettingsCard();
+  arcAppearanceSettings = new ArcAppearanceSettingsCard();
+  valueRangeSettings = new ValueRangeSettingsCard();
   zoneSettings = new ZoneSettings();
   targetSettings = new TargetSettings();
-  cardSettings = new CardStyleSettings();
-  animationSettings = new AnimationSettings();
-  clusterDisplaySettings = new ClusterDisplaySettings();
-  clusterLabelSettings = new ClusterLabelSettings();
+  labelsSettings = new LabelsSettingsCard();
 
-  dataLabelFormattingCard = new DataLabelFormattingCard();
   titleFormattingCard = new TitleFormattingCard();
+  dataLabelFormattingCard = new DataLabelFormattingCard();
   numberFormattingCard = new NumberFormattingCard();
+
+  animationSettings = new AnimationSettings();
+  cardSettings = new CardStyleSettings();
+
+  legendFormattingCard = new LegendFormattingCard();
   conditionalFormattingCard = new ConditionalFormattingCard();
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
+  dateFilterFormattingCard = new DateFilterFormattingCard();
   accessibilityFormattingCard = new AccessibilityFormattingCard();
 
   cards = [
-    this.clusterSettings,
+    this.gridLayoutSettings,
+    this.arcAppearanceSettings,
+    this.valueRangeSettings,
     this.zoneSettings,
     this.targetSettings,
-    this.cardSettings,
-    this.animationSettings,
-    this.clusterDisplaySettings,
-    this.clusterLabelSettings,
-    this.dataLabelFormattingCard,
+    this.labelsSettings,
     this.titleFormattingCard,
+    this.dataLabelFormattingCard,
     this.numberFormattingCard,
+    this.animationSettings,
+    this.cardSettings,
+    this.legendFormattingCard,
     this.conditionalFormattingCard,
+    this.colorThemeFormattingCard,
+    this.dateFilterFormattingCard,
     this.accessibilityFormattingCard,
   ];
 }

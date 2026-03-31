@@ -633,15 +633,21 @@
           }
         },
         "showInlineLabels": {
-          "type": { "bool": true },
+          "type": {
+            "bool": true
+          },
           "displayName": "Inline End Labels"
         },
         "inlineLabelFontSize": {
-          "type": { "numeric": true },
+          "type": {
+            "numeric": true
+          },
           "displayName": "Inline Label Font Size"
         },
         "inlineLabelOffset": {
-          "type": { "numeric": true },
+          "type": {
+            "numeric": true
+          },
           "displayName": "Inline Label Offset (px)"
         }
       }
@@ -1603,35 +1609,55 @@
     "gapIndicatorSettings": {
       "properties": {
         "showGapIndicator": {
-          "type": { "bool": true },
+          "type": {
+            "bool": true
+          },
           "displayName": "Show Gap Indicator"
         },
         "gapSeriesA": {
-          "type": { "numeric": true },
+          "type": {
+            "numeric": true
+          },
           "displayName": "Series A (1-indexed)"
         },
         "gapSeriesB": {
-          "type": { "numeric": true },
+          "type": {
+            "numeric": true
+          },
           "displayName": "Series B (1-indexed)"
         },
         "gapInterval": {
-          "type": { "numeric": true },
+          "type": {
+            "numeric": true
+          },
           "displayName": "Show Every N Points"
         },
         "gapColor": {
-          "type": { "fill": { "solid": { "color": true } } },
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
           "displayName": "Gap Line Color"
         },
         "gapLineWidth": {
-          "type": { "numeric": true },
+          "type": {
+            "numeric": true
+          },
           "displayName": "Gap Line Width"
         },
         "showGapValue": {
-          "type": { "bool": true },
+          "type": {
+            "bool": true
+          },
           "displayName": "Show Gap Value"
         },
         "gapFontSize": {
-          "type": { "numeric": true },
+          "type": {
+            "numeric": true
+          },
           "displayName": "Gap Font Size"
         }
       }
@@ -1683,6 +1709,12 @@
               }
             ]
           }
+        },
+        "enableGlass": {
+          "type": {
+            "bool": true
+          },
+          "displayName": "(Deprecated) Enable Glass"
         }
       }
     },

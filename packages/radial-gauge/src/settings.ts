@@ -5,8 +5,14 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { DataLabelFormattingCard, TitleFormattingCard, NumberFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard } from '../../core/src';
-class ArcSettings extends formattingSettings.SimpleCard {
+import { LegendFormattingCard, DataLabelFormattingCard, TitleFormattingCard, NumberFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard,
+  ColorThemeFormattingCard,
+  DateFilterFormattingCard,
+} from '../../core/src';
+
+// -- Arc Shape: all geometry together (merged Arc + Arc Display) ----------------
+
+class ArcShapeSettings extends formattingSettings.SimpleCard {
   thickness = new formattingSettings.ItemDropdown({
     name: 'thickness',
     displayName: 'Thickness',
@@ -16,42 +22,6 @@ class ArcSettings extends formattingSettings.SimpleCard {
       { value: 'thick', displayName: 'Thick' },
     ],
     value: { value: 'medium', displayName: 'Medium' },
-  });
-
-  trackOpacity = new formattingSettings.NumUpDown({
-
-    name: 'trackOpacity',
-
-    displayName: 'Track Opacity (%)',
-
-    value: 15,
-
-  });
-
-  zoneBorderWidth = new formattingSettings.NumUpDown({
-
-    name: 'zoneBorderWidth',
-
-    displayName: 'Zone Border Width',
-
-    value: 1.5,
-
-  });
-
-  zoneBorderOpacity = new formattingSettings.NumUpDown({
-
-    name: 'zoneBorderOpacity',
-
-    displayName: 'Zone Border Opacity (%)',
-
-    value: 30,
-
-  });
-
-  trackColor = new formattingSettings.ColorPicker({
-    name: 'trackColor',
-    displayName: 'Track Color',
-    value: { value: '#94A3B8' },
   });
 
   roundedCaps = new formattingSettings.ToggleSwitch({
@@ -70,9 +40,59 @@ class ArcSettings extends formattingSettings.SimpleCard {
     value: { value: 'half', displayName: 'Half Circle' },
   });
 
+  arcRange = new formattingSettings.NumUpDown({
+    name: 'arcRange',
+    displayName: 'Arc Range (degrees)',
+    value: 270,
+  });
+
+  segmented = new formattingSettings.ToggleSwitch({
+    name: 'segmented',
+    displayName: 'LED-Style Segments',
+    value: false,
+  });
+
+  segmentCount = new formattingSettings.NumUpDown({
+    name: 'segmentCount',
+    displayName: 'Segment Count',
+    value: 20,
+  });
+
   name = 'arcSettings';
-  displayName = 'Arc';
-  slices = [this.thickness, this.trackColor, this.trackOpacity, this.zoneBorderWidth, this.zoneBorderOpacity, this.roundedCaps, this.startAngle];
+  displayName = 'Arc Shape';
+  slices = [this.thickness, this.roundedCaps, this.startAngle, this.arcRange, this.segmented, this.segmentCount];
+}
+
+// -- Arc Colors: track and zone border appearance -----------------------------
+
+class ArcColorSettings extends formattingSettings.SimpleCard {
+  trackColor = new formattingSettings.ColorPicker({
+    name: 'trackColor',
+    displayName: 'Track Color',
+    value: { value: '#94A3B8' },
+  });
+
+  trackOpacity = new formattingSettings.NumUpDown({
+    name: 'trackOpacity',
+    displayName: 'Track Opacity (%)',
+    value: 15,
+  });
+
+  zoneBorderWidth = new formattingSettings.NumUpDown({
+    name: 'zoneBorderWidth',
+    displayName: 'Zone Border Width',
+    value: 1.5,
+  });
+
+  zoneBorderOpacity = new formattingSettings.NumUpDown({
+    name: 'zoneBorderOpacity',
+    displayName: 'Zone Border Opacity (%)',
+    value: 30,
+  });
+
+  name = 'arcColorSettings';
+  displayName = 'Arc Colors';
+  slices = [this.trackColor, this.trackOpacity, this.zoneBorderWidth, this.zoneBorderOpacity];
 }
 
 class ZoneSettings extends formattingSettings.SimpleCard {
@@ -117,7 +137,9 @@ class ZoneSettings extends formattingSettings.SimpleCard {
   ];
 }
 
-class ValueSettings extends formattingSettings.SimpleCard {
+// -- Center Value: font settings only (delta colors moved to Comparison) ------
+
+class CenterValueSettings extends formattingSettings.SimpleCard {
   fontSize = new formattingSettings.NumUpDown({
     name: 'fontSize',
     displayName: 'Font Size',
@@ -128,18 +150,6 @@ class ValueSettings extends formattingSettings.SimpleCard {
     name: 'fontColor',
     displayName: 'Font Color',
     value: { value: '' }, // empty = use theme default
-  });
-
-  deltaPositiveColor = new formattingSettings.ColorPicker({
-    name: 'deltaPositiveColor',
-    displayName: 'Delta Positive Color',
-    value: { value: '#22C55E' },
-  });
-
-  deltaNegativeColor = new formattingSettings.ColorPicker({
-    name: 'deltaNegativeColor',
-    displayName: 'Delta Negative Color',
-    value: { value: '#EF4444' },
   });
 
   fontFamily = new formattingSettings.ItemDropdown({
@@ -169,8 +179,8 @@ class ValueSettings extends formattingSettings.SimpleCard {
   });
 
   name = 'valueSettings';
-  displayName = 'Value';
-  slices = [this.fontSize, this.fontColor, this.fontFamily, this.fontWeight, this.deltaPositiveColor, this.deltaNegativeColor];
+  displayName = 'Center Value';
+  slices = [this.fontSize, this.fontColor, this.fontFamily, this.fontWeight];
 }
 
 class TargetSettings extends formattingSettings.SimpleCard {
@@ -186,16 +196,28 @@ class TargetSettings extends formattingSettings.SimpleCard {
     value: { value: '#0F172A' },
   });
 
+  lineWidth = new formattingSettings.NumUpDown({
+    name: 'lineWidth',
+    displayName: 'Line Width',
+    value: 3,
+  });
+
   name = 'targetSettings';
   displayName = 'Target';
-  slices = [this.show, this.color];
+  slices = [this.show, this.color, this.lineWidth];
 }
 
 class CardStyleSettings extends formattingSettings.SimpleCard {
-  enableGlass = new formattingSettings.ToggleSwitch({
-    name: 'enableGlass',
-    displayName: 'Glass Effect',
-    value: true,
+  cardStyleMode = new formattingSettings.ItemDropdown({
+    name: 'cardStyleMode',
+    displayName: 'Card Style',
+    items: [
+      { value: 'none', displayName: 'None' },
+      { value: 'glass', displayName: 'Glass' },
+      { value: 'elevated', displayName: 'Elevated' },
+      { value: 'neumorphic', displayName: 'Neumorphic' },
+    ],
+    value: { value: 'glass', displayName: 'Glass' },
   });
 
   backgroundColor = new formattingSettings.ColorPicker({
@@ -218,7 +240,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.cardStyleMode, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 class NeedleSettings extends formattingSettings.SimpleCard {
@@ -315,43 +337,29 @@ class GaugeScaleSettings extends formattingSettings.SimpleCard {
   });
 
   name = 'gaugeScaleSettings';
-  displayName = 'Scale';
+  displayName = 'Scale & Ticks';
   slices = [this.showTicks, this.showLabels, this.majorTicks, this.minorTicks, this.majorTickColor, this.minorTickColor];
 }
 
-// ── Gauge Arc Settings ──────────────────────────────────────────
-
-class GaugeArcSettings extends formattingSettings.SimpleCard {
-  arcRange = new formattingSettings.NumUpDown({
-    name: 'arcRange',
-    displayName: 'Arc Range (degrees)',
-    value: 270,
-  });
-
-  segmented = new formattingSettings.ToggleSwitch({
-    name: 'segmented',
-    displayName: 'LED-Style Segments',
-    value: false,
-  });
-
-  segmentCount = new formattingSettings.NumUpDown({
-    name: 'segmentCount',
-    displayName: 'Segment Count',
-    value: 20,
-  });
-
-  name = 'gaugeArcSettings';
-  displayName = 'Arc Display';
-  slices = [this.arcRange, this.segmented, this.segmentCount];
-}
-
-// ── Gauge Comparison Settings ───────────────────────────────────
+// ── Gauge Comparison Settings (now includes delta colors) ──────
 
 class GaugeComparisonSettings extends formattingSettings.SimpleCard {
   showDelta = new formattingSettings.ToggleSwitch({
     name: 'showDelta',
     displayName: 'Show Delta Indicator',
     value: false,
+  });
+
+  deltaPositiveColor = new formattingSettings.ColorPicker({
+    name: 'deltaPositiveColor',
+    displayName: 'Delta Positive Color',
+    value: { value: '#22C55E' },
+  });
+
+  deltaNegativeColor = new formattingSettings.ColorPicker({
+    name: 'deltaNegativeColor',
+    displayName: 'Delta Negative Color',
+    value: { value: '#EF4444' },
   });
 
   showSparkline = new formattingSettings.ToggleSwitch({
@@ -362,19 +370,19 @@ class GaugeComparisonSettings extends formattingSettings.SimpleCard {
 
   name = 'gaugeComparisonSettings';
   displayName = 'Comparison';
-  slices = [this.showDelta, this.showSparkline];
+  slices = [this.showDelta, this.deltaPositiveColor, this.deltaNegativeColor, this.showSparkline];
 }
 
 export class RadialGaugeSettings extends formattingSettings.Model {
-  arcSettings = new ArcSettings();
+  arcSettings = new ArcShapeSettings();
+  arcColorSettings = new ArcColorSettings();
   zoneSettings = new ZoneSettings();
-  valueSettings = new ValueSettings();
+  valueSettings = new CenterValueSettings();
   targetSettings = new TargetSettings();
   needleSettings = new NeedleSettings();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
   gaugeScaleSettings = new GaugeScaleSettings();
-  gaugeArcSettings = new GaugeArcSettings();
   gaugeComparisonSettings = new GaugeComparisonSettings();
 
   dataLabelFormattingCard = new DataLabelFormattingCard();
@@ -382,22 +390,28 @@ export class RadialGaugeSettings extends formattingSettings.Model {
   numberFormattingCard = new NumberFormattingCard();
   conditionalFormattingCard = new ConditionalFormattingCard();
   accessibilityFormattingCard = new AccessibilityFormattingCard();
+  legendFormattingCard = new LegendFormattingCard();
 
+  colorThemeFormattingCard = new ColorThemeFormattingCard();
+  dateFilterFormattingCard = new DateFilterFormattingCard();
   cards = [
     this.arcSettings,
+    this.arcColorSettings,
     this.zoneSettings,
     this.valueSettings,
     this.targetSettings,
     this.needleSettings,
-    this.cardSettings,
-    this.animationSettings,
     this.gaugeScaleSettings,
-    this.gaugeArcSettings,
     this.gaugeComparisonSettings,
-    this.dataLabelFormattingCard,
     this.titleFormattingCard,
-    this.numberFormattingCard,
     this.conditionalFormattingCard,
+    this.cardSettings,
+    this.numberFormattingCard,
+    this.animationSettings,
+    this.dataLabelFormattingCard,
+    this.legendFormattingCard,
+    this.colorThemeFormattingCard,
+    this.dateFilterFormattingCard,
     this.accessibilityFormattingCard,
   ];
 }

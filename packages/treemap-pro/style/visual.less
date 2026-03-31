@@ -26,8 +26,10 @@
 
 .treemap-cell {
   cursor: pointer;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.15s ease, filter 0.2s ease;
+
   &:hover {
+    filter: brightness(1.12) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
   }
 }
 
@@ -39,16 +41,3 @@
   pointer-events: none;
 }
 
-.treemap-back-btn {
-  align-self: flex-start;
-  padding: 4px 10px;
-  margin-bottom: 4px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 6px;
-  cursor: pointer;
-  user-select: none;
-  transition: background 0.15s ease;
-
-  &:hover {
-  }
-}

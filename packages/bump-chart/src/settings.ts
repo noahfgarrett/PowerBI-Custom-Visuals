@@ -12,6 +12,7 @@ import {
   TitleFormattingCard,
   LineStrokeFormattingCard,
   ScrollFormattingCard,
+  NumberFormattingCard,
   ReferenceLineFormattingCard,
   TrendLineFormattingCard,
   ConditionalFormattingCard,
@@ -20,10 +21,10 @@ import {
   AccessibilityFormattingCard,
   ColorThemeFormattingCard,
   SeriesFormattingCard,
-  NumberFormattingCard,
+  DateFilterFormattingCard,
 } from '../../core/src';
 
-// ── Bump Settings ──────────────────────────────────────────────────
+// ── Bump Lines ──────────────────────────────────────────────────
 
 class BumpSettings extends formattingSettings.SimpleCard {
   lineWidth = new formattingSettings.NumUpDown({
@@ -44,15 +45,10 @@ class BumpSettings extends formattingSettings.SimpleCard {
     value: true,
   });
 
-
   dotStrokeColor = new formattingSettings.ColorPicker({
-
     name: 'dotStrokeColor',
-
     displayName: 'Dot Stroke Color',
-
     value: { value: '' },
-
   });
 
   showArea = new formattingSettings.ToggleSwitch({
@@ -67,93 +63,24 @@ class BumpSettings extends formattingSettings.SimpleCard {
     value: 20,
   });
 
-  name = 'bumpSettings';
-  displayName = 'Bump Lines';
-  slices = [this.lineWidth, this.dotRadius, this.showRankNumbers, this.dotStrokeColor, this.showArea, this.areaOpacity];
-}
-
-// ── Color Settings ──────────────────────────────────────────────────
-
-class ColorSettings extends formattingSettings.SimpleCard {
-  useChartPalette = new formattingSettings.ToggleSwitch({
-    name: 'useChartPalette',
-    displayName: 'Use Chart Palette',
-    value: true,
-  });
-
-  name = 'colorSettings';
-  displayName = 'Colors';
-  slices = [this.useChartPalette];
-}
-
-
-// ── Axis Visibility (unique properties not in shared AxisFormattingCard) ─
-
-class AxisVisibilitySettings extends formattingSettings.SimpleCard {
   showXAxis = new formattingSettings.ToggleSwitch({
     name: 'showXAxis',
     displayName: 'Show X-Axis',
     value: true,
   });
 
-  name = 'axisVisibilitySettings';
-  displayName = 'Axis Visibility';
-  slices = [this.showXAxis];
-}
-
-// ── Card Style ──────────────────────────────────────────────────────
-
-class CardStyleSettings extends formattingSettings.SimpleCard {
-  enableGlass = new formattingSettings.ToggleSwitch({
-    name: 'enableGlass',
-    displayName: 'Glass Effect',
+  useChartPalette = new formattingSettings.ToggleSwitch({
+    name: 'useChartPalette',
+    displayName: 'Use Chart Palette',
     value: true,
   });
 
-  backgroundColor = new formattingSettings.ColorPicker({
-    name: 'backgroundColor',
-    displayName: 'Background Color',
-    value: { value: '' },
-  });
-
-  backgroundOpacity = new formattingSettings.NumUpDown({
-    name: 'backgroundOpacity',
-    displayName: 'Background Opacity (%)',
-    value: 35,
-  });
-
-  borderRadius = new formattingSettings.NumUpDown({
-    name: 'borderRadius',
-    displayName: 'Border Radius',
-    value: 12,
-  });
-
-  name = 'cardSettings';
-  displayName = 'Card Style';
-  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  name = 'bumpSettings';
+  displayName = 'Bump Lines';
+  slices = [this.lineWidth, this.dotRadius, this.showRankNumbers, this.dotStrokeColor, this.showArea, this.areaOpacity, this.showXAxis, this.useChartPalette];
 }
 
-// ── Animation Settings ──────────────────────────────────────────────
-
-class AnimationSettings extends formattingSettings.SimpleCard {
-  enabled = new formattingSettings.ToggleSwitch({
-    name: 'enabled',
-    displayName: 'Enable Animations',
-    value: true,
-  });
-
-  duration = new formattingSettings.NumUpDown({
-    name: 'duration',
-    displayName: 'Duration (ms)',
-    value: 600,
-  });
-
-  name = 'animationSettings';
-  displayName = 'Animation';
-  slices = [this.enabled, this.duration];
-}
-
-// ── Bump Highlight Settings ─────────────────────────────────────────
+// ── Highlight & Analysis ────────────────────────────────────────────
 
 class BumpHighlightSettingsCard extends formattingSettings.SimpleCard {
   enabled = new formattingSettings.ToggleSwitch({
@@ -179,7 +106,7 @@ class BumpHighlightSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.topN, this.showOthers];
 }
 
-// ── Bump Rank Change Settings ───────────────────────────────────────
+// ── Rank Change & Comparison ───────────────────────────────────────
 
 class BumpRankChangeSettingsCard extends formattingSettings.SimpleCard {
   show = new formattingSettings.ToggleSwitch({
@@ -194,38 +121,126 @@ class BumpRankChangeSettingsCard extends formattingSettings.SimpleCard {
     value: 9,
   });
 
-  name = 'bumpRankChangeSettings';
-  displayName = 'Rank Change Indicators';
-  slices = [this.show, this.fontSize];
-}
+  fontColor = new formattingSettings.ColorPicker({
+    name: 'fontColor',
+    displayName: 'Font Color',
+    value: { value: '' },
+  });
 
-// ── Bump Comparison Settings ────────────────────────────────────────
+  fontFamily = new formattingSettings.ItemDropdown({
+    name: 'fontFamily',
+    displayName: 'Font',
+    items: [
+      { value: '', displayName: 'Default' },
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Arial', displayName: 'Arial' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Helvetica Neue', displayName: 'Helvetica Neue' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
+      { value: 'Verdana', displayName: 'Verdana' },
+      { value: 'Georgia', displayName: 'Georgia' },
+    ],
+    value: { value: '', displayName: 'Default' },
+  });
 
-class BumpComparisonSettingsCard extends formattingSettings.SimpleCard {
-  show = new formattingSettings.ToggleSwitch({
-    name: 'show',
+  fontWeight = new formattingSettings.ItemDropdown({
+    name: 'fontWeight',
+    displayName: 'Font Weight',
+    items: [
+      { value: 'normal', displayName: 'Normal' },
+      { value: 'bold', displayName: 'Bold' },
+      { value: '600', displayName: 'Semi-Bold' },
+    ],
+    value: { value: 'bold', displayName: 'Bold' },
+  });
+
+  positiveColor = new formattingSettings.ColorPicker({
+    name: 'positiveColor',
+    displayName: 'Positive Color',
+    value: { value: '#22C55E' },
+  });
+
+  negativeColor = new formattingSettings.ColorPicker({
+    name: 'negativeColor',
+    displayName: 'Negative Color',
+    value: { value: '#EF4444' },
+  });
+
+  showComparison = new formattingSettings.ToggleSwitch({
+    name: 'showComparison',
     displayName: 'Show Period Comparison',
     value: false,
   });
 
-  name = 'bumpComparisonSettings';
-  displayName = 'Period Comparison';
-  slices = [this.show];
+  name = 'bumpRankChangeSettings';
+  displayName = 'Rank Change Indicators';
+  slices = [this.show, this.fontSize, this.fontColor, this.positiveColor, this.negativeColor, this.fontFamily, this.fontWeight, this.showComparison];
+}
+
+// ── Card Style ──────────────────────────────────────────────────────
+
+class CardStyleSettings extends formattingSettings.SimpleCard {
+  cardStyleMode = new formattingSettings.ItemDropdown({
+    name: 'cardStyleMode',
+    displayName: 'Card Style',
+    items: [
+      { value: 'none', displayName: 'None' },
+      { value: 'glass', displayName: 'Glass' },
+      { value: 'elevated', displayName: 'Elevated' },
+      { value: 'neumorphic', displayName: 'Neumorphic' },
+    ],
+    value: { value: 'glass', displayName: 'Glass' },
+  });
+
+  backgroundColor = new formattingSettings.ColorPicker({
+    name: 'backgroundColor',
+    displayName: 'Background Color',
+    value: { value: '' },
+  });
+
+  backgroundOpacity = new formattingSettings.NumUpDown({
+    name: 'backgroundOpacity',
+    displayName: 'Background Opacity (%)',
+    value: 35,
+  });
+
+  borderRadius = new formattingSettings.NumUpDown({
+    name: 'borderRadius',
+    displayName: 'Border Radius',
+    value: 12,
+  });
+
+  name = 'cardSettings';
+  displayName = 'Card Style';
+  slices = [this.cardStyleMode, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+}
+
+// ── Animation Settings ──────────────────────────────────────────────
+
+class AnimationSettings extends formattingSettings.SimpleCard {
+  enabled = new formattingSettings.ToggleSwitch({
+    name: 'enabled',
+    displayName: 'Enable Animations',
+    value: true,
+  });
+
+  duration = new formattingSettings.NumUpDown({
+    name: 'duration',
+    displayName: 'Duration (ms)',
+    value: 600,
+  });
+
+  name = 'animationSettings';
+  displayName = 'Animation';
+  slices = [this.enabled, this.duration];
 }
 
 // ── Root Model ──────────────────────────────────────────────────────
 
 export class BumpChartSettings extends formattingSettings.Model {
   bumpSettings = new BumpSettings();
-  colorSettings = new ColorSettings();
-  axisVisibilitySettings = new AxisVisibilitySettings();
-  cardSettings = new CardStyleSettings();
-  animationSettings = new AnimationSettings();
-
-  // New feature cards
   bumpHighlightSettings = new BumpHighlightSettingsCard();
   bumpRankChangeSettings = new BumpRankChangeSettingsCard();
-  bumpComparisonSettings = new BumpComparisonSettingsCard();
 
   // Shared formatting cards from core
   axisFormattingCard = new AxisFormattingCard();
@@ -234,12 +249,6 @@ export class BumpChartSettings extends formattingSettings.Model {
   titleFormattingCard = new TitleFormattingCard();
   lineStrokeFormattingCard = new LineStrokeFormattingCard();
   scrollFormattingCard = new ScrollFormattingCard();
-  referenceLineFormattingCard = new ReferenceLineFormattingCard();
-  trendLineFormattingCard = new TrendLineFormattingCard();
-  conditionalFormattingCard = new ConditionalFormattingCard();
-  crosshairFormattingCard = new CrosshairFormattingCard();
-  annotationFormattingCard = new AnnotationFormattingCard();
-  accessibilityFormattingCard = new AccessibilityFormattingCard();
 
   constructor() {
     super();
@@ -248,30 +257,38 @@ export class BumpChartSettings extends formattingSettings.Model {
 
   colorThemeFormattingCard = new ColorThemeFormattingCard();
   seriesFormattingCard = new SeriesFormattingCard();
+  referenceLineFormattingCard = new ReferenceLineFormattingCard();
+  trendLineFormattingCard = new TrendLineFormattingCard();
+  conditionalFormattingCard = new ConditionalFormattingCard();
+  crosshairFormattingCard = new CrosshairFormattingCard();
+  annotationFormattingCard = new AnnotationFormattingCard();
+  animationSettings = new AnimationSettings();
+  cardSettings = new CardStyleSettings();
   numberFormattingCard = new NumberFormattingCard();
+  dateFilterFormattingCard = new DateFilterFormattingCard();
+  accessibilityFormattingCard = new AccessibilityFormattingCard();
+
   cards = [
     this.bumpSettings,
-    this.colorSettings,
-    this.axisVisibilitySettings,
-    this.cardSettings,
-    this.animationSettings,
     this.bumpHighlightSettings,
     this.bumpRankChangeSettings,
-    this.bumpComparisonSettings,
     this.axisFormattingCard,
     this.legendFormattingCard,
     this.dataLabelFormattingCard,
     this.titleFormattingCard,
     this.lineStrokeFormattingCard,
     this.scrollFormattingCard,
+    this.colorThemeFormattingCard,
+    this.seriesFormattingCard,
     this.referenceLineFormattingCard,
     this.trendLineFormattingCard,
     this.conditionalFormattingCard,
     this.crosshairFormattingCard,
     this.annotationFormattingCard,
-    this.accessibilityFormattingCard,
-    this.seriesFormattingCard,
-    this.colorThemeFormattingCard,
+    this.animationSettings,
+    this.cardSettings,
     this.numberFormattingCard,
+    this.dateFilterFormattingCard,
+    this.accessibilityFormattingCard,
   ];
 }
