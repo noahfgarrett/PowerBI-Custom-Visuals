@@ -1430,13 +1430,18 @@ export class BarChartProVisual implements IVisual {
             .attr('dominant-baseline', 'central')
             .text(formatWithSettings(val, this.settings.numberFormattingCard));
 
-          // Determine text color based on fill luminance
-          const segFillColor = conditionalFill ?? sf.color;
-          const parsed = d3.color(segFillColor);
-          if (parsed) {
-            const rgb = parsed.rgb();
-            const lum = 0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b;
-            segLabel.attr('fill', lum < 128 ? '#ffffff' : '#1E293B');
+          // Use explicit user color if set; otherwise auto-contrast based on fill luminance
+          const userLabelColor = this.settings.dataLabelFormattingCard.dataLabelFontColor.value?.value;
+          if (userLabelColor && userLabelColor.length > 0) {
+            segLabel.attr('fill', userLabelColor);
+          } else {
+            const segFillColor = conditionalFill ?? sf.color;
+            const parsed = d3.color(segFillColor);
+            if (parsed) {
+              const rgb = parsed.rgb();
+              const lum = 0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b;
+              segLabel.attr('fill', lum < 128 ? '#ffffff' : '#1E293B');
+            }
           }
         }
 
@@ -1584,13 +1589,18 @@ export class BarChartProVisual implements IVisual {
             .attr('dominant-baseline', 'central')
             .text(`${Math.round(pct)}%`);
 
-          // Determine text color based on fill luminance
-          const segFillColor = conditionalFill ?? sf.color;
-          const parsed = d3.color(segFillColor);
-          if (parsed) {
-            const rgb = parsed.rgb();
-            const lum = 0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b;
-            segLabel.attr('fill', lum < 128 ? '#ffffff' : '#1E293B');
+          // Use explicit user color if set; otherwise auto-contrast based on fill luminance
+          const userLabelColor = this.settings.dataLabelFormattingCard.dataLabelFontColor.value?.value;
+          if (userLabelColor && userLabelColor.length > 0) {
+            segLabel.attr('fill', userLabelColor);
+          } else {
+            const segFillColor = conditionalFill ?? sf.color;
+            const parsed = d3.color(segFillColor);
+            if (parsed) {
+              const rgb = parsed.rgb();
+              const lum = 0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b;
+              segLabel.attr('fill', lum < 128 ? '#ffffff' : '#1E293B');
+            }
           }
         }
 
@@ -1964,7 +1974,7 @@ export class BarChartProVisual implements IVisual {
         const ldlFontColor = s.lineSettings.lineDataLabelFontColor.value?.value;
         lineData.forEach((d) => {
           const label = g.append('text')
-            .attr('class', 'bar-chart-label')
+            .attr('class', 'bar-chart-line-label')
             .attr('x', d.x)
             .attr('y', d.y - 10)
             .attr('text-anchor', 'middle')
@@ -3480,7 +3490,7 @@ export class BarChartProVisual implements IVisual {
    * (lower absolute value) to prevent visual clutter.
    */
   private removeOverlappingLabels(): void {
-    const labels = Array.from(this.container.querySelectorAll<SVGTextElement>('.bar-chart-label'));
+    const labels = Array.from(this.container.querySelectorAll<SVGTextElement>('.bar-chart-label, .bar-chart-line-label'));
     if (labels.length < 2) return;
 
     // Get bounding boxes (requires elements to be in DOM)

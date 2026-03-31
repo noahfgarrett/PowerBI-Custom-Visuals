@@ -14,9 +14,10 @@
 
 /* SVG chart area */
 .bar-chart-svg {
-  flex: 1;
-  width: 100%;
+  display: block;
   min-height: 0;
+  position: relative;
+  z-index: 1;
 }
 
 /* Axis styles */
@@ -37,6 +38,13 @@
   text-anchor: middle;
 }
 
+/* Axis titles */
+.bar-chart-axis-title {
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
 /* Grid lines */
 
 .bar-chart-grid .domain {
@@ -49,12 +57,19 @@
   cursor: pointer;
 
   &:hover {
-    filter: brightness(1.12);
+    filter: brightness(1.12) drop-shadow(0 0 3px rgba(0, 0, 0, 0.12));
   }
 }
 
 /* Data labels */
 .bar-chart-label {
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  text-anchor: middle;
+}
+
+/* Line data labels (combo mode) — separate class to avoid bar label formatting overrides */
+.bar-chart-line-label {
   font-variant-numeric: tabular-nums;
   pointer-events: none;
   text-anchor: middle;
@@ -73,32 +88,24 @@
 
 /* Target / reference line */
 
-/* Legend */
-.bar-chart-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  padding: 6px 0;
+/* Crosshair overlay */
+.bar-chart-crosshair {
+  pointer-events: none;
 }
 
-.bar-chart-legend-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
+/* Lollipop stem */
+.bar-chart-lollipop-stem {
+  pointer-events: none;
 }
 
-.bar-chart-legend-swatch {
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
+/* Copy as image button */
+.bar-chart-container:hover .bar-chart-copy-btn {
+  opacity: 0.7;
 
-.bar-chart-legend-line-swatch {
-  width: 16px;
-  height: 2px;
-  border-radius: 1px;
-  flex-shrink: 0;
+  &:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.95);
+  }
 }
 
 /* Empty state */

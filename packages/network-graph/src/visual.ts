@@ -14,7 +14,8 @@ import {
   animate,
   cubicOut,
   DURATION,
-  getGlassStyle,
+  applyCardStyle,
+  type CardStyleMode,
   getHostChartColor,
   getChartColor,
   withOpacity,
@@ -25,9 +26,15 @@ import {
   attachKeyboardNav,
   ensureFocusRingStyles,
   resolveColorTheme,
+  type ColorThemeName,
   buildConditionalConfig,
   resolveConditionalColor,
   resolveDropdown,
+  renderLegend,
+  type LegendItem,
+  getDateFilterIndices,
+  type DateFilterConfig,
+  formatWithSettings,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -36,6 +43,7 @@ import IVisual = powerbi.extensibility.visual.IVisual;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import DataView = powerbi.DataView;
 import ISelectionId = powerbi.visuals.ISelectionId;
+import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 
 import '../style/visual.less';
 
@@ -44,6 +52,7 @@ import '../style/visual.less';
 interface GraphNode extends d3.SimulationNodeDatum {
   id: string;
   group: number;
+  highlighted: boolean;
   selectionId: ISelectionId;
 }
 
@@ -57,6 +66,8 @@ interface GraphLink extends d3.SimulationLinkDatum<GraphNode> {
 interface NetworkData {
   nodes: GraphNode[];
   links: GraphLink[];
+  /** Whether cross-highlight data is present from another visual/slicer. */
+  hasHighlights: boolean;
 }
 
 // ── Constants ────────────────────────────────────────────────────
@@ -75,6 +86,7 @@ export class NetworkGraphVisual implements IVisual {
   private settings: NetworkGraphSettings;
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
+  private currentData: NetworkData | null = null;
   private svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null;
   private simulation: d3.Simulation<GraphNode, GraphLink> | null = null;
 
@@ -107,14 +119,31 @@ export class NetworkGraphVisual implements IVisual {
       );
     }
 
+    // Date filter: hide start/end when disabled
+    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
+
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
 
+    // Hide node label font controls when showLabels is off
+    const showNodeLabels = this.settings.nodeSettings.showLabels.value;
+    this.settings.nodeSettings.fontSize.visible = showNodeLabels;
+    this.settings.nodeSettings.fontColor.visible = showNodeLabels;
+    this.settings.nodeSettings.fontFamily.visible = showNodeLabels;
+    this.settings.nodeSettings.fontWeight.visible = showNodeLabels;
+
     // Conditional visibility: hide link min/max width when widthByWeight is off
-    this.settings.networkLinkSettings.minWidth.visible = this.settings.networkLinkSettings.widthByWeight.value;
-    this.settings.networkLinkSettings.maxWidth.visible = this.settings.networkLinkSettings.widthByWeight.value;
+    this.settings.linkSettings.minWidth.visible = this.settings.linkSettings.widthByWeight.value;
+    this.settings.linkSettings.maxWidth.visible = this.settings.linkSettings.widthByWeight.value;
+
+    // Conditional visibility: hide zoom sub-settings when zoom is off
+    this.settings.interactionSettings.minZoom.visible = this.settings.interactionSettings.enableZoom.value;
+    this.settings.interactionSettings.maxZoom.visible = this.settings.interactionSettings.enableZoom.value;
 
     // Extract data
     const data = this.extractData(dataView);
+    this.currentData = data;
 
     // Render
     this.render(data, options.viewport);
@@ -162,16 +191,40 @@ export class NetworkGraphVisual implements IVisual {
     const nodes: GraphNode[] = [];
     let groupCounter = 0;
 
-    const getOrCreateNode = (name: string, selectionId: ISelectionId): void => {
-      if (nodeMap.has(name)) return;
+    // Read cross-highlight data from weight column (or first value column)
+    const highlightSourceCol = weightColumn ?? (values ? values[0] : undefined);
+    const rowHighlights = highlightSourceCol
+      ? (highlightSourceCol.highlights as unknown[] | undefined)
+      : undefined;
+
+    const getOrCreateNode = (name: string, selectionId: ISelectionId, isHighlighted: boolean): void => {
+      if (nodeMap.has(name)) {
+        // If already created, upgrade highlighted status if this row is highlighted
+        if (isHighlighted) {
+          const existing = nodes.find(n => n.id === name);
+          if (existing) existing.highlighted = true;
+        }
+        return;
+      }
       const group = groupCounter++;
       nodeMap.set(name, group);
-      nodes.push({ id: name, group, selectionId });
+      nodes.push({ id: name, group, highlighted: isHighlighted, selectionId });
     };
 
     // Build links
     const links: GraphLink[] = [];
+
+    const dateConfig: DateFilterConfig = {
+      enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
+      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
+      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+    };
+    const dateIndices = getDateFilterIndices(sourceColumn.values, dateConfig);
+
     for (let i = 0; i < rowCount; i++) {
+      if (dateIndices && !dateIndices.has(i)) continue;
+
       const sourceVal = sourceColumn.values[i];
       const targetVal = targetColumn.values[i];
 
@@ -190,8 +243,9 @@ export class NetworkGraphVisual implements IVisual {
         .withCategory(targetColumn, i)
         .createSelectionId();
 
-      getOrCreateNode(sourceName, sourceSelectionId);
-      getOrCreateNode(targetName, targetSelectionId);
+      const rowHighlighted = rowHighlights ? rowHighlights[i] !== null : false;
+      getOrCreateNode(sourceName, sourceSelectionId, rowHighlighted);
+      getOrCreateNode(targetName, targetSelectionId, rowHighlighted);
 
       // Weight defaults to 1 when not provided
       let weight = 1;
@@ -210,7 +264,9 @@ export class NetworkGraphVisual implements IVisual {
 
     if (nodes.length === 0) return null;
 
-    return { nodes, links };
+    const hasHighlights = nodes.some(n => n.highlighted);
+
+    return { nodes, links, hasHighlights };
   }
 
   // ── Rendering ────────────────────────────────────────────────
@@ -227,27 +283,19 @@ export class NetworkGraphVisual implements IVisual {
 
     const s = this.settings;
 
-    // Apply glass card style
-    if (s.cardSettings.enableGlass.value) {
-      const glass = getGlassStyle({
-        mode: 'light',
+    // Apply card style
+    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    applyCardStyle(
+      this.container,
+      {
+        mode: cardMode,
         opacity: s.cardSettings.backgroundOpacity.value / 100,
         backgroundColor: s.cardSettings.backgroundColor.value?.value,
         borderRadius: s.cardSettings.borderRadius.value,
-      });
-      this.container.style.background = glass.background;
-      this.container.style.backdropFilter = glass.backdropFilter;
-      (this.container.style as unknown as Record<string, string>)['WebkitBackdropFilter'] = glass.WebkitBackdropFilter;
-      this.container.style.border = glass.border;
-      this.container.style.boxShadow = glass.boxShadow;
-      this.container.style.borderRadius = glass.borderRadius;
-    } else {
-      this.container.style.background = '';
-      this.container.style.backdropFilter = '';
-      (this.container.style as unknown as Record<string, string>)['WebkitBackdropFilter'] = '';
-      this.container.style.border = '';
-      this.container.style.boxShadow = '';
-      this.container.style.borderRadius = '';
+      },
+    );
+    if (cardMode === 'none') {
+      this.container.style.borderRadius = `${s.cardSettings.borderRadius.value}px`;
     }
 
     // Handle empty/null data
@@ -257,7 +305,7 @@ export class NetworkGraphVisual implements IVisual {
     }
 
     // Search input for filtering/highlighting nodes
-    if (s.networkInteractionSettings.enableSearch.value) {
+    if (s.interactionSettings.enableSearch.value) {
       this.renderSearchInput(data);
     }
 
@@ -293,6 +341,24 @@ export class NetworkGraphVisual implements IVisual {
         .attr('fill', resolvedArrowColor);
     }
 
+    // ── Glow filter for node hover effect ────────────────────────
+    const glowDefs = svg.select('defs').size() > 0
+      ? svg.select<SVGDefsElement>('defs')
+      : svg.append('defs');
+    const glowFilter = glowDefs.append('filter')
+      .attr('id', 'node-glow')
+      .attr('x', '-50%')
+      .attr('y', '-50%')
+      .attr('width', '200%')
+      .attr('height', '200%');
+    glowFilter.append('feGaussianBlur')
+      .attr('in', 'SourceGraphic')
+      .attr('stdDeviation', '3')
+      .attr('result', 'blur');
+    const glowMerge = glowFilter.append('feMerge');
+    glowMerge.append('feMergeNode').attr('in', 'blur');
+    glowMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+
     const g = svg.append('g')
       .attr('transform', `translate(${MARGIN.left},${MARGIN.top})`);
 
@@ -322,7 +388,7 @@ export class NetworkGraphVisual implements IVisual {
 
     // Cluster detection: simple label propagation
     const clusterMap = new Map<string, number>();
-    if (s.networkLayoutSettings.enableClustering.value) {
+    if (s.colorsAndThemeSettings.enableClustering.value) {
       // Initialize each node as its own cluster
       simNodes.forEach((n, i) => clusterMap.set(n.id, i));
 
@@ -373,12 +439,12 @@ export class NetworkGraphVisual implements IVisual {
     const resolvedLinkColor = s.linkSettings.linkColor.value?.value || '#94A3B8';
     const resolvedLinkWidth = s.linkSettings.linkWidth.value;
 
-    // Link width by weight feature
-    const widthByWeight = s.networkLinkSettings.widthByWeight.value;
-    const linkMinWidth = s.networkLinkSettings.minWidth.value;
-    const linkMaxWidth = s.networkLinkSettings.maxWidth.value;
+    // Link width by weight feature (now in merged linkSettings)
+    const widthByWeight = s.linkSettings.widthByWeight.value;
+    const linkMinWidth = s.linkSettings.minWidth.value;
+    const linkMaxWidth = s.linkSettings.maxWidth.value;
 
-    const edgeBundling = s.networkLayoutSettings.edgeBundling.value;
+    const edgeBundling = s.physicsAndLayoutSettings.edgeBundling.value;
 
     const getLinkWidth = (d: GraphLink): number => {
       if (widthByWeight) {
@@ -404,7 +470,7 @@ export class NetworkGraphVisual implements IVisual {
         .attr('stroke-opacity', linkOpacity)
         .attr('stroke-width', (d) => getLinkWidth(d))
         .attr('fill', 'none')
-        .style('transition', 'opacity 0.15s ease');
+        .style('transition', 'opacity 0.15s ease, filter 0.15s ease');
 
       if (s.linkSettings.showArrows.value) {
         bundledLinkElements.attr('marker-end', 'url(#network-arrowhead)');
@@ -424,7 +490,7 @@ export class NetworkGraphVisual implements IVisual {
         .attr('stroke', resolvedLinkColor)
         .attr('stroke-opacity', linkOpacity)
         .attr('stroke-width', (d) => getLinkWidth(d))
-        .style('transition', 'opacity 0.15s ease');
+        .style('transition', 'opacity 0.15s ease, filter 0.15s ease');
 
       if (s.linkSettings.showArrows.value) {
         linkElements.attr('marker-end', 'url(#network-arrowhead)');
@@ -444,9 +510,9 @@ export class NetworkGraphVisual implements IVisual {
 
     // Create node elements
     const nodeRadius = s.nodeSettings.radius.value;
-    const usePalette = s.colorSettings.useChartPalette.value;
-    const sizeByDegree = s.networkLayoutSettings.sizeByDegree.value;
-    const enableClustering = s.networkLayoutSettings.enableClustering.value;
+    const usePalette = s.colorsAndThemeSettings.useChartPalette.value;
+    const sizeByDegree = s.nodeSettings.sizeByDegree.value;
+    const enableClustering = s.colorsAndThemeSettings.enableClustering.value;
     const nodeGroup = g.append('g').attr('class', 'network-nodes');
 
     const getNodeRadius = (d: GraphNode): number => {
@@ -481,7 +547,7 @@ export class NetworkGraphVisual implements IVisual {
       .attr('stroke', s.nodeSettings.nodeBorderColor.value?.value || '#ffffff')
       .attr('stroke-width', s.nodeSettings.nodeBorderWidth.value)
       .style('cursor', 'pointer')
-      .style('transition', 'opacity 0.15s ease')
+      .style('transition', 'opacity 0.15s ease, filter 0.15s ease, transform 0.15s ease')
       .on('click', (event: MouseEvent, d) => {
         event.stopPropagation();
         void this.selectionManager.select(d.selectionId, event.ctrlKey || event.metaKey);
@@ -495,17 +561,58 @@ export class NetworkGraphVisual implements IVisual {
         });
       });
 
-    // Node tooltips
-    nodeElements.each(function (_d) {
-      const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-      title.textContent = _d.id;
-      this.appendChild(title);
-    });
+    // Node tooltips via tooltipService
+    const tooltipHost = this.host;
+    nodeElements
+      .on('mouseover', (event: MouseEvent, d: GraphNode) => {
+        const degree = degreeMap.get(d.id) ?? 0;
+        const tooltipItems: VisualTooltipDataItem[] = [
+          { displayName: 'Node', value: d.id },
+          { displayName: 'Connections', value: formatWithSettings(degree, this.settings.numberFormattingCard) },
+        ];
+        tooltipHost.tooltipService.show({
+          dataItems: tooltipItems,
+          identities: [],
+          coordinates: [event.clientX, event.clientY],
+          isTouchEvent: false,
+        });
+      })
+      .on('mousemove', (event: MouseEvent) => {
+        tooltipHost.tooltipService.move({
+          dataItems: [],
+          identities: [],
+          coordinates: [event.clientX, event.clientY],
+          isTouchEvent: false,
+        });
+      })
+      .on('mouseout', () => {
+        tooltipHost.tooltipService.hide({ immediately: true, isTouchEvent: false });
+      });
+
+    // Cross-highlight dimming: dim non-highlighted nodes and links
+    if (data.hasHighlights) {
+      const highlightedNodeIds = new Set<string>();
+      for (const node of simNodes) {
+        if (node.highlighted) highlightedNodeIds.add(node.id);
+      }
+
+      nodeElements.style('opacity', (d) => d.highlighted ? '1' : '0.3');
+
+      allLinkElements.style('opacity', (d) => {
+        const srcId = typeof d.source === 'string' ? d.source : (d.source as GraphNode).id;
+        const tgtId = typeof d.target === 'string' ? d.target : (d.target as GraphNode).id;
+        return (highlightedNodeIds.has(srcId) || highlightedNodeIds.has(tgtId)) ? '' : '0.3';
+      });
+    }
 
     // Create label elements
     let labelElements: d3.Selection<SVGTextElement, GraphNode, SVGGElement, unknown> | null = null;
     if (s.nodeSettings.showLabels.value) {
       const labelGroup = g.append('g').attr('class', 'network-labels');
+      const nodeFontSize = s.nodeSettings.fontSize.value;
+      const nodeFontColor = s.nodeSettings.fontColor.value?.value;
+      const nodeFontFamily = resolveDropdown(s.nodeSettings.fontFamily);
+      const nodeFontWeight = resolveDropdown(s.nodeSettings.fontWeight);
       labelElements = labelGroup.selectAll<SVGTextElement, GraphNode>('.network-label')
         .data(simNodes)
         .join('text')
@@ -513,24 +620,33 @@ export class NetworkGraphVisual implements IVisual {
         .attr('data-node', (d) => d.id)
         .attr('dx', nodeRadius + LABEL_OFFSET)
         .attr('dy', '0.35em')
+        .attr('font-size', `${nodeFontSize}px`)
         .style('transition', 'opacity 0.15s ease')
         .text((d) => d.id);
+      // Apply shared data-label formatting first (sets color, size, weight, font via inline style).
+      applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.network-label');
+
+      // Node-specific overrides: only apply when the user has explicitly set a value.
+      // Use .style() (not .attr()) so the inline style properly overrides applyDataLabelFormatting.
+      if (nodeFontColor) labelElements.style('fill', nodeFontColor);
+      if (nodeFontFamily) labelElements.style('font-family', nodeFontFamily);
+      if (nodeFontWeight) labelElements.style('font-weight', nodeFontWeight);
     }
 
     // Set up d3-force simulation
     const simulation = d3.forceSimulation<GraphNode>(simNodes)
       .force('link', d3.forceLink<GraphNode, GraphLink>(simLinks)
         .id((d) => d.id)
-        .distance(s.forceSettings.linkDistance.value)
-        .strength(s.forceSettings.strength.value)
+        .distance(s.physicsAndLayoutSettings.linkDistance.value)
+        .strength(s.physicsAndLayoutSettings.strength.value)
       )
       .force('charge', d3.forceManyBody<GraphNode>()
-        .strength(s.forceSettings.chargeStrength.value)
+        .strength(s.physicsAndLayoutSettings.chargeStrength.value)
       )
       .force('center', d3.forceCenter<GraphNode>(centerX, centerY));
 
     // Collision prevention (configurable)
-    if (s.networkLayoutSettings.enableCollision.value) {
+    if (s.physicsAndLayoutSettings.enableCollision.value) {
       simulation.force('collide', d3.forceCollide<GraphNode>((d) => getNodeRadius(d) + 2));
     }
 
@@ -587,7 +703,7 @@ export class NetworkGraphVisual implements IVisual {
     });
 
     // Drag behavior (configurable)
-    if (s.networkInteractionSettings.enableDrag.value) {
+    if (s.interactionSettings.enableDrag.value) {
       const dragBehavior = d3.drag<SVGCircleElement, GraphNode>()
         .on('start', (event: d3.D3DragEvent<SVGCircleElement, GraphNode, GraphNode>, d) => {
           if (!event.active) simulation.alphaTarget(0.3).restart();
@@ -609,9 +725,9 @@ export class NetworkGraphVisual implements IVisual {
 
     // ── Zoom & Pan ───────────────────────────────────────────────
 
-    if (s.zoomSettings.enabled.value) {
-      const minZoom = s.zoomSettings.minZoom.value;
-      const maxZoom = s.zoomSettings.maxZoom.value;
+    if (s.interactionSettings.enableZoom.value) {
+      const minZoom = s.interactionSettings.minZoom.value;
+      const maxZoom = s.interactionSettings.maxZoom.value;
 
       const zoom = d3.zoom<SVGSVGElement, unknown>()
         .scaleExtent([minZoom, maxZoom])
@@ -632,15 +748,12 @@ export class NetworkGraphVisual implements IVisual {
 
     // ── Node Hover Highlight/Dim ─────────────────────────────────
 
-    if (!s.networkInteractionSettings.highlightNeighbors.value) {
+    if (!s.interactionSettings.highlightNeighbors.value) {
       // Skip neighbor highlighting when disabled
       // Entrance animations
       if (s.animationSettings.enabled.value) {
         this.animateEntrance(nodeElements, allLinkElements as unknown as d3.Selection<SVGElement, GraphLink, SVGGElement, unknown>, labelElements, s.animationSettings.duration.value);
       }
-
-      // Apply shared formatting settings
-      applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.network-label');
 
       // Accessibility
       if (s.accessibilityFormattingCard.enableKeyboardNav.value) {
@@ -666,6 +779,9 @@ export class NetworkGraphVisual implements IVisual {
           },
         });
       }
+
+      // Legend — cluster colors when clustering is enabled
+      this.renderNetworkLegend(enableClustering, clusterMap, usePalette, themeName);
 
       this.container.addEventListener('click', this.handleBackgroundClick);
       return;
@@ -693,28 +809,61 @@ export class NetworkGraphVisual implements IVisual {
           if (!hoveredId) return;
           const neighbors = adjacency.get(hoveredId) ?? new Set<string>();
 
-          // Dim/highlight nodes and labels
+          // Dim/highlight nodes and labels — apply glow to hovered node
           allNodes.forEach((other) => {
             const otherId = other.getAttribute('data-node');
-            const isHighlighted = otherId === hoveredId || neighbors.has(otherId ?? '');
-            (other as SVGElement).style.opacity = isHighlighted ? '1' : '0.2';
+            const isHovered = otherId === hoveredId;
+            const isHighlighted = isHovered || neighbors.has(otherId ?? '');
+            (other as SVGElement).style.opacity = isHighlighted ? '1' : '0.15';
+            // Apply glow + scale to the hovered node
+            if (isHovered) {
+              (other as SVGElement).style.filter = 'url(#node-glow)';
+              (other as SVGElement).style.transform = 'scale(1.15)';
+              (other as SVGElement).style.transformOrigin = 'center';
+            } else {
+              (other as SVGElement).style.filter = '';
+              (other as SVGElement).style.transform = '';
+            }
           });
 
-          // Dim/highlight links
+          // Dim/highlight links — brighten connected links
           allLinks.forEach((link) => {
             const srcId = link.getAttribute('data-source');
             const tgtId = link.getAttribute('data-target');
             const isConnected = srcId === hoveredId || tgtId === hoveredId;
-            (link as SVGElement).style.opacity = isConnected ? '1' : '0.2';
+            (link as SVGElement).style.opacity = isConnected ? '1' : '0.08';
+            if (isConnected) {
+              (link as SVGElement).style.filter = 'brightness(1.3)';
+            } else {
+              (link as SVGElement).style.filter = '';
+            }
           });
         });
 
         el.addEventListener('mouseleave', () => {
+          const highlightedNodeIds = data.hasHighlights
+            ? new Set(simNodes.filter(n => n.highlighted).map(n => n.id))
+            : null;
+
           allNodes.forEach((other) => {
-            (other as SVGElement).style.opacity = '1';
+            const nodeId = other.getAttribute('data-node') ?? '';
+            if (highlightedNodeIds && !highlightedNodeIds.has(nodeId)) {
+              (other as SVGElement).style.opacity = '0.3';
+            } else {
+              (other as SVGElement).style.opacity = '1';
+            }
+            (other as SVGElement).style.filter = '';
+            (other as SVGElement).style.transform = '';
           });
           allLinks.forEach((link) => {
-            (link as SVGElement).style.opacity = '1';
+            if (highlightedNodeIds) {
+              const srcId = link.getAttribute('data-source') ?? '';
+              const tgtId = link.getAttribute('data-target') ?? '';
+              (link as SVGElement).style.opacity = (highlightedNodeIds.has(srcId) || highlightedNodeIds.has(tgtId)) ? '' : '0.3';
+            } else {
+              (link as SVGElement).style.opacity = '1';
+            }
+            (link as SVGElement).style.filter = '';
           });
         });
       });
@@ -724,9 +873,6 @@ export class NetworkGraphVisual implements IVisual {
     if (s.animationSettings.enabled.value) {
       this.animateEntrance(nodeElements, allLinkElements as unknown as d3.Selection<SVGElement, GraphLink, SVGGElement, unknown>, labelElements, s.animationSettings.duration.value);
     }
-
-    // Apply shared formatting settings
-    applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.network-label');
 
     // Accessibility
     if (s.accessibilityFormattingCard.enableKeyboardNav.value) {
@@ -753,7 +899,47 @@ export class NetworkGraphVisual implements IVisual {
       });
     }
 
+    // Legend — cluster colors when clustering is enabled
+    this.renderNetworkLegend(enableClustering, clusterMap, usePalette, themeName);
+
     this.container.addEventListener('click', this.handleBackgroundClick);
+  }
+
+  private renderNetworkLegend(
+    enableClustering: boolean,
+    clusterMap: Map<string, number>,
+    usePalette: boolean,
+    themeName: ColorThemeName,
+  ): void {
+    const legendCard = this.settings.legendFormattingCard;
+    if (!legendCard.showLegend.value || !enableClustering) return;
+
+    const legendPos = resolveDropdown(legendCard.legendPosition) ?? 'bottom';
+    const rawFontColor = legendCard.legendFontColor.value?.value;
+
+    // Collect unique cluster IDs and their colors
+    const uniqueClusters = new Set<number>();
+    for (const c of clusterMap.values()) uniqueClusters.add(c);
+    const sortedClusters = Array.from(uniqueClusters).sort((a, b) => a - b);
+
+    const legendItems: LegendItem[] = sortedClusters.map((clusterId) => ({
+      label: `Cluster ${clusterId + 1}`,
+      color: usePalette
+        ? getHostChartColor(this.host.colorPalette, clusterId, themeName)
+        : getChartColor(clusterId, themeName),
+    }));
+
+    if (legendItems.length > 0) {
+      renderLegend(this.container, {
+        items: legendItems,
+        position: legendPos as 'top' | 'bottom' | 'left' | 'right',
+        fontSize: legendCard.legendFontSize.value,
+        fontColor: rawFontColor && rawFontColor.length > 0 ? rawFontColor : '#64748B',
+        fontFamily: resolveDropdown(legendCard.legendFontFamily) || undefined,
+        fontWeight: resolveDropdown(legendCard.legendFontWeight) || 'normal',
+        aliases: legendCard.legendAliases.value,
+      });
+    }
   }
 
   private getConditionalColor(value: number): string | undefined {
@@ -908,12 +1094,57 @@ export class NetworkGraphVisual implements IVisual {
   // ── Formatting Pane ──────────────────────────────────────────
 
   public getFormattingModel(): powerbi.visuals.FormattingModel {
+    const s = this.settings;
+    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    s.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
+    s.cardSettings.backgroundColor.visible = cardMode !== 'none';
     return this.formattingSettingsService.buildFormattingModel(this.settings);
   }
 
   private handleBackgroundClick = (): void => {
     void this.selectionManager.clear();
+    // Restore cross-highlight dimming state after clearing selection
+    this.applyCrossHighlight();
   };
+
+  private applyCrossHighlight(): void {
+    const data = this.currentData;
+    if (!data) return;
+    const hasSelection = this.selectionManager.hasSelection();
+    const shouldDim = hasSelection || data.hasHighlights;
+
+    const nodes = this.container.querySelectorAll<SVGGElement>('.network-node');
+    const links = this.container.querySelectorAll<SVGLineElement>('.network-link');
+
+    if (!shouldDim) {
+      for (const el of Array.from(nodes)) el.style.opacity = '';
+      for (const el of Array.from(links)) el.style.opacity = '';
+      return;
+    }
+
+    const selectedIds = this.selectionManager.getSelectionIds() as powerbi.visuals.ISelectionId[];
+    const selectedKeys = new Set(selectedIds.map((id) => id.getKey()));
+    const highlightedNodeIds = new Set<string>();
+    if (data.hasHighlights) {
+      for (const node of data.nodes) {
+        if (node.highlighted) highlightedNodeIds.add(node.id);
+      }
+    }
+
+    for (const el of Array.from(nodes)) {
+      const nodeId = el.getAttribute('data-node');
+      const isHighlighted = data.hasHighlights && nodeId !== null && highlightedNodeIds.has(nodeId);
+      el.style.opacity = isHighlighted ? '' : '0.3';
+    }
+
+    for (const el of Array.from(links)) {
+      const srcId = el.getAttribute('data-source');
+      const tgtId = el.getAttribute('data-target');
+      const srcOk = srcId !== null && highlightedNodeIds.has(srcId);
+      const tgtOk = tgtId !== null && highlightedNodeIds.has(tgtId);
+      el.style.opacity = (srcOk || tgtOk) ? '' : '0.3';
+    }
+  }
 
   // ── Lifecycle ────────────────────────────────────────────────
 

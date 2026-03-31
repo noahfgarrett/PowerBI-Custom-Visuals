@@ -17,7 +17,8 @@ import {
   DURATION,
   formatNumber,
   formatWithSettings,
-  getGlassStyle,
+  applyCardStyle,
+  type CardStyleMode,
   getHostChartColor,
   withOpacity,
   renderChartTitle,
@@ -34,6 +35,8 @@ import {
   applyChartAria,
   attachKeyboardNav,
   ensureFocusRingStyles,
+  getDateFilterIndices,
+  type DateFilterConfig,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -58,6 +61,14 @@ interface PetalDatum {
   value: number;
   color: string;
   selectionId: ISelectionId;
+  /** Whether this data point is cross-highlighted from another visual. */
+  highlighted: boolean;
+}
+
+interface PolarChartData {
+  petals: PetalDatum[];
+  /** Whether cross-highlight data is present from another visual/slicer. */
+  hasHighlights: boolean;
 }
 
 // ── Visual Class ─────────────────────────────────────────────────────
@@ -69,6 +80,7 @@ export class PolarChartVisual implements IVisual {
   private settings: PolarChartSettings;
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
+  private currentData: PolarChartData | null = null;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
@@ -94,6 +106,16 @@ export class PolarChartVisual implements IVisual {
     }
 
     // Hide inapplicable shared axis properties — polar-chart doesn't use titles/rotation/min/max
+
+    // Date filter: hide start/end when disabled
+    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
+    // Card Style — hide sub-settings when mode is 'none'
+    const cardStyleMode = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    this.settings.cardSettings.backgroundOpacity.visible = cardStyleMode !== 'none';
+    this.settings.cardSettings.backgroundColor.visible = cardStyleMode !== 'none';
+
     this.settings.axisFormattingCard.showXAxis.visible = false;
     this.settings.axisFormattingCard.showYAxis.visible = false;
     this.settings.axisFormattingCard.xAxisTitle.visible = false;
@@ -104,15 +126,22 @@ export class PolarChartVisual implements IVisual {
     this.settings.axisFormattingCard.yAxisMax.visible = false;
     this.settings.axisFormattingCard.gridLineWidth.visible = false;
     this.settings.axisFormattingCard.gridLineOpacity.visible = false;
+    this.settings.axisFormattingCard.axisLabelFontWeight.visible = false;
 
-    // Hide shared showDataLabels — local polarSettings.showLabels handles label visibility
+    // Hide shared showDataLabels — local labelSettings.showLabels handles label visibility
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
+    // Hide data label position — position is determined by chart geometry
+    this.settings.dataLabelFormattingCard.dataLabelPosition.visible = false;
 
     // Extract data and apply user-configured sort order
+    const extracted = this.extractData(dataView);
     const data = applySortOrder(
-      this.extractData(dataView).map((d) => ({ ...d, name: d.label })),
+      extracted.petals.map((d) => ({ ...d, name: d.label })),
       this.settings.sortFormattingCard,
     );
+
+    // Store data for cross-highlight usage
+    this.currentData = { petals: data, hasHighlights: extracted.hasHighlights };
 
     // Populate per-series formatting groups from data
     const defaultColors = new Map<string, string>();
@@ -124,37 +153,46 @@ export class PolarChartVisual implements IVisual {
       defaultColors,
     );
 
-    this.notifyRenderStarted();
-    try {
-      this.render(data, options.viewport);
-      this.notifyRenderFinished();
-    } catch (error) {
-      this.notifyRenderFailed(error);
-      throw error;
-    }
+    this.render(data, options.viewport);
   }
 
-  private extractData(dataView: DataView | undefined): PetalDatum[] {
+  private extractData(dataView: DataView | undefined): PolarChartData {
     const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
-    const result: PetalDatum[] = [];
+    const empty: PolarChartData = { petals: [], hasHighlights: false };
 
-    if (!dataView?.categorical) return result;
+    if (!dataView?.categorical) return empty;
 
     const categories = dataView.categorical.categories;
     const values = dataView.categorical.values;
 
-    if (!categories || categories.length === 0 || !values || values.length === 0) return result;
+    if (!categories || categories.length === 0 || !values || values.length === 0) return empty;
 
     const categoryColumn = categories[0];
     const measureColumn = values[0];
 
-    if (!categoryColumn || !measureColumn) return result;
+    if (!categoryColumn || !measureColumn) return empty;
 
     const count = Math.min(categoryColumn.values.length, measureColumn.values.length);
-    const baseColor = this.settings.colorSettings.baseColor.value?.value;
+    const baseColor = this.settings.colorsAndFillSettings.baseColor.value?.value;
     const useBaseColor = typeof baseColor === 'string' && baseColor.length > 0;
 
+    // Cross-highlight: read highlight values from the measure column
+    const hlRaw = (measureColumn as unknown as { highlights?: unknown }).highlights as unknown[] | undefined;
+
+    const dateConfig: DateFilterConfig = {
+      enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
+      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
+      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+    };
+    const dateIndices = getDateFilterIndices(categoryColumn.values, dateConfig);
+
+    const result: PetalDatum[] = [];
+    let hasHighlights = false;
+
     for (let i = 0; i < count; i++) {
+      if (dateIndices && !dateIndices.has(i)) continue;
+
       const label = categoryColumn.values[i];
       const value = measureColumn.values[i];
 
@@ -167,6 +205,9 @@ export class PolarChartVisual implements IVisual {
         ? this.lightenColor(baseColor, count > 1 ? (i / (count - 1)) * 0.45 : 0)
         : getHostChartColor(this.host.colorPalette, i, themeName);
 
+      const isHighlighted = hlRaw ? hlRaw[i] !== null && hlRaw[i] !== undefined : false;
+      if (isHighlighted) hasHighlights = true;
+
       result.push({
         label: String(label),
         value: Math.max(0, value), // clamp negative values to 0
@@ -174,10 +215,11 @@ export class PolarChartVisual implements IVisual {
         selectionId: this.host.createSelectionIdBuilder()
           .withCategory(categoryColumn, i)
           .createSelectionId(),
+        highlighted: isHighlighted,
       });
     }
 
-    return result;
+    return { petals: result, hasHighlights };
   }
 
   private render(data: PetalDatum[], viewport: powerbi.IViewport): void {
@@ -192,22 +234,16 @@ export class PolarChartVisual implements IVisual {
 
     const s = this.settings;
 
-    // Apply glass card background
-    if (s.cardSettings.enableGlass.value) {
-      const glass = getGlassStyle({
-        mode: 'light',
-        opacity: s.cardSettings.backgroundOpacity.value / 100,
-        backgroundColor: s.cardSettings.backgroundColor.value?.value || undefined,
-        borderRadius: s.cardSettings.borderRadius.value,
-      });
-      Object.assign(this.container.style, glass);
-    } else {
-      this.container.style.background = '';
-      this.container.style.backdropFilter = '';
-      (this.container.style as unknown as Record<string, unknown>)['WebkitBackdropFilter'] = '';
-      this.container.style.border = '';
-      this.container.style.boxShadow = '';
-      this.container.style.borderRadius = '';
+    // Apply card style
+    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    applyCardStyle(this.container, {
+      mode: cardMode,
+      opacity: s.cardSettings.backgroundOpacity.value / 100,
+      backgroundColor: s.cardSettings.backgroundColor.value?.value || undefined,
+      borderRadius: s.cardSettings.borderRadius.value,
+    });
+    if (cardMode === 'none') {
+      this.container.style.borderRadius = `${s.cardSettings.borderRadius.value}px`;
     }
 
     // Empty state: no data
@@ -227,17 +263,18 @@ export class PolarChartVisual implements IVisual {
     const cy = height / 2;
     const padding = 24;
     const maxOuterRadius = (size / 2) - padding;
-    const innerRadius = Math.max(0, Math.min(s.polarSettings.innerRadius.value, maxOuterRadius * 0.6));
+    const innerRadius = Math.max(0, Math.min(s.segmentSettings.innerRadius.value, maxOuterRadius * 0.6));
 
     // ── Value calculations ──────────────────────────────────────
+    const totalValue = data.reduce((sum, d) => sum + d.value, 0);
     const maxValue = d3.max(data, (d) => d.value) ?? 1;
     const petalCount = data.length;
-    const segmentPaddingDeg = Math.max(0, s.polarDisplaySettings.segmentPadding.value);
-    const endAngleRad = (Math.max(1, Math.min(360, s.polarDisplaySettings.endAngle.value)) / 360) * 2 * Math.PI;
+    const segmentPaddingDeg = Math.max(0, s.segmentSettings.segmentPadding.value);
+    const endAngleRad = (Math.max(1, Math.min(360, s.segmentSettings.endAngle.value)) / 360) * 2 * Math.PI;
     const angleStep = endAngleRad / petalCount;
-    const startAngleOffset = s.polarSettings.startAngle.value * DEG_TO_RAD;
-    const showRadialLabels = s.polarDisplaySettings.showRadialLabels.value;
-    const showInnerLabels = s.polarDisplaySettings.showInnerLabels.value;
+    const startAngleOffset = s.segmentSettings.startAngle.value * DEG_TO_RAD;
+    const showRadialLabels = s.labelSettings.showRadialLabels.value;
+    const showInnerLabels = s.labelSettings.showInnerLabels.value;
 
     // ── SVG Setup ───────────────────────────────────────────────
     const svg = d3.select(this.container)
@@ -251,10 +288,34 @@ export class PolarChartVisual implements IVisual {
     const g = svg.append('g')
       .attr('transform', `translate(${cx}, ${cy})`);
 
+    // ── Glow filter for petal hover ─────────────────────────────
+    const defs = svg.append('defs');
+    const glowFilter = defs.append('filter')
+      .attr('id', 'petal-inner-glow')
+      .attr('x', '-20%')
+      .attr('y', '-20%')
+      .attr('width', '140%')
+      .attr('height', '140%');
+    glowFilter.append('feGaussianBlur')
+      .attr('in', 'SourceAlpha')
+      .attr('stdDeviation', '3')
+      .attr('result', 'blur');
+    glowFilter.append('feFlood')
+      .attr('flood-color', '#ffffff')
+      .attr('flood-opacity', '0.3')
+      .attr('result', 'glowColor');
+    glowFilter.append('feComposite')
+      .attr('in', 'glowColor')
+      .attr('in2', 'blur')
+      .attr('operator', 'in')
+      .attr('result', 'innerGlow');
+    const glowMerge = glowFilter.append('feMerge');
+    glowMerge.append('feMergeNode').attr('in', 'innerGlow');
+    glowMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+
     // ── Gradient Defs (if enabled) ──────────────────────────────
-    const gradientEnabled = s.polarGradientSettings.enabled.value;
+    const gradientEnabled = s.colorsAndFillSettings.enableGradientFill.value;
     if (gradientEnabled) {
-      const defs = svg.append('defs');
       data.forEach((datum, i) => {
         const fmt = resolveSeriesFormatting(this.settings.seriesFormattingCard, i, datum.color);
         const grad = defs.append('radialGradient')
@@ -341,10 +402,11 @@ export class PolarChartVisual implements IVisual {
       const petalFill = conditionalFill ?? (gradientEnabled ? `url(#polar-grad-${i})` : fmt.color);
       const petalPath = petalGroup.append('path')
         .attr('class', 'polar-petal')
+        .attr('data-selection-key', datum.selectionId.getKey())
         .attr('fill', petalFill)
         .attr('fill-opacity', fmt.opacity / 100)
-        .attr('stroke', s.polarSettings.segmentStrokeColor.value?.value || withOpacity(datum.color, 0.6))
-        .attr('stroke-width', s.polarSettings.segmentStrokeWidth.value)
+        .attr('stroke', s.segmentSettings.segmentStrokeColor.value?.value || withOpacity(datum.color, 0.6))
+        .attr('stroke-width', s.segmentSettings.segmentStrokeWidth.value)
         .style('cursor', 'pointer')
         .on('click', (event: MouseEvent) => {
           event.stopPropagation();
@@ -408,7 +470,7 @@ export class PolarChartVisual implements IVisual {
         }));
       }
 
-      // ── Hover: springScale bloom ────────────────────────────
+      // ── Hover: springScale bloom + inner glow ─────────────────
       const petalNode = petalPath.node();
       if (petalNode) {
         let hoverCancel: (() => void) | null = null;
@@ -417,7 +479,8 @@ export class PolarChartVisual implements IVisual {
           hoverCancel?.();
           hoverCancel = springScale(petalNode, 0, 300, 1, 1.06);
           petalPath.attr('fill-opacity', 1);
-          this.showPetalTooltip(datum, event);
+          petalPath.style('filter', 'url(#petal-inner-glow) brightness(1.15)');
+          this.showPetalTooltip(datum, totalValue, event);
         });
 
         petalNode.addEventListener('mousemove', (event: MouseEvent) => {
@@ -428,6 +491,7 @@ export class PolarChartVisual implements IVisual {
           hoverCancel?.();
           hoverCancel = springScale(petalNode, 0, 300, 1.06, 1);
           petalPath.attr('fill-opacity', fmt.opacity / 100);
+          petalPath.style('filter', null);
           this.hideTooltip();
         });
 
@@ -438,7 +502,7 @@ export class PolarChartVisual implements IVisual {
       }
 
       // ── Inner Labels (inside petals) ────────────────────────────
-      if (showInnerLabels || s.polarSettings.showLabels.value) {
+      if (showInnerLabels || s.labelSettings.showLabels.value) {
         const midAngle = (petalStartAngle + petalEndAngle) / 2;
         const labelRadius = innerRadius + (targetOuterRadius - innerRadius) * 0.65;
         const labelX = labelRadius * Math.sin(midAngle);
@@ -446,13 +510,19 @@ export class PolarChartVisual implements IVisual {
 
         // Only show labels if petal is large enough
         if (targetOuterRadius - innerRadius > 20) {
+          const polarLabelFontSize = s.labelSettings.fontSize.value;
+          const polarLabelFontFamily = resolveDropdown(s.labelSettings.fontFamily);
+          const polarLabelFontWeight = resolveDropdown(s.labelSettings.fontWeight);
           const labelEl = petalGroup.append('text')
             .attr('class', 'polar-label')
             .attr('x', labelX)
             .attr('y', labelY)
             .attr('dy', '0.35em')
-            .attr('fill', s.polarSettings.labelColor.value?.value || '#FFFFFF')
+            .attr('fill', s.dataLabelFormattingCard.dataLabelFontColor.value?.value || s.labelSettings.labelColor.value?.value || '#FFFFFF')
+            .attr('font-size', `${polarLabelFontSize}px`)
             .text(datum.label);
+          if (polarLabelFontFamily) labelEl.attr('font-family', polarLabelFontFamily);
+          if (polarLabelFontWeight) labelEl.attr('font-weight', polarLabelFontWeight);
 
           if (animEnabled) {
             labelEl.attr('opacity', 0);
@@ -494,7 +564,7 @@ export class PolarChartVisual implements IVisual {
           .attr('dy', '0.35em')
           .attr('text-anchor', textAnchor)
           .attr('font-size', `${s.axisFormattingCard.axisLabelSize.value}px`)
-          .attr('fill', s.polarSettings.labelColor.value?.value || '#475569')
+          .attr('fill', s.dataLabelFormattingCard.dataLabelFontColor.value?.value || s.labelSettings.labelColor.value?.value || '#475569')
           .text(datum.label);
 
         if (animEnabled) {
@@ -593,6 +663,7 @@ export class PolarChartVisual implements IVisual {
     }
 
     this.applyAccessibility(data.length);
+    this.applyCrossHighlight();
     this.container.addEventListener('click', this.handleBackgroundClick);
   }
 
@@ -622,6 +693,7 @@ export class PolarChartVisual implements IVisual {
       fontSize: legendFontSize,
       fontColor: legendFontColor,
       fontFamily: rawLegendFontFamily,
+      aliases: legendFmtCard.legendAliases.value,
     });
   }
 
@@ -634,16 +706,56 @@ export class PolarChartVisual implements IVisual {
     return 'bottom';
   }
 
+  // ── Cross-Highlight ──────────────────────────────────────────────
+
+  private applyCrossHighlight(): void {
+    const data = this.currentData;
+    if (!data) return;
+
+    const hasHighlights = data.hasHighlights;
+    const hasSelection = this.selectionManager.hasSelection();
+    const selectedIds = this.selectionManager.getSelectionIds() as ISelectionId[];
+    const selectedKeys = new Set(selectedIds.map((id) => id.getKey()));
+
+    const highlightedKeys = new Set<string>();
+    if (hasHighlights) {
+      for (const petal of data.petals) {
+        if (petal.highlighted) {
+          highlightedKeys.add(petal.selectionId.getKey());
+        }
+      }
+    }
+
+    const petals = this.container.querySelectorAll<SVGPathElement>('.polar-petal');
+    const shouldDim = hasSelection || hasHighlights;
+
+    for (const el of Array.from(petals)) {
+      if (shouldDim) {
+        const elKey = el.getAttribute('data-selection-key');
+        const isSelected = hasSelection && elKey !== null && selectedKeys.has(elKey);
+        const isHighlighted = hasHighlights && elKey !== null && highlightedKeys.has(elKey);
+        el.style.opacity = (isSelected || isHighlighted) ? '' : '0.3';
+      } else {
+        el.style.opacity = '';
+      }
+    }
+  }
+
   private handleBackgroundClick = (): void => {
     void this.selectionManager.clear();
+    this.applyCrossHighlight();
   };
 
-  private showPetalTooltip(datum: PetalDatum, event: MouseEvent): void {
-    const locale = this.getHostLocale();
+  private showPetalTooltip(datum: PetalDatum, totalValue: number, event: MouseEvent): void {
     const tooltipData: VisualTooltipDataItem[] = [
       { displayName: 'Category', value: datum.label },
       { displayName: 'Value', value: formatWithSettings(datum.value, this.settings.numberFormattingCard) },
     ];
+
+    if (totalValue > 0) {
+      const pctOfTotal = (datum.value / totalValue) * 100;
+      tooltipData.push({ displayName: '% of Total', value: `${pctOfTotal.toFixed(1)}%` });
+    }
 
     this.host.tooltipService.show({
       dataItems: tooltipData,
@@ -666,11 +778,6 @@ export class PolarChartVisual implements IVisual {
     this.host.tooltipService.hide({ immediately: true, isTouchEvent: false });
   }
 
-  private getHostLocale(): string | undefined {
-    const locale = (this.host as unknown as { locale?: unknown }).locale;
-    return typeof locale === 'string' && locale.length > 0 ? locale : undefined;
-  }
-
   /**
    * Lightens a hex color by a given amount (0 = no change, 1 = white).
    */
@@ -685,28 +792,6 @@ export class PolarChartVisual implements IVisual {
     const lb = Math.round(b + (255 - b) * amount);
 
     return `#${lr.toString(16).padStart(2, '0')}${lg.toString(16).padStart(2, '0')}${lb.toString(16).padStart(2, '0')}`;
-  }
-
-  private notifyRenderStarted(): void {
-    const eventService = (this.host as unknown as {
-      eventService?: { renderingStarted?: () => void };
-    }).eventService;
-    eventService?.renderingStarted?.();
-  }
-
-  private notifyRenderFinished(): void {
-    const eventService = (this.host as unknown as {
-      eventService?: { renderingFinished?: () => void };
-    }).eventService;
-    eventService?.renderingFinished?.();
-  }
-
-  private notifyRenderFailed(error: unknown): void {
-    const eventService = (this.host as unknown as {
-      eventService?: { renderingFailed?: (reason: string) => void };
-    }).eventService;
-    const reason = error instanceof Error ? error.message : 'render failure';
-    eventService?.renderingFailed?.(reason);
   }
 
   // ── Conditional Formatting ───────────────────────────────────
