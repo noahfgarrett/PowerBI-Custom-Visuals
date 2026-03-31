@@ -2681,11 +2681,13 @@ export class BarChartProVisual implements IVisual {
 
     if (this.settings.axisFormattingCard.integerTicks.value) {
       const [yMin, yMax] = yScale.domain();
-      const intTicks: number[] = [];
-      for (let i = Math.ceil(yMin); i <= Math.floor(yMax); i++) {
-        intTicks.push(i);
-      }
-      if (intTicks.length > 0) {
+      const intCount = Math.floor(yMax) - Math.ceil(yMin) + 1;
+      // Only override ticks when range is small enough that D3 would produce fractional ticks
+      if (intCount > 0 && intCount <= 10) {
+        const intTicks: number[] = [];
+        for (let i = Math.ceil(yMin); i <= Math.floor(yMax); i++) {
+          intTicks.push(i);
+        }
         gridGen.tickValues(intTicks);
       }
     }
@@ -2735,11 +2737,13 @@ export class BarChartProVisual implements IVisual {
 
       if (s.axisFormattingCard.integerTicks.value) {
         const [yMin, yMax] = yScale.domain();
-        const intTicks: number[] = [];
-        for (let i = Math.ceil(yMin); i <= Math.floor(yMax); i++) {
-          intTicks.push(i);
-        }
-        if (intTicks.length > 0) {
+        const intCount = Math.floor(yMax) - Math.ceil(yMin) + 1;
+        // Only override ticks when range is small enough that D3 would produce fractional ticks
+        if (intCount > 0 && intCount <= 10) {
+          const intTicks: number[] = [];
+          for (let i = Math.ceil(yMin); i <= Math.floor(yMax); i++) {
+            intTicks.push(i);
+          }
           yAxisGen.tickValues(intTicks);
         }
       }
@@ -2757,11 +2761,13 @@ export class BarChartProVisual implements IVisual {
 
       if (s.axisFormattingCard.integerTicks.value) {
         const [secYMin, secYMax] = secondaryYScale.domain();
-        const secIntTicks: number[] = [];
-        for (let i = Math.ceil(secYMin); i <= Math.floor(secYMax); i++) {
-          secIntTicks.push(i);
-        }
-        if (secIntTicks.length > 0) {
+        const secIntCount = Math.floor(secYMax) - Math.ceil(secYMin) + 1;
+        // Only override secondary axis ticks when range is small (avoids 50+ tick marks)
+        if (secIntCount > 0 && secIntCount <= 10) {
+          const secIntTicks: number[] = [];
+          for (let i = Math.ceil(secYMin); i <= Math.floor(secYMax); i++) {
+            secIntTicks.push(i);
+          }
           secYAxisGen.tickValues(secIntTicks);
         }
       }
