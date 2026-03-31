@@ -43,35 +43,35 @@
           }
         }
       ],
-      "table": {
-        "rows": {
-          "select": [
-            {
-              "for": {
-                "in": "trendAxis"
-              }
-            },
-            {
-              "for": {
-                "in": "measure"
-              }
-            },
-            {
-              "for": {
-                "in": "target"
-              }
-            },
-            {
-              "for": {
-                "in": "trendValues"
-              }
-            }
-          ],
+      "categorical": {
+        "categories": {
+          "for": {
+            "in": "trendAxis"
+          },
           "dataReductionAlgorithm": {
             "top": {
-              "count": 100
+              "count": 1000
             }
           }
+        },
+        "values": {
+          "select": [
+            {
+              "bind": {
+                "to": "measure"
+              }
+            },
+            {
+              "bind": {
+                "to": "target"
+              }
+            },
+            {
+              "bind": {
+                "to": "trendValues"
+              }
+            }
+          ]
         }
       }
     }
@@ -149,6 +149,44 @@
               }
             ]
           }
+        },
+        "alignment": {
+          "displayName": "Horizontal Alignment",
+          "type": {
+            "enumeration": [
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "center",
+                "displayName": "Center"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        },
+        "verticalAlignment": {
+          "displayName": "Vertical Alignment",
+          "type": {
+            "enumeration": [
+              {
+                "value": "top",
+                "displayName": "Top"
+              },
+              {
+                "value": "center",
+                "displayName": "Center"
+              },
+              {
+                "value": "bottom",
+                "displayName": "Bottom"
+              }
+            ]
+          }
         }
       }
     },
@@ -159,6 +197,59 @@
           "displayName": "Show Label",
           "type": {
             "bool": true
+          }
+        },
+        "position": {
+          "displayName": "Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "above",
+                "displayName": "Above Value"
+              },
+              {
+                "value": "below",
+                "displayName": "Below Value"
+              }
+            ]
+          }
+        },
+        "alignment": {
+          "displayName": "Horizontal Alignment",
+          "type": {
+            "enumeration": [
+              {
+                "value": "left",
+                "displayName": "Left"
+              },
+              {
+                "value": "center",
+                "displayName": "Center"
+              },
+              {
+                "value": "right",
+                "displayName": "Right"
+              }
+            ]
+          }
+        },
+        "verticalAlignment": {
+          "displayName": "Vertical Alignment",
+          "type": {
+            "enumeration": [
+              {
+                "value": "top",
+                "displayName": "Top"
+              },
+              {
+                "value": "center",
+                "displayName": "Center"
+              },
+              {
+                "value": "bottom",
+                "displayName": "Bottom"
+              }
+            ]
           }
         },
         "fontSize": {
@@ -250,7 +341,9 @@
         },
         "fontSize": {
           "displayName": "Font Size",
-          "type": { "numeric": true }
+          "type": {
+            "numeric": true
+          }
         },
         "positiveColor": {
           "displayName": "Positive Color",
@@ -280,6 +373,60 @@
                 "color": true
               }
             }
+          }
+        },
+        "fontFamily": {
+          "displayName": "Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri"
+              },
+              {
+                "value": "Helvetica",
+                "displayName": "Helvetica"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia"
+              }
+            ]
+          }
+        },
+        "fontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold"
+              }
+            ]
           }
         }
       }
@@ -333,6 +480,80 @@
                 "color": true
               }
             }
+          }
+        },
+        "showMinMax": {
+          "displayName": "Show Min/Max",
+          "type": {
+            "bool": true
+          }
+        },
+        "minColor": {
+          "displayName": "Min Marker Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "maxColor": {
+          "displayName": "Max Marker Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "cumulative": {
+          "displayName": "Cumulative Mode",
+          "type": {
+            "bool": true
+          }
+        },
+        "endpointMarker": {
+          "displayName": "Endpoint Marker",
+          "type": {
+            "enumeration": [
+              {
+                "value": "circle",
+                "displayName": "Circle"
+              },
+              {
+                "value": "triangle",
+                "displayName": "Triangle"
+              },
+              {
+                "value": "diamond",
+                "displayName": "Diamond"
+              },
+              {
+                "value": "none",
+                "displayName": "None"
+              }
+            ]
+          }
+        },
+        "sparklineType": {
+          "displayName": "Sparkline Type",
+          "type": {
+            "enumeration": [
+              {
+                "value": "line",
+                "displayName": "Line"
+              },
+              {
+                "value": "area",
+                "displayName": "Area"
+              },
+              {
+                "value": "bar",
+                "displayName": "Bar"
+              }
+            ]
           }
         }
       }
@@ -593,11 +814,51 @@
             "numeric": true
           }
         },
-        "enableGlass": {
+        "cardStyleMode": {
+          "displayName": "Card Style",
           "type": {
-            "bool": true
-          },
-          "displayName": "Glass Effect"
+            "enumeration": [
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "glass",
+                "displayName": "Glass"
+              },
+              {
+                "value": "elevated",
+                "displayName": "Elevated"
+              },
+              {
+                "value": "neumorphic",
+                "displayName": "Neumorphic"
+              }
+            ]
+          }
+        },
+        "kpiCount": {
+          "displayName": "KPI Count",
+          "type": {
+            "enumeration": [
+              {
+                "value": "1",
+                "displayName": "1"
+              },
+              {
+                "value": "2",
+                "displayName": "2"
+              },
+              {
+                "value": "3",
+                "displayName": "3"
+              },
+              {
+                "value": "4",
+                "displayName": "4"
+              }
+            ]
+          }
         }
       }
     },
@@ -660,6 +921,25 @@
             "bool": true
           }
         },
+        "compareMode": {
+          "displayName": "Compare Against",
+          "type": {
+            "enumeration": [
+              {
+                "value": "target",
+                "displayName": "Target"
+              },
+              {
+                "value": "previous",
+                "displayName": "Previous Period"
+              },
+              {
+                "value": "first",
+                "displayName": "First Period"
+              }
+            ]
+          }
+        },
         "showPercentChange": {
           "displayName": "Show % Change",
           "type": {
@@ -668,7 +948,9 @@
         },
         "fontSize": {
           "displayName": "Font Size",
-          "type": { "numeric": true }
+          "type": {
+            "numeric": true
+          }
         },
         "fontColor": {
           "displayName": "Font Color",
@@ -678,53 +960,6 @@
                 "color": true
               }
             }
-          }
-        }
-      }
-    },
-    "kpiLayoutSettings": {
-      "displayName": "Layout",
-      "properties": {
-        "kpiCount": {
-          "displayName": "KPI Count",
-          "type": {
-            "enumeration": [
-              {
-                "value": "1",
-                "displayName": "1"
-              },
-              {
-                "value": "2",
-                "displayName": "2"
-              },
-              {
-                "value": "3",
-                "displayName": "3"
-              },
-              {
-                "value": "4",
-                "displayName": "4"
-              }
-            ]
-          }
-        },
-        "sparklineType": {
-          "displayName": "Sparkline Type",
-          "type": {
-            "enumeration": [
-              {
-                "value": "line",
-                "displayName": "Line"
-              },
-              {
-                "value": "area",
-                "displayName": "Area"
-              },
-              {
-                "value": "bar",
-                "displayName": "Bar"
-              }
-            ]
           }
         }
       }
@@ -750,6 +985,12 @@
             "bool": true
           }
         },
+        "gradientProgress": {
+          "displayName": "Gradient Color",
+          "type": {
+            "bool": true
+          }
+        },
         "metColor": {
           "displayName": "Goal Met Color",
           "type": {
@@ -769,6 +1010,20 @@
               }
             }
           }
+        },
+        "showGoalText": {
+          "type": { "bool": true },
+          "displayName": "Show Goal Text"
+        },
+        "goalTextAlignment": {
+          "type": {
+            "enumeration": [
+              { "value": "left", "displayName": "Left" },
+              { "value": "center", "displayName": "Center" },
+              { "value": "right", "displayName": "Right" }
+            ]
+          },
+          "displayName": "Goal Text Alignment"
         }
       }
     },
@@ -890,6 +1145,35 @@
         }
       },
       "displayName": "Color Theme"
+    },
+    "dateFilterFormatting": {
+      "displayName": "Date Filter",
+      "properties": {
+        "enableDateFilter": {
+          "displayName": "Enable Date Filter",
+          "type": {
+            "bool": true
+          }
+        },
+        "startDate": {
+          "displayName": "Start Date",
+          "type": {
+            "text": true
+          }
+        },
+        "endAtCurrentDate": {
+          "displayName": "End at Current Date",
+          "type": {
+            "bool": true
+          }
+        },
+        "endDate": {
+          "displayName": "End Date",
+          "type": {
+            "text": true
+          }
+        }
+      }
     }
   },
   "supportsKeyboardFocus": true,

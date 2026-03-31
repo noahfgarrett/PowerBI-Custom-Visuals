@@ -13,6 +13,7 @@ export {
   getChartColors,
   getDeltaColor,
   withOpacity,
+  generateColorVariations,
   type ColorMode,
   type ColorThemeName,
   COLOR_THEMES,
@@ -26,6 +27,13 @@ export {
   type GlassStyleOptions,
   type GlassStyles,
 } from './glass';
+
+// Unified card styling (glass / elevated / neumorphic)
+export {
+  applyCardStyle,
+  type CardStyleMode,
+  type CardStyleOptions,
+} from './card-style';
 
 // Animations
 export {
@@ -99,6 +107,7 @@ export {
   AccessibilityFormattingCard,
   ColorThemeFormattingCard,
   AnnotationFormattingCard,
+  DateFilterFormattingCard,
   SeriesFormattingGroup,
   SeriesFormattingCard,
   resolveSeriesFormatting,
@@ -132,6 +141,11 @@ export {
   type LegendConfig,
   type HoverDimConfig,
   type SparklineConfig,
+  getDateFilterIndices,
+  type DateFilterConfig,
+  renderInlineLabels,
+  type InlineLabelItem,
+  type InlineLabelConfig,
 } from './shared-helpers';
 
 // Reference lines, trend lines, targets

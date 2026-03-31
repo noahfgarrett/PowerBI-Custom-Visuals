@@ -10,7 +10,7 @@
       "displayName": "Measure",
       "name": "measure",
       "kind": "Measure",
-      "description": "Y-axis values — each measure is one line/area series"
+      "description": "Y-axis values \u2014 each measure is one line/area series"
     }
   ],
   "dataViewMappings": [
@@ -36,7 +36,7 @@
           ],
           "dataReductionAlgorithm": {
             "top": {
-              "count": 500
+              "count": 30000
             }
           }
         },
@@ -54,7 +54,7 @@
   ],
   "objects": {
     "lineSettings": {
-      "displayName": "Line Settings",
+      "displayName": "Line & Points",
       "properties": {
         "lineWidth": {
           "displayName": "Line Width",
@@ -87,12 +87,6 @@
             "bool": true
           }
         },
-        "showArea": {
-          "displayName": "Show Area Fill",
-          "type": {
-            "bool": true
-          }
-        },
         "dotRadius": {
           "displayName": "Dot Radius",
           "type": {
@@ -117,9 +111,15 @@
         }
       }
     },
-    "areaSettings": {
-      "displayName": "Area Settings",
+    "areaFillSettings": {
+      "displayName": "Area Fill",
       "properties": {
+        "showArea": {
+          "displayName": "Show Area Fill",
+          "type": {
+            "bool": true
+          }
+        },
         "fillOpacity": {
           "displayName": "Fill Opacity (%)",
           "type": {
@@ -130,6 +130,95 @@
           "displayName": "Gradient Fill",
           "type": {
             "bool": true
+          }
+        },
+        "mode": {
+          "displayName": "Stack Mode",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal (Overlapping)"
+              },
+              {
+                "value": "stacked",
+                "displayName": "Stacked"
+              },
+              {
+                "value": "stacked100",
+                "displayName": "100% Stacked"
+              },
+              {
+                "value": "stream",
+                "displayName": "Stream"
+              }
+            ]
+          }
+        },
+        "showThreshold": {
+          "displayName": "Show Threshold Zone",
+          "type": {
+            "bool": true
+          }
+        },
+        "threshold": {
+          "displayName": "Threshold Value",
+          "type": {
+            "numeric": true
+          }
+        },
+        "aboveColor": {
+          "displayName": "Above Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "belowColor": {
+          "displayName": "Below Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "thresholdLineColor": {
+          "displayName": "Threshold Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "thresholdLineWidth": {
+          "displayName": "Threshold Line Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "forecastLineOpacity": {
+          "displayName": "Forecast Line Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "forecastBandOpacity": {
+          "displayName": "Forecast Band Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "thresholdLineOpacity": {
+          "displayName": "Threshold Line Opacity (%)",
+          "type": {
+            "numeric": true
           }
         }
       }
@@ -373,7 +462,7 @@
           }
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (°)",
+          "displayName": "X-Label Rotation (\u00b0)",
           "type": {
             "numeric": true
           }
@@ -536,6 +625,24 @@
               }
             ]
           }
+        },
+        "legendAliases": {
+          "displayName": "Rename Labels",
+          "type": {
+            "text": true
+          }
+        },
+        "showInlineLabels": {
+          "type": { "bool": true },
+          "displayName": "Inline End Labels"
+        },
+        "inlineLabelFontSize": {
+          "type": { "numeric": true },
+          "displayName": "Inline Label Font Size"
+        },
+        "inlineLabelOffset": {
+          "type": { "numeric": true },
+          "displayName": "Inline Label Offset (px)"
         }
       }
     },
@@ -951,6 +1058,12 @@
             ]
           }
         },
+        "crosshairOpacity": {
+          "displayName": "Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
         "showCrosshairValues": {
           "displayName": "Show Values",
           "type": {
@@ -1064,6 +1177,12 @@
             "numeric": true
           }
         },
+        "referenceBandWidth": {
+          "displayName": "Band Width (%)",
+          "type": {
+            "numeric": true
+          }
+        },
         "referenceLineAxis": {
           "displayName": "Target Axis",
           "type": {
@@ -1146,7 +1265,7 @@
           }
         },
         "showR2": {
-          "displayName": "Show R²",
+          "displayName": "Show R\u00b2",
           "type": {
             "bool": true
           }
@@ -1246,19 +1365,19 @@
           }
         },
         "annotation1Category": {
-          "displayName": "Annotation 1 — Category",
+          "displayName": "Annotation 1 \u2014 Category",
           "type": {
             "text": true
           }
         },
         "annotation1Text": {
-          "displayName": "Annotation 1 — Text",
+          "displayName": "Annotation 1 \u2014 Text",
           "type": {
             "text": true
           }
         },
         "annotation1Position": {
-          "displayName": "Annotation 1 — Position",
+          "displayName": "Annotation 1 \u2014 Position",
           "type": {
             "enumeration": [
               {
@@ -1281,19 +1400,19 @@
           }
         },
         "annotation2Category": {
-          "displayName": "Annotation 2 — Category",
+          "displayName": "Annotation 2 \u2014 Category",
           "type": {
             "text": true
           }
         },
         "annotation2Text": {
-          "displayName": "Annotation 2 — Text",
+          "displayName": "Annotation 2 \u2014 Text",
           "type": {
             "text": true
           }
         },
         "annotation2Position": {
-          "displayName": "Annotation 2 — Position",
+          "displayName": "Annotation 2 \u2014 Position",
           "type": {
             "enumeration": [
               {
@@ -1316,19 +1435,19 @@
           }
         },
         "annotation3Category": {
-          "displayName": "Annotation 3 — Category",
+          "displayName": "Annotation 3 \u2014 Category",
           "type": {
             "text": true
           }
         },
         "annotation3Text": {
-          "displayName": "Annotation 3 — Text",
+          "displayName": "Annotation 3 \u2014 Text",
           "type": {
             "text": true
           }
         },
         "annotation3Position": {
-          "displayName": "Annotation 3 — Position",
+          "displayName": "Annotation 3 \u2014 Position",
           "type": {
             "enumeration": [
               {
@@ -1412,32 +1531,8 @@
         }
       }
     },
-    "areaStackSettings": {
-      "displayName": "Area Stacking",
-      "properties": {
-        "mode": {
-          "displayName": "Stack Mode",
-          "type": {
-            "enumeration": [
-              {
-                "value": "normal",
-                "displayName": "Normal (Overlapping)"
-              },
-              {
-                "value": "stacked",
-                "displayName": "Stacked"
-              },
-              {
-                "value": "stacked100",
-                "displayName": "100% Stacked"
-              }
-            ]
-          }
-        }
-      }
-    },
-    "areaGapSettings": {
-      "displayName": "Gap Handling",
+    "dataHandlingSettings": {
+      "displayName": "Data Handling",
       "properties": {
         "nullHandling": {
           "displayName": "Null / Gap Handling",
@@ -1460,40 +1555,84 @@
         }
       }
     },
-    "areaThresholdSettings": {
-      "displayName": "Threshold Zone",
+    "verticalBandSettings": {
+      "displayName": "Vertical Reference Band",
       "properties": {
         "show": {
-          "displayName": "Show Threshold Zone",
+          "displayName": "Show Vertical Band",
           "type": {
             "bool": true
           }
         },
-        "threshold": {
-          "displayName": "Threshold Value",
+        "startValue": {
+          "displayName": "Start Category",
+          "type": {
+            "text": true
+          }
+        },
+        "endValue": {
+          "displayName": "End Category",
+          "type": {
+            "text": true
+          }
+        },
+        "bandColor": {
+          "displayName": "Band Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "bandOpacity": {
+          "displayName": "Band Opacity (%)",
           "type": {
             "numeric": true
           }
         },
-        "aboveColor": {
-          "displayName": "Above Color",
+        "bandLabel": {
+          "displayName": "Label",
           "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
+            "text": true
           }
+        }
+      }
+    },
+    "gapIndicatorSettings": {
+      "properties": {
+        "showGapIndicator": {
+          "type": { "bool": true },
+          "displayName": "Show Gap Indicator"
         },
-        "belowColor": {
-          "displayName": "Below Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
+        "gapSeriesA": {
+          "type": { "numeric": true },
+          "displayName": "Series A (1-indexed)"
+        },
+        "gapSeriesB": {
+          "type": { "numeric": true },
+          "displayName": "Series B (1-indexed)"
+        },
+        "gapInterval": {
+          "type": { "numeric": true },
+          "displayName": "Show Every N Points"
+        },
+        "gapColor": {
+          "type": { "fill": { "solid": { "color": true } } },
+          "displayName": "Gap Line Color"
+        },
+        "gapLineWidth": {
+          "type": { "numeric": true },
+          "displayName": "Gap Line Width"
+        },
+        "showGapValue": {
+          "type": { "bool": true },
+          "displayName": "Show Gap Value"
+        },
+        "gapFontSize": {
+          "type": { "numeric": true },
+          "displayName": "Gap Font Size"
         }
       }
     },
@@ -1522,11 +1661,28 @@
             "numeric": true
           }
         },
-        "enableGlass": {
+        "cardStyleMode": {
+          "displayName": "Card Style",
           "type": {
-            "bool": true
-          },
-          "displayName": "Glass Effect"
+            "enumeration": [
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "glass",
+                "displayName": "Glass"
+              },
+              {
+                "value": "elevated",
+                "displayName": "Elevated"
+              },
+              {
+                "value": "neumorphic",
+                "displayName": "Neumorphic"
+              }
+            ]
+          }
         }
       }
     },
@@ -1637,19 +1793,23 @@
       },
       "displayName": "Color Theme"
     },
-    "brushSettings": {
+    "interactionSettings": {
+      "displayName": "Interaction",
       "properties": {
-        "enabled": {
+        "brushEnabled": {
+          "displayName": "Enable Brush/Zoom",
           "type": {
             "bool": true
           }
         },
         "contextHeight": {
+          "displayName": "Context Height (px)",
           "type": {
             "numeric": true
           }
         },
         "brushColor": {
+          "displayName": "Brush Color",
           "type": {
             "fill": {
               "solid": {
@@ -1659,8 +1819,38 @@
           }
         },
         "brushOpacity": {
+          "displayName": "Brush Opacity (%)",
           "type": {
             "numeric": true
+          }
+        }
+      }
+    },
+    "dateFilterFormatting": {
+      "displayName": "Date Filter",
+      "properties": {
+        "enableDateFilter": {
+          "displayName": "Enable Date Filter",
+          "type": {
+            "bool": true
+          }
+        },
+        "startDate": {
+          "displayName": "Start Date",
+          "type": {
+            "text": true
+          }
+        },
+        "endAtCurrentDate": {
+          "displayName": "End at Current Date",
+          "type": {
+            "bool": true
+          }
+        },
+        "endDate": {
+          "displayName": "End Date",
+          "type": {
+            "text": true
           }
         }
       }

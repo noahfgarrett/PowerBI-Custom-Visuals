@@ -18,7 +18,8 @@ import {
   cubicOut,
   getHostChartColor,
   withOpacity,
-  getGlassStyle,
+  applyCardStyle,
+  type CardStyleMode,
   renderChartTitle,
   applyAxisFormatting,
   applyGridFormatting,
@@ -48,6 +49,10 @@ import {
   type TrendType,
   renderAnnotations,
   buildAnnotationConfig,
+  getDateFilterIndices,
+  type DateFilterConfig,
+  renderInlineLabels,
+  type InlineLabelItem,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -68,6 +73,7 @@ type LegendPosition = 'top' | 'bottom' | 'left' | 'right';
 interface SeriesData {
   name: string;
   values: (number | null)[];
+  highlights: (number | null)[];
   color: string;
 }
 
@@ -76,6 +82,8 @@ interface ChartData {
   categorySelectionIds: ISelectionId[];
   series: SeriesData[];
   isEmpty: boolean;
+  /** Whether cross-highlight data is present from another visual/slicer. */
+  hasHighlights: boolean;
 }
 
 interface Margin {
@@ -130,32 +138,58 @@ export class MorphingAreaChartVisual implements IVisual {
     }
 
     // Hide shared properties that are shadowed by local settings
+
+    // Date filter: hide start/end when disabled
+    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
+    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
+
+    // Card Style — hide sub-settings when mode is 'none'
+    const cardMode = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
+    this.settings.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
+    this.settings.cardSettings.backgroundColor.visible = cardMode !== 'none';
+
     this.settings.lineStrokeFormattingCard.lineWidth.visible = false;
     this.settings.axisFormattingCard.showXAxis.visible = false;
     this.settings.axisFormattingCard.showYAxis.visible = false;
     this.settings.axisFormattingCard.showGridLines.visible = false;
     // xAxisTitle and yAxisTitle are kept visible so users can set axis titles
     this.settings.axisFormattingCard.axisLabelFontFamily.visible = false;
-    this.settings.axisFormattingCard.axisLabelRotation.visible = false;
+    // axisLabelRotation is user-configurable — keep it visible
     this.settings.axisFormattingCard.yAxisMin.visible = false;
     this.settings.axisFormattingCard.yAxisMax.visible = false;
     this.settings.axisFormattingCard.gridLineWidth.visible = false;
     this.settings.axisFormattingCard.gridLineOpacity.visible = false;
 
+    // Hide dual-axis-only properties (no combo/dual-axis support)
+    this.settings.referenceLineFormattingCard.referenceLineAxis.visible = false;
+    this.settings.referenceLineFormattingCard.referenceBandWidth.visible = this.settings.referenceLineFormattingCard.showReferenceBand.value;
+    this.settings.trendLineFormattingCard.trendLineAxis.visible = false;
+
     // Conditional visibility: hide child settings when parent toggle is off
     this.settings.areaForecastSettings.periods.visible = this.settings.areaForecastSettings.show.value;
     this.settings.areaForecastSettings.opacity.visible = this.settings.areaForecastSettings.show.value;
-    this.settings.brushSettings.contextHeight.visible = this.settings.brushSettings.enabled.value;
-    this.settings.brushSettings.brushColor.visible = this.settings.brushSettings.enabled.value;
-    this.settings.brushSettings.brushOpacity.visible = this.settings.brushSettings.enabled.value;
-    this.settings.areaThresholdSettings.threshold.visible = this.settings.areaThresholdSettings.show.value;
-    this.settings.areaThresholdSettings.aboveColor.visible = this.settings.areaThresholdSettings.show.value;
-    this.settings.areaThresholdSettings.belowColor.visible = this.settings.areaThresholdSettings.show.value;
-    this.settings.areaSettings.fillOpacity.visible = this.settings.lineSettings.showArea.value;
-    this.settings.areaSettings.useGradient.visible = this.settings.lineSettings.showArea.value;
+    this.settings.areaFillSettings.mode.visible = this.settings.areaFillSettings.showArea.value;
+    this.settings.interactionSettings.contextHeight.visible = this.settings.interactionSettings.brushEnabled.value;
+    this.settings.interactionSettings.brushColor.visible = this.settings.interactionSettings.brushEnabled.value;
+    this.settings.interactionSettings.brushOpacity.visible = this.settings.interactionSettings.brushEnabled.value;
+    this.settings.areaFillSettings.threshold.visible = this.settings.areaFillSettings.showThreshold.value;
+    this.settings.areaFillSettings.aboveColor.visible = this.settings.areaFillSettings.showThreshold.value;
+    this.settings.areaFillSettings.belowColor.visible = this.settings.areaFillSettings.showThreshold.value;
+    this.settings.areaFillSettings.thresholdLineColor.visible = this.settings.areaFillSettings.showThreshold.value;
+    this.settings.areaFillSettings.thresholdLineWidth.visible = this.settings.areaFillSettings.showThreshold.value;
+    this.settings.areaFillSettings.fillOpacity.visible = this.settings.areaFillSettings.showArea.value;
+    this.settings.areaFillSettings.useGradient.visible = this.settings.areaFillSettings.showArea.value;
     this.settings.lineSettings.dotRadius.visible = this.settings.lineSettings.showDots.value;
     this.settings.lineSettings.dotStrokeColor.visible = this.settings.lineSettings.showDots.value;
     this.settings.lineSettings.dotStrokeWidth.visible = this.settings.lineSettings.showDots.value;
+
+    // Vertical band: hide sub-settings when disabled
+    this.settings.verticalBandSettings.startValue.visible = this.settings.verticalBandSettings.show.value;
+    this.settings.verticalBandSettings.endValue.visible = this.settings.verticalBandSettings.show.value;
+    this.settings.verticalBandSettings.bandColor.visible = this.settings.verticalBandSettings.show.value;
+    this.settings.verticalBandSettings.bandOpacity.visible = this.settings.verticalBandSettings.show.value;
+    this.settings.verticalBandSettings.bandLabel.visible = this.settings.verticalBandSettings.show.value;
 
     // Extract data
     const data = this.extractData(dataView);
@@ -164,15 +198,15 @@ export class MorphingAreaChartVisual implements IVisual {
     this.populateSeriesFormattingGroups(dataView, data);
     this.cachedSeriesFormats = data.series.map((s, i) => resolveSeriesFormatting(this.settings.seriesFormattingCard, i, s.color));
 
-    // Apply glass effect
-    this.applyCardStyle();
-
     // Render
     if (data.isEmpty) {
       this.renderEmpty();
     } else {
       this.render(data, options.viewport);
     }
+
+    // Apply card styling AFTER render — render clears the container, which would destroy the glass backdrop div.
+    this.applyCardStyle();
   }
 
   // ── Per-Series Formatting ─────────────────────────────────────────
@@ -198,6 +232,7 @@ export class MorphingAreaChartVisual implements IVisual {
       categorySelectionIds: [],
       series: [],
       isEmpty: true,
+      hasHighlights: false,
     };
 
     if (!dataView?.categorical) return empty;
@@ -207,6 +242,14 @@ export class MorphingAreaChartVisual implements IVisual {
     const valuesColumns = categorical.values;
 
     if (!categoryColumn || !valuesColumns || valuesColumns.length === 0) return empty;
+
+    const dateConfig: DateFilterConfig = {
+      enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
+      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
+      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+    };
+    const dateIndices = getDateFilterIndices(categoryColumn.values, dateConfig);
 
     // Extract category labels
     const categories = categoryColumn.values.map((v) =>
@@ -228,21 +271,29 @@ export class MorphingAreaChartVisual implements IVisual {
       if (!role) continue;
 
       if (role['measure']) {
-        const vals = col.values.map((v) => (typeof v === 'number' ? v : null));
+        const vals = col.values.map((v, vi) => (dateIndices && !dateIndices.has(vi)) ? null : (typeof v === 'number' ? v : null));
+        const hlRaw = col.highlights as unknown[] | undefined;
+        const highlights = hlRaw
+          ? hlRaw.map((v, vi) => (dateIndices && !dateIndices.has(vi)) ? null : (typeof v === 'number' ? v : null))
+          : vals.map(() => null);
         series.push({
           name: col.source.displayName ?? `Series ${series.length + 1}`,
           values: vals,
+          highlights,
           color: getHostChartColor(this.host.colorPalette, colorIdx, themeName),
         });
         colorIdx++;
       }
     }
 
+    const hasHighlights = series.some(s => s.highlights.some(h => h !== null));
+
     return {
       categories,
       categorySelectionIds,
       series,
       isEmpty: series.length === 0,
+      hasHighlights,
     };
   }
 
@@ -250,20 +301,17 @@ export class MorphingAreaChartVisual implements IVisual {
 
   private applyCardStyle(): void {
     const s = this.settings.cardSettings;
-    if (s.enableGlass.value) {
-      const glass = getGlassStyle({
-        mode: 'light',
+    const mode = (resolveDropdown(s.cardStyleMode) ?? 'glass') as CardStyleMode;
+    applyCardStyle(
+      this.container,
+      {
+        mode,
         opacity: s.backgroundOpacity.value / 100,
         backgroundColor: s.backgroundColor.value?.value,
         borderRadius: s.borderRadius.value,
-      });
-      Object.assign(this.container.style, glass);
-    } else {
-      this.container.style.background = '';
-      this.container.style.backdropFilter = '';
-      (this.container.style as unknown as Record<string, string>)['WebkitBackdropFilter'] = '';
-      this.container.style.border = '';
-      this.container.style.boxShadow = '';
+      },
+    );
+    if (mode === 'none') {
       this.container.style.borderRadius = `${s.borderRadius.value}px`;
     }
   }
@@ -309,6 +357,23 @@ export class MorphingAreaChartVisual implements IVisual {
     const yAxisTitle = s.axisFormattingCard.yAxisTitle.value;
     if (xAxisTitle && s.axisSettings.showXAxis.value) margin.bottom += 20;
     if (yAxisTitle && s.axisSettings.showYAxis.value) margin.left += 18;
+
+    // Reserve extra bottom space for rotated x-axis labels
+    const labelRotation = s.axisFormattingCard.axisLabelRotation.value;
+    if (labelRotation !== 0 && s.axisSettings.showXAxis.value) {
+      // Estimate the longest label width (use average character width * max label length)
+      const maxLabelLen = Math.max(...data.categories.map((c) => c.length), 0);
+      const avgCharWidth = (s.axisFormattingCard.axisLabelSize.value ?? 11) * 0.6;
+      const labelWidth = maxLabelLen * avgCharWidth;
+      const absAngleRad = Math.abs(labelRotation) * (Math.PI / 180);
+      const extraHeight = Math.ceil(labelWidth * Math.sin(absAngleRad));
+      margin.bottom += extraHeight;
+    }
+
+    // Reserve right margin for inline end-of-line labels
+    if (s.legendFormattingCard.showInlineLabels.value) {
+      margin.right += 60;
+    }
 
     // Compute chart dimensions
     const padding = 8;
@@ -384,14 +449,47 @@ export class MorphingAreaChartVisual implements IVisual {
       .padding(0.5);
 
     // ── Stacking mode ────────────────────────────────────────────
-    const stackMode = resolveDropdown(s.areaStackSettings.mode) ?? 'normal';
-    const isStacked = stackMode === 'stacked' || stackMode === 'stacked100';
+    const stackMode = resolveDropdown(s.areaFillSettings.mode) ?? 'normal';
+    const isStacked = stackMode === 'stacked' || stackMode === 'stacked100' || stackMode === 'stream';
+    const isStream = stackMode === 'stream';
 
     // Precompute stacked baselines: stackBaselines[seriesIdx][catIdx] = y0 value
     // stackTops[seriesIdx][catIdx] = y1 value
     const stackBaselines: number[][] = [];
     const stackTops: number[][] = [];
-    if (isStacked) {
+
+    if (isStream) {
+      // Use d3.stack with wiggle offset and insideOut ordering for stream graph
+      const seriesKeys = data.series.map((_, i) => String(i));
+      const tabularData = data.categories.map((_, ci) => {
+        const row: Record<string, number> = {};
+        for (let si = 0; si < data.series.length; si++) {
+          row[String(si)] = data.series[si].values[ci] ?? 0;
+        }
+        return row;
+      });
+
+      const stackGen = d3.stack<Record<string, number>>()
+        .keys(seriesKeys)
+        .offset(d3.stackOffsetWiggle)
+        .order(d3.stackOrderInsideOut);
+
+      const stackResult = stackGen(tabularData);
+
+      // Initialize arrays for all series
+      for (let si = 0; si < data.series.length; si++) {
+        stackBaselines.push([]);
+        stackTops.push([]);
+      }
+
+      for (const layer of stackResult) {
+        const si = Number(layer.key);
+        for (let ci = 0; ci < data.categories.length; ci++) {
+          stackBaselines[si].push(layer[ci][0]);
+          stackTops[si].push(layer[ci][1]);
+        }
+      }
+    } else if (isStacked) {
       const catCount = data.categories.length;
       const runningTotals = new Array<number>(catCount).fill(0);
       const catTotals = stackMode === 'stacked100'
@@ -414,17 +512,19 @@ export class MorphingAreaChartVisual implements IVisual {
       }
     }
 
-    const allValues = isStacked
-      ? (stackMode === 'stacked100'
-          ? [0, 100]
-          : [0, d3.max(stackTops[stackTops.length - 1] ?? [0]) ?? 0])
-      : data.series.flatMap((ser) =>
-          ser.values.filter((v): v is number => v !== null));
+    const allValues = isStream
+      ? [...stackBaselines.flat(), ...stackTops.flat()]
+      : isStacked
+        ? (stackMode === 'stacked100'
+            ? [0, 100]
+            : [0, d3.max(stackTops[stackTops.length - 1] ?? [0]) ?? 0])
+        : data.series.flatMap((ser) =>
+            ser.values.filter((v): v is number => v !== null));
     const yMax = d3.max(allValues) ?? 0;
     const yMin = d3.min(allValues) ?? 0;
-    const domainMin = isStacked ? 0 : Math.min(0, yMin);
+    const domainMin = (isStacked && !isStream) ? 0 : Math.min(0, yMin);
     const y = d3.scaleLinear()
-      .domain([domainMin, (isStacked ? yMax : yMax * 1.1) || 1])
+      .domain([domainMin, ((isStacked && !isStream) ? yMax : yMax * 1.1) || 1])
       .nice()
       .range([chartHeight, 0]);
 
@@ -450,17 +550,21 @@ export class MorphingAreaChartVisual implements IVisual {
 
       xAxisGroup.select('.domain').remove();
 
-      // Rotate labels if there are many categories
-      if (data.categories.length > 12) {
+      // Apply label rotation from the axis formatting card
+      if (labelRotation !== 0) {
         xAxisGroup.selectAll('text')
-          .attr('transform', 'rotate(-45)')
-          .style('text-anchor', 'end')
-          .attr('dx', '-0.5em')
+          .attr('transform', `rotate(${labelRotation})`)
+          .style('text-anchor', labelRotation < 0 ? 'end' : 'start')
+          .attr('dx', labelRotation < 0 ? '-0.5em' : '0.5em')
           .attr('dy', '0.25em');
+      } else {
+        // No rotation — center labels directly under data points
+        xAxisGroup.selectAll('text')
+          .style('text-anchor', 'middle');
       }
     }
 
-    if (s.axisSettings.showYAxis.value) {
+    if (s.axisSettings.showYAxis.value && !isStream) {
       chartGroup.append('g')
         .attr('class', 'area-axis')
         .call(
@@ -501,18 +605,21 @@ export class MorphingAreaChartVisual implements IVisual {
     // Reference line (shared core — rendered after axes/grid but before data series)
     this.renderReferenceLine(chartGroup, y, chartWidth, allValues);
 
+    // Vertical reference band
+    this.renderVerticalBand(chartGroup, x, chartHeight);
+
     // Curve function
     const curveFn = this.getCurveFunction();
 
     // Animation settings
     const animEnabled = s.animationSettings.enabled.value;
     const animDuration = s.animationSettings.duration.value;
-    const showArea = s.lineSettings.showArea.value;
+    const showArea = s.areaFillSettings.showArea.value;
     const showDots = s.lineSettings.showDots.value;
     const dotRadius = this.settings.lineSettings.dotRadius.value;
     const lineWidth = s.lineSettings.lineWidth.value;
-    const fillOpacity = s.areaSettings.fillOpacity.value / 100;
-    const useGradient = s.areaSettings.useGradient.value;
+    const fillOpacity = s.areaFillSettings.fillOpacity.value / 100;
+    const useGradient = s.areaFillSettings.useGradient.value;
     const showDataLabels = s.dataLabelFormattingCard.showDataLabels.value;
 
     // Render each series
@@ -521,7 +628,7 @@ export class MorphingAreaChartVisual implements IVisual {
       const seriesDelay = seriesIdx * 150;
 
       // Build valid data points respecting null handling strategy
-      const nullHandling = resolveDropdown(s.areaGapSettings.nullHandling) ?? 'skip';
+      const nullHandling = resolveDropdown(s.dataHandlingSettings.nullHandling) ?? 'skip';
       const validPoints: Array<{
         catIdx: number;
         x: number;
@@ -759,12 +866,113 @@ export class MorphingAreaChartVisual implements IVisual {
       }
     });
 
+    // ── Inline end-of-line labels ──────────────────────────────────
+    if (s.legendFormattingCard.showInlineLabels.value && data.series.length > 0) {
+      const inlineItems: InlineLabelItem[] = [];
+      data.series.forEach((series, seriesIdx) => {
+        const sf = this.cachedSeriesFormats[seriesIdx] ?? resolveSeriesFormatting(this.settings.seriesFormattingCard, seriesIdx, series.color);
+        // Find last non-null value
+        for (let i = data.categories.length - 1; i >= 0; i--) {
+          const val = series.values[i];
+          if (val !== null) {
+            const px = x(data.categories[i]);
+            if (px !== undefined) {
+              const stackedTop = isStacked ? stackTops[seriesIdx][i] : val;
+              inlineItems.push({
+                label: series.name,
+                x: px,
+                y: y(stackedTop),
+                color: sf.color,
+              });
+            }
+            break;
+          }
+        }
+      });
+
+      const chartGroupNode = chartGroup.node();
+      if (chartGroupNode && inlineItems.length > 0) {
+        renderInlineLabels(chartGroupNode, {
+          items: inlineItems,
+          fontSize: s.legendFormattingCard.inlineLabelFontSize.value,
+          offset: s.legendFormattingCard.inlineLabelOffset.value,
+        });
+      }
+    }
+
+    // ── Gap / Distance Indicators ──────────────────────────────────
+    if (s.gapIndicatorSettings.showGapIndicator.value && data.series.length >= 2) {
+      const idxA = Math.max(0, s.gapIndicatorSettings.gapSeriesA.value - 1);
+      const idxB = Math.max(0, s.gapIndicatorSettings.gapSeriesB.value - 1);
+      const interval = Math.max(1, s.gapIndicatorSettings.gapInterval.value);
+      const gapColor = s.gapIndicatorSettings.gapColor.value?.value ?? '#94A3B8';
+      const gapLineWidth = s.gapIndicatorSettings.gapLineWidth.value;
+      const showGapValue = s.gapIndicatorSettings.showGapValue.value;
+      const gapFontSize = s.gapIndicatorSettings.gapFontSize.value;
+
+      if (idxA < data.series.length && idxB < data.series.length) {
+        const seriesA = data.series[idxA];
+        const seriesB = data.series[idxB];
+
+        data.categories.forEach((cat, i) => {
+          if (i % interval !== 0) return;
+          const valA = seriesA.values[i];
+          const valB = seriesB.values[i];
+          if (valA === null || valB === null) return;
+
+          const px = x(cat);
+          if (px === undefined) return;
+
+          const yA = isStacked ? y(stackTops[idxA][i]) : y(valA);
+          const yB = isStacked ? y(stackTops[idxB][i]) : y(valB);
+          const yTop = Math.min(yA, yB);
+          const yBottom = Math.max(yA, yB);
+
+          // Vertical dashed line
+          chartGroup.append('line')
+            .attr('class', 'gap-indicator-line')
+            .attr('x1', px)
+            .attr('x2', px)
+            .attr('y1', yTop)
+            .attr('y2', yBottom)
+            .attr('stroke', gapColor)
+            .attr('stroke-width', gapLineWidth)
+            .attr('stroke-dasharray', '3 2')
+            .attr('pointer-events', 'none');
+
+          // Gap value label
+          if (showGapValue) {
+            const gap = Math.abs(valA - valB);
+            const midY = (yTop + yBottom) / 2;
+            chartGroup.append('text')
+              .attr('class', 'gap-indicator-value')
+              .attr('x', px + 4)
+              .attr('y', midY)
+              .attr('dominant-baseline', 'middle')
+              .attr('font-size', `${gapFontSize}px`)
+              .attr('fill', gapColor)
+              .attr('pointer-events', 'none')
+              .text(formatWithSettings(gap, this.settings.numberFormattingCard));
+          }
+        });
+      }
+    }
+
     // ── Forecast Projection ────────────────────────────────────
     if (s.areaForecastSettings.show.value && data.series.length > 0) {
       const forecastPeriods = s.areaForecastSettings.periods.value;
       const forecastOpacity = s.areaForecastSettings.opacity.value / 100;
 
       if (forecastPeriods > 0) {
+        // Create a clip path to constrain forecast within chart bounds
+        const forecastClipId = `forecast-clip-${this.renderGeneration}`;
+        const forecastClip = defs.append('clipPath').attr('id', forecastClipId);
+        forecastClip.append('rect')
+          .attr('x', 0)
+          .attr('y', 0)
+          .attr('width', chartWidth)
+          .attr('height', chartHeight);
+
         data.series.forEach((series, seriesIdx) => {
           const sf = this.cachedSeriesFormats[seriesIdx] ?? resolveSeriesFormatting(this.settings.seriesFormattingCard, seriesIdx, series.color);
           const numericValues = series.values.filter((v): v is number => v !== null);
@@ -815,7 +1023,8 @@ export class MorphingAreaChartVisual implements IVisual {
             .attr('stroke-width', lineWidth)
             .attr('stroke-dasharray', '6 4')
             .attr('fill', 'none')
-            .attr('opacity', 0.6);
+            .attr('opacity', s.areaFillSettings.forecastLineOpacity.value / 100)
+            .attr('clip-path', `url(#${forecastClipId})`);
 
           // Render forecast confidence band
           const forecastAreaGen = d3.area<{ x: number; y: number }>()
@@ -829,29 +1038,32 @@ export class MorphingAreaChartVisual implements IVisual {
             .attr('class', 'area-forecast-band')
             .attr('d', forecastAreaGen)
             .attr('fill', withOpacity(sf.color, forecastOpacity))
-            .attr('opacity', 0.5);
+            .attr('opacity', s.areaFillSettings.forecastBandOpacity.value / 100)
+            .attr('clip-path', `url(#${forecastClipId})`);
         });
       }
     }
 
     // ── Threshold Zone ─────────────────────────────────────────
-    if (s.areaThresholdSettings.show.value && data.series.length > 0) {
-      const thresholdVal = s.areaThresholdSettings.threshold.value;
-      const aboveColor = s.areaThresholdSettings.aboveColor.value?.value ?? '#22C55E';
-      const belowColor = s.areaThresholdSettings.belowColor.value?.value ?? '#EF4444';
+    if (s.areaFillSettings.showThreshold.value && data.series.length > 0) {
+      const thresholdVal = s.areaFillSettings.threshold.value;
+      const aboveColor = s.areaFillSettings.aboveColor.value?.value ?? '#22C55E';
+      const belowColor = s.areaFillSettings.belowColor.value?.value ?? '#EF4444';
       const thresholdY = y(thresholdVal);
 
       // Draw a threshold reference line
+      const thresholdLineColor = s.areaFillSettings.thresholdLineColor.value?.value ?? '#94A3B8';
+      const thresholdLineWidth = s.areaFillSettings.thresholdLineWidth.value;
       chartGroup.append('line')
         .attr('class', 'area-threshold-line')
         .attr('x1', 0)
         .attr('x2', chartWidth)
         .attr('y1', thresholdY)
         .attr('y2', thresholdY)
-        .attr('stroke', '#94A3B8')
-        .attr('stroke-width', 1)
+        .attr('stroke', thresholdLineColor)
+        .attr('stroke-width', thresholdLineWidth)
         .attr('stroke-dasharray', '4 3')
-        .attr('opacity', 0.7);
+        .attr('opacity', s.areaFillSettings.thresholdLineOpacity.value / 100);
 
       // Render colored overlay areas for above/below threshold per series
       const thresholdDefs = svg.select('defs');
@@ -910,7 +1122,7 @@ export class MorphingAreaChartVisual implements IVisual {
     this.renderAnnotationOverlay(chartGroup, data, x, y);
 
     // ── Brush / Zoom Context ─────────────────────────────────
-    if (s.brushSettings.enabled.value) {
+    if (s.interactionSettings.brushEnabled.value) {
       this.renderBrushContext({
         svg,
         defs,
@@ -957,6 +1169,26 @@ export class MorphingAreaChartVisual implements IVisual {
       }
     }
 
+    // ── Cross-highlight state (used by series hover + dimming) ──
+    const hasHighlights = data.hasHighlights;
+    const highlightedSeriesSet = new Set<string>();
+    if (hasHighlights) {
+      for (let si = 0; si < data.series.length; si++) {
+        if (data.series[si].highlights.some(h => h !== null)) {
+          highlightedSeriesSet.add(String(si));
+        }
+      }
+    }
+
+    // Helper: apply cross-highlight dimming to all series elements
+    const applyCrossHighlightDimming = (rootNode: SVGSVGElement): void => {
+      if (!hasHighlights) return;
+      rootNode.querySelectorAll<SVGElement>('[data-series]').forEach((el) => {
+        const sid = el.getAttribute('data-series') ?? '';
+        el.style.opacity = highlightedSeriesSet.has(sid) ? '' : '0.3';
+      });
+    };
+
     // ── Series Hover Highlight/Dim ──────────────────────────────
 
     const svgNode = svg.node();
@@ -970,11 +1202,19 @@ export class MorphingAreaChartVisual implements IVisual {
           });
         });
         el.addEventListener('mouseleave', () => {
-          seriesElements.forEach((other) => {
-            (other as SVGElement).style.opacity = '1';
-          });
+          if (hasHighlights) {
+            // Restore cross-highlight dimming on mouse leave
+            applyCrossHighlightDimming(svgNode);
+          } else {
+            seriesElements.forEach((other) => {
+              (other as SVGElement).style.opacity = '1';
+            });
+          }
         });
       });
+
+      // Apply initial cross-highlight dimming
+      applyCrossHighlightDimming(svgNode);
     }
 
     // Apply data label formatting from settings
@@ -1024,8 +1264,8 @@ export class MorphingAreaChartVisual implements IVisual {
     margin: Margin;
     curveFn: d3.CurveFactory;
   }): void {
-    const { svg, mainChartGroup, data, xScale, yScale, chartWidth, chartHeight, margin, curveFn } = opts;
-    const bs = this.settings.brushSettings;
+    const { svg, defs, mainChartGroup, data, xScale, yScale, chartWidth, chartHeight, margin, curveFn } = opts;
+    const bs = this.settings.interactionSettings;
     const contextHeight = Math.max(20, Math.min(bs.contextHeight.value, 200));
     const brushColor = bs.brushColor.value?.value ?? '#3B82F6';
     const brushOpacity = bs.brushOpacity.value / 100;
@@ -1134,7 +1374,7 @@ export class MorphingAreaChartVisual implements IVisual {
         yScale.domain([newDomainMin, newYMax * 1.1 || 1]).nice();
 
         // Re-render main chart paths
-        this.updateMainChartPaths(mainChartGroup, data, xScale, yScale, curveFn, chartWidth, chartHeight);
+        this.updateMainChartPaths(mainChartGroup, defs, data, xScale, yScale, curveFn, chartWidth, chartHeight);
       });
 
     const brushGroup = contextG.append('g')
@@ -1155,6 +1395,7 @@ export class MorphingAreaChartVisual implements IVisual {
    */
   private updateMainChartPaths(
     chartGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
+    defs: d3.Selection<SVGDefsElement, unknown, null, undefined>,
     data: ChartData,
     xScale: d3.ScalePoint<string>,
     yScale: d3.ScaleLinear<number, number>,
@@ -1168,6 +1409,10 @@ export class MorphingAreaChartVisual implements IVisual {
     // Remove and redraw axes
     chartGroup.selectAll('.area-axis').remove();
     chartGroup.selectAll('.area-grid').remove();
+
+    // Clear old gradient defs and bump generation for brush updates
+    defs.selectAll('linearGradient[id^="area-grad-"]').remove();
+    this.renderGeneration++;
 
     const s = this.settings;
 
@@ -1191,6 +1436,19 @@ export class MorphingAreaChartVisual implements IVisual {
         .attr('transform', `translate(0,${chartHeight})`)
         .call(d3.axisBottom(xScale).tickSize(0));
       xAxisGroup.select('.domain').remove();
+
+      // Apply label rotation from the axis formatting card
+      const brushLabelRotation = s.axisFormattingCard.axisLabelRotation.value;
+      if (brushLabelRotation !== 0) {
+        xAxisGroup.selectAll('text')
+          .attr('transform', `rotate(${brushLabelRotation})`)
+          .style('text-anchor', brushLabelRotation < 0 ? 'end' : 'start')
+          .attr('dx', brushLabelRotation < 0 ? '-0.5em' : '0.5em')
+          .attr('dy', '0.25em');
+      } else {
+        xAxisGroup.selectAll('text')
+          .style('text-anchor', 'middle');
+      }
     }
 
     if (s.axisSettings.showYAxis.value) {
@@ -1204,8 +1462,9 @@ export class MorphingAreaChartVisual implements IVisual {
         .select('.domain').remove();
     }
 
-    const showArea = s.lineSettings.showArea.value;
-    const fillOpacity = s.areaSettings.fillOpacity.value / 100;
+    const showArea = s.areaFillSettings.showArea.value;
+    const fillOpacity = s.areaFillSettings.fillOpacity.value / 100;
+    const useGradient = s.areaFillSettings.useGradient.value;
     const domainCats = new Set(xScale.domain());
 
     data.series.forEach((series, seriesIdx) => {
@@ -1225,8 +1484,39 @@ export class MorphingAreaChartVisual implements IVisual {
 
       if (validPoints.length < 2) return;
 
+      const effectiveFillOpacity = fillOpacity * seriesOpacityFactor;
+
       // Area fill
       if (showArea) {
+        const gradientId = `area-grad-${this.renderGeneration}-${seriesIdx}`;
+
+        if (useGradient) {
+          const seriesMinY = d3.min(validPoints, (pt) => pt.y) ?? 0;
+
+          const gradient = defs.append('linearGradient')
+            .attr('id', gradientId)
+            .attr('gradientUnits', 'userSpaceOnUse')
+            .attr('x1', 0)
+            .attr('y1', seriesMinY)
+            .attr('x2', 0)
+            .attr('y2', chartHeight);
+
+          gradient.append('stop')
+            .attr('offset', '0%')
+            .attr('stop-color', sf.color)
+            .attr('stop-opacity', effectiveFillOpacity);
+
+          gradient.append('stop')
+            .attr('offset', '60%')
+            .attr('stop-color', sf.color)
+            .attr('stop-opacity', effectiveFillOpacity * 0.35);
+
+          gradient.append('stop')
+            .attr('offset', '100%')
+            .attr('stop-color', sf.color)
+            .attr('stop-opacity', 0);
+        }
+
         const areaGen = d3.area<{ x: number; y: number }>()
           .x((d) => d.x)
           .y0(chartHeight)
@@ -1238,7 +1528,7 @@ export class MorphingAreaChartVisual implements IVisual {
           .attr('class', 'area-fill')
           .attr('data-series', String(seriesIdx))
           .attr('d', areaGen)
-          .attr('fill', withOpacity(sf.color, fillOpacity * seriesOpacityFactor));
+          .attr('fill', useGradient ? `url(#${gradientId})` : withOpacity(sf.color, effectiveFillOpacity));
       }
 
       // Line path
@@ -1298,6 +1588,7 @@ export class MorphingAreaChartVisual implements IVisual {
       ? ref.referenceLabelText.value
       : formatWithSettings(refValue, this.settings.numberFormattingCard);
 
+    const bandWidthPct = ref.referenceBandWidth.value / 100;
     renderHorizontalReferenceLine(g, {
       value: refValue,
       yScale,
@@ -1308,9 +1599,68 @@ export class MorphingAreaChartVisual implements IVisual {
       showLabel: ref.showReferenceLabel.value,
       labelText,
       showBand: ref.showReferenceBand.value,
-      bandUpperValue: refValue * 1.1,
+      bandUpperValue: refValue * (1 + bandWidthPct),
+      bandLowerValue: refValue * (1 - bandWidthPct),
       bandOpacity: ref.referenceBandOpacity.value / 100,
     });
+  }
+
+  // ── Vertical Reference Band ──────────────────────────────────────────
+
+  /**
+   * Renders a semi-transparent vertical band between two x-axis categories.
+   * Optionally renders a label at the top of the band.
+   */
+  private renderVerticalBand(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    xScale: d3.ScalePoint<string>,
+    chartHeight: number,
+  ): void {
+    const vb = this.settings.verticalBandSettings;
+    if (!vb.show.value) return;
+
+    const startCat = vb.startValue.value;
+    const endCat = vb.endValue.value;
+    if (!startCat || !endCat) return;
+
+    const x1 = xScale(startCat);
+    const x2 = xScale(endCat);
+    if (x1 === undefined || x2 === undefined) return;
+
+    const bandLeft = Math.min(x1, x2);
+    const bandRight = Math.max(x1, x2);
+    const bandWidth = bandRight - bandLeft;
+
+    if (bandWidth <= 0) return;
+
+    const bandColor = vb.bandColor.value?.value ?? '#3B82F6';
+    const bandOpacity = vb.bandOpacity.value / 100;
+    const bandLabel = vb.bandLabel.value;
+
+    // Render the band rectangle
+    g.append('rect')
+      .attr('class', 'area-vertical-band')
+      .attr('x', bandLeft)
+      .attr('y', 0)
+      .attr('width', bandWidth)
+      .attr('height', chartHeight)
+      .attr('fill', bandColor)
+      .attr('opacity', bandOpacity)
+      .attr('pointer-events', 'none');
+
+    // Render the label at the top center of the band
+    if (bandLabel) {
+      g.append('text')
+        .attr('class', 'area-vertical-band-label')
+        .attr('x', bandLeft + bandWidth / 2)
+        .attr('y', 12)
+        .attr('text-anchor', 'middle')
+        .attr('fill', bandColor)
+        .attr('font-size', '11px')
+        .attr('font-weight', 'bold')
+        .attr('pointer-events', 'none')
+        .text(bandLabel);
+    }
   }
 
   // ── Legend (shared core) ─────────────────────────────────────────────
@@ -1336,6 +1686,7 @@ export class MorphingAreaChartVisual implements IVisual {
       fontSize: legendFmtCard.legendFontSize.value,
       fontColor,
       fontFamily: rawLegendFontFamily,
+      aliases: legendFmtCard.legendAliases.value,
     });
 
     // Animate legend entrance
@@ -1392,7 +1743,7 @@ export class MorphingAreaChartVisual implements IVisual {
 
     const cleanup = attachKeyboardNav({
       container: this.container,
-      itemSelector: '.area-path, .area-dot, [tabindex="0"]',
+      itemSelector: '.area-line, .area-dot, [tabindex="0"]',
       onActivate: (el) => (el as HTMLElement).click?.(),
     });
     this.cancelAnimations.push(cleanup);

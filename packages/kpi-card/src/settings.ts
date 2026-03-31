@@ -5,7 +5,9 @@
 
 import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
-import { TitleFormattingCard, NumberFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard } from '../../core/src';
+import { TitleFormattingCard, NumberFormattingCard, ConditionalFormattingCard, AccessibilityFormattingCard, ColorThemeFormattingCard,
+  DateFilterFormattingCard,
+} from '../../core/src';
 class ValueSettings extends formattingSettings.SimpleCard {
   fontSize = new formattingSettings.NumUpDown({
     name: 'fontSize',
@@ -45,9 +47,31 @@ class ValueSettings extends formattingSettings.SimpleCard {
     value: { value: 'normal', displayName: 'Normal' },
   });
 
+  alignment = new formattingSettings.ItemDropdown({
+    name: 'alignment',
+    displayName: 'Horizontal Alignment',
+    items: [
+      { value: 'left', displayName: 'Left' },
+      { value: 'center', displayName: 'Center' },
+      { value: 'right', displayName: 'Right' },
+    ],
+    value: { value: 'left', displayName: 'Left' },
+  });
+
+  verticalAlignment = new formattingSettings.ItemDropdown({
+    name: 'verticalAlignment',
+    displayName: 'Vertical Alignment',
+    items: [
+      { value: 'top', displayName: 'Top' },
+      { value: 'center', displayName: 'Center' },
+      { value: 'bottom', displayName: 'Bottom' },
+    ],
+    value: { value: 'top', displayName: 'Top' },
+  });
+
   name = 'valueSettings';
   displayName = 'Value';
-  slices = [this.fontSize, this.fontColor, this.fontFamily, this.fontWeight];
+  slices = [this.fontSize, this.fontColor, this.fontFamily, this.fontWeight, this.alignment, this.verticalAlignment];
 }
 
 class LabelSettings extends formattingSettings.SimpleCard {
@@ -102,9 +126,41 @@ class LabelSettings extends formattingSettings.SimpleCard {
     value: { value: 'normal', displayName: 'Normal' },
   });
 
+  position = new formattingSettings.ItemDropdown({
+    name: 'position',
+    displayName: 'Position',
+    items: [
+      { value: 'above', displayName: 'Above Value' },
+      { value: 'below', displayName: 'Below Value' },
+    ],
+    value: { value: 'above', displayName: 'Above Value' },
+  });
+
+  alignment = new formattingSettings.ItemDropdown({
+    name: 'alignment',
+    displayName: 'Horizontal Alignment',
+    items: [
+      { value: 'left', displayName: 'Left' },
+      { value: 'center', displayName: 'Center' },
+      { value: 'right', displayName: 'Right' },
+    ],
+    value: { value: 'left', displayName: 'Left' },
+  });
+
+  verticalAlignment = new formattingSettings.ItemDropdown({
+    name: 'verticalAlignment',
+    displayName: 'Vertical Alignment',
+    items: [
+      { value: 'top', displayName: 'Top' },
+      { value: 'center', displayName: 'Center' },
+      { value: 'bottom', displayName: 'Bottom' },
+    ],
+    value: { value: 'top', displayName: 'Top' },
+  });
+
   name = 'labelSettings';
   displayName = 'Label';
-  slices = [this.show, this.fontSize, this.fontColor, this.fontFamily, this.fontWeight, this.customText];
+  slices = [this.show, this.position, this.alignment, this.verticalAlignment, this.fontSize, this.fontColor, this.fontFamily, this.fontWeight, this.customText];
 }
 
 class TrendSettings extends formattingSettings.SimpleCard {
@@ -138,9 +194,35 @@ class TrendSettings extends formattingSettings.SimpleCard {
     value: { value: '#94A3B8' },
   });
 
+  fontFamily = new formattingSettings.ItemDropdown({
+    name: 'fontFamily',
+    displayName: 'Font Family',
+    items: [
+      { value: 'Segoe UI', displayName: 'Segoe UI' },
+      { value: 'Arial', displayName: 'Arial' },
+      { value: 'Calibri', displayName: 'Calibri' },
+      { value: 'Helvetica', displayName: 'Helvetica' },
+      { value: 'Times New Roman', displayName: 'Times New Roman' },
+      { value: 'Verdana', displayName: 'Verdana' },
+      { value: 'Georgia', displayName: 'Georgia' },
+    ],
+    value: { value: 'Segoe UI', displayName: 'Segoe UI' },
+  });
+
+  fontWeight = new formattingSettings.ItemDropdown({
+    name: 'fontWeight',
+    displayName: 'Font Weight',
+    items: [
+      { value: 'normal', displayName: 'Normal' },
+      { value: 'bold', displayName: 'Bold' },
+      { value: '600', displayName: 'Semi-Bold' },
+    ],
+    value: { value: 'normal', displayName: 'Normal' },
+  });
+
   name = 'trendSettings';
   displayName = 'Trend Arrow';
-  slices = [this.show, this.fontSize, this.positiveColor, this.negativeColor, this.neutralColor];
+  slices = [this.show, this.fontSize, this.positiveColor, this.negativeColor, this.neutralColor, this.fontFamily, this.fontWeight];
 }
 
 class SparklineSettings extends formattingSettings.SimpleCard {
@@ -148,6 +230,17 @@ class SparklineSettings extends formattingSettings.SimpleCard {
     name: 'show',
     displayName: 'Show Sparkline',
     value: true,
+  });
+
+  sparklineType = new formattingSettings.ItemDropdown({
+    name: 'sparklineType',
+    displayName: 'Sparkline Type',
+    items: [
+      { value: 'line', displayName: 'Line' },
+      { value: 'area', displayName: 'Area' },
+      { value: 'bar', displayName: 'Bar' },
+    ],
+    value: { value: 'line', displayName: 'Line' },
   });
 
   lineColor = new formattingSettings.ColorPicker({
@@ -162,48 +255,76 @@ class SparklineSettings extends formattingSettings.SimpleCard {
     value: 45,
   });
 
-
   sparklineColor = new formattingSettings.ColorPicker({
-
     name: 'sparklineColor',
-
     displayName: 'Sparkline Color',
-
     value: { value: '' },
-
   });
 
   sparklineWidth = new formattingSettings.NumUpDown({
-
     name: 'sparklineWidth',
-
     displayName: 'Sparkline Width',
-
     value: 2,
-
   });
 
   dividerColor = new formattingSettings.ColorPicker({
-
     name: 'dividerColor',
-
     displayName: 'Divider Color',
-
     value: { value: '' },
-
   });
 
+  showMinMax = new formattingSettings.ToggleSwitch({
+    name: 'showMinMax',
+    displayName: 'Show Min/Max',
+    value: false,
+  });
+
+  minColor = new formattingSettings.ColorPicker({
+    name: 'minColor',
+    displayName: 'Min Marker Color',
+    value: { value: '#F87171' },
+  });
+
+  maxColor = new formattingSettings.ColorPicker({
+    name: 'maxColor',
+    displayName: 'Max Marker Color',
+    value: { value: '#34D399' },
+  });
+
+  cumulative = new formattingSettings.ToggleSwitch({
+    name: 'cumulative',
+    displayName: 'Cumulative Mode',
+    value: false,
+  });
+
+  endpointMarker = new formattingSettings.ItemDropdown({
+    name: 'endpointMarker',
+    displayName: 'Endpoint Marker',
+    items: [
+      { value: 'circle', displayName: 'Circle' },
+      { value: 'triangle', displayName: 'Triangle' },
+      { value: 'diamond', displayName: 'Diamond' },
+      { value: 'none', displayName: 'None' },
+    ],
+    value: { value: 'circle', displayName: 'Circle' },
+  });
 
   name = 'sparklineSettings';
   displayName = 'Sparkline';
-  slices = [this.show, this.lineColor, this.fillOpacity, this.sparklineColor, this.sparklineWidth, this.dividerColor];
+  slices = [this.show, this.sparklineType, this.lineColor, this.fillOpacity, this.sparklineColor, this.sparklineWidth, this.dividerColor, this.showMinMax, this.minColor, this.maxColor, this.cumulative, this.endpointMarker];
 }
 
 class CardStyleSettings extends formattingSettings.SimpleCard {
-  enableGlass = new formattingSettings.ToggleSwitch({
-    name: 'enableGlass',
-    displayName: 'Glass Effect',
-    value: true,
+  cardStyleMode = new formattingSettings.ItemDropdown({
+    name: 'cardStyleMode',
+    displayName: 'Card Style',
+    items: [
+      { value: 'none', displayName: 'None' },
+      { value: 'glass', displayName: 'Glass' },
+      { value: 'elevated', displayName: 'Elevated' },
+      { value: 'neumorphic', displayName: 'Neumorphic' },
+    ],
+    value: { value: 'glass', displayName: 'Glass' },
   });
 
   backgroundColor = new formattingSettings.ColorPicker({
@@ -215,7 +336,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
   backgroundOpacity = new formattingSettings.NumUpDown({
     name: 'backgroundOpacity',
     displayName: 'Background Opacity (%)',
-    value: 35,
+    value: 85,
   });
 
   borderRadius = new formattingSettings.NumUpDown({
@@ -224,9 +345,21 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
     value: 12,
   });
 
+  kpiCount = new formattingSettings.ItemDropdown({
+    name: 'kpiCount',
+    displayName: 'KPI Count',
+    items: [
+      { value: '1', displayName: '1' },
+      { value: '2', displayName: '2' },
+      { value: '3', displayName: '3' },
+      { value: '4', displayName: '4' },
+    ],
+    value: { value: '1', displayName: '1' },
+  });
+
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.cardStyleMode, this.backgroundColor, this.backgroundOpacity, this.borderRadius, this.kpiCount];
 }
 
 class AnimationSettings extends formattingSettings.SimpleCard {
@@ -274,40 +407,20 @@ class KpiComparisonSettings extends formattingSettings.SimpleCard {
     value: { value: '#64748B' },
   });
 
+  compareMode = new formattingSettings.ItemDropdown({
+    name: 'compareMode',
+    displayName: 'Compare Against',
+    items: [
+      { value: 'target', displayName: 'Target' },
+      { value: 'previous', displayName: 'Previous Period' },
+      { value: 'first', displayName: 'First Period' },
+    ],
+    value: { value: 'target', displayName: 'Target' },
+  });
+
   name = 'kpiComparisonSettings';
   displayName = 'Comparison';
-  slices = [this.show, this.showPercentChange, this.fontSize, this.fontColor];
-}
-
-// -- KPI Layout Settings ------------------------------------------------------
-
-class KpiLayoutSettings extends formattingSettings.SimpleCard {
-  kpiCount = new formattingSettings.ItemDropdown({
-    name: 'kpiCount',
-    displayName: 'KPI Count',
-    items: [
-      { value: '1', displayName: '1' },
-      { value: '2', displayName: '2' },
-      { value: '3', displayName: '3' },
-      { value: '4', displayName: '4' },
-    ],
-    value: { value: '1', displayName: '1' },
-  });
-
-  sparklineType = new formattingSettings.ItemDropdown({
-    name: 'sparklineType',
-    displayName: 'Sparkline Type',
-    items: [
-      { value: 'line', displayName: 'Line' },
-      { value: 'area', displayName: 'Area' },
-      { value: 'bar', displayName: 'Bar' },
-    ],
-    value: { value: 'line', displayName: 'Line' },
-  });
-
-  name = 'kpiLayoutSettings';
-  displayName = 'Layout';
-  slices = [this.kpiCount, this.sparklineType];
+  slices = [this.show, this.compareMode, this.showPercentChange, this.fontSize, this.fontColor];
 }
 
 // -- KPI Goal Settings --------------------------------------------------------
@@ -343,9 +456,32 @@ class KpiGoalSettings extends formattingSettings.SimpleCard {
     value: { value: '#3B82F6' },
   });
 
+  gradientProgress = new formattingSettings.ToggleSwitch({
+    name: 'gradientProgress',
+    displayName: 'Gradient Color',
+    value: false,
+  });
+
+  showGoalText = new formattingSettings.ToggleSwitch({
+    name: 'showGoalText',
+    displayName: 'Show Goal Text',
+    value: true,
+  });
+
+  goalTextAlignment = new formattingSettings.ItemDropdown({
+    name: 'goalTextAlignment',
+    displayName: 'Goal Text Alignment',
+    items: [
+      { value: 'left', displayName: 'Left' },
+      { value: 'center', displayName: 'Center' },
+      { value: 'right', displayName: 'Right' },
+    ],
+    value: { value: 'center', displayName: 'Center' },
+  });
+
   name = 'kpiGoalSettings';
   displayName = 'Goal / Target';
-  slices = [this.show, this.goalValue, this.showProgressBar, this.metColor, this.unmetColor];
+  slices = [this.show, this.goalValue, this.showProgressBar, this.gradientProgress, this.metColor, this.unmetColor, this.showGoalText, this.goalTextAlignment];
 }
 
 export class KpiCardSettings extends formattingSettings.Model {
@@ -356,7 +492,6 @@ export class KpiCardSettings extends formattingSettings.Model {
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettings();
   kpiComparisonSettings = new KpiComparisonSettings();
-  kpiLayoutSettings = new KpiLayoutSettings();
   kpiGoalSettings = new KpiGoalSettings();
 
   titleFormattingCard = new TitleFormattingCard();
@@ -366,20 +501,21 @@ export class KpiCardSettings extends formattingSettings.Model {
 
   colorThemeFormattingCard = new ColorThemeFormattingCard();
 
+  dateFilterFormattingCard = new DateFilterFormattingCard();
   cards = [
     this.valueSettings,
     this.labelSettings,
     this.trendSettings,
-    this.sparklineSettings,
-    this.cardSettings,
-    this.animationSettings,
     this.kpiComparisonSettings,
-    this.kpiLayoutSettings,
+    this.sparklineSettings,
     this.kpiGoalSettings,
     this.titleFormattingCard,
+    this.cardSettings,
+    this.animationSettings,
     this.numberFormattingCard,
     this.conditionalFormattingCard,
     this.accessibilityFormattingCard,
     this.colorThemeFormattingCard,
+    this.dateFilterFormattingCard,
   ];
 }

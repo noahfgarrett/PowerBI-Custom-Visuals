@@ -16,7 +16,7 @@
       "displayName": "Values",
       "name": "values",
       "kind": "Measure",
-      "description": "Bar values — supports multiple for grouped/stacked"
+      "description": "Bar values \u2014 supports multiple for grouped/stacked"
     },
     {
       "displayName": "Line Values",
@@ -68,7 +68,7 @@
           ],
           "dataReductionAlgorithm": {
             "top": {
-              "count": 500
+              "count": 30000
             }
           }
         },
@@ -125,6 +125,10 @@
               {
                 "value": "diverging",
                 "displayName": "Diverging"
+              },
+              {
+                "value": "waterfall",
+                "displayName": "Waterfall"
               }
             ]
           }
@@ -134,6 +138,21 @@
     "barSettings": {
       "displayName": "Bar Settings",
       "properties": {
+        "barStyle": {
+          "displayName": "Bar Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "bar",
+                "displayName": "Bar"
+              },
+              {
+                "value": "lollipop",
+                "displayName": "Lollipop"
+              }
+            ]
+          }
+        },
         "cornerRadius": {
           "displayName": "Corner Radius",
           "type": {
@@ -192,6 +211,57 @@
           "type": {
             "bool": true
           }
+        },
+        "patternEnabled": {
+          "displayName": "Enable Pattern Fill",
+          "type": {
+            "bool": true
+          }
+        },
+        "pattern": {
+          "displayName": "Pattern",
+          "type": {
+            "enumeration": [
+              {
+                "value": "diagonal",
+                "displayName": "Diagonal Lines"
+              },
+              {
+                "value": "crosshatch",
+                "displayName": "Crosshatch"
+              },
+              {
+                "value": "dots",
+                "displayName": "Dots"
+              },
+              {
+                "value": "horizontal",
+                "displayName": "Horizontal Lines"
+              },
+              {
+                "value": "vertical",
+                "displayName": "Vertical Lines"
+              }
+            ]
+          }
+        },
+        "patternOpacity": {
+          "displayName": "Pattern Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "lollipopDotRadius": {
+          "displayName": "Lollipop Dot Radius",
+          "type": {
+            "numeric": true
+          }
+        },
+        "lollipopStemWidth": {
+          "displayName": "Lollipop Stem Width",
+          "type": {
+            "numeric": true
+          }
         }
       }
     },
@@ -226,6 +296,22 @@
           "displayName": "Dot Radius",
           "type": {
             "numeric": true
+          }
+        },
+        "lineDataLabelFontSize": {
+          "displayName": "Data Label Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "lineDataLabelFontColor": {
+          "displayName": "Data Label Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
           }
         }
       }
@@ -285,6 +371,12 @@
                 "color": true
               }
             }
+          }
+        },
+        "lineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
           }
         }
       }
@@ -473,7 +565,7 @@
           }
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (°)",
+          "displayName": "X-Label Rotation (\u00b0)",
           "type": {
             "numeric": true
           }
@@ -500,6 +592,12 @@
           "displayName": "Grid Line Opacity (%)",
           "type": {
             "numeric": true
+          }
+        },
+        "integerTicks": {
+          "displayName": "Integer-Only Ticks",
+          "type": {
+            "bool": true
           }
         }
       }
@@ -620,6 +718,30 @@
                 "displayName": "Bold"
               }
             ]
+          }
+        },
+        "legendAliases": {
+          "displayName": "Rename Labels",
+          "type": {
+            "text": true
+          }
+        },
+        "showInlineLabels": {
+          "displayName": "Inline End-of-Line Labels",
+          "type": {
+            "bool": true
+          }
+        },
+        "inlineLabelFontSize": {
+          "displayName": "Inline Label Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "inlineLabelOffset": {
+          "displayName": "Inline Label Offset",
+          "type": {
+            "numeric": true
           }
         }
       }
@@ -1256,7 +1378,7 @@
           }
         },
         "showR2": {
-          "displayName": "Show R²",
+          "displayName": "Show R\u00b2",
           "type": {
             "bool": true
           }
@@ -1356,19 +1478,19 @@
           }
         },
         "annotation1Category": {
-          "displayName": "Annotation 1 — Category",
+          "displayName": "Annotation 1 \u2014 Category",
           "type": {
             "text": true
           }
         },
         "annotation1Text": {
-          "displayName": "Annotation 1 — Text",
+          "displayName": "Annotation 1 \u2014 Text",
           "type": {
             "text": true
           }
         },
         "annotation1Position": {
-          "displayName": "Annotation 1 — Position",
+          "displayName": "Annotation 1 \u2014 Position",
           "type": {
             "enumeration": [
               {
@@ -1391,19 +1513,19 @@
           }
         },
         "annotation2Category": {
-          "displayName": "Annotation 2 — Category",
+          "displayName": "Annotation 2 \u2014 Category",
           "type": {
             "text": true
           }
         },
         "annotation2Text": {
-          "displayName": "Annotation 2 — Text",
+          "displayName": "Annotation 2 \u2014 Text",
           "type": {
             "text": true
           }
         },
         "annotation2Position": {
-          "displayName": "Annotation 2 — Position",
+          "displayName": "Annotation 2 \u2014 Position",
           "type": {
             "enumeration": [
               {
@@ -1426,19 +1548,19 @@
           }
         },
         "annotation3Category": {
-          "displayName": "Annotation 3 — Category",
+          "displayName": "Annotation 3 \u2014 Category",
           "type": {
             "text": true
           }
         },
         "annotation3Text": {
-          "displayName": "Annotation 3 — Text",
+          "displayName": "Annotation 3 \u2014 Text",
           "type": {
             "text": true
           }
         },
         "annotation3Position": {
-          "displayName": "Annotation 3 — Position",
+          "displayName": "Annotation 3 \u2014 Position",
           "type": {
             "enumeration": [
               {
@@ -1499,50 +1621,6 @@
         }
       }
     },
-    "patternFillSettings": {
-      "displayName": "Pattern Fill",
-      "properties": {
-        "enabled": {
-          "displayName": "Enable Pattern Fill",
-          "type": {
-            "bool": true
-          }
-        },
-        "pattern": {
-          "displayName": "Pattern",
-          "type": {
-            "enumeration": [
-              {
-                "value": "diagonal",
-                "displayName": "Diagonal Lines"
-              },
-              {
-                "value": "crosshatch",
-                "displayName": "Crosshatch"
-              },
-              {
-                "value": "dots",
-                "displayName": "Dots"
-              },
-              {
-                "value": "horizontal",
-                "displayName": "Horizontal Lines"
-              },
-              {
-                "value": "vertical",
-                "displayName": "Vertical Lines"
-              }
-            ]
-          }
-        },
-        "patternOpacity": {
-          "displayName": "Pattern Opacity (%)",
-          "type": {
-            "numeric": true
-          }
-        }
-      }
-    },
     "varianceSettings": {
       "displayName": "Variance Indicators",
       "properties": {
@@ -1550,6 +1628,35 @@
           "displayName": "Show Variance Indicators",
           "type": {
             "bool": true
+          }
+        },
+        "compareAgainst": {
+          "displayName": "Compare Against",
+          "type": {
+            "enumeration": [
+              {
+                "value": "target",
+                "displayName": "Target (data role)"
+              },
+              {
+                "value": "average",
+                "displayName": "Average"
+              },
+              {
+                "value": "median",
+                "displayName": "Median"
+              },
+              {
+                "value": "custom",
+                "displayName": "Custom Value"
+              }
+            ]
+          }
+        },
+        "customValue": {
+          "displayName": "Custom Value",
+          "type": {
+            "numeric": true
           }
         },
         "showDelta": {
@@ -1582,6 +1689,12 @@
                 "color": true
               }
             }
+          }
+        },
+        "varianceFontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
           }
         }
       }
@@ -1689,11 +1802,28 @@
             "numeric": true
           }
         },
-        "enableGlass": {
+        "cardStyleMode": {
+          "displayName": "Card Style",
           "type": {
-            "bool": true
-          },
-          "displayName": "Glass Effect"
+            "enumeration": [
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "glass",
+                "displayName": "Glass"
+              },
+              {
+                "value": "elevated",
+                "displayName": "Elevated"
+              },
+              {
+                "value": "neumorphic",
+                "displayName": "Neumorphic"
+              }
+            ]
+          }
         }
       }
     },
@@ -1716,6 +1846,56 @@
     },
     "numberFormatting": {
       "displayName": "Number Format",
+      "properties": {
+        "displayUnits": {
+          "displayName": "Display Units",
+          "type": {
+            "enumeration": [
+              {
+                "value": "auto",
+                "displayName": "Auto"
+              },
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "thousands",
+                "displayName": "Thousands (K)"
+              },
+              {
+                "value": "millions",
+                "displayName": "Millions (M)"
+              },
+              {
+                "value": "billions",
+                "displayName": "Billions (B)"
+              }
+            ]
+          }
+        },
+        "decimalPlaces": {
+          "displayName": "Decimal Places",
+          "type": {
+            "numeric": true
+          }
+        },
+        "valuePrefix": {
+          "displayName": "Prefix",
+          "type": {
+            "text": true
+          }
+        },
+        "valueSuffix": {
+          "displayName": "Suffix",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "lineNumberFormatting": {
+      "displayName": "Line Number Format",
       "properties": {
         "displayUnits": {
           "displayName": "Display Units",
@@ -1803,6 +1983,221 @@
         }
       },
       "displayName": "Color Theme"
+    },
+    "paretoSettings": {
+      "displayName": "Pareto Line",
+      "properties": {
+        "show": {
+          "displayName": "Show Pareto Line",
+          "type": {
+            "bool": true
+          }
+        },
+        "lineColor": {
+          "displayName": "Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "showThreshold": {
+          "displayName": "Show 80% Line",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "smallMultiplesSettings": {
+      "displayName": "Small Multiples",
+      "properties": {
+        "enabled": {
+          "displayName": "Enable Small Multiples",
+          "type": {
+            "bool": true
+          }
+        },
+        "columns": {
+          "displayName": "Columns",
+          "type": {
+            "numeric": true
+          }
+        },
+        "syncYAxis": {
+          "displayName": "Sync Y-Axis",
+          "type": {
+            "bool": true
+          }
+        },
+        "cellTitleFontSize": {
+          "displayName": "Cell Title Font Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "cellTitleFontColor": {
+          "displayName": "Cell Title Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "zoomSettings": {
+      "displayName": "Zoom & Pan",
+      "properties": {
+        "enabled": {
+          "displayName": "Enable Zoom",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "waterfallSettings": {
+      "displayName": "Waterfall",
+      "properties": {
+        "positiveColor": {
+          "displayName": "Positive Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "negativeColor": {
+          "displayName": "Negative Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "totalColor": {
+          "displayName": "Total Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "connectorColor": {
+          "displayName": "Connector Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "connectorWidth": {
+          "displayName": "Connector Width",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "dateFilterFormatting": {
+      "displayName": "Date Filter",
+      "properties": {
+        "enableDateFilter": {
+          "displayName": "Enable Date Filter",
+          "type": {
+            "bool": true
+          }
+        },
+        "startDate": {
+          "displayName": "Start Date",
+          "type": {
+            "text": true
+          }
+        },
+        "endAtCurrentDate": {
+          "displayName": "End at Current Date",
+          "type": {
+            "bool": true
+          }
+        },
+        "endDate": {
+          "displayName": "End Date",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "crosshairFormatting": {
+      "displayName": "Crosshair",
+      "properties": {
+        "showCrosshair": {
+          "displayName": "Show Crosshair",
+          "type": {
+            "bool": true
+          }
+        },
+        "crosshairLineColor": {
+          "displayName": "Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "crosshairLineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
+          }
+        },
+        "crosshairLineStyle": {
+          "displayName": "Line Style",
+          "type": {
+            "enumeration": [
+              {
+                "value": "solid",
+                "displayName": "Solid"
+              },
+              {
+                "value": "dashed",
+                "displayName": "Dashed"
+              },
+              {
+                "value": "dotted",
+                "displayName": "Dotted"
+              }
+            ]
+          }
+        },
+        "crosshairOpacity": {
+          "displayName": "Opacity (%)",
+          "type": {
+            "numeric": true
+          }
+        },
+        "showCrosshairValues": {
+          "displayName": "Show Values",
+          "type": {
+            "bool": true
+          }
+        }
+      }
     }
   },
   "supportsKeyboardFocus": true,

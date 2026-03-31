@@ -21,11 +21,12 @@ import {
   AccessibilityFormattingCard,
   SeriesFormattingCard,
   ColorThemeFormattingCard,
+  DateFilterFormattingCard,
 } from '../../core/src';
 
-// ── Line Settings ────────────────────────────────────────────────────
+// ── Line & Points (merged LineSettingsCard — line config + dot config) ────────
 
-class LineSettingsCard extends formattingSettings.SimpleCard {
+class LineAndPointsCard extends formattingSettings.SimpleCard {
   lineWidth = new formattingSettings.NumUpDown({
     name: 'lineWidth',
     displayName: 'Line Width',
@@ -49,52 +50,38 @@ class LineSettingsCard extends formattingSettings.SimpleCard {
     value: true,
   });
 
+  dotRadius = new formattingSettings.NumUpDown({
+    name: 'dotRadius',
+    displayName: 'Dot Radius',
+    value: 4,
+  });
+
+  dotStrokeColor = new formattingSettings.ColorPicker({
+    name: 'dotStrokeColor',
+    displayName: 'Dot Stroke Color',
+    value: { value: '' },
+  });
+
+  dotStrokeWidth = new formattingSettings.NumUpDown({
+    name: 'dotStrokeWidth',
+    displayName: 'Dot Stroke Width',
+    value: 2,
+  });
+
+  name = 'lineSettings';
+  displayName = 'Line & Points';
+  slices = [this.lineWidth, this.curve, this.showDots, this.dotRadius, this.dotStrokeColor, this.dotStrokeWidth];
+}
+
+// ── Area Fill (merged AreaSettingsCard + AreaStackSettingsCard + AreaThresholdSettingsCard) ──
+
+class AreaFillCard extends formattingSettings.SimpleCard {
   showArea = new formattingSettings.ToggleSwitch({
     name: 'showArea',
     displayName: 'Show Area Fill',
     value: true,
   });
 
-
-  dotRadius = new formattingSettings.NumUpDown({
-
-    name: 'dotRadius',
-
-    displayName: 'Dot Radius',
-
-    value: 4,
-
-  });
-
-  dotStrokeColor = new formattingSettings.ColorPicker({
-
-    name: 'dotStrokeColor',
-
-    displayName: 'Dot Stroke Color',
-
-    value: { value: '' },
-
-  });
-
-  dotStrokeWidth = new formattingSettings.NumUpDown({
-
-    name: 'dotStrokeWidth',
-
-    displayName: 'Dot Stroke Width',
-
-    value: 2,
-
-  });
-
-
-  name = 'lineSettings';
-  displayName = 'Line Settings';
-  slices = [this.lineWidth, this.curve, this.showDots, this.showArea, this.dotRadius, this.dotStrokeColor, this.dotStrokeWidth];
-}
-
-// ── Area Settings ────────────────────────────────────────────────────
-
-class AreaSettingsCard extends formattingSettings.SimpleCard {
   fillOpacity = new formattingSettings.NumUpDown({
     name: 'fillOpacity',
     displayName: 'Fill Opacity (%)',
@@ -107,12 +94,79 @@ class AreaSettingsCard extends formattingSettings.SimpleCard {
     value: true,
   });
 
-  name = 'areaSettings';
-  displayName = 'Area Settings';
-  slices = [this.fillOpacity, this.useGradient];
+  mode = new formattingSettings.ItemDropdown({
+    name: 'mode',
+    displayName: 'Stack Mode',
+    items: [
+      { value: 'normal', displayName: 'Normal (Overlapping)' },
+      { value: 'stacked', displayName: 'Stacked' },
+      { value: 'stacked100', displayName: '100% Stacked' },
+      { value: 'stream', displayName: 'Stream' },
+    ],
+    value: { value: 'normal', displayName: 'Normal (Overlapping)' },
+  });
+
+  // Threshold zone sub-section
+  showThreshold = new formattingSettings.ToggleSwitch({
+    name: 'showThreshold',
+    displayName: 'Show Threshold Zone',
+    value: false,
+  });
+
+  threshold = new formattingSettings.NumUpDown({
+    name: 'threshold',
+    displayName: 'Threshold Value',
+    value: 0,
+  });
+
+  aboveColor = new formattingSettings.ColorPicker({
+    name: 'aboveColor',
+    displayName: 'Above Color',
+    value: { value: '#22C55E' },
+  });
+
+  belowColor = new formattingSettings.ColorPicker({
+    name: 'belowColor',
+    displayName: 'Below Color',
+    value: { value: '#EF4444' },
+  });
+
+  thresholdLineColor = new formattingSettings.ColorPicker({
+    name: 'thresholdLineColor',
+    displayName: 'Threshold Line Color',
+    value: { value: '#94A3B8' },
+  });
+
+  thresholdLineWidth = new formattingSettings.NumUpDown({
+    name: 'thresholdLineWidth',
+    displayName: 'Threshold Line Width',
+    value: 1,
+  });
+
+  forecastLineOpacity = new formattingSettings.NumUpDown({
+    name: 'forecastLineOpacity',
+    displayName: 'Forecast Line Opacity (%)',
+    value: 60,
+  });
+
+  forecastBandOpacity = new formattingSettings.NumUpDown({
+    name: 'forecastBandOpacity',
+    displayName: 'Forecast Band Opacity (%)',
+    value: 50,
+  });
+
+  thresholdLineOpacity = new formattingSettings.NumUpDown({
+    name: 'thresholdLineOpacity',
+    displayName: 'Threshold Line Opacity (%)',
+    value: 70,
+  });
+
+  name = 'areaFillSettings';
+  displayName = 'Area Fill';
+  slices = [this.showArea, this.fillOpacity, this.useGradient, this.mode, this.showThreshold, this.threshold, this.aboveColor, this.belowColor, this.thresholdLineColor, this.thresholdLineWidth, this.forecastLineOpacity, this.forecastBandOpacity, this.thresholdLineOpacity];
 }
 
-// ── Axis Settings ────────────────────────────────────────────────────
+// ── Axes (local toggles — shared AxisFormattingCard handles the rest) ─────────
 
 class AxisSettingsCard extends formattingSettings.SimpleCard {
   showXAxis = new formattingSettings.ToggleSwitch({
@@ -138,14 +192,19 @@ class AxisSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.showXAxis, this.showYAxis, this.gridLines];
 }
 
-
 // ── Card Style ───────────────────────────────────────────────────────
 
 class CardStyleSettings extends formattingSettings.SimpleCard {
-  enableGlass = new formattingSettings.ToggleSwitch({
-    name: 'enableGlass',
-    displayName: 'Glass Effect',
-    value: true,
+  cardStyleMode = new formattingSettings.ItemDropdown({
+    name: 'cardStyleMode',
+    displayName: 'Card Style',
+    items: [
+      { value: 'none', displayName: 'None' },
+      { value: 'glass', displayName: 'Glass' },
+      { value: 'elevated', displayName: 'Elevated' },
+      { value: 'neumorphic', displayName: 'Neumorphic' },
+    ],
+    value: { value: 'glass', displayName: 'Glass' },
   });
 
   backgroundColor = new formattingSettings.ColorPicker({
@@ -157,7 +216,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
   backgroundOpacity = new formattingSettings.NumUpDown({
     name: 'backgroundOpacity',
     displayName: 'Background Opacity (%)',
-    value: 35,
+    value: 85,
   });
 
   borderRadius = new formattingSettings.NumUpDown({
@@ -168,7 +227,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.enableGlass, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  slices = [this.cardStyleMode, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
 }
 
 // ── Animation Settings ──────────────────────────────────────────────
@@ -191,9 +250,41 @@ class AnimationSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.enabled, this.duration];
 }
 
-// ── Area Forecast Settings ──────────────────────────────────────────
+// ── Interaction (merged BrushSettingsCard) ──────────────────────────
 
-class AreaForecastSettingsCard extends formattingSettings.SimpleCard {
+class InteractionCard extends formattingSettings.SimpleCard {
+  brushEnabled = new formattingSettings.ToggleSwitch({
+    name: 'brushEnabled',
+    displayName: 'Enable Brush/Zoom',
+    value: false,
+  });
+
+  contextHeight = new formattingSettings.NumUpDown({
+    name: 'contextHeight',
+    displayName: 'Context Height (px)',
+    value: 60,
+  });
+
+  brushColor = new formattingSettings.ColorPicker({
+    name: 'brushColor',
+    displayName: 'Brush Color',
+    value: { value: '#3B82F6' },
+  });
+
+  brushOpacity = new formattingSettings.NumUpDown({
+    name: 'brushOpacity',
+    displayName: 'Brush Opacity (%)',
+    value: 30,
+  });
+
+  name = 'interactionSettings';
+  displayName = 'Interaction';
+  slices = [this.brushEnabled, this.contextHeight, this.brushColor, this.brushOpacity];
+}
+
+// ── Forecast Settings ──────────────────────────────────────────────
+
+class ForecastSettingsCard extends formattingSettings.SimpleCard {
   show = new formattingSettings.ToggleSwitch({
     name: 'show',
     displayName: 'Show Forecast Zone',
@@ -217,28 +308,9 @@ class AreaForecastSettingsCard extends formattingSettings.SimpleCard {
   slices = [this.show, this.periods, this.opacity];
 }
 
-// ── Area Stack Settings ─────────────────────────────────────────────
+// ── Data Handling (merged AreaGapSettingsCard) ──────────────────────
 
-class AreaStackSettingsCard extends formattingSettings.SimpleCard {
-  mode = new formattingSettings.ItemDropdown({
-    name: 'mode',
-    displayName: 'Stack Mode',
-    items: [
-      { value: 'normal', displayName: 'Normal (Overlapping)' },
-      { value: 'stacked', displayName: 'Stacked' },
-      { value: 'stacked100', displayName: '100% Stacked' },
-    ],
-    value: { value: 'normal', displayName: 'Normal (Overlapping)' },
-  });
-
-  name = 'areaStackSettings';
-  displayName = 'Area Stacking';
-  slices = [this.mode];
-}
-
-// ── Area Gap Handling Settings ──────────────────────────────────────
-
-class AreaGapSettingsCard extends formattingSettings.SimpleCard {
+class DataHandlingCard extends formattingSettings.SimpleCard {
   nullHandling = new formattingSettings.ItemDropdown({
     name: 'nullHandling',
     displayName: 'Null / Gap Handling',
@@ -250,90 +322,127 @@ class AreaGapSettingsCard extends formattingSettings.SimpleCard {
     value: { value: 'skip', displayName: 'Skip (Leave Gap)' },
   });
 
-  name = 'areaGapSettings';
-  displayName = 'Gap Handling';
+  name = 'dataHandlingSettings';
+  displayName = 'Data Handling';
   slices = [this.nullHandling];
 }
 
-// ── Area Threshold Settings ─────────────────────────────────────────
+// ── Vertical Reference Band ──────────────────────────────────────────
 
-class AreaThresholdSettingsCard extends formattingSettings.SimpleCard {
+class VerticalBandCard extends formattingSettings.SimpleCard {
   show = new formattingSettings.ToggleSwitch({
     name: 'show',
-    displayName: 'Show Threshold Zone',
+    displayName: 'Show Vertical Band',
     value: false,
   });
 
-  threshold = new formattingSettings.NumUpDown({
-    name: 'threshold',
-    displayName: 'Threshold Value',
-    value: 0,
+  startValue = new formattingSettings.TextInput({
+    name: 'startValue',
+    displayName: 'Start Category',
+    value: '',
+    placeholder: 'e.g. Jan',
   });
 
-  aboveColor = new formattingSettings.ColorPicker({
-    name: 'aboveColor',
-    displayName: 'Above Color',
-    value: { value: '#22C55E' },
+  endValue = new formattingSettings.TextInput({
+    name: 'endValue',
+    displayName: 'End Category',
+    value: '',
+    placeholder: 'e.g. Mar',
   });
 
-  belowColor = new formattingSettings.ColorPicker({
-    name: 'belowColor',
-    displayName: 'Below Color',
-    value: { value: '#EF4444' },
-  });
-
-  name = 'areaThresholdSettings';
-  displayName = 'Threshold Zone';
-  slices = [this.show, this.threshold, this.aboveColor, this.belowColor];
-}
-
-// ── Brush / Zoom Settings ──────────────────────────────────────────
-
-class BrushSettingsCard extends formattingSettings.SimpleCard {
-  enabled = new formattingSettings.ToggleSwitch({
-    name: 'enabled',
-    displayName: 'Enable Brush/Zoom',
-    value: false,
-  });
-
-  contextHeight = new formattingSettings.NumUpDown({
-    name: 'contextHeight',
-    displayName: 'Context Height (px)',
-    value: 60,
-  });
-
-  brushColor = new formattingSettings.ColorPicker({
-    name: 'brushColor',
-    displayName: 'Brush Color',
+  bandColor = new formattingSettings.ColorPicker({
+    name: 'bandColor',
+    displayName: 'Band Color',
     value: { value: '#3B82F6' },
   });
 
-  brushOpacity = new formattingSettings.NumUpDown({
-    name: 'brushOpacity',
-    displayName: 'Brush Opacity (%)',
-    value: 30,
+  bandOpacity = new formattingSettings.NumUpDown({
+    name: 'bandOpacity',
+    displayName: 'Band Opacity (%)',
+    value: 20,
   });
 
-  name = 'brushSettings';
-  displayName = 'Brush / Zoom';
-  slices = [this.enabled, this.contextHeight, this.brushColor, this.brushOpacity];
+  bandLabel = new formattingSettings.TextInput({
+    name: 'bandLabel',
+    displayName: 'Label',
+    value: '',
+    placeholder: 'e.g. Phase 1',
+  });
+
+  name = 'verticalBandSettings';
+  displayName = 'Vertical Reference Band';
+  slices = [this.show, this.startValue, this.endValue, this.bandColor, this.bandOpacity, this.bandLabel];
+}
+
+// ── Gap / Distance Indicator ───────────────────────────────────────────
+
+class GapIndicatorCard extends formattingSettings.SimpleCard {
+  showGapIndicator = new formattingSettings.ToggleSwitch({
+    name: 'showGapIndicator',
+    displayName: 'Show Gap Indicator',
+    value: false,
+  });
+
+  gapSeriesA = new formattingSettings.NumUpDown({
+    name: 'gapSeriesA',
+    displayName: 'Series A (1-indexed)',
+    value: 1,
+  });
+
+  gapSeriesB = new formattingSettings.NumUpDown({
+    name: 'gapSeriesB',
+    displayName: 'Series B (1-indexed)',
+    value: 2,
+  });
+
+  gapInterval = new formattingSettings.NumUpDown({
+    name: 'gapInterval',
+    displayName: 'Show Every N Points',
+    value: 1,
+  });
+
+  gapColor = new formattingSettings.ColorPicker({
+    name: 'gapColor',
+    displayName: 'Gap Line Color',
+    value: { value: '#94A3B8' },
+  });
+
+  gapLineWidth = new formattingSettings.NumUpDown({
+    name: 'gapLineWidth',
+    displayName: 'Gap Line Width',
+    value: 1,
+  });
+
+  showGapValue = new formattingSettings.ToggleSwitch({
+    name: 'showGapValue',
+    displayName: 'Show Gap Value',
+    value: true,
+  });
+
+  gapFontSize = new formattingSettings.NumUpDown({
+    name: 'gapFontSize',
+    displayName: 'Gap Font Size',
+    value: 10,
+  });
+
+  name = 'gapIndicatorSettings';
+  displayName = 'Gap / Distance Indicator';
+  slices = [this.showGapIndicator, this.gapSeriesA, this.gapSeriesB, this.gapInterval, this.gapColor, this.gapLineWidth, this.showGapValue, this.gapFontSize];
 }
 
 // ── Root Model ───────────────────────────────────────────────────────
 
 export class MorphingAreaChartSettings extends formattingSettings.Model {
-  lineSettings = new LineSettingsCard();
-  areaSettings = new AreaSettingsCard();
+  lineSettings = new LineAndPointsCard();
+  areaFillSettings = new AreaFillCard();
   axisSettings = new AxisSettingsCard();
   cardSettings = new CardStyleSettings();
   animationSettings = new AnimationSettingsCard();
-
-  // New feature cards
-  areaForecastSettings = new AreaForecastSettingsCard();
-  areaStackSettings = new AreaStackSettingsCard();
-  areaGapSettings = new AreaGapSettingsCard();
-  areaThresholdSettings = new AreaThresholdSettingsCard();
-  brushSettings = new BrushSettingsCard();
+  interactionSettings = new InteractionCard();
+  areaForecastSettings = new ForecastSettingsCard();
+  dataHandlingSettings = new DataHandlingCard();
+  verticalBandSettings = new VerticalBandCard();
+  gapIndicatorSettings = new GapIndicatorCard();
 
   // Shared formatting cards from core
   axisFormattingCard = new AxisFormattingCard();
@@ -357,17 +466,19 @@ export class MorphingAreaChartSettings extends formattingSettings.Model {
   }
 
   colorThemeFormattingCard = new ColorThemeFormattingCard();
+  dateFilterFormattingCard = new DateFilterFormattingCard();
+
   cards = [
     this.lineSettings,
-    this.areaSettings,
+    this.areaFillSettings,
     this.axisSettings,
     this.cardSettings,
     this.animationSettings,
+    this.interactionSettings,
     this.areaForecastSettings,
-    this.areaStackSettings,
-    this.areaGapSettings,
-    this.areaThresholdSettings,
-    this.brushSettings,
+    this.dataHandlingSettings,
+    this.verticalBandSettings,
+    this.gapIndicatorSettings,
     this.axisFormattingCard,
     this.legendFormattingCard,
     this.dataLabelFormattingCard,
@@ -383,5 +494,6 @@ export class MorphingAreaChartSettings extends formattingSettings.Model {
     this.accessibilityFormattingCard,
     this.seriesFormattingCard,
     this.colorThemeFormattingCard,
+    this.dateFilterFormattingCard,
   ];
 }

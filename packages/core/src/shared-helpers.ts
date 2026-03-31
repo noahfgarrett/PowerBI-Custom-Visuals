@@ -3,7 +3,7 @@
  * Used by all visuals to apply axis, grid, data label, and title formatting.
  */
 
-import type { AxisFormattingCard, DataLabelFormattingCard, NumberFormattingCard, ScrollFormattingCard, SortFormattingCard, TitleFormattingCard, ColorThemeFormattingCard } from './shared-settings';
+import type { AxisFormattingCard, DataLabelFormattingCard, NumberFormattingCard, ScrollFormattingCard, SortFormattingCard, TitleFormattingCard, ColorThemeFormattingCard, LegendFormattingCard } from './shared-settings';
 import { formatNumber } from './format';
 import type { DisplayUnits } from './format';
 import { COLOR_THEMES, type ColorThemeName } from './colors';
@@ -88,6 +88,10 @@ export function renderChartTitle(
   el.style.marginBottom = '4px';
   el.style.lineHeight = '1.3';
   el.style.fontFamily = fontFamily;
+  el.style.position = 'relative';
+  el.style.zIndex = '1';
+  el.style.width = '100%';
+  el.style.boxSizing = 'border-box';
 
   container.insertBefore(el, container.firstChild);
 
@@ -107,6 +111,10 @@ export function renderChartTitle(
     sub.style.fontWeight = subtitleWeight === 'bold' ? '600' : '400';
     sub.style.marginBottom = '4px';
     sub.style.lineHeight = '1.3';
+    sub.style.position = 'relative';
+    sub.style.zIndex = '1';
+    sub.style.width = '100%';
+    sub.style.boxSizing = 'border-box';
 
     // Insert subtitle right after the title element
     if (el.nextSibling) {
@@ -158,6 +166,12 @@ export function applyDataLabelFormatting(
         } else if (position === 'below') {
           el.setAttribute('dominant-baseline', 'hanging');
           el.setAttribute('dy', '8');
+        } else if (position === 'inside') {
+          el.setAttribute('dominant-baseline', 'hanging');
+          el.setAttribute('dy', '4');
+        } else if (position === 'outside') {
+          el.setAttribute('dominant-baseline', 'auto');
+          el.setAttribute('dy', '-12');
         }
       }
     } else if (el instanceof HTMLElement) {
@@ -372,6 +386,8 @@ export interface LegendConfig {
   fontFamily?: string;
   /** Optional font weight override. Falls back to 'normal'. */
   fontWeight?: string;
+  /** Comma-separated label overrides. Position-matched: alias[0] → item[0], etc. */
+  aliases?: string;
 }
 
 /**
@@ -403,6 +419,11 @@ export function renderLegend(
   legend.style.fontWeight = config.fontWeight || 'normal';
   legend.style.userSelect = 'none';
 
+  // Parse comma-separated aliases for label overrides
+  const aliasList = config.aliases
+    ? config.aliases.split(',').map((a) => a.trim())
+    : [];
+
   for (let i = 0; i < config.items.length; i++) {
     const item = config.items[i];
     const entry = document.createElement('div');
@@ -423,8 +444,10 @@ export function renderLegend(
 
     const label = document.createElement('span');
     label.style.color = config.fontColor || '#64748B';
+    label.style.fontWeight = config.fontWeight || 'normal';
     label.style.whiteSpace = 'nowrap';
-    label.textContent = item.label;
+    const alias = aliasList[i];
+    label.textContent = (alias && alias.length > 0) ? alias : item.label;
 
     entry.appendChild(swatch);
     entry.appendChild(label);
@@ -757,4 +780,160 @@ export function createScrollableChart(options: ScrollableChartOptions): Scrollab
     chartHeight: expandedSize,
     isScrolling: true,
   };
+}
+
+// ── Date Filter Helper ──────────────────────────────────────────────
+
+/**
+ * Convert an ISO week number + year to the Monday of that week (epoch ms).
+ * ISO 8601: week 1 is the week containing the first Thursday of the year.
+ */
+function weekToDate(week: number, year: number): number {
+  // Jan 4 is always in ISO week 1
+  const jan4 = new Date(year, 0, 4);
+  const dayOfWeek = jan4.getDay() || 7; // Mon=1 .. Sun=7
+  // Monday of week 1
+  const week1Monday = new Date(jan4.getTime());
+  week1Monday.setDate(jan4.getDate() - (dayOfWeek - 1));
+  // Advance to the requested week
+  const target = new Date(week1Monday.getTime());
+  target.setDate(week1Monday.getDate() + (week - 1) * 7);
+  return target.getTime();
+}
+
+/** Work-week pattern: WW51'2025, WW51'25, WW51-2025, WW51 2025, ww01'2024, etc. */
+const WW_PATTERN = /^[Ww]{2}(\d{1,2})['\s\-/](\d{2,4})$/;
+
+/**
+ * Parse a date string into epoch ms.
+ * Supports: YYYY-MM-DD, MM/DD/YYYY, Date-parseable strings,
+ * and work-week formats like WW51'2025, WW01'24, WW12-2025.
+ * Returns NaN if the string is not a valid date.
+ */
+function parseDateValue(raw: unknown): number {
+  if (raw == null) return NaN;
+  if (raw instanceof Date) return raw.getTime();
+  if (typeof raw === 'number') return raw;
+  const s = String(raw).trim();
+  if (s.length === 0) return NaN;
+
+  // Try work-week format first
+  const wwMatch = WW_PATTERN.exec(s);
+  if (wwMatch) {
+    const week = parseInt(wwMatch[1], 10);
+    let year = parseInt(wwMatch[2], 10);
+    if (year < 100) year += 2000; // WW51'25 → 2025
+    if (week >= 1 && week <= 53 && year >= 1900 && year <= 2100) {
+      return weekToDate(week, year);
+    }
+  }
+
+  // Standard date parsing
+  const t = new Date(s).getTime();
+  return t;
+}
+
+export interface DateFilterConfig {
+  enabled: boolean;
+  startDate: string;
+  endAtCurrentDate: boolean;
+  endDate: string;
+}
+
+/**
+ * Returns a Set of row indices that pass the date filter.
+ * The `categoryValues` array is the raw category column values from the dataView.
+ * If the filter is disabled or both dates are empty, returns null (meaning "include all").
+ */
+export function getDateFilterIndices(
+  categoryValues: ReadonlyArray<unknown>,
+  config: DateFilterConfig,
+): Set<number> | null {
+  if (!config.enabled) return null;
+
+  const hasStart = config.startDate.trim().length > 0;
+  const useCurrentEnd = config.endAtCurrentDate;
+  const hasEnd = useCurrentEnd || config.endDate.trim().length > 0;
+  if (!hasStart && !hasEnd) return null;
+
+  const startMs = hasStart ? parseDateValue(config.startDate) : -Infinity;
+  // End of current day (23:59:59.999) when using current date
+  const endMs = useCurrentEnd
+    ? new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 23, 59, 59, 999).getTime()
+    : (hasEnd ? parseDateValue(config.endDate) : Infinity);
+
+  // If dates are invalid, skip filtering to avoid hiding all data
+  if (hasStart && Number.isNaN(startMs)) return null;
+  if (!useCurrentEnd && hasEnd && Number.isNaN(endMs)) return null;
+
+  const indices = new Set<number>();
+  for (let i = 0; i < categoryValues.length; i++) {
+    const val = parseDateValue(categoryValues[i]);
+    if (Number.isNaN(val)) {
+      // Non-date category values — include them (don't hide non-date data)
+      indices.add(i);
+      continue;
+    }
+    if (val >= startMs && val <= endMs) {
+      indices.add(i);
+    }
+  }
+  return indices;
+}
+
+// ── Inline End-of-Line Labels ──────────────────────────────────────────
+
+export interface InlineLabelItem {
+  label: string;
+  x: number;
+  y: number;
+  color: string;
+}
+
+export interface InlineLabelConfig {
+  items: InlineLabelItem[];
+  fontSize: number;
+  offset: number;
+  fontFamily?: string;
+}
+
+/**
+ * Renders inline labels at the end of each line series inside an SVG group.
+ * Labels are placed to the right of the last data point, colored to match
+ * the series. Overlapping labels are nudged apart vertically.
+ */
+export function renderInlineLabels(
+  g: SVGGElement,
+  config: InlineLabelConfig,
+): void {
+  const { items, fontSize, offset, fontFamily } = config;
+  if (items.length === 0) return;
+
+  // Sort by y position to detect overlaps
+  const sorted = items.map((item, idx) => ({ ...item, idx }))
+    .sort((a, b) => a.y - b.y);
+
+  // Nudge overlapping labels apart (minimum spacing = fontSize)
+  const minSpacing = fontSize * 1.2;
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = sorted[i - 1];
+    const curr = sorted[i];
+    if (curr.y - prev.y < minSpacing) {
+      curr.y = prev.y + minSpacing;
+    }
+  }
+
+  const ns = 'http://www.w3.org/2000/svg';
+  for (const item of sorted) {
+    const text = document.createElementNS(ns, 'text');
+    text.setAttribute('class', 'pbi-inline-label');
+    text.setAttribute('x', String(item.x + offset));
+    text.setAttribute('y', String(item.y));
+    text.setAttribute('dominant-baseline', 'middle');
+    text.setAttribute('font-size', `${fontSize}px`);
+    text.setAttribute('fill', item.color);
+    text.setAttribute('font-family', fontFamily || "'Segoe UI', sans-serif");
+    text.textContent = item.label;
+    g.appendChild(text);
+  }
 }

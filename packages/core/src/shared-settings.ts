@@ -150,6 +150,12 @@ export class AxisFormattingCard extends formattingSettings.SimpleCard {
     value: 100,
   });
 
+  integerTicks = new formattingSettings.ToggleSwitch({
+    name: 'integerTicks',
+    displayName: 'Integer Ticks Only',
+    value: false,
+  });
+
   name = 'axisFormatting';
   displayName = 'Axis Formatting';
   slices = [
@@ -164,6 +170,7 @@ export class AxisFormattingCard extends formattingSettings.SimpleCard {
     this.axisLabelRotation,
     this.yAxisMin,
     this.yAxisMax,
+    this.integerTicks,
     this.axisLineColor,
     this.axisLineWidth,
     this.showGridLines,
@@ -221,6 +228,31 @@ export class LegendFormattingCard extends formattingSettings.SimpleCard {
     value: { value: 'normal', displayName: 'Normal' },
   });
 
+  legendAliases = new formattingSettings.TextInput({
+    name: 'legendAliases',
+    displayName: 'Rename Labels',
+    value: '',
+    placeholder: 'Label1, Label2, ...',
+  });
+
+  showInlineLabels = new formattingSettings.ToggleSwitch({
+    name: 'showInlineLabels',
+    displayName: 'Inline End Labels',
+    value: false,
+  });
+
+  inlineLabelFontSize = new formattingSettings.NumUpDown({
+    name: 'inlineLabelFontSize',
+    displayName: 'Inline Label Font Size',
+    value: 11,
+  });
+
+  inlineLabelOffset = new formattingSettings.NumUpDown({
+    name: 'inlineLabelOffset',
+    displayName: 'Inline Label Offset (px)',
+    value: 4,
+  });
+
   name = 'legendFormatting';
   displayName = 'Legend';
   slices = [
@@ -230,6 +262,10 @@ export class LegendFormattingCard extends formattingSettings.SimpleCard {
     this.legendFontColor,
     this.legendFontFamily,
     this.legendFontWeight,
+    this.legendAliases,
+    this.showInlineLabels,
+    this.inlineLabelFontSize,
+    this.inlineLabelOffset,
   ];
 }
 
@@ -852,6 +888,12 @@ export class CrosshairFormattingCard extends formattingSettings.SimpleCard {
     value: { value: 'dashed', displayName: 'Dashed' },
   });
 
+  crosshairOpacity = new formattingSettings.NumUpDown({
+    name: 'crosshairOpacity',
+    displayName: 'Opacity (%)',
+    value: 60,
+  });
+
   showCrosshairValues = new formattingSettings.ToggleSwitch({
     name: 'showCrosshairValues',
     displayName: 'Show Values',
@@ -865,6 +907,7 @@ export class CrosshairFormattingCard extends formattingSettings.SimpleCard {
     this.crosshairLineColor,
     this.crosshairLineWidth,
     this.crosshairLineStyle,
+    this.crosshairOpacity,
     this.showCrosshairValues,
   ];
 }
@@ -1262,6 +1305,40 @@ export class ColorThemeFormattingCard extends formattingSettings.SimpleCard {
   slices = [this.colorTheme];
 }
 
+// ── Date Filter ─────────────────────────────────────────────────────
+
+export class DateFilterFormattingCard extends formattingSettings.SimpleCard {
+  enableDateFilter = new formattingSettings.ToggleSwitch({
+    name: 'enableDateFilter',
+    displayName: 'Enable Date Filter',
+    value: false,
+  });
+
+  startDate = new formattingSettings.TextInput({
+    name: 'startDate',
+    displayName: 'Start Date',
+    value: '',
+    placeholder: 'YYYY-MM-DD',
+  });
+
+  endAtCurrentDate = new formattingSettings.ToggleSwitch({
+    name: 'endAtCurrentDate',
+    displayName: 'End at Current Date',
+    value: true,
+  });
+
+  endDate = new formattingSettings.TextInput({
+    name: 'endDate',
+    displayName: 'End Date',
+    value: '',
+    placeholder: 'YYYY-MM-DD',
+  });
+
+  name = 'dateFilterFormatting';
+  displayName = 'Date Filter';
+  slices = [this.enableDateFilter, this.startDate, this.endAtCurrentDate, this.endDate];
+}
+
 // ── Capabilities JSON Templates ──────────────────────────────────────
 
 /** Merge these into a visual's capabilities.json `objects` block. */
@@ -1430,6 +1507,7 @@ export const CAPABILITIES_TEMPLATES: Record<string, Record<string, unknown>> = {
       crosshairLineColor: { displayName: 'Line Color', type: { fill: { solid: { color: true } } } },
       crosshairLineWidth: { displayName: 'Line Width', type: { numeric: true } },
       crosshairLineStyle: { displayName: 'Line Style', type: { enumeration: [{ value: 'solid', displayName: 'Solid' }, { value: 'dashed', displayName: 'Dashed' }, { value: 'dotted', displayName: 'Dotted' }] } },
+      crosshairOpacity: { displayName: 'Opacity (%)', type: { numeric: true } },
       showCrosshairValues: { displayName: 'Show Values', type: { bool: true } },
     },
   },
@@ -1455,6 +1533,15 @@ export const CAPABILITIES_TEMPLATES: Record<string, Record<string, unknown>> = {
       annotationFontSize: { displayName: 'Font Size', type: { numeric: true } },
       annotationFontColor: { displayName: 'Font Color', type: { fill: { solid: { color: true } } } },
       annotationConnectorColor: { displayName: 'Connector Color', type: { fill: { solid: { color: true } } } },
+    },
+  },
+  dateFilterFormatting: {
+    displayName: 'Date Filter',
+    properties: {
+      enableDateFilter: { displayName: 'Enable Date Filter', type: { bool: true } },
+      startDate: { displayName: 'Start Date', type: { text: true } },
+      endAtCurrentDate: { displayName: 'End at Current Date', type: { bool: true } },
+      endDate: { displayName: 'End Date', type: { text: true } },
     },
   },
   colorThemeFormatting: {
