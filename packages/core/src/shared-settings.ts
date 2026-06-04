@@ -31,6 +31,15 @@ const FONT_FAMILY_ITEMS = [
   { value: 'Verdana', displayName: 'Verdana' },
 ];
 
+export const CARD_STYLE_MODE_ITEMS = [
+  { value: 'none', displayName: 'None', displayNameKey: 'SharedSettings_DisplayName_CardStyleNone' },
+  { value: 'glass', displayName: 'Glass', displayNameKey: 'SharedSettings_DisplayName_CardStyleGlass' },
+  { value: 'elevated', displayName: 'Elevated', displayNameKey: 'SharedSettings_DisplayName_CardStyleElevated' },
+  { value: 'neumorphic', displayName: 'Neumorphic', displayNameKey: 'SharedSettings_DisplayName_CardStyleNeumorphic' },
+  { value: 'outlined', displayName: 'Outlined', displayNameKey: 'SharedSettings_DisplayName_CardStyleOutlined' },
+  { value: 'floating', displayName: 'Floating', displayNameKey: 'SharedSettings_DisplayName_CardStyleFloating' },
+];
+
 // ── Axis Formatting ──────────────────────────────────────────────────
 
 export class AxisFormattingCard extends formattingSettings.SimpleCard {

@@ -3,10 +3,17 @@
  * Used by all visuals to apply axis, grid, data label, and title formatting.
  */
 
+import powerbi from 'powerbi-visuals-api';
 import type { AxisFormattingCard, DataLabelFormattingCard, NumberFormattingCard, ScrollFormattingCard, SortFormattingCard, TitleFormattingCard, ColorThemeFormattingCard, LegendFormattingCard } from './shared-settings';
 import { formatNumber } from './format';
 import type { DisplayUnits } from './format';
 import { COLOR_THEMES, type ColorThemeName } from './colors';
+
+import DataView = powerbi.DataView;
+import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
+import ISelectionId = powerbi.visuals.ISelectionId;
+import ISelectionManager = powerbi.extensibility.ISelectionManager;
+import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 
 // ── Default colors (used when user hasn't picked a color) ────────────
 
@@ -39,6 +46,57 @@ export function resolveDropdown(
   return undefined;
 }
 
+export function attachEmptySpaceContextMenu(
+  element: HTMLElement,
+  selectionManager: ISelectionManager,
+  createEmptySelectionId: () => ISelectionId,
+  isEnabled: () => boolean = () => true,
+): () => void {
+  const handler = (event: MouseEvent): void => {
+    if (!isEnabled()) return;
+    event.preventDefault();
+    void selectionManager.showContextMenu(createEmptySelectionId(), {
+      x: event.clientX,
+      y: event.clientY,
+    });
+  };
+
+  element.addEventListener('contextmenu', handler);
+  return () => element.removeEventListener('contextmenu', handler);
+}
+
+export function getLocalizedString(
+  hostOrManager: IVisualHost | ILocalizationManager | undefined,
+  key: string,
+  fallback: string,
+): string {
+  const manager = resolveLocalizationManager(hostOrManager);
+  const localized = manager?.getDisplayName(key);
+  return localized && localized !== key ? localized : fallback;
+}
+
+function resolveLocalizationManager(
+  hostOrManager: IVisualHost | ILocalizationManager | undefined,
+): ILocalizationManager | undefined {
+  if (!hostOrManager) return undefined;
+  if ('getDisplayName' in hostOrManager && typeof hostOrManager.getDisplayName === 'function') {
+    return hostOrManager;
+  }
+  if ('createLocalizationManager' in hostOrManager && typeof hostOrManager.createLocalizationManager === 'function') {
+    return hostOrManager.createLocalizationManager();
+  }
+  return undefined;
+}
+
+export type EmptyVisualStateMode = 'unconfigured' | 'noData';
+
+export function getVisualEmptyStateMode(dataView: DataView | undefined): EmptyVisualStateMode {
+  const hasBoundRoles = (dataView?.metadata?.columns ?? []).some((column) =>
+    Object.values(column.roles ?? {}).some(Boolean),
+  );
+  return hasBoundRoles ? 'noData' : 'unconfigured';
+}
+
 /**
  * Resolve the user's selected color theme from a ColorThemeFormattingCard.
  * Returns a validated ColorThemeName, defaulting to 'default' for invalid values.
@@ -61,6 +119,44 @@ function toDashArray(style: string | undefined): string {
 }
 
 // ── Chart Title ──────────────────────────────────────────────────────
+
+/**
+ * Synchronizes title/subtitle formatting pane visibility with the title toggle.
+ * When the title is hidden, the rest of the title block settings are hidden too.
+ */
+export function syncTitleFormattingVisibility(settings: TitleFormattingCard): void {
+  const visible = Boolean(settings.showTitle.value);
+  settings.titleText.visible = visible;
+  settings.titleFontSize.visible = visible;
+  settings.titleFontColor.visible = visible;
+  settings.titleFontFamily.visible = visible;
+  settings.titleFontWeight.visible = visible;
+  settings.titleAlignment.visible = visible;
+  settings.subtitleText.visible = visible;
+  settings.subtitleFontSize.visible = visible;
+  settings.subtitleFontColor.visible = visible;
+  settings.subtitleFontFamily.visible = visible;
+  settings.subtitleFontWeight.visible = visible;
+}
+
+/**
+ * Synchronizes legend formatting pane visibility with the legend toggles.
+ * When the legend is hidden, dependent controls are hidden too.
+ */
+export function syncLegendFormattingVisibility(settings: LegendFormattingCard): void {
+  const showLegend = Boolean(settings.showLegend.value);
+  const showInlineLabels = showLegend && Boolean(settings.showInlineLabels.value);
+
+  settings.legendPosition.visible = showLegend;
+  settings.legendFontSize.visible = showLegend;
+  settings.legendFontColor.visible = showLegend;
+  settings.legendFontFamily.visible = showLegend;
+  settings.legendFontWeight.visible = showLegend;
+  settings.legendAliases.visible = showLegend;
+  settings.showInlineLabels.visible = showLegend;
+  settings.inlineLabelFontSize.visible = showInlineLabels;
+  settings.inlineLabelOffset.visible = showInlineLabels;
+}
 
 /**
  * Renders an optional chart title as the first child of the container.

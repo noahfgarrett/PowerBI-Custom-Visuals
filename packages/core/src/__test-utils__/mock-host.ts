@@ -8,16 +8,18 @@ const PALETTE_COLORS = [
 ];
 
 let colorIndex = 0;
+let selectionIdIndex = 0;
 
 function nextColor(): string {
   return PALETTE_COLORS[colorIndex++ % PALETTE_COLORS.length];
 }
 
 function createMockSelectionId(): Record<string, unknown> {
+  const key = `selection-${selectionIdIndex++}`;
   return {
     equals: () => false,
     includes: () => false,
-    getKey: () => JSON.stringify({ key: Math.random() }),
+    getKey: () => key,
     getSelector: () => ({}),
     getSelectorsByColumn: () => ({}),
     hasIdentity: () => false,
@@ -92,6 +94,7 @@ function createMockColorPalette(): Record<string, unknown> {
 function createMockLocale(): Record<string, unknown> {
   return {
     get: (key: string) => key,
+    getDisplayName: (key: string) => key,
   };
 }
 
@@ -100,6 +103,7 @@ function createMockLocale(): Record<string, unknown> {
  */
 export function createMockHost(): Record<string, unknown> {
   colorIndex = 0;
+  selectionIdIndex = 0;
   return {
     createSelectionIdBuilder: () => createMockSelectionIdBuilder(),
     createSelectionManager: () => createMockSelectionManager(),
