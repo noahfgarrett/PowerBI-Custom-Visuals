@@ -19,8 +19,9 @@ The pane should feel like a premium overlay:
 
 - A glass filter icon button opens the pane.
 - Opening the pane adds a semi-dark blurred stained-glass backdrop inside the visual bounds.
-- The pane contains generated filter controls for bound fields.
+- The pane contains `Basic` and `Advanced` tabs for bound fields.
 - Users can search, select, clear, and apply filters without leaving the report page.
+- The default pane is larger and more polished than the compact Network Graph tray, with room for field cards, active-filter summaries, and clear action areas.
 
 ## Data Roles
 
@@ -38,39 +39,80 @@ Columns are the reliable core because Power BI JSON filters target table columns
 3. The author styles the icon, overlay, and pane in the formatting menu.
 4. The report user clicks the glass filter icon.
 5. The background inside the visual dims and blurs.
-6. The pane opens with filter sections generated from the bound fields.
-7. The user selects values or numeric/date conditions.
-8. The user clicks `Apply`, or uses immediate apply if that setting is enabled.
-9. Power BI receives a JSON filter through `host.applyJsonFilter`.
-10. The active-filter count updates on the icon.
-11. The user can click `Clear` to remove all filters from the pane.
+6. The pane opens to the `Basic` tab with polished slicer-style sections generated from the bound fields.
+7. The user can switch to `Advanced` for specific rule-based filtering.
+8. The user selects values, numeric/date conditions, or advanced rules.
+9. The user clicks `Apply`, or uses immediate apply if that setting is enabled.
+10. Power BI receives a JSON filter through `host.applyJsonFilter`.
+11. The active-filter count updates on the icon.
+12. The user can click `Clear` to remove all filters from the pane.
 
 ## Pane Layout
 
 Default pane structure:
 
 - Header: title (`Filters` by default), active-filter count, close button.
-- Search: optional global search for fields and values.
-- Filter sections: one generated section per bound field.
+- Tab bar: `Basic` and `Advanced`.
+- Active summary row: compact chips/counts for filters currently applied across either tab.
+- Search: optional global search for fields and values within the active tab.
+- Filter content: generated controls for the active tab.
 - Footer: `Clear`, `Apply`, and optional `Reset`.
 
-Categorical sections:
+The pane should use a wider professional layout by default. Side panes should target roughly `420px` to `560px` wide when space allows. Centered modal panes should target roughly `560px` to `720px` wide. The layout should use responsive max-widths so it remains usable in smaller visual containers.
+
+When authors want the backdrop to cover the full report canvas, they should size the visual to the intended overlay area. The visual can only dim and blur inside its own visual bounds. Closed state should keep the filter button interactive while minimizing interference with report content as much as Power BI visual layering allows.
+
+## Basic Tab
+
+The `Basic` tab is the default and should feel like a premium slicer panel. It is designed for normal users who want quick filtering without understanding operators or rule logic.
+
+Basic categorical sections:
 
 - Search box for long value lists.
 - Checkbox list with `Select all` and `Clear`.
 - Compact selected-count text.
 - Optional collapsed-by-default sections when many fields are bound.
+- Clean field cards with field name, selected count, and a small reset control.
+- Long values truncate with ellipsis but expose full text on hover.
 
-Numeric sections:
+Basic numeric sections:
 
-- Operator dropdown with friendly labels: `Equals`, `Does not equal`, `Greater than`, `Greater than or equal`, `Less than`, `Less than or equal`, `Between`.
+- Simple range control by default.
+- Optional operator dropdown with friendly labels: `Equals`, `Does not equal`, `Greater than`, `Greater than or equal`, `Less than`, `Less than or equal`, `Between`.
 - Numeric input accepting decimals.
 - `Between` uses two numeric inputs.
 
-Date sections:
+Basic date sections:
 
 - `Between`, `Before`, `After`, and `On`.
 - Date inputs using native input controls where possible.
+
+## Advanced Tab
+
+The `Advanced` tab is for more specific detail filtering, similar in spirit to the Network Graph advanced filter row but given a larger, more professional surface.
+
+Advanced layout:
+
+- Left/top rule composer: field picker, operator picker, value input/select, and `Add rule`.
+- Active rules area: removable chips or rows with readable labels.
+- Rule preview: plain-English summary of what will be applied.
+- Results/count strip: active rule count and affected field count.
+- Optional field/value search to quickly find details in long lists.
+
+Advanced supported operators:
+
+- Text/category: `Equals`, `Does not equal`, `Contains`, `Does not contain`, `Starts with`, `Is blank`, `Is not blank`.
+- Numeric: `Equals`, `Does not equal`, `Greater than`, `Greater than or equal`, `Less than`, `Less than or equal`, `Between`, `Is blank`, `Is not blank`.
+- Date: `On`, `Before`, `After`, `Between`, `Is blank`, `Is not blank`.
+
+Advanced logic:
+
+- Rules within the same field use OR when they are repeated equality/value selections.
+- Rules across different fields use AND.
+- Advanced condition rows should show the implied logic in human-readable text so users are not left guessing.
+- V1 does not expose arbitrary nested AND/OR groups, but the UI should be structured so a future grouped-rule builder can be added without redesigning the pane.
+
+The advanced tab should look intentionally high-end: roomy spacing, crisp field cards, subdued glass surfaces, clear operator labels, polished chips, and no cramped dropdowns.
 
 ## Visual Styling
 
@@ -92,7 +134,7 @@ Format pane settings should include:
 - Apply mode: `Apply button` or `Apply immediately`.
 - Persistence mode: `Bookmark linked` or `Manual session`.
 
-The default should be tasteful and work without configuration: a compact glass funnel button, right-side pane, dark translucent blurred backdrop, and visible active-filter badge.
+The default should be tasteful and work without configuration: a compact glass funnel button, right-side pane, dark translucent blurred backdrop, `Basic` tab selected, and visible active-filter badge.
 
 ## Filter Logic
 
@@ -143,6 +185,7 @@ Internal state should track:
 
 - Bound fields with display name, query name, role kind, data type, and available values.
 - Per-field filter state.
+- Active tab: `basic` or `advanced`.
 - Pane open/closed state.
 - Expanded/collapsed section ids.
 - Search text.
@@ -158,6 +201,17 @@ Each filter field state should include:
 - `value`: scalar value for single-condition filters.
 - `valueTo`: second value for between filters.
 - `isDirty`: pending changes exist when using Apply-button mode.
+
+Advanced rule state should include:
+
+- `id`: stable local rule id.
+- `fieldKey`: source query name.
+- `fieldType`: category, numeric, or date.
+- `operator`: friendly advanced operator mapped to a Power BI filter operator.
+- `value`: selected or entered value where applicable.
+- `valueTo`: second value for between filters.
+- `display`: precomputed plain-English rule text.
+- `isValid`: whether the row can be applied.
 
 ## Error Handling
 
@@ -182,9 +236,12 @@ Each filter field state should include:
 
 - Unit test empty state when no fields are bound.
 - Unit test categorical sections render checkbox options.
+- Unit test `Basic` tab is selected by default.
+- Unit test switching to `Advanced` shows the rule composer.
 - Unit test selecting multiple values creates an OR/basic filter.
 - Unit test multiple fields combine as AND across field filters.
 - Unit test numeric operators create advanced filter conditions.
+- Unit test advanced text operators produce readable rule rows.
 - Unit test decimal numeric input is accepted.
 - Unit test invalid numeric/date input disables Apply.
 - Unit test Clear sends a null filter and resets active count.
@@ -209,6 +266,9 @@ Each filter field state should include:
 - A new `Filter Pane Pro` visual package exists and builds.
 - The visual has a polished glass filter icon with active-filter count.
 - Clicking the icon opens a filter pane with a blurred semi-dark backdrop.
+- The pane has `Basic` and `Advanced` tabs.
+- `Basic` provides normal slicer-style filtering controls.
+- `Advanced` provides professional rule-builder controls for specific detail filtering.
 - Bound categorical fields generate searchable checkbox lists.
 - Bound numeric/date fields generate friendly operator controls.
 - Apply and Clear update Power BI filters through the visual filter API.
