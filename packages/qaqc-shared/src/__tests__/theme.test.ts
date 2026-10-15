@@ -10,6 +10,10 @@ describe('withOpacity', () => {
     expect(withOpacity('#FFFFFF', 0)).toBe('rgba(255, 255, 255, 0)')
     expect(withOpacity('#000000', 150)).toBe('rgba(0, 0, 0, 1)')
   })
+
+  it('treats a non-finite percent as fully opaque', () => {
+    expect(withOpacity('#000000', Number.NaN)).toBe('rgba(0, 0, 0, 1)')
+  })
 })
 
 describe('resolveTheme', () => {

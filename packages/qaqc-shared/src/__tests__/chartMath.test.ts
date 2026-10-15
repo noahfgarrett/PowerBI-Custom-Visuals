@@ -15,7 +15,11 @@ describe('labelIndices', () => {
   })
 
   it('thins labels from the right and always keeps the selected bar', () => {
-    expect([...labelIndices(30, 440, 28)].sort((a, b) => a - b)).toEqual([2, 5, 8, 11, 14, 17, 20, 23, 26, 28])
+    expect([...labelIndices(30, 440, 28)].sort((a, b) => a - b)).toEqual([2, 5, 8, 11, 14, 17, 20, 23, 28])
+  })
+
+  it('ignores a selection past the end', () => {
+    expect([...labelIndices(10, 440, 15)].sort((a, b) => a - b)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
   })
 
   it('returns nothing for an empty chart', () => {

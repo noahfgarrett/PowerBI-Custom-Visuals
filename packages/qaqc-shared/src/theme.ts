@@ -80,7 +80,7 @@ export function isPresetName(value: unknown): value is PresetName {
 export function withOpacity(hex: string, percent: number): string {
   const match = hex.match(HEX_COLOR)
   if (!match) return hex
-  const alpha = Math.min(100, Math.max(0, percent)) / 100
+  const alpha = Number.isFinite(percent) ? Math.min(100, Math.max(0, percent)) / 100 : 1
   const [r, g, b] = [match[1], match[2], match[3]].map((part) => parseInt(part, 16))
   return `rgba(${r}, ${g}, ${b}, ${Number(alpha.toFixed(3))})`
 }

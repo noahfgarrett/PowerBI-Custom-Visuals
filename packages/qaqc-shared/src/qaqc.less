@@ -106,8 +106,12 @@
 }
 
 .qaqc-range-toggle button:focus-visible,
-.qaqc-week-picker select:focus-visible,
 .qaqc-chart:focus-visible {
+  outline: 2px solid var(--qaqc-accent);
+  outline-offset: 2px;
+}
+
+.qaqc-week-picker:focus-within {
   outline: 2px solid var(--qaqc-accent);
   outline-offset: 2px;
 }
@@ -186,7 +190,7 @@
 }
 
 .qaqc-kpi-group-head em {
-  color: var(--qaqc-faint);
+  color: var(--qaqc-muted);
   font-size: 10.5px;
   font-style: normal;
   font-weight: 600;
@@ -431,18 +435,20 @@
   position: absolute;
   top: 0;
   bottom: 0;
+  left: 0;
   width: 30%;
   background: var(--qaqc-accent);
+  transform: translateX(-100%);
   animation: qaqc-loading 1.1s ease-in-out infinite;
 }
 
 @keyframes qaqc-loading {
   from {
-    left: -30%;
+    transform: translateX(-100%);
   }
 
   to {
-    left: 100%;
+    transform: translateX(340%);
   }
 }
 
@@ -504,9 +510,16 @@
   position: absolute;
   width: 1px;
   height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+.qaqc-root.is-compact {
+  overflow-y: auto;
 }
 
 .qaqc-root.is-compact .qaqc-header {
@@ -518,8 +531,9 @@
 }
 
 .qaqc-root.is-compact .qaqc-charts {
+  flex: 0 0 auto;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: 320px 220px 220px;
 }
 
 .qaqc-root.is-compact .qaqc-panel-main {
