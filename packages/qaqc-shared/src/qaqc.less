@@ -814,6 +814,20 @@
   min-height: 0;
 }
 
+// The expanded overlay sits outside .qaqc-root, so the compact rules above do not reach it.
+.qaqc-expanded.is-compact .qaqc-expanded-split {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.qaqc-expanded.is-compact .qaqc-issue-list {
+  max-height: 30%;
+}
+
+.qaqc-expanded.is-compact .qaqc-summary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 @media (prefers-reduced-motion: reduce) {
   .qaqc-host * {
     animation: none !important;

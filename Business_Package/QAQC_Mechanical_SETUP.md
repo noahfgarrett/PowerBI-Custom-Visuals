@@ -31,7 +31,7 @@ Set every field to **Don't summarize**. The visual is designed to fill a full re
 - The week dropdown opens on the current work week every time the report opens.
 - `30 WW | All` switches the charts between the last 30 weeks and full history.
 - Click a bar to see that week's cards without moving the chart.
-- Click the expand icon on any chart to fill the visual with more detail; press Esc or the collapse icon to return.
+- Click the expand icon on any chart to fill the visual with more detail; press Esc or the collapse icon to return. The icon is hidden on empty charts and in read-only views.
 - Format pane: **Colors → Preset** (QAQC, Ivory, LotusWorks, Grayscale), **Background** (color, background opacity, card opacity), **Animation**, **Accessibility**.
 
 ## Counting rules

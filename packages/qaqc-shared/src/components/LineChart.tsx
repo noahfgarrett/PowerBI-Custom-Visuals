@@ -13,6 +13,7 @@ const DOT_RADIUS = 4
 const ISSUE_LABEL_OFFSET = 10
 const ISSUE_LABEL_BELOW_OFFSET = 16
 const MIN_ISSUE_LABEL_SPACING = 34
+const END_LABEL_OFFSET = 6
 
 export interface LineChartProps {
   points: PassRatePoint[]
@@ -21,7 +22,7 @@ export interface LineChartProps {
   height: number
   colors: ChartColors
   describe: boolean
-  /** Writes the pass rate beside the dot of NCR weeks. Skips the last point (the end label shows it) and any week closer than 34 px to the previous label. */
+  /** Writes the pass rate beside the dot of NCR weeks. Skips the last point (the end label shows it) and any week closer than 34 px to the previous label or to the end label. */
   labelIssueWeeks?: boolean
   /** Draws thinned work-week labels under the plot, with the selected week in bold. */
   showWeekAxis?: boolean
@@ -71,10 +72,12 @@ export function LineChart({
 
   const rateLabelIndices: number[] = []
   if (labelIssueWeeks) {
+    const endLabelX = lastIndex >= 0 ? x(lastIndex) + END_LABEL_OFFSET : Number.POSITIVE_INFINITY
     let previousX = Number.NEGATIVE_INFINITY
     points.forEach((item, index) => {
       if (!item.hadIssue || item.rate === null || index === lastIndex) return
       if (x(index) - previousX < MIN_ISSUE_LABEL_SPACING) return
+      if (endLabelX - x(index) < MIN_ISSUE_LABEL_SPACING) return
       rateLabelIndices.push(index)
       previousX = x(index)
     })
@@ -151,7 +154,7 @@ export function LineChart({
         )
       })}
       {lastRate !== null && (
-        <text className="qaqc-value-text qaqc-end-label" x={x(lastIndex) + 6} y={y(lastRate) + 3.5} fill={colors.ink}>
+        <text className="qaqc-value-text qaqc-end-label" x={x(lastIndex) + END_LABEL_OFFSET} y={y(lastRate) + 3.5} fill={colors.ink}>
           {formatPercent(lastRate)}
         </text>
       )}

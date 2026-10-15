@@ -94,12 +94,12 @@ describe('LineChart', () => {
   })
 
   it('skips an NCR-week label that would crowd the previous one', () => {
-    // 4 points across 30 px of plot give 10 px between neighbours.
+    // 7 points across 60 px of plot give 10 px between neighbours; both NCR weeks are well clear of the end label.
     view = render(
       <LineChart
-        points={[point(39, 99.5), point(40, 99.2, true), point(41, 99.1, true), point(42, 99.3)]}
+        points={[point(36, 99.5), point(37, 99.2, true), point(38, 99.1, true), point(39, 99.3), point(40, 99.3), point(41, 99.3), point(42, 99.3)]}
         selectedKey={202642}
-        width={112}
+        width={142}
         height={160}
         colors={COLORS}
         describe
@@ -110,6 +110,25 @@ describe('LineChart', () => {
     const labels = view.container.querySelectorAll('.qaqc-issue-rate')
     expect(labels).toHaveLength(1)
     expect(labels[0].textContent).toBe('99.2%')
+  })
+
+  it('skips a mid-chart NCR-week label that would collide with the end label', () => {
+    // 4 points across 81 px of plot give 27 px between neighbours: week 41 sits 33 px before the end label, which starts 6 px after the last point.
+    view = render(
+      <LineChart
+        points={[point(39, 99.5, true), point(40, 99.2), point(41, 99.1, true), point(42, 99.3)]}
+        selectedKey={202642}
+        width={163}
+        height={160}
+        colors={COLORS}
+        describe
+        labelIssueWeeks
+        onHover={vi.fn()}
+      />,
+    )
+    const labels = view.container.querySelectorAll('.qaqc-issue-rate')
+    expect(labels).toHaveLength(1)
+    expect(labels[0].textContent).toBe('99.5%')
   })
 
   it('draws no week axis by default', () => {

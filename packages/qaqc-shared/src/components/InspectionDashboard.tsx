@@ -387,6 +387,7 @@ export function InspectionDashboard({
           legend={panels[expanded].expandedLegend ?? panels[expanded].legend}
           emptyMessage={panels[expanded].emptyMessage}
           animate={animate}
+          className={isCompact ? 'is-compact' : undefined}
           getRootBox={() => (frameRef.current ? frameBox(frameRef.current) : ZERO_BOX)}
           getOriginBox={() => (frameRef.current ? originBox(frameRef.current, panelRefs.current[expanded]) : null)}
           onClosed={() => closeExpanded(expanded)}

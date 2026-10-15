@@ -384,6 +384,20 @@ describe('InspectionDashboard with measured charts', () => {
     expect(view.container.querySelector('.qaqc-root')?.hasAttribute('inert')).toBe(true)
   })
 
+  it('marks the expanded chart compact on narrow tiles', () => {
+    stubSize()
+    view = draw({ viewport: { width: 800, height: 900 } })
+    expandPanel(view.container, 'NCR Pass Rate Trend')
+    expect(dialog(view.container, 'NCR Pass Rate Trend')?.classList.contains('is-compact')).toBe(true)
+  })
+
+  it('does not mark the expanded chart compact on wide tiles', () => {
+    stubSize()
+    view = draw()
+    expandPanel(view.container, 'NCR Pass Rate Trend')
+    expect(dialog(view.container, 'NCR Pass Rate Trend')?.classList.contains('is-compact')).toBe(false)
+  })
+
   it('animates from the panel box to the frame box, both relative to the frame', () => {
     const keyframes: Keyframe[][] = []
     const animate = vi.fn((frames: Keyframe[]) => {

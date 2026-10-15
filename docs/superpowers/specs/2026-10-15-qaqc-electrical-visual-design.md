@@ -165,7 +165,7 @@ Added 2026-10-15 at the user's request. It lives in `qaqc-shared`, so every QAQC
 - "Full screen" means the whole visual area. Power BI does not let a custom visual take over the browser window; the user can still combine this with Power BI's own Focus mode.
 - With Animation → Transitions off, or under `prefers-reduced-motion`, expand and collapse are instant.
 - Focus moves to the collapse button on expand and back to the expand button on collapse. The overlay is `role="dialog"` with `aria-modal="true"` and `aria-label` set to the chart title.
-- Only one chart can be expanded at a time. The expanded chart keeps working while open: week selection, the range toggle, data refreshes, and Format pane changes all update it. If the expanded chart becomes empty after a refresh, it stays open and shows its empty message.
+- Only one chart can be expanded at a time. The expanded chart stays live while open: data refreshes, report filters, Format pane changes, and clicking a bar in the expanded Finals + SORs chart all update it. The header controls sit under the overlay until it is collapsed. If the expanded chart becomes empty after a refresh, it stays open and shows its empty message.
 - Cards-only tiles have no charts, so they have no expand buttons.
 
 ### Extra information when expanded

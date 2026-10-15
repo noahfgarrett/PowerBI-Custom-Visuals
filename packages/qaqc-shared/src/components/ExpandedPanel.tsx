@@ -31,6 +31,8 @@ export interface ExpandedPanelProps {
   legend: LegendItem[]
   emptyMessage: string | null
   animate: boolean
+  /** Extra class for the dialog, e.g. is-compact on narrow tiles. */
+  className?: string
   /** The whole frame (the box to expand into). */
   getRootBox: () => PanelBox
   /** The grid panel's current box; null when it is not on screen. */
@@ -74,6 +76,7 @@ export function ExpandedPanel({
   legend,
   emptyMessage,
   animate,
+  className,
   getRootBox,
   getOriginBox,
   onClosed,
@@ -183,7 +186,7 @@ export function ExpandedPanel({
   return (
     <div
       ref={boxRef}
-      className="qaqc-expanded"
+      className={className ? `qaqc-expanded ${className}` : 'qaqc-expanded'}
       role="dialog"
       aria-modal="true"
       aria-label={title}
