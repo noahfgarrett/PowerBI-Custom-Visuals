@@ -141,6 +141,20 @@ function byIdDescending(a: SortableIssue, b: SortableIssue): number {
   return NAME_COLLATOR.compare(b.issue.id, a.issue.id)
 }
 
+/**
+ * Numbers the detail rows by ID ascending, so tables sort IDs as numbers instead of calling the collator per
+ * comparison. Walks the ID-descending list from its end; neighbours the collator treats as equal share a rank.
+ */
+function assignIdRanks(sorted: SortableIssue[]): void {
+  let rank = 0
+  for (let position = sorted.length - 1; position >= 0; position -= 1) {
+    const current = sorted[position]
+    const previous = position < sorted.length - 1 ? sorted[position + 1] : null
+    if (previous !== null && current.issue.id !== previous.issue.id && byIdDescending(previous, current) !== 0) rank += 1
+    current.issue.detail.idRank = rank
+  }
+}
+
 function buildOpenAging(issues: IssueRecord[], today: Date): AgingBucket[] {
   const buckets: AgingBucket[] = [
     { label: '0-1', count: 0 },
@@ -184,6 +198,7 @@ function buildOpenIssues(issues: IssueRecord[], today: Date): OpenIssueRow[] {
     if (issue.statusKind === 'closed') continue
     rows.push({
       id: issue.id,
+      idRank: issue.detail.idRank,
       title: issue.title,
       contractor: issue.contractor,
       createdOn: issue.detail.createdOn,
@@ -249,6 +264,8 @@ export function buildIssueIndex(rows: InspectionRows, columns: IssueColumns, tod
     const dueDate = readDate(row[columns.dueDate], caches)?.date ?? null
     const detail: IssueDetailRow = {
       id,
+      // Set once every issue is sorted by ID.
+      idRank: 0,
       subtype,
       // Pending displays as Open, and so does a blank status.
       status: statusKind === 'pending' ? 'Open' : cellText(row[columns.status]) || 'Open',
@@ -284,6 +301,7 @@ export function buildIssueIndex(rows: InspectionRows, columns: IssueColumns, tod
 
   const sorted = issues.map(sortableIssue).sort(byIdDescending)
   for (let position = 0; position < sorted.length; position += 1) issues[position] = sorted[position].issue
+  assignIdRanks(sorted)
 
   const weeks: IssueWeekCounts[] = []
   const cumulativeOpened: number[] = []

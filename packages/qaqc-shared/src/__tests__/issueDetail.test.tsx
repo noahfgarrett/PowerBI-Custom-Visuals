@@ -7,6 +7,7 @@ import { TABLE_ROW_HEIGHT } from '../hooks/useVirtualRows'
 import { buildIssueIndex } from '../issues'
 import type { IssueColumns, IssueDetailRow, IssueIndex } from '../types'
 import { makeWorkWeek } from '../workWeeks'
+import { countCompares } from './countCompares'
 import { render, type Rendered } from './render'
 
 let view: Rendered | null = null
@@ -53,9 +54,11 @@ function sortBy(root: HTMLElement, name: string): void {
 const DAY = 86_400_000
 const BASE_TIME = new Date(2026, 0, 2, 12).getTime()
 
+/** IDs are '#' plus a number here, so the number is a valid ID rank. */
 function detailRow(id: string, overrides: Partial<IssueDetailRow> = {}): IssueDetailRow {
   return {
     id,
+    idRank: Number(id.slice(1)),
     subtype: 'COR',
     status: 'Open',
     statusKind: 'open',
@@ -264,6 +267,28 @@ describe('IssueDetailTable', () => {
   it('names the table for screen readers', () => {
     view = drawTable()
     expect(view.container.querySelector('caption')?.textContent).toBe(CAPTION)
+  })
+
+  it('sorts IDs by their precomputed rank, without the collator', () => {
+    const calls = countCompares()
+    view = drawTable()
+    sortBy(view.container, 'ID')
+    expect(calls()).toBe(0)
+  })
+
+  it('reuses a text column\'s ranks across direction flips and later sorts', () => {
+    const calls = countCompares()
+    view = drawTable()
+    sortBy(view.container, 'Title')
+    const afterFirstSort = calls()
+    sortBy(view.container, 'Title')
+    sortBy(view.container, 'Status')
+    const afterStatus = calls()
+    sortBy(view.container, 'Title')
+    sortBy(view.container, 'Title')
+    expect(afterFirstSort).toBeGreaterThan(0)
+    expect(afterStatus).toBeGreaterThan(afterFirstSort)
+    expect(calls()).toBe(afterStatus)
   })
 
   it('lists rows that share a blank ID without a key clash', () => {

@@ -360,6 +360,8 @@ describe('buildIssueIndex', () => {
     expect(index.openIssues.map((row) => row.id)).toEqual(['#9', '#11', '#10'])
     expect(index.openIssues[0]).toEqual({
       id: '#9',
+      // The lowest of #9–#12.
+      idRank: 0,
       title: 'Issue #9',
       contractor: 'Unassigned',
       createdOn: '09/01/26',

@@ -1,13 +1,14 @@
 import { useMemo, useState, type ReactElement } from 'react'
 
-import { NAME_COLLATOR } from '../format'
 import { directionSign, type SortState } from '../hooks/useTableSort'
 import { TABLE_ROW_HEIGHT, useVirtualRows } from '../hooks/useVirtualRows'
+import { textRanks } from '../tableSort'
 import type { IssueDetailRow } from '../types'
 
-type TextKey = 'id' | 'subtype' | 'status' | 'title' | 'contractor'
-type DateKey = 'workWeek' | 'createdOn' | 'workWeekClosed' | 'dueDate'
-type SortKey = TextKey | DateKey
+type TextKey = 'subtype' | 'status' | 'title' | 'contractor'
+/** Columns sorted on a precomputed number: the ID's rank, and the week and date keys. */
+type NumberKey = 'id' | 'workWeek' | 'createdOn' | 'workWeekClosed' | 'dueDate'
+type SortKey = TextKey | NumberKey
 
 interface Column {
   key: SortKey
@@ -34,17 +35,19 @@ const DISCUSSION_TITLE = 'Open for discussion'
 type StatusPillKind = 'closed' | 'open' | 'other'
 
 function isTextKey(key: SortKey): key is TextKey {
-  return key === 'id' || key === 'subtype' || key === 'status' || key === 'title' || key === 'contractor'
+  return key === 'subtype' || key === 'status' || key === 'title' || key === 'contractor'
 }
 
-/** Text columns start A to Z; week and date columns start newest first. */
+/** ID and the text columns start A to Z; week and date columns start newest first. */
 function firstDirection(key: SortKey): SortState<SortKey>['direction'] {
-  return isTextKey(key) ? 'ascending' : 'descending'
+  return key === 'id' || isTextKey(key) ? 'ascending' : 'descending'
 }
 
-/** The precomputed sort key of a week or date column; null when the issue has none. */
-function dateValue(row: IssueDetailRow, key: DateKey): number | null {
+/** The precomputed sort key of a number column; null when the issue has no such week or date. */
+function numberValue(row: IssueDetailRow, key: NumberKey): number | null {
   switch (key) {
+    case 'id':
+      return row.idRank
     case 'workWeek':
       return row.workWeekKey
     case 'createdOn':
@@ -66,21 +69,6 @@ function statusPillKind(row: IssueDetailRow): StatusPillKind {
 }
 
 /**
- * Each row's position in collator order for one text column; equal values share a rank. Built once per column and
- * data set, so later sorts and direction flips compare numbers instead of calling the collator.
- */
-function textRanks(rows: IssueDetailRow[], key: TextKey): Uint32Array {
-  const order = rows.map((_, position) => position).sort((a, b) => NAME_COLLATOR.compare(rows[a][key], rows[b][key]))
-  const ranks = new Uint32Array(rows.length)
-  let rank = 0
-  order.forEach((position, index) => {
-    if (index > 0 && NAME_COLLATOR.compare(rows[order[index - 1]][key], rows[position][key]) !== 0) rank += 1
-    ranks[position] = rank
-  })
-  return ranks
-}
-
-/**
  * Row positions in display order. With no sort, the model order: report rows, then discussion rows, each by ID
  * descending. Ties keep that order. Blank weeks and dates go last in either direction.
  */
@@ -93,7 +81,7 @@ function sortPositions(rows: IssueDetailRow[], sort: SortState<SortKey> | null, 
     const ranks = ranksFor(key)
     return positions.sort((a, b) => (ranks[a] - ranks[b]) * sign || a - b)
   }
-  const values = rows.map((row) => dateValue(row, key))
+  const values = rows.map((row) => numberValue(row, key))
   return positions.sort((a, b) => {
     const first = values[a]
     const second = values[b]
@@ -125,7 +113,7 @@ export function IssueDetailTable({ reportRows, discussionRows, caption }: IssueD
     return (key: TextKey): Uint32Array => {
       let ranks = cache.get(key)
       if (ranks === undefined) {
-        ranks = textRanks(rows, key)
+        ranks = textRanks(rows, (row) => row[key])
         cache.set(key, ranks)
       }
       return ranks

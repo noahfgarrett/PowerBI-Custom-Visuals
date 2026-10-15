@@ -1,12 +1,14 @@
 import { useMemo, type ReactElement } from 'react'
 
-import { formatCount, NAME_COLLATOR } from '../format'
+import { formatCount } from '../format'
 import { directionSign, useTableSort, type SortState } from '../hooks/useTableSort'
 import { TABLE_ROW_HEIGHT, useVirtualRows } from '../hooks/useVirtualRows'
+import { textRanks } from '../tableSort'
 import type { OpenIssueRow } from '../types'
 
-type TextKey = 'id' | 'title' | 'contractor' | 'status'
-type SortKey = TextKey | 'createdOn' | 'age'
+type TextKey = 'title' | 'contractor' | 'status'
+/** ID sorts on its precomputed rank, not the collator. */
+type SortKey = TextKey | 'id' | 'createdOn' | 'age'
 
 interface Column {
   key: SortKey
@@ -27,22 +29,7 @@ const COLUMNS: readonly Column[] = [
 const ASCENDING_FIRST: readonly SortKey[] = ['id', 'title', 'contractor', 'createdOn', 'status'] as const
 
 function isTextKey(key: SortKey): key is TextKey {
-  return key === 'id' || key === 'title' || key === 'contractor' || key === 'status'
-}
-
-/**
- * Each row's position in collator order for one text column; equal values share a rank. Built once per column and
- * data set, so later sorts and direction flips compare numbers instead of calling the collator.
- */
-function textRanks(rows: OpenIssueRow[], key: TextKey): Uint32Array {
-  const order = rows.map((_, position) => position).sort((a, b) => NAME_COLLATOR.compare(rows[a][key], rows[b][key]))
-  const ranks = new Uint32Array(rows.length)
-  let rank = 0
-  order.forEach((position, index) => {
-    if (index > 0 && NAME_COLLATOR.compare(rows[order[index - 1]][key], rows[position][key]) !== 0) rank += 1
-    ranks[position] = rank
-  })
-  return ranks
+  return key === 'title' || key === 'contractor' || key === 'status'
 }
 
 /** Row positions in display order. Ties keep the model's oldest-first order. */
@@ -53,6 +40,8 @@ function sortPositions(rows: OpenIssueRow[], sort: SortState<SortKey>, ranksFor:
   if (isTextKey(key)) {
     const ranks = ranksFor(key)
     keyOf = (position) => ranks[position]
+  } else if (key === 'id') {
+    keyOf = (position) => rows[position].idRank
   } else if (key === 'createdOn') {
     keyOf = (position) => rows[position].createdOnTime
   } else {
@@ -74,7 +63,7 @@ export function OpenIssuesTable({ rows }: OpenIssuesTableProps): ReactElement {
     return (key: TextKey): Uint32Array => {
       let ranks = cache.get(key)
       if (ranks === undefined) {
-        ranks = textRanks(rows, key)
+        ranks = textRanks(rows, (row) => row[key])
         cache.set(key, ranks)
       }
       return ranks

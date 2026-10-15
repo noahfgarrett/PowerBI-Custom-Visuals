@@ -1,12 +1,15 @@
+import { act, createElement } from 'react'
 import { describe, expect, it } from 'vitest'
 
+import { IssueDetailTable } from '../components/IssueDetailTable'
 import { layoutChart } from '../components/IssuesTrendChart'
 import { buildInspectionIndex, buildInspectionModel, defaultViewState } from '../inspections'
 import { buildIssueDetail, buildIssueIndex, buildIssueModel } from '../issues'
-import type { IssueTrendPoint } from '../types'
+import type { IssueDetailRow, IssueTrendPoint } from '../types'
 import { buildWeldIndex, buildWeldModel } from '../welds'
 import { makeWorkWeek } from '../workWeeks'
 import { syntheticInspectionRows, syntheticIssueRows, syntheticWeldRows } from './fixtures/syntheticRows'
+import { render } from './render'
 
 const COLUMNS = { workWeek: 0, phase: 1, issue: 2, building: 3 }
 const WELD_COLUMNS = { weldWeek: 0, signature: 1, signedWeek: 2, issue: 3, fluidCode: 4, pipeSpec: 5, tagNo: 6 }
@@ -85,6 +88,56 @@ describe('issues performance budgets', () => {
     const index = buildIssueIndex(syntheticIssueRows(200_000), ISSUE_COLUMNS, TODAY)
     buildIssueDetail(index, index.currentWeek.key)
     expect(elapsed(() => buildIssueDetail(index, index.currentWeek.key))).toBeLessThan(30)
+  })
+})
+
+describe('issue table performance budgets', () => {
+  const DETAIL_ROWS = 70_000
+
+  const TITLE_WORDS = ['Pipe', 'support', 'grid', 'cable', 'tray', 'valve', 'Anchor', 'bolt', 'PS1', 'Corroded', 'HDPE', 'grout']
+
+  /** Issue-like titles in no particular order: 4 to 9 words from a seeded generator, plus a number. */
+  function titleFor(position: number): string {
+    let seed = position + 1
+    const words: string[] = []
+    for (let word = 0; word < 4 + (position % 6); word += 1) {
+      seed = (seed * 16_807) % 2_147_483_647
+      words.push(TITLE_WORDS[seed % TITLE_WORDS.length])
+    }
+    return `${words.join(' ')} ${position}`
+  }
+
+  function detailRows(): IssueDetailRow[] {
+    const index = buildIssueIndex(syntheticIssueRows(200_000), ISSUE_COLUMNS, TODAY)
+    // Detail rows by ID descending like the model; the table does not care which block a row is in.
+    return index.issues.slice(0, DETAIL_ROWS).map((issue, position) => ({ ...issue.detail, title: titleFor(position) }))
+  }
+
+  /** The time of the first click on a header: building that column's ranks and sorting every row. */
+  function firstSortTime(rows: IssueDetailRow[], column: string): number {
+    const view = render(createElement(IssueDetailTable, { reportRows: [], discussionRows: rows, caption: 'Issues' }))
+    const button = [...view.container.querySelectorAll('thead th button')].find((item) => item.textContent === column)
+    if (!(button instanceof HTMLButtonElement)) throw new Error(`header ${column} missing`)
+    const time = elapsed(() => {
+      act(() => {
+        button.click()
+      })
+    })
+    view.unmount()
+    return time
+  }
+
+  it('sorts 70,000 detail rows by Title on the first click within budget', () => {
+    const rows = detailRows()
+    expect(rows).toHaveLength(DETAIL_ROWS)
+    firstSortTime(rows, 'Title')
+    expect(firstSortTime(rows, 'Title')).toBeLessThan(150)
+  })
+
+  it('sorts 70,000 detail rows by ID on the first click within budget', () => {
+    const rows = detailRows()
+    firstSortTime(rows, 'ID')
+    expect(firstSortTime(rows, 'ID')).toBeLessThan(150)
   })
 })
 

@@ -5,6 +5,7 @@ import { AgingSplitTable } from '../components/AgingSplitTable'
 import { OpenIssuesTable } from '../components/OpenIssuesTable'
 import { TABLE_ROW_HEIGHT } from '../hooks/useVirtualRows'
 import type { OpenIssueRow, OverallAgingBucket } from '../types'
+import { countCompares } from './countCompares'
 import { render, type Rendered } from './render'
 
 let view: Rendered | null = null
@@ -40,8 +41,9 @@ function sortBy(root: HTMLElement, name: string): void {
   })
 }
 
+/** IDs are '#' plus a number here (or blank), so the number is a valid ID rank. */
 function row(id: string, createdOn: string, createdOnTime: number, ageDays: number, overrides: Partial<OpenIssueRow> = {}): OpenIssueRow {
-  return { id, title: `Issue ${id}`, contractor: 'Bayside', createdOn, createdOnTime, ageDays, status: 'Open', ...overrides }
+  return { id, idRank: Number(id.slice(1)), title: `Issue ${id}`, contractor: 'Bayside', createdOn, createdOnTime, ageDays, status: 'Open', ...overrides }
 }
 
 const DAY = 86_400_000
@@ -99,6 +101,13 @@ describe('OpenIssuesTable', () => {
     expect(header(view.container, 'ID').getAttribute('aria-sort')).toBe('ascending')
     sortBy(view.container, 'ID')
     expect(rowIds(view.container)).toEqual(['#1020', '#1004', '#999', '#98'])
+  })
+
+  it('sorts IDs by their precomputed rank, without the collator', () => {
+    const calls = countCompares()
+    view = render(<OpenIssuesTable rows={ROWS} />)
+    sortBy(view.container, 'ID')
+    expect(calls()).toBe(0)
   })
 
   it('sorts titles A to Z first, ignoring case', () => {

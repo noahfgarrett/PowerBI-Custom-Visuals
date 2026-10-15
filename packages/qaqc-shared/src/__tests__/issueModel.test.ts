@@ -182,6 +182,25 @@ describe('buildIssueModel trend and window', () => {
   })
 })
 
+describe('issue ID ranks', () => {
+  it('ranks every detail row by ID ascending, numeric-aware', () => {
+    const byRank = index.issues.map((item) => item.detail).sort((a, b) => a.idRank - b.idRank)
+    expect(byRank.map((row) => row.id)).toEqual(['#1', '#2', '#3', '#4', '#5', '#6', '#7', '#10'])
+  })
+
+  it('gives IDs the collator treats as equal the same rank', () => {
+    const twins = buildIssueIndex([issue('#a1', '9/22/2026'), issue('#A1', '9/23/2026'), issue('', '9/24/2026'), issue('', '9/25/2026')], COLUMNS, TODAY)
+    const rankOf = (id: string): number[] => twins.issues.filter((item) => item.id === id).map((item) => item.detail.idRank)
+    expect(rankOf('#a1')).toEqual(rankOf('#A1'))
+    expect(new Set(rankOf('')).size).toBe(1)
+  })
+
+  it('gives each open issue row the rank of its detail row', () => {
+    const detailRank = new Map(index.issues.map((item) => [item.id, item.detail.idRank]))
+    expect(index.openIssues.every((row) => row.idRank === detailRank.get(row.id))).toBe(true)
+  })
+})
+
 describe('buildIssueDetail', () => {
   it('counts issues opened and closed in the week before the selected week', () => {
     const detail = buildIssueDetail(index, WW42)

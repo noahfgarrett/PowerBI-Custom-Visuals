@@ -296,6 +296,8 @@ export type IncludedIssueStatusKind = Exclude<IssueStatusKind, 'void'>
 /** One row of the Issue Detail table, formatted once when the index is built. */
 export interface IssueDetailRow {
   id: string
+  /** The ID's place in numeric-aware ascending order; IDs the collator treats as equal share a rank. Sort on this, not the ID. */
+  idRank: number
   subtype: string
   /** The status label; pending displays as Open. */
   status: string
@@ -354,6 +356,8 @@ export interface OverallAgingBucket extends AgingBucket {
 /** An open or pending issue in the expanded Open Issue Aging table. */
 export interface OpenIssueRow {
   id: string
+  /** The ID's place in numeric-aware ascending order; IDs the collator treats as equal share a rank. Sort on this, not the ID. */
+  idRank: number
   title: string
   contractor: string
   /** MM/DD/YY */
