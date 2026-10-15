@@ -329,27 +329,26 @@ describe('IssuesTrendChart remaining open line', () => {
 })
 
 describe('IssuesTrendChart label collisions', () => {
-  const cases: Array<[string, number, number, number]> = [
+  const shapes: Array<[string, number, number, number]> = [
     ['a few weeks', 3, 5, 11],
     ['the 30-week range', 30, 6, 12],
     ['the 30-week range with large counts', 30, 120, 13],
     ['a year', 52, 9, 14],
     ['the All range', 320, 15, 15],
+    ['ten years', 520, 15, 16],
   ]
+  const sizes: Array<[number, number]> = [[632, 300], [420, 180], [1200, 520]]
+  const cases = shapes.flatMap(([name, count, maxPerWeek, seed]) => sizes.flatMap(([width, height]) =>
+    [false, true].map((showValues) => ({ name, count, maxPerWeek, seed, width, height, showValues }))))
 
-  for (const [name, count, maxPerWeek, seed] of cases) {
-    for (const showValues of [false, true]) {
-      it(`keeps every label clear of the others for ${name}${showValues ? ' with showValues' : ''}`, () => {
-        for (const [width, height] of [[632, 300], [420, 180], [1200, 520]]) {
-          const points = randomPoints(count, maxPerWeek, seed + width)
-          view = draw({ points, selectedKey: points[count - 1].week.key, width, height, showValues })
-          expect(collisions(view.container)).toEqual([])
-          view.unmount()
-          view = null
-        }
-      })
-    }
-  }
+  it.each(cases)(
+    'keeps every label clear of the others for $name at $width × $height (showValues $showValues)',
+    ({ count, maxPerWeek, seed, width, height, showValues }) => {
+      const points = randomPoints(count, maxPerWeek, seed + width)
+      view = draw({ points, selectedKey: points[count - 1].week.key, width, height, showValues })
+      expect(collisions(view.container)).toEqual([])
+    },
+  )
 
   it('keeps every label inside the plot and the chart', () => {
     for (const seed of [21, 22, 23]) {
@@ -386,6 +385,27 @@ describe('IssuesTrendChart at the All range', () => {
   it('thins the week axis labels', () => {
     view = draw({ points, selectedKey: points[319].week.key })
     expect(all(view.container, '.qaqc-week-axis-text').length).toBeLessThanOrEqual(Math.floor(540 / 54) + 1)
+  })
+})
+
+describe('IssuesTrendChart at 520 weeks', () => {
+  // Ten years of weeks at the test size: 540 px of plot gives 1.04 px bands.
+  const points = randomPoints(520, 15, 99)
+
+  it('keeps the line labels at least 28 px apart', () => {
+    view = draw({ points, selectedKey: points[519].week.key })
+    expect(all(view.container, '.qaqc-remaining-label').length).toBeLessThanOrEqual(540 / 28 + 1)
+  })
+
+  it('draws no bar labels', () => {
+    view = draw({ points, selectedKey: points[519].week.key, showValues: true })
+    expect(all(view.container, '.qaqc-bar-label')).toHaveLength(0)
+  })
+
+  it('keeps the node count to about three per week', () => {
+    // Two bars and one hit area per week, plus a bounded set of labels, ticks and axis text.
+    view = draw({ points, selectedKey: points[519].week.key })
+    expect(all(view.container, 'svg *').length).toBeLessThanOrEqual(3 * 520 + 150)
   })
 })
 

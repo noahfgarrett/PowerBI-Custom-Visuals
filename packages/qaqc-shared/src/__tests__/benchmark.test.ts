@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
+import { layoutChart } from '../components/IssuesTrendChart'
 import { buildInspectionIndex, buildInspectionModel, defaultViewState } from '../inspections'
 import { buildIssueDetail, buildIssueIndex, buildIssueModel } from '../issues'
+import type { IssueTrendPoint } from '../types'
 import { buildWeldIndex, buildWeldModel } from '../welds'
+import { makeWorkWeek } from '../workWeeks'
 import { syntheticInspectionRows, syntheticIssueRows, syntheticWeldRows } from './fixtures/syntheticRows'
 
 const COLUMNS = { workWeek: 0, phase: 1, issue: 2, building: 3 }
@@ -82,5 +85,25 @@ describe('issues performance budgets', () => {
     const index = buildIssueIndex(syntheticIssueRows(200_000), ISSUE_COLUMNS, TODAY)
     buildIssueDetail(index, index.currentWeek.key)
     expect(elapsed(() => buildIssueDetail(index, index.currentWeek.key))).toBeLessThan(30)
+  })
+})
+
+describe('issue chart performance budgets', () => {
+  // Ten years of weeks with busy counts, so every bar and label path is exercised.
+  const points: IssueTrendPoint[] = Array.from({ length: 520 }, (_, index) => ({
+    week: makeWorkWeek(2016 + Math.floor(index / 52), (index % 52) + 1),
+    opened: (index * 7) % 13,
+    closed: (index * 5) % 11,
+    remainingOpen: 200 + ((index * 17) % 90),
+  }))
+
+  it('lays out the 520-week trend chart within one frame', () => {
+    layoutChart(points, 1200, 520, false)
+    expect(elapsed(() => layoutChart(points, 1200, 520, false))).toBeLessThan(16)
+  })
+
+  it('lays out the 520-week trend chart with every value shown within one frame', () => {
+    layoutChart(points, 2400, 900, true)
+    expect(elapsed(() => layoutChart(points, 2400, 900, true))).toBeLessThan(16)
   })
 })

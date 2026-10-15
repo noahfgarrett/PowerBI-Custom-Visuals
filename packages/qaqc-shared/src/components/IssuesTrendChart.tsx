@@ -92,7 +92,7 @@ interface Box {
   bottom: number
 }
 
-interface Layout {
+export interface Layout {
   plotRight: number
   plotWidth: number
   plotHeight: number
@@ -150,18 +150,27 @@ function overlaps(a: Box, b: Box): boolean {
   return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom
 }
 
-/** Every third point and the last, thinned further on narrow bands. With showValues, every point that fits. */
+/**
+ * Every third point and the last, thinned further on narrow bands so labels sit at least 28 px apart. With
+ * showValues, every point that fits.
+ */
 function lineLabelIndices(count: number, band: number, showValues: boolean): number[] {
   if (count === 0) return []
   const spacing = band > 0 ? Math.max(1, Math.ceil(MIN_LINE_LABEL_SPACING / band)) : count
   const every = showValues ? spacing : Math.max(LINE_LABEL_EVERY, spacing)
   const indices: number[] = []
   for (let index = 0; index < count; index += every) indices.push(index)
-  if (indices[indices.length - 1] !== count - 1) indices.push(count - 1)
+  const last = count - 1
+  const lastRegular = indices[indices.length - 1]
+  if (lastRegular === last) return indices
+  // The last point is always labelled; it replaces a regular label that would sit closer than the minimum spacing.
+  if (indices.length > 1 && (last - lastRegular) * band < MIN_LINE_LABEL_SPACING) indices.pop()
+  indices.push(last)
   return indices
 }
 
-function layoutChart(points: IssueTrendPoint[], width: number, height: number, showValues: boolean): Layout {
+/** All of the chart's geometry and label placement; pure, so it can be benchmarked and memoised. */
+export function layoutChart(points: IssueTrendPoint[], width: number, height: number, showValues: boolean): Layout {
   const plotRight = width - MARGIN.right
   const plotWidth = Math.max(0, plotRight - MARGIN.left)
   const plotHeight = Math.max(0, height - MARGIN.top - MARGIN.bottom)
