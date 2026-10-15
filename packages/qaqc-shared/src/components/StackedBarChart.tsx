@@ -4,13 +4,14 @@ import { labelIndices, niceScale, roundedTopBarPath } from '../chartMath'
 import type { ChartColors, TooltipHandler } from '../chartTypes'
 import { formatCount } from '../format'
 import type { WeekCounts } from '../types'
-import { shortWeekLabel } from '../workWeeks'
+import { shortWeekLabel, shortWeekLabelWithYear } from '../workWeeks'
 
 const MARGIN = { top: 22, right: 8, bottom: 24, left: 34 } as const
 const MAX_BAR_WIDTH = 24
 const MIN_BAR_WIDTH = 2
 const BADGE_RADIUS = 8
 const CORNER_RADIUS = 4
+const YEAR_LABEL_WIDTH = 54
 
 export interface StackedBarChartProps {
   weeks: WeekCounts[]
@@ -60,7 +61,13 @@ export function StackedBarChart({
   const band = weeks.length > 0 ? plotWidth / weeks.length : plotWidth
   const barWidth = Math.min(MAX_BAR_WIDTH, Math.max(MIN_BAR_WIDTH, band * 0.68))
   const scale = useMemo(() => niceScale(weeks.reduce((max, item) => Math.max(max, item.finals + item.sors), 0)), [weeks])
-  const labels = useMemo(() => labelIndices(weeks.length, plotWidth, selectedIndex), [weeks.length, plotWidth, selectedIndex])
+  const spansYears = weeks.length > 0 && weeks[0].week.year !== weeks[weeks.length - 1].week.year
+  const labels = useMemo(
+    () => (spansYears
+      ? labelIndices(weeks.length, plotWidth, selectedIndex, YEAR_LABEL_WIDTH)
+      : labelIndices(weeks.length, plotWidth, selectedIndex)),
+    [weeks.length, plotWidth, selectedIndex, spansYears],
+  )
   const focus = Math.min(Math.max(focusIndex, 0), weeks.length - 1)
   const y = (value: number): number => MARGIN.top + plotHeight - (value / scale.max) * plotHeight
   const bandX = (index: number): number => MARGIN.left + index * band
@@ -180,7 +187,7 @@ export function StackedBarChart({
                   textAnchor="middle"
                   fill={isSelected ? colors.ink : colors.axisText}
                 >
-                  {shortWeekLabel(item.week)}
+                  {spansYears ? shortWeekLabelWithYear(item.week) : shortWeekLabel(item.week)}
                 </text>
               )}
             </g>

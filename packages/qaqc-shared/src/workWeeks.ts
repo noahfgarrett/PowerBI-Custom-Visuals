@@ -73,3 +73,7 @@ export function enumerateWorkWeeks(start: WorkWeek, end: WorkWeek): WorkWeek[] {
 export function shortWeekLabel(week: WorkWeek): string {
   return `WW${String(week.week).padStart(2, '0')}`
 }
+
+export function shortWeekLabelWithYear(week: WorkWeek): string {
+  return `${shortWeekLabel(week)}'${String(week.year % 100).padStart(2, '0')}`
+}

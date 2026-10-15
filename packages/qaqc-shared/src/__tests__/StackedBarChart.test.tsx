@@ -125,6 +125,16 @@ describe('StackedBarChart', () => {
     expect(svg.getAttribute('aria-label')).toBe("Finals and SORs by work week, WW40'2026 to WW42'2026")
   })
 
+  it('adds the year to axis labels when the window spans years', () => {
+    const spanning: WeekCounts[] = [
+      { week: makeWorkWeek(2025, 52), finals: 2, sors: 1, issuesFound: 0 },
+      { week: makeWorkWeek(2026, 1), finals: 3, sors: 1, issuesFound: 0 },
+      { week: makeWorkWeek(2026, 2), finals: 4, sors: 2, issuesFound: 0 },
+    ]
+    view = draw({ weeks: spanning, selectedKey: spanning[2].week.key })
+    expect(view.container.querySelector('.qaqc-axis-text.is-selected')?.textContent).toBe("WW02'26")
+  })
+
   it('skips issue badges when bar slots are too narrow', () => {
     const many: WeekCounts[] = Array.from({ length: 120 }, (_, index) => ({
       week: makeWorkWeek(2024 + Math.floor(index / 52), (index % 52) + 1),
