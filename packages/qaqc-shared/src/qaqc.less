@@ -560,6 +560,224 @@
   grid-row: auto;
 }
 
+.qaqc-panel-title .qaqc-icon-button {
+  margin-left: auto;
+}
+
+// The title bar colors its icons with the accent; the button icon follows the button's own color.
+.qaqc-panel-title .qaqc-icon-button svg {
+  color: inherit;
+}
+
+.qaqc-icon-button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--qaqc-muted);
+  cursor: pointer;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+
+.qaqc-icon-button:hover {
+  background: var(--qaqc-accent-soft);
+  color: var(--qaqc-accent);
+}
+
+.qaqc-icon-button:focus-visible {
+  outline: 2px solid var(--qaqc-accent);
+  outline-offset: 2px;
+}
+
+.qaqc-root.is-expanded {
+  overflow: hidden;
+}
+
+// Keep the loading bar visible above the expanded chart.
+.qaqc-root.is-expanded .qaqc-loading {
+  z-index: 6;
+}
+
+.qaqc-expanded {
+  position: absolute;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding: 14px 16px;
+  overflow: hidden;
+  border: 1px solid var(--qaqc-border);
+  border-radius: 14px;
+  background: var(--qaqc-card-solid);
+  box-shadow: 0 12px 34px rgba(27, 37, 48, 0.16);
+  outline: none;
+}
+
+.qaqc-expanded-body {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  margin-top: 6px;
+}
+
+// Fade out over 100 ms on collapse; fade in over 120 ms once the box arrives.
+.qaqc-reveal {
+  opacity: 0;
+  transition: opacity 100ms ease-out;
+}
+
+.qaqc-reveal.is-revealed {
+  opacity: 1;
+  transition-duration: 120ms;
+}
+
+.qaqc-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 8px;
+}
+
+.qaqc-summary div {
+  padding: 6px 10px;
+  border: 1px solid var(--qaqc-border);
+  border-radius: 10px;
+  background: var(--qaqc-week-card);
+}
+
+.qaqc-summary dt {
+  color: var(--qaqc-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.qaqc-summary dd {
+  margin: 2px 0 0;
+  color: var(--qaqc-ink);
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.qaqc-issue-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.qaqc-issue-list li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+  padding: 6px 10px;
+  border: 1px solid var(--qaqc-border);
+  border-radius: 8px;
+  color: var(--qaqc-ink-2);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.qaqc-issue-list strong {
+  color: var(--qaqc-ink);
+}
+
+.qaqc-table-wrap {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.qaqc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.qaqc-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0;
+  border-bottom: 1px solid var(--qaqc-border);
+  background: var(--qaqc-card-solid);
+  text-align: right;
+}
+
+.qaqc-table th:first-child,
+.qaqc-table td:first-child {
+  text-align: left;
+}
+
+.qaqc-table th button {
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--qaqc-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: inherit;
+  text-transform: uppercase;
+}
+
+.qaqc-table th[aria-sort] button {
+  color: var(--qaqc-accent);
+}
+
+.qaqc-table th[aria-sort="ascending"] button::after {
+  content: " \2191";
+}
+
+.qaqc-table th[aria-sort="descending"] button::after {
+  content: " \2193";
+}
+
+.qaqc-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--qaqc-hairline);
+  color: var(--qaqc-ink);
+  text-align: right;
+}
+
+.qaqc-share-bar {
+  display: block;
+  height: 3px;
+  margin-top: 4px;
+  margin-left: auto;
+  border-radius: 2px;
+  background: var(--qaqc-series-1);
+}
+
+.qaqc-expanded-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 14px;
+  height: 100%;
+}
+
+.qaqc-expanded-stack {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.qaqc-expanded-stack > .qaqc-chart-fill,
+.qaqc-expanded-split > .qaqc-chart-fill {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .qaqc-host * {
     animation: none !important;

@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react'
+import { Maximize2, type LucideIcon } from 'lucide-react'
 import type { ReactElement, ReactNode } from 'react'
 
 import { useElementSize, type ElementSize } from '../hooks/useElementSize'
@@ -16,17 +16,34 @@ export interface ChartPanelProps {
   /** When set, shown instead of the chart. */
   emptyMessage: string | null
   className?: string
+  /** When set (and the panel is not empty), the title bar shows an expand button. */
+  onExpand?: () => void
+  sectionRef?: (element: HTMLElement | null) => void
   children: (size: ElementSize) => ReactNode
 }
 
-export function ChartPanel({ title, icon: Icon, legend, emptyMessage, className, children }: ChartPanelProps): ReactElement {
+export function ChartPanel({
+  title,
+  icon: Icon,
+  legend,
+  emptyMessage,
+  className,
+  onExpand,
+  sectionRef,
+  children,
+}: ChartPanelProps): ReactElement {
   const [bodyRef, size] = useElementSize<HTMLDivElement>()
   const isMeasured = size.width > 0 && size.height > 0
   return (
-    <section className={className ? `qaqc-panel ${className}` : 'qaqc-panel'} aria-label={title}>
+    <section ref={sectionRef} className={className ? `qaqc-panel ${className}` : 'qaqc-panel'} aria-label={title}>
       <header className="qaqc-panel-title">
         <Icon size={15} aria-hidden="true" />
         <h3>{title}</h3>
+        {onExpand && emptyMessage === null && (
+          <button type="button" className="qaqc-icon-button qaqc-expand-button" aria-label={`Expand ${title}`} onClick={onExpand}>
+            <Maximize2 size={14} aria-hidden="true" />
+          </button>
+        )}
       </header>
       {legend.length > 0 && (
         <ul className="qaqc-legend">
