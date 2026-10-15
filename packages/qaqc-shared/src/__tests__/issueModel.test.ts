@@ -185,6 +185,15 @@ describe('buildIssueModel detail', () => {
     expect(detail.discussionRows).toEqual([])
   })
 
+  it('leaves an open issue created after a past selected week out of the discussion rows', () => {
+    // #5 (Not approved) and #7 (Open) are open today but were created in WW41 and WW42.
+    const { detail } = buildIssueModel(index, viewAt(WW39))
+    const ids = [...detail.reportRows, ...detail.discussionRows].map((row) => row.id)
+    expect(ids).not.toContain('#5')
+    expect(ids).not.toContain('#7')
+    expect(detail.discussionRows).toEqual([])
+  })
+
   it('shows a pending issue as Open', () => {
     const { detail } = buildIssueModel(index, viewAt(WW42))
     expect(detail.reportRows.find((row) => row.id === '#4')?.status).toBe('Open')

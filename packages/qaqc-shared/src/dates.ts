@@ -52,7 +52,10 @@ export function parseDate(value: unknown): Date | null {
   const monthDayYear = MONTH_DAY_YEAR.exec(text)
   if (monthDayYear) {
     const rawYear = Number(monthDayYear[3])
-    const year = rawYear < 100 ? 2000 + rawYear : rawYear
+    // Two-digit years follow the app's Date parsing: 00–49 are 20xx, 50–99 are 19xx.
+    let year = rawYear
+    if (rawYear < 50) year = 2000 + rawYear
+    else if (rawYear < 100) year = 1900 + rawYear
     return localNoon(year, Number(monthDayYear[1]) - 1, Number(monthDayYear[2]))
   }
 

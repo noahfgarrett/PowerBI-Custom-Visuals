@@ -331,7 +331,7 @@ export interface IssueRecord {
   updatedOn: Date | null
   dueDate: Date | null
   createdWeek: WorkWeek
-  /** ISO week of Updated On for closed issues that have one, never before the created week. Otherwise null. */
+  /** ISO week of Updated On for closed issues that have one, otherwise null. */
   closedWeek: WorkWeek | null
   detail: IssueDetailRow
 }

@@ -241,11 +241,7 @@ export function buildIssueIndex(rows: InspectionRows, columns: IssueColumns, tod
     if (!firstWeek || created.week.key < firstWeek.key) firstWeek = created.week
 
     const updated = readDate(row[columns.updatedOn], caches)
-    let closedWeek: WorkWeek | null = null
-    if (statusKind === 'closed' && updated !== null) {
-      // An issue can't close before it opens, so a bad Updated On counts in the created week.
-      closedWeek = updated.week.key < created.week.key ? created.week : updated.week
-    }
+    const closedWeek = statusKind === 'closed' && updated !== null ? updated.week : null
 
     const id = cellText(row[columns.id])
     const record: Omit<IssueRecord, 'detail'> = {
@@ -345,6 +341,7 @@ function buildDetail(index: IssueIndex, selected: IssueWeekCounts, previous: Iss
   // index.issues is sorted by ID descending, so both blocks come out in that order.
   for (const issue of index.issues) {
     const createdKey = issue.createdWeek.key
+    // The detail is as of the selected week, so issues created after it are left out.
     if (createdKey > weekKey) continue
     const closedKey = issue.closedWeek?.key
     const isReport = createdKey === weekKey || createdKey === previousKey || closedKey === weekKey || closedKey === previousKey

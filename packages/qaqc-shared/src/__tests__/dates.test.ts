@@ -28,9 +28,16 @@ describe('parseDate', () => {
     expect(parts(parseDate(' 10/14/2026 '))).toEqual([2026, 10, 14, 12])
   })
 
-  it('reads two-digit years as 20xx', () => {
+  it('reads two-digit years 00–49 as 20xx', () => {
     expect(parts(parseDate('1/5/26'))).toEqual([2026, 1, 5, 12])
     expect(parts(parseDate('12-31-24'))).toEqual([2024, 12, 31, 12])
+    expect(parts(parseDate('3/4/00'))).toEqual([2000, 3, 4, 12])
+    expect(parts(parseDate('3/4/49'))).toEqual([2049, 3, 4, 12])
+  })
+
+  it('reads two-digit years 50–99 as 19xx, like the app', () => {
+    expect(parts(parseDate('1/1/99'))).toEqual([1999, 1, 1, 12])
+    expect(parts(parseDate('12-31-50'))).toEqual([1950, 12, 31, 12])
   })
 
   it('reads Excel serial numbers, as numbers or numeric text', () => {

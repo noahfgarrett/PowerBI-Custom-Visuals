@@ -150,15 +150,16 @@ describe('buildIssueIndex', () => {
     expect(index.futureRows).toBe(0)
   })
 
-  it('never closes an issue before the week it was created', () => {
+  it('counts a closed issue in its Updated On week even when that is before its created week, like the app', () => {
     const index = buildIssueIndex(
-      [issue('#1', '10/6/2026', { status: 'Closed', updatedOn: '9/29/2026' })],
+      [issue('#1', '10/6/2026', { status: 'Closed', updatedOn: '9/29/2026' }), issue('#2', '9/28/2026')],
       COLUMNS,
       TODAY,
     )
-    expect(index.issues[0].closedWeek?.label).toBe("WW41'2026")
-    expect(index.weeks.map((item) => item.closed)).toEqual([1, 0])
-    expect(index.cumulativeOpened.map((opened, i) => opened - index.cumulativeClosed[i])).toEqual([0, 0])
+    const closedIssue = index.issues.find((record) => record.id === '#1')
+    expect(closedIssue?.closedWeek?.label).toBe("WW40'2026")
+    expect(index.weeks.map((item) => item.week.key)).toEqual([202640, 202641, 202642])
+    expect(index.weeks.map((item) => item.closed)).toEqual([1, 0, 0])
   })
 
   it('keeps cumulative totals parallel to the weeks', () => {
