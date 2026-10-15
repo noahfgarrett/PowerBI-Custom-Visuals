@@ -28,7 +28,7 @@ There is no Row ID slot: issue IDs are unique, so Power BI cannot merge two diff
 
 ## 3. Use it
 
-- The week dropdown opens on the current work week every time the report opens. Cards, the aging charts and Issue Detail all read "as of" the selected week.
+- The week dropdown opens on the current work week every time the report opens. Cards and Issue Detail read "as of" the selected week. The two aging charts always measure from today.
 - `30 WW | All` switches the Issues by Work Week chart between the last 30 weeks and full history.
 - Click a bar to see that week's cards without moving the chart.
 - Click the expand icon on any chart to fill the visual with more detail; press Esc or the collapse icon to return. The icon is hidden on empty charts and in read-only views.
@@ -57,7 +57,7 @@ There is no Row ID slot: issue IDs are unique, so Power BI cannot merge two diff
 - **Issues by Work Week:** red Opened bars and green Closed bars for each week, plus an amber **Remaining Open** line read on the right axis. The selected week is highlighted. Hover for the week's Remaining, Opened and Closed.
   - Expanded: adds value labels on every line point that fits, and a summary strip for the window (opened, closed, net change in remaining, and closure rate at the window end).
 - **Open Issue Aging:** open and pending issues as of today, in five age buckets: 0-1 (under 7 days), 1-2, 2-3, 3-4 and 4+ weeks.
-  - Expanded: adds a sortable table of the open issues (ID, Title, Contractor, Created On, Age in days, Status), oldest first.
+  - Expanded: shows a sortable table of the open issues in place of the chart (ID, Title, Contractor, Created On, Age in days, Status), oldest first.
 - **Overall Issue Aging:** every counted issue, aged to its closed date if closed, otherwise to today, in three buckets: 0-14, 14-28 and 28+ days. A stacked strip with a row per bucket shows the count and percent.
   - Expanded: adds the closed and still-open split for each bucket.
 
@@ -75,11 +75,11 @@ Select **Issue Detail** in the header to open the BIM Issues Detail view for the
 
 ## Counting rules
 
-- **Counted issues:** Created By contains "LotusWorks" (any case or spacing), or is a removed-user record for Samuel Leach or Aaron Harwood. Anything else, including a blank Created By, is excluded and noted in a footnote.
+- **Counted issues:** Created By contains "LotusWorks" in any letter case, ignoring punctuation (it must be one word, so "Lotus Works" is not counted), or is a removed-user record for Samuel Leach or Aaron Harwood. Anything else, including a blank Created By, is excluded and noted in a footnote.
 - **Void:** issues with Status Void are excluded everywhere.
 - **Work week:** an issue's work week is the week of its Created On. Issues with a blank or unreadable Created On are skipped and noted in a footnote.
 - **Closed:** an issue is closed when its Status is Closed. Its closed week is the week of Updated On. A closed issue with no Updated On counts as opened but is not counted as closed in any week.
 - **Open:** every other status (blank, Open, Pending, Not approved, Ready to Inspect).
-- **Contractor:** a blank Contractor shows as Bayside when the ID ends in 1021, otherwise Unassigned.
+- **Contractor:** a blank Contractor shows as Bayside when the ID's number is 1021, otherwise Unassigned.
 - **Subtype and Title:** a blank Type shows as Uncategorized and a blank Title as Untitled issue.
 - **Future weeks:** issues created after the current work week are not counted and are noted in a footnote.
