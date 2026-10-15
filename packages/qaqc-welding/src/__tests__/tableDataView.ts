@@ -5,6 +5,8 @@ export type SlotRole = 'weldWeek' | 'signature' | 'signedWeek' | 'issue' | 'flui
 export interface TableOptions {
   roles?: SlotRole[]
   segment?: boolean
+  /** Format pane values, as Power BI delivers them in metadata.objects. */
+  objects?: powerbi.DataViewObjects
 }
 
 const ALL_ROLES: SlotRole[] = ['weldWeek', 'signature', 'signedWeek', 'issue', 'fluidCode', 'pipeSpec', 'tagNo', 'rowId']
@@ -23,8 +25,11 @@ export function tableDataView(rows: ReadonlyArray<ReadonlyArray<string | null>>,
   const tableRows: powerbi.DataViewTableRow[] = rows.map((row, rowIndex) =>
     roles.map((role) => (role === 'rowId' ? rowIndex + 1 : row[ALL_ROLES.indexOf(role)] ?? '')),
   )
+  const metadata: powerbi.DataViewMetadata = { columns }
+  if (options.segment) metadata.segment = {}
+  if (options.objects) metadata.objects = options.objects
   return {
-    metadata: options.segment ? { columns, segment: {} } : { columns },
+    metadata,
     table: { columns, rows: tableRows },
   }
 }

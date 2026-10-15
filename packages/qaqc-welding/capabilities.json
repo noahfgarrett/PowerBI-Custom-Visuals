@@ -27,7 +27,7 @@
     {
       "name": "issue",
       "kind": "Grouping",
-      "displayName": "Issue Created?",
+      "displayName": "Issue Created",
       "displayNameKey": "Qaqc_role_issue",
       "description": "BIM number when an issue was created, or No / blank when none.",
       "descriptionKey": "Qaqc_role_issue_description"

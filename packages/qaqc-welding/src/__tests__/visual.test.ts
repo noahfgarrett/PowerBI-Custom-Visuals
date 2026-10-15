@@ -3,7 +3,9 @@ import { act, createElement, type ComponentProps } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createConstructorOptions } from '../../../core/src/__test-utils__'
+import { WELD_SLOTS } from '../../../qaqc-shared/src/dataView'
 import { WELDING_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/weldingRows'
+import capabilities from '../../capabilities.json'
 import { QaqcWeldingVisual } from '../visual'
 import { tableDataView } from './tableDataView'
 
@@ -62,6 +64,27 @@ function apply(target: Harness, options: UpdateOptions): void {
   })
 }
 
+function buildingRowLabels(element: HTMLElement): string[] {
+  const panel = Array.from(element.querySelectorAll('section.qaqc-panel')).find(
+    (node) => node.getAttribute('aria-label') === 'Issues by Building',
+  )
+  return Array.from(panel?.querySelectorAll('.qaqc-row-label') ?? []).map((label) => label.textContent ?? '')
+}
+
+function stubChartSize(): void {
+  vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+    x: 0,
+    y: 0,
+    top: 0,
+    left: 0,
+    right: 800,
+    bottom: 400,
+    width: 800,
+    height: 400,
+    toJSON: () => ({}),
+  })
+}
+
 function totalGroupLabel(element: HTMLElement): string | null {
   return element.querySelector('.qaqc-kpi-group.is-total em')?.textContent ?? null
 }
@@ -98,12 +121,18 @@ afterEach(() => {
   harness?.element.remove()
   harness = null
   vi.useRealTimers()
+  vi.restoreAllMocks()
 })
 
 describe('QaqcWeldingVisual', () => {
   it('labels the visual for assistive technology', () => {
     harness = createHarness()
     expect(harness.element.getAttribute('aria-label')).toBe('Welding signoffs dashboard')
+  })
+
+  it('names each data role like its field slot', () => {
+    const roleNames = Object.fromEntries(capabilities.dataRoles.map((role) => [role.name, role.displayName]))
+    expect(roleNames).toEqual(Object.fromEntries(WELD_SLOTS.map((slot) => [slot.role, slot.slot])))
   })
 
   it('lists the missing field slots before data is bound', () => {
@@ -300,5 +329,23 @@ describe('QaqcWeldingVisual', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(WELDING_ROWS)))
     expect(harness.visual.getFormattingModel().cards).toHaveLength(5)
+  })
+
+  it('rolls buildings under the default minimum of 10 welds into Other', () => {
+    stubChartSize()
+    harness = createHarness()
+    apply(harness, update(tableDataView(WELDING_ROWS)))
+    const labels = buildingRowLabels(harness.element)
+    expect(labels).not.toContain('F632')
+    expect(labels.some((label) => label.startsWith('Other'))).toBe(true)
+  })
+
+  it('passes the Hotspots minimum welds setting to the dashboard', () => {
+    stubChartSize()
+    harness = createHarness()
+    apply(harness, update(tableDataView(WELDING_ROWS, { objects: { hotspots: { minWelds: 1 } } })))
+    const labels = buildingRowLabels(harness.element)
+    expect(labels).toContain('F632')
+    expect(labels.some((label) => label.startsWith('Other'))).toBe(false)
   })
 })

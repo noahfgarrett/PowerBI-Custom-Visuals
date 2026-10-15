@@ -7,7 +7,7 @@
     "Qaqc_role_signature_description": "QAQC signature. Blank means the weld is not signed off yet.",
     "Qaqc_role_signedWeek": "Work Week Signed",
     "Qaqc_role_signedWeek_description": "Work Week the weld was signed, for example WW42'2026.",
-    "Qaqc_role_issue": "Issue Created?",
+    "Qaqc_role_issue": "Issue Created",
     "Qaqc_role_issue_description": "BIM number when an issue was created, or No / blank when none.",
     "Qaqc_role_fluidCode": "Fluid Code",
     "Qaqc_role_fluidCode_description": "Fluid code of the system, for example AW or IW.",
