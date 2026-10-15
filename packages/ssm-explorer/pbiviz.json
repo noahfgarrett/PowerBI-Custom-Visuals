@@ -4,7 +4,7 @@
     "displayName": "SSM Explorer",
     "guid": "ssmExplorer_91E8C42DA6B7",
     "visualClassName": "SsmExplorerVisual",
-    "version": "1.7.0.0",
+    "version": "1.8.0.0",
     "description": "Explore project milestones, equipment hierarchy, and dependencies.",
     "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
     "gitHubUrl": "https://github.com/noahgarrett/PowerBI"

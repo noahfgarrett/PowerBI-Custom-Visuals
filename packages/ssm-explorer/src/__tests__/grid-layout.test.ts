@@ -59,7 +59,7 @@ describe('equipment sibling group layout', () => {
         noOverlap(v.occurrences);
     });
 
-    it('reserves both expanded sibling subtrees before placing the next sibling group', () => {
+    it('packs expanded sibling subtrees as separate parent-owned groups', () => {
         const rows = branchRows();
         for (const parent of ['C-00', 'C-05']) for (let index = 0; index < 5; index++) rows.push({ ...base, equipmentId: `${parent}-G${index}`, closestParent: parent });
         rows.push({ ...base, equipmentId: 'Z-OTHER-ROOT' });
@@ -67,10 +67,58 @@ describe('equipment sibling group layout', () => {
         for (const parent of ['C-00', 'C-05']) {
             const children = v.occurrences.filter((item: any) => item.structuralParentOccurrenceId === tree(parent).id);
             expect(children).toHaveLength(5);
-            expect(new Set(children.map((item: any) => item.x)).size).toBe(3);
+            expect(new Set(children.map((item: any) => item.x)).size).toBeLessThanOrEqual(3);
             expect(children.every((item: any) => item.y > tree(parent).y)).toBe(true);
         }
-        expect(tree('Z-OTHER-ROOT').y).toBeGreaterThan(Math.max(...v.occurrences.filter((item: any) => item.node.id.startsWith('C-')).map((item: any) => item.y + item.height)));
+        expect(tree('Z-OTHER-ROOT').structuralParentOccurrenceId).toBeNull();
+        noOverlap(v.occurrences);
+    });
+
+    it('keeps three independently expanded equipment parents side by side with children under their own parent', () => {
+        const rows: SyntheticRow[] = [];
+        for (const id of ['A', 'B', 'C']) {
+            rows.push({ ...base, equipmentId: id });
+            for (let index = 0; index < 2; index++) rows.push({ ...base, equipmentId: `${id}-${index}`, closestParent: id });
+        }
+        load(rows); for (const id of ['A', 'B', 'C']) open(id);
+        expect(new Set(['A', 'B', 'C'].map(id => tree(id).y)).size).toBe(1);
+        for (const id of ['A', 'B', 'C']) {
+            const parent = tree(id), children = v.occurrences.filter((item: any) => item.structuralParentOccurrenceId === parent.id);
+            expect(children).toHaveLength(2);
+            expect(children.every((item: any) => item.x >= parent.x && item.x + item.width <= parent.x + parent.width && item.y > parent.y)).toBe(true);
+        }
+        noOverlap(v.occurrences);
+    });
+
+    it('packs expanded L1 and L2 groups horizontally when their nested contents fit', () => {
+        const rows: SyntheticRow[] = ['A', 'B', 'C'].flatMap(parent => [0, 1].map(index => ({ ...base, parentMilestone: parent, milestone: `${parent} milestone`, equipmentId: `${parent}-${index}` })));
+        load(rows);
+        for (const node of v.graph.nodes.values()) {
+            if (node.kind === 'l1') v.expandedParents.add(node.key);
+            if (node.kind === 'l2') for (const parent of node.parentMilestoneKeys) v.branchLimits.set(assignmentKey(parent, node.key), 30);
+        }
+        v.layout();
+        const parents = v.occurrences.filter((item: any) => item.node.kind === 'l1'), milestones = v.occurrences.filter((item: any) => item.node.kind === 'l2');
+        expect(new Set(parents.map((item: any) => item.y)).size).toBe(1);
+        expect(new Set(milestones.map((item: any) => item.y)).size).toBe(1);
+        for (const parent of parents) {
+            const milestone = milestones.find((item: any) => item.parentKey === parent.node.key);
+            expect(milestone.x).toBeGreaterThanOrEqual(parent.x);
+            expect(milestone.x + milestone.width).toBeLessThan(parent.x + parent.width + 12);
+            expect(milestone.y).toBeGreaterThan(parent.y + parent.height);
+        }
+        noOverlap(v.occurrences);
+    });
+
+    it('keeps three open milestones alongside one another instead of allocating three full-width stacks', () => {
+        const rows: SyntheticRow[] = ['A', 'B', 'C'].flatMap(milestone => [0, 1].map(index => ({ ...base, milestone, equipmentId: `${milestone}-${index}` })));
+        load(rows);
+        for (const node of v.graph.nodes.values()) if (node.kind === 'l2') v.branchLimits.set(assignmentKey(parentKey, node.key), 30);
+        v.layout();
+        const milestones = v.occurrences.filter((item: any) => item.node.kind === 'l2');
+        expect(new Set(milestones.map((item: any) => item.y)).size).toBe(1);
+        expect(new Set(milestones.map((item: any) => item.x)).size).toBe(3);
+        for (const milestone of milestones) for (const item of v.occurrences.filter((candidate: any) => candidate.branch === milestone.node.key && candidate.node.kind === 'equipment')) expect(item.y).toBeGreaterThan(milestone.y + milestone.height);
         noOverlap(v.occurrences);
     });
 
@@ -113,6 +161,8 @@ describe('equipment sibling group layout', () => {
         expect(tree('CHAIN-999')).toBeTruthy(); expect(v.occurrences.length).toBeLessThanOrEqual(25);
         const other = v.occurrences.find((item: any) => item.node.kind === 'l2' && item.node.id === 'Z Other milestone');
         const mainBottom = Math.max(...v.occurrences.filter((item: any) => item.groupKey === cohort).map((item: any) => item.y + item.height));
-        expect(other.y).toBeGreaterThan(mainBottom); expect(v.camera).toEqual(before); noOverlap(v.occurrences);
+        const mainRight = Math.max(...v.occurrences.filter((item: any) => item.groupKey === cohort).map((item: any) => item.x + item.width));
+        expect(other.y > mainBottom || other.x > mainRight).toBe(true);
+        expect(v.camera).toEqual(before); noOverlap(v.occurrences);
     });
 });

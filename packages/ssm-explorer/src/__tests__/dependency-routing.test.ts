@@ -80,6 +80,23 @@ function avoidsCards(points: Point[], cards: HTMLElement[]) {
 }
 
 describe('dependency side-lane routing', () => {
+  it('keeps closest-parent rails local to their compact sibling group', () => {
+    const common = { project: 'Routing Project', nodeType: 'equipment', parentMilestone: 'Root', milestone: 'A Main' };
+    const rows: SyntheticRow[] = ['A', 'B', 'C'].flatMap(id => [
+      { ...common, equipmentId: id },
+      { ...common, equipmentId: `${id}-0`, closestParent: id },
+      { ...common, equipmentId: `${id}-1`, closestParent: id },
+    ]);
+    visual.update({ dataViews: [tableFixture(rows, { navigation: { initialExpanded: true }, appearance: { animate: false } })], viewport: { width: 1280, height: 2000 }, type: 2, operationKind: 0 } as never);
+    flush();
+    expect(new Set(['A', 'B', 'C'].map(id => card(id).style.top)).size).toBe(1);
+    const paths = [...element.querySelectorAll<SVGPathElement>('path.parent')]; expect(paths).toHaveLength(6);
+    for (const path of paths) {
+      expect(path.getAttribute('marker-end')).toContain('-parent)');
+      avoidsCards(samplePath(path.getAttribute('d')!), [...element.querySelectorAll<HTMLElement>('[data-node]')]);
+    }
+  });
+
   it('routes a prerequisite around sibling cards and enters the target facing edge', () => {
     setup(); const source = open('A-SOURCE'), target = card('P-SUPPORT', 'dependency');
     const siblings = [card('B-SIBLING'), card('C-SIBLING')], s = box(source), t = box(target);
