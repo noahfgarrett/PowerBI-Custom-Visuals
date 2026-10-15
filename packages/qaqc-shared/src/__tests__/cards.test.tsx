@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
 import { ClipboardCheck } from 'lucide-react'
 import { afterEach, describe, expect, it } from 'vitest'
 
@@ -87,5 +90,40 @@ describe('KpiGroup', () => {
     const group = view.container.querySelector('section.qaqc-kpi-group.is-total')
     expect(group?.querySelector('em')?.textContent).toBe("Through WW42'2026")
     expect(group?.querySelector('.child')).not.toBeNull()
+  })
+})
+
+/** The declarations of one top-level rule in the shared stylesheet (jsdom cannot lay out the compiled CSS). */
+function ruleBody(selector: string): string {
+  const source = readFileSync(join(__dirname, '..', 'qaqc.less'), 'utf8')
+  const start = source.indexOf(`\n${selector} {`)
+  if (start < 0) throw new Error(`rule ${selector} missing`)
+  return source.slice(start, source.indexOf('}', start))
+}
+
+describe('KpiGroup layout', () => {
+  it('passes its card count to the stylesheet so the groups share the row in proportion', () => {
+    view = render(
+      <KpiGroup title="WW42'2026" variant="week">
+        <span />
+        <span />
+        <span />
+        <span />
+      </KpiGroup>,
+    )
+    const group = view.container.querySelector<HTMLElement>('section.qaqc-kpi-group')
+    expect(group?.style.getPropertyValue('--qaqc-kpi-cards')).toBe('4')
+  })
+
+  it('lays the cards out in one row whatever their count', () => {
+    const body = ruleBody('.qaqc-kpi-group-body')
+    expect(body).toContain('grid-auto-flow: column;')
+    expect(body).toContain('grid-auto-columns: minmax(0, 1fr);')
+    expect(body).not.toContain('grid-template-columns')
+  })
+
+  it('sizes each group by its card count in the row', () => {
+    expect(ruleBody('.qaqc-kpi-row')).toContain('display: flex;')
+    expect(ruleBody('.qaqc-kpi-group')).toContain('flex: var(--qaqc-kpi-cards) 1 0;')
   })
 })

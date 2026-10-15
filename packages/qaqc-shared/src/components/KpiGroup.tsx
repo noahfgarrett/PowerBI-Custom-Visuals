@@ -1,4 +1,4 @@
-import type { ReactElement, ReactNode } from 'react'
+import { Children, type CSSProperties, type ReactElement, type ReactNode } from 'react'
 
 export interface KpiGroupProps {
   title: string
@@ -7,9 +7,13 @@ export interface KpiGroupProps {
   children: ReactNode
 }
 
+/** The stylesheet grows each group by its card count, so groups in a row share the width in proportion. */
+type KpiGroupStyle = CSSProperties & Record<'--qaqc-kpi-cards', number>
+
 export function KpiGroup({ title, subtitle, variant, children }: KpiGroupProps): ReactElement {
+  const style: KpiGroupStyle = { '--qaqc-kpi-cards': Children.count(children) }
   return (
-    <section className={`qaqc-kpi-group is-${variant}`} aria-label={title}>
+    <section className={`qaqc-kpi-group is-${variant}`} aria-label={title} style={style}>
       <header className="qaqc-kpi-group-head">
         <span>{title}</span>
         {subtitle && <em>{subtitle}</em>}
