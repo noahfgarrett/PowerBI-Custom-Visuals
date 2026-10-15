@@ -45,19 +45,24 @@ All required, validated in code (the review gate allows at most one `min >= 1` r
 | This WW | Issues Created | issue welds with weld week W | change vs W−1; warn amber when up |
 | Project to date | Total Welds | welds with weld week ≤ W | `+n this WW` |
 | Project to date | Welds Signed | signed welds with weld week ≤ W | `+n signed this WW`, where n is Signed This Week (by signing week) |
-| Project to date | Overall Sign-off % | Welds Signed ÷ Total Welds | change in points vs through W−1 |
+| Project to date | Overall Sign-off % | Welds Signed ÷ Total Welds | change in points vs through W−1; a status line under the value is red below 10%, amber at 10% to below 15%, and green at 15% and above |
 
 ## Charts
 
 ### Signoffs by Work Week (large)
 
-- One bar per weld week in the window: the total (light, series 2) with the signed portion inside it (series 1), same rounded-top bar style as the other visuals.
-- A short hairline tick inside each bar at 10% of its total height marks the 10% sign-off baseline (no second axis).
-- The sign-off % for each week is a label above the bar when the band is at least 26 px wide. It is red (bad) when under 10%.
-- Red issue badges with the issue count above weeks with issues.
-- Legend: Signed, Total welds, 10% baseline tick, Issue created.
-- Hover tooltip: week, signed of total, sign-off %, issues. Bar click / keyboard select the week exactly like the Electrical chart.
-- **Expanded:** summary strip (welds, signed, sign-off %, issues for the window) and value labels (signed / total) on every bar wide enough.
+Matches the HTML app's Welding chart (user decision 2026-10-15: these visuals do not follow DESIGN.md's single-axis rule):
+
+- One bar per weld week in the window. A light **total** bar (series 2) with the **signed** bar (series 1) drawn over it from the baseline, using the same rounded-top style as the other visuals.
+- The total count is labelled above each bar. The signed count is labelled inside the signed bar when it is at least 16 px tall, and just above it otherwise. Labels are only drawn when the band is at least 18 px wide.
+- A **sign-off % line** with dots, one point per week that has welds, on a **right axis** fixed at 0–100% with ticks at 0, 25, 50, 75 and 100. The line uses the warn/amber series color, as in the app.
+- A dashed red **10% baseline** line across the plot at 10% on the right axis, labelled "10% baseline" at its right end.
+- The selected week's sign-off % is labelled next to its dot (with a card-colored halo), avoiding the badge and the total label.
+- Red issue badges with the count sit above weeks with issues.
+- Axis titles: "Weld count" (left) and "Sign-off rate" (right).
+- Legend: Signed, Total welds, Sign-off %, Issue created, 10% baseline.
+- Hover tooltip: week, signed of total, sign-off %, issues created. Bar click and keyboard select the week exactly like the Electrical chart.
+- **Expanded:** a summary strip (welds, signed, sign-off %, issues for the window), and the sign-off % labelled at every point wide enough to fit.
 
 ### Sign-off by System (small, drill-down)
 
