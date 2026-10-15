@@ -173,7 +173,7 @@ export function buildInspectionIndex(
   }
 }
 
-export function defaultViewState(index: InspectionIndex): ViewState {
+export function defaultViewState(index: { currentWeek: WorkWeek }): ViewState {
   return { selectedKey: index.currentWeek.key, windowEndKey: index.currentWeek.key, range: 'recent' }
 }
 
