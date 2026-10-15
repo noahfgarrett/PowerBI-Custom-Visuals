@@ -1,16 +1,24 @@
 import type {
+  BuildingBar,
   BuildingTally,
+  DeltaMetric,
   InspectionColumns,
   InspectionIndex,
+  InspectionModel,
   InspectionPhase,
   InspectionRows,
+  OtherBuildings,
+  ViewState,
   WeekCounts,
   WorkWeek,
 } from './types'
-import { enumerateWorkWeeks, parseWorkWeek, toIsoWorkWeek } from './workWeeks'
+import { enumerateWorkWeeks, parseWorkWeek, previousWorkWeek, toIsoWorkWeek } from './workWeeks'
 
 export const UNSPECIFIED_BUILDING = 'Unspecified'
 const NO_ISSUE = 'no issue found'
+
+export const RECENT_WEEK_COUNT = 30
+export const TOP_BUILDING_COUNT = 8
 
 export function cellText(value: unknown): string {
   if (value === null || value === undefined) return ''
@@ -154,5 +162,99 @@ export function buildInspectionIndex(
     totalRows: rows.length,
     skippedRows,
     futureRows,
+  }
+}
+
+export function defaultViewState(index: InspectionIndex): ViewState {
+  return { selectedKey: index.currentWeek.key, windowEndKey: index.currentWeek.key, range: 'recent' }
+}
+
+function deltaMetric(value: number, previous: number): DeltaMetric {
+  return { value, delta: value - previous }
+}
+
+function passRateAt(index: InspectionIndex, position: number): number | null {
+  if (position < 0) return null
+  const finals = index.cumulativeFinals[position]
+  if (finals === 0) return null
+  return ((finals - index.cumulativeIssues[position]) / finals) * 100
+}
+
+function summarizeBuildings(
+  index: InspectionIndex,
+  start: number,
+  end: number,
+): { buildings: BuildingBar[]; otherBuildings: OtherBuildings | null } {
+  const totals = new Map<string, BuildingTally>()
+  for (let position = start; position <= end; position += 1) {
+    for (const [building, tally] of index.buildingsByWeek[position]) {
+      const total = totals.get(building) ?? { finals: 0, sors: 0 }
+      total.finals += tally.finals
+      total.sors += tally.sors
+      totals.set(building, total)
+    }
+  }
+  const ranked: BuildingBar[] = [...totals.entries()]
+    .map(([building, tally]) => ({ building, finals: tally.finals, sors: tally.sors }))
+    .sort((a, b) => b.finals + b.sors - (a.finals + a.sors) || a.building.localeCompare(b.building))
+  const rest = ranked.slice(TOP_BUILDING_COUNT)
+  return {
+    buildings: ranked.slice(0, TOP_BUILDING_COUNT),
+    otherBuildings: rest.length === 0
+      ? null
+      : {
+          count: rest.length,
+          finals: rest.reduce((sum, bar) => sum + bar.finals, 0),
+          sors: rest.reduce((sum, bar) => sum + bar.sors, 0),
+        },
+  }
+}
+
+export function buildInspectionModel(index: InspectionIndex, view: ViewState): InspectionModel {
+  const lastPosition = index.weeks.length - 1
+  const selectedPosition = index.positionByKey.get(view.selectedKey) ?? lastPosition
+  const endPosition = index.positionByKey.get(view.windowEndKey) ?? lastPosition
+  const startPosition = view.range === 'all' ? 0 : Math.max(0, endPosition - RECENT_WEEK_COUNT + 1)
+  const selected = index.weeks[selectedPosition]
+  const previous = selectedPosition > 0 ? index.weeks[selectedPosition - 1] : null
+  const finalsToDate = index.cumulativeFinals[selectedPosition]
+  const passRate = passRateAt(index, selectedPosition)
+  const previousPassRate = passRateAt(index, selectedPosition - 1)
+  const window = index.weeks.slice(startPosition, endPosition + 1)
+  const { buildings, otherBuildings } = summarizeBuildings(index, startPosition, endPosition)
+
+  return {
+    selectedWeek: selected.week,
+    previousWeek: previousWorkWeek(selected.week),
+    weekOptions: index.weeks.map((item) => item.week).reverse(),
+    thisWeek: {
+      finals: deltaMetric(selected.finals, previous?.finals ?? 0),
+      sors: deltaMetric(selected.sors, previous?.sors ?? 0),
+      issuesFound: deltaMetric(selected.issuesFound, previous?.issuesFound ?? 0),
+    },
+    toDate: {
+      finals: finalsToDate,
+      sors: index.cumulativeSors[selectedPosition],
+      finalsThisWeek: selected.finals,
+      sorsThisWeek: selected.sors,
+      cleanFinals: finalsToDate - index.cumulativeIssues[selectedPosition],
+      passRate,
+      passRateDeltaPoints: passRate !== null && previousPassRate !== null ? passRate - previousPassRate : null,
+    },
+    window,
+    passRateTrend: window.map((item, offset) => {
+      const position = startPosition + offset
+      const totalFinals = index.cumulativeFinals[position]
+      return {
+        week: item.week,
+        rate: passRateAt(index, position),
+        cleanFinals: totalFinals - index.cumulativeIssues[position],
+        totalFinals,
+        hadIssue: item.issuesFound > 0,
+      }
+    }),
+    buildings,
+    otherBuildings,
+    hasData: index.totalRows - index.skippedRows - index.futureRows > 0,
   }
 }
