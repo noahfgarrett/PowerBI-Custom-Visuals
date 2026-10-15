@@ -91,7 +91,8 @@ export function InspectionDashboard({
     () => buildInspectionModel(index, { selectedKey: effectiveSelected, windowEndKey: effectiveEnd, range }),
     [index, effectiveSelected, effectiveEnd, range],
   )
-  const colors = chartColorsFromTheme(theme)
+  // Memoized so the charts' own memos see the same colors object until the theme changes.
+  const colors = useMemo(() => chartColorsFromTheme(theme), [theme])
   const { thisWeek, toDate } = model
   const previousLabel = shortWeekLabel(model.previousWeek)
   const isCompact = viewport.width < COMPACT_WIDTH

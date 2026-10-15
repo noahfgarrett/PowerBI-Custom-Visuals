@@ -116,7 +116,8 @@ export function WeldingDashboard({
   // The drilled system left the window: return to all systems for good, so it does not re-drill if it comes back.
   if (drillSystem !== null && model.drill === null) setDrillSystem(null)
 
-  const colors = chartColorsFromTheme(theme)
+  // Memoized so the charts' own memos see the same colors object until the theme changes.
+  const colors = useMemo(() => chartColorsFromTheme(theme), [theme])
   const { thisWeek, toDate } = model
   const signoff = thisWeek.signoff
   const previousLabel = shortWeekLabel(model.previousWeek)
