@@ -1,0 +1,29 @@
+{
+  "locale": "en-US",
+  "values": {
+    "Qaqc_role_workWeek": "Work Week",
+    "Qaqc_role_workWeek_description": "Work Week Observed, for example WW42'2026.",
+    "Qaqc_role_phase": "Inspection Phase",
+    "Qaqc_role_phase_description": "Final, SOR, or another inspection phase.",
+    "Qaqc_role_issue": "Issue?",
+    "Qaqc_role_issue_description": "No Issue Found, or the issue raised on the inspection.",
+    "Qaqc_role_building": "Building",
+    "Qaqc_role_building_description": "Building or area inspected.",
+    "Qaqc_role_rowId": "Row ID",
+    "Qaqc_role_rowId_description": "Required unique row number (Power Query Index column). Keeps identical rows separate.",
+    "Qaqc_colors": "Colors",
+    "Qaqc_colors_preset": "Preset",
+    "Qaqc_preset_qaqc": "QAQC",
+    "Qaqc_preset_blue": "Blue",
+    "Qaqc_preset_lotusworks": "LotusWorks",
+    "Qaqc_preset_grayscale": "Grayscale",
+    "Qaqc_background": "Background",
+    "Qaqc_background_color": "Background color",
+    "Qaqc_background_opacity": "Background opacity",
+    "Qaqc_card_opacity": "Card opacity",
+    "Qaqc_animation": "Animation",
+    "Qaqc_animation_enabled": "Transitions",
+    "Qaqc_accessibility": "Accessibility",
+    "Qaqc_accessibility_summaries": "Screen reader chart summaries"
+  }
+}

@@ -59,6 +59,7 @@ describe('InspectionDashboard', () => {
   it('shows the title and icon it is given', () => {
     view = draw({ title: 'Mechanical / Process Inspections', icon: Cog })
     expect(view.container.querySelector('h2')?.textContent).toBe('Mechanical / Process Inspections')
+    expect(view.container.querySelector('.qaqc-title-icon svg.lucide-cog')).not.toBeNull()
   })
 
   it('switches cards and the to-date label when another week is picked', () => {
