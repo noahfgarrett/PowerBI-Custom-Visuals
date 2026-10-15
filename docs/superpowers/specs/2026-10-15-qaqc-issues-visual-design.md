@@ -43,7 +43,7 @@ All required, validated in code. Issue IDs are unique, so no Row ID slot is need
 | This WW | Issues Opened | created in W | vs W−1; warn amber when up, else neutral |
 | This WW | Issues Closed | closed in W | vs W−1; good green when ≥ previous |
 | Project to date | Total Opened | created through W | vs through W−1; bad red when up, good green when down |
-| Project to date | Total Closed | closed through W | vs through W−1; good green |
+| Project to date | Total Closed | closed through W | vs through W−1; good green when up, neutral when unchanged |
 | Project to date | Remaining Open | Total Opened − Total Closed | vs through W−1; bad when up, good when down |
 | Project to date | Closure Rate | Total Closed ÷ Total Opened | points vs through W−1; good when up, bad when down; `n/a` with no opened |
 
