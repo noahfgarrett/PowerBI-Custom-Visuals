@@ -67,11 +67,22 @@ describe('LineChart', () => {
     expect(view.container.querySelectorAll('.qaqc-issue-rate')).toHaveLength(0)
   })
 
-  it('keeps NCR-week labels below the top margin', () => {
+  it('puts the NCR-week label below the dot when there is no room above it', () => {
     view = render(
       <LineChart points={[point(41, 99.1), point(42, 100, true)]} selectedKey={202642} width={300} height={160} colors={COLORS} describe labelIssueWeeks onHover={vi.fn()} />,
     )
-    expect(Number(view.container.querySelector('.qaqc-issue-rate')?.getAttribute('y'))).toBeGreaterThanOrEqual(24)
+    const dotY = Number(view.container.querySelector('.qaqc-issue-dot')?.getAttribute('cy'))
+    const labelY = Number(view.container.querySelector('.qaqc-issue-rate')?.getAttribute('y'))
+    expect(labelY - dotY).toBe(16)
+  })
+
+  it('keeps the NCR-week label above the dot when there is room', () => {
+    view = render(
+      <LineChart points={[point(41, 99.1, true), point(42, 99.16)]} selectedKey={202642} width={300} height={160} colors={COLORS} describe labelIssueWeeks onHover={vi.fn()} />,
+    )
+    const dotY = Number(view.container.querySelector('.qaqc-issue-dot')?.getAttribute('cy'))
+    const labelY = Number(view.container.querySelector('.qaqc-issue-rate')?.getAttribute('y'))
+    expect(labelY).toBeLessThan(dotY)
   })
 
   it('skips weeks without Finals instead of drawing through them', () => {

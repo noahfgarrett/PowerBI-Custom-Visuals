@@ -8,6 +8,7 @@ import type { PassRatePoint } from '../types'
 const MARGIN = { top: 14, right: 42, bottom: 10, left: 40 } as const
 const DOT_RADIUS = 4
 const ISSUE_LABEL_OFFSET = 10
+const ISSUE_LABEL_BELOW_OFFSET = 16
 
 export interface LineChartProps {
   points: PassRatePoint[]
@@ -107,20 +108,24 @@ export function LineChart({
           />
         ) : null,
       )}
-      {labelIssueWeeks && points.map((item, index) =>
-        item.hadIssue && item.rate !== null ? (
+      {labelIssueWeeks && points.map((item, index) => {
+        if (!item.hadIssue || item.rate === null) return null
+        const dotY = y(item.rate)
+        // Near the top edge there is no room above the dot, so the label goes below it.
+        const hasRoomAbove = dotY - ISSUE_LABEL_OFFSET >= MARGIN.top + ISSUE_LABEL_OFFSET
+        return (
           <text
             key={`issue-rate-${item.week.key}`}
             className="qaqc-value-text qaqc-issue-rate"
             x={x(index)}
-            y={Math.max(y(item.rate) - ISSUE_LABEL_OFFSET, MARGIN.top + ISSUE_LABEL_OFFSET)}
+            y={hasRoomAbove ? dotY - ISSUE_LABEL_OFFSET : dotY + ISSUE_LABEL_BELOW_OFFSET}
             textAnchor="middle"
             fill={colors.ink}
           >
             {formatPercent(item.rate)}
           </text>
-        ) : null,
-      )}
+        )
+      })}
       {lastRate !== null && (
         <text className="qaqc-value-text qaqc-end-label" x={x(lastIndex) + 6} y={y(lastRate) + 3.5} fill={colors.ink}>
           {formatPercent(lastRate)}
