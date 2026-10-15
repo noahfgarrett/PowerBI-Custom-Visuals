@@ -39,7 +39,7 @@
     - `allBuildings.length === 19`
     - `allBuildings[0]` is `{ building: 'F63.2', finals: 138, sors: 15 }`
   - `mechanicalFixture.test.ts`, default view:
-    - `allBuildings.length === 20`
+    - `allBuildings.length === 19` (after case-insensitive building grouping)
     - `windowTotals.issuesFound === 0`
 - [ ] **Step 2: Implement.**
   - In `types.ts`:
