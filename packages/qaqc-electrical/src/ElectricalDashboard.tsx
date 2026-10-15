@@ -29,6 +29,7 @@ import { shortWeekLabel } from '../../qaqc-shared/src/workWeeks'
 export const COMPACT_WIDTH = 900
 export const CARDS_ONLY_HEIGHT = 420
 const NO_ROWS_MESSAGE = 'No inspections match the current filters'
+const EMPTY_RANGE_MESSAGE = 'No inspections in this range'
 
 export interface ElectricalDashboardProps {
   index: InspectionIndex
@@ -66,8 +67,9 @@ export function ElectricalDashboard({
   const [range, setRange] = useState<RangeMode>('recent')
 
   // Keep the user's week across data refreshes when it still exists; otherwise use the current week.
-  const effectiveSelected = index.positionByKey.has(selectedKey) ? selectedKey : index.currentWeek.key
-  const effectiveEnd = index.positionByKey.has(windowEndKey) ? windowEndKey : index.currentWeek.key
+  const isSelectionInData = index.positionByKey.has(selectedKey)
+  const effectiveSelected = isSelectionInData ? selectedKey : index.currentWeek.key
+  const effectiveEnd = isSelectionInData && index.positionByKey.has(windowEndKey) ? windowEndKey : index.currentWeek.key
   const model = useMemo(
     () => buildInspectionModel(index, { selectedKey: effectiveSelected, windowEndKey: effectiveEnd, range }),
     [index, effectiveSelected, effectiveEnd, range],
@@ -88,6 +90,18 @@ export function ElectricalDashboard({
     ? `${formatCount(toDate.cleanFinals)} / ${formatCount(toDate.finals)} Finals`
     : `${formatCount(toDate.cleanFinals)} / ${formatCount(toDate.finals)} Finals · ${formatPointsDelta(toDate.passRateDeltaPoints)}`
 
+  function changeRange(mode: RangeMode): void {
+    setRange(mode)
+    if (mode !== 'recent') return
+    // Returning to the recent range must not leave the selected week outside the visible window.
+    const selectedPosition = index.positionByKey.get(effectiveSelected)
+    const endPosition = index.positionByKey.get(effectiveEnd)
+    if (selectedPosition === undefined || endPosition === undefined) return
+    if (selectedPosition > endPosition || selectedPosition <= endPosition - RECENT_WEEK_COUNT) {
+      setWindowEndKey(effectiveSelected)
+    }
+  }
+
   function pickWeek(key: number): void {
     setSelectedKey(key)
     setWindowEndKey(key)
@@ -96,7 +110,7 @@ export function ElectricalDashboard({
   return (
     <div className={rootClass}>
       <LoadingBar active={loading} />
-      <header className="qaqc-header">
+      <div className="qaqc-header">
         <div className="qaqc-title">
           <span className="qaqc-title-icon">
             <Zap size={16} aria-hidden="true" />
@@ -104,10 +118,10 @@ export function ElectricalDashboard({
           <h2>Electrical Inspections</h2>
         </div>
         <div className="qaqc-controls">
-          <RangeToggle value={range} recentCount={RECENT_WEEK_COUNT} disabled={!interactive} onChange={setRange} />
+          <RangeToggle value={range} recentCount={RECENT_WEEK_COUNT} disabled={!interactive} onChange={changeRange} />
           <WorkWeekPicker options={model.weekOptions} valueKey={model.selectedWeek.key} disabled={!interactive} onChange={pickWeek} />
         </div>
-      </header>
+      </div>
 
       <div className="qaqc-kpi-row">
         <KpiGroup title={model.selectedWeek.label} variant="week">
@@ -213,7 +227,7 @@ export function ElectricalDashboard({
             title="Inspections by Building"
             icon={Building2}
             legend={finalsSorsLegend}
-            emptyMessage={model.buildings.length > 0 ? null : NO_ROWS_MESSAGE}
+            emptyMessage={model.buildings.length > 0 ? null : model.hasData ? EMPTY_RANGE_MESSAGE : NO_ROWS_MESSAGE}
           >
             {(size) => (
               <HorizontalBarChart
