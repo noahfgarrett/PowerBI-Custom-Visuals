@@ -15,6 +15,8 @@ import { readInspectionTable, type FieldSlot, type TableReadResult } from './dat
 import { ElectricalDashboard } from './ElectricalDashboard'
 import { ElectricalSettingsModel, readDisplaySettings } from './settings'
 
+import '../style/visual.less'
+
 type VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions
 type VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions
 type IVisualHost = powerbi.extensibility.visual.IVisualHost
