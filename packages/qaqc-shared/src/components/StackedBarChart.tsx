@@ -44,11 +44,16 @@ export function StackedBarChart({
   const selectedIndex = weeks.findIndex((item) => item.week.key === selectedKey)
   const [focusIndex, setFocusIndex] = useState(selectedIndex >= 0 ? selectedIndex : weeks.length - 1)
   const [hasFocus, setHasFocus] = useState(false)
+  const [showFocusRing, setShowFocusRing] = useState(false)
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
 
   useEffect(() => {
     if (selectedIndex >= 0) setFocusIndex(selectedIndex)
   }, [selectedIndex])
+
+  useEffect(() => {
+    setHoverIndex(null)
+  }, [weeks])
 
   const plotWidth = Math.max(0, width - MARGIN.left - MARGIN.right)
   const plotHeight = Math.max(0, height - MARGIN.top - MARGIN.bottom)
@@ -91,116 +96,129 @@ export function StackedBarChart({
     const target = targets[event.key]
     if (target !== undefined) {
       event.preventDefault()
+      setShowFocusRing(true)
       setFocusIndex(Math.min(Math.max(target, 0), weeks.length - 1))
       return
     }
     if ((event.key === 'Enter' || event.key === ' ') && interactive) {
       event.preventDefault()
+      setShowFocusRing(true)
       onSelectWeek(weeks[focus].week.key)
     }
   }
 
   const summary = describe && weeks.length > 0
-    ? `Finals and SORs by work week, ${weeks[0].week.label} to ${weeks[weeks.length - 1].week.label}.${hasFocus ? ` ${describeWeek(weeks[focus])}` : ''}`
+    ? `Finals and SORs by work week, ${weeks[0].week.label} to ${weeks[weeks.length - 1].week.label}`
     : 'Finals and SORs by work week'
+  const canShowBadges = band >= BADGE_RADIUS * 2 - 2
 
   return (
-    <svg
-      className={animate ? 'qaqc-chart qaqc-animate' : 'qaqc-chart'}
-      width={width}
-      height={height}
-      role="group"
-      aria-label={summary}
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
-      onFocus={() => setHasFocus(true)}
-      onBlur={() => setHasFocus(false)}
-      onMouseLeave={hideTooltip}
-    >
-      {selectedIndex >= 0 && (
-        <rect
-          className="qaqc-selected-band"
-          x={0}
-          y={MARGIN.top}
-          width={band}
-          height={plotHeight}
-          fill={colors.accent}
-          style={{ transform: `translateX(${bandX(selectedIndex)}px)` }}
-        />
-      )}
-      {scale.ticks.map((tick) => (
-        <g key={tick}>
-          <line x1={MARGIN.left} x2={width - MARGIN.right} y1={y(tick)} y2={y(tick)} stroke={colors.grid} />
-          <text className="qaqc-axis-text" x={MARGIN.left - 6} y={y(tick) + 3.5} textAnchor="end" fill={colors.axisText}>
-            {formatCount(tick)}
-          </text>
-        </g>
-      ))}
-      {weeks.map((item, index) => {
-        const x = bandX(index) + (band - barWidth) / 2
-        const finalsTop = y(item.finals)
-        const totalTop = y(item.finals + item.sors)
-        const isSelected = index === selectedIndex
-        return (
-          <g key={item.week.key} className={hoverIndex !== null && hoverIndex !== index ? 'qaqc-bar is-dimmed' : 'qaqc-bar'}>
-            {item.sors > 0 && (
-              <path d={roundedTopBarPath(x, totalTop, barWidth, finalsTop - totalTop, CORNER_RADIUS)} fill={colors.series2} />
-            )}
-            {item.finals > 0 && (item.sors > 0
-              ? <rect x={x} y={finalsTop} width={barWidth} height={y(0) - finalsTop} fill={colors.series1} />
-              : <path d={roundedTopBarPath(x, finalsTop, barWidth, y(0) - finalsTop, CORNER_RADIUS)} fill={colors.series1} />)}
-            {item.issuesFound > 0 && (
-              <g
-                className="qaqc-issue-badge"
-                transform={`translate(${x + barWidth / 2} ${Math.max(BADGE_RADIUS + 1, totalTop - BADGE_RADIUS - 4)})`}
-              >
-                <circle r={BADGE_RADIUS} fill={colors.bad} stroke={colors.card} strokeWidth={2} />
-                <text y={3.5} textAnchor="middle" fill={colors.card}>
-                  {item.issuesFound}
-                </text>
-              </g>
-            )}
-            {labels.has(index) && (
-              <text
-                className={isSelected ? 'qaqc-axis-text is-selected' : 'qaqc-axis-text'}
-                x={bandX(index) + band / 2}
-                y={height - 8}
-                textAnchor="middle"
-                fill={isSelected ? colors.ink : colors.axisText}
-              >
-                {shortWeekLabel(item.week)}
-              </text>
-            )}
+    <>
+      <svg
+        className={animate ? 'qaqc-chart qaqc-animate' : 'qaqc-chart'}
+        width={width}
+        height={height}
+        role="group"
+        aria-label={summary}
+        tabIndex={0}
+        onKeyDown={handleKeyDown}
+        onFocus={() => setHasFocus(true)}
+        onBlur={() => {
+          setHasFocus(false)
+          setShowFocusRing(false)
+        }}
+        onMouseDown={() => setShowFocusRing(false)}
+      >
+        {selectedIndex >= 0 && (
+          <rect
+            className="qaqc-selected-band"
+            x={0}
+            y={MARGIN.top}
+            width={band}
+            height={plotHeight}
+            fill={colors.accent}
+            style={{ transform: `translateX(${bandX(selectedIndex)}px)` }}
+          />
+        )}
+        {scale.ticks.map((tick) => (
+          <g key={tick}>
+            <line x1={MARGIN.left} x2={width - MARGIN.right} y1={y(tick)} y2={y(tick)} stroke={colors.grid} />
+            <text className="qaqc-axis-text" x={MARGIN.left - 6} y={y(tick) + 3.5} textAnchor="end" fill={colors.axisText}>
+              {formatCount(tick)}
+            </text>
           </g>
-        )
-      })}
-      {hasFocus && weeks.length > 0 && (
-        <rect
-          x={bandX(focus) + 1}
-          y={MARGIN.top - 2}
-          width={Math.max(0, band - 2)}
-          height={plotHeight + 4}
-          rx={3}
-          fill="none"
-          stroke={colors.accent}
-          strokeWidth={1.5}
-        />
-      )}
-      {weeks.map((item, index) => (
-        <rect
-          key={`hit-${item.week.key}`}
-          className="qaqc-hit"
-          data-week={item.week.key}
-          x={bandX(index)}
-          y={MARGIN.top}
-          width={band}
-          height={plotHeight}
-          fill="transparent"
-          style={{ cursor: interactive ? 'pointer' : 'default' }}
-          onMouseMove={(event) => showTooltip(index, event)}
-          onClick={interactive ? () => onSelectWeek(item.week.key) : undefined}
-        />
-      ))}
-    </svg>
+        ))}
+        {weeks.map((item, index) => {
+          const x = bandX(index) + (band - barWidth) / 2
+          const finalsTop = y(item.finals)
+          const totalTop = y(item.finals + item.sors)
+          const isSelected = index === selectedIndex
+          return (
+            <g key={item.week.key} className={hoverIndex !== null && hoverIndex !== index ? 'qaqc-bar is-dimmed' : 'qaqc-bar'}>
+              {item.sors > 0 && (
+                <path d={roundedTopBarPath(x, totalTop, barWidth, finalsTop - totalTop, CORNER_RADIUS)} fill={colors.series2} />
+              )}
+              {item.finals > 0 && (item.sors > 0
+                ? <rect x={x} y={finalsTop} width={barWidth} height={y(0) - finalsTop} fill={colors.series1} />
+                : <path d={roundedTopBarPath(x, finalsTop, barWidth, y(0) - finalsTop, CORNER_RADIUS)} fill={colors.series1} />)}
+              {canShowBadges && item.issuesFound > 0 && (
+                <g
+                  className="qaqc-issue-badge"
+                  transform={`translate(${x + barWidth / 2} ${Math.max(BADGE_RADIUS + 1, totalTop - BADGE_RADIUS - 4)})`}
+                >
+                  <circle r={BADGE_RADIUS} fill={colors.bad} stroke={colors.card} strokeWidth={2} />
+                  <text y={3.5} textAnchor="middle" fill={colors.card}>
+                    {item.issuesFound}
+                  </text>
+                </g>
+              )}
+              {labels.has(index) && (
+                <text
+                  className={isSelected ? 'qaqc-axis-text is-selected' : 'qaqc-axis-text'}
+                  x={bandX(index) + band / 2}
+                  y={height - 8}
+                  textAnchor="middle"
+                  fill={isSelected ? colors.ink : colors.axisText}
+                >
+                  {shortWeekLabel(item.week)}
+                </text>
+              )}
+            </g>
+          )
+        })}
+        {hasFocus && showFocusRing && weeks.length > 0 && (
+          <rect
+            x={bandX(focus) + 1}
+            y={MARGIN.top - 2}
+            width={Math.max(0, band - 2)}
+            height={plotHeight + 4}
+            rx={3}
+            fill="none"
+            stroke={colors.accent}
+            strokeWidth={1.5}
+          />
+        )}
+        <g onMouseLeave={hideTooltip}>
+          {weeks.map((item, index) => (
+            <rect
+              key={`hit-${item.week.key}`}
+              className="qaqc-hit"
+              data-week={item.week.key}
+              x={bandX(index)}
+              y={MARGIN.top}
+              width={band}
+              height={plotHeight}
+              fill="transparent"
+              style={{ cursor: interactive ? 'pointer' : 'default' }}
+              onMouseMove={(event) => showTooltip(index, event)}
+              onClick={interactive ? () => onSelectWeek(item.week.key) : undefined}
+            />
+          ))}
+        </g>
+      </svg>
+      <p className="qaqc-visually-hidden" aria-live="polite">
+        {hasFocus && weeks.length > 0 ? describeWeek(weeks[focus]) : ''}
+      </p>
+    </>
   )
 }

@@ -109,7 +109,30 @@ describe('StackedBarChart', () => {
       clientX: 10,
       clientY: 20,
     })
-    fire(svg, new MouseEvent('mouseout', { bubbles: true, relatedTarget: document.body }))
+    fire(hit, new MouseEvent('mouseout', { bubbles: true, relatedTarget: document.body }))
     expect(onHover).toHaveBeenLastCalledWith(null)
+  })
+
+  it('announces the focused week through a live region', () => {
+    view = draw()
+    const svg = view.container.querySelector('svg')
+    const live = view.container.querySelector('[aria-live="polite"]')
+    if (!svg || !live) throw new Error('chart missing')
+    expect(svg.getAttribute('aria-label')).toBe("Finals and SORs by work week, WW40'2026 to WW42'2026")
+    fire(svg, new FocusEvent('focusin', { bubbles: true }))
+    fire(svg, new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }))
+    expect(live.textContent).toBe("WW41'2026: 6 Finals, 3 SORs, 2 issues found")
+    expect(svg.getAttribute('aria-label')).toBe("Finals and SORs by work week, WW40'2026 to WW42'2026")
+  })
+
+  it('skips issue badges when bar slots are too narrow', () => {
+    const many: WeekCounts[] = Array.from({ length: 120 }, (_, index) => ({
+      week: makeWorkWeek(2024 + Math.floor(index / 52), (index % 52) + 1),
+      finals: 2,
+      sors: 1,
+      issuesFound: index === 60 ? 1 : 0,
+    }))
+    view = draw({ weeks: many, selectedKey: many[119].week.key })
+    expect(view.container.querySelectorAll('.qaqc-issue-badge')).toHaveLength(0)
   })
 })

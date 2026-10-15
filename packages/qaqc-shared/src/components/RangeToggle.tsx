@@ -9,8 +9,13 @@ export interface RangeToggleProps {
   onChange: (mode: RangeMode) => void
 }
 
+interface RangeOption {
+  mode: RangeMode
+  label: string
+}
+
 export function RangeToggle({ value, recentCount, disabled, onChange }: RangeToggleProps): ReactElement {
-  const options: Array<{ mode: RangeMode; label: string }> = [
+  const options: RangeOption[] = [
     { mode: 'recent', label: `${recentCount} WW` },
     { mode: 'all', label: 'All' },
   ]

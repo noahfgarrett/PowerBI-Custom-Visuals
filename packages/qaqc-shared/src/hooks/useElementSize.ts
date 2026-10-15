@@ -5,7 +5,10 @@ export interface ElementSize {
   height: number
 }
 
-/** Measures an element; ResizeObserver callbacks are coalesced to one update per animation frame. */
+/**
+ * Measures an element; ResizeObserver callbacks are coalesced to one update per animation frame.
+ * The measured element must be rendered on the first render, because the observer attaches once.
+ */
 export function useElementSize<T extends HTMLElement>(): [RefObject<T | null>, ElementSize] {
   const ref = useRef<T | null>(null)
   const [size, setSize] = useState<ElementSize>({ width: 0, height: 0 })
