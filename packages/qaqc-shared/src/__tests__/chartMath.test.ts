@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { labelIndices, niceScale, ordinalOpacity, passRateDomain, roundedRightBarPath, roundedTopBarPath, truncateLabel } from '../chartMath'
+import { labelIndices, niceScale, ordinalOpacity, round, passRateDomain, roundedRightBarPath, roundedTopBarPath, truncateLabel } from '../chartMath'
 
 describe('niceScale', () => {
   it('rounds the max up to a nice step with integer ticks', () => {
@@ -69,5 +69,13 @@ describe('ordinalOpacity', () => {
 
   it('is fully opaque for a single step', () => {
     expect(ordinalOpacity(0, 1)).toBe(1)
+  })
+})
+
+describe('round', () => {
+  it('rounds to hundredths for SVG coordinates', () => {
+    expect(round(88.4999)).toBe(88.5)
+    expect(round(1 / 3)).toBe(0.33)
+    expect(round(-2.005)).toBe(-2)
   })
 })

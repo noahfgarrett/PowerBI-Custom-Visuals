@@ -113,6 +113,15 @@ describe('StackedBarChart', () => {
     expect(onHover).toHaveBeenLastCalledWith(null)
   })
 
+  it('draws its keyboard focus ring with the shared focus-ring class', () => {
+    view = draw()
+    const svg = view.container.querySelector('svg')
+    if (!svg) throw new Error('svg missing')
+    fire(svg, new FocusEvent('focusin', { bubbles: true }))
+    fire(svg, new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }))
+    expect(view.container.querySelector('.qaqc-focus-ring')).not.toBeNull()
+  })
+
   it('announces the focused week through a live region', () => {
     view = draw()
     const svg = view.container.querySelector('svg')

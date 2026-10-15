@@ -1,8 +1,9 @@
-import { useEffect, useId, useMemo, useState, type KeyboardEvent, type MouseEvent, type ReactElement } from 'react'
+import { useEffect, useId, useMemo, useState, type MouseEvent, type ReactElement } from 'react'
 
-import { labelIndices, niceScale, roundedTopBarPath, type NiceScale } from '../chartMath'
+import { labelIndices, niceScale, round, roundedTopBarPath, type NiceScale } from '../chartMath'
 import type { ChartColors, TooltipHandler } from '../chartTypes'
 import { formatCount } from '../format'
+import { useWeekFocus } from '../hooks/useWeekFocus'
 import type { IssueTrendPoint } from '../types'
 import { shortWeekLabel, shortWeekLabelWithYear } from '../workWeeks'
 import type { LegendItem } from './ChartPanel'
@@ -115,10 +116,6 @@ export function issueTrendLegend(colors: ChartColors): LegendItem[] {
     { label: 'Opened', color: colors.bad, shape: 'bar' },
     { label: 'Closed', color: colors.good, shape: 'bar' },
   ]
-}
-
-function round(value: number): number {
-  return Math.round(value * 100) / 100
 }
 
 /** The app's smooth line: each segment's control points sit a third of the way along, level with its ends. */
@@ -299,15 +296,14 @@ export function IssuesTrendChart({
   onHover,
 }: IssuesTrendChartProps): ReactElement {
   const selectedIndex = points.findIndex((point) => point.week.key === selectedKey)
-  const [focusIndex, setFocusIndex] = useState(selectedIndex >= 0 ? selectedIndex : points.length - 1)
-  const [hasFocus, setHasFocus] = useState(false)
-  const [showFocusRing, setShowFocusRing] = useState(false)
+  const { focus, hasFocus, showFocusRing, svgProps } = useWeekFocus({
+    count: points.length,
+    selectedIndex,
+    interactive,
+    onSelect: (index) => onSelectWeek(points[index].week.key),
+  })
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   const gradientId = `qaqc-remaining-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`
-
-  useEffect(() => {
-    if (selectedIndex >= 0) setFocusIndex(selectedIndex)
-  }, [selectedIndex])
 
   useEffect(() => {
     setHoverIndex(null)
@@ -317,7 +313,6 @@ export function IssuesTrendChart({
   const { plotRight, plotHeight, plotBottom, band } = layout
   const top = MARGIN.top
   const bandX = (index: number): number => MARGIN.left + index * band
-  const focus = Math.min(Math.max(focusIndex, 0), points.length - 1)
   const hovered = hoverIndex !== null && hoverIndex < layout.linePoints.length ? layout.linePoints[hoverIndex] : null
 
   // Hover and focus re-render the chart often, so every layer that does not depend on them is built once per layout.
@@ -472,28 +467,6 @@ export function IssuesTrendChart({
     )
   }, [points, layout, interactive, onSelectWeek, onHover])
 
-  function handleKeyDown(event: KeyboardEvent<SVGSVGElement>): void {
-    if (points.length === 0) return
-    const targets: Record<string, number> = {
-      ArrowLeft: focus - 1,
-      ArrowRight: focus + 1,
-      Home: 0,
-      End: points.length - 1,
-    }
-    const target = targets[event.key]
-    if (target !== undefined) {
-      event.preventDefault()
-      setShowFocusRing(true)
-      setFocusIndex(Math.min(Math.max(target, 0), points.length - 1))
-      return
-    }
-    if ((event.key === 'Enter' || event.key === ' ') && interactive) {
-      event.preventDefault()
-      setShowFocusRing(true)
-      onSelectWeek(points[focus].week.key)
-    }
-  }
-
   const summary = describe && points.length > 0
     ? `${TITLE}, ${points[0].week.label} to ${points[points.length - 1].week.label}`
     : TITLE
@@ -506,14 +479,7 @@ export function IssuesTrendChart({
         height={height}
         role="group"
         aria-label={summary}
-        tabIndex={0}
-        onKeyDown={handleKeyDown}
-        onFocus={() => setHasFocus(true)}
-        onBlur={() => {
-          setHasFocus(false)
-          setShowFocusRing(false)
-        }}
-        onMouseDown={() => setShowFocusRing(false)}
+        {...svgProps}
       >
         {selectedIndex >= 0 && (
           <rect
