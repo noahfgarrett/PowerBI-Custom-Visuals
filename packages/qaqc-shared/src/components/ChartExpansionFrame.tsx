@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactElement, type ReactNode } from '
 import type { TooltipHandler } from '../chartTypes'
 import type { ElementSize } from '../hooks/useElementSize'
 import type { LegendItem } from './ChartPanel'
-import { ExpandedPanel, type PanelBox } from './ExpandedPanel'
+import { ExpandedPanel, type PanelBox, type PanelKind } from './ExpandedPanel'
 
 /** Dashboards narrower than this use the compact layout. */
 export const COMPACT_WIDTH = 900
@@ -13,10 +13,15 @@ export const CARDS_ONLY_HEIGHT = 420
 
 const ZERO_BOX: PanelBox = { top: 0, left: 0, width: 0, height: 0 }
 
-/** What the overlay needs to draw one expandable chart panel. */
+/** What the overlay needs to draw one expandable chart panel, or a page opened from a header button. */
 export interface ExpandablePanel {
   title: string
   icon: LucideIcon
+  /**
+   * Defaults to chart: a grid ChartPanel expands it. A page is opened by a HeaderOverlayButton, closes with a back
+   * button, and is drawn on cards-only tiles too.
+   */
+  kind?: PanelKind
   legend: LegendItem[]
   /** Legend for the expanded panel when it differs from the grid panel's. */
   expandedLegend?: LegendItem[]
@@ -24,7 +29,7 @@ export interface ExpandablePanel {
   renderExpanded: (size: ElementSize) => ReactNode
 }
 
-/** Spread onto a grid ChartPanel to make it expandable. */
+/** Spread onto a grid ChartPanel to make it expandable, or onto a HeaderOverlayButton to open a page. */
 export interface ExpandableProps {
   sectionRef: (element: HTMLElement | null) => void
   onExpand: (() => void) | undefined
@@ -35,7 +40,7 @@ export interface ChartExpansionFrameProps<Id extends string> {
   interactive: boolean
   animate: boolean
   isCompact: boolean
-  /** Cards-only tiles have no charts, so no overlay is drawn; it comes back if the tile grows again. */
+  /** Cards-only tiles have no charts, so no chart overlay is drawn; it comes back if the tile grows again. Pages are still drawn. */
   isCardsOnly: boolean
   onHover: TooltipHandler
   /** The dashboard's root content; call `expandable(id)` for each grid ChartPanel. */
@@ -75,6 +80,7 @@ export function ChartExpansionFrame<Id extends string>({
 
   // Return focus once the overlay is gone and the dashboard is no longer inert: to the expand button, or to the
   // panel when the button is gone (the panel became empty or interactions were turned off), or to the frame.
+  // A page registers its header button as the "panel", so focus returns to that button.
   useEffect(() => {
     const id = restoreFocusRef.current
     if (expanded !== null || id === null) return
@@ -84,7 +90,7 @@ export function ChartExpansionFrame<Id extends string>({
     target?.focus({ preventScroll: true })
   }, [expanded])
 
-  const isOverlayShown = expanded !== null && !isCardsOnly
+  const isOverlayShown = expanded !== null && (!isCardsOnly || panels[expanded].kind === 'page')
 
   // The expanded charts unmount without a mouseleave, so clear any Power BI tooltip when the overlay goes away.
   useEffect(() => {
@@ -124,6 +130,7 @@ export function ChartExpansionFrame<Id extends string>({
           key={expanded}
           title={panels[expanded].title}
           icon={panels[expanded].icon}
+          kind={panels[expanded].kind}
           legend={panels[expanded].expandedLegend ?? panels[expanded].legend}
           emptyMessage={panels[expanded].emptyMessage}
           animate={animate}

@@ -1,10 +1,11 @@
-import { Building2, TrendingUp } from 'lucide-react'
+import { Building2, TableProperties, TrendingUp } from 'lucide-react'
 import { act, type ReactElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { TooltipHandler } from '../chartTypes'
 import { ChartExpansionFrame, type ExpandablePanel } from '../components/ChartExpansionFrame'
 import { ChartPanel } from '../components/ChartPanel'
+import { HeaderOverlayButton } from '../components/HeaderOverlayButton'
 import { render, type Rendered } from './render'
 
 type TestPanelId = 'alpha' | 'beta'
@@ -195,5 +196,164 @@ describe('ChartExpansionFrame', () => {
     expect(root(view.container)?.classList.contains('is-cards-only')).toBe(true)
     expect(root(view.container)?.classList.contains('is-expanded')).toBe(false)
     expect(root(view.container)?.hasAttribute('inert')).toBe(false)
+  })
+})
+
+type PageTestId = TestPanelId | 'detail'
+
+const PAGE_PANELS: Record<PageTestId, ExpandablePanel> = {
+  ...PANELS,
+  detail: {
+    title: 'Detail Page',
+    icon: TableProperties,
+    kind: 'page',
+    legend: [],
+    emptyMessage: null,
+    renderExpanded: () => <p className="detail-page">detail</p>,
+  },
+}
+
+interface PageDashboardProps {
+  interactive?: boolean
+  isCardsOnly?: boolean
+  animate?: boolean
+}
+
+/** A dashboard with a header button that opens a page, beside one expandable chart. */
+function PageDashboard({ interactive = true, isCardsOnly = false, animate = false }: PageDashboardProps): ReactElement {
+  return (
+    <ChartExpansionFrame
+      panels={PAGE_PANELS}
+      interactive={interactive}
+      animate={animate}
+      isCompact={false}
+      isCardsOnly={isCardsOnly}
+      onHover={vi.fn()}
+    >
+      {(expandable) => (
+        <>
+          <div className="test-header">
+            <HeaderOverlayButton {...expandable('detail')} label="Detail" ariaLabel="Open Detail Page" icon={TableProperties} />
+          </div>
+          {!isCardsOnly && (
+            <ChartPanel
+              title={PANELS.alpha.title}
+              icon={PANELS.alpha.icon}
+              legend={PANELS.alpha.legend}
+              emptyMessage={null}
+              {...expandable('alpha')}
+            >
+              {() => <svg />}
+            </ChartPanel>
+          )}
+        </>
+      )}
+    </ChartExpansionFrame>
+  )
+}
+
+function pageButton(container: HTMLElement): HTMLButtonElement | null {
+  return container.querySelector<HTMLButtonElement>('button[aria-label="Open Detail Page"]')
+}
+
+function dialog(container: HTMLElement): HTMLElement | null {
+  return container.querySelector<HTMLElement>('.qaqc-frame > [role="dialog"]')
+}
+
+describe('ChartExpansionFrame header-button pages', () => {
+  it('labels the header button and announces that it opens a dialog', () => {
+    view = render(<PageDashboard />)
+    const button = pageButton(view.container)
+    expect(button?.textContent).toBe('Detail')
+    expect(button?.getAttribute('aria-haspopup')).toBe('dialog')
+  })
+
+  it('opens the page as a dialog with its content', () => {
+    stubSize()
+    view = render(<PageDashboard />)
+    click(pageButton(view.container))
+    expect(dialog(view.container)?.getAttribute('aria-label')).toBe('Detail Page')
+    expect(dialog(view.container)?.querySelector('.detail-page')).not.toBeNull()
+  })
+
+  it('makes the dashboard behind the page inert', () => {
+    view = render(<PageDashboard />)
+    click(pageButton(view.container))
+    expect(root(view.container)?.hasAttribute('inert')).toBe(true)
+    expect(dialog(view.container)?.closest('[inert]')).toBeNull()
+  })
+
+  it('closes the page on Esc and releases the dashboard', () => {
+    view = render(<PageDashboard />)
+    click(pageButton(view.container))
+    pressEscape(dialog(view.container))
+    expect(dialog(view.container)).toBeNull()
+    expect(root(view.container)?.hasAttribute('inert')).toBe(false)
+  })
+
+  it('returns focus to the header button after Esc', () => {
+    view = render(<PageDashboard />)
+    click(pageButton(view.container))
+    pressEscape(dialog(view.container))
+    expect(document.activeElement).toBe(pageButton(view.container))
+  })
+
+  it('offers a back button instead of a collapse button', () => {
+    view = render(<PageDashboard />)
+    click(pageButton(view.container))
+    const back = dialog(view.container)?.querySelector('button[aria-label="Back to dashboard"]')
+    expect(back?.textContent).toBe('Back')
+    expect(dialog(view.container)?.querySelector('button[aria-label^="Collapse"]')).toBeNull()
+  })
+
+  it('focuses the back button when the page opens', () => {
+    view = render(<PageDashboard />)
+    click(pageButton(view.container))
+    expect(document.activeElement?.getAttribute('aria-label')).toBe('Back to dashboard')
+  })
+
+  it('closes with the back button and returns focus to the header button', () => {
+    view = render(<PageDashboard />)
+    click(pageButton(view.container))
+    click(dialog(view.container)?.querySelector('button[aria-label="Back to dashboard"]') ?? null)
+    expect(dialog(view.container)).toBeNull()
+    expect(document.activeElement).toBe(pageButton(view.container))
+  })
+
+  it('hides the header button when interactions are not allowed', () => {
+    view = render(<PageDashboard interactive={false} />)
+    expect(pageButton(view.container)).toBeNull()
+  })
+
+  it('draws the page on a cards-only tile, which has no charts to expand', () => {
+    view = render(<PageDashboard isCardsOnly />)
+    click(pageButton(view.container))
+    expect(dialog(view.container)?.getAttribute('aria-label')).toBe('Detail Page')
+    expect(root(view.container)?.hasAttribute('inert')).toBe(true)
+  })
+
+  it('still expands charts the usual way beside a page', () => {
+    view = render(<PageDashboard />)
+    click(expandButton(view.container, 'Alpha Chart'))
+    expect(dialog(view.container)?.querySelector('button[aria-label="Collapse Alpha Chart"]')).not.toBeNull()
+  })
+
+  it('grows the page from the header button', () => {
+    const keyframes: Keyframe[][] = []
+    const animate = vi.fn((frames: Keyframe[]) => {
+      keyframes.push(frames)
+      return { finished: new Promise<void>(() => undefined), cancel: vi.fn(), playState: 'running' }
+    })
+    Object.defineProperty(HTMLElement.prototype, 'animate', { value: animate, configurable: true, writable: true })
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function rect(this: Element): DOMRect {
+      return this.matches('button[aria-label="Open Detail Page"]') ? new DOMRect(880, 12, 110, 28) : new DOMRect(0, 0, 1000, 600)
+    })
+    try {
+      view = render(<PageDashboard animate />)
+      click(pageButton(view.container))
+      expect(keyframes[0][0]).toEqual({ top: '12px', left: '880px', width: '110px', height: '28px' })
+    } finally {
+      Reflect.deleteProperty(HTMLElement.prototype, 'animate')
+    }
   })
 })

@@ -1165,6 +1165,247 @@
   max-width: 0;
 }
 
+// Issue Detail: the page opened from the dashboard header (HeaderOverlayButton, IssueDetail, IssueDetailTable).
+
+.qaqc-header-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 11px 0 9px;
+  border: 1px solid var(--qaqc-border);
+  border-radius: 9px;
+  background: var(--qaqc-card-solid);
+  color: var(--qaqc-ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color 150ms ease-out, border-color 150ms ease-out;
+}
+
+.qaqc-header-button svg {
+  flex: 0 0 auto;
+  color: var(--qaqc-accent);
+}
+
+.qaqc-header-button:hover {
+  border-color: var(--qaqc-accent);
+  background: var(--qaqc-accent-soft);
+}
+
+.qaqc-header-button:focus-visible,
+.qaqc-back-button:focus-visible {
+  outline: 2px solid var(--qaqc-accent);
+  outline-offset: 2px;
+}
+
+.qaqc-back-button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  margin-right: 4px;
+  padding: 0 10px 0 7px;
+  border: 1px solid var(--qaqc-border);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--qaqc-ink-2);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+
+// The title bar colors its icons with the accent; the back arrow follows the button's own color.
+.qaqc-panel-title .qaqc-back-button svg {
+  color: inherit;
+}
+
+.qaqc-back-button:hover {
+  background: var(--qaqc-accent-soft);
+  color: var(--qaqc-accent);
+}
+
+.qaqc-issue-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+}
+
+// Two groups of two cards; they stack when the overlay is too narrow for both.
+.qaqc-issue-detail-cards {
+  flex-wrap: wrap;
+}
+
+.qaqc-issue-detail-cards .qaqc-kpi-group {
+  min-width: 240px;
+}
+
+.qaqc-detail-legend {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 0;
+  padding: 0 2px;
+  list-style: none;
+}
+
+.qaqc-detail-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--qaqc-ink-2);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.qaqc-detail-legend strong {
+  color: var(--qaqc-ink);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.qaqc-detail-swatch {
+  display: block;
+  flex: 0 0 auto;
+  width: 18px;
+  height: 12px;
+  border: 1px solid var(--qaqc-border);
+  border-radius: 4px;
+}
+
+.qaqc-detail-swatch.is-report {
+  background: var(--qaqc-card-solid);
+}
+
+.qaqc-detail-swatch.is-discussion {
+  background: var(--qaqc-discussion);
+  box-shadow: inset 3px 0 var(--qaqc-muted);
+}
+
+.qaqc-issue-detail-wrap {
+  flex: 1 1 0;
+  height: auto;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--qaqc-border);
+  border-radius: 12px;
+  background: var(--qaqc-card-solid);
+}
+
+// Fixed layout: column widths come from the colgroup, so they do not shift as windowed rows scroll past. Narrow
+// overlays scroll sideways rather than squeezing the title to nothing.
+.qaqc-issue-detail-table {
+  min-width: 1040px;
+  table-layout: fixed;
+}
+
+// No vertical padding: cells centre in the fixed TABLE_ROW_HEIGHT row, so the status pill never grows the row.
+.qaqc-issue-detail-table td,
+.qaqc-issue-detail-table tbody th {
+  padding-top: 0;
+  padding-bottom: 0;
+  vertical-align: middle;
+}
+
+.qaqc-issue-detail-table tbody tr:not(.qaqc-virtual-spacer):hover > * {
+  background: var(--qaqc-accent-soft);
+}
+
+// "Open for discussion" rows, as in the app: a tint from the preset and an inset bar on the leading edge.
+.qaqc-issue-detail-table tbody tr.is-discussion > * {
+  background: var(--qaqc-discussion);
+}
+
+.qaqc-issue-detail-table tbody tr.is-discussion > th {
+  box-shadow: inset 3px 0 var(--qaqc-muted);
+}
+
+// Text carries the contrast (ink on a light tint in every preset); the dot carries the status color.
+.qaqc-status-pill {
+  display: inline-block;
+  max-width: 100%;
+  padding: 1px 8px 1px 7px;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--qaqc-ink);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.qaqc-status-pill::before {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 5px;
+  border-radius: 999px;
+  background: var(--qaqc-muted);
+  content: "";
+  vertical-align: 1px;
+}
+
+.qaqc-status-pill.is-closed {
+  background: var(--qaqc-good-soft);
+}
+
+.qaqc-status-pill.is-closed::before {
+  background: var(--qaqc-good);
+}
+
+.qaqc-status-pill.is-open {
+  background: var(--qaqc-accent-soft);
+}
+
+.qaqc-status-pill.is-open::before {
+  background: var(--qaqc-accent);
+}
+
+.qaqc-status-pill.is-other {
+  border-color: var(--qaqc-border);
+  color: var(--qaqc-ink-2);
+}
+
+.qaqc-detail-empty {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 24px;
+  border: 1px dashed var(--qaqc-border);
+  border-radius: 12px;
+  color: var(--qaqc-muted);
+  text-align: center;
+}
+
+.qaqc-detail-empty svg {
+  margin-bottom: 4px;
+  color: var(--qaqc-faint);
+}
+
+.qaqc-detail-empty strong {
+  color: var(--qaqc-ink);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.qaqc-detail-empty span {
+  max-width: 46ch;
+  font-size: 12px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .qaqc-host * {
     animation: none !important;

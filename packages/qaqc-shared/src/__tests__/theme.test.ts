@@ -61,6 +61,30 @@ describe('resolveTheme', () => {
     expect(theme.cssVariables['--qaqc-page']).toBe('#000000')
   })
 
+  it('tints Issue Detail discussion rows with the preset series 1 over the solid card', () => {
+    expect(resolveTheme(BASE).cssVariables['--qaqc-discussion']).toBe('#ECF1F8')
+    expect(resolveTheme({ ...BASE, preset: 'lotusworks' }).cssVariables['--qaqc-discussion']).toBe(
+      compositeOver(PRESETS.lotusworks.series1, 0.08, PRESETS.lotusworks.card),
+    )
+  })
+
+  it('keeps the discussion tint solid when cards are transparent', () => {
+    expect(resolveTheme({ ...BASE, cardOpacity: 0 }).cssVariables['--qaqc-discussion']).toBe('#ECF1F8')
+  })
+
+  it('tints closed status pills with the fixed good color', () => {
+    expect(resolveTheme(BASE).cssVariables['--qaqc-good-soft']).toBe('rgba(10, 122, 10, 0.12)')
+  })
+
+  it('drops the row and pill tints in high-contrast mode', () => {
+    const theme = resolveTheme({
+      ...BASE,
+      highContrast: { foreground: '#FFFF00', background: '#000000', foregroundSelected: '#00FFFF' },
+    })
+    expect(theme.cssVariables['--qaqc-discussion']).toBe('#000000')
+    expect(theme.cssVariables['--qaqc-good-soft']).toBe('#000000')
+  })
+
   it('derives solid chart colors', () => {
     const colors = chartColorsFromTheme(resolveTheme({ ...BASE, cardOpacity: 0 }))
     expect(colors.card).toBe('#FDFEFF')

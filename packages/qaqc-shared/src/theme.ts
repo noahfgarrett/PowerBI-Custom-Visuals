@@ -73,6 +73,11 @@ export interface ResolvedTheme {
   cssVariables: Record<string, string>
 }
 
+/** Issue Detail "Open for discussion" rows: series 1 at this opacity over the card, like the app's #EDF3F7 tint. */
+const DISCUSSION_TINT_OPACITY = 0.08
+/** Closed status pills: the good color at this percent. */
+const GOOD_SOFT_PERCENT = 12
+
 const HEX_COLOR = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i
 
 export function isPresetName(value: unknown): value is PresetName {
@@ -162,6 +167,9 @@ export function resolveTheme(options: ThemeOptions): ResolvedTheme {
       '--qaqc-good': colors.good,
       '--qaqc-bad': colors.bad,
       '--qaqc-warn': colors.warn,
+      // High contrast keeps only host colors, so rows and pills lose their tints and keep their bar, dot and text.
+      '--qaqc-discussion': highContrast ? colors.card : compositeOver(colors.series1, DISCUSSION_TINT_OPACITY, colors.card),
+      '--qaqc-good-soft': highContrast ? colors.card : withOpacity(colors.good, GOOD_SOFT_PERCENT),
     },
   }
 }
