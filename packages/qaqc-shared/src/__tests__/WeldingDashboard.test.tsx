@@ -50,6 +50,14 @@ function draw(overrides: Partial<WeldingDashboardProps> = {}): Rendered {
   return render(dashboardElement(overrides))
 }
 
+/** One WW42 week of welds, the first `signed` of them signed that week. */
+function weekOfWelds(total: number, signed: number): Array<Array<string | null>> {
+  return Array.from({ length: total }, (_, position) => {
+    const isSigned = position < signed
+    return ["WW42'2026", isSigned ? 'signed' : null, isSigned ? "WW42'2026" : null, null, 'AW', 'PCH', 'F631M008XX-1']
+  })
+}
+
 function indexOf(rows: ReadonlyArray<ReadonlyArray<string | null>>): WeldIndex {
   return buildWeldIndex(rows, COLUMNS, TODAY)
 }
@@ -233,13 +241,17 @@ describe('WeldingDashboard cards', () => {
     expect(card(view.container, 'Sign-off %')?.querySelector('.qaqc-kpi-value.is-bad')).toBeNull()
   })
 
-  it('colors the Sign-off % value red under 10%', () => {
-    const rows = Array.from({ length: 20 }, (_, position) => [
-      "WW42'2026", position === 0 ? 'signed' : null, position === 0 ? "WW42'2026" : null, null, 'AW', 'PCH', 'F631M008XX-1',
-    ])
-    view = draw({ index: indexOf(rows) })
-    expect(cardValue(view.container, 'Sign-off %')).toBe('5%')
+  it('shows a red, truncated Sign-off % at 24 of 250', () => {
+    view = draw({ index: indexOf(weekOfWelds(250, 24)) })
+    expect(cardValue(view.container, 'Sign-off %')).toBe('9.6%')
     expect(card(view.container, 'Sign-off %')?.querySelector('.qaqc-kpi-value.is-bad')).not.toBeNull()
+    expect(card(view.container, 'Sign-off %')?.getAttribute('aria-label')).toMatch(/Below target$/)
+  })
+
+  it('does not color the Sign-off % value at exactly 10%', () => {
+    view = draw({ index: indexOf(weekOfWelds(20, 2)) })
+    expect(cardValue(view.container, 'Sign-off %')).toBe('10%')
+    expect(card(view.container, 'Sign-off %')?.querySelector('.qaqc-kpi-value.is-bad')).toBeNull()
   })
 
   it('offers every week in the index, newest first', () => {
@@ -298,6 +310,13 @@ describe('WeldingDashboard layout', () => {
     const shapes = items.map((item) => [...(item.firstElementChild?.classList ?? [])].find((name) => name.startsWith('is-')))
     expect(shapes).toEqual(['is-bar', 'is-bar', 'is-line', 'is-dot', 'is-dashed'])
     expect(items[4].querySelector('line')?.getAttribute('stroke')).toBe(THEME.colors.bad)
+  })
+
+  it('draws the Overall rate legend key as a hairline like the chart', () => {
+    view = draw()
+    const items = [...(panel(view.container, BUILDINGS_TITLE)?.querySelectorAll('.qaqc-legend li') ?? [])]
+    expect(items.map((item) => item.textContent)).toEqual(['Issue rate', '2× overall or more', 'Overall rate'])
+    expect(items[2].firstElementChild?.classList.contains('is-hairline')).toBe(true)
   })
 
   it('says there are no welds when the data is empty', () => {

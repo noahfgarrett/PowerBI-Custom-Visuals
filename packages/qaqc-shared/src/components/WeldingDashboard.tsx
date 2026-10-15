@@ -34,6 +34,7 @@ import {
   formatDelta,
   formatPercent,
   formatPointsDelta,
+  formatSignoffRate,
   roundPoints,
   signoffStatus,
   trendOf,
@@ -203,7 +204,7 @@ export function WeldingDashboard({
       legend: [
         { label: 'Issue rate', color: colors.series1, shape: 'bar' },
         { label: '2× overall or more', color: colors.warn, shape: 'bar' },
-        { label: 'Overall rate', color: colors.ink, shape: 'line' },
+        { label: 'Overall rate', color: colors.ink, shape: 'hairline' },
       ],
       expandedLegend: [],
       emptyMessage: model.allBuildings.length > 0 ? null : rangeMessage,
@@ -286,7 +287,7 @@ export function WeldingDashboard({
               <KpiCard
                 label="Sign-off %"
                 icon={Percent}
-                value={formatPercent(signoff?.rate ?? null, 0)}
+                value={formatSignoffRate(signoff?.rate ?? null)}
                 detail={signoffDetail}
                 tone="neutral"
                 trend="none"

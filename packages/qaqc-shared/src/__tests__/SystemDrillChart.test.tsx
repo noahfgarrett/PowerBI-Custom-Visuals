@@ -221,6 +221,20 @@ describe('SystemDrillChart', () => {
     expect(document.activeElement).toBe(rowButton(view.container, 'AW'))
   })
 
+  it('reports lost focus when All systems finds no row to return to', () => {
+    const onFocusLost = vi.fn()
+    const onDrill = vi.fn()
+    view = draw({ drill: AW, onDrill, onFocusLost })
+    const button = allSystemsButton(view.container)
+    act(() => {
+      button.focus()
+    })
+    fire(button, new MouseEvent('click', { bubbles: true }))
+    // AW has dropped into Other, so it has no row of its own.
+    view.rerender(<SystemDrillChart {...props({ onDrill, onFocusLost, systems: SYSTEMS.slice(1) })} />)
+    expect(onFocusLost).toHaveBeenCalledTimes(1)
+  })
+
   it('shows the row focus ring only after keyboard use', () => {
     view = draw()
     const aw = rowButton(view.container, 'AW')

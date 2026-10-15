@@ -21,6 +21,17 @@ export function formatPercent(value: number | null, digits = 1): string {
   return value === null ? 'n/a' : `${value.toFixed(digits)}%`
 }
 
+/**
+ * A sign-off rate as the cards and chart show it. Under the 10% baseline it keeps one decimal, truncated so a
+ * missed baseline never reads as 10%; from 10% up it is a whole percent.
+ */
+export function formatSignoffRate(rate: number | null): string {
+  if (rate === null) return 'n/a'
+  if (rate >= SIGNOFF_BAD_BELOW) return `${rate.toFixed(0)}%`
+  // The epsilon absorbs float error (29 / 500 * 100 is 5.7999…) before truncating.
+  return `${(Math.floor(rate * 10 + 1e-9) / 10).toFixed(1)}%`
+}
+
 export function formatDelta(delta: number, comparedTo: string): string {
   if (delta === 0) return `No change vs ${comparedTo}`
   return `${delta > 0 ? '+' : MINUS}${formatCount(Math.abs(delta))} vs ${comparedTo}`

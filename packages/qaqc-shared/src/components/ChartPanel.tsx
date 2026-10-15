@@ -6,7 +6,7 @@ import { useElementSize, type ElementSize } from '../hooks/useElementSize'
 export interface LegendItem {
   label: string
   color: string
-  shape: 'bar' | 'dot' | 'line' | 'dashed'
+  shape: 'bar' | 'dot' | 'line' | 'hairline' | 'dashed'
 }
 
 /** One legend key. A dashed line is drawn in SVG so its dash pattern matches the chart's (`.qaqc-signoff-baseline` in qaqc.less). */

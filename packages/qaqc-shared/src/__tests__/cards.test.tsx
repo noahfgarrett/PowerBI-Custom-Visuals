@@ -40,6 +40,11 @@ describe('KpiCard value tone', () => {
     expect(view.container.querySelector('.qaqc-kpi-value.is-bad')).not.toBeNull()
   })
 
+  it('names a bad value for screen readers', () => {
+    view = render(<KpiCard label="Sign-off %" value="5.0%" detail="1 of 20" tone="neutral" trend="none" icon={ClipboardCheck} isValueBad />)
+    expect(view.container.querySelector('article')?.getAttribute('aria-label')).toBe('Sign-off %: 5.0%. 1 of 20. Below target')
+  })
+
   it('leaves the value uncolored by default', () => {
     view = render(<KpiCard label="Sign-off %" value="80%" detail="67 of 84" tone="neutral" trend="none" icon={ClipboardCheck} />)
     expect(view.container.querySelector('.qaqc-kpi-value')?.className).toBe('qaqc-kpi-value')

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type KeyboardEvent, type MouseEvent, type
 
 import { labelIndices, niceScale, roundedTopBarPath } from '../chartMath'
 import type { ChartColors, TooltipHandler } from '../chartTypes'
-import { formatCount, formatPercent, pluralize } from '../format'
+import { formatCount, formatPercent, formatSignoffRate, pluralize } from '../format'
 import type { WeldWeekCounts } from '../types'
 import { shortWeekLabel, shortWeekLabelWithYear } from '../workWeeks'
 
@@ -351,7 +351,7 @@ export function SignoffBarChart({
             textAnchor="middle"
             fill={colors.warn}
           >
-            {formatPercent(point.rate, 0)}
+            {formatSignoffRate(point.rate)}
           </text>
         ))}
         {canShowBadges && weeks.map((item, index) => (item.issues > 0

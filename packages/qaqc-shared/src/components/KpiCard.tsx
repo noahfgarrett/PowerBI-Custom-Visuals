@@ -30,7 +30,7 @@ export interface KpiCardProps {
 
 export function KpiCard({ label, value, detail, tone, trend, icon: Icon, status, isValueBad = false }: KpiCardProps): ReactElement {
   const TrendIcon = trend === 'none' ? null : TREND_ICONS[trend]
-  const summary = `${label}: ${value}. ${detail}`
+  const summary = isValueBad ? `${label}: ${value}. ${detail}. Below target` : `${label}: ${value}. ${detail}`
   return (
     <article className="qaqc-kpi" aria-label={status === undefined ? summary : `${summary}. Status: ${STATUS_WORDS[status]}`}>
       <div className="qaqc-kpi-head">

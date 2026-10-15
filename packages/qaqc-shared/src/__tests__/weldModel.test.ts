@@ -231,6 +231,13 @@ describe('buildWeldModel systems', () => {
     expect(buildWeldModel(index, defaultViewState(index), 'ZZ', 1).drill).toBeNull()
   })
 
+  it('keeps the drill when a refresh changes the system name spelling shown', () => {
+    const respelled = buildWeldIndex(ROWS.map((row) => (row[4] === 'AW' ? [...row.slice(0, 4), ' aw ', ...row.slice(5)] : row)), COLUMNS, TODAY)
+    const model = buildWeldModel(respelled, defaultViewState(respelled), 'AW', 1)
+    expect(model.drill?.system).toBe('aw')
+    expect(model.drill?.total).toBe(4)
+  })
+
   it('drops the drill when the system has no welds in the window', () => {
     const rows = [weld("WW05'2026", null, 'AW', 'PCH', F631), weld(WW41, null, 'IW', 'PCH', F631)]
     const long = buildWeldIndex(rows, COLUMNS, TODAY)

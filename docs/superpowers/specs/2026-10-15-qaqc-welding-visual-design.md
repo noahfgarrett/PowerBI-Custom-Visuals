@@ -69,6 +69,7 @@ Matches the HTML app's Welding chart (user decision 2026-10-15: these visuals do
 - Horizontal bars per system in the window, ranked by total welds: signed inside total, with `signed / total · %` at the end. Top 8, then `Other (n systems)`.
 - Clicking a system bar (or Enter on the focused row) drills into that system: the same chart now shows its **pipe specs** (signed within total), with a breadcrumb `All systems › AW` above the bars. The breadcrumb's "All systems" button returns. `Other` is not clickable.
 - Drill state is per session (resets on reopen) and survives week changes; if the drilled system disappears from the window, the chart returns to All systems.
+- Legend: Signed, Total welds.
 - **Expanded:** a table of every system (Total, Signed, Sign-off %, sortable like the building table). Each system row has a disclosure button that reveals its pipe-spec rows indented underneath.
 
 ### Issues by Building (small)
@@ -76,6 +77,7 @@ Matches the HTML app's Welding chart (user decision 2026-10-15: these visuals do
 - Horizontal bars per building in the window: issue rate (issues ÷ welds), labelled `n issues · x.x%`. Only buildings with at least the **minimum welds** (Format pane, default 10, range 1–100) are ranked; the rest roll into `Other (n buildings)`. Sorted by rate, then issues, then name.
 - A building whose rate is at least 2× the overall window rate is drawn in the warn amber; the rest use series 1. A vertical hairline marks the overall rate.
 - Empty message when the window has no issues: "No issues created in this range".
+- Legend: Issue rate, 2× overall or more (warn amber), Overall rate (a 1 px hairline key, matching the chart's line).
 - **Expanded:** sortable table of every building (Building, Welds, Issues, Issue rate), ignoring the minimum.
 
 ## Format pane

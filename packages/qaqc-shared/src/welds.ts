@@ -74,10 +74,15 @@ function newNameGroups(): NameGroups {
   return { bySpelling: new Map(), byKey: new Map() }
 }
 
+/** The case- and whitespace-insensitive key that names are grouped by. */
+function groupKey(name: string): string {
+  return name.toLowerCase().replace(/\s+/g, ' ')
+}
+
 function groupName(spelling: string, groups: NameGroups): string {
   const known = groups.bySpelling.get(spelling)
   if (known !== undefined) return known
-  const key = spelling.toLowerCase().replace(/\s+/g, ' ')
+  const key = groupKey(spelling)
   const name = groups.byKey.get(key) ?? spelling
   groups.byKey.set(key, name)
   groups.bySpelling.set(spelling, name)
@@ -359,7 +364,8 @@ export function buildWeldModel(
     systems,
     allSystems,
     otherSystems,
-    drill: drillSystem === null ? null : (allSystems.find((system) => system.system === drillSystem) ?? null),
+    // Matched by grouping key: a refresh can change which spelling a system is shown under.
+    drill: drillSystem === null ? null : (allSystems.find((system) => groupKey(system.system) === groupKey(drillSystem)) ?? null),
     buildings,
     allBuildings,
     otherBuildings,

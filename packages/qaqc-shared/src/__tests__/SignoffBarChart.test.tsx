@@ -170,7 +170,7 @@ describe('SignoffBarChart', () => {
   it('labels only the selected week rate by default', () => {
     view = draw()
     const labels = [...view.container.querySelectorAll('.qaqc-rate-label')]
-    expect(labels.map((node) => node.textContent)).toEqual(['5%'])
+    expect(labels.map((node) => node.textContent)).toEqual(['5.0%'])
     expect(numberAttr(labels[0], 'x')).toBe(469)
   })
 
@@ -234,9 +234,14 @@ describe('SignoffBarChart', () => {
     expect(view.container.querySelectorAll('.qaqc-rate-label')).toHaveLength(0)
   })
 
+  it('labels a rate just under 10% with a truncated decimal, never 10%', () => {
+    view = draw({ weeks: [week(41, 300, 299), week(42, 301, 30)] })
+    expect(texts(view.container, '.qaqc-rate-label')).toEqual(['9.9%'])
+  })
+
   it('labels every rate that fits its band when showValues is on', () => {
     view = draw({ showValues: true })
-    expect(texts(view.container, '.qaqc-rate-label')).toEqual(['37%', '80%', '5%'])
+    expect(texts(view.container, '.qaqc-rate-label')).toEqual(['37%', '80%', '5.0%'])
   })
 
   it('keeps only the selected rate label when bands are too narrow, even with showValues', () => {

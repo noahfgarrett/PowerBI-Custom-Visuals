@@ -29,8 +29,8 @@ export interface SystemDrillChartProps {
   /** A system name drills in; null returns to all systems. */
   onDrill: (system: string | null) => void
   /**
-   * Called when the drill resets without the breadcrumb (the drilled system left the window) while the breadcrumb
-   * had focus, so the parent can move focus somewhere that still exists instead of letting it fall to the body.
+   * Called when focus would fall to the body: the drill reset without the breadcrumb (the drilled system left the
+   * window) while the breadcrumb had focus, or All systems found no row to return focus to.
    */
   onFocusLost?: () => void
   onHover: TooltipHandler
@@ -129,7 +129,9 @@ export function SystemDrillChart({
     if (drilledSystem !== null) return
     const rows = svgRef.current?.querySelectorAll<SVGElement>('[data-system]') ?? []
     const target = [...rows].find((node) => node.getAttribute('data-system') === pending.system)
-    target?.focus()
+    // The system may have no row of its own now (it fell into Other or below the height limit).
+    if (target === undefined) onFocusLost?.()
+    else target.focus()
   }, [drilledSystem])
 
   const svgHeight = Math.max(0, height - (drill !== null ? BREADCRUMB_HEIGHT : 0))
