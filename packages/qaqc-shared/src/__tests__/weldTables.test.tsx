@@ -18,7 +18,7 @@ function texts(nodes: Iterable<Element>): string[] {
 }
 
 function rowNames(root: HTMLElement): string[] {
-  return [...root.querySelectorAll('tbody tr')].map((row) => row.querySelector('th')?.textContent ?? '')
+  return [...root.querySelectorAll('tbody tr:not([hidden])')].map((row) => row.querySelector('th')?.textContent ?? '')
 }
 
 function header(root: HTMLElement, name: string): HTMLTableCellElement {
@@ -100,7 +100,7 @@ describe('SystemTable', () => {
     view = render(<SystemTable rows={SYSTEMS} />)
     const buttons = [...view.container.querySelectorAll('.qaqc-disclosure')]
     expect(buttons.map((button) => button.getAttribute('aria-expanded'))).toEqual(['false', 'false', 'false'])
-    expect(view.container.querySelectorAll('.qaqc-spec-row')).toHaveLength(0)
+    expect(view.container.querySelectorAll('.qaqc-spec-row:not([hidden])')).toHaveLength(0)
   })
 
   it('reveals pipe-spec rows under a system and hides them again', () => {
@@ -108,12 +108,29 @@ describe('SystemTable', () => {
     click(disclosure(view.container, 'AW'))
     expect(disclosure(view.container, 'AW').getAttribute('aria-expanded')).toBe('true')
     expect(rowNames(view.container)).toEqual(['AW', 'PCH', 'QCH', 'MDW', 'PCHA', 'IW', 'FL'])
-    const specRow = view.container.querySelector('.qaqc-spec-row')
+    const specRow = view.container.querySelector('.qaqc-spec-row:not([hidden])')
     expect(specRow?.querySelector('th')?.getAttribute('scope')).toBe('row')
     expect(texts(specRow?.querySelectorAll('td') ?? [])).toEqual(['208', '142', '68.3%'])
     click(disclosure(view.container, 'AW'))
     expect(disclosure(view.container, 'AW').getAttribute('aria-expanded')).toBe('false')
-    expect(view.container.querySelectorAll('.qaqc-spec-row')).toHaveLength(0)
+    expect(view.container.querySelectorAll('.qaqc-spec-row:not([hidden])')).toHaveLength(0)
+  })
+
+  it('points each disclosure button at the spec rows it controls, open or closed', () => {
+    view = render(<SystemTable rows={SYSTEMS} />)
+    const controlled = (system: string): string[] => {
+      const ids = disclosure(view?.container ?? document.body, system).getAttribute('aria-controls')?.split(' ') ?? []
+      return ids.map((id) => document.getElementById(id)?.querySelector('th')?.textContent ?? `missing ${id}`)
+    }
+    expect(controlled('AW')).toEqual(['PCH', 'QCH', 'MDW', 'PCHA'])
+    expect(controlled('FL')).toEqual(['Unspecified'])
+    click(disclosure(view.container, 'AW'))
+    expect(controlled('AW')).toEqual(['PCH', 'QCH', 'MDW', 'PCHA'])
+  })
+
+  it('omits aria-controls for a system with no pipe specs', () => {
+    view = render(<SystemTable rows={[{ system: 'Z', total: 0, signed: 0, specs: [] }]} />)
+    expect(disclosure(view.container, 'Z').hasAttribute('aria-controls')).toBe(false)
   })
 
   it('keeps systems open across sorts and sorts their specs the same way', () => {
@@ -139,7 +156,7 @@ describe('SystemTable', () => {
 
   it('reads n/a for a system with no welds', () => {
     view = render(<SystemTable rows={[{ system: 'Z', total: 0, signed: 0, specs: [] }]} />)
-    expect(texts(view.container.querySelectorAll('tbody td'))).toEqual(['0', '0', 'n/a'])
+    expect(texts(view.container.querySelectorAll('tbody tr:not([hidden]) td'))).toEqual(['0', '0', 'n/a'])
   })
 
   it('renders only headers when there are no systems', () => {

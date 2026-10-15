@@ -2,7 +2,7 @@ import { Minimize2, type LucideIcon } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactElement, type ReactNode } from 'react'
 
 import { useElementSize, type ElementSize } from '../hooks/useElementSize'
-import type { LegendItem } from './ChartPanel'
+import { LegendSwatch, type LegendItem } from './ChartPanel'
 
 const OPEN_MS = 250
 const CLOSE_MS = 220
@@ -205,7 +205,7 @@ export function ExpandedPanel({
         <ul className={`qaqc-legend${revealClass}${stateClass}`}>
           {legend.map((item) => (
             <li key={item.label}>
-              <span className={`qaqc-legend-swatch is-${item.shape}`} style={{ background: item.color }} />
+              <LegendSwatch item={item} />
               {item.label}
             </li>
           ))}

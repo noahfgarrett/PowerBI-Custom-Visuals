@@ -187,6 +187,48 @@ describe('SignoffBarChart', () => {
     expect(numberAttr(element(view.container, '.qaqc-rate-label'), 'y')).toBeCloseTo(rateY(80) + 17, 6)
   })
 
+  it('moves the rate label below its dot when above would hit the total label on a badged week', () => {
+    // WW41's 100 welds put its total label at y 109.67 and its badge centre at 90.67; above its 64% dot the label would sit at 111.12.
+    view = draw({ weeks: [week(40, 126, 46), week(41, 100, 64, 1)], selectedKey: 202641 })
+    const labelY = numberAttr(element(view.container, '.qaqc-rate-label'), 'y')
+    expect(labelY).toBeCloseTo(rateY(64) + 17, 6)
+    const totalY = numberAttr(view.container.querySelectorAll('.qaqc-total-label')[1], 'y')
+    expect(Math.abs(labelY - totalY)).toBeGreaterThanOrEqual(15)
+  })
+
+  it('moves the rate label below its dot when above would hit the 10% baseline label', () => {
+    // Eight 63.75 px bands put the last dot at x 522, under the right-aligned "10% baseline" label.
+    const weeks = [...Array.from({ length: 7 }, (_, index) => week(34 + index, 100, 50)), week(41, 100, 10)]
+    view = draw({ weeks, selectedKey: 202641 })
+    expect(numberAttr(element(view.container, '.qaqc-rate-label'), 'y')).toBeCloseTo(rateY(10) + 17, 6)
+  })
+
+  it('keeps a 10% rate label above its dot when the dot is clear of the baseline label', () => {
+    const weeks = [week(34, 100, 10), ...Array.from({ length: 7 }, (_, index) => week(35 + index, 100, 50))]
+    view = draw({ weeks, selectedKey: 202634 })
+    expect(numberAttr(element(view.container, '.qaqc-rate-label'), 'y')).toBeCloseTo(rateY(10) - 10, 6)
+  })
+
+  it('does not dodge a total label that narrow bands leave undrawn', () => {
+    // 17 px bands draw no total labels, so WW80's 80% label stays above its dot even though it sits at its bar top.
+    const weeks: WeldWeekCounts[] = Array.from({ length: 30 }, (_, index) => ({
+      week: makeWorkWeek(2026, index + 1),
+      logged: index === 0 ? 150 : 120,
+      signed: index === 0 ? 15 : 96,
+      issues: 0,
+      signedInWeek: 0,
+    }))
+    view = draw({ weeks, selectedKey: weeks[29].week.key })
+    expect(numberAttr(element(view.container, '.qaqc-rate-label'), 'y')).toBeCloseTo(rateY(80) - 10, 6)
+  })
+
+  it('uses the side with more room when the label is crowded both above and below', () => {
+    // WW41's 76% dot is at y 92.08. Above (82.08) is 8.6 px from its badge (90.67); below (109.08) is 0.6 px
+    // from its total label (109.67). Above has more room.
+    view = draw({ weeks: [week(40, 150, 15), week(41, 100, 76, 1)], selectedKey: 202641 })
+    expect(numberAttr(element(view.container, '.qaqc-rate-label'), 'y')).toBeCloseTo(rateY(76) - 10, 6)
+  })
+
   it('draws no rate label when the selected week has no welds', () => {
     view = draw({ weeks: [week(41, 84, 67), week(42, 0, 0)] })
     expect(view.container.querySelectorAll('.qaqc-rate-label')).toHaveLength(0)

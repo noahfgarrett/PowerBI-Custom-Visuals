@@ -41,14 +41,16 @@ describe('KpiCard status', () => {
     const line = card?.querySelector('.qaqc-kpi-status')
     expect(line?.classList.contains('is-warn')).toBe(true)
     expect(line?.previousElementSibling?.classList.contains('qaqc-kpi-value')).toBe(true)
-    expect(card?.getAttribute('aria-label')).toBe('Overall Sign-off %: 12.0%. +0.4 pts. Status: warn')
+    expect(card?.getAttribute('aria-label')).toBe('Overall Sign-off %: 12.0%. +0.4 pts. Status: watch')
   })
 
   it('classes the line by status', () => {
     view = render(<KpiCard label="Overall Sign-off %" value="60.2%" detail="No change" tone="neutral" trend="flat" icon={ClipboardCheck} status="good" />)
     expect(view.container.querySelector('.qaqc-kpi-status.is-good')).not.toBeNull()
+    expect(view.container.querySelector('article')?.getAttribute('aria-label')).toMatch(/Status: on track$/)
     view.rerender(<KpiCard label="Overall Sign-off %" value="8.0%" detail="No change" tone="neutral" trend="flat" icon={ClipboardCheck} status="bad" />)
     expect(view.container.querySelector('.qaqc-kpi-status.is-bad')).not.toBeNull()
+    expect(view.container.querySelector('article')?.getAttribute('aria-label')).toMatch(/Status: below target$/)
   })
 
   it('draws no status line and adds no status text without a status', () => {

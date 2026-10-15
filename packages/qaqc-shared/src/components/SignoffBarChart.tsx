@@ -29,11 +29,17 @@ const TOTAL_LABEL_GAP = 5
 const SIGNED_LABEL_INSET = 12
 const SIGNED_LABEL_GAP = 4
 const BADGE_GAP = 2
-// A rate label moves below its dot when, above it, it would sit within this distance of the badge or total label.
+// A rate label must sit at least this far from the total label, badge, and baseline label.
 const RATE_LABEL_CLEARANCE = 15
 const RATE_LABEL_ABOVE = 10
 const RATE_LABEL_BELOW = 17
 const AXIS_TITLE_INSET = 10
+const BASELINE_LABEL = '10% baseline'
+const BASELINE_LABEL_GAP = 5
+/** Approximate width of one 9.5 px bold label character. */
+const LABEL_CHAR_WIDTH = 5.6
+/** Half the width of a rate label such as "100%". */
+const RATE_LABEL_HALF_WIDTH = 12
 
 export interface SignoffBarChartProps {
   weeks: WeldWeekCounts[]
@@ -134,6 +140,8 @@ export function SignoffBarChart({
   const bandX = (index: number): number => MARGIN.left + index * band
   const centerX = (index: number): number => bandX(index) + band / 2
 
+  const baselineY = rateY(BASELINE_PERCENT)
+  const baselineLabelY = baselineY - BASELINE_LABEL_GAP
   const canShowBadges = band >= BADGE_RADIUS * 2 - 2
   const canShowBarLabels = band >= MIN_BAR_LABEL_BAND
   const totalLabelY = (item: WeldWeekCounts): number => y(item.logged) - TOTAL_LABEL_GAP
@@ -150,13 +158,29 @@ export function SignoffBarChart({
   const labelledPoints = ratePoints.filter((point) => point.index === selectedIndex
     || (showValues && band >= MIN_RATE_LABEL_BAND))
 
-  /** The app's avoid-overlap rule: above the dot unless that crowds the badge or total label, then below it. */
-  function rateLabelY(point: RatePoint): number {
+  /** The y of every label already drawn near this week's dot. */
+  function reservedYs(point: RatePoint): number[] {
     const item = weeks[point.index]
+    const reserved: number[] = []
+    if (canShowBarLabels) reserved.push(totalLabelY(item))
+    if (canShowBadges && item.issues > 0) reserved.push(badgeCenterY(item))
+    const baselineLabelLeft = plotRight - BASELINE_LABEL.length * LABEL_CHAR_WIDTH
+    if (point.x + RATE_LABEL_HALF_WIDTH >= baselineLabelLeft) reserved.push(baselineLabelY)
+    return reserved
+  }
+
+  /**
+   * The app's avoid-overlap rule, checked against every nearby label: above the dot when that is clear, otherwise
+   * below it, and when both are crowded, whichever side has more room.
+   */
+  function rateLabelY(point: RatePoint): number {
+    const reserved = reservedYs(point)
+    const room = (candidate: number): number => reserved.reduce((min, y) => Math.min(min, Math.abs(candidate - y)), Infinity)
     const above = Math.max(top + RATE_LABEL_ABOVE, point.y - RATE_LABEL_ABOVE)
     const below = Math.min(plotBottom - 5, point.y + RATE_LABEL_BELOW)
-    const reservedY = canShowBadges && item.issues > 0 ? badgeCenterY(item) : totalLabelY(item)
-    return Math.abs(above - reservedY) < RATE_LABEL_CLEARANCE ? below : above
+    if (room(above) >= RATE_LABEL_CLEARANCE) return above
+    if (room(below) >= RATE_LABEL_CLEARANCE) return below
+    return room(above) >= room(below) ? above : below
   }
 
   function showTooltip(index: number, event: MouseEvent<SVGRectElement>): void {
@@ -205,7 +229,6 @@ export function SignoffBarChart({
     ? `Weld sign-offs by work week, ${weeks[0].week.label} to ${weeks[weeks.length - 1].week.label}`
     : 'Weld sign-offs by work week'
   const plotMiddle = top + plotHeight / 2
-  const baselineY = rateY(BASELINE_PERCENT)
 
   return (
     <>
@@ -341,8 +364,8 @@ export function SignoffBarChart({
             </g>
           )
           : null))}
-        <text className="qaqc-baseline-label" x={plotRight} y={baselineY - 5} textAnchor="end" fill={colors.bad}>
-          10% baseline
+        <text className="qaqc-baseline-label" x={plotRight} y={baselineLabelY} textAnchor="end" fill={colors.bad}>
+          {BASELINE_LABEL}
         </text>
         <text
           className="qaqc-axis-title"

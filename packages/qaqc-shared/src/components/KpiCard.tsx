@@ -3,6 +3,12 @@ import type { ReactElement } from 'react'
 
 import type { DeltaTone, KpiStatus, Trend } from '../format'
 
+const STATUS_WORDS: Record<KpiStatus, string> = {
+  good: 'on track',
+  warn: 'watch',
+  bad: 'below target',
+}
+
 const TREND_ICONS: Record<Exclude<Trend, 'none'>, LucideIcon> = {
   up: ArrowUpRight,
   down: ArrowDownRight,
@@ -24,7 +30,7 @@ export function KpiCard({ label, value, detail, tone, trend, icon: Icon, status 
   const TrendIcon = trend === 'none' ? null : TREND_ICONS[trend]
   const summary = `${label}: ${value}. ${detail}`
   return (
-    <article className="qaqc-kpi" aria-label={status === undefined ? summary : `${summary}. Status: ${status}`}>
+    <article className="qaqc-kpi" aria-label={status === undefined ? summary : `${summary}. Status: ${STATUS_WORDS[status]}`}>
       <div className="qaqc-kpi-head">
         <span className="qaqc-kpi-icon">
           <Icon size={13} aria-hidden="true" />

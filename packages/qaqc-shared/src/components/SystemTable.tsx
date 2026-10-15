@@ -1,5 +1,5 @@
 import { ChevronRight } from 'lucide-react'
-import { Fragment, useMemo, useState, type ReactElement } from 'react'
+import { Fragment, useId, useMemo, useState, type ReactElement } from 'react'
 
 import { formatCount, formatPercent, NAME_COLLATOR } from '../format'
 import type { SystemDetail } from '../types'
@@ -77,8 +77,10 @@ export interface SystemTableProps {
 export function SystemTable({ rows }: SystemTableProps): ReactElement {
   const [sort, setSort] = useState<SortState>({ key: 'total', direction: 'descending' })
   const [openSystems, setOpenSystems] = useState<ReadonlySet<string>>(() => new Set())
+  const idPrefix = useId()
+  // Each system keeps its input position so its spec-row ids stay stable across sorts.
   const sorted = useMemo(
-    () => sortRows(rows.map((row) => ({ ...row, name: row.system })), sort),
+    () => sortRows(rows.map((row, position) => ({ ...row, name: row.system, position })), sort),
     [rows, sort],
   )
 
@@ -118,19 +120,29 @@ export function SystemTable({ rows }: SystemTableProps): ReactElement {
         <tbody>
           {sorted.map((row) => {
             const isOpen = openSystems.has(row.system)
+            // Spec rows stay in the DOM while collapsed (hidden) so aria-controls always points at real rows.
+            const specs = sortRows(row.specs.map((spec, position) => ({ ...spec, name: spec.spec, position })), sort)
+            const specId = (position: number): string => `${idPrefix}-system-${row.position}-spec-${position}`
+            const controls = specs.length > 0 ? specs.map((spec) => specId(spec.position)).join(' ') : undefined
             return (
               <Fragment key={row.system}>
                 <tr>
                   <th scope="row">
-                    <button type="button" className="qaqc-disclosure" aria-expanded={isOpen} onClick={() => toggleOpen(row.system)}>
+                    <button
+                      type="button"
+                      className="qaqc-disclosure"
+                      aria-expanded={isOpen}
+                      aria-controls={controls}
+                      onClick={() => toggleOpen(row.system)}
+                    >
                       <ChevronRight size={14} aria-hidden="true" />
                       {row.system}
                     </button>
                   </th>
                   <TallyCells row={row} />
                 </tr>
-                {isOpen && sortRows(row.specs.map((spec) => ({ ...spec, name: spec.spec })), sort).map((spec) => (
-                  <tr key={spec.spec} className="qaqc-spec-row">
+                {specs.map((spec) => (
+                  <tr key={spec.spec} id={specId(spec.position)} className="qaqc-spec-row" hidden={!isOpen}>
                     <th scope="row">{spec.spec}</th>
                     <TallyCells row={spec} />
                   </tr>

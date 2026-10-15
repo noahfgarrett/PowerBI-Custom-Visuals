@@ -293,3 +293,11 @@ describe('ExpandedPanel with the Web Animations API', () => {
     expect(calls).toHaveLength(1)
   })
 })
+
+describe('ExpandedPanel legend shapes', () => {
+  it('draws a dashed-line swatch like the panel legend', () => {
+    stubSize()
+    view = render(panel({ animate: false, legend: [{ label: '10% baseline', color: '#D03B3B', shape: 'dashed' }] }))
+    expect(view.container.querySelector('.qaqc-legend-swatch.is-dashed line')?.getAttribute('stroke')).toBe('#D03B3B')
+  })
+})
