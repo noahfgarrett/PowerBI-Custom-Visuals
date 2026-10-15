@@ -26,16 +26,6 @@ const DATA_UPDATE_FLAG = 2
 const APPEND_OPERATION = 1
 const SEGMENT_OPERATION = 2
 
-/** Cheap change detector: row count, column names and roles, first and last row. */
-function fingerprintTable(table: powerbi.DataViewTable | undefined): string {
-  if (!table) return ''
-  const rows = table.rows ?? []
-  const columns = table.columns.map((column) => `${column.displayName}:${Object.keys(column.roles ?? {}).join('+')}`)
-  const first = rows.length > 0 ? JSON.stringify(rows[0]) : ''
-  const last = rows.length > 0 ? JSON.stringify(rows[rows.length - 1]) : ''
-  return [rows.length, columns.join('|'), first, last].join('#')
-}
-
 function prefersReducedMotion(): boolean {
   return typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
@@ -50,7 +40,6 @@ export class QaqcElectricalVisual implements powerbi.extensibility.visual.IVisua
   private table: TableReadResult | null = null
   private index: InspectionIndex | null = null
   private loading = false
-  private tableFingerprint = ''
   private rowLimitReached = false
   private renderError: unknown = null
   private viewport: powerbi.IViewport = { width: 0, height: 0 }
@@ -120,15 +109,10 @@ export class QaqcElectricalVisual implements powerbi.extensibility.visual.IVisua
     this.root.unmount()
   }
 
-  /** Format-pane changes arrive as data updates, so an unchanged table keeps its index. */
   private readTable(dataView: powerbi.DataView | undefined): void {
-    const result = readInspectionTable(dataView)
-    const fingerprint = fingerprintTable(dataView?.table)
-    if (this.table !== null && this.table.kind === result.kind && fingerprint === this.tableFingerprint) return
-    this.table = result
-    this.tableFingerprint = fingerprint
-    this.index = result.kind === 'ready'
-      ? buildInspectionIndex(result.rows, result.columns, new Date())
+    this.table = readInspectionTable(dataView)
+    this.index = this.table.kind === 'ready'
+      ? buildInspectionIndex(this.table.rows, this.table.columns, new Date())
       : null
   }
 

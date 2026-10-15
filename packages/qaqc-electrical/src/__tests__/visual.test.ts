@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createConstructorOptions } from '../../../core/src/__test-utils__'
 import { ELECTRICAL_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/electricalRows'
-import { buildInspectionIndex } from '../../../qaqc-shared/src/inspections'
 import { QaqcElectricalVisual } from '../visual'
 import { tableDataView } from './tableDataView'
 
@@ -20,12 +19,6 @@ vi.mock('../ElectricalDashboard', async (importOriginal) => {
       return createElement(actual.ElectricalDashboard, props)
     },
   }
-})
-
-// Counts index builds while keeping the real implementation.
-vi.mock('../../../qaqc-shared/src/inspections', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../../qaqc-shared/src/inspections')>()
-  return { ...actual, buildInspectionIndex: vi.fn(actual.buildInspectionIndex) }
 })
 
 type ConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions
@@ -90,7 +83,6 @@ let harness: Harness | null = null
 
 beforeEach(() => {
   dashboardControl.shouldThrow = false
-  vi.mocked(buildInspectionIndex).mockClear()
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date(2026, 9, 15, 12))
 })
@@ -208,20 +200,19 @@ describe('QaqcElectricalVisual', () => {
     expect(harness.events.renderingFinished).toHaveBeenCalledTimes(1)
   })
 
-  it('does not rebuild the index when only formatting changes', () => {
+  it('refreshes the cards when a middle row changes and the row count stays the same', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(ELECTRICAL_ROWS)))
-    const reformatted = tableDataView(ELECTRICAL_ROWS)
-    reformatted.metadata.objects = { animationSettings: { enabled: false } }
-    apply(harness, update(reformatted))
-    expect(vi.mocked(buildInspectionIndex)).toHaveBeenCalledTimes(1)
-  })
+    const before = cardValue(harness.element, 'Issues Found')
 
-  it('rebuilds the index when the rows change', () => {
-    harness = createHarness()
-    apply(harness, update(tableDataView(ELECTRICAL_ROWS)))
-    apply(harness, update(tableDataView(ELECTRICAL_ROWS.slice(0, 100))))
-    expect(vi.mocked(buildInspectionIndex)).toHaveBeenCalledTimes(2)
+    // The first WW42 Final row is the sixth from the end, so the first and last rows stay untouched.
+    const edited = ELECTRICAL_ROWS.map((row, position) =>
+      position === ELECTRICAL_ROWS.length - 6 ? [row[0], row[1], 'NCR', row[3]] : row,
+    )
+    apply(harness, update(tableDataView(edited)))
+
+    expect(before).toBe('0')
+    expect(cardValue(harness.element, 'Issues Found')).toBe('1')
   })
 
   it('keeps the row-limit footnote across a resize', () => {
