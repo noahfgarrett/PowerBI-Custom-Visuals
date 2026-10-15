@@ -276,6 +276,12 @@ describe('ChartExpansionFrame header-button pages', () => {
     expect(dialog(view.container)?.querySelector('.detail-page')).not.toBeNull()
   })
 
+  it('marks the page dialog as modal', () => {
+    view = render(<PageDashboard />)
+    click(pageButton(view.container))
+    expect(dialog(view.container)?.getAttribute('aria-modal')).toBe('true')
+  })
+
   it('makes the dashboard behind the page inert', () => {
     view = render(<PageDashboard />)
     click(pageButton(view.container))

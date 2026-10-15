@@ -214,6 +214,15 @@ describe('buildIssueDetail', () => {
     expect(detail.closedLastWeek).toBe(0)
   })
 
+  it('names the week it used and the week before', () => {
+    const detail = buildIssueDetail(index, WW41)
+    expect([detail.selectedWeek.label, detail.previousWeek.label]).toEqual(["WW41'2026", "WW40'2026"])
+  })
+
+  it('names the current week when the selected week is unknown', () => {
+    expect(buildIssueDetail(index, 201901).selectedWeek.label).toBe("WW42'2026")
+  })
+
   it('falls back to the current week for an unknown selected week', () => {
     expect(buildIssueDetail(index, 201901)).toEqual(buildIssueDetail(index, WW42))
   })

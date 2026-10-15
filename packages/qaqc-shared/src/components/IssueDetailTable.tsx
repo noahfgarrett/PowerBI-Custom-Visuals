@@ -13,22 +13,27 @@ type SortKey = TextKey | NumberKey
 interface Column {
   key: SortKey
   label: string
-  /** A fixed column width; the column without one (Title) takes the spare width. */
-  width: string | undefined
+  /** The column width in px; null for Title, which takes the spare width. */
+  width: number | null
 }
 
-// Fixed widths (table-layout: fixed) keep the columns still while the windowed rows scroll past.
+// Fixed widths (table-layout: fixed) keep the columns still while the windowed rows scroll past. The widths live
+// only here: the stylesheet sets the fixed layout, and the table's minimum width is derived below.
 const COLUMNS: readonly Column[] = [
-  { key: 'id', label: 'ID', width: '78px' },
-  { key: 'subtype', label: 'Subtype', width: '11%' },
-  { key: 'status', label: 'Status', width: '150px' },
-  { key: 'title', label: 'Title', width: undefined },
-  { key: 'contractor', label: 'Contractor', width: '12%' },
-  { key: 'workWeek', label: 'Work Week', width: '104px' },
-  { key: 'createdOn', label: 'Created On', width: '100px' },
-  { key: 'workWeekClosed', label: 'Work Week Closed', width: '146px' },
-  { key: 'dueDate', label: 'Due Date', width: '96px' },
+  { key: 'id', label: 'ID', width: 78 },
+  { key: 'subtype', label: 'Subtype', width: 110 },
+  { key: 'status', label: 'Status', width: 150 },
+  { key: 'title', label: 'Title', width: null },
+  { key: 'contractor', label: 'Contractor', width: 140 },
+  { key: 'workWeek', label: 'Work Week', width: 104 },
+  { key: 'createdOn', label: 'Created On', width: 100 },
+  { key: 'workWeekClosed', label: 'Work Week Closed', width: 146 },
+  { key: 'dueDate', label: 'Due Date', width: 96 },
 ] as const
+
+/** Title never gets narrower than this; narrower overlays scroll the table sideways instead. */
+const TITLE_MIN_WIDTH = 260
+const TABLE_MIN_WIDTH = COLUMNS.reduce((sum, column) => sum + (column.width ?? 0), TITLE_MIN_WIDTH)
 
 const DISCUSSION_TITLE = 'Open for discussion'
 
@@ -136,12 +141,16 @@ export function IssueDetailTable({ reportRows, discussionRows, caption }: IssueD
   }
 
   return (
-    <div className="qaqc-table-wrap qaqc-issue-detail-wrap" ref={containerRef} onScroll={onScroll}>
-      <table className="qaqc-table is-windowed qaqc-issue-detail-table" aria-rowcount={rows.length + 1}>
+    <div className="qaqc-table-wrap is-flex-fill qaqc-issue-detail-wrap" ref={containerRef} onScroll={onScroll}>
+      <table
+        className="qaqc-table is-windowed qaqc-issue-detail-table"
+        aria-rowcount={rows.length + 1}
+        style={{ minWidth: TABLE_MIN_WIDTH }}
+      >
         <caption className="qaqc-visually-hidden">{caption}</caption>
         <colgroup>
           {COLUMNS.map((column) => (
-            <col key={column.key} style={column.width === undefined ? undefined : { width: column.width }} />
+            <col key={column.key} style={column.width === null ? undefined : { width: column.width }} />
           ))}
         </colgroup>
         <thead>
@@ -179,7 +188,7 @@ export function IssueDetailTable({ reportRows, discussionRows, caption }: IssueD
                 title={isDiscussion ? DISCUSSION_TITLE : undefined}
                 style={{ height: TABLE_ROW_HEIGHT }}
               >
-                <th scope="row" className="qaqc-issue-id">
+                <th scope="row">
                   {row.id}
                   {isDiscussion && <span className="qaqc-visually-hidden">, open for discussion</span>}
                 </th>
@@ -187,7 +196,7 @@ export function IssueDetailTable({ reportRows, discussionRows, caption }: IssueD
                 <td className="is-text">
                   <span className={`qaqc-status-pill is-${pill}`} title={row.status}>{row.status}</span>
                 </td>
-                <td className="is-text qaqc-issue-title" title={row.title}>{row.title}</td>
+                <td className="is-text" title={row.title}>{row.title}</td>
                 <td className="is-text" title={row.contractor}>{row.contractor}</td>
                 <td className="is-text">{row.workWeek}</td>
                 <td className="is-text">{row.createdOn}</td>

@@ -817,6 +817,12 @@
   text-transform: uppercase;
 }
 
+.qaqc-table thead th button:focus-visible {
+  // Header cells clip overflow (windowed tables), so the ring sits inside the button.
+  outline: 2px solid var(--qaqc-accent);
+  outline-offset: -2px;
+}
+
 .qaqc-table thead th[aria-sort] button {
   color: var(--qaqc-accent);
 }
@@ -1246,7 +1252,7 @@
   min-width: 240px;
 }
 
-.qaqc-detail-legend {
+.qaqc-issue-detail-legend {
   display: flex;
   flex: 0 0 auto;
   flex-wrap: wrap;
@@ -1256,7 +1262,7 @@
   list-style: none;
 }
 
-.qaqc-detail-legend li {
+.qaqc-issue-detail-legend li {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1265,13 +1271,13 @@
   font-weight: 600;
 }
 
-.qaqc-detail-legend strong {
+.qaqc-issue-detail-legend strong {
   color: var(--qaqc-ink);
   font-variant-numeric: tabular-nums;
   font-weight: 700;
 }
 
-.qaqc-detail-swatch {
+.qaqc-issue-detail-swatch {
   display: block;
   flex: 0 0 auto;
   width: 18px;
@@ -1280,29 +1286,32 @@
   border-radius: 4px;
 }
 
-.qaqc-detail-swatch.is-report {
+.qaqc-issue-detail-swatch.is-report {
   background: var(--qaqc-card-solid);
 }
 
-.qaqc-detail-swatch.is-discussion {
+.qaqc-issue-detail-swatch.is-discussion {
   background: var(--qaqc-discussion);
   box-shadow: inset 3px 0 var(--qaqc-muted);
 }
 
-.qaqc-issue-detail-wrap {
+// A table wrap that shares a flex column with other content, instead of filling its parent's height.
+.qaqc-table-wrap.is-flex-fill {
   flex: 1 1 0;
   height: auto;
   min-height: 0;
+}
+
+.qaqc-issue-detail-wrap {
   overflow: auto;
   border: 1px solid var(--qaqc-border);
   border-radius: 12px;
   background: var(--qaqc-card-solid);
 }
 
-// Fixed layout: column widths come from the colgroup, so they do not shift as windowed rows scroll past. Narrow
-// overlays scroll sideways rather than squeezing the title to nothing.
+// Fixed layout: column widths and the minimum width come from IssueDetailTable's COLUMNS, so they do not shift as
+// windowed rows scroll past; narrow overlays scroll sideways rather than squeezing the title.
 .qaqc-issue-detail-table {
-  min-width: 1040px;
   table-layout: fixed;
 }
 
@@ -1376,8 +1385,9 @@
   color: var(--qaqc-ink-2);
 }
 
-.qaqc-detail-empty {
+.qaqc-issue-detail-empty {
   display: flex;
+  margin: 0;
   flex: 1 1 auto;
   flex-direction: column;
   align-items: center;
@@ -1390,20 +1400,36 @@
   text-align: center;
 }
 
-.qaqc-detail-empty svg {
+.qaqc-issue-detail-empty svg {
   margin-bottom: 4px;
   color: var(--qaqc-faint);
 }
 
-.qaqc-detail-empty strong {
+.qaqc-issue-detail-empty strong {
   color: var(--qaqc-ink);
   font-size: 14px;
   font-weight: 650;
 }
 
-.qaqc-detail-empty span {
+.qaqc-issue-detail-empty span {
   max-width: 46ch;
   font-size: 12px;
+}
+
+// Forced colors (Windows high contrast) drop backgrounds and box shadows, so the discussion marker becomes a real
+// border, and the legend swatches keep their outlines.
+@media (forced-colors: active) {
+  .qaqc-issue-detail-table tbody tr.is-discussion > th {
+    border-left: 3px solid CanvasText;
+  }
+
+  .qaqc-issue-detail-swatch {
+    border: 1px solid CanvasText;
+  }
+
+  .qaqc-issue-detail-swatch.is-discussion {
+    border-left-width: 3px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -375,7 +375,8 @@ export function buildIssueDetail(index: IssueIndex, selectedKey: number): IssueD
   const selected = index.weeks[selectedPosition]
   const previous = selectedPosition > 0 ? index.weeks[selectedPosition - 1] : null
   const weekKey = selected.week.key
-  const previousKey = previousWorkWeek(selected.week).key
+  const previousWeek = previousWorkWeek(selected.week)
+  const previousKey = previousWeek.key
   const reportRows: IssueDetailRow[] = []
   const discussionRows: IssueDetailRow[] = []
   // index.issues is sorted by ID descending, so both blocks come out in that order.
@@ -389,6 +390,8 @@ export function buildIssueDetail(index: IssueIndex, selectedKey: number): IssueD
     else if (issue.statusKind !== 'closed') discussionRows.push(issue.detail)
   }
   return {
+    selectedWeek: selected.week,
+    previousWeek,
     openedThisWeek: selected.opened,
     closedThisWeek: selected.closed,
     openedLastWeek: previous?.opened ?? 0,

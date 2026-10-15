@@ -426,6 +426,9 @@ export interface IssueWindowTotals {
 }
 
 export interface IssueDetail {
+  /** The week the detail is for: the selected week, or the current week when the selected week is not in the data. */
+  selectedWeek: WorkWeek
+  previousWeek: WorkWeek
   openedThisWeek: number
   closedThisWeek: number
   openedLastWeek: number

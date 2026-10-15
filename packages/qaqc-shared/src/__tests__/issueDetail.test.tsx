@@ -6,7 +6,6 @@ import { IssueDetailTable } from '../components/IssueDetailTable'
 import { TABLE_ROW_HEIGHT } from '../hooks/useVirtualRows'
 import { buildIssueIndex } from '../issues'
 import type { IssueColumns, IssueDetailRow, IssueIndex } from '../types'
-import { makeWorkWeek } from '../workWeeks'
 import { countCompares } from './countCompares'
 import { render, type Rendered } from './render'
 
@@ -40,6 +39,14 @@ function discussionIds(root: HTMLElement): string[] {
 function header(root: HTMLElement, name: string): HTMLTableCellElement {
   const cell = [...root.querySelectorAll('thead th')].find((item) => item.textContent === name)
   if (!(cell instanceof HTMLTableCellElement)) throw new Error(`header ${name} missing`)
+  return cell
+}
+
+/** The cell of `row` in the column headed `name`. */
+function cellIn(root: HTMLElement, row: HTMLTableRowElement, name: string): HTMLTableCellElement {
+  const column = [...root.querySelectorAll('thead th')].findIndex((item) => item.textContent === name)
+  const cell = row.cells[column]
+  if (cell === undefined) throw new Error(`cell ${name} missing`)
   return cell
 }
 
@@ -187,8 +194,8 @@ describe('IssueDetailTable', () => {
   it('keeps the full title in a tooltip so a long title can end in an ellipsis', () => {
     const long = 'Pipe support at grid line C-14 conflicts with the cable tray route shown on the latest revision'
     view = drawTable([detailRow('#1', { title: long })], [])
-    const cell = dataRows(view.container)[0].querySelector('.qaqc-issue-title')
-    expect(cell?.getAttribute('title')).toBe(long)
+    const cell = cellIn(view.container, dataRows(view.container)[0], 'Title')
+    expect(cell.getAttribute('title')).toBe(long)
   })
 
   it('marks no column as sorted in the default order', () => {
@@ -223,7 +230,16 @@ describe('IssueDetailTable', () => {
     sortBy(view.container, 'Status')
     expect(header(view.container, 'ID').hasAttribute('aria-sort')).toBe(false)
     expect(header(view.container, 'Status').getAttribute('aria-sort')).toBe('ascending')
-    expect(rowIds(view.container)).toEqual(['#1020', '#98', '#999', '#9'])
+  })
+
+  it('sorts statuses A to Z first', () => {
+    // Neither the model order (#3 #2 #1) nor the ID order (#1 #2 #3).
+    view = drawTable(
+      [detailRow('#3', { status: 'Open' }), detailRow('#2', { status: 'Closed', statusKind: 'closed' })],
+      [detailRow('#1', { status: 'Not approved' })],
+    )
+    sortBy(view.container, 'Status')
+    expect(rowIds(view.container)).toEqual(['#2', '#1', '#3'])
   })
 
   it('sorts Created On by date, not by its MM/DD/YY label, newest first', () => {
@@ -247,12 +263,25 @@ describe('IssueDetailTable', () => {
     expect(rowIds(view.container)).toEqual(['#1020', '#999', '#98', '#9'])
   })
 
-  it('puts issues without a closed week last when sorting Work Week Closed', () => {
-    view = drawTable()
+  // #4 closed WW40, #2 closed WW42; #3 is open and #1 closed without a date, so neither has a closed week.
+  const CLOSED_WEEKS: IssueDetailRow[] = [
+    detailRow('#4', { workWeekClosed: "WW40'2026", workWeekClosedKey: 202640 }),
+    detailRow('#3'),
+    detailRow('#2', { workWeekClosed: "WW42'2026", workWeekClosedKey: 202642 }),
+    detailRow('#1', { workWeekClosed: '' }),
+  ]
+
+  it('sorts Work Week Closed newest first, with the issues that have no closed week last', () => {
+    view = drawTable(CLOSED_WEEKS, [])
     sortBy(view.container, 'Work Week Closed')
-    expect(rowIds(view.container)[0]).toBe('#1020')
+    expect(rowIds(view.container)).toEqual(['#2', '#4', '#3', '#1'])
+  })
+
+  it('keeps the issues that have no closed week last when Work Week Closed is reversed', () => {
+    view = drawTable(CLOSED_WEEKS, [])
     sortBy(view.container, 'Work Week Closed')
-    expect(rowIds(view.container)[0]).toBe('#1020')
+    sortBy(view.container, 'Work Week Closed')
+    expect(rowIds(view.container)).toEqual(['#4', '#2', '#3', '#1'])
   })
 
   it('sorts contractors A to Z, ignoring case', () => {
@@ -289,6 +318,29 @@ describe('IssueDetailTable', () => {
     expect(afterFirstSort).toBeGreaterThan(0)
     expect(afterStatus).toBeGreaterThan(afterFirstSort)
     expect(calls()).toBe(afterStatus)
+  })
+
+  it('keeps the sort when the rows change', () => {
+    view = drawTable()
+    sortBy(view.container, 'ID')
+    view.rerender(<IssueDetailTable reportRows={[detailRow('#5'), ...REPORT]} discussionRows={DISCUSSION} caption={CAPTION} />)
+    expect(header(view.container, 'ID').getAttribute('aria-sort')).toBe('ascending')
+    expect(rowIds(view.container)).toEqual(['#5', '#9', '#98', '#999', '#1020'])
+  })
+
+  it('keeps at least 260 px for Title at the table\'s minimum width', () => {
+    view = drawTable()
+    const table = view.container.querySelector('table')
+    const fixed = [...view.container.querySelectorAll('col')].reduce((sum, col) => sum + (Number.parseFloat(col.style.width) || 0), 0)
+    expect(Number.parseFloat(table?.style.minWidth ?? '') - fixed).toBeGreaterThanOrEqual(260)
+  })
+
+  it('gives every column but Title a fixed pixel width', () => {
+    view = drawTable()
+    const widths = [...view.container.querySelectorAll('col')].map((col) => col.style.width)
+    expect(widths.filter((width) => width === '')).toHaveLength(1)
+    expect(widths.filter((width) => width !== '').every((width) => width.endsWith('px'))).toBe(true)
+    expect(widths[3]).toBe('')
   })
 
   it('lists rows that share a blank ID without a key clash', () => {
@@ -343,14 +395,27 @@ describe('IssueDetailTable with many rows', () => {
     expect(dataRows(view.container).every((item) => item.style.height === `${TABLE_ROW_HEIGHT}px`)).toBe(true)
   })
 
-  it('ends on the last discussion row at the bottom, with no space below it', () => {
+  function scrollToBottom(root: HTMLElement): HTMLTableRowElement {
+    scrollTo(root, 5000 * TABLE_ROW_HEIGHT - VIEWPORT_HEIGHT)
+    const rows = dataRows(root)
+    return rows[rows.length - 1]
+  }
+
+  it('ends on the last discussion row at the bottom', () => {
     view = drawMany()
-    scrollTo(view.container, 5000 * TABLE_ROW_HEIGHT - VIEWPORT_HEIGHT)
-    const rows = dataRows(view.container)
-    const last = rows[rows.length - 1]
+    const last = scrollToBottom(view.container)
     expect(last.querySelector('th')?.firstChild?.textContent).toBe('#1')
-    expect(last.getAttribute('aria-rowindex')).toBe('5001')
     expect(last.classList.contains('is-discussion')).toBe(true)
+  })
+
+  it('gives the last row the last row index', () => {
+    view = drawMany()
+    expect(scrollToBottom(view.container).getAttribute('aria-rowindex')).toBe('5001')
+  })
+
+  it('leaves no space below the last row', () => {
+    view = drawMany()
+    scrollToBottom(view.container)
     expect(view.container.querySelector('tbody tr.qaqc-virtual-spacer:last-child')).toBeNull()
   })
 
@@ -362,13 +427,17 @@ describe('IssueDetailTable with many rows', () => {
     expect(spacer?.style.height).toBe(`${firstIndex * TABLE_ROW_HEIGHT}px`)
   })
 
-  it('sorts the whole set and returns to the first row', () => {
+  it('sorts the whole set, not only the rendered rows', () => {
+    view = drawMany()
+    sortBy(view.container, 'ID')
+    expect(rowIds(view.container)[0]).toBe('#1')
+  })
+
+  it('returns to the first row when the sort changes', () => {
     view = drawMany()
     scrollTo(view.container, 2500 * TABLE_ROW_HEIGHT)
     sortBy(view.container, 'ID')
     expect(wrap(view.container).scrollTop).toBe(0)
-    expect(rowIds(view.container)[0]).toBe('#1')
-    expect(discussionIds(view.container)[0]).toBe('#1')
   })
 })
 
@@ -385,8 +454,8 @@ const COLUMNS: IssueColumns = {
   createdBy: 9,
 }
 const TODAY = new Date(2026, 9, 15) // WW42'2026
-const WW41 = makeWorkWeek(2026, 41)
-const WW42 = makeWorkWeek(2026, 42)
+const WW41 = 202641
+const WW42 = 202642
 
 type Cell = string | null
 function issue(id: string, createdOn: string, status = 'Open', updatedOn: Cell = null): Cell[] {
@@ -426,7 +495,7 @@ function cardLabels(root: HTMLElement): string[] {
 
 describe('IssueDetail', () => {
   it('shows the opened and closed counts for the selected week and the week before', () => {
-    view = render(<IssueDetail index={buildIssueIndex(ROWS, COLUMNS, TODAY)} selectedWeek={WW42} />)
+    view = render(<IssueDetail index={buildIssueIndex(ROWS, COLUMNS, TODAY)} selectedKey={WW42} />)
     expect(cardLabels(view.container)).toEqual([
       "Opened This Week: 1. Created in WW42'2026",
       "Closed This Week: 1. Closed in WW42'2026",
@@ -436,27 +505,27 @@ describe('IssueDetail', () => {
   })
 
   it('heads the card groups with the selected week and the week before', () => {
-    view = render(<IssueDetail index={buildIssueIndex(ROWS, COLUMNS, TODAY)} selectedWeek={WW42} />)
+    view = render(<IssueDetail index={buildIssueIndex(ROWS, COLUMNS, TODAY)} selectedKey={WW42} />)
     const groups = [...view.container.querySelectorAll('.qaqc-kpi-group-head')].map((head) => head.textContent)
     expect(groups).toEqual(["This weekWW42'2026", "Last weekWW41'2026"])
   })
 
   it('lists the report rows, then the discussion rows, each by ID descending', () => {
-    view = render(<IssueDetail index={buildIssueIndex(ROWS, COLUMNS, TODAY)} selectedWeek={WW42} />)
+    view = render(<IssueDetail index={buildIssueIndex(ROWS, COLUMNS, TODAY)} selectedKey={WW42} />)
     expect(rowIds(view.container)).toEqual(['#10', '#7', '#6', '#5', '#4', '#3', '#2'])
     expect(discussionIds(view.container)).toEqual(['#2'])
   })
 
   it('counts each kind of row in the legend', () => {
-    view = render(<IssueDetail index={buildIssueIndex(ROWS, COLUMNS, TODAY)} selectedWeek={WW42} />)
-    expect(texts(view.container.querySelectorAll('.qaqc-detail-legend li'))).toEqual([
+    view = render(<IssueDetail index={buildIssueIndex(ROWS, COLUMNS, TODAY)} selectedKey={WW42} />)
+    expect(texts(view.container.querySelectorAll('.qaqc-issue-detail-legend li'))).toEqual([
       'Reporting week6',
       'Open for discussion1',
     ])
   })
 
   it('names the table with the selected week', () => {
-    view = render(<IssueDetail index={buildIssueIndex(ROWS, COLUMNS, TODAY)} selectedWeek={WW42} />)
+    view = render(<IssueDetail index={buildIssueIndex(ROWS, COLUMNS, TODAY)} selectedKey={WW42} />)
     expect(view.container.querySelector('caption')?.textContent).toBe(
       "BIM issues as of WW42'2026: reporting-week issues, then issues open for discussion",
     )
@@ -464,31 +533,45 @@ describe('IssueDetail', () => {
 
   it('builds the detail once while the selected week stays the same', () => {
     const { index, builds } = countingIndex()
-    view = render(<IssueDetail index={index} selectedWeek={WW42} />)
-    view.rerender(<IssueDetail index={index} selectedWeek={makeWorkWeek(2026, 42)} />)
+    view = render(<IssueDetail index={index} selectedKey={WW42} />)
+    view.rerender(<IssueDetail index={index} selectedKey={WW42} />)
     expect(builds()).toBe(1)
   })
 
   it('rebuilds the detail when the selected week changes', () => {
     const { index, builds } = countingIndex()
-    view = render(<IssueDetail index={index} selectedWeek={WW42} />)
-    view.rerender(<IssueDetail index={index} selectedWeek={WW41} />)
+    view = render(<IssueDetail index={index} selectedKey={WW42} />)
+    view.rerender(<IssueDetail index={index} selectedKey={WW41} />)
     expect(builds()).toBe(2)
     expect(rowIds(view.container)).toEqual(['#10', '#6', '#5', '#4', '#3', '#1', '#2'])
   })
 
+  it('labels the cards with the week the detail used when the selected week is not in the data', () => {
+    view = render(<IssueDetail index={buildIssueIndex(ROWS, COLUMNS, TODAY)} selectedKey={201901} />)
+    const groups = [...view.container.querySelectorAll('.qaqc-kpi-group-head')].map((head) => head.textContent)
+    expect(groups).toEqual(["This weekWW42'2026", "Last weekWW41'2026"])
+  })
+
+  it('shows a plain message, not a live region, when there is nothing to list', () => {
+    const quiet = buildIssueIndex([issue('#1', '9/1/2026', 'Closed', '9/8/2026')], COLUMNS, TODAY)
+    view = render(<IssueDetail index={quiet} selectedKey={WW42} />)
+    const message = view.container.querySelector('.qaqc-issue-detail-empty')
+    expect(message?.tagName).toBe('P')
+    expect(message?.hasAttribute('role')).toBe(false)
+  })
+
   it('shows a friendly message instead of the table when there is nothing to list', () => {
     const quiet = buildIssueIndex([issue('#1', '9/1/2026', 'Closed', '9/8/2026')], COLUMNS, TODAY)
-    view = render(<IssueDetail index={quiet} selectedWeek={WW42} />)
+    view = render(<IssueDetail index={quiet} selectedKey={WW42} />)
     expect(view.container.querySelector('table')).toBeNull()
-    expect(view.container.querySelector('.qaqc-detail-empty')?.textContent).toBe(
+    expect(view.container.querySelector('.qaqc-issue-detail-empty')?.textContent).toBe(
       "No issues to review as of WW42'2026Nothing was opened or closed in WW41'2026 or WW42'2026, and no issues are open.",
     )
   })
 
   it('still shows the cards when there is nothing to list', () => {
     const quiet = buildIssueIndex([issue('#1', '9/1/2026', 'Closed', '9/8/2026')], COLUMNS, TODAY)
-    view = render(<IssueDetail index={quiet} selectedWeek={WW42} />)
+    view = render(<IssueDetail index={quiet} selectedKey={WW42} />)
     expect(cardLabels(view.container)).toHaveLength(4)
   })
 })
