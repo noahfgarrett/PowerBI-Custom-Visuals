@@ -35,6 +35,6 @@ Set every field to **Don't summarize**. The visual is designed to fill a full re
 
 ## Counting rules
 
-- **Final:** Inspection Phase is Final (any case) or contains "final inspection". **SOR:** contains "SOR".
+- **Final:** Inspection Phase is Final (any case), starts with "Final ", or contains "final inspection". **SOR:** contains "SOR".
 - **Issues Found:** Final rows whose Issue? is filled in and is not "No Issue Found". SOR rows never count.
 - **NCR Pass Rate:** Finals with no issue ÷ all Finals, through the selected week.

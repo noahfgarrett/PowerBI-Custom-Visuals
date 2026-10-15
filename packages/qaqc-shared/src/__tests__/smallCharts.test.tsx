@@ -113,6 +113,22 @@ describe('HorizontalBarChart', () => {
     expect(Array.from(view.container.querySelectorAll('.qaqc-value-text')).map((node) => node.textContent)).toEqual(['153', '7', '2'])
   })
 
+  it('labels a single grouped building in the singular', () => {
+    view = render(
+      <HorizontalBarChart
+        bars={[{ building: 'F63.2', finals: 138, sors: 15 }]}
+        other={{ count: 1, finals: 1, sors: 0 }}
+        width={600}
+        height={200}
+        colors={COLORS}
+        describe
+        onHover={vi.fn()}
+      />,
+    )
+    const labels = Array.from(view.container.querySelectorAll('.qaqc-row-label')).map((node) => node.textContent ?? '')
+    expect(labels[1]).toContain('Other (1 building)')
+  })
+
   it('reports building tooltips', () => {
     const onHover = vi.fn()
     view = render(

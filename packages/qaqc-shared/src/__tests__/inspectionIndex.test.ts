@@ -52,6 +52,12 @@ describe('buildInspectionIndex', () => {
     expect(index.futureRows).toBe(1)
   })
 
+  it('ignores rows with an unrecognised phase without counting them as skipped', () => {
+    const index = buildInspectionIndex([['', 'N/A', '', ''], ["WW42'2026", 'Final', '', 'F63.2']], COLUMNS, TODAY)
+    expect(index.skippedRows).toBe(0)
+    expect(index.futureRows).toBe(0)
+  })
+
   it('reads Date cells as ISO weeks', () => {
     const index = buildInspectionIndex([[new Date(2026, 9, 13), 'Final', '', 'OAC']], COLUMNS, TODAY)
     expect(index.weeks.map((item) => item.finals)).toEqual([1])

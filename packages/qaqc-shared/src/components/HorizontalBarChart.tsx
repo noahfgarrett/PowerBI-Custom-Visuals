@@ -2,7 +2,7 @@ import type { MouseEvent, ReactElement } from 'react'
 
 import { roundedRightBarPath, truncateLabel } from '../chartMath'
 import type { ChartColors, TooltipHandler } from '../chartTypes'
-import { formatCount } from '../format'
+import { formatCount, pluralize } from '../format'
 import type { BuildingBar, OtherBuildings } from '../types'
 
 const LABEL_RATIO = 0.36
@@ -32,7 +32,7 @@ interface Row {
 export function HorizontalBarChart({ bars, other, width, height, colors, describe, onHover }: HorizontalBarChartProps): ReactElement {
   const allRows: Row[] = [
     ...bars.map((bar) => ({ label: bar.building, finals: bar.finals, sors: bar.sors })),
-    ...(other ? [{ label: `Other (${other.count} buildings)`, finals: other.finals, sors: other.sors }] : []),
+    ...(other ? [{ label: `Other (${other.count} ${pluralize(other.count, 'building', 'buildings')})`, finals: other.finals, sors: other.sors }] : []),
   ]
   const rows = allRows.slice(0, Math.max(1, Math.floor(height / MIN_ROW_HEIGHT)))
   const widestTotalChars = rows.reduce((max, row) => Math.max(max, formatCount(row.finals + row.sors).length), 0)

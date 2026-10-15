@@ -87,6 +87,9 @@ export function buildInspectionIndex(
   let firstWeek: WorkWeek | null = null
 
   for (const row of rows) {
+    const phase = readPhase(row[columns.phase], phaseCache)
+    if (phase === 'other') continue
+
     const week = readWeek(row[columns.workWeek], weekCache)
     if (!week) {
       skippedRows += 1
@@ -97,8 +100,6 @@ export function buildInspectionIndex(
       continue
     }
 
-    const phase = readPhase(row[columns.phase], phaseCache)
-    if (phase === 'other') continue
     if (!firstWeek || week.key < firstWeek.key) firstWeek = week
 
     let bucket = buckets.get(week.key)
