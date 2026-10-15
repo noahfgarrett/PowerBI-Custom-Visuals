@@ -1151,14 +1151,25 @@
   text-align: left;
 }
 
-.qaqc-open-issues-table thead th,
-.qaqc-open-issues-table .qaqc-issue-id,
-.qaqc-open-issues-table td:not(.is-text) {
+// Windowed tables (hooks/useVirtualRows.ts) set every body row to TABLE_ROW_HEIGHT inline; cells stay on one line
+// so no row grows past it, and long text ends in an ellipsis with the full text in its title.
+.qaqc-table.is-windowed thead th,
+.qaqc-table.is-windowed td,
+.qaqc-table.is-windowed tbody th {
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.qaqc-table .qaqc-virtual-spacer td {
+  padding: 0;
+  border: 0;
+}
+
+// The title column takes the spare width and truncates rather than widening the table.
 .qaqc-open-issues-table .qaqc-issue-title {
-  min-width: 180px;
+  width: 100%;
+  max-width: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { AgingSplitTable } from '../components/AgingSplitTable'
 import { OpenIssuesTable } from '../components/OpenIssuesTable'
+import { TABLE_ROW_HEIGHT } from '../hooks/useVirtualRows'
 import type { OpenIssueRow, OverallAgingBucket } from '../types'
 import { render, type Rendered } from './render'
 
@@ -17,8 +18,12 @@ function texts(nodes: Iterable<Element>): string[] {
   return [...nodes].map((node) => node.textContent ?? '')
 }
 
+function dataRows(root: HTMLElement): HTMLTableRowElement[] {
+  return [...root.querySelectorAll<HTMLTableRowElement>('tbody tr[aria-rowindex]')]
+}
+
 function rowIds(root: HTMLElement): string[] {
-  return [...root.querySelectorAll('tbody tr')].map((row) => row.querySelector('th')?.textContent ?? '')
+  return dataRows(root).map((row) => row.querySelector('th')?.textContent ?? '')
 }
 
 function header(root: HTMLElement, name: string): HTMLTableCellElement {
@@ -68,7 +73,7 @@ describe('OpenIssuesTable', () => {
 
   it('formats a large age with a thousands separator', () => {
     view = render(<OpenIssuesTable rows={[row('#1', '01/02/23', TODAY - 1381 * DAY, 1381)]} />)
-    expect(view.container.querySelectorAll('tbody td')[3].textContent).toBe('1,381')
+    expect(dataRows(view.container)[0].querySelectorAll('td')[3].textContent).toBe('1,381')
   })
 
   it('sorts age as a number, not as text', () => {
@@ -117,7 +122,7 @@ describe('OpenIssuesTable', () => {
   it('lists rows that share a blank ID without a key clash', () => {
     const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined)
     view = render(<OpenIssuesTable rows={[row('', '10/06/26', TODAY - 9 * DAY, 9), row('', '10/07/26', TODAY - 8 * DAY, 8)]} />)
-    expect(view.container.querySelectorAll('tbody tr')).toHaveLength(2)
+    expect(dataRows(view.container)).toHaveLength(2)
     expect(errors).not.toHaveBeenCalled()
     errors.mockRestore()
   })
@@ -130,7 +135,91 @@ describe('OpenIssuesTable', () => {
   it('renders only headers when there are no open issues', () => {
     view = render(<OpenIssuesTable rows={[]} />)
     expect(view.container.querySelectorAll('thead th')).toHaveLength(6)
-    expect(view.container.querySelectorAll('tbody tr')).toHaveLength(0)
+    expect(dataRows(view.container)).toHaveLength(0)
+  })
+})
+
+// 5,000 open issues, oldest first like the model: #1 is the oldest, #5000 the newest.
+const MANY: OpenIssueRow[] = Array.from({ length: 5000 }, (_, index) => {
+  const ageDays = 5000 - index
+  return row(`#${index + 1}`, 'x', TODAY - ageDays * DAY, ageDays, { title: `Issue ${String(index % 97).padStart(2, '0')}` })
+})
+const VIEWPORT_HEIGHT = 320
+
+function wrap(root: HTMLElement): HTMLElement {
+  const element = root.querySelector('.qaqc-table-wrap')
+  if (!(element instanceof HTMLElement)) throw new Error('table wrap missing')
+  return element
+}
+
+function scrollTo(root: HTMLElement, top: number): void {
+  const element = wrap(root)
+  element.scrollTop = top
+  act(() => {
+    element.dispatchEvent(new Event('scroll'))
+  })
+}
+
+describe('OpenIssuesTable with many rows', () => {
+  function drawMany(): Rendered {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 800, VIEWPORT_HEIGHT))
+    return render(<OpenIssuesTable rows={MANY} />)
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('renders only the rows near the viewport', () => {
+    view = drawMany()
+    const visible = Math.ceil(VIEWPORT_HEIGHT / TABLE_ROW_HEIGHT)
+    expect(dataRows(view.container).length).toBeLessThanOrEqual(visible + 20)
+    expect(rowIds(view.container)[0]).toBe('#1')
+  })
+
+  it('tells screen readers the full row count and each row position', () => {
+    view = drawMany()
+    expect(view.container.querySelector('table')?.getAttribute('aria-rowcount')).toBe('5001')
+    expect(dataRows(view.container)[0].getAttribute('aria-rowindex')).toBe('2')
+  })
+
+  it('pads the scroll height for the rows it does not render', () => {
+    view = drawMany()
+    const spacer = view.container.querySelector<HTMLTableRowElement>('tbody tr.qaqc-virtual-spacer:last-child')
+    const rendered = dataRows(view.container).length
+    expect(spacer?.style.height).toBe(`${(5000 - rendered) * TABLE_ROW_HEIGHT}px`)
+  })
+
+  it('gives every row the fixed height the window assumes', () => {
+    view = drawMany()
+    expect(dataRows(view.container).every((item) => item.style.height === `${TABLE_ROW_HEIGHT}px`)).toBe(true)
+  })
+
+  it('shows later rows after scrolling', () => {
+    view = drawMany()
+    scrollTo(view.container, 2500 * TABLE_ROW_HEIGHT)
+    const ids = rowIds(view.container)
+    expect(ids).toContain('#2501')
+    expect(ids).not.toContain('#1')
+    expect(dataRows(view.container).length).toBeLessThanOrEqual(Math.ceil(VIEWPORT_HEIGHT / TABLE_ROW_HEIGHT) + 20)
+  })
+
+  it('sorts the whole set, not only the rendered rows', () => {
+    view = drawMany()
+    sortBy(view.container, 'Age (days)')
+    expect(rowIds(view.container)[0]).toBe('#5000')
+    scrollTo(view.container, 5000 * TABLE_ROW_HEIGHT)
+    const ids = rowIds(view.container)
+    expect(ids[ids.length - 1]).toBe('#1')
+  })
+
+  it('sorts a text column across the whole set', () => {
+    view = drawMany()
+    sortBy(view.container, 'Title')
+    // "Issue 00" first; among equal titles the oldest (lowest number) comes first.
+    expect(rowIds(view.container).slice(0, 2)).toEqual(['#1', '#98'])
+    sortBy(view.container, 'Title')
+    expect(rowIds(view.container)[0]).toBe('#97')
   })
 })
 
