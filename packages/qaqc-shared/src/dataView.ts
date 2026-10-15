@@ -1,4 +1,4 @@
-import type { InspectionColumns, InspectionRows, WeldColumns } from './types'
+import type { InspectionColumns, InspectionRows, IssueColumns, WeldColumns } from './types'
 
 export interface FieldSlot<Role extends string = keyof InspectionColumns | 'rowId'> {
   role: Role
@@ -98,4 +98,48 @@ export function readWeldTable(table: InspectionTableSource | undefined): WeldTab
       tagNo: positions.tagNo,
     },
   }
+}
+
+export type IssueSlotRole = keyof IssueColumns
+export type IssueFieldSlot = FieldSlot<IssueSlotRole>
+
+/** Issue IDs are unique, so Power BI never merges two issues and no Row ID slot is needed. */
+export const ISSUE_SLOTS: readonly IssueFieldSlot[] = [
+  { role: 'id', slot: 'ID', column: 'ID' },
+  { role: 'title', slot: 'Title', column: 'Title' },
+  { role: 'status', slot: 'Status', column: 'Status' },
+  { role: 'type', slot: 'Type', column: 'Type' },
+  { role: 'contractor', slot: 'Contractor', column: 'Contractor' },
+  { role: 'discipline', slot: 'Discipline', column: 'Discipline' },
+  { role: 'createdOn', slot: 'Created On', column: 'Created On' },
+  { role: 'updatedOn', slot: 'Updated On', column: 'Updated On' },
+  { role: 'dueDate', slot: 'Due Date', column: 'Due Date' },
+  { role: 'createdBy', slot: 'Created By', column: 'Created By' },
+]
+
+export type IssueTableReadResult =
+  | { kind: 'missing'; missing: IssueFieldSlot[] }
+  | { kind: 'ready'; rows: InspectionRows; columns: IssueColumns }
+
+/** Cells pass through untouched: the issue index parses strings, numbers and the Date objects Power BI may send. */
+export function readIssueTable(table: InspectionTableSource | undefined): IssueTableReadResult {
+  if (!table) return { kind: 'missing', missing: [...ISSUE_SLOTS] }
+
+  const positionOf = (role: string): number => table.columns.findIndex((column) => column.roles?.[role] === true)
+  const columns: IssueColumns = {
+    id: positionOf('id'),
+    title: positionOf('title'),
+    status: positionOf('status'),
+    type: positionOf('type'),
+    contractor: positionOf('contractor'),
+    discipline: positionOf('discipline'),
+    createdOn: positionOf('createdOn'),
+    updatedOn: positionOf('updatedOn'),
+    dueDate: positionOf('dueDate'),
+    createdBy: positionOf('createdBy'),
+  }
+  const missing = ISSUE_SLOTS.filter((slot) => columns[slot.role] < 0)
+  if (missing.length > 0) return { kind: 'missing', missing }
+
+  return { kind: 'ready', rows: table.rows ?? [], columns }
 }

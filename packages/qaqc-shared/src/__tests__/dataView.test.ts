@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { readInspectionTable, readWeldTable, type InspectionTableSource } from '../dataView'
+import { readInspectionTable, readIssueTable, readWeldTable, type InspectionTableSource } from '../dataView'
 
 type SlotRole = 'workWeek' | 'phase' | 'issue' | 'building' | 'rowId'
 const ALL_ROLES: SlotRole[] = ['workWeek', 'phase', 'issue', 'building', 'rowId']
@@ -96,6 +96,84 @@ describe('readWeldTable', () => {
 
   it('treats a table without rows as ready and empty', () => {
     const result = readWeldTable({ columns: ALL_WELD_ROLES.map((role) => ({ roles: { [role]: true } })) })
+    expect(result.kind).toBe('ready')
+    if (result.kind === 'ready') expect(result.rows).toEqual([])
+  })
+})
+
+type IssueRole = 'id' | 'title' | 'status' | 'type' | 'contractor' | 'discipline' | 'createdOn' | 'updatedOn' | 'dueDate' | 'createdBy'
+const ALL_ISSUE_ROLES: IssueRole[] = ['id', 'title', 'status', 'type', 'contractor', 'discipline', 'createdOn', 'updatedOn', 'dueDate', 'createdBy']
+
+function issueTable(rows: ReadonlyArray<ReadonlyArray<unknown>>, roles: IssueRole[] = ALL_ISSUE_ROLES): InspectionTableSource {
+  return {
+    columns: roles.map((role) => ({ roles: { [role]: true } })),
+    rows: rows.map((row) => roles.map((role) => row[ALL_ISSUE_ROLES.indexOf(role)])),
+  }
+}
+
+const ISSUE_ROW = ['#1020', 'WR1 - GF PVC Protection Deficiency', 'Ready to Inspect', 'COR', 'Bayside', 'Mechanical', '7/27/2026', '7/27/2026', '8/14/2026', 'LotusWorks']
+
+describe('readIssueTable', () => {
+  it('reports every required slot when there is no data view', () => {
+    const result = readIssueTable(undefined)
+    expect(result.kind).toBe('missing')
+    if (result.kind === 'missing') {
+      expect(result.missing.map((slot) => slot.slot)).toEqual([
+        'ID',
+        'Title',
+        'Status',
+        'Type',
+        'Contractor',
+        'Discipline',
+        'Created On',
+        'Updated On',
+        'Due Date',
+        'Created By',
+      ])
+    }
+  })
+
+  it('names only the slots that are still empty', () => {
+    const result = readIssueTable(issueTable([ISSUE_ROW], ['id', 'title', 'status', 'type', 'contractor', 'discipline', 'createdOn']))
+    expect(result.kind).toBe('missing')
+    if (result.kind === 'missing') expect(result.missing.map((slot) => slot.column)).toEqual(['Updated On', 'Due Date', 'Created By'])
+  })
+
+  it('requires the Created By slot on its own', () => {
+    const result = readIssueTable(issueTable([ISSUE_ROW], ALL_ISSUE_ROLES.filter((role) => role !== 'createdBy')))
+    expect(result.kind).toBe('missing')
+    if (result.kind === 'missing') expect(result.missing.map((slot) => slot.role)).toEqual(['createdBy'])
+  })
+
+  it('finds column positions by role regardless of order', () => {
+    const result = readIssueTable(issueTable([ISSUE_ROW], [...ALL_ISSUE_ROLES].reverse()))
+    expect(result.kind).toBe('ready')
+    if (result.kind === 'ready') {
+      expect(result.columns).toEqual({
+        id: 9,
+        title: 8,
+        status: 7,
+        type: 6,
+        contractor: 5,
+        discipline: 4,
+        createdOn: 3,
+        updatedOn: 2,
+        dueDate: 1,
+        createdBy: 0,
+      })
+      expect(result.rows[0][result.columns.id]).toBe('#1020')
+    }
+  })
+
+  it('passes date cells through unchanged when Power BI delivers Date objects', () => {
+    const createdOn = new Date(2026, 6, 27)
+    const result = readIssueTable(issueTable([[...ISSUE_ROW.slice(0, 6), createdOn, ...ISSUE_ROW.slice(7)]]))
+    expect(result.kind).toBe('ready')
+    if (result.kind === 'ready') expect(result.rows[0][result.columns.createdOn]).toBe(createdOn)
+  })
+
+  it('treats a table without rows as ready and empty', () => {
+    const result = readIssueTable({ columns: ALL_ISSUE_ROLES.map((role) => ({ roles: { [role]: true } })) })
     expect(result.kind).toBe('ready')
     if (result.kind === 'ready') expect(result.rows).toEqual([])
   })
