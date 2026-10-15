@@ -48,6 +48,6 @@ Set every field to **Don't summarize**. The visual is designed to fill a full re
 - **Signed This Week:** signed welds counted by WORK WEEK SIGNED, not by weld week. A signed weld whose WORK WEEK SIGNED can't be read still counts as signed for its weld week, but not in Signed This Week.
 - **Sign-off %:** signed ÷ logged for the latest weld week (up to the selected week) that has welds.
 - **Overall Sign-off %:** all signed welds ÷ all welds through the selected week. Its status line is red below 10%, amber from 10% to below 15%, and green at 15% and above.
-- **Issue:** ISSUE CREATED? is filled in and is not "no", "n/a", "none" or "-". QAQC Advisory Items are not used.
+- **Issue:** ISSUE CREATED? is filled in and is not "no", "n/a", "na", "none" or "-". QAQC Advisory Items are not used.
 - **Building:** taken from TAG NO (for example BK1, F631, WR1, PS1, F632). A leading "P4-" is ignored. Anything else is grouped as Site General.
 - **System and Pipe Spec:** FLUID CODE and PIPE SPEC, with blanks shown as Unspecified. Names are grouped ignoring case and extra spaces.
