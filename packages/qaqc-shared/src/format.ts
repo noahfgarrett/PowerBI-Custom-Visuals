@@ -6,6 +6,12 @@ export const NAME_COLLATOR = new Intl.Collator(undefined, { numeric: true, sensi
 
 export type DeltaTone = 'neutral' | 'good' | 'warn' | 'bad'
 export type Trend = 'up' | 'down' | 'flat' | 'none'
+export type KpiStatus = 'good' | 'warn' | 'bad'
+
+/** Overall sign-off below this percent is bad. */
+const SIGNOFF_BAD_BELOW = 10
+/** Overall sign-off below this percent (and at or above the bad line) is a warning. */
+const SIGNOFF_WARN_BELOW = 15
 
 export function formatCount(value: number): string {
   return COUNT_FORMAT.format(value)
@@ -40,4 +46,11 @@ export function trendOf(delta: number): Trend {
 
 export function pluralize(count: number, singular: string, plural: string): string {
   return count === 1 ? singular : plural
+}
+
+export function signoffStatus(rate: number | null): KpiStatus | undefined {
+  if (rate === null) return undefined
+  if (rate < SIGNOFF_BAD_BELOW) return 'bad'
+  if (rate < SIGNOFF_WARN_BELOW) return 'warn'
+  return 'good'
 }

@@ -12,6 +12,15 @@ const COLORS: ChartColors = {
   grid: '#EBEEF3', axisText: '#6A7583', ink: '#1B2530', accent: '#2E5AAC',
 }
 
+// Geometry at 602 × 300: the plot spans x 44–554 and y 34–276 (242 px tall), so three weeks get 170 px bands
+// centred at x 129, 299, and 469. The count axis runs 0–150 and the rate axis 0–100%.
+const PLOT_BOTTOM = 276
+const PLOT_HEIGHT = 242
+
+function rateY(rate: number): number {
+  return PLOT_BOTTOM - (rate / 100) * PLOT_HEIGHT
+}
+
 function week(number: number, logged: number, signed: number, issues = 0): WeldWeekCounts {
   return { week: makeWorkWeek(2026, number), logged, signed, issues, signedInWeek: 0 }
 }
@@ -30,7 +39,7 @@ function draw(overrides: Partial<SignoffBarChartProps> = {}): Rendered {
     <SignoffBarChart
       weeks={WEEKS}
       selectedKey={202642}
-      width={600}
+      width={602}
       height={300}
       colors={COLORS}
       interactive
@@ -55,6 +64,14 @@ function element(root: HTMLElement, selector: string): Element {
   return found
 }
 
+function texts(root: HTMLElement, selector: string): string[] {
+  return [...root.querySelectorAll(selector)].map((node) => node.textContent ?? '')
+}
+
+function numberAttr(node: Element, name: string): number {
+  return Number(node.getAttribute(name))
+}
+
 function manyWeeks(count: number, issueAt = -1): WeldWeekCounts[] {
   return Array.from({ length: count }, (_, index) => ({
     week: makeWorkWeek(2024 + Math.floor(index / 52), (index % 52) + 1),
@@ -74,73 +91,130 @@ describe('SignoffBarChart', () => {
     expect(badges[0].textContent).toBe('2')
   })
 
-  it('labels each week with its sign-off rate, using a decimal under 10%', () => {
-    view = draw()
-    const labels = [...view.container.querySelectorAll('.qaqc-rate-label')].map((node) => node.textContent)
-    expect(labels).toEqual(['37%', '80%', '5.0%'])
-  })
-
-  it('colors rates under 10% red and the rest ink', () => {
-    view = draw()
-    const labels = [...view.container.querySelectorAll('.qaqc-rate-label')]
-    expect(labels.map((node) => node.classList.contains('is-low'))).toEqual([false, false, true])
-    expect(labels.map((node) => node.getAttribute('fill'))).toEqual([COLORS.ink, COLORS.ink, COLORS.bad])
-  })
-
-  it('keeps a 9.6% rate red and reads it as under 10%', () => {
-    view = draw({ weeks: [week(41, 1000, 96)], selectedKey: 202641 })
-    const label = element(view.container, '.qaqc-rate-label')
-    expect(label.textContent).toBe('9.6%')
-    expect(label.classList.contains('is-low')).toBe(true)
-  })
-
-  it('treats exactly 10% as meeting the baseline', () => {
-    view = draw({ weeks: [week(41, 50, 5)], selectedKey: 202641 })
-    const label = element(view.container, '.qaqc-rate-label')
-    expect(label.textContent).toBe('10%')
-    expect(label.classList.contains('is-low')).toBe(false)
-  })
-
-  it('draws a 10% tick inside each bar at a tenth of its total height', () => {
-    view = draw()
-    const ticks = [...view.container.querySelectorAll('.qaqc-baseline-tick')]
-    expect(ticks).toHaveLength(3)
-    // Plot runs from y 34 to 276 with a 0–150 scale, so WW40's 126 welds put the tick at 276 − 12.6 / 150 × 242.
-    expect(Number(ticks[0].getAttribute('y1'))).toBeCloseTo(255.67, 2)
-    expect(ticks[0].getAttribute('y1')).toBe(ticks[0].getAttribute('y2'))
-  })
-
-  it('draws the tick in card color over signed welds and in ink over unsigned ones', () => {
-    view = draw()
-    const strokes = [...view.container.querySelectorAll('.qaqc-baseline-tick')].map((node) => node.getAttribute('stroke'))
-    expect(strokes).toEqual([COLORS.card, COLORS.card, COLORS.ink])
-  })
-
-  it('skips the rate label and tick for weeks with no welds', () => {
-    view = draw({ weeks: [week(41, 84, 67), week(42, 0, 0)] })
-    expect(view.container.querySelectorAll('.qaqc-rate-label')).toHaveLength(1)
-    expect(view.container.querySelectorAll('.qaqc-baseline-tick')).toHaveLength(1)
-  })
-
-  it('hides rate labels when bands are narrower than 26 px', () => {
-    // 558 px of plot across 30 weeks gives 18.6 px bands.
-    const weeks = manyWeeks(30)
-    view = draw({ weeks, selectedKey: weeks[29].week.key })
-    expect(view.container.querySelectorAll('.qaqc-rate-label')).toHaveLength(0)
-  })
-
-  it('draws the signed portion inside the total bar', () => {
+  it('draws the signed bar over the total bar', () => {
     view = draw({ weeks: [week(42, 20, 10)] })
-    const fills = [...view.container.querySelectorAll('.qaqc-bar path, .qaqc-bar rect')].map((node) => node.getAttribute('fill'))
+    const fills = [...view.container.querySelectorAll('.qaqc-bar path')].map((node) => node.getAttribute('fill'))
     expect(fills).toEqual([COLORS.series2, COLORS.series1])
   })
 
-  it('draws a fully signed week as one rounded signed bar', () => {
-    view = draw({ weeks: [week(42, 20, 20)] })
-    const marks = [...view.container.querySelectorAll('.qaqc-bar path, .qaqc-bar rect')]
-    expect(marks).toHaveLength(1)
-    expect(marks[0].tagName.toLowerCase()).toBe('path')
-    expect(marks[0].getAttribute('fill')).toBe(COLORS.series1)
+  it('labels each bar with its total above it', () => {
+    view = draw()
+    expect(texts(view.container, '.qaqc-total-label')).toEqual(['126', '84', '20'])
+  })
+
+  it('labels the signed count inside a tall signed bar and above a short one', () => {
+    view = draw()
+    const labels = [...view.container.querySelectorAll('.qaqc-signed-label')]
+    expect(labels.map((node) => node.textContent)).toEqual(['46', '67', '1'])
+    expect(labels.map((node) => node.classList.contains('is-inside'))).toEqual([true, true, false])
+    expect(labels.map((node) => node.getAttribute('fill'))).toEqual([COLORS.card, COLORS.card, COLORS.series1])
+  })
+
+  it('drops an outside signed label that would collide with the total label', () => {
+    view = draw({ weeks: [week(41, 150, 15), week(42, 3, 3)] })
+    expect(texts(view.container, '.qaqc-signed-label')).toEqual(['15'])
+    expect(texts(view.container, '.qaqc-total-label')).toEqual(['150', '3'])
+  })
+
+  it('hides bar labels when bands are narrower than 18 px', () => {
+    // 510 px of plot across 30 weeks gives 17 px bands.
+    const weeks = manyWeeks(30)
+    view = draw({ weeks, selectedKey: weeks[29].week.key })
+    expect(view.container.querySelectorAll('.qaqc-total-label, .qaqc-signed-label')).toHaveLength(0)
+  })
+
+  it('draws a right axis from 0% to 100% in steps of 25', () => {
+    view = draw()
+    const ticks = [...view.container.querySelectorAll('.qaqc-rate-axis-text')]
+    expect(ticks.map((node) => node.textContent)).toEqual(['0%', '25%', '50%', '75%', '100%'])
+    expect(numberAttr(ticks[4], 'y')).toBeCloseTo(rateY(100) + 3.5, 6)
+    expect(ticks.every((node) => node.getAttribute('fill') === COLORS.warn)).toBe(true)
+  })
+
+  it('titles both axes', () => {
+    view = draw()
+    expect(texts(view.container, '.qaqc-axis-title')).toEqual(['Weld count', 'Sign-off rate'])
+  })
+
+  it('draws the sign-off % as a smooth amber line through each week with welds', () => {
+    view = draw()
+    const line = element(view.container, '.qaqc-rate-line')
+    expect(line.getAttribute('stroke')).toBe(COLORS.warn)
+    expect(line.getAttribute('d')).toBe(
+      'M129,187.65 C185.67,187.65 242.33,82.98 299,82.98 C355.67,82.98 412.33,263.9 469,263.9',
+    )
+  })
+
+  it('draws one rate dot per week that has welds', () => {
+    view = draw({ weeks: [week(40, 126, 46), week(41, 0, 0), week(42, 20, 1)] })
+    const dots = [...view.container.querySelectorAll('.qaqc-rate-dot')]
+    expect(dots.map((node) => numberAttr(node, 'cx'))).toEqual([129, 469])
+    expect(view.container.querySelector('.qaqc-rate-line')?.getAttribute('d')?.match(/C/g)).toHaveLength(1)
+  })
+
+  it('draws a dashed red 10% baseline across the plot with a label', () => {
+    view = draw()
+    const baseline = element(view.container, '.qaqc-signoff-baseline')
+    expect(numberAttr(baseline, 'y1')).toBeCloseTo(rateY(10), 6)
+    expect(baseline.getAttribute('y2')).toBe(baseline.getAttribute('y1'))
+    expect([numberAttr(baseline, 'x1'), numberAttr(baseline, 'x2')]).toEqual([44, 554])
+    expect(baseline.getAttribute('stroke')).toBe(COLORS.bad)
+    expect(element(view.container, '.qaqc-baseline-label').textContent).toBe('10% baseline')
+  })
+
+  it('no longer draws per-bar 10% ticks', () => {
+    view = draw()
+    expect(view.container.querySelectorAll('.qaqc-baseline-tick')).toHaveLength(0)
+  })
+
+  it('labels only the selected week rate by default', () => {
+    view = draw()
+    const labels = [...view.container.querySelectorAll('.qaqc-rate-label')]
+    expect(labels.map((node) => node.textContent)).toEqual(['5%'])
+    expect(numberAttr(labels[0], 'x')).toBe(469)
+  })
+
+  it('puts the selected rate label above its dot when that is clear', () => {
+    view = draw({ selectedKey: 202641 })
+    const label = element(view.container, '.qaqc-rate-label')
+    expect(label.textContent).toBe('80%')
+    expect(numberAttr(label, 'y')).toBeCloseTo(rateY((67 / 84) * 100) - 10, 6)
+  })
+
+  it('moves the selected rate label below its dot when above would hit the total label', () => {
+    // WW41's 120 welds put its total label at y 77.4, and its 80% dot sits at y 82.4.
+    view = draw({ weeks: [week(40, 150, 15), week(41, 120, 96)], selectedKey: 202641 })
+    expect(numberAttr(element(view.container, '.qaqc-rate-label'), 'y')).toBeCloseTo(rateY(80) + 17, 6)
+  })
+
+  it('draws no rate label when the selected week has no welds', () => {
+    view = draw({ weeks: [week(41, 84, 67), week(42, 0, 0)] })
+    expect(view.container.querySelectorAll('.qaqc-rate-label')).toHaveLength(0)
+  })
+
+  it('labels every rate that fits its band when showValues is on', () => {
+    view = draw({ showValues: true })
+    expect(texts(view.container, '.qaqc-rate-label')).toEqual(['37%', '80%', '5%'])
+  })
+
+  it('keeps only the selected rate label when bands are too narrow, even with showValues', () => {
+    const weeks = manyWeeks(30)
+    view = draw({ weeks, selectedKey: weeks[29].week.key, showValues: true })
+    expect(texts(view.container, '.qaqc-rate-label')).toEqual(['50%'])
+  })
+
+  it('stacks the issue badge above the total label', () => {
+    view = draw({ weeks: [week(41, 84, 67, 2)], selectedKey: 202641 })
+    const badgeY = Number(element(view.container, '.qaqc-issue-badge').getAttribute('transform')?.match(/translate\([\d.]+ ([\d.]+)\)/)?.[1])
+    const totalY = numberAttr(element(view.container, '.qaqc-total-label'), 'y')
+    expect(badgeY + 8).toBeLessThanOrEqual(totalY - 9)
+  })
+
+  it('keeps the badge and total label inside the chart on the tallest bar', () => {
+    view = draw({ weeks: [week(41, 150, 20, 1), week(42, 3, 1)], selectedKey: 202641 })
+    const badgeY = Number(element(view.container, '.qaqc-issue-badge').getAttribute('transform')?.match(/translate\([\d.]+ ([\d.]+)\)/)?.[1])
+    expect(badgeY - 8).toBeGreaterThanOrEqual(0)
+    expect(numberAttr(element(view.container, '.qaqc-total-label'), 'y')).toBeGreaterThanOrEqual(10)
   })
 
   it('labels the selected week in bold', () => {
@@ -150,8 +224,7 @@ describe('SignoffBarChart', () => {
 
   it('shades the selected band at its week', () => {
     view = draw()
-    // Bands are (600 − 34 − 8) / 3 = 186 px wide, so WW42 starts at 34 + 2 × 186.
-    expect(view.container.querySelector<SVGElement>('.qaqc-selected-band')?.style.transform).toBe('translateX(406px)')
+    expect(view.container.querySelector<SVGElement>('.qaqc-selected-band')?.style.transform).toBe('translateX(384px)')
   })
 
   it('selects a week on click when interactive', () => {
@@ -202,7 +275,7 @@ describe('SignoffBarChart', () => {
       rows: [
         { label: 'Signed', value: '67 of 84' },
         { label: 'Sign-off %', value: '79.8%' },
-        { label: 'Issues', value: '2' },
+        { label: 'Issues created', value: '2' },
       ],
       clientX: 10,
       clientY: 20,
@@ -225,7 +298,7 @@ describe('SignoffBarChart', () => {
     expect(svg.getAttribute('aria-label')).toBe("Weld sign-offs by work week, WW40'2026 to WW42'2026")
     fire(svg, new FocusEvent('focusin', { bubbles: true }))
     fire(svg, new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }))
-    expect(live.textContent).toBe("WW41'2026: 67 of 84 welds signed (79.8%), 2 issues")
+    expect(live.textContent).toBe("WW41'2026: 67 of 84 welds signed (79.8%), 2 issues created")
     expect(svg.getAttribute('aria-label')).toBe("Weld sign-offs by work week, WW40'2026 to WW42'2026")
   })
 
@@ -245,41 +318,9 @@ describe('SignoffBarChart', () => {
     expect(view.container.querySelectorAll('.qaqc-issue-badge')).toHaveLength(0)
   })
 
-  it('labels each bar with signed / total when showValues is on', () => {
-    view = draw({ showValues: true })
-    const values = [...view.container.querySelectorAll('.qaqc-bar-value')].map((node) => node.textContent)
-    expect(values).toEqual(['46 / 126', '67 / 84', '1 / 20'])
-  })
-
-  it('draws no value labels by default', () => {
-    view = draw()
-    expect(view.container.querySelectorAll('.qaqc-bar-value')).toHaveLength(0)
-  })
-
-  it('skips value labels that would not fit their band', () => {
-    // 18.6 px bands cannot hold "10 / 20".
-    const weeks = manyWeeks(30)
-    view = draw({ weeks, selectedKey: weeks[29].week.key, showValues: true })
-    expect(view.container.querySelectorAll('.qaqc-bar-value')).toHaveLength(0)
-  })
-
-  it('skips value labels for weeks with no welds', () => {
-    view = draw({ weeks: [week(41, 0, 0), week(42, 4, 1)], showValues: true })
-    expect([...view.container.querySelectorAll('.qaqc-bar-value')].map((node) => node.textContent)).toEqual(['1 / 4'])
-  })
-
-  it('stacks the rate label, badge, and value label above the bar without overlap', () => {
-    view = draw({ weeks: [week(41, 84, 67, 2)], selectedKey: 202641, showValues: true })
-    const rateY = Number(element(view.container, '.qaqc-rate-label').getAttribute('y'))
-    const badgeY = Number(element(view.container, '.qaqc-issue-badge').getAttribute('transform')?.match(/translate\([\d.]+ ([\d.]+)\)/)?.[1])
-    const valueY = Number(element(view.container, '.qaqc-bar-value').getAttribute('y'))
-    expect(badgeY + 8).toBeLessThan(rateY - 8)
-    expect(valueY).toBeLessThan(badgeY - 8)
-  })
-
-  it('keeps labels inside the chart when the tallest bar carries every label', () => {
-    view = draw({ weeks: [week(41, 150, 20, 1), week(42, 3, 1)], selectedKey: 202641, showValues: true })
-    const ys = [...view.container.querySelectorAll('.qaqc-rate-label, .qaqc-bar-value')].map((node) => Number(node.getAttribute('y')))
-    for (const y of ys) expect(y).toBeGreaterThanOrEqual(10)
+  it('draws an empty plot without a line or labels when there are no weeks', () => {
+    view = draw({ weeks: [], selectedKey: 202642 })
+    expect(view.container.querySelector('.qaqc-rate-line')?.getAttribute('d')).toBe('')
+    expect(view.container.querySelectorAll('.qaqc-rate-dot, .qaqc-rate-label, .qaqc-hit')).toHaveLength(0)
   })
 })

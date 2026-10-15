@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatCount, formatDelta, formatPercent, formatPointsDelta, pluralize, trendOf } from '../format'
+import { formatCount, formatDelta, formatPercent, formatPointsDelta, pluralize, signoffStatus, trendOf } from '../format'
 
 describe('format', () => {
   it('formats counts with thousands separators', () => {
@@ -33,5 +33,24 @@ describe('format', () => {
   it('pluralizes', () => {
     expect(pluralize(1, 'row', 'rows')).toBe('row')
     expect(pluralize(2, 'row', 'rows')).toBe('rows')
+  })
+})
+
+describe('signoffStatus', () => {
+  it('is bad below 10%', () => {
+    expect(signoffStatus(9.99)).toBe('bad')
+  })
+
+  it('is warn from 10% to under 15%', () => {
+    expect(signoffStatus(10)).toBe('warn')
+    expect(signoffStatus(14.99)).toBe('warn')
+  })
+
+  it('is good from 15%', () => {
+    expect(signoffStatus(15)).toBe('good')
+  })
+
+  it('has no status without a rate', () => {
+    expect(signoffStatus(null)).toBeUndefined()
   })
 })

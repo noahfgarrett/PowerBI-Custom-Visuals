@@ -34,6 +34,30 @@ describe('KpiCard', () => {
   })
 })
 
+describe('KpiCard status', () => {
+  it('draws a status line under the value and names it for screen readers', () => {
+    view = render(<KpiCard label="Overall Sign-off %" value="12.0%" detail="+0.4 pts" tone="neutral" trend="up" icon={ClipboardCheck} status="warn" />)
+    const card = view.container.querySelector('article')
+    const line = card?.querySelector('.qaqc-kpi-status')
+    expect(line?.classList.contains('is-warn')).toBe(true)
+    expect(line?.previousElementSibling?.classList.contains('qaqc-kpi-value')).toBe(true)
+    expect(card?.getAttribute('aria-label')).toBe('Overall Sign-off %: 12.0%. +0.4 pts. Status: warn')
+  })
+
+  it('classes the line by status', () => {
+    view = render(<KpiCard label="Overall Sign-off %" value="60.2%" detail="No change" tone="neutral" trend="flat" icon={ClipboardCheck} status="good" />)
+    expect(view.container.querySelector('.qaqc-kpi-status.is-good')).not.toBeNull()
+    view.rerender(<KpiCard label="Overall Sign-off %" value="8.0%" detail="No change" tone="neutral" trend="flat" icon={ClipboardCheck} status="bad" />)
+    expect(view.container.querySelector('.qaqc-kpi-status.is-bad')).not.toBeNull()
+  })
+
+  it('draws no status line and adds no status text without a status', () => {
+    view = render(<KpiCard label="Total Welds" value="1,751" detail="+0 this WW" tone="neutral" trend="none" icon={ClipboardCheck} />)
+    expect(view.container.querySelector('.qaqc-kpi-status')).toBeNull()
+    expect(view.container.querySelector('article')?.getAttribute('aria-label')).toBe('Total Welds: 1,751. +0 this WW')
+  })
+})
+
 describe('KpiGroup', () => {
   it('renders a titled group with an optional subtitle', () => {
     view = render(
