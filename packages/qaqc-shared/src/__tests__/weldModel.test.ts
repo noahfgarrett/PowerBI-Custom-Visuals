@@ -55,7 +55,7 @@ describe('buildWeldModel cards', () => {
     expect(model.selectedWeek.label).toBe(WW42)
     expect(model.previousWeek.label).toBe(WW41)
     expect(model.thisWeek.logged).toEqual({ value: 0, delta: -3 })
-    expect(model.thisWeek.signedThisWeek).toEqual({ value: 1, delta: -1 })
+    expect(model.thisWeek.signedInWeek).toEqual({ value: 1, delta: -1 })
     expect(model.thisWeek.issues).toEqual({ value: 0, delta: -1 })
   })
 
@@ -76,7 +76,7 @@ describe('buildWeldModel cards', () => {
   it('counts Signed This Week by signed week, not weld week', () => {
     const model = buildWeldModel(index, viewAt(202641), null, 1)
     expect(model.thisWeek.logged).toEqual({ value: 3, delta: -1 })
-    expect(model.thisWeek.signedThisWeek).toEqual({ value: 2, delta: 1 })
+    expect(model.thisWeek.signedInWeek).toEqual({ value: 2, delta: 1 })
     expect(model.thisWeek.issues).toEqual({ value: 1, delta: 0 })
   })
 
@@ -85,7 +85,7 @@ describe('buildWeldModel cards', () => {
     expect(model.toDate.total).toBe(7)
     expect(model.toDate.signed).toBe(4)
     expect(model.toDate.totalThisWeek).toBe(3)
-    expect(model.toDate.signedThisWeek).toBe(2)
+    expect(model.toDate).not.toHaveProperty('signedThisWeek')
     expect(model.toDate.overallRate).toBeCloseTo(57.143, 3)
     expect(model.toDate.overallRateDeltaPoints).toBeCloseTo(7.143, 3)
   })
@@ -98,7 +98,7 @@ describe('buildWeldModel cards', () => {
   it('has no previous week at the start of the range, so deltas are against zero', () => {
     const model = buildWeldModel(index, viewAt(202640), null, 1)
     expect(model.thisWeek.logged).toEqual({ value: 4, delta: 4 })
-    expect(model.thisWeek.signedThisWeek).toEqual({ value: 1, delta: 1 })
+    expect(model.thisWeek.signedInWeek).toEqual({ value: 1, delta: 1 })
     expect(model.toDate.overallRate).toBe(50)
     expect(model.toDate.overallRateDeltaPoints).toBeNull()
   })

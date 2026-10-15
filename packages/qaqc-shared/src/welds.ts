@@ -344,7 +344,7 @@ export function buildWeldModel(
     weekOptions: index.weeks.map((item) => item.week).reverse(),
     thisWeek: {
       logged: deltaMetric(selected.logged, previous?.logged ?? 0),
-      signedThisWeek: deltaMetric(selected.signedInWeek, previous?.signedInWeek ?? 0),
+      signedInWeek: deltaMetric(selected.signedInWeek, previous?.signedInWeek ?? 0),
       signoff: latestSignoff(index, selectedPosition),
       issues: deltaMetric(selected.issues, previous?.issues ?? 0),
     },
@@ -352,7 +352,6 @@ export function buildWeldModel(
       total: index.cumulativeLogged[selectedPosition],
       signed: index.cumulativeSigned[selectedPosition],
       totalThisWeek: selected.logged,
-      signedThisWeek: selected.signed,
       overallRate,
       overallRateDeltaPoints: overallRate !== null && previousRate !== null ? overallRate - previousRate : null,
     },

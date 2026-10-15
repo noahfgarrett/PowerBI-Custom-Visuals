@@ -54,7 +54,7 @@ describe('Welding export (2026-10-14)', () => {
   it('matches the WW42 cards, using the latest weld week for sign-off', () => {
     const model = buildWeldModel(index, defaultViewState(index), null, MIN_WELDS)
     expect(model.thisWeek.logged).toEqual({ value: 0, delta: -84 })
-    expect(model.thisWeek.signedThisWeek).toEqual({ value: 70, delta: 24 })
+    expect(model.thisWeek.signedInWeek).toEqual({ value: 70, delta: 24 })
     expect(model.thisWeek.issues).toEqual({ value: 0, delta: 0 })
     expect(model.thisWeek.signoff?.week.label).toBe("WW41'2026")
     expect(model.thisWeek.signoff?.signed).toBe(67)
@@ -65,11 +65,11 @@ describe('Welding export (2026-10-14)', () => {
   it('matches the WW41 and WW40 cards', () => {
     const ww41 = buildWeldModel(index, viewAt(202641), null, MIN_WELDS)
     expect(ww41.thisWeek.logged.value).toBe(84)
-    expect(ww41.thisWeek.signedThisWeek.value).toBe(46)
+    expect(ww41.thisWeek.signedInWeek.value).toBe(46)
     const ww40 = buildWeldModel(index, viewAt(202640), null, MIN_WELDS)
     expect(ww40.thisWeek.logged.value).toBe(126)
     expect(ww40.thisWeek.signoff).toMatchObject({ signed: 46, total: 126 })
-    expect(ww40.thisWeek.signedThisWeek.value).toBe(67)
+    expect(ww40.thisWeek.signedInWeek.value).toBe(67)
   })
 
   it('matches the to-date totals through WW42', () => {

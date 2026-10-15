@@ -238,7 +238,7 @@ export interface WeldModel {
   thisWeek: {
     logged: DeltaMetric
     /** Signed welds whose signed week is the selected week. */
-    signedThisWeek: DeltaMetric
+    signedInWeek: DeltaMetric
     /** Sign-off for the latest weld week up to the selected week that has welds, or null when none exist. */
     signoff: SignoffSummary | null
     issues: DeltaMetric
@@ -248,8 +248,6 @@ export interface WeldModel {
     signed: number
     /** Welds logged in the selected week. */
     totalThisWeek: number
-    /** Signed welds, by weld week, in the selected week. */
-    signedThisWeek: number
     /** Percent 0–100, or null when no welds exist through the selected week. */
     overallRate: number | null
     /** Change in points versus through the previous week, or null when either rate is missing. */
