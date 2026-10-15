@@ -10,7 +10,7 @@
     "Qaqc_role_building": "Building",
     "Qaqc_role_building_description": "Building or area inspected.",
     "Qaqc_role_rowId": "Row ID",
-    "Qaqc_role_rowId_description": "Optional unique row number (Power Query Index column). Keeps identical rows separate.",
+    "Qaqc_role_rowId_description": "Required unique row number (Power Query Index column). Keeps identical rows separate.",
     "Qaqc_colors": "Colors",
     "Qaqc_colors_preset": "Preset",
     "Qaqc_preset_qaqc": "QAQC",

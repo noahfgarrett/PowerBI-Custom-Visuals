@@ -37,7 +37,7 @@
       "kind": "Grouping",
       "displayName": "Row ID",
       "displayNameKey": "Qaqc_role_rowId",
-      "description": "Optional unique row number (Power Query Index column). Keeps identical rows separate.",
+      "description": "Required unique row number (Power Query Index column). Keeps identical rows separate.",
       "descriptionKey": "Qaqc_role_rowId_description"
     }
   ],
