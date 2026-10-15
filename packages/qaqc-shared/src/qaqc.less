@@ -405,7 +405,9 @@
 /* A card-coloured halo keeps value labels readable over lines and bars. */
 .qaqc-issue-rate,
 .qaqc-end-label,
-.qaqc-bar-value {
+.qaqc-bar-value,
+.qaqc-rate-label,
+.qaqc-rate-value {
   paint-order: stroke;
   stroke: var(--qaqc-card-solid);
   stroke-width: 3px;
@@ -826,6 +828,118 @@
 
 .qaqc-expanded.is-compact .qaqc-summary {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+// Welding charts.
+
+.qaqc-rate-label {
+  font-size: 10px;
+}
+
+.qaqc-rate-label.is-low {
+  font-weight: 700;
+}
+
+.qaqc-baseline-tick,
+.qaqc-overall-line {
+  stroke-width: 1px;
+  pointer-events: none;
+}
+
+.qaqc-drill-chart {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.qaqc-breadcrumb {
+  display: flex;
+  flex: 0 0 24px;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  font-size: 11.5px;
+}
+
+.qaqc-breadcrumb button {
+  flex: 0 0 auto;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--qaqc-accent);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  transition: background-color 150ms ease-out;
+}
+
+.qaqc-breadcrumb button:hover:not(:disabled) {
+  background: var(--qaqc-accent-soft);
+}
+
+.qaqc-breadcrumb button:disabled {
+  color: var(--qaqc-muted);
+  cursor: not-allowed;
+}
+
+.qaqc-breadcrumb-separator {
+  color: var(--qaqc-faint);
+}
+
+.qaqc-breadcrumb-current {
+  overflow: hidden;
+  color: var(--qaqc-ink);
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Rows draw their own keyboard-only ring, so the browser outline stays off.
+.qaqc-drill-row {
+  cursor: pointer;
+  outline: none;
+}
+
+.qaqc-breadcrumb button:focus-visible,
+.qaqc-disclosure:focus-visible {
+  outline: 2px solid var(--qaqc-accent);
+  outline-offset: 1px;
+}
+
+.qaqc-disclosure {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.qaqc-disclosure svg {
+  flex: 0 0 auto;
+  color: var(--qaqc-muted);
+  transition: transform 150ms ease-out;
+}
+
+.qaqc-disclosure[aria-expanded="true"] svg {
+  transform: rotate(90deg);
+}
+
+// Indent past the chevron (14 px + 4 px gap) so spec names line up under their system's name.
+.qaqc-table tbody .qaqc-spec-row th {
+  padding-left: 28px;
+  color: var(--qaqc-ink-2);
+  font-weight: 500;
+}
+
+.qaqc-table .qaqc-spec-row td {
+  color: var(--qaqc-ink-2);
 }
 
 @media (prefers-reduced-motion: reduce) {

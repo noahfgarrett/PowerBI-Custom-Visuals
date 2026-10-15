@@ -8,7 +8,7 @@ import { makeWorkWeek } from '../workWeeks'
 import { render, type Rendered } from './render'
 
 const COLORS: ChartColors = {
-  series1: '#2E5AAC', series2: '#86B6EF', bad: '#D03B3B', card: '#FDFEFF',
+  series1: '#2E5AAC', series2: '#86B6EF', bad: '#D03B3B', warn: '#B45309', card: '#FDFEFF',
   grid: '#EBEEF3', axisText: '#6A7583', ink: '#1B2530', accent: '#2E5AAC',
 }
 

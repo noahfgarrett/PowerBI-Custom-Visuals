@@ -56,6 +56,10 @@ describe('resolveTheme', () => {
     expect(colors.card).toBe('#FDFEFF')
     expect(colors.bad).toBe('#D03B3B')
   })
+
+  it('carries the warn amber into chart colors', () => {
+    expect(chartColorsFromTheme(resolveTheme(BASE)).warn).toBe(STATUS_COLORS.warn)
+  })
 })
 
 describe('isPresetName', () => {

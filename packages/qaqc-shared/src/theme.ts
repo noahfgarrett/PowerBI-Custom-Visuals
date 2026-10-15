@@ -135,6 +135,7 @@ export function chartColorsFromTheme(theme: ResolvedTheme): ChartColors {
     series1: colors.series1,
     series2: colors.series2,
     bad: colors.bad,
+    warn: colors.warn,
     card: colors.card,
     grid: colors.hairline,
     axisText: colors.muted,
