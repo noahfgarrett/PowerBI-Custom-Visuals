@@ -8,6 +8,8 @@ import {
   formatSignedCount,
   formatSignoffRate,
   pluralize,
+  pointsTone,
+  pointsTrend,
   signoffStatus,
   trendOf,
 } from '../format'
@@ -86,5 +88,24 @@ describe('formatSignoffRate', () => {
 
   it('shows n/a for a missing sign-off rate', () => {
     expect(formatSignoffRate(null)).toBe('n/a')
+  })
+
+  it('tones a points change good when it rises, bad when it falls, neutral otherwise', () => {
+    expect(pointsTone(1.2)).toBe('good')
+    expect(pointsTone(-0.4)).toBe('bad')
+    expect(pointsTone(0)).toBe('neutral')
+    expect(pointsTone(null)).toBe('neutral')
+  })
+
+  it('treats a points change that rounds to zero as no change', () => {
+    expect(pointsTone(0.004)).toBe('neutral')
+    expect(pointsTone(-0.004)).toBe('neutral')
+    expect(pointsTrend(0.004)).toBe('flat')
+  })
+
+  it('trends a points change by its rounded direction, with no arrow when there is no change to show', () => {
+    expect(pointsTrend(0.8)).toBe('up')
+    expect(pointsTrend(-0.8)).toBe('down')
+    expect(pointsTrend(null)).toBe('none')
   })
 })

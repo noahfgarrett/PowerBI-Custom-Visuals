@@ -14,6 +14,7 @@ import { useMemo, useRef, useState, type ReactElement, type ReactNode } from 're
 
 import type { TooltipHandler } from '../chartTypes'
 import type { ElementSize } from '../hooks/useElementSize'
+import { useWeekWindow } from '../hooks/useWeekWindow'
 import { BuildingIssueTable } from './BuildingIssueTable'
 import { CARDS_ONLY_HEIGHT, ChartExpansionFrame, COMPACT_WIDTH, type ExpandablePanel } from './ChartExpansionFrame'
 import { ChartFill } from './ChartFill'
@@ -35,14 +36,14 @@ import {
   formatPercent,
   formatPointsDelta,
   formatSignoffRate,
-  roundPoints,
+  pointsTone,
+  pointsTrend,
   signoffStatus,
   trendOf,
-  type DeltaTone,
 } from '../format'
 import { RECENT_WEEK_COUNT } from '../inspections'
 import { chartColorsFromTheme, type ResolvedTheme } from '../theme'
-import type { RangeMode, WeldIndex } from '../types'
+import type { WeldIndex } from '../types'
 import { buildWeldModel } from '../welds'
 import { shortWeekLabel } from '../workWeeks'
 
@@ -76,14 +77,6 @@ export interface WeldingDashboardProps {
   onHover: TooltipHandler
 }
 
-function pointsTone(delta: number | null): DeltaTone {
-  if (delta === null) return 'neutral'
-  const rounded = roundPoints(delta)
-  if (rounded < 0) return 'bad'
-  if (rounded > 0) return 'good'
-  return 'neutral'
-}
-
 export function WeldingDashboard({
   title,
   icon: Icon,
@@ -98,19 +91,13 @@ export function WeldingDashboard({
   viewport,
   onHover,
 }: WeldingDashboardProps): ReactElement {
-  const [selectedKey, setSelectedKey] = useState(index.currentWeek.key)
-  const [windowEndKey, setWindowEndKey] = useState(index.currentWeek.key)
-  const [range, setRange] = useState<RangeMode>('recent')
+  const { view, range, selectWeek, pickWeek, changeRange } = useWeekWindow(index)
   const [drillSystem, setDrillSystem] = useState<string | null>(null)
   const systemsSectionRef = useRef<HTMLElement | null>(null)
 
-  // Keep the user's week across data refreshes when it still exists; otherwise use the current week.
-  const isSelectionInData = index.positionByKey.has(selectedKey)
-  const effectiveSelected = isSelectionInData ? selectedKey : index.currentWeek.key
-  const effectiveEnd = isSelectionInData && index.positionByKey.has(windowEndKey) ? windowEndKey : index.currentWeek.key
   const model = useMemo(
-    () => buildWeldModel(index, { selectedKey: effectiveSelected, windowEndKey: effectiveEnd, range }, drillSystem, minWelds),
-    [index, effectiveSelected, effectiveEnd, range, drillSystem, minWelds],
+    () => buildWeldModel(index, view, drillSystem, minWelds),
+    [index, view, drillSystem, minWelds],
   )
 
   // The drilled system left the window: return to all systems for good, so it does not re-drill if it comes back.
@@ -149,7 +136,7 @@ export function WeldingDashboard({
         animate={animate}
         describe={describeCharts}
         showValues={showValues}
-        onSelectWeek={setSelectedKey}
+        onSelectWeek={selectWeek}
         onHover={onHover}
       />
     )
@@ -223,23 +210,6 @@ export function WeldingDashboard({
       ),
       renderExpanded: () => <BuildingIssueTable rows={model.allBuildings} />,
     },
-  }
-
-  function changeRange(mode: RangeMode): void {
-    setRange(mode)
-    if (mode !== 'recent') return
-    // Returning to the recent range must not leave the selected week outside the visible window.
-    const selectedPosition = index.positionByKey.get(effectiveSelected)
-    const endPosition = index.positionByKey.get(effectiveEnd)
-    if (selectedPosition === undefined || endPosition === undefined) return
-    if (selectedPosition > endPosition || selectedPosition <= endPosition - RECENT_WEEK_COUNT) {
-      setWindowEndKey(effectiveSelected)
-    }
-  }
-
-  function pickWeek(key: number): void {
-    setSelectedKey(key)
-    setWindowEndKey(key)
   }
 
   return (
@@ -326,7 +296,7 @@ export function WeldingDashboard({
                 value={formatPercent(toDate.overallRate)}
                 detail={overallDetail}
                 tone={pointsTone(toDate.overallRateDeltaPoints)}
-                trend={toDate.overallRateDeltaPoints === null ? 'none' : trendOf(roundPoints(toDate.overallRateDeltaPoints))}
+                trend={pointsTrend(toDate.overallRateDeltaPoints)}
                 status={signoffStatus(toDate.overallRate)}
               />
             </KpiGroup>

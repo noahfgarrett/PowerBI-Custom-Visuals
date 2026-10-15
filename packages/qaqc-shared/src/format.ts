@@ -61,6 +61,20 @@ export function trendOf(delta: number): Trend {
   return 'flat'
 }
 
+/** A rate change in points: good when it rises, bad when it falls; no change (after rounding) or no rate is neutral. */
+export function pointsTone(delta: number | null): DeltaTone {
+  if (delta === null) return 'neutral'
+  const rounded = roundPoints(delta)
+  if (rounded < 0) return 'bad'
+  if (rounded > 0) return 'good'
+  return 'neutral'
+}
+
+/** The arrow for a rate change in points, by its rounded direction; none when there is no rate to compare. */
+export function pointsTrend(delta: number | null): Trend {
+  return delta === null ? 'none' : trendOf(roundPoints(delta))
+}
+
 export function pluralize(count: number, singular: string, plural: string): string {
   return count === 1 ? singular : plural
 }

@@ -11,10 +11,11 @@ import {
   TableProperties,
   type LucideIcon,
 } from 'lucide-react'
-import { useMemo, useState, type ReactElement, type ReactNode } from 'react'
+import { useMemo, type ReactElement, type ReactNode } from 'react'
 
 import type { TooltipHandler } from '../chartTypes'
 import type { ElementSize } from '../hooks/useElementSize'
+import { useWeekWindow } from '../hooks/useWeekWindow'
 import { AgingSplitTable } from './AgingSplitTable'
 import { AgingStripChart } from './AgingStripChart'
 import { CARDS_ONLY_HEIGHT, ChartExpansionFrame, COMPACT_WIDTH, type ExpandablePanel } from './ChartExpansionFrame'
@@ -32,11 +33,11 @@ import { OpenIssuesTable } from './OpenIssuesTable'
 import { RangeToggle } from './RangeToggle'
 import { IssueWindowSummary } from './WindowSummary'
 import { WorkWeekPicker } from './WorkWeekPicker'
-import { formatCount, formatDelta, formatPercent, formatPointsDelta, formatSignedCount, roundPoints, trendOf } from '../format'
+import { formatCount, formatDelta, formatPercent, formatPointsDelta, formatSignedCount, pointsTrend, trendOf } from '../format'
 import { RECENT_WEEK_COUNT } from '../inspections'
 import { buildIssueModel } from '../issues'
 import { chartColorsFromTheme, type ResolvedTheme } from '../theme'
-import type { ClosureRateCard, IssueIndex, RangeMode } from '../types'
+import type { ClosureRateCard, IssueIndex } from '../types'
 import { shortWeekLabel } from '../workWeeks'
 
 const NO_ROWS_MESSAGE = 'No issues match the current filters'
@@ -90,18 +91,9 @@ export function IssuesDashboard({
   viewport,
   onHover,
 }: IssuesDashboardProps): ReactElement {
-  const [selectedKey, setSelectedKey] = useState(index.currentWeek.key)
-  const [windowEndKey, setWindowEndKey] = useState(index.currentWeek.key)
-  const [range, setRange] = useState<RangeMode>('recent')
+  const { view, range, selectWeek, pickWeek, changeRange } = useWeekWindow(index)
 
-  // Keep the user's week across data refreshes when it still exists; otherwise use the current week.
-  const isSelectionInData = index.positionByKey.has(selectedKey)
-  const effectiveSelected = isSelectionInData ? selectedKey : index.currentWeek.key
-  const effectiveEnd = isSelectionInData && index.positionByKey.has(windowEndKey) ? windowEndKey : index.currentWeek.key
-  const model = useMemo(
-    () => buildIssueModel(index, { selectedKey: effectiveSelected, windowEndKey: effectiveEnd, range }),
-    [index, effectiveSelected, effectiveEnd, range],
-  )
+  const model = useMemo(() => buildIssueModel(index, view), [index, view])
   // Memoized so the charts' own memos see the same colors object until the theme changes.
   const colors = useMemo(() => chartColorsFromTheme(theme), [theme])
   const { thisWeek, toDate } = model
@@ -123,7 +115,7 @@ export function IssuesDashboard({
         animate={animate}
         describe={describeCharts}
         showValues={showValues}
-        onSelectWeek={setSelectedKey}
+        onSelectWeek={selectWeek}
         onHover={onHover}
       />
     )
@@ -195,23 +187,6 @@ export function IssuesDashboard({
       // Mounted only while the page is open, so the detail is built only then.
       renderExpanded: () => <IssueDetail index={index} selectedKey={model.selectedWeek.key} />,
     },
-  }
-
-  function changeRange(mode: RangeMode): void {
-    setRange(mode)
-    if (mode !== 'recent') return
-    // Returning to the recent range must not leave the selected week outside the visible window.
-    const selectedPosition = index.positionByKey.get(effectiveSelected)
-    const endPosition = index.positionByKey.get(effectiveEnd)
-    if (selectedPosition === undefined || endPosition === undefined) return
-    if (selectedPosition > endPosition || selectedPosition <= endPosition - RECENT_WEEK_COUNT) {
-      setWindowEndKey(effectiveSelected)
-    }
-  }
-
-  function pickWeek(key: number): void {
-    setSelectedKey(key)
-    setWindowEndKey(key)
   }
 
   return (
@@ -290,7 +265,7 @@ export function IssuesDashboard({
                 value={formatPercent(closureRate.value)}
                 detail={closureRateDetail(closureRate, previousLabel)}
                 tone={closureRate.tone}
-                trend={closureRate.deltaPoints === null ? 'none' : trendOf(roundPoints(closureRate.deltaPoints))}
+                trend={pointsTrend(closureRate.deltaPoints)}
               />
             </KpiGroup>
           </div>

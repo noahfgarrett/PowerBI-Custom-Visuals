@@ -384,6 +384,7 @@ describe('IssuesDashboard layout', () => {
   })
 })
 
+// The week, window and range rules are covered in useWeekWindow.test.tsx; these check the dashboard's wiring.
 describe('IssuesDashboard week and window', () => {
   it('selects a week from a bar click without moving the window', () => {
     stubSize()
@@ -401,42 +402,6 @@ describe('IssuesDashboard week and window', () => {
     if (!chart) throw new Error('trend chart missing')
     pressKeys(chart, ['ArrowLeft', 'Enter'])
     expect(weekSubtitle(view.container)).toBe("WW41'2026")
-  })
-
-  it('moves the window to the week picked in the dropdown', () => {
-    stubSize()
-    view = draw()
-    pickWeekInDropdown(view.container, '202630')
-    expect(lastHitWeek(view.container)).toBe('202630')
-  })
-
-  it('keeps a bar-selected week visible when switching back to the recent range', () => {
-    stubSize()
-    view = draw()
-    clickRange(view.container, 'All')
-    expect(mainHitWeeks(view.container)[0]).toBe('202446')
-    clickHit(view.container, '202506')
-    clickRange(view.container, '30 WW')
-    expect(lastHitWeek(view.container)).toBe('202506')
-  })
-
-  it('leaves the window alone when switching to recent with the selection already visible', () => {
-    stubSize()
-    view = draw()
-    clickRange(view.container, 'All')
-    clickHit(view.container, '202640')
-    clickRange(view.container, '30 WW')
-    expect(lastHitWeek(view.container)).toBe('202642')
-  })
-
-  it('falls back to the current week when a refresh removes the picked week', () => {
-    stubSize()
-    view = draw()
-    pickWeekInDropdown(view.container, '202450')
-    const trimmed = ISSUE_ROWS.filter((row) => !/\/202[45]$/.test(row[6] ?? ''))
-    view.rerender(dashboardElement({ index: indexOf(trimmed) }))
-    expect(weekSubtitle(view.container)).toBe("WW42'2026")
-    expect(lastHitWeek(view.container)).toBe('202642')
   })
 })
 

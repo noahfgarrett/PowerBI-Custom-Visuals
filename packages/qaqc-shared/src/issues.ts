@@ -19,8 +19,8 @@ import type {
 } from './types'
 import type { DeltaTone } from './format'
 import { daysBetween, formatDate, parseDate } from './dates'
-import { NAME_COLLATOR, roundPoints } from './format'
-import { cellText, RECENT_WEEK_COUNT } from './inspections'
+import { NAME_COLLATOR, pointsTone } from './format'
+import { cellText, recentWindowStart } from './inspections'
 import { enumerateWorkWeeks, previousWorkWeek, toIsoWorkWeek } from './workWeeks'
 
 export const DEFAULT_CONTRACTOR = 'Unassigned'
@@ -359,10 +359,7 @@ function closureRateCard(index: IssueIndex, position: number): ClosureRateCard {
   const value = closureRateAt(index, position)
   const previous = closureRateAt(index, position - 1)
   const deltaPoints = value !== null && previous !== null ? value - previous : null
-  let tone: DeltaTone = 'neutral'
-  if (deltaPoints !== null && roundPoints(deltaPoints) > 0) tone = 'good'
-  if (deltaPoints !== null && roundPoints(deltaPoints) < 0) tone = 'bad'
-  return { value, deltaPoints, tone }
+  return { value, deltaPoints, tone: pointsTone(deltaPoints) }
 }
 
 function cumulativeAt(cumulative: number[], position: number): number {
@@ -405,7 +402,7 @@ export function buildIssueModel(index: IssueIndex, view: ViewState): IssueModel 
   const lastPosition = index.weeks.length - 1
   const selectedPosition = index.positionByKey.get(view.selectedKey) ?? lastPosition
   const endPosition = index.positionByKey.get(view.windowEndKey) ?? lastPosition
-  const startPosition = view.range === 'all' ? 0 : Math.max(0, endPosition - RECENT_WEEK_COUNT + 1)
+  const startPosition = view.range === 'all' ? 0 : recentWindowStart(endPosition)
   const selected = index.weeks[selectedPosition]
   const previous = selectedPosition > 0 ? index.weeks[selectedPosition - 1] : null
   const { cumulativeOpened, cumulativeClosed } = index

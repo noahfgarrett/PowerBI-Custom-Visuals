@@ -1,8 +1,9 @@
 import { Building2, ChartColumnStacked, CircleAlert, CircleCheck, ClipboardCheck, Gauge, TrendingUp, Wrench, type LucideIcon } from 'lucide-react'
-import { useMemo, useState, type ReactElement, type ReactNode } from 'react'
+import { useMemo, type ReactElement, type ReactNode } from 'react'
 
 import type { TooltipHandler } from '../chartTypes'
 import type { ElementSize } from '../hooks/useElementSize'
+import { useWeekWindow } from '../hooks/useWeekWindow'
 import { BuildingTable } from './BuildingTable'
 import { CARDS_ONLY_HEIGHT, ChartExpansionFrame, COMPACT_WIDTH, type ExpandablePanel } from './ChartExpansionFrame'
 import { ChartFill } from './ChartFill'
@@ -23,13 +24,13 @@ import {
   formatDelta,
   formatPercent,
   formatPointsDelta,
-  roundPoints,
+  pointsTone,
+  pointsTrend,
   trendOf,
-  type DeltaTone,
 } from '../format'
 import { buildInspectionModel, RECENT_WEEK_COUNT } from '../inspections'
 import { chartColorsFromTheme, type ResolvedTheme } from '../theme'
-import type { InspectionIndex, RangeMode } from '../types'
+import type { InspectionIndex } from '../types'
 import { shortWeekLabel } from '../workWeeks'
 
 const NO_ROWS_MESSAGE = 'No inspections match the current filters'
@@ -58,14 +59,6 @@ export interface InspectionDashboardProps {
   onHover: TooltipHandler
 }
 
-function pointsTone(delta: number | null): DeltaTone {
-  if (delta === null) return 'neutral'
-  const rounded = roundPoints(delta)
-  if (rounded < 0) return 'bad'
-  if (rounded > 0) return 'good'
-  return 'neutral'
-}
-
 export function InspectionDashboard({
   title,
   icon: Icon,
@@ -79,18 +72,9 @@ export function InspectionDashboard({
   viewport,
   onHover,
 }: InspectionDashboardProps): ReactElement {
-  const [selectedKey, setSelectedKey] = useState(index.currentWeek.key)
-  const [windowEndKey, setWindowEndKey] = useState(index.currentWeek.key)
-  const [range, setRange] = useState<RangeMode>('recent')
+  const { view, range, selectWeek, pickWeek, changeRange } = useWeekWindow(index)
 
-  // Keep the user's week across data refreshes when it still exists; otherwise use the current week.
-  const isSelectionInData = index.positionByKey.has(selectedKey)
-  const effectiveSelected = isSelectionInData ? selectedKey : index.currentWeek.key
-  const effectiveEnd = isSelectionInData && index.positionByKey.has(windowEndKey) ? windowEndKey : index.currentWeek.key
-  const model = useMemo(
-    () => buildInspectionModel(index, { selectedKey: effectiveSelected, windowEndKey: effectiveEnd, range }),
-    [index, effectiveSelected, effectiveEnd, range],
-  )
+  const model = useMemo(() => buildInspectionModel(index, view), [index, view])
   // Memoized so the charts' own memos see the same colors object until the theme changes.
   const colors = useMemo(() => chartColorsFromTheme(theme), [theme])
   const { thisWeek, toDate } = model
@@ -119,7 +103,7 @@ export function InspectionDashboard({
         animate={animate}
         describe={describeCharts}
         showValues={showValues}
-        onSelectWeek={setSelectedKey}
+        onSelectWeek={selectWeek}
         onHover={onHover}
       />
     )
@@ -192,23 +176,6 @@ export function InspectionDashboard({
       ),
       renderExpanded: () => <BuildingTable rows={model.allBuildings} />,
     },
-  }
-
-  function changeRange(mode: RangeMode): void {
-    setRange(mode)
-    if (mode !== 'recent') return
-    // Returning to the recent range must not leave the selected week outside the visible window.
-    const selectedPosition = index.positionByKey.get(effectiveSelected)
-    const endPosition = index.positionByKey.get(effectiveEnd)
-    if (selectedPosition === undefined || endPosition === undefined) return
-    if (selectedPosition > endPosition || selectedPosition <= endPosition - RECENT_WEEK_COUNT) {
-      setWindowEndKey(effectiveSelected)
-    }
-  }
-
-  function pickWeek(key: number): void {
-    setSelectedKey(key)
-    setWindowEndKey(key)
   }
 
   return (
@@ -286,7 +253,7 @@ export function InspectionDashboard({
                 value={formatPercent(toDate.passRate)}
                 detail={passRateDetail}
                 tone={pointsTone(toDate.passRateDeltaPoints)}
-                trend={toDate.passRateDeltaPoints === null ? 'none' : trendOf(roundPoints(toDate.passRateDeltaPoints))}
+                trend={pointsTrend(toDate.passRateDeltaPoints)}
               />
             </KpiGroup>
           </div>

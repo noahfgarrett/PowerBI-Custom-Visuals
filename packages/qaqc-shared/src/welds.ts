@@ -20,7 +20,7 @@ import type {
   WorkWeek,
 } from './types'
 import { NAME_COLLATOR } from './format'
-import { cellText, RECENT_WEEK_COUNT } from './inspections'
+import { cellText, recentWindowStart } from './inspections'
 import { enumerateWorkWeeks, parseWorkWeek, previousWorkWeek, toIsoWorkWeek } from './workWeeks'
 
 export const SITE_GENERAL = 'Site General'
@@ -304,7 +304,7 @@ export function buildWeldModel(
   const lastPosition = index.weeks.length - 1
   const selectedPosition = index.positionByKey.get(view.selectedKey) ?? lastPosition
   const endPosition = index.positionByKey.get(view.windowEndKey) ?? lastPosition
-  const startPosition = view.range === 'all' ? 0 : Math.max(0, endPosition - RECENT_WEEK_COUNT + 1)
+  const startPosition = view.range === 'all' ? 0 : recentWindowStart(endPosition)
   const selected = index.weeks[selectedPosition]
   const previous = selectedPosition > 0 ? index.weeks[selectedPosition - 1] : null
   const overallRate = overallRateAt(index, selectedPosition)
