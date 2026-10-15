@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-15T14:01:59.715Z",
+  "generatedAt": "2026-10-15T15:36:56.728Z",
   "summary": {
-    "packageCount": 35,
+    "packageCount": 36,
     "warningCount": 7,
     "errorCount": 0
   },
@@ -266,6 +266,18 @@
         "capabilities": "packages/qaqc-mechanical/capabilities.json",
         "visual": "packages/qaqc-mechanical/src/visual.ts",
         "settings": "packages/qaqc-mechanical/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "qaqc-welding",
+      "files": {
+        "package": "packages/qaqc-welding/package.json",
+        "pbiviz": "packages/qaqc-welding/pbiviz.json",
+        "capabilities": "packages/qaqc-welding/capabilities.json",
+        "visual": "packages/qaqc-welding/src/visual.ts",
+        "settings": "packages/qaqc-welding/src/settings.ts"
       },
       "issueCount": 0,
       "issues": []
