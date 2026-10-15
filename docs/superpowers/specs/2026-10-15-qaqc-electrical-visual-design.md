@@ -185,6 +185,29 @@ The visual is designed to fill a full report page (about 1280×720).
 | More than 30,000 rows | Thin loading bar until all segments load |
 | High-contrast mode | Colors switch to the host's high-contrast foreground and background |
 
+## Performance
+
+These visuals must stay fast and polished with very large logs. Targets are measured on the dev Mac with a production build:
+
+| Operation | Data size | Target |
+|---|---|---|
+| Normalize + aggregate on data update | 100,000 rows | < 150 ms |
+| Normalize + aggregate on data update | 500,000 rows | < 750 ms |
+| Change selected week, range toggle, or bar click | any size | < 16 ms model work, one React render |
+| Resize | any size | no layout thrash; at most one render per animation frame |
+
+How the design meets them:
+
+- **Aggregate once per data update.** One pass over the rows builds a per-week index: for each work week, counts of Finals, SORs, and issues found, plus per-building counts. Raw rows are never touched again until Power BI sends new data.
+- **Interactions read only the index.** Selecting a week, toggling the range, or clicking a bar recomputes from the per-week index (at most a few hundred weeks), never from rows. To-date totals use cumulative sums over the sorted weeks.
+- **Charts draw aggregates, not rows.** SVG element counts are bounded by weeks in the window plus top-8 buildings, so the chart size is independent of row count. In "All" mode with hundreds of weeks, bar width shrinks to a 2px minimum and labels thin out.
+- **Memoization.** The index is keyed on the Power BI data view identity. The view model is memoized on index, selected week, window end, range, and settings.
+- **Incremental loading.** `fetchMoreData` appends segments to an accumulating buffer and rebuilds the index once all segments arrive. The loading bar shows progress and the previous render stays visible meanwhile.
+- **Resize** goes through a `requestAnimationFrame`-throttled handler. Size-dependent layout is computed from the latest viewport only.
+- **No per-row React components and no per-row DOM nodes**, anywhere.
+
+A benchmark test generates synthetic logs of 100,000 and 500,000 rows and asserts the aggregation targets (with headroom for CI variance). The same synthetic data is also loaded in the browser preview to check interaction smoothness and the "All" range with several years of weeks.
+
 ## Power BI integration
 
 These satisfy the repo's `review:business` gate, with zero warnings as the target:
@@ -204,6 +227,7 @@ Clicking a bar changes the visual's own selected week. It does not cross-filter 
    - Final, SOR, and issue rules, including case and whitespace variants.
    - The Electrical model against a fixture built from the real export: only the Work Week, Inspection Phase, Issue?, and Building columns, with no names. Expected values for WW42'2026: 3 Finals, 3 SORs, 0 Issues Found. Through WW42'2026: 238 Finals, 48 SORs, NCR pass rate 236/238 (99.2%).
    - Window logic: 30 WW vs All, short history, empty weeks, future rows.
+   - Performance benchmark: synthetic 100,000- and 500,000-row logs against the targets in Performance.
 2. **Browser preview** (`npm run dev` in `qaqc-electrical`): the dashboard rendered from the fixture. Screenshots are checked at 1280×720 for each preset, both opacity sliders at 0, a narrow tile, the setup state, the empty state, the All range, and a bar click.
 3. **Build gate:** `npm run typecheck`, the package build, `npm run review:business` with zero warnings, then sync to `Business_Package/` and `LotusWorks_Package/`, and a dated zip in `releases/`.
 4. **User smoke test** in Power BI Desktop on the work laptop. Power BI Desktop is Windows-only, so it can't run on the dev Mac.
@@ -213,4 +237,4 @@ Clicking a bar changes the visual's own selected week. It does not cross-filter 
 - A one-page setup guide shipped with the package: add an Index column in Power Query, bind each column to its slot, import the `.pbiviz`.
 - Updates: re-import the new `.pbiviz` in each report. The GUID stays fixed and the version increases, so re-importing upgrades in place.
 - When all QAQC visuals are done, the zipped package is emailed to the user (confirmed with them before sending).
-- Work happens on the `feat/qaqc-electrical` branch. Unrelated uncommitted changes already in the repo (deleted old `.pbiviz` files) are left untouched.
+- Work happens on the `feat/qaqc-electrical` branch, based on `chore/visual-package-updates` (the previously uncommitted visual work, committed on its own branch).
