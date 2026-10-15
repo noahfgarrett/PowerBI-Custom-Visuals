@@ -4963,6 +4963,7 @@ describe('QaqcElectricalVisual', () => {
       'Inspection Phase → Inspection Phase',
       'Issue? → Issue?',
       'Building → Building',
+      'Index → Row ID',
     ])
   })
 
@@ -5007,10 +5008,11 @@ describe('QaqcElectricalVisual', () => {
     expect(harness.element.querySelector('.qaqc-footnotes')?.textContent).toContain('Showing the first 288 rows (Power BI data limit)')
   })
 
-  it('reminds the author to bind a Row ID', () => {
+  it('shows the setup state until a Row ID is bound', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(ELECTRICAL_ROWS, { roles: ['workWeek', 'phase', 'issue', 'building'] })))
-    expect(harness.element.querySelector('.qaqc-footnotes')?.textContent).toContain('Row ID')
+    const items = Array.from(harness.element.querySelectorAll('.qaqc-status li')).map((item) => item.textContent)
+    expect(items).toEqual(['Index → Row ID'])
   })
 
   it('reports rendering lifecycle events', () => {
@@ -5188,7 +5190,7 @@ export class QaqcElectricalVisual implements powerbi.extensibility.visual.IVisua
     }
 
     const index = this.index
-    const footnotes = buildFootnotes(index, this.table.hasRowId, this.rowLimitReached)
+    const footnotes = buildFootnotes(index, this.rowLimitReached)
     flushSync(() => {
       this.root.render(
         createElement(ElectricalDashboard, {
@@ -5477,7 +5479,7 @@ if (data === 'missing') {
       animate
       describeCharts
       loading={false}
-      footnotes={buildFootnotes(index, true, false)}
+      footnotes={buildFootnotes(index, false)}
       viewport={{ width, height }}
       onHover={showTooltip}
     />,
@@ -5523,7 +5525,7 @@ Start the preview with the Browser pane tool `preview_start` using name `qaqc-el
 | `?bg=0&card=0` | Checkerboard shows through page and cards; borders and text still legible. |
 | `?w=800&h=900` | Compact: card groups stacked, charts in one column, header wraps cleanly. |
 | `?w=1280&h=380` | Cards only, no charts, nothing clipped. |
-| `?data=missing` and `?data=loading` | Centered status panel with icon, title, message (and the four `column → slot` items for missing). |
+| `?data=missing` and `?data=loading` | Centered status panel with icon, title, message (and the five `column → slot` items for missing, ending with `Index → Row ID`). |
 | `?data=empty` | Cards show 0 / n/a; chart panels show "No inspections match the current filters". |
 | `?hc=1` | Black background, yellow/cyan marks, all text readable. |
 | `?data=synthetic&rows=500000&preset=qaqc` | Page title shows index time; record it. Click bars, toggle All, change weeks: each responds without visible lag. |
@@ -5600,9 +5602,9 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 2. Choose `qaqcElectrical_6B2E9D4A1C7F.<version>.pbiviz`.
 3. To update later, import the newer file the same way. It replaces the old version in place and keeps your field bindings.
 
-## 2. Add a Row ID (Power Query, once per report)
+## 2. Add a Row ID (Power Query, once per report, required)
 
-Power BI merges rows that are identical in every bound column. To keep every inspection:
+Power BI merges rows that are identical in every bound column (on the October export that hides 151 of 238 Finals). The visual shows its setup screen until a Row ID is bound. To add one:
 
 1. **Home → Transform data**, select the Electrical Inspection Log query.
 2. **Add Column → Index Column → From 1**.

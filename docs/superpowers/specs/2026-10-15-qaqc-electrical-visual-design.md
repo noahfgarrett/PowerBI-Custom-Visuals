@@ -69,9 +69,9 @@ The table mapping uses `dataReductionAlgorithm: { window: { count: 30000 } }`. W
 | Inspection Phase | Inspection Phase | yes |
 | Issue? | Issue? | yes |
 | Building | Building | yes |
-| Row ID | Index column added in Power Query | no |
+| Row ID | Index column added in Power Query | yes |
 
-Without a Row ID, Power BI merges rows that are identical across the bound columns. The visual shows a small footnote recommending the Index column when the Row ID slot is empty.
+Without a Row ID, Power BI merges rows that are identical across the bound columns; on the October export that turns 238 Finals into 87. Row ID is therefore required: the visual shows the setup card until it is bound. It is validated in code, because the repo's review gate allows at most one role with `min >= 1` in `capabilities.json`.
 
 ## Rules
 
@@ -98,7 +98,7 @@ The visual is designed to fill a full report page (about 1280×720).
 │ (≈ 2/3 width, full chart height)   ├──────────────────────────────────┤
 │                                    │ Inspections by Building          │
 └────────────────────────────────────┴──────────────────────────────────┘
-  footnotes (skipped rows, Row ID hint) in small muted text when needed
+  footnotes (skipped rows, future rows, data limit) in small muted text when needed
 ```
 
 - The cards sit in **one compact row at the top** and take at most about 15% of the visual height.
@@ -186,7 +186,6 @@ The `cardSettings`, `animationSettings`, and `accessibility` object names are re
 | Required slot empty | A setup card listing each missing slot by name, with a lucide icon |
 | No rows after report filters | Cards show 0; each chart shows "No inspections match the current filters" |
 | Unreadable work weeks | Footnote: `n rows skipped: unreadable work week` |
-| Row ID slot empty | Footnote recommending an Index column |
 | More than 30,000 rows | Thin loading bar until all segments load |
 | Power BI refuses more segments (memory limit) | Renders the rows received, with footnote `Showing the first n rows (Power BI data limit)` |
 | High-contrast mode | Colors switch to the host's high-contrast foreground and background |
