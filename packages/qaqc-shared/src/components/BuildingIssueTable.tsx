@@ -1,15 +1,10 @@
-import { useMemo, useState, type ReactElement } from 'react'
+import { useMemo, type ReactElement } from 'react'
 
 import { formatCount, formatPercent, NAME_COLLATOR } from '../format'
+import { directionSign, useTableSort, type SortState } from '../hooks/useTableSort'
 import type { BuildingIssueBar } from '../types'
 
 type SortKey = 'building' | 'welds' | 'issues' | 'rate'
-type SortDirection = 'ascending' | 'descending'
-
-interface SortState {
-  key: SortKey
-  direction: SortDirection
-}
 
 const COLUMNS: ReadonlyArray<{ key: SortKey; label: string }> = [
   { key: 'building', label: 'Building' },
@@ -18,8 +13,8 @@ const COLUMNS: ReadonlyArray<{ key: SortKey; label: string }> = [
   { key: 'rate', label: 'Issue rate' },
 ]
 
-function compareRows(a: BuildingIssueBar, b: BuildingIssueBar, sort: SortState): number {
-  const sign = sort.direction === 'ascending' ? 1 : -1
+function compareRows(a: BuildingIssueBar, b: BuildingIssueBar, sort: SortState<SortKey>): number {
+  const sign = directionSign(sort.direction)
   let difference = 0
   switch (sort.key) {
     case 'building':
@@ -48,17 +43,8 @@ export interface BuildingIssueTableProps {
 }
 
 export function BuildingIssueTable({ rows }: BuildingIssueTableProps): ReactElement {
-  const [sort, setSort] = useState<SortState>({ key: 'rate', direction: 'descending' })
+  const { sort, toggleSort } = useTableSort<SortKey>({ key: 'rate', direction: 'descending' }, 'building')
   const sorted = useMemo(() => [...rows].sort((a, b) => compareRows(a, b, sort)), [rows, sort])
-
-  function toggleSort(key: SortKey): void {
-    setSort((current) => {
-      if (current.key === key) {
-        return { key, direction: current.direction === 'ascending' ? 'descending' : 'ascending' }
-      }
-      return { key, direction: key === 'building' ? 'ascending' : 'descending' }
-    })
-  }
 
   return (
     <div className="qaqc-table-wrap">

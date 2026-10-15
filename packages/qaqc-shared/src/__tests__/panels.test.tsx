@@ -63,7 +63,7 @@ describe('ChartPanel legend shapes', () => {
     expect(view.container.querySelector<HTMLElement>('.qaqc-legend-swatch.is-line')?.style.background).toBe('rgb(180, 83, 9)')
     const dash = view.container.querySelector('.qaqc-legend-swatch.is-dashed line')
     expect(dash?.getAttribute('stroke')).toBe('#D03B3B')
-    expect(dash?.getAttribute('stroke-dasharray')).toBe('5 3')
+    expect(dash?.getAttribute('stroke-dasharray')).toBe('5 4')
   })
 })
 

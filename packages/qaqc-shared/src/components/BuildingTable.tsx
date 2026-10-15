@@ -1,15 +1,10 @@
-import { useMemo, useState, type ReactElement } from 'react'
+import { useMemo, type ReactElement } from 'react'
 
 import { formatCount, NAME_COLLATOR } from '../format'
+import { directionSign, useTableSort, type SortState } from '../hooks/useTableSort'
 import type { BuildingBar } from '../types'
 
 type SortKey = 'building' | 'finals' | 'sors' | 'total'
-type SortDirection = 'ascending' | 'descending'
-
-interface SortState {
-  key: SortKey
-  direction: SortDirection
-}
 
 const COLUMNS: ReadonlyArray<{ key: SortKey; label: string }> = [
   { key: 'building', label: 'Building' },
@@ -22,8 +17,8 @@ function totalOf(row: BuildingBar): number {
   return row.finals + row.sors
 }
 
-function compareRows(a: BuildingBar, b: BuildingBar, sort: SortState): number {
-  const sign = sort.direction === 'ascending' ? 1 : -1
+function compareRows(a: BuildingBar, b: BuildingBar, sort: SortState<SortKey>): number {
+  const sign = directionSign(sort.direction)
   let difference = 0
   switch (sort.key) {
     case 'building':
@@ -51,18 +46,9 @@ export interface BuildingTableProps {
 }
 
 export function BuildingTable({ rows }: BuildingTableProps): ReactElement {
-  const [sort, setSort] = useState<SortState>({ key: 'total', direction: 'descending' })
+  const { sort, toggleSort } = useTableSort<SortKey>({ key: 'total', direction: 'descending' }, 'building')
   const sorted = useMemo(() => [...rows].sort((a, b) => compareRows(a, b, sort)), [rows, sort])
   const maxTotal = rows.reduce((max, row) => Math.max(max, totalOf(row)), 1)
-
-  function toggleSort(key: SortKey): void {
-    setSort((current) => {
-      if (current.key === key) {
-        return { key, direction: current.direction === 'ascending' ? 'descending' : 'ascending' }
-      }
-      return { key, direction: key === 'building' ? 'ascending' : 'descending' }
-    })
-  }
 
   return (
     <div className="qaqc-table-wrap">

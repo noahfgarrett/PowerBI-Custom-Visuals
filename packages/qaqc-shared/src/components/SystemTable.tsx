@@ -2,15 +2,10 @@ import { ChevronRight } from 'lucide-react'
 import { Fragment, useId, useMemo, useState, type ReactElement } from 'react'
 
 import { formatCount, formatPercent, NAME_COLLATOR } from '../format'
+import { directionSign, useTableSort, type SortState } from '../hooks/useTableSort'
 import type { SystemDetail } from '../types'
 
 type SortKey = 'name' | 'total' | 'signed' | 'rate'
-type SortDirection = 'ascending' | 'descending'
-
-interface SortState {
-  key: SortKey
-  direction: SortDirection
-}
 
 /** A system or pipe-spec row, so both levels sort with one comparator. */
 interface TallyRow {
@@ -30,8 +25,8 @@ function rateOf(row: TallyRow): number | null {
   return row.total === 0 ? null : (row.signed / row.total) * 100
 }
 
-function compareRows(a: TallyRow, b: TallyRow, sort: SortState): number {
-  const sign = sort.direction === 'ascending' ? 1 : -1
+function compareRows(a: TallyRow, b: TallyRow, sort: SortState<SortKey>): number {
+  const sign = directionSign(sort.direction)
   let difference = 0
   switch (sort.key) {
     case 'name':
@@ -55,7 +50,7 @@ function compareRows(a: TallyRow, b: TallyRow, sort: SortState): number {
   return difference * sign || NAME_COLLATOR.compare(a.name, b.name)
 }
 
-function sortRows<T extends TallyRow>(rows: T[], sort: SortState): T[] {
+function sortRows<T extends TallyRow>(rows: T[], sort: SortState<SortKey>): T[] {
   return [...rows].sort((a, b) => compareRows(a, b, sort))
 }
 
@@ -75,7 +70,7 @@ export interface SystemTableProps {
 }
 
 export function SystemTable({ rows }: SystemTableProps): ReactElement {
-  const [sort, setSort] = useState<SortState>({ key: 'total', direction: 'descending' })
+  const { sort, toggleSort } = useTableSort<SortKey>({ key: 'total', direction: 'descending' }, 'name')
   const [openSystems, setOpenSystems] = useState<ReadonlySet<string>>(() => new Set())
   const idPrefix = useId()
   // Each system keeps its input position so its spec-row ids stay stable across sorts.
@@ -83,15 +78,6 @@ export function SystemTable({ rows }: SystemTableProps): ReactElement {
     () => sortRows(rows.map((row, position) => ({ ...row, name: row.system, position })), sort),
     [rows, sort],
   )
-
-  function toggleSort(key: SortKey): void {
-    setSort((current) => {
-      if (current.key === key) {
-        return { key, direction: current.direction === 'ascending' ? 'descending' : 'ascending' }
-      }
-      return { key, direction: key === 'name' ? 'ascending' : 'descending' }
-    })
-  }
 
   function toggleOpen(system: string): void {
     setOpenSystems((current) => {
