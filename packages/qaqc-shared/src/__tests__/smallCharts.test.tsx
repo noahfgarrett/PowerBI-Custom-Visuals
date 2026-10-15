@@ -102,7 +102,7 @@ describe('HorizontalBarChart', () => {
     // Label column is min(132, 160 x 0.36) = 57.6px, so labels keep floor((57.6 - 8) / 6.4) = 7 characters.
     expect(labels[0]).toBe('F63.2')
     expect(labels[1]).toBe('IWW Pu…')
-    expect(labels[2]).toBe('Other (…')
+    expect(labels[2]).toBe('Other…')
     expect(Array.from(view.container.querySelectorAll('.qaqc-value-text')).map((node) => node.textContent)).toEqual(['153', '7', '2'])
   })
 

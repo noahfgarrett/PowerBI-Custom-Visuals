@@ -57,5 +57,6 @@ describe('truncateLabel', () => {
   it('keeps short labels and ellipsizes long ones', () => {
     expect(truncateLabel('F63.2', 10)).toBe('F63.2')
     expect(truncateLabel('IWW Pump Station', 8)).toBe('IWW Pum…')
+    expect(truncateLabel('Other (2 buildings)', 7)).toBe('Other…')
   })
 })
