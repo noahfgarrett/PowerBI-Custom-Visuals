@@ -44,7 +44,7 @@ All required, validated in code (the review gate allows at most one `min >= 1` r
 | This WW | Sign-off % | signed ÷ logged for the **latest weld week ≤ W that has welds** | `67 of 84 · WW41'2026`; red when under 10% |
 | This WW | Issues Created | issue welds with weld week W | change vs W−1; warn amber when up |
 | Project to date | Total Welds | welds with weld week ≤ W | `+n this WW` |
-| Project to date | Welds Signed | signed welds with weld week ≤ W | `+n this WW` |
+| Project to date | Welds Signed | signed welds with weld week ≤ W | `+n signed this WW`, where n is Signed This Week (by signing week) |
 | Project to date | Overall Sign-off % | Welds Signed ÷ Total Welds | change in points vs through W−1 |
 
 ## Charts
