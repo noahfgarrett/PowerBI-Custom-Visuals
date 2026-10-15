@@ -1,0 +1,25 @@
+export interface ChartColors {
+  series1: string
+  series2: string
+  bad: string
+  /** Solid card color, used for marker rings and badge text. */
+  card: string
+  grid: string
+  axisText: string
+  ink: string
+  accent: string
+}
+
+export interface TooltipRow {
+  label: string
+  value: string
+}
+
+export interface TooltipRequest {
+  title: string
+  rows: TooltipRow[]
+  clientX: number
+  clientY: number
+}
+
+export type TooltipHandler = (request: TooltipRequest | null) => void

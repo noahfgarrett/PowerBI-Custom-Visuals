@@ -1,0 +1,144 @@
+import type { ChartColors } from './chartTypes'
+
+export type PresetName = 'qaqc' | 'blue' | 'lotusworks' | 'grayscale'
+
+export interface PresetColors {
+  page: string
+  card: string
+  weekCard: string
+  border: string
+  hairline: string
+  ink: string
+  ink2: string
+  muted: string
+  faint: string
+  accent: string
+  accentSoft: string
+  series1: string
+  series2: string
+}
+
+export interface ThemeColors extends PresetColors {
+  onAccent: string
+  good: string
+  bad: string
+  warn: string
+}
+
+/** Fixed in every preset: green = good/closed, red = bad/opened/issue found, amber = warning. */
+export const STATUS_COLORS = { good: '#0A7A0A', bad: '#D03B3B', warn: '#B45309' } as const
+
+export const PRESETS: Record<PresetName, PresetColors> = {
+  qaqc: {
+    page: '#EDF1F6', card: '#FDFEFF', weekCard: '#F8FAFF', border: '#DCE3EC', hairline: '#EBEEF3',
+    ink: '#1B2530', ink2: '#45505F', muted: '#6A7583', faint: '#9AA4B2',
+    accent: '#2E5AAC', accentSoft: '#EAF0FA', series1: '#2E5AAC', series2: '#86B6EF',
+  },
+  blue: {
+    page: '#F7F8FA', card: '#FFFFFF', weekCard: '#F5F9FD', border: '#E3E7ED', hairline: '#EEF1F5',
+    ink: '#00325B', ink2: '#2B4A6B', muted: '#5B6B7F', faint: '#98A6B6',
+    accent: '#0071C5', accentSoft: '#E6F1FA', series1: '#0071C5', series2: '#9CCBEE',
+  },
+  lotusworks: {
+    page: '#F3F5F8', card: '#FFFFFF', weekCard: '#FFF9F5', border: '#DDE3EA', hairline: '#ECEFF3',
+    ink: '#003459', ink2: '#2E4A66', muted: '#5E6E80', faint: '#9AA6B4',
+    accent: '#E85D04', accentSoft: '#FDEFE6', series1: '#003459', series2: '#0077B6',
+  },
+  grayscale: {
+    page: '#F2F2F2', card: '#FFFFFF', weekCard: '#FAFAFA', border: '#DADADA', hairline: '#ECECEC',
+    ink: '#1E1E1E', ink2: '#444444', muted: '#6B6B6B', faint: '#A0A0A0',
+    accent: '#3A3A3A', accentSoft: '#EDEDED', series1: '#3A3A3A', series2: '#A6A6A6',
+  },
+}
+
+export interface HighContrastColors {
+  foreground: string
+  background: string
+  foregroundSelected: string
+}
+
+export interface ThemeOptions {
+  preset: PresetName
+  /** '' or an invalid value means "use the preset page color". */
+  backgroundColor: string
+  backgroundOpacity: number
+  cardOpacity: number
+  highContrast: HighContrastColors | null
+}
+
+export interface ResolvedTheme {
+  colors: ThemeColors
+  cssVariables: Record<string, string>
+}
+
+const HEX_COLOR = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i
+
+export function isPresetName(value: unknown): value is PresetName {
+  return typeof value === 'string' && Object.prototype.hasOwnProperty.call(PRESETS, value)
+}
+
+export function withOpacity(hex: string, percent: number): string {
+  const match = hex.match(HEX_COLOR)
+  if (!match) return hex
+  const alpha = Math.min(100, Math.max(0, percent)) / 100
+  const [r, g, b] = [match[1], match[2], match[3]].map((part) => parseInt(part, 16))
+  return `rgba(${r}, ${g}, ${b}, ${Number(alpha.toFixed(3))})`
+}
+
+function highContrastColors(host: HighContrastColors): ThemeColors {
+  return {
+    page: host.background, card: host.background, weekCard: host.background,
+    border: host.foreground, hairline: host.foreground,
+    ink: host.foreground, ink2: host.foreground, muted: host.foreground, faint: host.foreground,
+    accent: host.foregroundSelected, accentSoft: host.background, onAccent: host.background,
+    series1: host.foreground, series2: host.foregroundSelected,
+    good: host.foreground, bad: host.foregroundSelected, warn: host.foreground,
+  }
+}
+
+export function resolveTheme(options: ThemeOptions): ResolvedTheme {
+  const highContrast = options.highContrast
+  const colors: ThemeColors = highContrast
+    ? highContrastColors(highContrast)
+    : { ...PRESETS[options.preset], onAccent: '#FFFFFF', ...STATUS_COLORS }
+  const pageBase = HEX_COLOR.test(options.backgroundColor) ? options.backgroundColor : colors.page
+  const fill = (color: string, percent: number): string => (highContrast ? color : withOpacity(color, percent))
+
+  return {
+    colors,
+    cssVariables: {
+      '--qaqc-page': fill(highContrast ? colors.page : pageBase, options.backgroundOpacity),
+      '--qaqc-card': fill(colors.card, options.cardOpacity),
+      '--qaqc-week-card': fill(colors.weekCard, options.cardOpacity),
+      '--qaqc-card-solid': colors.card,
+      '--qaqc-border': colors.border,
+      '--qaqc-hairline': colors.hairline,
+      '--qaqc-ink': colors.ink,
+      '--qaqc-ink-2': colors.ink2,
+      '--qaqc-muted': colors.muted,
+      '--qaqc-faint': colors.faint,
+      '--qaqc-accent': colors.accent,
+      '--qaqc-accent-soft': colors.accentSoft,
+      '--qaqc-on-accent': colors.onAccent,
+      '--qaqc-series-1': colors.series1,
+      '--qaqc-series-2': colors.series2,
+      '--qaqc-good': colors.good,
+      '--qaqc-bad': colors.bad,
+      '--qaqc-warn': colors.warn,
+    },
+  }
+}
+
+export function chartColorsFromTheme(theme: ResolvedTheme): ChartColors {
+  const { colors } = theme
+  return {
+    series1: colors.series1,
+    series2: colors.series2,
+    bad: colors.bad,
+    card: colors.card,
+    grid: colors.hairline,
+    axisText: colors.muted,
+    ink: colors.ink,
+    accent: colors.accent,
+  }
+}
