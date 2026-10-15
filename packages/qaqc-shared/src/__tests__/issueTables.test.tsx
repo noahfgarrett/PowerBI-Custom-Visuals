@@ -222,6 +222,14 @@ describe('OpenIssuesTable with many rows', () => {
     expect(ids[ids.length - 1]).toBe('#1')
   })
 
+  it('returns to the first row when the sort changes', () => {
+    view = drawMany()
+    scrollTo(view.container, 2500 * TABLE_ROW_HEIGHT)
+    sortBy(view.container, 'Age (days)')
+    expect(wrap(view.container).scrollTop).toBe(0)
+    expect(rowIds(view.container)[0]).toBe('#5000')
+  })
+
   it('sorts a text column across the whole set', () => {
     view = drawMany()
     sortBy(view.container, 'Title')

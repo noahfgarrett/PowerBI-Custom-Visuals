@@ -1,4 +1,4 @@
-import { useState, type RefObject, type UIEvent } from 'react'
+import { useLayoutEffect, useState, type RefObject, type UIEvent } from 'react'
 
 import { useElementSize } from './useElementSize'
 
@@ -30,11 +30,24 @@ export interface VirtualRows<T extends HTMLElement> {
 /**
  * Windows a long list of fixed-height rows inside a scroll container: only the rows in view, plus overscan, are
  * rendered. A sticky header inside the container takes some of the viewport; the overscan covers it.
+ * When `resetKey` changes (pass the table's sort), the container scrolls back to the first row.
  */
-export function useVirtualRows<T extends HTMLElement>(count: number, rowHeight: number): VirtualRows<T> {
+export function useVirtualRows<T extends HTMLElement>(count: number, rowHeight: number, resetKey: string): VirtualRows<T> {
   const [containerRef, size] = useElementSize<T>()
   // The first row in view. Kept as a row index, so scrolling within a row does not re-render.
   const [firstInView, setFirstInView] = useState(0)
+  const [shownResetKey, setShownResetKey] = useState(resetKey)
+
+  // Adjusted during render, so the re-ordered rows are never drawn at the old scroll position.
+  if (shownResetKey !== resetKey) {
+    setShownResetKey(resetKey)
+    setFirstInView(0)
+  }
+
+  useLayoutEffect(() => {
+    const element = containerRef.current
+    if (element) element.scrollTop = 0
+  }, [resetKey, containerRef])
 
   function onScroll(event: UIEvent<T>): void {
     const next = Math.max(0, Math.floor(event.currentTarget.scrollTop / rowHeight))
@@ -42,7 +55,9 @@ export function useVirtualRows<T extends HTMLElement>(count: number, rowHeight: 
   }
 
   const visible = Math.ceil(size.height / rowHeight)
-  const first = Math.min(firstInView, count)
+  // After the row count shrinks the browser clamps the scroll to the last full viewport, possibly before (or without)
+  // a scroll event; clamp the same way so the rows it shows are rendered.
+  const first = Math.min(firstInView, Math.max(0, count - visible))
   const start = Math.max(0, first - OVERSCAN)
   const end = Math.min(count, first + visible + OVERSCAN)
 

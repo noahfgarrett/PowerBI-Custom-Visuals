@@ -19,8 +19,13 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-function Probe({ count }: { count: number }): ReactElement {
-  const { containerRef, onScroll, start, end, paddingTop, paddingBottom } = useVirtualRows<HTMLDivElement>(count, ROW_HEIGHT)
+interface ProbeProps {
+  count: number
+  resetKey?: string
+}
+
+function Probe({ count, resetKey = '' }: ProbeProps): ReactElement {
+  const { containerRef, onScroll, start, end, paddingTop, paddingBottom } = useVirtualRows<HTMLDivElement>(count, ROW_HEIGHT, resetKey)
   return (
     <div ref={containerRef} onScroll={onScroll} data-window={[start, end, paddingTop, paddingBottom].join(',')} />
   )
@@ -30,9 +35,14 @@ function windowOf(): number[] {
   return (view?.container.firstElementChild?.getAttribute('data-window') ?? '').split(',').map(Number)
 }
 
-function scrollTo(top: number): void {
+function scroller(): HTMLElement {
   const element = view?.container.firstElementChild
   if (!(element instanceof HTMLElement)) throw new Error('container missing')
+  return element
+}
+
+function scrollTo(top: number): void {
+  const element = scroller()
   element.scrollTop = top
   act(() => {
     element.dispatchEvent(new Event('scroll'))
@@ -59,15 +69,42 @@ describe('useVirtualRows', () => {
 
   it('stops at the last row when scrolled to the bottom', () => {
     view = render(<Probe count={1000} />)
-    scrollTo(1000 * ROW_HEIGHT)
-    expect(windowOf()).toEqual([990, 1000, 990 * ROW_HEIGHT, 0])
+    // The furthest a 10-row viewport can scroll: rows 990–999 in view.
+    scrollTo(990 * ROW_HEIGHT)
+    expect(windowOf()).toEqual([980, 1000, 980 * ROW_HEIGHT, 0])
   })
 
   it('pulls the window back inside when the row count shrinks', () => {
     view = render(<Probe count={1000} />)
     scrollTo(900 * ROW_HEIGHT)
     view.rerender(<Probe count={50} />)
-    expect(windowOf()).toEqual([40, 50, 40 * ROW_HEIGHT, 0])
+    // The browser clamps the scroll to rows 40–49; 10 rows of overscan sit above them.
+    expect(windowOf()).toEqual([30, 50, 30 * ROW_HEIGHT, 0])
+  })
+
+  it('keeps the last viewport of rows rendered when the row count shrinks below a tall viewport', () => {
+    vi.mocked(HTMLElement.prototype.getBoundingClientRect).mockReturnValue(new DOMRect(0, 0, 400, 20 * ROW_HEIGHT))
+    view = render(<Probe count={1000} />)
+    scrollTo(900 * ROW_HEIGHT)
+    view.rerender(<Probe count={50} />)
+    // The browser clamps the scroll to rows 30–49; those 20 rows and 10 above them must be rendered.
+    expect(windowOf()).toEqual([20, 50, 20 * ROW_HEIGHT, 0])
+  })
+
+  it('returns to the top when the reset key changes', () => {
+    view = render(<Probe count={1000} resetKey="id-ascending" />)
+    scrollTo(500 * ROW_HEIGHT)
+    view.rerender(<Probe count={1000} resetKey="id-descending" />)
+    expect(scroller().scrollTop).toBe(0)
+    expect(windowOf()).toEqual([0, 20, 0, 980 * ROW_HEIGHT])
+  })
+
+  it('keeps the scroll position while the reset key stays the same', () => {
+    view = render(<Probe count={1000} resetKey="id-ascending" />)
+    scrollTo(500 * ROW_HEIGHT)
+    view.rerender(<Probe count={1000} resetKey="id-ascending" />)
+    expect(scroller().scrollTop).toBe(500 * ROW_HEIGHT)
+    expect(windowOf()[0]).toBe(490)
   })
 
   it('renders nothing for no rows', () => {

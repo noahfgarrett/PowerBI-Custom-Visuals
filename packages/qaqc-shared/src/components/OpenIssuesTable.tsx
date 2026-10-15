@@ -81,7 +81,11 @@ export function OpenIssuesTable({ rows }: OpenIssuesTableProps): ReactElement {
     }
   }, [rows])
   const order = useMemo(() => sortPositions(rows, sort, ranksFor), [rows, sort, ranksFor])
-  const { containerRef, onScroll, start, end, paddingTop, paddingBottom } = useVirtualRows<HTMLDivElement>(order.length, TABLE_ROW_HEIGHT)
+  const { containerRef, onScroll, start, end, paddingTop, paddingBottom } = useVirtualRows<HTMLDivElement>(
+    order.length,
+    TABLE_ROW_HEIGHT,
+    `${sort.key}:${sort.direction}`,
+  )
 
   return (
     <div className="qaqc-table-wrap" ref={containerRef} onScroll={onScroll}>
