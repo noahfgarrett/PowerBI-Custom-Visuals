@@ -125,7 +125,7 @@ The visual is designed to fill a full report page (about 1280×720).
 
 - The "This WW" group is labeled with the selected week (e.g. `WW42'2026`). "Project to date" is labeled `Through WW42'2026`.
 - Deltas are muted gray, with two exceptions: Issues Found going up is **warn amber**, and NCR Pass Rate going down is **bad red**. NCR Pass Rate going up is **good green**.
-- With zero Finals, NCR Pass Rate shows `—`.
+- With zero Finals, NCR Pass Rate shows `n/a`. UI copy never uses em dashes (DESIGN.md ban).
 
 ## Charts
 
@@ -134,7 +134,7 @@ The visual is designed to fill a full report page (about 1280×720).
 ### Finals + SORs by Work Week (large)
 
 - Stacked bars: Finals on the bottom (series 1 color), SORs on top (series 2 color).
-- A marker dot above the bar on weeks with at least one issue found (NCR marker color).
+- An issue badge above the bar on weeks with at least one issue found: a red circle (radius 8, 2px card-color ring) showing the count, as in the HTML app's Electrical chart.
 - The selected week's column is shaded with the accent color at low opacity.
 - Hover shows a Power BI tooltip: work week, Finals, SORs, Issues Found.
 - **Clicking a bar selects that week.** The dropdown and the "This WW" cards update, and the "Project to date" cards recompute through that week. The chart window stays where it is, so the clicked bar doesn't jump; the window end only changes when a week is picked from the dropdown. Internally, the selected week and the window end are separate pieces of state: the dropdown sets both, and a bar click sets only the selected week.
@@ -142,7 +142,7 @@ The visual is designed to fill a full report page (about 1280×720).
 ### NCR Pass Rate Trend (small)
 
 - A line with one point per week: the cumulative NCR pass rate through that week (counting all Finals since the first week, not only those in the window).
-- Dots in the NCR marker color on weeks with an issue found.
+- Red dots (radius 4, 2px card-color ring) on weeks with an issue found.
 - The y-axis zooms automatically: lower bound is the window minimum rounded down to the nearest whole percent, minus 1 point, and never below 0. The upper bound is 100%.
 - Hover tooltip: work week, pass rate, `clean / total Finals`.
 
@@ -157,22 +157,27 @@ The visual is designed to fill a full report page (about 1280×720).
 | Card | Setting | Default |
 |---|---|---|
 | Colors | Preset: QAQC / Ivory / LotusWorks / Grayscale | QAQC |
-| Background | Background opacity (0–100%) | 100 |
-| Background | Card opacity (0–100%) | 100 |
+| Background (`cardSettings`) | Background color (blank = preset page color) | blank |
+| Background (`cardSettings`) | Background opacity (0–100%) | 100 |
+| Background (`cardSettings`) | Card opacity (0–100%) | 100 |
+| Animation (`animationSettings`) | Transitions (bar height and selection, 180 ms, off under reduced motion) | on |
+| Accessibility (`accessibility`) | Screen reader chart summaries | on |
+
+The `cardSettings`, `animationSettings`, and `accessibility` object names are required by the repo's `review:business` gate.
 
 - **Background opacity** applies to the area behind the cards and charts. **Card opacity** applies to the card and chart panel fills. Borders stay visible at 0%.
 
 ### Presets
 
-| Preset | Page | Card | Text | Accent | Series 1 (Finals) | Series 2 (SORs) | NCR marker |
-|---|---|---|---|---|---|---|---|
-| QAQC | `#EDF1F6` | `#FDFEFF` | `#1B2530` | `#2E5AAC` | `#2E5AAC` | `#86B6EF` | `#B45309` |
-| Ivory | `#F7F8FA` | `#FFFFFF` | `#00325B` | `#0071C5` | `#0071C5` | `#9CCBEE` | `#B45309` |
-| LotusWorks | `#F3F5F8` | `#FFFFFF` | `#003459` | `#E85D04` | `#003459` | `#0077B6` | `#E85D04` |
-| Grayscale | `#F2F2F2` | `#FFFFFF` | `#1E1E1E` | `#3A3A3A` | `#3A3A3A` | `#A6A6A6` | `#000000` |
+| Preset | Page | Card | Text | Accent | Series 1 (Finals) | Series 2 (SORs) |
+|---|---|---|---|---|---|---|
+| QAQC | `#EDF1F6` | `#FDFEFF` | `#1B2530` | `#2E5AAC` | `#2E5AAC` | `#86B6EF` |
+| Ivory | `#F7F8FA` | `#FFFFFF` | `#00325B` | `#0071C5` | `#0071C5` | `#9CCBEE` |
+| LotusWorks | `#F3F5F8` | `#FFFFFF` | `#003459` | `#E85D04` | `#003459` | `#0077B6` |
+| Grayscale | `#F2F2F2` | `#FFFFFF` | `#1E1E1E` | `#3A3A3A` | `#3A3A3A` | `#A6A6A6` |
 
 - Each preset also defines border and muted text colors, taken from the preview mockups.
-- **Status colors are fixed across every preset:** good / closed `#0A7A0A`, bad / opened `#D03B3B`, warn `#B45309`. Later visuals use the same rule (closed issues green, opened issues red).
+- **Status colors are fixed across every preset:** good / closed `#0A7A0A`, bad / opened / issue found `#D03B3B`, warn `#B45309`. The issue badge and pass-rate dots use the bad red in every preset, matching DESIGN.md ("issues-found markers = alert-red"). Later visuals use the same rule (closed issues green, opened issues red).
 
 ## Error and empty states
 
@@ -183,6 +188,7 @@ The visual is designed to fill a full report page (about 1280×720).
 | Unreadable work weeks | Footnote: `n rows skipped: unreadable work week` |
 | Row ID slot empty | Footnote recommending an Index column |
 | More than 30,000 rows | Thin loading bar until all segments load |
+| Power BI refuses more segments (memory limit) | Renders the rows received, with footnote `Showing the first n rows (Power BI data limit)` |
 | High-contrast mode | Colors switch to the host's high-contrast foreground and background |
 
 ## Performance
@@ -202,7 +208,7 @@ How the design meets them:
 - **Interactions read only the index.** Selecting a week, toggling the range, or clicking a bar recomputes from the per-week index (at most a few hundred weeks), never from rows. To-date totals use cumulative sums over the sorted weeks.
 - **Charts draw aggregates, not rows.** SVG element counts are bounded by weeks in the window plus top-8 buildings, so the chart size is independent of row count. In "All" mode with hundreds of weeks, bar width shrinks to a 2px minimum and labels thin out.
 - **Memoization.** The index is keyed on the Power BI data view identity. The view model is memoized on index, selected week, window end, range, and settings.
-- **Incremental loading.** `fetchMoreData` appends segments to an accumulating buffer and rebuilds the index once all segments arrive. The loading bar shows progress and the previous render stays visible meanwhile.
+- **Incremental loading.** `fetchMoreData(true)` asks Power BI to aggregate segments into one table; the index is rebuilt once, after the last segment arrives. The loading bar shows progress and the previous render stays visible meanwhile.
 - **Resize** goes through a `requestAnimationFrame`-throttled handler. Size-dependent layout is computed from the latest viewport only.
 - **No per-row React components and no per-row DOM nodes**, anywhere.
 
