@@ -57,8 +57,8 @@ export function AgingStripChart({ buckets, colors, isHighContrast }: AgingStripC
           </div>
           <strong>
             <span className="qaqc-aging-count">{formatCount(bucket.count)}</span>
-            {/* The gap on screen is a margin, so screen readers need a real space to keep "38 21%" from reading as "3821%". */}
-            <span className="qaqc-visually-hidden">{' '}</span>
+            {/* The gap on screen is a margin. Hidden whitespace alone collapses, so a hidden comma keeps "38, 21%" from reading as "3821%". */}
+            <span className="qaqc-visually-hidden">, </span>
             <span className="qaqc-aging-percent">{`${percents[index]}%`}</span>
           </strong>
         </div>
