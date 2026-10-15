@@ -5,9 +5,11 @@ import { ExplorerSettings } from './settings';
 import { assignmentKey, getGraphIndex, parseDataView, projectGraph, SsmDataStore, walkConnections } from './model';
 import { SegmentLoader } from './loading';
 import { getNodeStatus, hasStatusBinding } from './status';
+import { buildDependencyList, type DependencyListResult } from './dependency-list';
 import { buildMilestoneExport } from './milestone-export';
 import { createMilestoneWorkbook } from './milestone-workbook';
 import { SceneIndex } from './ui/scene';
+import { packNestedForest, type NestedLayoutNode, type NestedLayout } from './ui/nested-layout';
 import { LoadingIndicator } from './ui/loading-indicator';
 import { ControlTooltip } from './ui/control-tooltip';
 import { parseViewState, serializeViewState, viewStateScope, type ViewState } from './ui/view-state';
@@ -125,10 +127,15 @@ export class SsmExplorerVisual implements powerbi.extensibility.visual.IVisual {
   private minimapSelectedKey: string | null = null;
   private renderedCount = 0;
   private connectionOffset = 0;
+  private dependencyOffset = 0;
+  private dependencyDiscipline: string | null = null;
+  private dependencySourcesKey: string | null = null;
+  private dependencySourcesOffset = 0;
+  private dependencyListCache: { graph: SsmGraph; revision: number; key: string; result: DependencyListResult } | null = null;
   private searchTimer: ReturnType<typeof setTimeout> | undefined;
   private selectedKey: string | null = null;
   private drawerOpen = false;
-  private drawerTab: 'overview' | 'connections' = 'overview';
+  private drawerTab: 'overview' | 'dependencies' | 'connections' = 'overview';
   private allConnections = false;
   private forcedKeys = new Set<string>();
   private graphSignature = '';
@@ -222,6 +229,7 @@ export class SsmExplorerVisual implements powerbi.extensibility.visual.IVisual {
       this.interactions = allowInteractions(this.host);
       if (result) {
         this.table = result.table; this.graph = result.graph;
+        if (result.changed || result.reset) this.dependencyListCache = null;
         this.graphSignature = this.graph.nodes.size ? String(this.graph.revision) : '';
         const echoTable = this.copyEchoTable(dataView);
         if (result.reset) this.initialDataView = echoTable;
@@ -304,6 +312,7 @@ export class SsmExplorerVisual implements powerbi.extensibility.visual.IVisual {
       collapsed: [...this.collapsed], expandedParents: [...this.expandedParents], collapsedParents: [...this.collapsedParents], expandedEquipment: [...this.expandedEquipment], collapsedEquipment: [...this.collapsedEquipment], forcedKeys: [...this.forcedKeys],
       parentOffsets: [...this.parentOffsets], branchLimits: [...this.branchLimits], branchOffsets: [...this.branchOffsets], siblingOffsets: [...this.siblingOffsets], treeFocus: [...this.treeFocus],
       selectedKey: this.selectedKey, selectedOccurrenceId: this.selectedOccurrenceId, drawerOpen: this.drawerOpen, drawerTab: this.drawerTab, connectionOffset: this.connectionOffset,
+      dependencyOffset: this.dependencyOffset, dependencyDiscipline: this.dependencyDiscipline,
       allConnections: this.allConnections, quickStates: this.quickStates().map(state => ({ ...state })), trail: this.trail as ViewState['trail'],
       highlightFieldKey: this.highlightFieldKey, highlightedValues: [...this.highlightedValues], search: this.q<HTMLInputElement>('[data-search]').value, loadingPaused: this.loader.state.paused,
     };
@@ -321,6 +330,7 @@ export class SsmExplorerVisual implements powerbi.extensibility.visual.IVisual {
     for (const [target, values] of maps) { target.clear(); values.forEach(([key, value]) => target.set(key, value)); }
     this.treeFocus.clear(); state.treeFocus.forEach(([key, value]) => this.treeFocus.set(key, value));
     this.selectedKey = state.selectedKey; this.selectedOccurrenceId = state.selectedOccurrenceId; this.drawerOpen = state.drawerOpen; this.drawerTab = state.drawerTab; this.connectionOffset = state.connectionOffset;
+    this.dependencyOffset = state.dependencyOffset; this.dependencyDiscipline = state.dependencyDiscipline; this.dependencySourcesKey = null; this.dependencySourcesOffset = 0;
     this.allConnections = state.allConnections; this.quickDependencies = state.quickStates[0] ? { ...state.quickStates[0] } : null; this.quickTrail = state.quickStates.slice(1).map(value => ({ ...value })); this.trail = state.trail;
     this.highlightFieldKey = state.highlightFieldKey; this.q<HTMLInputElement>('[data-search]').value = state.search;
     this.layoutToken = ''; this.projectionToken = ''; this.viewportToken = ''; this.linkCache.clear(); this.notice = '';
@@ -667,6 +677,104 @@ export class SsmExplorerVisual implements powerbi.extensibility.visual.IVisual {
     }
     const invalidLane = this.settings.options.showRelations ? sideStates.findIndex(state => !this.dependencyPanels.some(panel => panel.sourceId === state.occurrenceId)) : -1;
     if (invalidLane >= 0) { const valid = sideStates.slice(0, invalidLane); this.quickDependencies = valid[0] ?? null; this.quickTrail = valid.slice(1); this.layoutToken = ''; this.layout(); return; }
+
+    // Materialization above is bounded by the existing sibling pages and scene
+    // budget. Reflow those stable occurrences as parent-owned groups: an open
+    // narrow subtree can share a row, while a broad subtree can use more columns.
+    const allById = new Map(this.occurrences.map(item => [item.id, item]));
+    const main = this.occurrences.filter(item => !item.origin), mainIds = new Set(main.map(item => item.id));
+    const l1ByKey = new Map(main.filter(item => item.node.kind === 'l1').map(item => [item.node.key, item]));
+    const l2ByCohort = new Map(main.filter(item => item.node.kind === 'l2').map(item => [assignmentKey(item.parentKey ?? '', item.node.key), item]));
+    const parentIds = new Map<string, string>(), layoutNodes = new Map<string, NestedLayoutNode>();
+    for (const item of this.occurrences) layoutNodes.set(item.id, { id: item.id, width: item.width, height: item.node.kind === 'l1' || item.node.kind === 'l2' ? 88 : item.height, children: [], childGap: item.node.kind === 'l1' ? 20 : item.node.kind === 'l2' ? 18 : 12 });
+    for (const item of this.occurrences) {
+      let parentId = item.structuralParentOccurrenceId;
+      if (!parentId && !item.origin) parentId = item.node.kind === 'l2' ? l1ByKey.get(item.parentKey ?? '')?.id ?? null : item.groupKey ? l2ByCohort.get(item.groupKey)?.id ?? null : null;
+      if (parentId && parentId !== item.id && allById.has(parentId) && (!!item.origin === !!allById.get(parentId)!.origin)) {
+        parentIds.set(item.id, parentId); layoutNodes.get(parentId)!.children.push(item.id);
+      }
+    }
+    for (const item of this.occurrences) {
+      const node = layoutNodes.get(item.id)!;
+      node.childInset = item.node.kind === 'l1' || item.node.kind === 'l2' ? 6 : Math.max(0, item.width - (allById.get(node.children[0])?.width ?? item.width));
+    }
+    type Footer = { kind: 'siblings'; page: SiblingPage } | { kind: 'limit'; cohort: string } | { kind: 'parent'; actions: BranchAction[] };
+    const footers = new Map<string, Footer[]>(), addFooter = (id: string, footer: Footer, height: number): void => {
+      const bucket = footers.get(id); if (bucket) bucket.push(footer); else footers.set(id, [footer]);
+      const node = layoutNodes.get(id); if (node) node.footerHeight = (node.footerHeight ?? 0) + height;
+    };
+    const rootLists = new Map([...l2ByCohort].map(([cohort, item]) => [this.siblingListKey(cohort, null), item.id]));
+    for (const page of this.siblingPages) { const owner = page.sourceId ?? rootLists.get(page.key); if (owner && layoutNodes.has(owner)) addFooter(owner, { kind: 'siblings', page }, 34); }
+    for (const cohort of this.limitedTreeContext.keys()) { const owner = l2ByCohort.get(cohort); if (owner) addFooter(owner.id, { kind: 'limit', cohort }, 28); }
+    const parentPagers = new Map<string, BranchAction[]>();
+    for (const action of this.branches) if (action.action === 'parent-prev' || action.action === 'parent-next') { const bucket = parentPagers.get(action.key); if (bucket) bucket.push(action); else parentPagers.set(action.key, [action]); }
+    for (const [key, actions] of parentPagers) { const item = l1ByKey.get(key); if (item) addFooter(item.id, { kind: 'parent', actions }, 36); }
+    // Reserve a full main row for a group with side lanes. Its wider footprint
+    // can then grow rightwards without colliding with a neighbouring milestone.
+    for (const panel of this.dependencyPanels) {
+      const cohort = allById.get(panel.sourceId)?.groupKey, owner = cohort ? l2ByCohort.get(cohort) : null;
+      if (owner) { layoutNodes.get(owner.id)!.minimumSpan = columns; const root = parentIds.get(owner.id); if (root) layoutNodes.get(root)!.minimumSpan = columns; }
+    }
+    const packing = { columns, cardWidth: width, gap, rowGap: 20 };
+    const sections = this.projectLabels.map(label => ({ label, roots: [] as string[], nodes: [] as NestedLayoutNode[] }));
+    for (const item of main) if (!parentIds.has(item.id)) {
+      let low = 0, high = sections.length;
+      while (low < high) { const mid = (low + high) >>> 1; if (sections[mid].label.y <= item.y) low = mid + 1; else high = mid; }
+      if (low) sections[low - 1].roots.push(item.id);
+    }
+    for (const section of sections) { const pending = [...section.roots]; while (pending.length) { const node = layoutNodes.get(pending.pop()!)!; section.nodes.push(node); for (const child of node.children) if (mainIds.has(child)) pending.push(child); } }
+    let packed = new Map<string, { x: number; y: number; plan: NestedLayout }>();
+    const packMain = (): number => {
+      packed = new Map(); let y = 12;
+      for (const section of sections) {
+        if (!section.roots.length) continue;
+        section.label.x = inset; section.label.y = y; section.label.width = mainSpan; y += 32;
+        const plan = packNestedForest(section.nodes, section.roots, packing);
+        for (const [id, rect] of plan.placements) packed.set(id, { x: inset + rect.x, y: y + rect.y, plan });
+        y += plan.height + 28;
+      }
+      return y;
+    };
+    const moveMain = (): void => { for (const item of main) { const target = packed.get(item.id); if (target) { item.x = target.x; item.y = target.y; } } };
+    const sidePlans = new Map<string, NestedLayout>();
+    for (const panel of this.dependencyPanels) {
+      const nodes = this.occurrences.filter(item => item.origin === panel.sourceId), ids = new Set(nodes.map(item => item.id));
+      const roots = nodes.filter(item => !parentIds.has(item.id) || !ids.has(parentIds.get(item.id)!)).map(item => item.id);
+      sidePlans.set(panel.sourceId, packNestedForest(nodes.map(item => layoutNodes.get(item.id)!), roots, packing));
+    }
+    // Side lane sources may themselves be in an earlier lane. Resolve them in
+    // their existing bounded chain order, then reserve the owning group's height.
+    const moveSides = (reserve: boolean): void => {
+      const nextLane = new Map<string, number>();
+      for (const panel of this.dependencyPanels) {
+        const source = allById.get(panel.sourceId), plan = sidePlans.get(panel.sourceId); if (!source || !plan) continue;
+        const owner = source.groupKey ? l2ByCohort.get(source.groupKey) : null; if (!owner) continue;
+        panel.x = nextLane.get(owner.id) ?? owner.x + mainSpan + 54; panel.y = source.y; panel.width = plan.width;
+        for (const [id, rect] of plan.placements) { const item = allById.get(id)!; item.x = panel.x + rect.x; item.y = panel.y + 62 + rect.y; }
+        panel.pagingY = panel.y + 62 + plan.height;
+        const bottom = panel.pagingY + (!panel.total ? 24 : 0) + (panel.total > 5 ? 34 : 0) + 12;
+        if (reserve) layoutNodes.get(owner.id)!.minimumHeight = Math.max(layoutNodes.get(owner.id)!.minimumHeight ?? 0, bottom - owner.y);
+        nextLane.set(owner.id, panel.x + plan.width + 54); this.worldWidth = Math.max(this.worldWidth, panel.x + plan.width + inset);
+      }
+    };
+    cursorY = packMain(); moveMain();
+    if (this.dependencyPanels.length) { moveSides(true); cursorY = packMain(); moveMain(); moveSides(false); }
+    // Controls are tied to occurrence identity, not their former row. Keep
+    // paging and notices underneath the exact parent-owned content bounds.
+    for (const action of this.equipmentActions) { const item = allById.get(action.sourceId); if (item) { action.x = item.x; action.y = item.y + 67; action.width = item.width; } }
+    for (const action of this.branches) if (action.action === 'branch' || action.action === 'parent') {
+      const item = action.action === 'parent' ? l1ByKey.get(action.key) : l2ByCohort.get(action.key); if (item) { action.x = item.x; action.y = item.y + 68; action.width = item.width; }
+    }
+    for (const [id, list] of footers) {
+      const item = allById.get(id); if (!item) continue;
+      const mainPlan = packed.get(id)?.plan, sidePlan = item.origin ? sidePlans.get(item.origin) : null, rect = (mainPlan ?? sidePlan)?.placements.get(id); if (!rect) continue;
+      let y = item.y + rect.footerY - rect.y;
+      for (const footer of list) {
+        if (footer.kind === 'siblings') { footer.page.x = item.x + (layoutNodes.get(id)!.childInset ?? 0); footer.page.y = y; footer.page.width = Math.max(item.width, rect.groupWidth - (layoutNodes.get(id)!.childInset ?? 0)); y += 34; }
+        else if (footer.kind === 'limit') { this.limitedTreeNoticeY.set(footer.cohort, y); y += 28; }
+        else { for (const action of footer.actions) { action.x = item.x + (action.action === 'parent-next' ? item.width / 2 + 4 : 0); action.y = y; action.width = item.width / 2 - 4; } y += 36; }
+      }
+    }
     this.worldHeight = Math.max(180, cursorY + 20);
     this.sceneIndex.rebuild(this.occurrences); this.minimapDirty = true; this.viewportToken = '';
   }
@@ -920,8 +1028,7 @@ export class SsmExplorerVisual implements powerbi.extensibility.visual.IVisual {
           const rail = to.x - 14;
           path = `M${ax},${ay} V${ay - 16} H${rail} V${by} H${bx}`;
         } else if (edge.kind === 'parent' && from.structuralEdgeKey === edge.key && from.groupKey === to.groupKey) {
-          const milestone = (this.occurrencesByKey.get(from.branch ?? to.branch ?? '') ?? []).find(item => item.parentKey === from.parentKey);
-          const rail = from.role === 'dependency' ? Math.min(from.x, to.x) - 12 : (milestone?.x ?? Math.min(from.x, to.x)) - 20;
+          const rail = Math.min(from.x, to.x) - 12;
           path = `M${from.x + from.width / 2},${from.y} V${from.y - 8} H${rail} V${to.y + 32} H${to.x}`;
         } else if (edge.kind === 'dependency' && (to.origin === from.id || from.origin === to.id)) {
           const forward = to.origin === from.id, source = forward ? from : to, target = forward ? to : from;
@@ -988,8 +1095,8 @@ export class SsmExplorerVisual implements powerbi.extensibility.visual.IVisual {
     if (!this.drawerOpen) return;
     if (!this.settings.options.showRelations) this.drawerTab = 'overview';
     const breadcrumbs = [node.project, ...node.parentMilestoneKeys.map(key => this.graph.nodes.get(key)?.label).filter(Boolean), ...node.milestoneKeys.map(key => this.graph.nodes.get(key)?.label).filter(Boolean)].join(' › ');
-    const tabs = this.settings.options.showRelations ? `<div class="ssm-drawer-tabs" role="tablist" aria-label="Node detail sections"><button type="button" role="tab" data-action="tab-overview" aria-selected="${this.drawerTab === 'overview'}">Overview</button><button type="button" role="tab" data-action="tab-connections" aria-selected="${this.drawerTab === 'connections'}">Connections</button></div>` : '';
-    setTrustedMarkup(drawer, `<div class="ssm-drawer-header"><strong>${escapeHtml(node.label)}</strong><button type="button" class="ssm-close" data-action="close" aria-label="Close node details">×</button></div><div class="ssm-breadcrumb">${escapeHtml(breadcrumbs)}</div>${tabs}<div data-drawer-content>${this.drawerTab === 'overview' ? this.renderOverview(node) : this.renderConnections(node)}</div>`);
+    const tabs = this.settings.options.showRelations ? `<div class="ssm-drawer-tabs" role="tablist" aria-label="Node detail sections"><button type="button" role="tab" data-action="tab-overview" aria-selected="${this.drawerTab === 'overview'}">Overview</button><button type="button" role="tab" data-action="tab-dependencies" aria-selected="${this.drawerTab === 'dependencies'}">Dependencies</button><button type="button" role="tab" data-action="tab-connections" aria-selected="${this.drawerTab === 'connections'}">Connections</button></div>` : '';
+    setTrustedMarkup(drawer, `<div class="ssm-drawer-header"><strong>${escapeHtml(node.label)}</strong><button type="button" class="ssm-close" data-action="close" aria-label="Close node details">×</button></div><div class="ssm-breadcrumb">${escapeHtml(breadcrumbs)}</div>${tabs}<div data-drawer-content>${this.drawerTab === 'overview' ? this.renderOverview(node) : this.drawerTab === 'dependencies' ? this.renderDependencies(node) : this.renderConnections(node)}</div>`);
     this.measureViewport();
   }
 
@@ -1079,6 +1186,45 @@ export class SsmExplorerVisual implements powerbi.extensibility.visual.IVisual {
     return String(value);
   }
 
+  private renderDependencies(node: SsmNode): string {
+    const cached = this.dependencyListCache;
+    const result = cached && cached.graph === this.graph && cached.revision === this.graph.revision && cached.key === node.key
+      ? cached.result : buildDependencyList(this.graph, node.key);
+    this.dependencyListCache = { graph: this.graph, revision: this.graph.revision, key: node.key, result };
+    const options = [...result.disciplineOptions];
+    // Keep a saved filter while a later batch may still supply matching targets.
+    if (this.dependencyDiscipline !== null && !options.includes(this.dependencyDiscipline)) options.push(this.dependencyDiscipline);
+    const filtered = this.dependencyDiscipline === null ? result.targets : result.targets.filter(target => target.disciplines.includes(this.dependencyDiscipline!));
+    const offset = Math.min(this.dependencyOffset, Math.max(0, Math.floor((filtered.length - 1) / 30) * 30));
+    if (!result.partial) this.dependencyOffset = offset;
+    const targets = filtered.slice(offset, offset + 30);
+    const filter = `<label class="ssm-dependency-filter"><span>Discipline</span><select data-dependency-discipline aria-label="Dependency discipline"><option value=""${this.dependencyDiscipline === null ? ' selected' : ''}>All disciplines</option>${options.map(value => `<option value="${escapeHtml(JSON.stringify(value))}"${value === this.dependencyDiscipline ? ' selected' : ''}>${escapeHtml(value || 'Unspecified')}</option>`).join('')}</select></label>`;
+    const summary = `<div class="ssm-dependency-summary" role="status">${filtered.length.toLocaleString()} ${filtered.length === 1 ? 'dependency' : 'dependencies'}${this.dependencyDiscipline !== null ? ` of ${result.dependencyCount.toLocaleString()}` : ''}</div><p class="ssm-dependency-scope">Selected item and nested equipment${result.partial ? ' · More data available' : ''}</p>`;
+    const paging = filtered.length > 30 ? `<nav class="ssm-connection-paging" aria-label="Dependency pages"><button type="button" data-action="dependency-list-prev" data-offset="${offset}"${offset === 0 ? ' disabled' : ''}>Previous</button><span>${offset + 1}–${offset + targets.length} / ${filtered.length}</span><button type="button" data-action="dependency-list-next" data-offset="${offset}"${offset + targets.length >= filtered.length ? ' disabled' : ''}>Next</button></nav>` : '';
+    const rows = targets.map(target => {
+      const status = getNodeStatus(this.graph, target.node);
+      const expanded = this.dependencySourcesKey === target.key;
+      const sourceOffset = Math.min(this.dependencySourcesOffset, Math.max(0, Math.floor((target.requiredBy.length - 1) / 10) * 10));
+      const sources = expanded ? `<div class="ssm-dependency-sources">${target.requiredBy.slice(sourceOffset, sourceOffset + 10).map(source => `<div><button type="button" data-action="dependency-open" data-target="${escapeHtml(source.key)}">${escapeHtml(source.id)}</button><small>${escapeHtml(source.project)}${source.label !== source.id ? ` · ${escapeHtml(source.label)}` : ''}</small></div>`).join('')}${target.requiredBy.length > 10 ? `<nav class="ssm-connection-paging" aria-label="Required equipment pages"><button type="button" data-action="dependency-sources-prev" data-offset="${sourceOffset}"${sourceOffset === 0 ? ' disabled' : ''}>Previous</button><span>${sourceOffset + 1}–${Math.min(sourceOffset + 10, target.requiredBy.length)} / ${target.requiredBy.length}</span><button type="button" data-action="dependency-sources-next" data-offset="${sourceOffset}"${sourceOffset + 10 >= target.requiredBy.length ? ' disabled' : ''}>Next</button></nav>` : ''}</div>` : '';
+      const milestones = target.node.milestoneKeys.map(key => this.graph.nodes.get(key)?.label).filter(Boolean);
+      return `<article class="ssm-connection ssm-dependency-item" data-dependency-key="${escapeHtml(target.key)}"><button type="button" class="ssm-dependency-title" data-action="dependency-open" data-target="${escapeHtml(target.key)}">${escapeHtml(target.node.id)}</button>${target.node.label !== target.node.id ? `<small>${escapeHtml(target.node.label)}</small>` : ''}<small>${escapeHtml(target.project)} · ${escapeHtml(target.disciplines.map(value => value || 'Unspecified').join(' / '))}</small><small>${escapeHtml(status.label)}${target.node.kind === 'unresolved' ? ' · Unavailable record' : ''}</small>${milestones.length ? `<small>${escapeHtml(milestones.join(' · '))}</small>` : ''}<button type="button" class="ssm-dependency-source-toggle" data-action="dependency-sources" data-target="${escapeHtml(target.key)}" aria-expanded="${expanded}">${expanded ? '▾' : '▸'} Required by ${target.requiredBy.length.toLocaleString()} ${target.requiredBy.length === 1 ? 'item' : 'items'}</button>${sources}</article>`;
+    }).join('');
+    return `<section class="ssm-dependencies" aria-label="Dependencies of selected item and nested equipment">${filter}${summary}${paging}${rows || `<p class="ssm-issue">${result.partial ? 'No matching dependencies in the rows received so far.' : this.dependencyDiscipline !== null ? 'No dependencies match this discipline.' : 'No dependencies in the supplied data.'}</p>`}</section>`;
+  }
+
+  private resetDependencySelection(key: string): void {
+    if (key === this.selectedKey) return;
+    this.dependencyOffset = 0; this.dependencySourcesKey = null; this.dependencySourcesOffset = 0;
+  }
+
+  private refreshDependencyDrawer(action?: string): void {
+    this.renderDrawer();
+    const selector = action ? `[data-action="${action}"]` : '[data-dependency-discipline]';
+    const control = this.root.querySelector<HTMLButtonElement | HTMLSelectElement>(selector);
+    if (control && !control.disabled) control.focus({ preventScroll: true });
+    else this.root.querySelector<HTMLButtonElement>('[data-action="tab-dependencies"]')?.focus({ preventScroll: true });
+  }
+
   private renderConnections(node: SsmNode): string {
     const index = getGraphIndex(this.graph), outgoing = index.outgoing.get(node.key) ?? new Set<SsmEdge>(), incoming = index.incoming.get(node.key) ?? new Set<SsmEdge>();
     let selfEdges = 0;
@@ -1154,7 +1300,7 @@ export class SsmExplorerVisual implements powerbi.extensibility.visual.IVisual {
     node.milestoneKeys.forEach(milestone => { this.forcedKeys.add(milestone); this.graph.nodes.get(milestone)?.parentMilestoneKeys.forEach(parent => this.forcedKeys.add(parent)); });
     if (explicitProjectChange) { this.pendingRestore = null; this.syncLoadingScope(); }
     this.openNodeAncestors(node);
-    this.selectedKey = key; this.drawerOpen = true; this.connectionOffset = 0;
+    this.selectedKey = key; this.drawerOpen = true; this.connectionOffset = 0; this.dependencyOffset = 0; this.dependencySourcesKey = null; this.dependencySourcesOffset = 0;
     this.q<HTMLInputElement>('[data-search]').value = '';
     this.q('[data-search-results]').hidden = true;
     this.render();
@@ -1218,12 +1364,13 @@ export class SsmExplorerVisual implements powerbi.extensibility.visual.IVisual {
     if (existing >= 0) { states.splice(existing); }
     else {
       const cycle = states.find(state => state.sourceKey === occurrence.node.key);
-      if (cycle) { this.selectedKey = cycle.sourceKey; this.selectedOccurrenceId = cycle.occurrenceId; this.render(); this.announce('This dependency is already open.'); return; }
+      if (cycle) { this.resetDependencySelection(cycle.sourceKey); this.selectedKey = cycle.sourceKey; this.selectedOccurrenceId = cycle.occurrenceId; this.render(); this.announce('This dependency is already open.'); return; }
       if (!occurrence.origin) states.length = 0;
       if (states.length >= 8) { this.notice = 'Eight lanes open. Close a lane or use Follow dependency chain in details to continue.'; this.drawerOpen = true; this.render(); return; }
       states.push({ sourceKey: occurrence.node.key, occurrenceId, groupKey: occurrence.groupKey, direction, offset: 0 });
     }
     this.quickDependencies = states[0] ?? null; this.quickTrail = states.slice(1);
+    this.resetDependencySelection(occurrence.node.key);
     this.selectedKey = occurrence.node.key; this.selectedOccurrenceId = occurrence.id;
     this.filters.showDependencies = true;
     this.render();
@@ -1467,7 +1614,19 @@ export class SsmExplorerVisual implements powerbi.extensibility.visual.IVisual {
         case 'close': this.closeDrawer(); break;
         case 'export-milestone': void this.exportMilestone(); break;
         case 'tab-overview': this.drawerTab = 'overview'; this.renderDrawer(); break;
+        case 'tab-dependencies': this.drawerTab = 'dependencies'; this.refreshDependencyDrawer('tab-dependencies'); break;
         case 'tab-connections': this.drawerTab = 'connections'; this.renderDrawer(); break;
+        case 'dependency-list-prev': this.dependencyOffset = Math.max(0, Number(actionButton!.dataset.offset) - 30); this.dependencySourcesKey = null; this.refreshDependencyDrawer(action); break;
+        case 'dependency-list-next': this.dependencyOffset = Number(actionButton!.dataset.offset) + 30; this.dependencySourcesKey = null; this.refreshDependencyDrawer(action); break;
+        case 'dependency-sources': {
+          const key = actionButton!.dataset.target!;
+          this.dependencySourcesKey = this.dependencySourcesKey === key ? null : key; this.dependencySourcesOffset = 0;
+          this.renderDrawer();
+          [...this.root.querySelectorAll<HTMLButtonElement>('[data-action="dependency-sources"]')].find(button => button.dataset.target === key)?.focus({ preventScroll: true }); break;
+        }
+        case 'dependency-sources-prev': this.dependencySourcesOffset = Math.max(0, Number(actionButton!.dataset.offset) - 10); this.refreshDependencyDrawer(action); break;
+        case 'dependency-sources-next': this.dependencySourcesOffset = Number(actionButton!.dataset.offset) + 10; this.refreshDependencyDrawer(action); break;
+        case 'dependency-open': if (actionButton?.dataset.target) { this.drawerTab = 'overview'; this.revealNode(actionButton.dataset.target, false); } break;
         case 'connections-prev': this.connectionOffset = Math.max(0, this.connectionOffset - 30); this.renderDrawer(); break;
         case 'connections-next': this.connectionOffset += 30; this.renderDrawer(); break;
         case 'search-result': if (actionButton?.dataset.target) this.revealNode(actionButton.dataset.target, true); break;
@@ -1513,7 +1672,7 @@ export class SsmExplorerVisual implements powerbi.extensibility.visual.IVisual {
         case 'follow-tree': {
           const target = actionButton!.dataset.target ?? this.limitedTreeContext.get(actionButton!.dataset.branch!);
           const node = target ? this.graph.nodes.get(target) : undefined;
-          if (node) { this.selectedKey = node.key; this.followConnections('parent'); } break;
+          if (node) { this.resetDependencySelection(node.key); this.selectedKey = node.key; this.followConnections('parent'); } break;
         }
         case 'select-report': { const node = this.selectedKey ? this.graph.nodes.get(this.selectedKey) : undefined; const ids = node ? this.selectionIds(node) : []; if (ids.length) void this.selectionManager.select(ids, event.ctrlKey || event.metaKey).then(() => { if (!this.destroyed) { this.markReportSelection(); this.renderDrawer(); } }); break; }
         case 'clear-report': void this.selectionManager.clear().then(() => { if (!this.destroyed) { this.markReportSelection(); this.renderDrawer(); } }); break;
@@ -1534,7 +1693,7 @@ export class SsmExplorerVisual implements powerbi.extensibility.visual.IVisual {
       return;
     }
     if (nodeButton?.dataset.node) {
-      this.selectedKey = nodeButton.dataset.node; this.selectedOccurrenceId = nodeButton.dataset.occurrence ?? null; this.drawerOpen = true; this.notice = ''; this.connectionOffset = 0;
+      this.selectedKey = nodeButton.dataset.node; this.selectedOccurrenceId = nodeButton.dataset.occurrence ?? null; this.drawerOpen = true; this.notice = ''; this.connectionOffset = 0; this.dependencyOffset = 0; this.dependencySourcesKey = null; this.dependencySourcesOffset = 0;
       const node = this.graph.nodes.get(this.selectedKey);
       const occurrence = this.occurrences.find(item => item.id === nodeButton.dataset.occurrence);
       if (node?.kind === 'l2') { this.beginMotion(occurrence); this.toggleBranches([assignmentKey(occurrence?.parentKey ?? '', node.key)]); this.render(); }
@@ -1552,6 +1711,11 @@ export class SsmExplorerVisual implements powerbi.extensibility.visual.IVisual {
   private onChange(event: Event): void {
     if (!this.interactions) return;
     const target = event.target as HTMLInputElement | HTMLSelectElement;
+    if (target.hasAttribute('data-dependency-discipline')) {
+      this.dependencyDiscipline = target.value ? JSON.parse(target.value) as string : null;
+      this.dependencyOffset = 0; this.dependencySourcesKey = null; this.dependencySourcesOffset = 0;
+      this.refreshDependencyDrawer(); return;
+    }
     if (target.dataset.highlightValue) { if ((target as HTMLInputElement).checked) this.highlightedValues.add(target.dataset.highlightValue); else this.highlightedValues.delete(target.dataset.highlightValue); this.viewportToken = ''; this.render(); const key = target.dataset.highlightValue; this.schedule(() => [...this.root.querySelectorAll<HTMLInputElement>('[data-highlight-value]')].find(input => input.dataset.highlightValue === key)?.focus({ preventScroll: true })); }
     else if (target.dataset.project) {
       const projects = new Set(this.filters.projects ?? this.graph.projects);
@@ -1673,5 +1837,5 @@ export class SsmExplorerVisual implements powerbi.extensibility.visual.IVisual {
   }
 
   public getFormattingModel(): powerbi.visuals.FormattingModel { return this.settings.getFormattingModel(); }
-  public destroy(): void { this.flushView(); this.destroyed = true; this.controlTooltip.dispose(); this.motion.dispose(); this.loader.dispose(); this.dataStore.clear(); this.abort.abort(); cancelAnimationFrame(this.raf); cancelAnimationFrame(this.viewportRaf); clearTimeout(this.searchTimer); this.host.tooltipService?.hide({ immediately: true, isTouchEvent: false }); this.root.remove(); }
+  public destroy(): void { this.flushView(); this.destroyed = true; this.controlTooltip.dispose(); this.motion.dispose(); this.loader.dispose(); this.dataStore.clear(); this.dependencyListCache = null; this.abort.abort(); cancelAnimationFrame(this.raf); cancelAnimationFrame(this.viewportRaf); clearTimeout(this.searchTimer); this.host.tooltipService?.hide({ immediately: true, isTouchEvent: false }); this.root.remove(); }
 }

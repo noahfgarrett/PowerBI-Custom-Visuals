@@ -23,8 +23,10 @@ export interface ViewState {
   selectedKey: string | null;
   selectedOccurrenceId: string | null;
   drawerOpen: boolean;
-  drawerTab: 'overview' | 'connections';
+  drawerTab: 'overview' | 'dependencies' | 'connections';
   connectionOffset: number;
+  dependencyOffset: number;
+  dependencyDiscipline: string | null;
   allConnections: boolean;
   quickStates: { sourceKey: string; occurrenceId: string; groupKey: string; direction: 'in' | 'out'; offset: number }[];
   trail: 'parent' | 'dependency' | null;
@@ -108,7 +110,7 @@ function normalize(value: unknown, scope: string): ViewState {
     viewerTheme, startCollapsed: bool(values, 'startCollapsed', false), authorTheme: choice(values, 'authorTheme', ['auto', 'light', 'dark'], 'auto'),
     collapsed: keys(values, 'collapsed'), expandedParents: keys(values, 'expandedParents'), collapsedParents: keys(values, 'collapsedParents'), expandedEquipment: keys(values, 'expandedEquipment'), collapsedEquipment: keys(values, 'collapsedEquipment'), forcedKeys: keys(values, 'forcedKeys'),
     parentOffsets: offsets(values, 'parentOffsets'), branchLimits: offsets(values, 'branchLimits'), branchOffsets: offsets(values, 'branchOffsets'), siblingOffsets: offsets(values, 'siblingOffsets'), treeFocus: [...new Map(treeFocus)],
-    selectedKey: nullableText(values, 'selectedKey'), selectedOccurrenceId: nullableText(values, 'selectedOccurrenceId'), drawerOpen: bool(values, 'drawerOpen', false), drawerTab: choice(values, 'drawerTab', ['overview', 'connections'], 'overview'), connectionOffset: number(values, 'connectionOffset', 0, 0, MAX_OFFSET, true), allConnections: bool(values, 'allConnections', false), quickStates, trail,
+    selectedKey: nullableText(values, 'selectedKey'), selectedOccurrenceId: nullableText(values, 'selectedOccurrenceId'), drawerOpen: bool(values, 'drawerOpen', false), drawerTab: choice(values, 'drawerTab', ['overview', 'dependencies', 'connections'], 'overview'), connectionOffset: number(values, 'connectionOffset', 0, 0, MAX_OFFSET, true), dependencyOffset: number(values, 'dependencyOffset', 0, 0, MAX_OFFSET, true), dependencyDiscipline: nullableText(values, 'dependencyDiscipline'), allConnections: bool(values, 'allConnections', false), quickStates, trail,
     highlightFieldKey: own(values, 'highlightFieldKey') ? text(values.highlightFieldKey) : '', highlightedValues: keys(values, 'highlightedValues'), search: own(values, 'search') ? text(values.search, 4096) : '', loadingPaused: bool(values, 'loadingPaused', false),
   };
 }

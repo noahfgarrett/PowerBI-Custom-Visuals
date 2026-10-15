@@ -163,7 +163,7 @@
   .ssm-drawer-header strong { font-weight: 500; font-size: 14px; overflow-wrap: anywhere; }
   .ssm-close { border: 0; padding: 3px 6px; background: transparent; font-size: 14px; }
   .ssm-breadcrumb { font-size: 11px; color: var(--ssm-muted); margin: 7px 0 10px; overflow-wrap: anywhere; }
-  .ssm-drawer-tabs { display: flex; gap: 5px; margin-bottom: 10px; }
+  .ssm-drawer-tabs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
   .ssm-drawer-tabs button { padding: 5px 8px; }
   .ssm-detail-row { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.25fr); gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--ssm-border); overflow-wrap: anywhere; }
   .ssm-detail-row dt { color: var(--ssm-muted); margin: 0; }
@@ -182,6 +182,16 @@
   .ssm-connection small { display: block; font-size: 11px; color: var(--ssm-muted); margin-top: 3px; overflow-wrap: anywhere; }
   .ssm-connection-paging { display: flex; gap: 6px; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 11px; }
   .ssm-connection-paging button { padding: 4px 6px; }
+  .ssm-dependency-filter { display: grid; gap: 5px; margin-bottom: 12px; }
+  .ssm-dependency-filter span { font-size: 11px; color: var(--ssm-muted); }
+  .ssm-dependency-filter select { width: 100%; max-width: 100%; min-width: 0; padding: 6px; }
+  .ssm-dependency-summary { font-weight: 500; }
+  .ssm-dependency-scope { color: var(--ssm-muted); font-size: 11px; margin: 4px 0 12px; }
+  .ssm-dependency-item .ssm-dependency-title { font-weight: 500; }
+  .ssm-dependency-item .ssm-dependency-source-toggle { margin-top: 7px; font-size: 11px; color: var(--ssm-accent); }
+  .ssm-dependency-sources { border-left: 2px solid var(--ssm-border); padding-left: 9px; margin-top: 8px; }
+  .ssm-dependency-sources > div { padding: 5px 0; }
+  .ssm-dependency-sources .ssm-connection-paging { margin-top: 8px; }
   .ssm-notice { font-size: 11px; color: var(--ssm-muted); padding: 4px 10px; background: var(--ssm-panel); }
   .ssm-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
   [hidden] { display: none !important; }
