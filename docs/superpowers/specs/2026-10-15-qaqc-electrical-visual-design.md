@@ -153,6 +153,31 @@ The visual is designed to fill a full report page (about 1280×720).
 - Top 8 buildings shown. The remainder is grouped as `Other (n buildings)`. A blank building shows as `Unspecified`.
 - Hover tooltip: building, Finals, SORs.
 
+## Expanded chart view
+
+Added 2026-10-15 at the user's request. It lives in `qaqc-shared`, so every QAQC visual gets it.
+
+### Behavior
+
+- Every chart panel has an **expand** button (lucide `Maximize2`) at the right end of its title bar, with `aria-label` "Expand <chart title>". It is hidden when interactions are not allowed and when the panel shows an empty message.
+- Expanding grows the panel from its place in the grid to fill the whole visual. The box animates from the panel's rectangle to the visual's rectangle (left, top, width, height) over 250 ms with `cubic-bezier(0.2, 0.8, 0.2, 1)`. The detail content fades in over 120 ms once the box arrives. During the animation the box shows only the panel's title bar, so nothing reflows mid-animation.
+- Collapsing reverses it: the detail fades out over 100 ms, then the box shrinks back to the grid panel's current rectangle over 220 ms, then the overlay is removed. The collapse button (`Minimize2`, `aria-label` "Collapse <chart title>") replaces the expand button. **Esc** also collapses.
+- "Full screen" means the whole visual area. Power BI does not let a custom visual take over the browser window; the user can still combine this with Power BI's own Focus mode.
+- With Animation → Transitions off, or under `prefers-reduced-motion`, expand and collapse are instant.
+- Focus moves to the collapse button on expand and back to the expand button on collapse. The overlay is `role="dialog"` with `aria-modal="true"` and `aria-label` set to the chart title.
+- Only one chart can be expanded at a time. The expanded chart keeps working while open: week selection, the range toggle, data refreshes, and Format pane changes all update it. If the expanded chart becomes empty after a refresh, it stays open and shows its empty message.
+- Cards-only tiles have no charts, so they have no expand buttons.
+
+### Extra information when expanded
+
+| Chart | Expanded content |
+|---|---|
+| Finals + SORs by Work Week | The same chart with a value label above each bar (Finals + SORs total; omitted when bars are narrower than 18 px). Above it, a summary strip for the visible window: total Finals, total SORs, total issues found, and average inspections per week (Finals + SORs ÷ weeks in the window, one decimal). |
+| NCR Pass Rate Trend | The same chart, larger, with the pass rate labelled at every NCR week. Beside it on the right (about 260 px), a list of every week in the window with an issue found: week, issues found, and pass rate through that week, newest first. With no NCR weeks the list says "No NCR weeks in this range". |
+| Inspections by Building | A table of **all** buildings in the window (no top-8 cap, no Other row) with columns Building, Finals, SORs, Total. It is sorted by Total, descending, by default. Clicking a column header sorts by it; clicking again reverses. Headers use `aria-sort`. The table body scrolls; the header row stays put. A small bar in the Total column shows each building's share of the largest total. |
+
+The detail content reads from the same view model. Two fields are added to it: `allBuildings` (every building in the window, ranked) and `windowTotals` (Finals, SORs, issues found, and week count in the window).
+
 ## Format pane
 
 | Card | Setting | Default |
