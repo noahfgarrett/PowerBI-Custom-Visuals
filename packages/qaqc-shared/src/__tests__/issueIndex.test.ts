@@ -10,11 +10,10 @@ const COLUMNS: IssueColumns = {
   status: 2,
   type: 3,
   contractor: 4,
-  discipline: 5,
-  createdOn: 6,
-  updatedOn: 7,
-  dueDate: 8,
-  createdBy: 9,
+  createdOn: 5,
+  updatedOn: 6,
+  dueDate: 7,
+  createdBy: 8,
 }
 const TODAY = new Date(2026, 9, 15) // Thursday of WW42'2026
 const LW = 'LotusWorks'
@@ -26,7 +25,6 @@ interface IssueOptions {
   createdBy?: Cell
   contractor?: Cell
   type?: Cell
-  discipline?: Cell
   title?: Cell
   dueDate?: Cell
 }
@@ -38,7 +36,6 @@ function issue(id: string, createdOn: Cell, options: IssueOptions = {}): Cell[] 
     options.status === undefined ? 'Open' : options.status,
     options.type === undefined ? 'COR' : options.type,
     options.contractor === undefined ? 'Bayside' : options.contractor,
-    options.discipline === undefined ? 'Mechanical' : options.discipline,
     createdOn,
     options.updatedOn ?? null,
     options.dueDate ?? null,
@@ -242,7 +239,7 @@ describe('buildIssueIndex', () => {
   it('normalizes each issue with the app defaults', () => {
     const index = buildIssueIndex(
       [
-        issue('#1021', '10/5/2026', { contractor: '', type: '', discipline: null, title: '  ', status: 'pending' }),
+        issue('#1021', '10/5/2026', { contractor: '', type: '', title: '  ', status: 'pending' }),
         issue('#7', '10/5/2026', { contractor: null, status: '' }),
       ],
       COLUMNS,

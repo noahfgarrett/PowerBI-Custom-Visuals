@@ -156,7 +156,6 @@ describe('QaqcIssuesVisual', () => {
       'Status → Status',
       'Type → Type',
       'Contractor → Contractor',
-      'Discipline → Discipline',
       'Created On → Created On',
       'Updated On → Updated On',
       'Due Date → Due Date',

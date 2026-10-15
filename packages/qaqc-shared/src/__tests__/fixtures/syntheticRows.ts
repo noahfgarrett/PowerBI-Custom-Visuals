@@ -48,7 +48,6 @@ export function syntheticWeldRows(count: number, systemCount = 56): Array<Array<
 const ISSUE_STATUSES = ['Closed', 'Open', 'Closed', 'Not approved', 'Closed', 'Void', 'Pending', 'Closed'] as const
 const ISSUE_TYPES = ['COR', 'NCR', 'SOR', 'Observation'] as const
 const ISSUE_CONTRACTORS = ['Bayside', 'Mapleford', 'Redstone', ''] as const
-const ISSUE_DISCIPLINES = ['Mechanical', 'Electrical', 'Civil', 'Welding', ''] as const
 // About 2,100 days from WW01'2021, so created dates run from January 2021 to October 2026.
 const ISSUE_DAY_SPAN = 2_100
 
@@ -72,7 +71,7 @@ function seededShuffle<T>(items: T[], seed: number): T[] {
 
 /**
  * BIM issue rows with M/D/YYYY dates from January 2021 to October 2026: [id, title, status, type, contractor,
- * discipline, created on, updated on, due date, created by]. One in eight is void and one in twenty has a
+ * created on, updated on, due date, created by]. One in eight is void and one in twenty has a
  * non-LotusWorks creator. Closed issues close up to 40 days after they open. Rows come in a seeded random order
  * so sorting by ID is measured on unsorted input.
  */
@@ -88,7 +87,6 @@ export function syntheticIssueRows(count: number): Array<Array<string | null>> {
       ISSUE_STATUSES[i % ISSUE_STATUSES.length],
       ISSUE_TYPES[i % ISSUE_TYPES.length],
       ISSUE_CONTRACTORS[i % ISSUE_CONTRACTORS.length],
-      ISSUE_DISCIPLINES[i % ISSUE_DISCIPLINES.length],
       days[created],
       i % 3 === 0 ? null : days[created + (i % 41)],
       days[created + 14],

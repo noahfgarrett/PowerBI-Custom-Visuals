@@ -26,7 +26,6 @@ import { enumerateWorkWeeks, previousWorkWeek, toIsoWorkWeek } from './workWeeks
 export const DEFAULT_CONTRACTOR = 'Unassigned'
 export const ISSUE_1021_CONTRACTOR = 'Bayside'
 export const DEFAULT_SUBTYPE = 'Uncategorized'
-export const DEFAULT_DISCIPLINE = 'Unassigned'
 export const DEFAULT_TITLE = 'Untitled issue'
 
 // ACC replaces the company name with "Removed" when these LotusWorks accounts are deactivated.
@@ -63,10 +62,6 @@ export function issueContractor(id: unknown, contractor: unknown): string {
 
 export function issueSubtype(value: unknown): string {
   return cellText(value) || DEFAULT_SUBTYPE
-}
-
-export function issueDiscipline(value: unknown): string {
-  return cellText(value) || DEFAULT_DISCIPLINE
 }
 
 export function issueTitle(value: unknown): string {

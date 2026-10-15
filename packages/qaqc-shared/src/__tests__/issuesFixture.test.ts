@@ -11,11 +11,10 @@ const COLUMNS: IssueColumns = {
   status: 2,
   type: 3,
   contractor: 4,
-  discipline: 5,
-  createdOn: 6,
-  updatedOn: 7,
-  dueDate: 8,
-  createdBy: 9,
+  createdOn: 5,
+  updatedOn: 6,
+  dueDate: 7,
+  createdBy: 8,
 }
 const TODAY = new Date(2026, 9, 15) // WW42'2026
 const index = buildIssueIndex(ISSUE_ROWS, COLUMNS, TODAY)
@@ -33,17 +32,17 @@ describe('BIM Issues Log export (2026-10-14)', () => {
   })
 
   it('holds no creator names, only the LotusWorks marker or blank', () => {
-    expect(new Set(ISSUE_ROWS.map((row) => row[9]))).toEqual(new Set(['LotusWorks', '']))
+    expect(new Set(ISSUE_ROWS.map((row) => row[COLUMNS.createdBy]))).toEqual(new Set(['LotusWorks', '']))
   })
 
   it('excludes #1021–#1024 for a blank creator and #920 for a non-LotusWorks creator', () => {
     expect(index.excludedRows).toBe(5)
-    const excluded = ISSUE_ROWS.filter((row) => row[9] !== 'LotusWorks').map((row) => row[0])
+    const excluded = ISSUE_ROWS.filter((row) => row[COLUMNS.createdBy] !== 'LotusWorks').map((row) => row[0])
     expect(excluded).toEqual(['#1024', '#1023', '#1022', '#1021', '#920'])
   })
 
   it('drops the 26 void issues among the 203 LotusWorks rows', () => {
-    const lotusWorks = ISSUE_ROWS.filter((row) => row[9] === 'LotusWorks')
+    const lotusWorks = ISSUE_ROWS.filter((row) => row[COLUMNS.createdBy] === 'LotusWorks')
     expect(lotusWorks).toHaveLength(203)
     const voids = lotusWorks.filter((row) => (row[2] ?? '').trim().toLowerCase() === 'void')
     expect(voids).toHaveLength(26)

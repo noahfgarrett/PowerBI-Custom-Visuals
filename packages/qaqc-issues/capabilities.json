@@ -41,14 +41,6 @@
       "descriptionKey": "Qaqc_role_contractor_description"
     },
     {
-      "name": "discipline",
-      "kind": "Grouping",
-      "displayName": "Discipline",
-      "displayNameKey": "Qaqc_role_discipline",
-      "description": "Discipline of the issue, for example Piping or Electrical.",
-      "descriptionKey": "Qaqc_role_discipline_description"
-    },
-    {
       "name": "createdOn",
       "kind": "Grouping",
       "displayName": "Created On",
@@ -100,9 +92,6 @@
           "contractor": {
             "max": 1
           },
-          "discipline": {
-            "max": 1
-          },
           "createdOn": {
             "max": 1
           },
@@ -143,11 +132,6 @@
             {
               "for": {
                 "in": "contractor"
-              }
-            },
-            {
-              "for": {
-                "in": "discipline"
               }
             },
             {

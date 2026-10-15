@@ -23,7 +23,7 @@
 
 ### Task 1: Issues model
 
-- [ ] **Date and rule helpers.** Port `parseDate`, `formatDate` (`MM/DD/YY`), and `daysBetween` into `qaqc-shared` with tests covering Date objects, ISO, `M/D/YYYY`, two-digit years, and Excel serials. Port `isLotusWorksIssueCreator`, the status kind, the contractor default, and the subtype, discipline, and title defaults into `issues.ts`, with tests.
+- [ ] **Date and rule helpers.** Port `parseDate`, `formatDate` (`MM/DD/YY`), and `daysBetween` into `qaqc-shared` with tests covering Date objects, ISO, `M/D/YYYY`, two-digit years, and Excel serials. Port `isLotusWorksIssueCreator`, the status kind, the contractor default, and the subtype and title defaults into `issues.ts`, with tests.
 - [ ] **`buildIssueIndex(rows, columns, today)`.** Build normalized issues (void excluded, include rule applied), the continuous weeks from the first created week through the current week, and per-week counts of opened and closed. Also build cumulative opened and closed, `positionByKey`, and the counts of skipped rows (no Created On, unreadable dates), future rows, and excluded rows (creator).
 - [ ] **`buildIssueModel(index, view)`.** It returns:
   - cards with deltas and tones per the spec;
@@ -32,7 +32,7 @@
   - the open-issue rows for the expanded aging table;
   - `detail` for W and W−1, with cards, report rows, and discussion rows sorted per the spec;
   - `windowTotals`, `hasData`, and week options.
-- [ ] **Fixture.** Generate `fixtures/issueRows.ts` from the xlsx with the 10 slot columns. Replace Created By with `'LotusWorks'` when it passes the include rule and `''` otherwise, so the fixture holds no personal names. Titles are issue descriptions, not personal data. Expected: 208 rows.
+- [ ] **Fixture.** Generate `fixtures/issueRows.ts` from the xlsx with the 9 slot columns. Replace Created By with `'LotusWorks'` when it passes the include rule and `''` otherwise, so the fixture holds no personal names. Titles are issue descriptions, not personal data. Expected: 208 rows.
 - [ ] **Fixture test.** `issuesFixture.test.ts` asserts every spec "Expected numbers" value, including the WW32 detail IDs.
 - [ ] **Benchmark.** Index 200k synthetic issues within 1,500 ms, and compute the model within 16 ms.
 - [ ] Commit: `feat: add the BIM issues model`.
@@ -64,7 +64,7 @@
 
 - [ ] **Package files.** Copy the per-package layer from `packages/qaqc-mechanical`: `package.json` (name and `alert` icon shape), `pbiviz.json` (new GUID), `tsconfig.json`, `vitest.config.ts`, `ensure-api.cjs`, and `style/visual.less`.
 - [ ] **Icon.** Add an `alert` shape to `scripts/make-qaqc-icon.mjs` and view the resulting PNG.
-- [ ] **Capabilities.** `capabilities.json` defines the 10 issue roles (`max: 1` each) and the same objects as Electrical. Add matching `resources.resjson` keys.
+- [ ] **Capabilities.** `capabilities.json` defines the 9 issue roles (`max: 1` each) and the same objects as Electrical. Add matching `resources.resjson` keys.
 - [ ] **Table reader.** Add `readIssueTable` and `ISSUE_SLOTS` in `qaqc-shared`, with tests.
 - [ ] **`settings.ts`.** Copy it, renamed to `IssuesSettingsModel`.
 - [ ] **`visual.ts`.** Adapt it to the issue reader, index, and dashboard, using these strings:

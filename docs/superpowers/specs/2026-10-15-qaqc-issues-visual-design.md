@@ -17,13 +17,12 @@ Package: `packages/qaqc-issues`, GUID `qaqcIssues_<12 hex chosen at scaffold tim
 | Status (`status`) | Status | yes |
 | Type (`type`) | Type | yes |
 | Contractor (`contractor`) | Contractor | yes |
-| Discipline (`discipline`) | Discipline | yes |
 | Created On (`createdOn`) | Created On | yes |
 | Updated On (`updatedOn`) | Updated On | yes |
 | Due Date (`dueDate`) | Due Date | yes |
 | Created By (`createdBy`) | Created By | yes |
 
-All required, validated in code. Issue IDs are unique, so no Row ID slot is needed: Power BI can't merge two issues that differ in ID.
+All 9 slots are required, validated in code. Discipline is not used by any card, chart or column, so it has no slot (Power BI slicers on the page still filter by it). Issue IDs are unique, so no Row ID slot is needed: Power BI can't merge two issues that differ in ID.
 
 ## Rules (ported from the HTML app)
 
@@ -31,7 +30,7 @@ All required, validated in code. Issue IDs are unique, so no Row ID slot is need
 - **Status kind:** trimmed and lower-cased; `void` → void, `closed` → closed, `pending` → pending, anything else (blank, "Open", "Not approved", "Ready to Inspect") → open. Void issues are excluded everywhere. Pending issues display as "Open" in the detail table.
 - **Dates:** Power BI may deliver Date objects, ISO strings, `M/D/YYYY` strings, or Excel serial numbers. Port the HTML `parseDate` behavior (local noon). Created week = ISO week of Created On; issues without a Created On are skipped (and footnoted). **Closed week** = ISO week of Updated On, only for closed issues with an Updated On; closed issues without one count as neither closed-through nor closed-in-week.
 - **Contractor:** trimmed; when blank, `Bayside` if the ID's trailing digits are exactly `1021`, otherwise `Unassigned`.
-- **Subtype:** Type, else `Uncategorized`. **Discipline:** else `Unassigned`. **Title:** else `Untitled issue`.
+- **Subtype:** Type, else `Uncategorized`. **Title:** else `Untitled issue`.
 - Future-dated created weeks are excluded from the dropdown and totals, like the other visuals.
 
 ## Cards

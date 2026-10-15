@@ -6,7 +6,6 @@ export type SlotRole =
   | 'status'
   | 'type'
   | 'contractor'
-  | 'discipline'
   | 'createdOn'
   | 'updatedOn'
   | 'dueDate'
@@ -27,7 +26,6 @@ export const ALL_ROLES: SlotRole[] = [
   'status',
   'type',
   'contractor',
-  'discipline',
   'createdOn',
   'updatedOn',
   'dueDate',
@@ -36,7 +34,7 @@ export const ALL_ROLES: SlotRole[] = [
 
 /**
  * Builds a table data view whose columns carry the given roles, in order. Each input row
- * supplies the ten slot values in ALL_ROLES order; a null cell becomes blank text.
+ * supplies the nine slot values in ALL_ROLES order; a null cell becomes blank text.
  */
 export function tableDataView(rows: ReadonlyArray<ReadonlyArray<Cell>>, options: TableOptions = {}): powerbi.DataView {
   const roles = options.roles ?? ALL_ROLES

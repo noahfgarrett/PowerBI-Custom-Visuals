@@ -34,15 +34,14 @@ const ISSUE_COLUMNS: IssueColumns = {
   status: 2,
   type: 3,
   contractor: 4,
-  discipline: 5,
-  createdOn: 6,
-  updatedOn: 7,
-  dueDate: 8,
-  createdBy: 9,
+  createdOn: 5,
+  updatedOn: 6,
+  dueDate: 7,
+  createdBy: 8,
 }
 
 function issueRow(id: string, createdOn: string | null, createdBy = 'LotusWorks'): Array<string | null> {
-  return [id, 'Title', 'Open', 'COR', 'Bayside', 'Piping', createdOn, null, null, createdBy]
+  return [id, 'Title', 'Open', 'COR', 'Bayside', createdOn, null, null, createdBy]
 }
 
 describe('buildIssueFootnotes', () => {

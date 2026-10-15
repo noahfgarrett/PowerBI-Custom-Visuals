@@ -11,8 +11,6 @@
     "Qaqc_role_type_description": "Issue type, for example COR or NCR.",
     "Qaqc_role_contractor": "Contractor",
     "Qaqc_role_contractor_description": "Contractor responsible for the issue.",
-    "Qaqc_role_discipline": "Discipline",
-    "Qaqc_role_discipline_description": "Discipline of the issue, for example Piping or Electrical.",
     "Qaqc_role_createdOn": "Created On",
     "Qaqc_role_createdOn_description": "Date the issue was created. Sets the work week it was opened.",
     "Qaqc_role_updatedOn": "Updated On",

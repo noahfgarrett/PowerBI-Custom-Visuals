@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import {
   isLotusWorksIssueCreator,
   issueContractor,
-  issueDiscipline,
   issueStatusKind,
   issueSubtype,
   issueTitle,
@@ -73,11 +72,6 @@ describe('issue text defaults', () => {
   it('defaults a blank Type to Uncategorized', () => {
     expect(issueSubtype('COR')).toBe('COR')
     expect(issueSubtype('  ')).toBe('Uncategorized')
-  })
-
-  it('defaults a blank Discipline to Unassigned', () => {
-    expect(issueDiscipline('Mechanical')).toBe('Mechanical')
-    expect(issueDiscipline(null)).toBe('Unassigned')
   })
 
   it('defaults a blank Title to Untitled issue', () => {

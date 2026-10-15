@@ -447,11 +447,10 @@ const COLUMNS: IssueColumns = {
   status: 2,
   type: 3,
   contractor: 4,
-  discipline: 5,
-  createdOn: 6,
-  updatedOn: 7,
-  dueDate: 8,
-  createdBy: 9,
+  createdOn: 5,
+  updatedOn: 6,
+  dueDate: 7,
+  createdBy: 8,
 }
 const TODAY = new Date(2026, 9, 15) // WW42'2026
 const WW41 = 202641
@@ -459,7 +458,7 @@ const WW42 = 202642
 
 type Cell = string | null
 function issue(id: string, createdOn: string, status = 'Open', updatedOn: Cell = null): Cell[] {
-  return [id, `Issue ${id}`, status, 'COR', 'Bayside', 'Mechanical', createdOn, updatedOn, null, 'LotusWorks']
+  return [id, `Issue ${id}`, status, 'COR', 'Bayside', createdOn, updatedOn, null, 'LotusWorks']
 }
 
 // The issue model's test data. At WW42: opened 1, closed 1; WW41: opened 3, closed 2.

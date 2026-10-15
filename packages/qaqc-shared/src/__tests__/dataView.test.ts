@@ -101,8 +101,8 @@ describe('readWeldTable', () => {
   })
 })
 
-type IssueRole = 'id' | 'title' | 'status' | 'type' | 'contractor' | 'discipline' | 'createdOn' | 'updatedOn' | 'dueDate' | 'createdBy'
-const ALL_ISSUE_ROLES: IssueRole[] = ['id', 'title', 'status', 'type', 'contractor', 'discipline', 'createdOn', 'updatedOn', 'dueDate', 'createdBy']
+type IssueRole = 'id' | 'title' | 'status' | 'type' | 'contractor' | 'createdOn' | 'updatedOn' | 'dueDate' | 'createdBy'
+const ALL_ISSUE_ROLES: IssueRole[] = ['id', 'title', 'status', 'type', 'contractor', 'createdOn', 'updatedOn', 'dueDate', 'createdBy']
 
 function issueTable(rows: ReadonlyArray<ReadonlyArray<unknown>>, roles: IssueRole[] = ALL_ISSUE_ROLES): InspectionTableSource {
   return {
@@ -111,7 +111,7 @@ function issueTable(rows: ReadonlyArray<ReadonlyArray<unknown>>, roles: IssueRol
   }
 }
 
-const ISSUE_ROW = ['#1020', 'WR1 - GF PVC Protection Deficiency', 'Ready to Inspect', 'COR', 'Bayside', 'Mechanical', '7/27/2026', '7/27/2026', '8/14/2026', 'LotusWorks']
+const ISSUE_ROW = ['#1020', 'WR1 - GF PVC Protection Deficiency', 'Ready to Inspect', 'COR', 'Bayside', '7/27/2026', '7/27/2026', '8/14/2026', 'LotusWorks']
 
 describe('readIssueTable', () => {
   it('reports every required slot when there is no data view', () => {
@@ -124,7 +124,6 @@ describe('readIssueTable', () => {
         'Status',
         'Type',
         'Contractor',
-        'Discipline',
         'Created On',
         'Updated On',
         'Due Date',
@@ -134,7 +133,7 @@ describe('readIssueTable', () => {
   })
 
   it('names only the slots that are still empty', () => {
-    const result = readIssueTable(issueTable([ISSUE_ROW], ['id', 'title', 'status', 'type', 'contractor', 'discipline', 'createdOn']))
+    const result = readIssueTable(issueTable([ISSUE_ROW], ['id', 'title', 'status', 'type', 'contractor', 'createdOn']))
     expect(result.kind).toBe('missing')
     if (result.kind === 'missing') expect(result.missing.map((slot) => slot.column)).toEqual(['Updated On', 'Due Date', 'Created By'])
   })
@@ -150,12 +149,11 @@ describe('readIssueTable', () => {
     expect(result.kind).toBe('ready')
     if (result.kind === 'ready') {
       expect(result.columns).toEqual({
-        id: 9,
-        title: 8,
-        status: 7,
-        type: 6,
-        contractor: 5,
-        discipline: 4,
+        id: 8,
+        title: 7,
+        status: 6,
+        type: 5,
+        contractor: 4,
         createdOn: 3,
         updatedOn: 2,
         dueDate: 1,
@@ -167,7 +165,7 @@ describe('readIssueTable', () => {
 
   it('passes date cells through unchanged when Power BI delivers Date objects', () => {
     const createdOn = new Date(2026, 6, 27)
-    const result = readIssueTable(issueTable([[...ISSUE_ROW.slice(0, 6), createdOn, ...ISSUE_ROW.slice(7)]]))
+    const result = readIssueTable(issueTable([[...ISSUE_ROW.slice(0, 5), createdOn, ...ISSUE_ROW.slice(6)]]))
     expect(result.kind).toBe('ready')
     if (result.kind === 'ready') expect(result.rows[0][result.columns.createdOn]).toBe(createdOn)
   })

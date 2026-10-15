@@ -281,7 +281,6 @@ export interface IssueColumns {
   status: number
   type: number
   contractor: number
-  discipline: number
   createdOn: number
   updatedOn: number
   dueDate: number
