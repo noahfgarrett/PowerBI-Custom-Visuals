@@ -269,6 +269,12 @@ describe('IssuesDashboard cards', () => {
     expect(cardTone(container, 'Closure Rate')).toBe('is-bad')
   })
 
+  it('keeps the closed cards neutral in a week with nothing closed', () => {
+    view = draw()
+    expect(cardTone(view.container, 'Issues Closed')).toBe('is-neutral')
+    expect(cardTone(view.container, 'Total Closed')).toBe('is-neutral')
+  })
+
   it('shows a falling Remaining Open as a good minus', () => {
     view = draw()
     pickWeekInDropdown(view.container, '202628')

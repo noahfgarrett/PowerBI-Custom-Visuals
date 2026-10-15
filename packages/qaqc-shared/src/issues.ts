@@ -437,11 +437,12 @@ export function buildIssueModel(index: IssueIndex, view: ViewState): IssueModel 
     weekOptions: index.weeks.map((item) => item.week).reverse(),
     thisWeek: {
       opened: countCard(openedInWeek, openedInPreviousWeek, openedInWeek > openedInPreviousWeek ? 'warn' : 'neutral'),
-      closed: countCard(closedInWeek, closedInPreviousWeek, closedInWeek >= closedInPreviousWeek ? 'good' : 'neutral'),
+      // Good when at least as many closed as the week before, but a week with nothing closed is never good.
+      closed: countCard(closedInWeek, closedInPreviousWeek, closedInWeek > 0 && closedInWeek >= closedInPreviousWeek ? 'good' : 'neutral'),
     },
     toDate: {
       opened: countCard(opened, previousOpened, riseIsBad(opened - previousOpened)),
-      closed: countCard(closed, previousClosed, 'good'),
+      closed: countCard(closed, previousClosed, closed > previousClosed ? 'good' : 'neutral'),
       remaining: countCard(remaining, previousRemaining, riseIsBad(remaining - previousRemaining)),
       closureRate: closureRateCard(index, selectedPosition),
     },

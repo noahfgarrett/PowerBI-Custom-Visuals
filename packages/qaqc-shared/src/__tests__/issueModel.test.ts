@@ -88,20 +88,47 @@ describe('buildIssueModel cards', () => {
     expect(model.toDate.remaining).toEqual({ value: 0, delta: -1, tone: 'good' })
   })
 
-  it('is neutral on the to-date cards when nothing changed, except Total Closed which is always good', () => {
+  it('is neutral on every to-date card when nothing changed', () => {
     // One open issue from WW40, nothing in WW41.
     const quietIndex = buildIssueIndex([issue('#1', '9/29/2026')], COLUMNS, TODAY)
     const model = buildIssueModel(quietIndex, viewAt(WW41))
     expect(model.toDate.opened).toEqual({ value: 1, delta: 0, tone: 'neutral' })
-    expect(model.toDate.closed).toEqual({ value: 0, delta: 0, tone: 'good' })
+    expect(model.toDate.closed).toEqual({ value: 0, delta: 0, tone: 'neutral' })
     expect(model.toDate.remaining).toEqual({ value: 1, delta: 0, tone: 'neutral' })
     expect(model.toDate.closureRate).toEqual({ value: 0, deltaPoints: 0, tone: 'neutral' })
+  })
+
+  it('is neutral on Issues Closed when nothing closed in either week', () => {
+    const quietIndex = buildIssueIndex([issue('#1', '9/29/2026')], COLUMNS, TODAY)
+    const model = buildIssueModel(quietIndex, viewAt(WW41))
+    expect(model.thisWeek.closed).toEqual({ value: 0, delta: 0, tone: 'neutral' })
+  })
+
+  it('is good on Issues Closed when as many closed as the week before', () => {
+    const steadyIndex = buildIssueIndex(
+      [issue('#1', '9/29/2026', 'Closed', '10/6/2026'), issue('#2', '9/29/2026', 'Closed', '10/13/2026')],
+      COLUMNS,
+      TODAY,
+    )
+    const model = buildIssueModel(steadyIndex, viewAt(WW42))
+    expect(model.thisWeek.closed).toEqual({ value: 1, delta: 0, tone: 'good' })
+  })
+
+  it('is neutral on Issues Closed when fewer closed than the week before', () => {
+    // WW41 closed 2, WW42 closed 1.
+    const model = buildIssueModel(index, viewAt(WW42))
+    expect(model.thisWeek.closed).toEqual({ value: 1, delta: -1, tone: 'neutral' })
+  })
+
+  it('is good on Total Closed when it rises', () => {
+    const model = buildIssueModel(index, viewAt(WW42))
+    expect(model.toDate.closed).toEqual({ value: 4, delta: 1, tone: 'good' })
   })
 
   it('compares the first week against zero and has no closure rate change', () => {
     const model = buildIssueModel(index, viewAt(WW39))
     expect(model.thisWeek.opened).toEqual({ value: 3, delta: 3, tone: 'warn' })
-    expect(model.thisWeek.closed).toEqual({ value: 0, delta: 0, tone: 'good' })
+    expect(model.thisWeek.closed).toEqual({ value: 0, delta: 0, tone: 'neutral' })
     expect(model.toDate.remaining).toEqual({ value: 3, delta: 3, tone: 'bad' })
     expect(model.toDate.closureRate).toEqual({ value: 0, deltaPoints: null, tone: 'neutral' })
   })
