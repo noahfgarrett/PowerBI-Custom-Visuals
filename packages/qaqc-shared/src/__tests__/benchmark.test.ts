@@ -1,11 +1,24 @@
 import { describe, expect, it } from 'vitest'
 
 import { buildInspectionIndex, buildInspectionModel, defaultViewState } from '../inspections'
+import { buildIssueIndex, buildIssueModel } from '../issues'
 import { buildWeldIndex, buildWeldModel } from '../welds'
-import { syntheticInspectionRows, syntheticWeldRows } from './fixtures/syntheticRows'
+import { syntheticInspectionRows, syntheticIssueRows, syntheticWeldRows } from './fixtures/syntheticRows'
 
 const COLUMNS = { workWeek: 0, phase: 1, issue: 2, building: 3 }
 const WELD_COLUMNS = { weldWeek: 0, signature: 1, signedWeek: 2, issue: 3, fluidCode: 4, pipeSpec: 5, tagNo: 6 }
+const ISSUE_COLUMNS = {
+  id: 0,
+  title: 1,
+  status: 2,
+  type: 3,
+  contractor: 4,
+  discipline: 5,
+  createdOn: 6,
+  updatedOn: 7,
+  dueDate: 8,
+  createdBy: 9,
+}
 const TODAY = new Date(2026, 9, 15)
 
 function elapsed(work: () => void): number {
@@ -47,5 +60,21 @@ describe('welding performance budgets', () => {
     const view = { ...defaultViewState(index), range: 'all' as const }
     buildWeldModel(index, view, 'AW', 10)
     expect(elapsed(() => buildWeldModel(index, view, 'AW', 10))).toBeLessThan(16)
+  })
+})
+
+describe('issues performance budgets', () => {
+  it('indexes 200,000 issue rows within budget', () => {
+    const rows = syntheticIssueRows(200_000)
+    buildIssueIndex(rows, ISSUE_COLUMNS, TODAY)
+    expect(elapsed(() => buildIssueIndex(rows, ISSUE_COLUMNS, TODAY))).toBeLessThan(1500)
+  })
+
+  it('recomputes the All-range issue model from a 200,000-row index within one frame', () => {
+    const index = buildIssueIndex(syntheticIssueRows(200_000), ISSUE_COLUMNS, TODAY)
+    expect(index.issues.length).toBeGreaterThan(150_000)
+    const view = { ...defaultViewState(index), range: 'all' as const }
+    buildIssueModel(index, view)
+    expect(elapsed(() => buildIssueModel(index, view))).toBeLessThan(16)
   })
 })

@@ -44,3 +44,41 @@ export function syntheticWeldRows(count: number, systemCount = 56): Array<Array<
   }
   return rows
 }
+
+const ISSUE_STATUSES = ['Closed', 'Open', 'Closed', 'Not approved', 'Closed', 'Void', 'Pending', 'Closed'] as const
+const ISSUE_TYPES = ['COR', 'NCR', 'SOR', 'Observation'] as const
+const ISSUE_CONTRACTORS = ['Bayside', 'Mapleford', 'Redstone', ''] as const
+const ISSUE_DISCIPLINES = ['Mechanical', 'Electrical', 'Civil', 'Welding', ''] as const
+// About 2,100 days from WW01'2021, so created dates run from January 2021 to October 2026.
+const ISSUE_DAY_SPAN = 2_100
+
+function monthDayYear(date: Date): string {
+  return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`
+}
+
+/**
+ * BIM issue rows with M/D/YYYY dates from January 2021 to October 2026: [id, title, status, type, contractor,
+ * discipline, created on, updated on, due date, created by]. One in eight is void and one in twenty has a
+ * non-LotusWorks creator. Closed issues close up to 40 days after they open.
+ */
+export function syntheticIssueRows(count: number): Array<Array<string | null>> {
+  const days: string[] = []
+  for (let offset = 0; offset < ISSUE_DAY_SPAN + 60; offset += 1) days.push(monthDayYear(new Date(2021, 0, 4 + offset)))
+  const rows: Array<Array<string | null>> = []
+  for (let i = 0; i < count; i += 1) {
+    const created = i % ISSUE_DAY_SPAN
+    rows.push([
+      `#${i}`,
+      `Issue ${i}`,
+      ISSUE_STATUSES[i % ISSUE_STATUSES.length],
+      ISSUE_TYPES[i % ISSUE_TYPES.length],
+      ISSUE_CONTRACTORS[i % ISSUE_CONTRACTORS.length],
+      ISSUE_DISCIPLINES[i % ISSUE_DISCIPLINES.length],
+      days[created],
+      i % 3 === 0 ? null : days[created + (i % 41)],
+      days[created + 14],
+      i % 20 === 0 ? 'Bayside' : 'Jane Doe (LotusWorks)',
+    ])
+  }
+  return rows
+}

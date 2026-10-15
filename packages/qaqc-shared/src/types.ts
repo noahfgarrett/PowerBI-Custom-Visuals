@@ -1,3 +1,5 @@
+import type { DeltaTone } from './format'
+
 export interface WorkWeek {
   week: number
   year: number
@@ -269,5 +271,190 @@ export interface WeldModel {
   /** Window issues ÷ window welds as a percent, 0 when the window has no welds. */
   overallIssueRate: number
   windowTotals: WeldWindowTotals
+  hasData: boolean
+}
+
+/** Column positions of each BIM issue field slot inside a table row. */
+export interface IssueColumns {
+  id: number
+  title: number
+  status: number
+  type: number
+  contractor: number
+  discipline: number
+  createdOn: number
+  updatedOn: number
+  dueDate: number
+  createdBy: number
+}
+
+export type IssueStatusKind = 'open' | 'pending' | 'closed' | 'void'
+
+/** Void issues are excluded everywhere, so an indexed issue is never void. */
+export type IncludedIssueStatusKind = Exclude<IssueStatusKind, 'void'>
+
+/** One row of the Issue Detail table, formatted once when the index is built. */
+export interface IssueDetailRow {
+  id: string
+  subtype: string
+  /** The status label; pending displays as Open. */
+  status: string
+  statusKind: IncludedIssueStatusKind
+  title: string
+  contractor: string
+  /** Created work week label. */
+  workWeek: string
+  workWeekKey: number
+  /** MM/DD/YY */
+  createdOn: string
+  createdOnTime: number
+  /** Closed work week label, `Open` when not closed, blank when closed without a date. */
+  workWeekClosed: string
+  /** Null when not closed or closed without a date. */
+  workWeekClosedKey: number | null
+  /** MM/DD/YY, blank when there is no due date. */
+  dueDate: string
+  dueDateTime: number | null
+}
+
+export interface IssueRecord {
+  id: string
+  title: string
+  /** Trimmed Status text; blank reads as Open and pending as Pending. */
+  status: string
+  statusKind: IncludedIssueStatusKind
+  subtype: string
+  contractor: string
+  discipline: string
+  createdOn: Date
+  /** Updated On, or null when blank or unreadable. */
+  updatedOn: Date | null
+  dueDate: Date | null
+  createdWeek: WorkWeek
+  /** ISO week of Updated On for closed issues that have one, never before the created week. Otherwise null. */
+  closedWeek: WorkWeek | null
+  detail: IssueDetailRow
+}
+
+export interface IssueWeekCounts {
+  week: WorkWeek
+  /** Issues created in this week. */
+  opened: number
+  /** Closed issues whose closed week is this week. */
+  closed: number
+}
+
+export interface AgingBucket {
+  label: string
+  count: number
+}
+
+export interface OverallAgingBucket extends AgingBucket {
+  closed: number
+  open: number
+}
+
+/** An open or pending issue in the expanded Open Issue Aging table. */
+export interface OpenIssueRow {
+  id: string
+  title: string
+  contractor: string
+  /** MM/DD/YY */
+  createdOn: string
+  createdOnTime: number
+  ageDays: number
+  /** The status label; pending displays as Open. */
+  status: string
+}
+
+export interface IssueIndex {
+  currentWeek: WorkWeek
+  /** Included issues created through the current week, sorted by ID descending (numeric-aware). */
+  issues: IssueRecord[]
+  /** Continuous weeks from the first created week through the current week. Always holds at least one week, the current week. */
+  weeks: IssueWeekCounts[]
+  /** Parallel to weeks: running totals through each week. */
+  cumulativeOpened: number[]
+  cumulativeClosed: number[]
+  positionByKey: Map<number, number>
+  /** Open and pending issues by age today. */
+  openAging: AgingBucket[]
+  /** Every issue by age to its closed date (closed) or today. */
+  overallAging: OverallAgingBucket[]
+  /** Open and pending issues, oldest first. */
+  openIssues: OpenIssueRow[]
+  totalRows: number
+  /** Included, non-void rows with a blank or unreadable Created On. */
+  skippedRows: number
+  /** Included, non-void rows created after the current week. */
+  futureRows: number
+  /** Rows whose Created By is not a LotusWorks creator. */
+  excludedRows: number
+}
+
+export interface IssueCountCard {
+  value: number
+  delta: number
+  tone: DeltaTone
+}
+
+export interface ClosureRateCard {
+  /** Percent 0–100, or null when no issues were opened through the week. */
+  value: number | null
+  /** Change in points versus through the previous week, or null when either rate is missing. */
+  deltaPoints: number | null
+  tone: DeltaTone
+}
+
+export interface IssueTrendPoint {
+  week: WorkWeek
+  opened: number
+  closed: number
+  /** Cumulative opened minus cumulative closed through this week. */
+  remainingOpen: number
+}
+
+export interface IssueWindowTotals {
+  opened: number
+  closed: number
+  /** Remaining open at the window end minus remaining open before the window. */
+  remainingChange: number
+  /** Percent 0–100 through the window end, or null when nothing was opened. */
+  closureRate: number | null
+  weeks: number
+}
+
+export interface IssueDetail {
+  openedThisWeek: number
+  closedThisWeek: number
+  openedLastWeek: number
+  closedLastWeek: number
+  /** Issues created or closed in the selected week or the week before, by ID descending. */
+  reportRows: IssueDetailRow[]
+  /** Every other open or pending issue created through the selected week, by ID descending. */
+  discussionRows: IssueDetailRow[]
+}
+
+export interface IssueModel {
+  selectedWeek: WorkWeek
+  previousWeek: WorkWeek
+  /** Newest first. */
+  weekOptions: WorkWeek[]
+  thisWeek: {
+    opened: IssueCountCard
+    closed: IssueCountCard
+  }
+  toDate: {
+    opened: IssueCountCard
+    closed: IssueCountCard
+    remaining: IssueCountCard
+    closureRate: ClosureRateCard
+  }
+  trend: IssueTrendPoint[]
+  openAging: AgingBucket[]
+  overallAging: OverallAgingBucket[]
+  openIssues: OpenIssueRow[]
+  detail: IssueDetail
+  windowTotals: IssueWindowTotals
   hasData: boolean
 }
