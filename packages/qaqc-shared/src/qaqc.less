@@ -1360,8 +1360,10 @@
   min-height: 0;
 }
 
-// The header and at least four rows (TABLE_ROW_HEIGHT 32) stay in view however short the tile; beats is-flex-fill's 0.
-.qaqc-issue-detail .qaqc-issue-detail-wrap {
+// The header and at least four rows stay in view however short the tile: 164px = about 36px for the sticky header row
+// and the wrap's border + 4 × TABLE_ROW_HEIGHT (32px, hooks/useVirtualRows.ts). Three classes, so it outranks
+// .qaqc-table-wrap.is-flex-fill's min-height: 0 by specificity, not by source order.
+.qaqc-issue-detail .qaqc-table-wrap.qaqc-issue-detail-wrap {
   min-height: 164px;
 }
 

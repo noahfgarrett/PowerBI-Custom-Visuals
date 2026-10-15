@@ -247,6 +247,11 @@ describe('AgingStripChart', () => {
     expect(view.container.querySelector('.qaqc-aging')?.classList.contains('is-high-contrast')).toBe(false)
   })
 
+  it('reads each count and percent as separate words', () => {
+    view = render(<AgingStripChart buckets={OVERALL} colors={COLORS} isHighContrast={false} />)
+    expect(texts(view.container, '.qaqc-aging-row strong')).toEqual(['38 21%', '19 11%', '120 68%'])
+  })
+
   it('rounds the percents so they add up to 100', () => {
     const thirds = OVERALL.map((bucket) => ({ ...bucket, count: 1 }))
     view = render(<AgingStripChart buckets={thirds} colors={COLORS} isHighContrast={false} />)

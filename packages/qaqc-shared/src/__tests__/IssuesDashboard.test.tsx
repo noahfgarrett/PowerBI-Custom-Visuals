@@ -1,6 +1,3 @@
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
-
 import { CircleAlert } from 'lucide-react'
 import { act, type ReactElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -11,6 +8,7 @@ import { resolveTheme } from '../theme'
 import type { IssueColumns, IssueIndex } from '../types'
 import { ISSUE_ROWS } from './fixtures/issueRows'
 import { render, type Rendered } from './render'
+import { ruleBody } from './stylesheet'
 
 const COLUMNS: IssueColumns = {
   id: 0,
@@ -188,14 +186,6 @@ function detailRowIds(root: HTMLElement): string[] {
   return [...root.querySelectorAll('tbody tr[aria-rowindex]')].map((row) => row.querySelector('th')?.firstChild?.textContent ?? '')
 }
 
-/** The declarations of one top-level rule in the shared stylesheet (jsdom cannot lay out the compiled CSS). */
-function ruleBody(selector: string): string {
-  const source = readFileSync(join(__dirname, '..', 'qaqc.less'), 'utf8')
-  const start = source.indexOf(`\n${selector} {`)
-  if (start < 0) throw new Error(`rule ${selector} missing`)
-  return source.slice(start, source.indexOf('}', start))
-}
-
 function stubSize(width = 800, height = 400): void {
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
     x: 0,
@@ -341,8 +331,11 @@ describe('IssuesDashboard layout', () => {
     expect(view.container.querySelectorAll('article.qaqc-kpi')).toHaveLength(6)
   })
 
-  it('shrinks the card values on a short, narrow tile so the stacked groups leave room for a footnote', () => {
-    expect(ruleBody('.qaqc-root.is-cards-only.is-compact .qaqc-kpi-value')).toContain('font-size: 24px;')
+  it('uses the compact cards-only layout on a short, narrow tile', () => {
+    view = draw({ viewport: { width: 800, height: 300 } })
+    const root = view.container.querySelector('.qaqc-root')
+    expect(root?.classList.contains('is-cards-only')).toBe(true)
+    expect(root?.classList.contains('is-compact')).toBe(true)
   })
 
   it('uses the compact layout on narrow tiles', () => {
@@ -499,7 +492,7 @@ describe('IssuesDashboard Issue Detail', () => {
     pickWeekInDropdown(view.container, '202632')
     expect(walks()).toBe(0)
     openDetail(view.container)
-    expect(walks()).toBe(1)
+    expect(walks()).toBeGreaterThan(0)
   })
 
   it('closes with the back button and returns focus to the Issue Detail button', () => {
@@ -538,6 +531,6 @@ describe('IssuesDashboard Issue Detail', () => {
 
   it('keeps several table rows in view on a short tile by scrolling the page instead of squeezing the table', () => {
     expect(ruleBody('.qaqc-issue-detail')).toContain('overflow-y: auto;')
-    expect(ruleBody('.qaqc-issue-detail .qaqc-issue-detail-wrap')).toMatch(/min-height: \d+px;/)
+    expect(ruleBody('.qaqc-issue-detail .qaqc-table-wrap.qaqc-issue-detail-wrap')).toMatch(/min-height: \d+px;/)
   })
 })

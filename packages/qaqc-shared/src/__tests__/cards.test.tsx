@@ -1,12 +1,10 @@
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
-
 import { ClipboardCheck } from 'lucide-react'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { KpiCard } from '../components/KpiCard'
 import { KpiGroup } from '../components/KpiGroup'
 import { render, type Rendered } from './render'
+import { ruleBody } from './stylesheet'
 
 let view: Rendered | null = null
 
@@ -93,12 +91,9 @@ describe('KpiGroup', () => {
   })
 })
 
-/** The declarations of one top-level rule in the shared stylesheet (jsdom cannot lay out the compiled CSS). */
-function ruleBody(selector: string): string {
-  const source = readFileSync(join(__dirname, '..', 'qaqc.less'), 'utf8')
-  const start = source.indexOf(`\n${selector} {`)
-  if (start < 0) throw new Error(`rule ${selector} missing`)
-  return source.slice(start, source.indexOf('}', start))
+/** Class-only selectors: their specificity is the number of classes. */
+function classCount(selector: string): number {
+  return selector.match(/\.[a-z-]+/g)?.length ?? 0
 }
 
 describe('KpiGroup layout', () => {
@@ -125,5 +120,13 @@ describe('KpiGroup layout', () => {
   it('sizes each group by its card count in the row', () => {
     expect(ruleBody('.qaqc-kpi-row')).toContain('display: flex;')
     expect(ruleBody('.qaqc-kpi-group')).toContain('flex: var(--qaqc-kpi-cards) 1 0;')
+  })
+
+  it('sizes card values on compact cards-only tiles with a rule that outranks the cards-only size', () => {
+    const cardsOnly = '.qaqc-root.is-cards-only .qaqc-kpi-value'
+    const compactCardsOnly = '.qaqc-root.is-cards-only.is-compact .qaqc-kpi-value'
+    expect(ruleBody(cardsOnly)).toContain('font-size:')
+    expect(ruleBody(compactCardsOnly)).toContain('font-size:')
+    expect(classCount(compactCardsOnly)).toBeGreaterThan(classCount(cardsOnly))
   })
 })

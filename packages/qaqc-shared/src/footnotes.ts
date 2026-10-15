@@ -27,10 +27,7 @@ export function buildFootnotes(index: FootnoteSource, rowLimitReached: boolean):
 }
 
 /** Issues are dated by Created On, not a work week column, and only LotusWorks-created issues are included. */
-export function buildIssueFootnotes(
-  index: Pick<IssueIndex, 'currentWeek' | 'totalRows' | 'skippedRows' | 'futureRows' | 'excludedRows'>,
-  rowLimitReached: boolean,
-): string[] {
+export function buildIssueFootnotes(index: FootnoteSource & Pick<IssueIndex, 'excludedRows'>, rowLimitReached: boolean): string[] {
   const notes: string[] = []
   if (rowLimitReached) notes.push(rowLimitNote(index.totalRows))
   if (index.excludedRows > 0) {
