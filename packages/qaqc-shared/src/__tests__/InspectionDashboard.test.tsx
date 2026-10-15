@@ -161,7 +161,31 @@ function clickRange(container: HTMLElement, label: string): void {
   })
 }
 
-function dashboardElement(index: InspectionDashboardProps['index']): ReactElement {
+// Matches labels in code: jsdom's selector engine mishandles "+" inside attribute values.
+function byLabel<T extends Element>(nodes: NodeListOf<T>, label: string): T | null {
+  return Array.from(nodes).find((node) => node.getAttribute('aria-label') === label) ?? null
+}
+
+function expandButton(container: HTMLElement, title: string): HTMLButtonElement | null {
+  return byLabel(container.querySelectorAll<HTMLButtonElement>('.qaqc-expand-button'), `Expand ${title}`)
+}
+
+function dialog(container: HTMLElement, title: string): HTMLElement | null {
+  return byLabel(container.querySelectorAll<HTMLElement>('[role="dialog"]'), title)
+}
+
+function expandPanel(container: HTMLElement, title: string): void {
+  const button = expandButton(container, title)
+  if (!button) throw new Error(`expand button for ${title} missing`)
+  act(() => {
+    button.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+  })
+}
+
+function dashboardElement(
+  index: InspectionDashboardProps['index'],
+  viewport: InspectionDashboardProps['viewport'] = { width: 1280, height: 720 },
+): ReactElement {
   return (
     <InspectionDashboard
       title="Electrical Inspections"
@@ -173,7 +197,7 @@ function dashboardElement(index: InspectionDashboardProps['index']): ReactElemen
       describeCharts
       loading={false}
       footnotes={[]}
-      viewport={{ width: 1280, height: 720 }}
+      viewport={viewport}
       onHover={vi.fn()}
     />
   )
@@ -257,6 +281,78 @@ describe('InspectionDashboard with measured charts', () => {
     view.rerender(dashboardElement(trimmedIndex))
     expect(weekTitle(view.container)).toBe("WW42'2026")
     expect(lastHitWeek(view.container)).toBe('202642')
+  })
+
+  it('gives each chart panel an expand button', () => {
+    stubSize()
+    view = draw()
+    expect(view.container.querySelectorAll('.qaqc-panel .qaqc-expand-button')).toHaveLength(3)
+  })
+
+  it('expands Inspections by Building into a table of every building in the window', () => {
+    stubSize()
+    view = draw()
+    expandPanel(view.container, 'Inspections by Building')
+    const table = dialog(view.container, 'Inspections by Building')?.querySelector('table.qaqc-table')
+    expect(table?.querySelectorAll('tbody tr')).toHaveLength(19)
+    expect(view.container.querySelector('.qaqc-root.is-expanded')).not.toBeNull()
+  })
+
+  it('collapses on Esc and returns focus to the expand button', () => {
+    stubSize()
+    view = draw()
+    expandPanel(view.container, 'Inspections by Building')
+    const open = dialog(view.container, 'Inspections by Building')
+    if (!open) throw new Error('dialog missing')
+    act(() => {
+      open.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    })
+    expect(view.container.querySelector('[role="dialog"]')).toBeNull()
+    expect(view.container.querySelector('.qaqc-root.is-expanded')).toBeNull()
+    expect(document.activeElement).toBe(expandButton(view.container, 'Inspections by Building'))
+  })
+
+  it('expands Finals + SORs with a window summary and bar value labels', () => {
+    stubSize()
+    view = draw()
+    expandPanel(view.container, 'Finals + SORs by Work Week')
+    const expandedTrend = dialog(view.container, 'Finals + SORs by Work Week')
+    expect(expandedTrend?.querySelector('.qaqc-summary')).not.toBeNull()
+    expect(expandedTrend?.querySelectorAll('.qaqc-bar-value').length).toBeGreaterThan(0)
+  })
+
+  it('expands NCR Pass Rate Trend with the NCR weeks listed newest first', () => {
+    stubSize()
+    view = draw()
+    expandPanel(view.container, 'NCR Pass Rate Trend')
+    const items = view.container.querySelectorAll('[role="dialog"] .qaqc-issue-list > li')
+    expect(items).toHaveLength(2)
+    expect(items[0].querySelector('strong')?.textContent).toBe("WW23'2026")
+  })
+
+  it('has no expand buttons when interactions are not allowed', () => {
+    stubSize()
+    view = draw({ interactive: false })
+    expect(view.container.querySelector('.qaqc-expand-button')).toBeNull()
+  })
+
+  it('keeps the expanded chart open while the week changes', () => {
+    stubSize()
+    view = draw()
+    expandPanel(view.container, 'Finals + SORs by Work Week')
+    pickWeekInDropdown(view.container, '202641')
+    expect(dialog(view.container, 'Finals + SORs by Work Week')).not.toBeNull()
+    expect(cardValue(view.container, 'Final Inspections')).toBe('6')
+  })
+
+  it('hides the expanded chart on a short tile and brings it back when the tile grows', () => {
+    stubSize()
+    view = draw()
+    expandPanel(view.container, 'NCR Pass Rate Trend')
+    view.rerender(dashboardElement(INDEX, { width: 1280, height: 400 }))
+    expect(view.container.querySelector('[role="dialog"]')).toBeNull()
+    view.rerender(dashboardElement(INDEX))
+    expect(dialog(view.container, 'NCR Pass Rate Trend')).not.toBeNull()
   })
 })
 

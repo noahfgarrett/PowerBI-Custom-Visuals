@@ -1,16 +1,21 @@
 import { Building2, ChartColumnStacked, CircleAlert, CircleCheck, ClipboardCheck, Gauge, TrendingUp, Wrench, type LucideIcon } from 'lucide-react'
-import { useMemo, useState, type ReactElement } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react'
 
 import type { TooltipHandler } from '../chartTypes'
+import { useElementSize, type ElementSize } from '../hooks/useElementSize'
+import { BuildingTable } from './BuildingTable'
 import { ChartPanel, type LegendItem } from './ChartPanel'
+import { ExpandedPanel, type PanelBox } from './ExpandedPanel'
 import { Footnotes } from './Footnotes'
 import { HorizontalBarChart } from './HorizontalBarChart'
+import { IssueWeekList } from './IssueWeekList'
 import { KpiCard } from './KpiCard'
 import { KpiGroup } from './KpiGroup'
 import { LineChart } from './LineChart'
 import { LoadingBar } from './LoadingBar'
 import { RangeToggle } from './RangeToggle'
 import { StackedBarChart } from './StackedBarChart'
+import { WindowSummary } from './WindowSummary'
 import { WorkWeekPicker } from './WorkWeekPicker'
 import {
   formatCount,
@@ -30,6 +35,21 @@ export const COMPACT_WIDTH = 900
 export const CARDS_ONLY_HEIGHT = 420
 const NO_ROWS_MESSAGE = 'No inspections match the current filters'
 const EMPTY_RANGE_MESSAGE = 'No inspections in this range'
+const ZERO_BOX: PanelBox = { top: 0, left: 0, width: 0, height: 0 }
+
+type PanelId = 'trend' | 'passRate' | 'buildings'
+
+const PANEL_IDS: readonly PanelId[] = ['trend', 'passRate', 'buildings'] as const
+
+interface PanelConfig {
+  title: string
+  icon: LucideIcon
+  legend: LegendItem[]
+  emptyMessage: string | null
+  className?: string
+  renderChart: (size: ElementSize) => ReactNode
+  renderExpanded: (size: ElementSize) => ReactNode
+}
 
 export interface InspectionDashboardProps {
   title: string
@@ -43,6 +63,32 @@ export interface InspectionDashboardProps {
   footnotes: string[]
   viewport: { width: number; height: number }
   onHover: TooltipHandler
+}
+
+/** The visible area of the root, in the root's scroll-content coordinates. */
+function rootBox(root: HTMLElement): PanelBox {
+  return { top: root.scrollTop, left: 0, width: root.clientWidth, height: root.clientHeight }
+}
+
+function originBox(root: HTMLElement, panel: HTMLElement | null): PanelBox | null {
+  if (!panel) return null
+  const rootRect = root.getBoundingClientRect()
+  const rect = panel.getBoundingClientRect()
+  return { top: rect.top - rootRect.top + root.scrollTop, left: rect.left - rootRect.left, width: rect.width, height: rect.height }
+}
+
+interface ChartFillProps {
+  children: (size: ElementSize) => ReactNode
+}
+
+/** A flexible chart area inside an expanded panel; the chart gets this area's size, not the whole body's. */
+function ChartFill({ children }: ChartFillProps): ReactElement {
+  const [ref, size] = useElementSize<HTMLDivElement>()
+  return (
+    <div ref={ref} className="qaqc-chart-fill">
+      {size.width > 0 && size.height > 0 ? children(size) : null}
+    </div>
+  )
 }
 
 function pointsTone(delta: number | null): DeltaTone {
@@ -69,6 +115,18 @@ export function InspectionDashboard({
   const [selectedKey, setSelectedKey] = useState(index.currentWeek.key)
   const [windowEndKey, setWindowEndKey] = useState(index.currentWeek.key)
   const [range, setRange] = useState<RangeMode>('recent')
+  const [expanded, setExpanded] = useState<PanelId | null>(null)
+  const rootRef = useRef<HTMLDivElement | null>(null)
+  const panelRefs = useRef<Record<PanelId, HTMLElement | null>>({ trend: null, passRate: null, buildings: null })
+  const restoreFocusRef = useRef<PanelId | null>(null)
+
+  // Return focus to the expand button once the overlay is gone and the grid is no longer inert.
+  useEffect(() => {
+    const id = restoreFocusRef.current
+    if (expanded !== null || id === null) return
+    restoreFocusRef.current = null
+    panelRefs.current[id]?.querySelector<HTMLButtonElement>('.qaqc-expand-button')?.focus()
+  }, [expanded])
 
   // Keep the user's week across data refreshes when it still exists; otherwise use the current week.
   const isSelectionInData = index.positionByKey.has(selectedKey)
@@ -83,7 +141,14 @@ export function InspectionDashboard({
   const previousLabel = shortWeekLabel(model.previousWeek)
   const isCompact = viewport.width < COMPACT_WIDTH
   const isCardsOnly = viewport.height < CARDS_ONLY_HEIGHT
-  const rootClass = ['qaqc-root', isCompact ? 'is-compact' : '', isCardsOnly ? 'is-cards-only' : ''].filter(Boolean).join(' ')
+  // Cards-only tiles have no charts; the expanded panel comes back if the tile grows again.
+  const isOverlayShown = expanded !== null && !isCardsOnly
+  const rootClass = [
+    'qaqc-root',
+    isCompact ? 'is-compact' : '',
+    isCardsOnly ? 'is-cards-only' : '',
+    isOverlayShown ? 'is-expanded' : '',
+  ].filter(Boolean).join(' ')
   const hasFinalsInWindow = model.passRateTrend.some((point) => point.rate !== null)
 
   const finalsSorsLegend: LegendItem[] = [
@@ -93,6 +158,95 @@ export function InspectionDashboard({
   const passRateDetail = toDate.passRateDeltaPoints === null
     ? `${formatCount(toDate.cleanFinals)} / ${formatCount(toDate.finals)} Finals`
     : `${formatCount(toDate.cleanFinals)} / ${formatCount(toDate.finals)} Finals · ${formatPointsDelta(toDate.passRateDeltaPoints)}`
+
+  function renderTrend(size: ElementSize, showValues: boolean): ReactElement {
+    return (
+      <StackedBarChart
+        weeks={model.window}
+        selectedKey={model.selectedWeek.key}
+        width={size.width}
+        height={size.height}
+        colors={colors}
+        interactive={interactive}
+        animate={animate}
+        describe={describeCharts}
+        showValues={showValues}
+        onSelectWeek={setSelectedKey}
+        onHover={onHover}
+      />
+    )
+  }
+
+  function renderPassRate(size: ElementSize, labelIssueWeeks: boolean): ReactElement {
+    return (
+      <LineChart
+        points={model.passRateTrend}
+        selectedKey={model.selectedWeek.key}
+        width={size.width}
+        height={size.height}
+        colors={colors}
+        describe={describeCharts}
+        labelIssueWeeks={labelIssueWeeks}
+        onHover={onHover}
+      />
+    )
+  }
+
+  const panels: Record<PanelId, PanelConfig> = {
+    trend: {
+      title: 'Finals + SORs by Work Week',
+      icon: ChartColumnStacked,
+      legend: [...finalsSorsLegend, { label: 'Issue found', color: colors.bad, shape: 'dot' }],
+      emptyMessage: model.hasData ? null : NO_ROWS_MESSAGE,
+      className: 'qaqc-panel-main',
+      renderChart: (size) => renderTrend(size, false),
+      renderExpanded: () => (
+        <div className="qaqc-expanded-stack">
+          <WindowSummary totals={model.windowTotals} />
+          <ChartFill>{(size) => renderTrend(size, true)}</ChartFill>
+        </div>
+      ),
+    },
+    passRate: {
+      title: 'NCR Pass Rate Trend',
+      icon: TrendingUp,
+      legend: [
+        { label: 'Pass rate', color: colors.series1, shape: 'bar' },
+        { label: 'Week with NCR', color: colors.bad, shape: 'dot' },
+      ],
+      emptyMessage: hasFinalsInWindow ? null : 'No Final inspections in this range',
+      renderChart: (size) => renderPassRate(size, false),
+      renderExpanded: () => (
+        <div className="qaqc-expanded-split">
+          <ChartFill>{(size) => renderPassRate(size, true)}</ChartFill>
+          <IssueWeekList points={model.passRateTrend} />
+        </div>
+      ),
+    },
+    buildings: {
+      title: 'Inspections by Building',
+      icon: Building2,
+      legend: finalsSorsLegend,
+      emptyMessage: model.buildings.length > 0 ? null : model.hasData ? EMPTY_RANGE_MESSAGE : NO_ROWS_MESSAGE,
+      renderChart: (size) => (
+        <HorizontalBarChart
+          bars={model.buildings}
+          other={model.otherBuildings}
+          width={size.width}
+          height={size.height}
+          colors={colors}
+          describe={describeCharts}
+          onHover={onHover}
+        />
+      ),
+      renderExpanded: () => <BuildingTable rows={model.allBuildings} />,
+    },
+  }
+
+  function closeExpanded(id: PanelId): void {
+    restoreFocusRef.current = id
+    setExpanded(null)
+  }
 
   function changeRange(mode: RangeMode): void {
     setRange(mode)
@@ -112,9 +266,9 @@ export function InspectionDashboard({
   }
 
   return (
-    <div className={rootClass}>
+    <div ref={rootRef} className={rootClass}>
       <LoadingBar active={loading} />
-      <div className="qaqc-header">
+      <div className="qaqc-header" inert={isOverlayShown}>
         <div className="qaqc-title">
           <span className="qaqc-title-icon">
             <Icon size={16} aria-hidden="true" />
@@ -127,7 +281,7 @@ export function InspectionDashboard({
         </div>
       </div>
 
-      <div className="qaqc-kpi-row">
+      <div className="qaqc-kpi-row" inert={isOverlayShown}>
         <KpiGroup title={model.selectedWeek.label} variant="week">
           <KpiCard
             label="Final Inspections"
@@ -183,69 +337,43 @@ export function InspectionDashboard({
       </div>
 
       {!isCardsOnly && (
-        <div className="qaqc-charts">
-          <ChartPanel
-            className="qaqc-panel-main"
-            title="Finals + SORs by Work Week"
-            icon={ChartColumnStacked}
-            legend={[...finalsSorsLegend, { label: 'Issue found', color: colors.bad, shape: 'dot' }]}
-            emptyMessage={model.hasData ? null : NO_ROWS_MESSAGE}
-          >
-            {(size) => (
-              <StackedBarChart
-                weeks={model.window}
-                selectedKey={model.selectedWeek.key}
-                width={size.width}
-                height={size.height}
-                colors={colors}
-                interactive={interactive}
-                animate={animate}
-                describe={describeCharts}
-                onSelectWeek={setSelectedKey}
-                onHover={onHover}
-              />
-            )}
-          </ChartPanel>
-          <ChartPanel
-            title="NCR Pass Rate Trend"
-            icon={TrendingUp}
-            legend={[
-              { label: 'Pass rate', color: colors.series1, shape: 'bar' },
-              { label: 'Week with NCR', color: colors.bad, shape: 'dot' },
-            ]}
-            emptyMessage={hasFinalsInWindow ? null : 'No Final inspections in this range'}
-          >
-            {(size) => (
-              <LineChart
-                points={model.passRateTrend}
-                selectedKey={model.selectedWeek.key}
-                width={size.width}
-                height={size.height}
-                colors={colors}
-                describe={describeCharts}
-                onHover={onHover}
-              />
-            )}
-          </ChartPanel>
-          <ChartPanel
-            title="Inspections by Building"
-            icon={Building2}
-            legend={finalsSorsLegend}
-            emptyMessage={model.buildings.length > 0 ? null : model.hasData ? EMPTY_RANGE_MESSAGE : NO_ROWS_MESSAGE}
-          >
-            {(size) => (
-              <HorizontalBarChart
-                bars={model.buildings}
-                other={model.otherBuildings}
-                width={size.width}
-                height={size.height}
-                colors={colors}
-                describe={describeCharts}
-                onHover={onHover}
-              />
-            )}
-          </ChartPanel>
+        <div className="qaqc-charts" inert={isOverlayShown}>
+          {PANEL_IDS.map((id) => {
+            const panel = panels[id]
+            return (
+              <ChartPanel
+                key={id}
+                className={panel.className}
+                title={panel.title}
+                icon={panel.icon}
+                legend={panel.legend}
+                emptyMessage={panel.emptyMessage}
+                sectionRef={(element) => {
+                  panelRefs.current[id] = element
+                }}
+                onExpand={interactive ? () => setExpanded(id) : undefined}
+              >
+                {panel.renderChart}
+              </ChartPanel>
+            )
+          })}
         </div>
+      )}
+
+      {isOverlayShown && (
+        <ExpandedPanel
+          key={expanded}
+          title={panels[expanded].title}
+          icon={panels[expanded].icon}
+          legend={panels[expanded].legend}
+          emptyMessage={panels[expanded].emptyMessage}
+          animate={animate}
+          getRootBox={() => (rootRef.current ? rootBox(rootRef.current) : ZERO_BOX)}
+          getOriginBox={() => (rootRef.current ? originBox(rootRef.current, panelRefs.current[expanded]) : null)}
+          onClosed={() => closeExpanded(expanded)}
+        >
+          {panels[expanded].renderExpanded}
+        </ExpandedPanel>
       )}
 
       <Footnotes notes={footnotes} />
