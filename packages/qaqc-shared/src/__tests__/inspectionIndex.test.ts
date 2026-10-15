@@ -45,6 +45,25 @@ describe('buildInspectionIndex', () => {
     expect(index.buildingsByWeek[2].get('F63.1')).toEqual({ finals: 1, sors: 0 })
   })
 
+  it('groups buildings that differ only by case or spacing under the first spelling seen', () => {
+    const rows = [
+      ["WW42'2026", 'Final', '', 'Off-site Warehouse'],
+      ["WW42'2026", 'SOR', '', 'off-site  WAREHOUSE'],
+    ]
+    const index = buildInspectionIndex(rows, COLUMNS, TODAY)
+    expect([...index.buildingsByWeek[0].keys()]).toEqual(['Off-site Warehouse'])
+    expect(index.buildingsByWeek[0].get('Off-site Warehouse')).toEqual({ finals: 1, sors: 1 })
+  })
+
+  it('uses one display name for a building across weeks', () => {
+    const rows = [
+      ["WW41'2026", 'Final', '', 'Fire water pump house'],
+      ["WW42'2026", 'Final', '', 'Fire water Pump House'],
+    ]
+    const index = buildInspectionIndex(rows, COLUMNS, TODAY)
+    expect([...index.buildingsByWeek[1].keys()]).toEqual(['Fire water pump house'])
+  })
+
   it('counts skipped and future rows separately', () => {
     const index = buildInspectionIndex(ROWS, COLUMNS, TODAY)
     expect(index.totalRows).toBe(7)

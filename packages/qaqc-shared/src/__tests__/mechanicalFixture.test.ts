@@ -39,11 +39,11 @@ describe('Mechanical export (2026-10-14)', () => {
     expect(all.passRateTrend.filter((point) => point.hadIssue).map((point) => point.week.label)).toEqual(["WW08'2026"])
   })
 
-  it('ranks F63.2 first and groups 12 smaller buildings as Other', () => {
+  it('ranks F63.2 first and groups 11 smaller buildings as Other', () => {
     const model = buildInspectionModel(index, defaultViewState(index))
     expect(model.buildings[0]).toEqual({ building: 'F63.2', finals: 14, sors: 2 })
     expect(model.buildings).toHaveLength(8)
-    expect(model.otherBuildings?.count).toBe(12)
+    expect(model.otherBuildings?.count).toBe(11)
     expect((model.otherBuildings?.finals ?? 0) + (model.otherBuildings?.sors ?? 0)).toBe(14)
   })
 })

@@ -82,6 +82,8 @@ export function buildInspectionIndex(
   const weekCache = new Map<string, WorkWeek | null>()
   const phaseCache = new Map<string, InspectionPhase>()
   const buckets = new Map<number, WeekBucket>()
+  // Buildings that differ only by case or spacing share one tally, shown under the first spelling seen.
+  const buildingNames = new Map<string, string>()
   let skippedRows = 0
   let futureRows = 0
   let firstWeek: WorkWeek | null = null
@@ -107,7 +109,10 @@ export function buildInspectionIndex(
       bucket = { finals: 0, sors: 0, issuesFound: 0, buildings: new Map() }
       buckets.set(week.key, bucket)
     }
-    const building = normalizeBuilding(row[columns.building])
+    const spelling = normalizeBuilding(row[columns.building])
+    const buildingKey = spelling.toLowerCase().replace(/\s+/g, ' ')
+    const building = buildingNames.get(buildingKey) ?? spelling
+    buildingNames.set(buildingKey, building)
     let tally = bucket.buildings.get(building)
     if (!tally) {
       tally = { finals: 0, sors: 0 }
