@@ -68,6 +68,8 @@ export interface PassRatePoint {
   cleanFinals: number
   totalFinals: number
   hadIssue: boolean
+  /** Final inspections with an issue found in this week. */
+  issuesFound: number
 }
 
 export interface BuildingBar {
@@ -80,6 +82,13 @@ export interface OtherBuildings {
   count: number
   finals: number
   sors: number
+}
+
+export interface WindowTotals {
+  finals: number
+  sors: number
+  issuesFound: number
+  weeks: number
 }
 
 export interface InspectionModel {
@@ -104,6 +113,9 @@ export interface InspectionModel {
   window: WeekCounts[]
   passRateTrend: PassRatePoint[]
   buildings: BuildingBar[]
+  /** Every building in the window, ranked. `buildings` is the top slice of this list. */
+  allBuildings: BuildingBar[]
   otherBuildings: OtherBuildings | null
+  windowTotals: WindowTotals
   hasData: boolean
 }

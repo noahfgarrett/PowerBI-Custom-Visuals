@@ -89,6 +89,18 @@ describe('buildInspectionModel', () => {
     expect(ww40?.hadIssue).toBe(true)
     expect(ww40?.totalFinals).toBe(120)
     expect(trend.filter((point) => point.hadIssue)).toHaveLength(1)
+    expect(ww40?.issuesFound).toBe(1)
+  })
+
+  it('totals Finals, SORs, issues, and weeks over the window', () => {
+    const index = syntheticIndex()
+    const model = buildInspectionModel(index, defaultViewState(index))
+    expect(model.windowTotals).toEqual({
+      finals: model.window.reduce((sum, item) => sum + item.finals, 0),
+      sors: model.window.reduce((sum, item) => sum + item.sors, 0),
+      issuesFound: model.window.reduce((sum, item) => sum + item.issuesFound, 0),
+      weeks: 30,
+    })
   })
 
   it('ranks the top 8 buildings and groups the rest as Other', () => {
@@ -99,6 +111,7 @@ describe('buildInspectionModel', () => {
     const model = buildInspectionModel(index, defaultViewState(index))
     expect(model.buildings.map((bar) => bar.building)).toEqual(names.slice(0, 8))
     expect(model.otherBuildings).toEqual({ count: 2, finals: 2, sors: 0 })
+    expect(model.allBuildings.map((bar) => bar.building)).toEqual(names)
   })
 
   it('reports no data for an empty index', () => {

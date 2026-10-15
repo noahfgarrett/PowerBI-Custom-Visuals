@@ -10,6 +10,7 @@ import type {
   OtherBuildings,
   ViewState,
   WeekCounts,
+  WindowTotals,
   WorkWeek,
 } from './types'
 import { enumerateWorkWeeks, parseWorkWeek, previousWorkWeek, toIsoWorkWeek } from './workWeeks'
@@ -190,7 +191,7 @@ function summarizeBuildings(
   index: InspectionIndex,
   start: number,
   end: number,
-): { buildings: BuildingBar[]; otherBuildings: OtherBuildings | null } {
+): { buildings: BuildingBar[]; allBuildings: BuildingBar[]; otherBuildings: OtherBuildings | null } {
   const totals = new Map<string, BuildingTally>()
   for (let position = start; position <= end; position += 1) {
     for (const [building, tally] of index.buildingsByWeek[position]) {
@@ -206,6 +207,7 @@ function summarizeBuildings(
   const rest = ranked.slice(TOP_BUILDING_COUNT)
   return {
     buildings: ranked.slice(0, TOP_BUILDING_COUNT),
+    allBuildings: ranked,
     otherBuildings: rest.length === 0
       ? null
       : {
@@ -227,7 +229,17 @@ export function buildInspectionModel(index: InspectionIndex, view: ViewState): I
   const passRate = passRateAt(index, selectedPosition)
   const previousPassRate = passRateAt(index, selectedPosition - 1)
   const window = index.weeks.slice(startPosition, endPosition + 1)
-  const { buildings, otherBuildings } = summarizeBuildings(index, startPosition, endPosition)
+  const { buildings, allBuildings, otherBuildings } = summarizeBuildings(index, startPosition, endPosition)
+
+  const windowTotals = window.reduce<WindowTotals>(
+    (totals, item) => ({
+      finals: totals.finals + item.finals,
+      sors: totals.sors + item.sors,
+      issuesFound: totals.issuesFound + item.issuesFound,
+      weeks: totals.weeks,
+    }),
+    { finals: 0, sors: 0, issuesFound: 0, weeks: window.length },
+  )
 
   return {
     selectedWeek: selected.week,
@@ -257,10 +269,13 @@ export function buildInspectionModel(index: InspectionIndex, view: ViewState): I
         cleanFinals: totalFinals - index.cumulativeIssues[position],
         totalFinals,
         hadIssue: item.issuesFound > 0,
+        issuesFound: item.issuesFound,
       }
     }),
     buildings,
+    allBuildings,
     otherBuildings,
+    windowTotals,
     hasData: index.cumulativeFinals[lastPosition] + index.cumulativeSors[lastPosition] > 0,
   }
 }

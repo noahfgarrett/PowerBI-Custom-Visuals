@@ -48,6 +48,13 @@ describe('Electrical export (2026-10-14)', () => {
     ])
   })
 
+  it('lists all 19 buildings and totals the 30-week window', () => {
+    const model = buildInspectionModel(index, defaultViewState(index))
+    expect(model.windowTotals.weeks).toBe(30)
+    expect(model.allBuildings).toHaveLength(19)
+    expect(model.allBuildings[0]).toEqual({ building: 'F63.2', finals: 138, sors: 15 })
+  })
+
   it('ranks F63.2 first and groups 11 smaller buildings as Other', () => {
     const model = buildInspectionModel(index, defaultViewState(index))
     expect(model.buildings[0]).toEqual({ building: 'F63.2', finals: 138, sors: 15 })

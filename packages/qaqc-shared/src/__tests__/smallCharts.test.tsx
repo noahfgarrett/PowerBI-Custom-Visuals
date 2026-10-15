@@ -14,7 +14,7 @@ const COLORS: ChartColors = {
 }
 
 function point(week: number, rate: number | null, hadIssue = false): PassRatePoint {
-  return { week: makeWorkWeek(2026, week), rate, cleanFinals: 236, totalFinals: 238, hadIssue }
+  return { week: makeWorkWeek(2026, week), rate, cleanFinals: 236, totalFinals: 238, hadIssue, issuesFound: hadIssue ? 1 : 0 }
 }
 
 let view: Rendered | null = null

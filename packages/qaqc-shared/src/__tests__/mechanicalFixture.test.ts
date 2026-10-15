@@ -39,6 +39,12 @@ describe('Mechanical export (2026-10-14)', () => {
     expect(all.passRateTrend.filter((point) => point.hadIssue).map((point) => point.week.label)).toEqual(["WW08'2026"])
   })
 
+  it('lists all 19 buildings and finds no issues in the default window', () => {
+    const model = buildInspectionModel(index, defaultViewState(index))
+    expect(model.allBuildings).toHaveLength(19)
+    expect(model.windowTotals.issuesFound).toBe(0)
+  })
+
   it('ranks F63.2 first and groups 11 smaller buildings as Other', () => {
     const model = buildInspectionModel(index, defaultViewState(index))
     expect(model.buildings[0]).toEqual({ building: 'F63.2', finals: 14, sors: 2 })
