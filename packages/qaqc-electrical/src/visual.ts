@@ -44,7 +44,8 @@ export class QaqcElectricalVisual implements powerbi.extensibility.visual.IVisua
   private renderError: unknown = null
   private viewport: powerbi.IViewport = { width: 0, height: 0 }
 
-  constructor(options: VisualConstructorOptions) {
+  constructor(options?: VisualConstructorOptions) {
+    if (!options) throw new Error('QAQC Electrical requires a Power BI visual host.')
     this.host = options.host
     this.element = options.element
     this.element.classList.add('qaqc-host')
