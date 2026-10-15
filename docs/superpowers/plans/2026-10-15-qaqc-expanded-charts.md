@@ -454,6 +454,14 @@ export function ExpandedPanel({
   color: var(--qaqc-accent);
 }
 
+.qaqc-table th[aria-sort="ascending"] button::after {
+  content: " \2191";
+}
+
+.qaqc-table th[aria-sort="descending"] button::after {
+  content: " \2193";
+}
+
 .qaqc-table td {
   padding: 7px 10px;
   border-bottom: 1px solid var(--qaqc-hairline);
