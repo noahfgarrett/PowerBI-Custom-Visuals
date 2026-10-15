@@ -28,7 +28,7 @@ describe('ElectricalSettingsModel', () => {
 
   it('builds four Format pane cards with the object names capabilities.json declares', () => {
     const formattingModel = new FormattingSettingsService().buildFormattingModel(new ElectricalSettingsModel())
-    expect(formattingModel.cards.map((card) => card.uid.replace(/-card$/, ''))).toEqual([
+    expect(formattingModel.cards.map((card) => ('uid' in card ? card.uid : '').replace(/-card$/, ''))).toEqual([
       'colors',
       'cardSettings',
       'animationSettings',
