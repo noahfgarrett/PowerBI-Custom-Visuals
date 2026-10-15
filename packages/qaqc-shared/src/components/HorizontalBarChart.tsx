@@ -10,6 +10,7 @@ const MAX_LABEL_WIDTH = 132
 const VALUE_SPACE = 34
 const MAX_ROW_HEIGHT = 24
 const MAX_BAR_THICKNESS = 14
+const MIN_ROW_HEIGHT = 12
 const CHAR_WIDTH = 6.4
 
 export interface HorizontalBarChartProps {
@@ -29,12 +30,15 @@ interface Row {
 }
 
 export function HorizontalBarChart({ bars, other, width, height, colors, describe, onHover }: HorizontalBarChartProps): ReactElement {
-  const rows: Row[] = [
+  const allRows: Row[] = [
     ...bars.map((bar) => ({ label: bar.building, finals: bar.finals, sors: bar.sors })),
     ...(other ? [{ label: `Other (${other.count} buildings)`, finals: other.finals, sors: other.sors }] : []),
   ]
+  const rows = allRows.slice(0, Math.max(1, Math.floor(height / MIN_ROW_HEIGHT)))
+  const widestTotalChars = rows.reduce((max, row) => Math.max(max, formatCount(row.finals + row.sors).length), 0)
+  const valueSpace = Math.max(VALUE_SPACE, Math.ceil(widestTotalChars * CHAR_WIDTH) + 8)
   const labelWidth = Math.min(MAX_LABEL_WIDTH, width * LABEL_RATIO)
-  const plotWidth = Math.max(0, width - labelWidth - VALUE_SPACE)
+  const plotWidth = Math.max(0, width - labelWidth - valueSpace)
   const rowHeight = rows.length > 0 ? Math.min(MAX_ROW_HEIGHT, height / rows.length) : 0
   const thickness = Math.min(MAX_BAR_THICKNESS, rowHeight * 0.64)
   const maxTotal = rows.reduce((max, row) => Math.max(max, row.finals + row.sors), 1)

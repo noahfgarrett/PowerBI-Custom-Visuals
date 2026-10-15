@@ -25,7 +25,6 @@ export function LineChart({ points, selectedKey, width, height, colors, describe
   const step = points.length > 1 ? plotWidth / (points.length - 1) : 0
   const x = (index: number): number => (points.length > 1 ? MARGIN.left + index * step : MARGIN.left + plotWidth / 2)
   const y = (rate: number): number => MARGIN.top + plotHeight - ((rate - domain.min) / (domain.max - domain.min)) * plotHeight
-  const band = points.length > 0 ? plotWidth / points.length : plotWidth
 
   let line = ''
   let previousWasNull = true
@@ -38,6 +37,7 @@ export function LineChart({ points, selectedKey, width, height, colors, describe
     previousWasNull = false
   })
 
+  const hitWidth = points.length > 1 ? step : plotWidth
   const lastIndex = points.reduce((found, item, index) => (item.rate !== null ? index : found), -1)
   const selectedIndex = points.findIndex((item) => item.week.key === selectedKey)
   const ticks = [domain.min, (domain.min + domain.max) / 2, domain.max]
@@ -70,6 +70,17 @@ export function LineChart({ points, selectedKey, width, height, colors, describe
         <line x1={x(selectedIndex)} x2={x(selectedIndex)} y1={MARGIN.top} y2={MARGIN.top + plotHeight} stroke={colors.accent} strokeOpacity={0.35} />
       )}
       <path className="qaqc-line" d={line} fill="none" stroke={colors.series1} strokeWidth={2} strokeLinejoin="round" />
+      {lastRate !== null && (
+        <circle
+          className="qaqc-end-dot"
+          cx={x(lastIndex)}
+          cy={y(lastRate)}
+          r={3}
+          fill={colors.series1}
+          stroke={colors.card}
+          strokeWidth={2}
+        />
+      )}
       {points.map((item, index) =>
         item.hadIssue && item.rate !== null ? (
           <circle
@@ -95,9 +106,9 @@ export function LineChart({ points, selectedKey, width, height, colors, describe
             key={`hit-${item.week.key}`}
             className="qaqc-hit"
             data-week={item.week.key}
-            x={x(index) - band / 2}
+            x={x(index) - hitWidth / 2}
             y={MARGIN.top}
-            width={band}
+            width={hitWidth}
             height={plotHeight}
             fill="transparent"
             onMouseMove={(event) => showTooltip(item, event)}

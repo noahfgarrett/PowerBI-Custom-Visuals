@@ -1,6 +1,10 @@
 import type { ReactElement } from 'react'
 
-export function LoadingBar({ active }: { active: boolean }): ReactElement | null {
+export interface LoadingBarProps {
+  active: boolean
+}
+
+export function LoadingBar({ active }: LoadingBarProps): ReactElement | null {
   if (!active) return null
   return (
     <div className="qaqc-loading" role="progressbar" aria-label="Loading more rows">

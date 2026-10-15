@@ -70,6 +70,13 @@ describe('LineChart', () => {
     })
   })
 
+  it('marks a lone point with an end dot', () => {
+    view = render(
+      <LineChart points={[point(42, 100)]} selectedKey={202642} width={300} height={160} colors={COLORS} describe onHover={vi.fn()} />,
+    )
+    expect(view.container.querySelectorAll('.qaqc-end-dot')).toHaveLength(1)
+  })
+
   it('hides the tooltip when the pointer leaves a hit area', () => {
     const onHover = vi.fn()
     view = render(
@@ -126,6 +133,24 @@ describe('HorizontalBarChart', () => {
       clientX: 1,
       clientY: 2,
     })
+  })
+
+  it('keeps value labels inside the chart for large totals', () => {
+    view = render(
+      <HorizontalBarChart bars={[{ building: 'F63.2', finals: 123456, sors: 0 }]} other={null} width={300} height={120} colors={COLORS} describe onHover={vi.fn()} />,
+    )
+    const value = view.container.querySelector('.qaqc-value-text')
+    if (!value) throw new Error('value text missing')
+    expect(value.textContent).toBe('123,456')
+    expect(Number(value.getAttribute('x')) + 7 * 6.4).toBeLessThanOrEqual(300)
+  })
+
+  it('drops rows that do not fit at the minimum row height', () => {
+    const bars = Array.from({ length: 9 }, (_, index) => ({ building: `B${index}`, finals: 10, sors: 1 }))
+    view = render(
+      <HorizontalBarChart bars={bars} other={null} width={300} height={60} colors={COLORS} describe onHover={vi.fn()} />,
+    )
+    expect(view.container.querySelectorAll('.qaqc-row-label')).toHaveLength(5)
   })
 
   it('hides the tooltip when the pointer leaves a hit area', () => {
