@@ -292,6 +292,11 @@
   font-size: 30px;
 }
 
+// Narrow tiles stack the groups, so the values stay smaller and a footnote line still fits on a 300 px tile.
+.qaqc-root.is-cards-only.is-compact .qaqc-kpi-value {
+  font-size: 24px;
+}
+
 .qaqc-kpi-detail {
   display: inline-flex;
   align-items: center;
@@ -1150,6 +1155,57 @@
   font-weight: 600;
 }
 
+// Expanded Overall Issue Aging: the strip and its rows, then the closed and open split, in a centred column.
+.qaqc-aging-expanded {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  max-width: 880px;
+  height: 100%;
+  margin: 0 auto;
+  padding-top: 10px;
+  overflow-y: auto;
+}
+
+.qaqc-aging-expanded > .qaqc-aging {
+  flex: 0 0 auto;
+  gap: 12px;
+  height: auto;
+}
+
+.qaqc-aging-expanded .qaqc-aging-strip {
+  height: 12px;
+}
+
+.qaqc-aging-expanded .qaqc-aging-row {
+  grid-template-columns: 110px minmax(0, 1fr) auto;
+}
+
+.qaqc-aging-expanded .qaqc-aging-label,
+.qaqc-aging-expanded .qaqc-aging-row strong {
+  font-size: 12px;
+}
+
+.qaqc-aging-expanded .qaqc-aging-track {
+  height: 10px;
+}
+
+.qaqc-aging-expanded > .qaqc-table-wrap {
+  flex: 0 0 auto;
+  height: auto;
+  overflow: visible;
+}
+
+// Its headers are plain text, not sort buttons, so they take the sort buttons' padding and type.
+.qaqc-aging-split-table thead th {
+  padding: 8px 10px;
+  color: var(--qaqc-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 // Windowed tables (hooks/useVirtualRows.ts) set every body row to TABLE_ROW_HEIGHT inline; cells stay on one line
 // so no row grows past it, and long text ends in an ellipsis with the full text in its title.
 .qaqc-table.is-windowed thead th,
@@ -1241,6 +1297,8 @@
   flex-direction: column;
   gap: 10px;
   height: 100%;
+  // On a short tile the page scrolls, so the table keeps its minimum height below.
+  overflow-y: auto;
 }
 
 // Two groups of two cards; they stack when the overlay is too narrow for both.
@@ -1300,6 +1358,11 @@
   flex: 1 1 0;
   height: auto;
   min-height: 0;
+}
+
+// The header and at least four rows (TABLE_ROW_HEIGHT 32) stay in view however short the tile; beats is-flex-fill's 0.
+.qaqc-issue-detail .qaqc-issue-detail-wrap {
+  min-height: 164px;
 }
 
 .qaqc-issue-detail-wrap {

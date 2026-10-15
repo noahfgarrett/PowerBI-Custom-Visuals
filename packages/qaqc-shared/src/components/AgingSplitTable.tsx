@@ -12,7 +12,7 @@ export interface AgingSplitTableProps {
 export function AgingSplitTable({ buckets }: AgingSplitTableProps): ReactElement {
   return (
     <div className="qaqc-table-wrap">
-      <table className="qaqc-table">
+      <table className="qaqc-table qaqc-aging-split-table">
         <caption className="qaqc-visually-hidden">Issue aging, closed and still open</caption>
         <thead>
           <tr>
