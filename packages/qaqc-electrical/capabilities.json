@@ -1,0 +1,141 @@
+{
+  "dataRoles": [
+    {
+      "name": "workWeek",
+      "kind": "Grouping",
+      "displayName": "Work Week",
+      "displayNameKey": "Qaqc_role_workWeek",
+      "description": "Work Week Observed, for example WW42'2026.",
+      "descriptionKey": "Qaqc_role_workWeek_description"
+    },
+    {
+      "name": "phase",
+      "kind": "Grouping",
+      "displayName": "Inspection Phase",
+      "displayNameKey": "Qaqc_role_phase",
+      "description": "Final, SOR, or another inspection phase.",
+      "descriptionKey": "Qaqc_role_phase_description"
+    },
+    {
+      "name": "issue",
+      "kind": "Grouping",
+      "displayName": "Issue?",
+      "displayNameKey": "Qaqc_role_issue",
+      "description": "No Issue Found, or the issue raised on the inspection.",
+      "descriptionKey": "Qaqc_role_issue_description"
+    },
+    {
+      "name": "building",
+      "kind": "Grouping",
+      "displayName": "Building",
+      "displayNameKey": "Qaqc_role_building",
+      "description": "Building or area inspected.",
+      "descriptionKey": "Qaqc_role_building_description"
+    },
+    {
+      "name": "rowId",
+      "kind": "Grouping",
+      "displayName": "Row ID",
+      "displayNameKey": "Qaqc_role_rowId",
+      "description": "Optional unique row number (Power Query Index column). Keeps identical rows separate.",
+      "descriptionKey": "Qaqc_role_rowId_description"
+    }
+  ],
+  "dataViewMappings": [
+    {
+      "conditions": [
+        {
+          "workWeek": { "max": 1 },
+          "phase": { "max": 1 },
+          "issue": { "max": 1 },
+          "building": { "max": 1 },
+          "rowId": { "max": 1 }
+        }
+      ],
+      "table": {
+        "rows": {
+          "select": [
+            { "for": { "in": "workWeek" } },
+            { "for": { "in": "phase" } },
+            { "for": { "in": "issue" } },
+            { "for": { "in": "building" } },
+            { "for": { "in": "rowId" } }
+          ],
+          "dataReductionAlgorithm": {
+            "window": { "count": 30000 }
+          }
+        }
+      }
+    }
+  ],
+  "objects": {
+    "colors": {
+      "displayName": "Colors",
+      "displayNameKey": "Qaqc_colors",
+      "properties": {
+        "preset": {
+          "displayName": "Preset",
+          "displayNameKey": "Qaqc_colors_preset",
+          "type": {
+            "enumeration": [
+              { "value": "qaqc", "displayName": "QAQC", "displayNameKey": "Qaqc_preset_qaqc" },
+              { "value": "blue", "displayName": "Blue", "displayNameKey": "Qaqc_preset_blue" },
+              { "value": "lotusworks", "displayName": "LotusWorks", "displayNameKey": "Qaqc_preset_lotusworks" },
+              { "value": "grayscale", "displayName": "Grayscale", "displayNameKey": "Qaqc_preset_grayscale" }
+            ]
+          }
+        }
+      }
+    },
+    "cardSettings": {
+      "displayName": "Background",
+      "displayNameKey": "Qaqc_background",
+      "properties": {
+        "backgroundColor": {
+          "displayName": "Background color",
+          "displayNameKey": "Qaqc_background_color",
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "backgroundOpacity": {
+          "displayName": "Background opacity",
+          "displayNameKey": "Qaqc_background_opacity",
+          "type": { "numeric": true }
+        },
+        "cardOpacity": {
+          "displayName": "Card opacity",
+          "displayNameKey": "Qaqc_card_opacity",
+          "type": { "numeric": true }
+        }
+      }
+    },
+    "animationSettings": {
+      "displayName": "Animation",
+      "displayNameKey": "Qaqc_animation",
+      "properties": {
+        "enabled": {
+          "displayName": "Transitions",
+          "displayNameKey": "Qaqc_animation_enabled",
+          "type": { "bool": true }
+        }
+      }
+    },
+    "accessibility": {
+      "displayName": "Accessibility",
+      "displayNameKey": "Qaqc_accessibility",
+      "properties": {
+        "chartSummaries": {
+          "displayName": "Screen reader chart summaries",
+          "displayNameKey": "Qaqc_accessibility_summaries",
+          "type": { "bool": true }
+        }
+      }
+    }
+  },
+  "tooltips": {
+    "supportedTypes": { "default": true },
+    "supportEnhancedTooltips": true
+  },
+  "supportsEmptyDataView": true,
+  "supportsKeyboardFocus": true,
+  "privileges": []
+}
