@@ -44,6 +44,7 @@ vi.mock('powerbi-visuals-utils-formattingmodel', () => {
 
 import { StreamGraphVisual } from '../visual';
 import { StreamGraphSettings } from '../settings';
+import capabilities from '../../capabilities.json';
 import {
   createConstructorOptions,
   DataViewBuilder,
@@ -52,7 +53,15 @@ import {
   type HarnessConfig,
 } from '../../../core/src/__test-utils__';
 
-const testDV = DataViewBuilder.singleCategoryMeasure(['A','B','C','D'], [10,20,15,25], { categoryRole: 'category', valueRole: 'measure' });
+const testDV = DataViewBuilder.multiSeries(
+  ['A', 'B', 'C', 'D'],
+  [
+    { name: 'Revenue', values: [10, 20, 15, 25], role: 'measure' },
+    { name: 'Cost', values: [8, 16, 12, 20], role: 'measure' },
+    { name: 'Margin', values: [30, 5, 25, 10], role: 'measure' },
+  ],
+  { categoryRole: 'category' },
+);
 
 function createVisual() {
   const opts = createConstructorOptions();
@@ -78,6 +87,7 @@ function makeDeps(): Record<string, Record<string, unknown>> {
   for (const s of ['legendPosition','legendFontSize','legendFontColor','legendFontWeight']) {
     deps[`legendFormatting.${s}`] = { 'legendFormatting.showLegend': true };
   }
+  deps['legendFormatting.legendAliases'] = { 'legendFormatting.showLegend': true };
   for (const s of ['dataLabelFontSize','dataLabelFontColor','dataLabelFontWeight','dataLabelFontFamily','dataLabelPosition']) {
     deps[`dataLabelFormatting.${s}`] = { 'dataLabelFormatting.showDataLabels': true };
   }
@@ -132,6 +142,7 @@ const harnessConfig: HarnessConfig = {
     'streamSettings.offset',
     'streamSettings.streamStrokeWidth',
     'streamSortSettings.sortOrder',
+    'streamDisplaySettings.showPercentages',
     'axisFormatting.showXAxis',
     'axisFormatting.showYAxis',
     'axisFormatting.yAxisTitle',
@@ -144,7 +155,6 @@ const harnessConfig: HarnessConfig = {
     'axisFormatting.gridLineWidth',
     'axisFormatting.gridLineOpacity',
     'legendFormatting.showLegend',
-    'legendFormatting.legendPosition',
     'legendFormatting.legendFontSize',
     'legendFormatting.legendFontColor',
     'legendFormatting.legendFontFamily',
@@ -167,6 +177,10 @@ const harnessConfig: HarnessConfig = {
 };
 
 describe('stream-graph formatting coverage', () => {
+  it('does not advertise an unsupported sort formatting card', () => {
+    expect(capabilities.objects).not.toHaveProperty('sortFormatting');
+  });
+
   it('detects settings from the model', () => {
     const settings = new StreamGraphSettings();
     const paths = getSettingPaths(

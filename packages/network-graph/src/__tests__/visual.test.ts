@@ -169,6 +169,78 @@ describe('NetworkGraphVisual', () => {
     expect(() => visual.update(createUpdateOptions([dv]) as never)).not.toThrow();
   });
 
+  it('exposes focusable, labelled nodes to keyboard users', () => {
+    const selectionManager = (constructorOpts.host as Record<string, unknown>).__selectionManager as {
+      select: (...args: unknown[]) => unknown;
+    };
+    const select = vi.spyOn(selectionManager, 'select');
+    const settings = new NetworkGraphSettings();
+    settings.animationSettings.enabled.value = false;
+    settings.interactionSettings.enableZoom.value = false;
+    settingsRef.current = settings;
+
+    visual.update(createUpdateOptions([
+      DataViewBuilder.relational([
+        { source: 'Building A', target: 'Spec 1', weight: 10 },
+      ]),
+    ]) as never);
+
+    const nodes = Array.from(constructorOpts.element.querySelectorAll<SVGCircleElement>('.network-node'));
+    expect(nodes).toHaveLength(2);
+    expect(nodes.every((node) => node.getAttribute('tabindex') === '0')).toBe(true);
+    expect(nodes.every((node) => node.getAttribute('role') === 'listitem')).toBe(true);
+    expect(nodes.every((node) => (node.getAttribute('aria-label') ?? '').includes('Item'))).toBe(true);
+    nodes[0]?.focus();
+    nodes[0]?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(select).toHaveBeenCalledOnce();
+  });
+
+  it('reports rendering lifecycle completion', () => {
+    const settings = new NetworkGraphSettings();
+    settings.animationSettings.enabled.value = false;
+    settings.interactionSettings.enableZoom.value = false;
+    settingsRef.current = settings;
+    const eventService = constructorOpts.host.eventService as {
+      renderingStarted: (...args: unknown[]) => void;
+      renderingFinished: (...args: unknown[]) => void;
+    };
+    const started = vi.spyOn(eventService, 'renderingStarted');
+    const finished = vi.spyOn(eventService, 'renderingFinished');
+    const updateOptions = createUpdateOptions([
+      DataViewBuilder.relational([{ source: 'A', target: 'B', weight: 5 }]),
+    ]);
+
+    visual.update(updateOptions as never);
+
+    expect(started).toHaveBeenCalledWith(updateOptions);
+    expect(finished).toHaveBeenCalledWith(updateOptions);
+  });
+
+  it('honors disabled host interactions for nodes and empty-space context menus', () => {
+    (constructorOpts.host.hostCapabilities as { allowInteractions: boolean }).allowInteractions = false;
+    const settings = new NetworkGraphSettings();
+    settings.animationSettings.enabled.value = false;
+    settings.interactionSettings.enableZoom.value = false;
+    settingsRef.current = settings;
+    const selectionManager = (constructorOpts.host as Record<string, unknown>).__selectionManager as {
+      select: (...args: unknown[]) => unknown;
+      showContextMenu: (...args: unknown[]) => unknown;
+    };
+    const select = vi.spyOn(selectionManager, 'select');
+    const contextMenu = vi.spyOn(selectionManager, 'showContextMenu');
+    visual.update(createUpdateOptions([
+      DataViewBuilder.relational([{ source: 'A', target: 'B', weight: 5 }]),
+    ]) as never);
+    const node = constructorOpts.element.querySelector<SVGCircleElement>('.network-node');
+
+    node?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    node?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+    constructorOpts.element.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+
+    expect(select).not.toHaveBeenCalled();
+    expect(contextMenu).not.toHaveBeenCalled();
+  });
+
   // d3-force simulation uses d3-timer internally which conflicts with
   // synchronous rAF stubs in JSDOM. We catch the timer error gracefully.
   it('renders sample data without fatal crash', () => {
@@ -712,6 +784,87 @@ describe('NetworkGraphVisual', () => {
     expect(filterIcon?.getAttribute('aria-hidden')).toBe('true');
   });
 
+  it('opens the detail filter pane as an anchored readable overlay', () => {
+    const settings = new NetworkGraphSettings();
+    settings.animationSettings.enabled.value = false;
+    settings.interactionSettings.enableZoom.value = false;
+    settings.interactionSettings.enableSearch.value = true;
+    settingsRef.current = settings;
+
+    const dv = new DataViewBuilder()
+      .withCategory('Source', ['Building A'], 'source')
+      .withCategory('Target', ['Spec 1'], 'target')
+      .withValues('Weight', [10], 'weight')
+      .withValues('Issues Found', [0], 'detailMeasure')
+      .build();
+
+    try {
+      visual.update(createUpdateOptions([dv], { width: 700, height: 460 }) as never);
+    } catch {
+      // d3-timer may throw in JSDOM; filter panel DOM is what this test verifies.
+    }
+
+    constructorOpts.element.querySelector<HTMLButtonElement>('.network-detail-filter-toggle')?.click();
+
+    const controls = constructorOpts.element.querySelector<HTMLElement>('.network-search-controls');
+    const panel = constructorOpts.element.querySelector<HTMLElement>('.network-detail-filter-panel');
+    expect(controls).not.toBeNull();
+    expect(panel).not.toBeNull();
+    expect(panel?.classList.contains('network-detail-filter-panel-overlay')).toBe(true);
+    expect(panel?.classList.contains('network-detail-filter-panel-readable')).toBe(true);
+  });
+
+  it('filters exact target values from the Basic filter tab with checkboxes', () => {
+    const settings = new NetworkGraphSettings();
+    settings.animationSettings.enabled.value = false;
+    settings.interactionSettings.enableZoom.value = false;
+    settings.interactionSettings.enableSearch.value = true;
+    settingsRef.current = settings;
+
+    const dv = new DataViewBuilder()
+      .withCategory('Source', ['Building A', 'Building B'], 'source')
+      .withCategory('Target', ['Spec Alpha', 'Spec Beta'], 'target')
+      .withValues('Weight', [10, 20], 'weight')
+      .build();
+
+    try {
+      visual.update(createUpdateOptions([dv], { width: 700, height: 460 }) as never);
+    } catch {
+      // d3-timer may throw in JSDOM; filter DOM is what this test verifies.
+    }
+
+    constructorOpts.element.querySelector<HTMLButtonElement>('.network-detail-filter-toggle')?.click();
+
+    const basicTab = constructorOpts.element.querySelector<HTMLButtonElement>('.network-detail-filter-tab-basic');
+    const advancedTab = constructorOpts.element.querySelector<HTMLButtonElement>('.network-detail-filter-tab-advanced');
+    expect(basicTab).not.toBeNull();
+    expect(advancedTab).not.toBeNull();
+
+    basicTab?.click();
+    expect(constructorOpts.element.querySelector<HTMLButtonElement>('.network-detail-filter-tab-basic')?.getAttribute('aria-selected')).toBe('true');
+
+    const fieldSelect = constructorOpts.element.querySelector<HTMLSelectElement>('.network-detail-filter-basic-field');
+    expect(fieldSelect).not.toBeNull();
+    expect(fieldSelect?.style.width).toBe('28ch');
+    expect(fieldSelect?.style.maxWidth).toBe('48ch');
+    fieldSelect!.value = 'target:Target';
+    fieldSelect!.dispatchEvent(new Event('change', { bubbles: true }));
+
+    const alphaCheckbox = constructorOpts.element.querySelector<HTMLInputElement>('.network-detail-filter-basic-checkbox[value="Spec Alpha"]');
+    expect(alphaCheckbox).not.toBeNull();
+    alphaCheckbox!.checked = true;
+    alphaCheckbox!.dispatchEvent(new Event('change', { bubbles: true }));
+
+    expect(constructorOpts.element.querySelector<SVGCircleElement>('.network-node[data-node="Spec Alpha"]')?.style.opacity).toBe('1');
+    expect(constructorOpts.element.querySelector<SVGCircleElement>('.network-node[data-node="Building A"]')?.style.opacity).toBe('1');
+    expect(constructorOpts.element.querySelector<SVGCircleElement>('.network-node[data-node="Spec Beta"]')?.style.opacity).toBe('0.15');
+    expect(constructorOpts.element.querySelector<SVGCircleElement>('.network-node[data-node="Building B"]')?.style.opacity).toBe('0.15');
+
+    constructorOpts.element.querySelector<HTMLButtonElement>('.network-detail-filter-select-all')?.click();
+    expect(constructorOpts.element.querySelector<SVGCircleElement>('.network-node[data-node="Spec Beta"]')?.style.opacity).toBe('1');
+    expect(constructorOpts.element.querySelector<SVGCircleElement>('.network-node[data-node="Building B"]')?.style.opacity).toBe('1');
+  });
+
   it('repeats shared target labels per source in map canvas mode', () => {
     const settings = new NetworkGraphSettings();
     settings.animationSettings.enabled.value = false;
@@ -1054,6 +1207,86 @@ describe('NetworkGraphVisual', () => {
     expect(constructorOpts.element.querySelector<SVGCircleElement>('.network-node[data-node="Spec 2"]')?.style.opacity).toBe('0.15');
   });
 
+  it('uses plain-language measure filter operator labels', () => {
+    const settings = new NetworkGraphSettings();
+    settings.animationSettings.enabled.value = false;
+    settings.interactionSettings.enableZoom.value = false;
+    settings.interactionSettings.enableSearch.value = true;
+    settingsRef.current = settings;
+
+    const dv = new DataViewBuilder()
+      .withCategory('Source', ['Building A'], 'source')
+      .withCategory('Target', ['Spec 1'], 'target')
+      .withValues('Weight', [10], 'weight')
+      .withValues('Issues Found', [0], 'detailMeasure')
+      .build();
+
+    try {
+      visual.update(createUpdateOptions([dv], { width: 700, height: 460 }) as never);
+    } catch {
+      // d3-timer may throw in JSDOM; operator DOM is what this test verifies.
+    }
+
+    constructorOpts.element.querySelector<HTMLButtonElement>('.network-detail-filter-toggle')?.click();
+    const fieldSelect = constructorOpts.element.querySelector<HTMLSelectElement>('.network-detail-filter-field');
+    fieldSelect!.value = 'measure:Issues Found';
+    fieldSelect!.dispatchEvent(new Event('change', { bubbles: true }));
+
+    const operatorLabels = Array.from(
+      constructorOpts.element.querySelectorAll<HTMLOptionElement>('.network-detail-filter-operator option'),
+    ).map((option) => option.textContent);
+
+    expect(operatorLabels).toEqual([
+      'Equals',
+      'Does not Equal',
+      'Greater than',
+      'Greater than or Equal to',
+      'Less than',
+      'Less than or Equal to',
+    ]);
+    expect(operatorLabels).not.toContain('=');
+    expect(operatorLabels).not.toContain('!=');
+  });
+
+  it('keeps sources lit when they connect to measure-filtered target matches', () => {
+    const settings = new NetworkGraphSettings();
+    settings.animationSettings.enabled.value = false;
+    settings.interactionSettings.enableZoom.value = false;
+    settings.interactionSettings.enableSearch.value = true;
+    settingsRef.current = settings;
+
+    const dv = new DataViewBuilder()
+      .withCategory('Source', ['Building A', 'Building A', 'Building B'], 'source')
+      .withCategory('Target', ['Spec 1', 'Spec 2', 'Spec 3'], 'target')
+      .withValues('Weight', [10, 20, 30], 'weight')
+      .withValues('Issues Found', [5, 5, 0], 'detailMeasure')
+      .build();
+
+    try {
+      visual.update(createUpdateOptions([dv], { width: 700, height: 460 }) as never);
+    } catch {
+      // d3-timer may throw in JSDOM; filter dimming is what this test verifies.
+    }
+
+    constructorOpts.element.querySelector<HTMLButtonElement>('.network-detail-filter-toggle')?.click();
+    const fieldSelect = constructorOpts.element.querySelector<HTMLSelectElement>('.network-detail-filter-field');
+    fieldSelect!.value = 'measure:Issues Found';
+    fieldSelect!.dispatchEvent(new Event('change', { bubbles: true }));
+    const operatorSelect = constructorOpts.element.querySelector<HTMLSelectElement>('.network-detail-filter-operator');
+    operatorSelect!.value = 'eq';
+    operatorSelect!.dispatchEvent(new Event('change', { bubbles: true }));
+    const valueInput = constructorOpts.element.querySelector<HTMLInputElement>('.network-detail-filter-number');
+    valueInput!.value = '5';
+    valueInput!.dispatchEvent(new Event('input', { bubbles: true }));
+    constructorOpts.element.querySelector<HTMLButtonElement>('.network-detail-filter-add')?.click();
+
+    expect(constructorOpts.element.querySelector<SVGCircleElement>('.network-node[data-node="Spec 1"]')?.style.opacity).toBe('1');
+    expect(constructorOpts.element.querySelector<SVGCircleElement>('.network-node[data-node="Spec 2"]')?.style.opacity).toBe('1');
+    expect(constructorOpts.element.querySelector<SVGCircleElement>('.network-node[data-node="Building A"]')?.style.opacity).toBe('1');
+    expect(constructorOpts.element.querySelector<SVGCircleElement>('.network-node[data-node="Spec 3"]')?.style.opacity).toBe('0.15');
+    expect(constructorOpts.element.querySelector<SVGCircleElement>('.network-node[data-node="Building B"]')?.style.opacity).toBe('0.15');
+  });
+
   it('disables Add for invalid measure values and supports zero helper rules', () => {
     const settings = new NetworkGraphSettings();
     settings.animationSettings.enabled.value = false;
@@ -1175,8 +1408,8 @@ describe('NetworkGraphVisual', () => {
     expect(constructorOpts.element.querySelector('.network-detail-filter-chip')).toBeNull();
   });
 
-  it('sizes detail filter selects to long selected labels with a capped width and title', () => {
-    const longMeasure = 'Very Long Issues Found Detail Measure Name';
+  it('sizes detail filter selects to long selected labels with a wider capped width and title', () => {
+    const longMeasure = 'Very Long Issues Found Detail Measure Name That Keeps Going Past The Menu Width';
     const settings = new NetworkGraphSettings();
     settings.animationSettings.enabled.value = false;
     settings.interactionSettings.enableZoom.value = false;
@@ -1199,13 +1432,15 @@ describe('NetworkGraphVisual', () => {
     constructorOpts.element.querySelector<HTMLButtonElement>('.network-detail-filter-toggle')?.click();
     const fieldSelect = constructorOpts.element.querySelector<HTMLSelectElement>('.network-detail-filter-field');
     expect(fieldSelect).not.toBeNull();
+    expect(fieldSelect?.style.width).toBe('28ch');
+    expect(fieldSelect?.style.maxWidth).toBe('48ch');
     fieldSelect!.value = `measure:${longMeasure}`;
     fieldSelect!.dispatchEvent(new Event('change', { bubbles: true }));
 
     const updatedFieldSelect = constructorOpts.element.querySelector<HTMLSelectElement>('.network-detail-filter-field');
     expect(updatedFieldSelect?.title).toBe(longMeasure);
-    expect(updatedFieldSelect?.style.width).toBe('26ch');
-    expect(updatedFieldSelect?.style.maxWidth).toBe('26ch');
+    expect(updatedFieldSelect?.style.width).toBe('48ch');
+    expect(updatedFieldSelect?.style.maxWidth).toBe('48ch');
   });
 
   it('filters by a specific target value while keeping connected sources visible', () => {
@@ -1586,6 +1821,44 @@ describe('NetworkGraphVisual', () => {
     expect(Number(highTarget?.getAttribute('r'))).toBeGreaterThan(Number(lowTarget?.getAttribute('r')));
     expect(Number(highTarget?.getAttribute('r'))).toBeCloseTo(24, 5);
     expect(Number(source?.getAttribute('r'))).toBe(8);
+  });
+
+  it('scales sources more strongly while keeping target nodes varied in source plus target weighted mode', () => {
+    const settings = new NetworkGraphSettings();
+    settings.animationSettings.enabled.value = false;
+    settings.interactionSettings.enableZoom.value = false;
+    settings.nodeSettings.radius.value = 8;
+    settings.nodeSettings.minRadius.value = 4;
+    settings.nodeSettings.maxRadius.value = 24;
+    (settings.nodeSettings as unknown as Record<string, { value: unknown }>).targetSizeMode = {
+      value: { value: 'sourceTargetWeighted', displayName: 'Source + Target Weighted' },
+    };
+    settingsRef.current = settings;
+
+    const dv = DataViewBuilder.relational([
+      { source: 'Building A', target: 'Shared Spec', weight: 100 },
+      { source: 'Building A', target: 'Spec 2', weight: 100 },
+      { source: 'Building A', target: 'Spec 3', weight: 100 },
+      { source: 'Building B', target: 'Shared Spec', weight: 20 },
+      { source: 'Building C', target: 'Solo Spec', weight: 10 },
+    ]);
+
+    try {
+      visual.update(createUpdateOptions([dv], { width: 700, height: 460 }) as never);
+    } catch {
+      // d3-timer may throw in JSDOM; rendered radii are what this test verifies.
+    }
+
+    const largeSource = constructorOpts.element.querySelector<SVGCircleElement>('.network-node[data-node="Building A"]');
+    const sharedTarget = constructorOpts.element.querySelector<SVGCircleElement>('.network-node[data-node="Shared Spec"]');
+    const soloTarget = constructorOpts.element.querySelector<SVGCircleElement>('.network-node[data-node="Solo Spec"]');
+    const largeSourceRadius = Number(largeSource?.getAttribute('r'));
+    const sharedTargetRadius = Number(sharedTarget?.getAttribute('r'));
+    const soloTargetRadius = Number(soloTarget?.getAttribute('r'));
+
+    expect(largeSourceRadius).toBeGreaterThan(sharedTargetRadius);
+    expect(sharedTargetRadius).toBeGreaterThan(soloTargetRadius);
+    expect(sharedTargetRadius).toBeLessThan(24);
   });
 
   it('scales only target node radius by connection count when target size mode is count', () => {

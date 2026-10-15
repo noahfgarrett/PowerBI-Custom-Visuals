@@ -59,6 +59,59 @@ describe('BulletChartProVisual', () => {
     expect(() => visual.update(createUpdateOptions([dv]) as never)).not.toThrow();
   });
 
+  it('exposes focusable, descriptive bars and activates selection from the keyboard', () => {
+    const dv = new DataViewBuilder().withCategory('Category', ['Sales','Profit'], 'category').withValues('Measure', [80, 60], 'measure').withValues('Target', [100, 75], 'target').build();
+    visual.update(createUpdateOptions([dv]) as never);
+
+    const bar = constructorOpts.element.querySelector<SVGRectElement>('.bullet-value-bar');
+    expect(bar?.getAttribute('tabindex')).toBe('0');
+    expect(bar?.getAttribute('role')).toBe('listitem');
+    expect(bar?.getAttribute('aria-label')).toContain('Sales');
+
+    const selectionManager = constructorOpts.host.__selectionManager as {
+      getSelectionIds: () => unknown[];
+    };
+    const activeElementSpy = vi.spyOn(document, 'activeElement', 'get').mockReturnValue(bar!);
+    bar?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    activeElementSpy.mockRestore();
+    expect(selectionManager.getSelectionIds()).toHaveLength(1);
+  });
+
+  it('does not select or open context menus when host interactions are disabled', () => {
+    (constructorOpts.host.hostCapabilities as { allowInteractions: boolean }).allowInteractions = false;
+    const dv = new DataViewBuilder().withCategory('Category', ['Sales','Profit'], 'category').withValues('Measure', [80, 60], 'measure').withValues('Target', [100, 75], 'target').build();
+    visual.update(createUpdateOptions([dv]) as never);
+
+    const selectionManager = constructorOpts.host.__selectionManager as {
+      select: (...args: unknown[]) => unknown;
+      showContextMenu: (...args: unknown[]) => unknown;
+    };
+    const selectSpy = vi.spyOn(selectionManager, 'select');
+    const contextSpy = vi.spyOn(selectionManager, 'showContextMenu');
+    const bar = constructorOpts.element.querySelector<SVGRectElement>('.bullet-value-bar');
+    expect(bar?.style.cursor).toBe('default');
+
+    bar?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    bar?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+
+    expect(selectSpy).not.toHaveBeenCalled();
+    expect(contextSpy).not.toHaveBeenCalled();
+  });
+
+  it('opens the empty-space context menu', () => {
+    const dv = new DataViewBuilder().withCategory('Category', ['Sales','Profit'], 'category').withValues('Measure', [80, 60], 'measure').withValues('Target', [100, 75], 'target').build();
+    visual.update(createUpdateOptions([dv]) as never);
+    const selectionManager = (constructorOpts.host as Record<string, unknown>).__selectionManager as {
+      showContextMenu: (...args: unknown[]) => unknown;
+    };
+    const spy = vi.spyOn(selectionManager as any, 'showContextMenu');
+    constructorOpts.element.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 12, clientY: 34 }));
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ getKey: expect.any(Function) }),
+      { x: 12, y: 34 },
+    );
+  });
+
   it('returns formatting model', () => {
     const dv = new DataViewBuilder().withCategory('Category', ['Sales','Profit'], 'category').withValues('Measure', [80, 60], 'measure').withValues('Target', [100, 75], 'target').build();
     visual.update(createUpdateOptions([dv]) as never);

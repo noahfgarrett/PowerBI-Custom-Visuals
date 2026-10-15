@@ -44,6 +44,7 @@ vi.mock('powerbi-visuals-utils-formattingmodel', () => {
 
 import { RadialGaugeVisual } from '../visual';
 import { RadialGaugeSettings } from '../settings';
+import capabilities from '../../capabilities.json';
 import {
   createConstructorOptions,
   DataViewBuilder,
@@ -78,10 +79,14 @@ function makeDeps(): Record<string, Record<string, unknown>> {
   for (const s of ['dataLabelFontSize','dataLabelFontColor','dataLabelFontWeight','dataLabelFontFamily','dataLabelPosition']) {
     deps[`dataLabelFormatting.${s}`] = { 'dataLabelFormatting.showDataLabels': true };
   }
+  for (const s of ['labelFontSize','labelFontColor','labelFontFamily','labelFontWeight','labelOffset']) {
+    deps[`gaugeScaleSettings.${s}`] = { 'gaugeScaleSettings.showLabels': true };
+  }
   deps['conditionalFormatting.enableConditional'] = {};
   for (const s of ['conditionalDirection','threshold1','threshold2','conditionalColor1','conditionalColor2','conditionalColor3']) {
     deps[`conditionalFormatting.${s}`] = { 'conditionalFormatting.enableConditional': true };
   }
+  deps['cardSettings.contentPadding'] = { 'cardSettings.enableGlass': true };
   return deps;
 }
 
@@ -102,6 +107,7 @@ const harnessConfig: HarnessConfig = {
     'cardSettings.backgroundOpacity',
     'cardSettings.backgroundColor',
     'cardSettings.enableGlass',
+    'cardSettings.contentPadding',
     'accessibilityFormatting.enableKeyboardNav',
     'animationSettings.staggerDelay',
     'animationSettings.duration',
@@ -120,6 +126,19 @@ const harnessConfig: HarnessConfig = {
     'gaugeArcSettings.segmentCount',
     'gaugeComparisonSettings.showSparkline',
     'dataLabelFormatting.showDataLabels',
+    'arcSettings.segmentCount',
+    'gaugeScaleSettings.labelFontFamily',
+    'gaugeScaleSettings.labelFontWeight',
+    'gaugeScaleSettings.labelOffset',
+    'gaugeComparisonSettings.deltaPositiveColor',
+    'gaugeComparisonSettings.deltaNegativeColor',
+    'legendFormatting.showInlineLabels',
+    'legendFormatting.inlineLabelFontSize',
+    'legendFormatting.inlineLabelOffset',
+    'dateFilterFormatting.enableDateFilter',
+    'dateFilterFormatting.startDate',
+    'dateFilterFormatting.endAtCurrentDate',
+    'dateFilterFormatting.endDate',
   ],
 };
 
@@ -131,6 +150,22 @@ describe('radial-gauge formatting coverage', () => {
       harnessConfig.skipCards,
     );
     expect(paths.length).toBeGreaterThan(0);
+  });
+
+  it('declares arc and scale properties only on their owning cards', () => {
+    expect(capabilities.objects.arcSettings.properties).not.toHaveProperty('trackOpacity');
+    expect(capabilities.objects.arcSettings.properties).not.toHaveProperty('zoneBorderWidth');
+    expect(capabilities.objects.arcSettings.properties).not.toHaveProperty('zoneBorderOpacity');
+    expect(capabilities.objects.arcColorSettings.properties).toEqual(expect.objectContaining({
+      trackOpacity: expect.any(Object),
+      zoneBorderWidth: expect.any(Object),
+      zoneBorderOpacity: expect.any(Object),
+    }));
+    expect(capabilities.objects).not.toHaveProperty('dataLabelFormatting');
+    expect(capabilities.objects.gaugeScaleSettings.properties).toEqual(expect.objectContaining({
+      labelFontSize: expect.any(Object),
+      labelFontColor: expect.any(Object),
+    }));
   });
 
   it('every setting affects DOM output', () => {

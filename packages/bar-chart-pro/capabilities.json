@@ -4,31 +4,49 @@
       "displayName": "Category",
       "name": "category",
       "kind": "Grouping",
-      "description": "X-axis categories (e.g., Work Week)"
+      "description": "X-axis categories (e.g., Work Week)",
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0001",
+      "descriptionKey": "BarChartProCapabilities_Description_0001"
     },
     {
       "displayName": "Sub-Category",
       "name": "subCategory",
       "kind": "Grouping",
-      "description": "Drill-down sub-category (optional)"
+      "description": "Drill-down sub-category (optional)",
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0002",
+      "descriptionKey": "BarChartProCapabilities_Description_0002"
     },
     {
       "displayName": "Values",
       "name": "values",
       "kind": "Measure",
-      "description": "Bar values \u2014 supports multiple for grouped/stacked"
+      "description": "Bar values — supports multiple for grouped/stacked",
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0003",
+      "descriptionKey": "BarChartProCapabilities_Description_0003"
     },
     {
       "displayName": "Line Values",
       "name": "lineValues",
       "kind": "Measure",
-      "description": "Line overlay measures for combo mode"
+      "description": "Line overlay measures for combo mode",
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0004",
+      "descriptionKey": "BarChartProCapabilities_Description_0004"
     },
     {
       "displayName": "Target",
       "name": "target",
       "kind": "Measure",
-      "description": "Target/reference line value"
+      "description": "Target/reference line value",
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0005",
+      "descriptionKey": "BarChartProCapabilities_Description_0005"
+    },
+    {
+      "displayName": "Hover Tooltips",
+      "name": "hoverTooltip",
+      "kind": "Grouping",
+      "description": "Optional category-level text shown immediately when hovering category labels",
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0001",
+      "descriptionKey": "BarChartProCapabilities_Description_0001"
     }
   ],
   "dataViewMappings": [
@@ -49,6 +67,9 @@
           },
           "target": {
             "max": 1
+          },
+          "hoverTooltip": {
+            "max": 5
           }
         }
       ],
@@ -63,6 +84,11 @@
             {
               "for": {
                 "in": "subCategory"
+              }
+            },
+            {
+              "for": {
+                "in": "hoverTooltip"
               }
             }
           ],
@@ -104,36 +130,45 @@
             "enumeration": [
               {
                 "value": "grouped",
-                "displayName": "Grouped"
+                "displayName": "Grouped",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0008"
               },
               {
                 "value": "stacked",
-                "displayName": "Stacked"
+                "displayName": "Stacked",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0009"
               },
               {
                 "value": "stacked100",
-                "displayName": "100% Stacked"
+                "displayName": "100% Stacked",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0010"
               },
               {
                 "value": "combo",
-                "displayName": "Combo (Bar + Line)"
+                "displayName": "Combo (Bar + Line)",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0011"
               },
               {
                 "value": "horizontal",
-                "displayName": "Horizontal"
+                "displayName": "Horizontal",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0012"
               },
               {
                 "value": "diverging",
-                "displayName": "Diverging"
+                "displayName": "Diverging",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0013"
               },
               {
                 "value": "waterfall",
-                "displayName": "Waterfall"
+                "displayName": "Waterfall",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0014"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0007"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0006"
     },
     "barSettings": {
       "displayName": "Bar Settings",
@@ -144,26 +179,31 @@
             "enumeration": [
               {
                 "value": "bar",
-                "displayName": "Bar"
+                "displayName": "Bar",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0017"
               },
               {
                 "value": "lollipop",
-                "displayName": "Lollipop"
+                "displayName": "Lollipop",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0018"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0016"
         },
         "cornerRadius": {
           "displayName": "Corner Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0019"
         },
         "barSpacing": {
           "displayName": "Bar Spacing",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0020"
         },
         "showDataLabels": {
           "displayName": "Data Labels",
@@ -171,18 +211,22 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0022"
               },
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0023"
               },
               {
                 "value": "inside",
-                "displayName": "Inside"
+                "displayName": "Inside",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0024"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0021"
         },
         "barBorderColor": {
           "displayName": "Bar Border Color",
@@ -192,31 +236,36 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0025"
         },
         "barBorderWidth": {
           "displayName": "Bar Border Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0026"
         },
         "barOpacity": {
           "displayName": "Bar Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0027"
         },
         "useGradient": {
           "displayName": "Gradient Fill",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0028"
         },
         "patternEnabled": {
           "displayName": "Enable Pattern Fill",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0029"
         },
         "pattern": {
           "displayName": "Pattern",
@@ -224,46 +273,56 @@
             "enumeration": [
               {
                 "value": "diagonal",
-                "displayName": "Diagonal Lines"
+                "displayName": "Diagonal Lines",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0031"
               },
               {
                 "value": "crosshatch",
-                "displayName": "Crosshatch"
+                "displayName": "Crosshatch",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0032"
               },
               {
                 "value": "dots",
-                "displayName": "Dots"
+                "displayName": "Dots",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0033"
               },
               {
                 "value": "horizontal",
-                "displayName": "Horizontal Lines"
+                "displayName": "Horizontal Lines",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0034"
               },
               {
                 "value": "vertical",
-                "displayName": "Vertical Lines"
+                "displayName": "Vertical Lines",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0035"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0030"
         },
         "patternOpacity": {
           "displayName": "Pattern Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0036"
         },
         "lollipopDotRadius": {
           "displayName": "Lollipop Dot Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0037"
         },
         "lollipopStemWidth": {
           "displayName": "Lollipop Stem Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0038"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0015"
     },
     "lineSettings": {
       "displayName": "Line Settings",
@@ -272,37 +331,43 @@
           "displayName": "Show Dots",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0040"
         },
         "lineGradientFill": {
           "displayName": "Gradient Fill Under Line",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0041"
         },
         "showLineDataLabels": {
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0042"
         },
         "lineGradientOpacity": {
           "displayName": "Gradient Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0043"
         },
         "lineDotRadius": {
           "displayName": "Dot Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0044"
         },
         "lineDataLabelFontSize": {
           "displayName": "Data Label Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0045"
         },
         "lineDataLabelFontColor": {
           "displayName": "Data Label Font Color",
@@ -312,9 +377,89 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0046"
+        },
+        "lineDataLabelFontFamily": {
+          "displayName": "Data Label Font",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0048"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0049"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0050"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0051"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0052"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0053"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0054"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0055"
+              }
+            ]
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0047"
+        },
+        "lineDataLabelFontWeight": {
+          "displayName": "Data Label Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0057"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0058"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0059"
+              }
+            ]
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0056"
+        },
+        "lineDataLabelOffset": {
+          "displayName": "Data Label Offset",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0060"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0039"
     },
     "secondaryAxisSettings": {
       "displayName": "Secondary Axis",
@@ -323,15 +468,42 @@
           "displayName": "Show Secondary Y-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0062"
         },
         "secondaryYAxisTitle": {
           "displayName": "Secondary Y-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0063"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0061"
+    },
+    "dataRolesSettings": {
+      "displayName": "Bar Colors",
+      "properties": {
+        "colorBy": {
+          "displayName": "Color Bars By",
+          "type": {
+            "enumeration": [
+              {
+                "value": "series",
+                "displayName": "Series",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0004"
+              },
+              {
+                "value": "category",
+                "displayName": "Category",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0005"
+              }
+            ]
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0003"
+        }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0002"
     },
     "targetLine": {
       "displayName": "Target Line",
@@ -340,13 +512,15 @@
           "displayName": "Show Target Line",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0065"
         },
         "label": {
           "displayName": "Label",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0066"
         },
         "style": {
           "displayName": "Line Style",
@@ -354,14 +528,17 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0068"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0069"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0067"
         },
         "color": {
           "displayName": "Color",
@@ -371,15 +548,18 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0070"
         },
         "lineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0071"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0064"
     },
     "animationSettings": {
       "displayName": "Animation",
@@ -388,21 +568,25 @@
           "displayName": "Enable Animations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0073"
         },
         "duration": {
           "displayName": "Duration (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0074"
         },
         "staggerDelay": {
           "displayName": "Stagger Delay (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0075"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0072"
     },
     "axisFormatting": {
       "displayName": "Axis Formatting",
@@ -411,13 +595,15 @@
           "displayName": "Show X-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0077"
         },
         "showYAxis": {
           "displayName": "Show Y-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0078"
         },
         "axisLabelColor": {
           "displayName": "Label Color",
@@ -427,13 +613,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0079"
         },
         "axisLabelSize": {
           "displayName": "Label Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0080"
         },
         "axisLineColor": {
           "displayName": "Axis Line Color",
@@ -443,19 +631,22 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0081"
         },
         "axisLineWidth": {
           "displayName": "Axis Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0082"
         },
         "showGridLines": {
           "displayName": "Show Grid Lines",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0083"
         },
         "gridLineColor": {
           "displayName": "Grid Line Color",
@@ -465,7 +656,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0084"
         },
         "gridLineStyle": {
           "displayName": "Grid Line Style",
@@ -473,26 +665,31 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0086"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0087"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0085"
         },
         "xAxisTitle": {
           "displayName": "X-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0088"
         },
         "yAxisTitle": {
           "displayName": "Y-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0089"
         },
         "axisLabelFontFamily": {
           "displayName": "Label Font",
@@ -500,54 +697,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0091"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0092"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0093"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0094"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0095"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0096"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0097"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0098"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0099"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0100"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0101"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0102"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0090"
         },
         "axisLabelFontWeight": {
           "displayName": "Label Font Weight",
@@ -555,52 +765,62 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0104"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0105"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0103"
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (\u00b0)",
+          "displayName": "X-Label Rotation (°)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0106"
         },
         "yAxisMin": {
           "displayName": "Y-Axis Min",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0107"
         },
         "yAxisMax": {
           "displayName": "Y-Axis Max",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0108"
         },
         "gridLineWidth": {
           "displayName": "Grid Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0109"
         },
         "gridLineOpacity": {
           "displayName": "Grid Line Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0110"
         },
         "integerTicks": {
           "displayName": "Integer-Only Ticks",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0111"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0076"
     },
     "legendFormatting": {
       "displayName": "Legend",
@@ -609,7 +829,8 @@
           "displayName": "Show Legend",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0113"
         },
         "legendPosition": {
           "displayName": "Position",
@@ -617,28 +838,34 @@
             "enumeration": [
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0115"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0116"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0117"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0118"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0114"
         },
         "legendFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0119"
         },
         "legendFontColor": {
           "displayName": "Font Color",
@@ -648,7 +875,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0120"
         },
         "legendFontFamily": {
           "displayName": "Font",
@@ -656,54 +884,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0122"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0123"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0124"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0125"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0126"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0127"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0128"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0129"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0130"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0131"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0132"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0133"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0121"
         },
         "legendFontWeight": {
           "displayName": "Font Weight",
@@ -711,40 +952,48 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0135"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0136"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0134"
         },
         "legendAliases": {
           "displayName": "Rename Labels",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0137"
         },
         "showInlineLabels": {
           "displayName": "Inline End-of-Line Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0138"
         },
         "inlineLabelFontSize": {
           "displayName": "Inline Label Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0139"
         },
         "inlineLabelOffset": {
           "displayName": "Inline Label Offset",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0140"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0112"
     },
     "dataLabelFormatting": {
       "displayName": "Data Labels",
@@ -753,7 +1002,8 @@
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0142"
         },
         "dataLabelFontColor": {
           "displayName": "Font Color",
@@ -763,7 +1013,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0143"
         },
         "dataLabelFontWeight": {
           "displayName": "Font Weight",
@@ -771,20 +1022,24 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0145"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0146"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0144"
         },
         "showDataLabels": {
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0147"
         },
         "dataLabelFontFamily": {
           "displayName": "Font",
@@ -792,54 +1047,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0149"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0150"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0151"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0152"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0153"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0154"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0155"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0156"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0157"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0158"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0159"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0160"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0148"
         },
         "dataLabelPosition": {
           "displayName": "Position",
@@ -847,28 +1115,35 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0162"
               },
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0163"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0164"
               },
               {
                 "value": "inside",
-                "displayName": "Inside"
+                "displayName": "Inside",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0165"
               },
               {
                 "value": "outside",
-                "displayName": "Outside"
+                "displayName": "Outside",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0166"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0161"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0141"
     },
     "titleFormatting": {
       "displayName": "Chart Title",
@@ -877,19 +1152,22 @@
           "displayName": "Show Title",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0168"
         },
         "titleText": {
           "displayName": "Title Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0169"
         },
         "titleFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0170"
         },
         "titleFontColor": {
           "displayName": "Font Color",
@@ -899,7 +1177,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0171"
         },
         "titleAlignment": {
           "displayName": "Alignment",
@@ -907,18 +1186,22 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0173"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0174"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0175"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0172"
         },
         "titleFontFamily": {
           "displayName": "Font",
@@ -926,54 +1209,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0177"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0178"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0179"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0180"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0181"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0182"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0183"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0184"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0185"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0186"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0187"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0188"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0176"
         },
         "titleFontWeight": {
           "displayName": "Font Weight",
@@ -981,26 +1277,31 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0190"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0191"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0189"
         },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0192"
         },
         "subtitleFontSize": {
           "displayName": "Subtitle Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0193"
         },
         "subtitleFontColor": {
           "displayName": "Subtitle Color",
@@ -1010,7 +1311,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0194"
         },
         "subtitleFontFamily": {
           "displayName": "Subtitle Font",
@@ -1018,54 +1320,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0196"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0197"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0198"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0199"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0200"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0201"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0202"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0203"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0204"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0205"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0206"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0207"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0195"
         },
         "subtitleFontWeight": {
           "displayName": "Subtitle Font Weight",
@@ -1073,16 +1388,20 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0209"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0210"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0208"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0167"
     },
     "topNSettings": {
       "displayName": "Top N / Others",
@@ -1091,19 +1410,22 @@
           "displayName": "Enable Top N",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0212"
         },
         "topN": {
           "displayName": "Top N",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0213"
         },
         "othersLabel": {
           "displayName": "Others Label",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0214"
         },
         "othersColor": {
           "displayName": "Others Color",
@@ -1113,7 +1435,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0215"
         },
         "sortBy": {
           "displayName": "Sort By",
@@ -1121,16 +1444,131 @@
             "enumeration": [
               {
                 "value": "value",
-                "displayName": "Value"
+                "displayName": "Value",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0217"
               },
               {
                 "value": "name",
-                "displayName": "Name"
+                "displayName": "Name",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0218"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0216"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0211"
+    },
+    "sortControlsSettings": {
+      "displayName": "Sort Controls",
+      "properties": {
+        "enabled": {
+          "displayName": "Show On-Chart Sort",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0007"
+        },
+        "defaultSort": {
+          "displayName": "Default Sort",
+          "type": {
+            "enumeration": [
+              {
+                "value": "noSort",
+                "displayName": "No Sort",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0009"
+              },
+              {
+                "value": "highToLow",
+                "displayName": "High to Low",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0010"
+              },
+              {
+                "value": "lowToHigh",
+                "displayName": "Low to High",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0011"
+              },
+              {
+                "value": "percentHighToLow",
+                "displayName": "Percent: High to Low",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0012"
+              },
+              {
+                "value": "percentLowToHigh",
+                "displayName": "Percent: Low to High",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0013"
+              }
+            ]
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0008"
+        },
+        "showPercentOptions": {
+          "displayName": "Show Percent Sort Options",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0014"
+        },
+        "position": {
+          "displayName": "Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "right",
+                "displayName": "Right",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0016"
+              },
+              {
+                "value": "topRight",
+                "displayName": "Top Right",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0017"
+              }
+            ]
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0015"
+        },
+        "fontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0018"
+        },
+        "activeColor": {
+          "displayName": "Active Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0019"
+        },
+        "inactiveColor": {
+          "displayName": "Inactive Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0020"
+        },
+        "backgroundColor": {
+          "displayName": "Background",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0021"
+        }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0006"
     },
     "seriesFormatting": {
       "displayName": "Series Formatting",
@@ -1144,19 +1582,22 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0220"
         },
         "seriesOpacity": {
           "displayName": "Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0221"
         },
         "showDataLabels": {
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0222"
         },
         "lineStyle": {
           "displayName": "Line Style",
@@ -1164,26 +1605,50 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0224"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0225"
               },
               {
                 "value": "dotted",
-                "displayName": "Dotted"
+                "displayName": "Dotted",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0226"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0223"
         },
         "lineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0227"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0219"
+    },
+    "categoryColors": {
+      "displayName": "Category Colors",
+      "objectCategory": 2,
+      "properties": {
+        "categoryColor": {
+          "displayName": "Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0023"
+        }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0022"
     },
     "referenceLineFormatting": {
       "displayName": "Reference Line",
@@ -1192,7 +1657,8 @@
           "displayName": "Show Reference Line",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0229"
         },
         "referenceLineType": {
           "displayName": "Type",
@@ -1200,36 +1666,44 @@
             "enumeration": [
               {
                 "value": "custom",
-                "displayName": "Custom Value"
+                "displayName": "Custom Value",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0231"
               },
               {
                 "value": "mean",
-                "displayName": "Mean"
+                "displayName": "Mean",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0232"
               },
               {
                 "value": "median",
-                "displayName": "Median"
+                "displayName": "Median",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0233"
               },
               {
                 "value": "percentile",
-                "displayName": "Percentile"
+                "displayName": "Percentile",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0234"
               },
               {
                 "value": "min",
-                "displayName": "Min"
+                "displayName": "Min",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0235"
               },
               {
                 "value": "max",
-                "displayName": "Max"
+                "displayName": "Max",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0236"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0230"
         },
         "referenceLineValue": {
           "displayName": "Value",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0237"
         },
         "referenceLineColor": {
           "displayName": "Line Color",
@@ -1239,13 +1713,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0238"
         },
         "referenceLineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0239"
         },
         "referenceLineStyle": {
           "displayName": "Line Style",
@@ -1253,48 +1729,57 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0241"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0242"
               },
               {
                 "value": "dotted",
-                "displayName": "Dotted"
+                "displayName": "Dotted",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0243"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0240"
         },
         "showReferenceLabel": {
           "displayName": "Show Label",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0244"
         },
         "referenceLabelText": {
           "displayName": "Label Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0245"
         },
         "showReferenceBand": {
           "displayName": "Show Band",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0246"
         },
         "referenceBandOpacity": {
           "displayName": "Band Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0247"
         },
         "referenceBandWidth": {
           "displayName": "Band Width (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0248"
         },
         "referenceLineAxis": {
           "displayName": "Target Axis",
@@ -1302,16 +1787,20 @@
             "enumeration": [
               {
                 "value": "primary",
-                "displayName": "Primary"
+                "displayName": "Primary",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0250"
               },
               {
                 "value": "secondary",
-                "displayName": "Secondary"
+                "displayName": "Secondary",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0251"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0249"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0228"
     },
     "trendLineFormatting": {
       "displayName": "Trend Line",
@@ -1320,7 +1809,8 @@
           "displayName": "Show Trend Line",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0253"
         },
         "trendLineType": {
           "displayName": "Type",
@@ -1328,32 +1818,39 @@
             "enumeration": [
               {
                 "value": "linear",
-                "displayName": "Linear"
+                "displayName": "Linear",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0255"
               },
               {
                 "value": "polynomial",
-                "displayName": "Polynomial"
+                "displayName": "Polynomial",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0256"
               },
               {
                 "value": "exponential",
-                "displayName": "Exponential"
+                "displayName": "Exponential",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0257"
               },
               {
                 "value": "logarithmic",
-                "displayName": "Logarithmic"
+                "displayName": "Logarithmic",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0258"
               },
               {
                 "value": "power",
-                "displayName": "Power"
+                "displayName": "Power",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0259"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0254"
         },
         "polynomialOrder": {
           "displayName": "Polynomial Order",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0260"
         },
         "trendLineColor": {
           "displayName": "Line Color",
@@ -1363,25 +1860,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0261"
         },
         "trendLineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0262"
         },
         "showEquation": {
           "displayName": "Show Equation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0263"
         },
         "showR2": {
-          "displayName": "Show R\u00b2",
+          "displayName": "Show R²",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0264"
         },
         "trendLineAxis": {
           "displayName": "Target Axis",
@@ -1389,16 +1890,20 @@
             "enumeration": [
               {
                 "value": "primary",
-                "displayName": "Primary"
+                "displayName": "Primary",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0266"
               },
               {
                 "value": "secondary",
-                "displayName": "Secondary"
+                "displayName": "Secondary",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0267"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0265"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0252"
     },
     "conditionalFormatting": {
       "displayName": "Conditional Formatting",
@@ -1407,7 +1912,8 @@
           "displayName": "Enable",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0269"
         },
         "conditionalDirection": {
           "displayName": "Direction",
@@ -1415,26 +1921,31 @@
             "enumeration": [
               {
                 "value": "ascending",
-                "displayName": "Ascending (Low = Bad)"
+                "displayName": "Ascending (Low = Bad)",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0271"
               },
               {
                 "value": "descending",
-                "displayName": "Descending (Low = Good)"
+                "displayName": "Descending (Low = Good)",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0272"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0270"
         },
         "threshold1": {
           "displayName": "Threshold 1",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0273"
         },
         "threshold2": {
           "displayName": "Threshold 2",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0274"
         },
         "conditionalColor1": {
           "displayName": "Color 1 (Bad)",
@@ -1444,7 +1955,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0275"
         },
         "conditionalColor2": {
           "displayName": "Color 2 (Warning)",
@@ -1454,7 +1966,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0276"
         },
         "conditionalColor3": {
           "displayName": "Color 3 (Good)",
@@ -1464,9 +1977,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0277"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0268"
     },
     "annotationFormatting": {
       "displayName": "Annotations",
@@ -1475,118 +1990,141 @@
           "displayName": "Show Annotations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0279"
         },
         "annotation1Category": {
-          "displayName": "Annotation 1 \u2014 Category",
+          "displayName": "Annotation 1 — Category",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0280"
         },
         "annotation1Text": {
-          "displayName": "Annotation 1 \u2014 Text",
+          "displayName": "Annotation 1 — Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0281"
         },
         "annotation1Position": {
-          "displayName": "Annotation 1 \u2014 Position",
+          "displayName": "Annotation 1 — Position",
           "type": {
             "enumeration": [
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0283"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0284"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0285"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0286"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0282"
         },
         "annotation2Category": {
-          "displayName": "Annotation 2 \u2014 Category",
+          "displayName": "Annotation 2 — Category",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0287"
         },
         "annotation2Text": {
-          "displayName": "Annotation 2 \u2014 Text",
+          "displayName": "Annotation 2 — Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0288"
         },
         "annotation2Position": {
-          "displayName": "Annotation 2 \u2014 Position",
+          "displayName": "Annotation 2 — Position",
           "type": {
             "enumeration": [
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0290"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0291"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0292"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0293"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0289"
         },
         "annotation3Category": {
-          "displayName": "Annotation 3 \u2014 Category",
+          "displayName": "Annotation 3 — Category",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0294"
         },
         "annotation3Text": {
-          "displayName": "Annotation 3 \u2014 Text",
+          "displayName": "Annotation 3 — Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0295"
         },
         "annotation3Position": {
-          "displayName": "Annotation 3 \u2014 Position",
+          "displayName": "Annotation 3 — Position",
           "type": {
             "enumeration": [
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0297"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0298"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0299"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0300"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0296"
         },
         "annotationFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0301"
         },
         "annotationFontColor": {
           "displayName": "Font Color",
@@ -1596,7 +2134,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0302"
         },
         "annotationConnectorColor": {
           "displayName": "Connector Color",
@@ -1606,9 +2145,146 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0303"
+        },
+        "annotationFontFamily": {
+          "displayName": "Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0305"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0306"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0307"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0308"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0309"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0310"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0311"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0312"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0313"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0314"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0315"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0316"
+              }
+            ]
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0304"
+        },
+        "annotationFontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0318"
+              },
+              {
+                "value": "500",
+                "displayName": "Medium",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0319"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0320"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0321"
+              }
+            ]
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0317"
+        },
+        "annotationOffset": {
+          "displayName": "Callout Offset",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0322"
+        },
+        "annotationPadding": {
+          "displayName": "Badge Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0323"
+        },
+        "annotationBackgroundColor": {
+          "displayName": "Badge Background",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0324"
+        },
+        "annotationBackgroundOpacity": {
+          "displayName": "Badge Opacity (%)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0325"
+        },
+        "annotationCornerRadius": {
+          "displayName": "Badge Corner Radius",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0326"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0278"
     },
     "accessibilityFormatting": {
       "displayName": "Accessibility",
@@ -1617,9 +2293,11 @@
           "displayName": "Enable Keyboard Navigation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0328"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0327"
     },
     "varianceSettings": {
       "displayName": "Variance Indicators",
@@ -1628,7 +2306,8 @@
           "displayName": "Show Variance Indicators",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0330"
         },
         "compareAgainst": {
           "displayName": "Compare Against",
@@ -1636,40 +2315,48 @@
             "enumeration": [
               {
                 "value": "target",
-                "displayName": "Target (data role)"
+                "displayName": "Target (data role)",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0332"
               },
               {
                 "value": "average",
-                "displayName": "Average"
+                "displayName": "Average",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0333"
               },
               {
                 "value": "median",
-                "displayName": "Median"
+                "displayName": "Median",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0334"
               },
               {
                 "value": "custom",
-                "displayName": "Custom Value"
+                "displayName": "Custom Value",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0335"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0331"
         },
         "customValue": {
           "displayName": "Custom Value",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0336"
         },
         "showDelta": {
           "displayName": "Show Delta Value",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0337"
         },
         "showArrow": {
           "displayName": "Show Arrow",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0338"
         },
         "positiveColor": {
           "displayName": "Positive Color",
@@ -1679,7 +2366,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0339"
         },
         "negativeColor": {
           "displayName": "Negative Color",
@@ -1689,15 +2377,100 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0340"
         },
         "varianceFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0341"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0329"
+    },
+    "percentComparisonSettings": {
+      "displayName": "Series Ratio Labels",
+      "properties": {
+        "show": {
+          "displayName": "Show Ratio Labels",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0025"
+        },
+        "numeratorSeriesIndex": {
+          "displayName": "Numerator Series Number",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0026"
+        },
+        "denominatorSeriesIndex": {
+          "displayName": "Denominator Series Number",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0027"
+        },
+        "decimalPlaces": {
+          "displayName": "Decimal Places",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0028"
+        },
+        "fontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0029"
+        },
+        "fontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0030"
+        },
+        "fontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0032"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0033"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0034"
+              }
+            ]
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0031"
+        },
+        "labelSpace": {
+          "displayName": "Label Space",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0035"
+        }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0024"
     },
     "benchmarkBandSettings": {
       "displayName": "Benchmark Band",
@@ -1706,19 +2479,22 @@
           "displayName": "Show Benchmark Band",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0343"
         },
         "lowerBound": {
           "displayName": "Lower Bound",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0344"
         },
         "upperBound": {
           "displayName": "Upper Bound",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0345"
         },
         "bandColor": {
           "displayName": "Band Color",
@@ -1728,21 +2504,25 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0346"
         },
         "bandOpacity": {
           "displayName": "Band Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0347"
         },
         "label": {
           "displayName": "Label",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0348"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0342"
     },
     "drillDownSettings": {
       "displayName": "Drill-Down",
@@ -1751,19 +2531,22 @@
           "displayName": "Enable Drill-Down",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0350"
         },
         "showBreadcrumb": {
           "displayName": "Show Breadcrumb",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0351"
         },
         "breadcrumbFontSize": {
           "displayName": "Breadcrumb Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0352"
         },
         "breadcrumbColor": {
           "displayName": "Breadcrumb Color",
@@ -1773,9 +2556,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0353"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0349"
     },
     "cardSettings": {
       "displayName": "Card Style",
@@ -1788,19 +2573,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0355"
         },
         "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0356"
         },
         "borderRadius": {
           "displayName": "Border Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0357"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0358"
         },
         "cardStyleMode": {
           "displayName": "Card Style",
@@ -1808,30 +2603,47 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0036"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0037"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0038"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0039"
+              },
+              {
+                "value": "outlined",
+                "displayName": "Border Only",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0040"
+              },
+              {
+                "value": "floating",
+                "displayName": "Floating Shadow",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0041"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0359"
         },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "(Deprecated) Enable Glass"
+          "displayName": "(Deprecated) Enable Glass",
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0364"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0354"
     },
     "scrollFormatting": {
       "displayName": "Scroll",
@@ -1840,15 +2652,18 @@
           "displayName": "Enable Scroll",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0366"
         },
         "minCategoryWidth": {
           "displayName": "Min Category Width (px)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0367"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0365"
     },
     "numberFormatting": {
       "displayName": "Number Format",
@@ -1859,46 +2674,56 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0370"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0371"
               },
               {
                 "value": "thousands",
-                "displayName": "Thousands (K)"
+                "displayName": "Thousands (K)",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0372"
               },
               {
                 "value": "millions",
-                "displayName": "Millions (M)"
+                "displayName": "Millions (M)",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0373"
               },
               {
                 "value": "billions",
-                "displayName": "Billions (B)"
+                "displayName": "Billions (B)",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0374"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0369"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0375"
         },
         "valuePrefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0376"
         },
         "valueSuffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0377"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0368"
     },
     "lineNumberFormatting": {
       "displayName": "Line Number Format",
@@ -1909,46 +2734,56 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0380"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0381"
               },
               {
                 "value": "thousands",
-                "displayName": "Thousands (K)"
+                "displayName": "Thousands (K)",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0382"
               },
               {
                 "value": "millions",
-                "displayName": "Millions (M)"
+                "displayName": "Millions (M)",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0383"
               },
               {
                 "value": "billions",
-                "displayName": "Billions (B)"
+                "displayName": "Billions (B)",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0384"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0379"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0385"
         },
         "valuePrefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0386"
         },
         "valueSuffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0387"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0378"
     },
     "colorThemeFormatting": {
       "properties": {
@@ -1958,37 +2793,46 @@
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0390"
               },
               {
                 "value": "ocean",
-                "displayName": "Ocean"
+                "displayName": "Ocean",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0391"
               },
               {
                 "value": "sunset",
-                "displayName": "Sunset"
+                "displayName": "Sunset",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0392"
               },
               {
                 "value": "forest",
-                "displayName": "Forest"
+                "displayName": "Forest",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0393"
               },
               {
                 "value": "berry",
-                "displayName": "Berry"
+                "displayName": "Berry",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0394"
               },
               {
                 "value": "monochrome",
-                "displayName": "Monochrome"
+                "displayName": "Monochrome",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0395"
               },
               {
                 "value": "earth",
-                "displayName": "Earth"
+                "displayName": "Earth",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0396"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0389"
         }
       },
-      "displayName": "Color Theme"
+      "displayName": "Color Theme",
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0388"
     },
     "paretoSettings": {
       "displayName": "Pareto Line",
@@ -1997,7 +2841,8 @@
           "displayName": "Show Pareto Line",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0398"
         },
         "lineColor": {
           "displayName": "Line Color",
@@ -2007,15 +2852,18 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0399"
         },
         "showThreshold": {
           "displayName": "Show 80% Line",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0400"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0397"
     },
     "smallMultiplesSettings": {
       "displayName": "Small Multiples",
@@ -2024,25 +2872,29 @@
           "displayName": "Enable Small Multiples",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0402"
         },
         "columns": {
           "displayName": "Columns",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0403"
         },
         "syncYAxis": {
           "displayName": "Sync Y-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0404"
         },
         "cellTitleFontSize": {
           "displayName": "Cell Title Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0405"
         },
         "cellTitleFontColor": {
           "displayName": "Cell Title Font Color",
@@ -2052,9 +2904,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0406"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0401"
     },
     "zoomSettings": {
       "displayName": "Zoom & Pan",
@@ -2063,9 +2917,11 @@
           "displayName": "Enable Zoom",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0408"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0407"
     },
     "waterfallSettings": {
       "displayName": "Waterfall",
@@ -2078,7 +2934,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0410"
         },
         "negativeColor": {
           "displayName": "Negative Color",
@@ -2088,7 +2945,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0411"
         },
         "totalColor": {
           "displayName": "Total Color",
@@ -2098,7 +2956,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0412"
         },
         "connectorColor": {
           "displayName": "Connector Color",
@@ -2108,15 +2967,18 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0413"
         },
         "connectorWidth": {
           "displayName": "Connector Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0414"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0409"
     },
     "dateFilterFormatting": {
       "displayName": "Date Filter",
@@ -2125,27 +2987,32 @@
           "displayName": "Enable Date Filter",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0416"
         },
         "startDate": {
           "displayName": "Start Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0417"
         },
         "endAtCurrentDate": {
           "displayName": "End at Current Date",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0418"
         },
         "endDate": {
           "displayName": "End Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0419"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0415"
     },
     "crosshairFormatting": {
       "displayName": "Crosshair",
@@ -2154,7 +3021,8 @@
           "displayName": "Show Crosshair",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0421"
         },
         "crosshairLineColor": {
           "displayName": "Line Color",
@@ -2164,13 +3032,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0422"
         },
         "crosshairLineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0423"
         },
         "crosshairLineStyle": {
           "displayName": "Line Style",
@@ -2178,37 +3048,53 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0425"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0426"
               },
               {
                 "value": "dotted",
-                "displayName": "Dotted"
+                "displayName": "Dotted",
+                "displayNameKey": "BarChartProCapabilities_DisplayName_0427"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0424"
         },
         "crosshairOpacity": {
           "displayName": "Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0428"
         },
         "showCrosshairValues": {
           "displayName": "Show Values",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarChartProCapabilities_DisplayName_0429"
         }
-      }
+      },
+      "displayNameKey": "BarChartProCapabilities_DisplayName_0420"
     }
   },
   "supportsKeyboardFocus": true,
   "supportsHighlight": true,
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
   "supportsMultiVisualSelection": true,
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
   "privileges": [],
   "suppressDefaultTitle": true
 }

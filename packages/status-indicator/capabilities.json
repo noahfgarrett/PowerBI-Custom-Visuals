@@ -4,25 +4,33 @@
       "displayName": "Category",
       "name": "category",
       "kind": "Grouping",
-      "description": "KPI names"
+      "description": "KPI names",
+      "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0217",
+      "descriptionKey": "StatusIndicatorCapabilities_Description_0001"
     },
     {
       "displayName": "Value",
       "name": "measure",
       "kind": "Measure",
-      "description": "Current value"
+      "description": "Current value",
+      "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0218",
+      "descriptionKey": "StatusIndicatorCapabilities_Description_0002"
     },
     {
       "displayName": "Warning Threshold",
       "name": "warningThreshold",
       "kind": "Measure",
-      "description": "Warning threshold"
+      "description": "Warning threshold",
+      "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0219",
+      "descriptionKey": "StatusIndicatorCapabilities_Description_0003"
     },
     {
       "displayName": "Critical Threshold",
       "name": "criticalThreshold",
       "kind": "Measure",
-      "description": "Critical threshold"
+      "description": "Critical threshold",
+      "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0220",
+      "descriptionKey": "StatusIndicatorCapabilities_Description_0004"
     }
   ],
   "dataViewMappings": [
@@ -86,50 +94,61 @@
             "enumeration": [
               {
                 "value": "circle",
-                "displayName": "Circle"
+                "displayName": "Circle",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0007"
               },
               {
                 "value": "square",
-                "displayName": "Square"
+                "displayName": "Square",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0008"
               },
               {
                 "value": "triangle",
-                "displayName": "Triangle"
+                "displayName": "Triangle",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0009"
               },
               {
                 "value": "diamond",
-                "displayName": "Diamond"
+                "displayName": "Diamond",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0010"
               },
               {
                 "value": "star",
-                "displayName": "Star"
+                "displayName": "Star",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0011"
               },
               {
                 "value": "heart",
-                "displayName": "Heart"
+                "displayName": "Heart",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0012"
               },
               {
                 "value": "flag",
-                "displayName": "Flag"
+                "displayName": "Flag",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0013"
               },
               {
                 "value": "check",
-                "displayName": "Check"
+                "displayName": "Check",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0014"
               }
             ]
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0222"
         },
         "iconSize": {
           "displayName": "Icon Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0015"
         },
         "size": {
-          "displayName": "Size",
+          "displayName": "Label Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0016"
         },
         "labelColor": {
           "displayName": "Label Color",
@@ -139,9 +158,82 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0017"
+        },
+        "labelFontFamily": {
+          "displayName": "Label Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0019"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0020"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0021"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0022"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0023"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0024"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0025"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0026"
+              }
+            ]
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0018"
+        },
+        "labelFontWeight": {
+          "displayName": "Label Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0028"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0029"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0030"
+              }
+            ]
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0027"
         }
-      }
+      },
+      "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0221"
     },
     "layoutSettings": {
       "displayName": "Layout",
@@ -152,23 +244,42 @@
             "enumeration": [
               {
                 "value": "vertical",
-                "displayName": "Vertical"
+                "displayName": "Vertical",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0033"
               },
               {
                 "value": "horizontal",
-                "displayName": "Horizontal"
+                "displayName": "Horizontal",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0034"
               },
               {
                 "value": "grid",
-                "displayName": "Grid"
+                "displayName": "Grid",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0035"
               }
             ]
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0032"
+        },
+        "itemGap": {
+          "displayName": "Item Gap",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0036"
+        },
+        "itemPadding": {
+          "displayName": "Item Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0037"
         }
-      }
+      },
+      "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0031"
     },
     "thresholdSettings": {
-      "displayName": "Thresholds",
+      "displayName": "Thresholds & Colors",
       "properties": {
         "goodColor": {
           "displayName": "Good Color",
@@ -178,7 +289,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0039"
         },
         "warningColor": {
           "displayName": "Warning Color",
@@ -188,7 +300,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0040"
         },
         "criticalColor": {
           "displayName": "Critical Color",
@@ -198,7 +311,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0041"
         },
         "direction": {
           "displayName": "Direction",
@@ -206,32 +320,52 @@
             "enumeration": [
               {
                 "value": "higherIsBetter",
-                "displayName": "Higher is Better"
+                "displayName": "Higher is Better",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0043"
               },
               {
                 "value": "lowerIsBetter",
-                "displayName": "Lower is Better"
+                "displayName": "Lower is Better",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0044"
               }
             ]
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0042"
         },
         "useCustomThresholds": {
           "displayName": "Custom Thresholds",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0045"
         },
         "threshold1": {
-          "displayName": "Warning Threshold",
+          "displayName": "Lower Threshold",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0046"
         },
         "threshold2": {
-          "displayName": "Critical Threshold",
+          "displayName": "Upper Threshold",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0047"
+        },
+        "threshold3": {
+          "displayName": "Level 4 Threshold",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0215"
+        },
+        "threshold4": {
+          "displayName": "Level 5 Threshold",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0216"
         },
         "levelCount": {
           "displayName": "Level Count",
@@ -239,18 +373,22 @@
             "enumeration": [
               {
                 "value": "3",
-                "displayName": "3"
+                "displayName": "3",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0049"
               },
               {
                 "value": "4",
-                "displayName": "4"
+                "displayName": "4",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0050"
               },
               {
                 "value": "5",
-                "displayName": "5"
+                "displayName": "5",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0051"
               }
             ]
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0048"
         },
         "level4Color": {
           "displayName": "Level 4 Color",
@@ -260,7 +398,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0052"
         },
         "level5Color": {
           "displayName": "Level 5 Color",
@@ -270,9 +409,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0053"
         }
-      }
+      },
+      "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0038"
     },
     "valueDisplaySettings": {
       "displayName": "Value Display",
@@ -281,13 +422,15 @@
           "displayName": "Show Value",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0055"
         },
         "valueFontSize": {
           "displayName": "Value Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0056"
         },
         "valueFontFamily": {
           "displayName": "Value Font Family",
@@ -295,38 +438,47 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0058"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0059"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0060"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0061"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0062"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0063"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0064"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0065"
               }
             ]
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0057"
         },
         "valueFontWeight": {
           "displayName": "Value Font Weight",
@@ -334,30 +486,36 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0067"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0068"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0069"
               }
             ]
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0066"
         },
         "showStatusText": {
           "displayName": "Show Status Text",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0070"
         },
         "statusFontSize": {
           "displayName": "Status Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0071"
         },
         "statusFontColor": {
           "displayName": "Status Font Color",
@@ -367,7 +525,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0072"
         },
         "statusFontFamily": {
           "displayName": "Status Font Family",
@@ -375,38 +534,47 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0074"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0075"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0076"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0077"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0078"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0079"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0080"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0081"
               }
             ]
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0073"
         },
         "statusFontWeight": {
           "displayName": "Status Font Weight",
@@ -414,26 +582,32 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0083"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0084"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0085"
               }
             ]
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0082"
         },
         "showSparkline": {
-          "displayName": "Show Sparkline",
+          "displayName": "Show Value Bar",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0086"
         }
-      }
+      },
+      "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0054"
     },
     "animationSettings": {
       "displayName": "Animation & Effects",
@@ -442,21 +616,25 @@
           "displayName": "Enable Animations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0088"
         },
         "duration": {
           "displayName": "Duration (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0089"
         },
         "enablePulse": {
           "displayName": "Pulse Critical",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0090"
         }
-      }
+      },
+      "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0087"
     },
     "titleFormatting": {
       "displayName": "Chart Title",
@@ -465,19 +643,22 @@
           "displayName": "Show Title",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0092"
         },
         "titleText": {
           "displayName": "Title Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0093"
         },
         "titleFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0094"
         },
         "titleFontColor": {
           "displayName": "Font Color",
@@ -487,7 +668,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0095"
         },
         "titleAlignment": {
           "displayName": "Alignment",
@@ -495,18 +677,22 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0097"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0098"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0099"
               }
             ]
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0096"
         },
         "titleFontFamily": {
           "displayName": "Font",
@@ -514,66 +700,81 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0101"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0102"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0103"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0104"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0105"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0106"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0107"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0108"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0109"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0110"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0111"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0112"
               }
             ]
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0100"
         },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0113"
         },
         "subtitleFontSize": {
           "displayName": "Subtitle Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0114"
         },
         "subtitleFontColor": {
           "displayName": "Subtitle Color",
@@ -583,7 +784,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0115"
         },
         "titleFontWeight": {
           "displayName": "Font Weight",
@@ -591,14 +793,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0117"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0118"
               }
             ]
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0116"
         },
         "subtitleFontFamily": {
           "displayName": "Subtitle Font",
@@ -606,54 +811,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0120"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0121"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0122"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0123"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0124"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0125"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0126"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0127"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0128"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0129"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0130"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0131"
               }
             ]
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0119"
         },
         "subtitleFontWeight": {
           "displayName": "Subtitle Font Weight",
@@ -661,16 +879,20 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0133"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0134"
               }
             ]
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0132"
         }
-      }
+      },
+      "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0091"
     },
     "cardSettings": {
       "displayName": "Card Style",
@@ -683,19 +905,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0136"
         },
         "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0137"
         },
         "borderRadius": {
           "displayName": "Border Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0138"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0139"
         },
         "cardStyleMode": {
           "displayName": "Card Style",
@@ -703,30 +935,47 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0001"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0002"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0003"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0004"
+              },
+              {
+                "value": "outlined",
+                "displayName": "Border Only",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0005"
+              },
+              {
+                "value": "floating",
+                "displayName": "Floating Shadow",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0006"
               }
             ]
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0140"
         },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "(Deprecated) Enable Glass"
+          "displayName": "(Deprecated) Enable Glass",
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0145"
         }
-      }
+      },
+      "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0135"
     },
     "conditionalFormatting": {
       "displayName": "Conditional Formatting",
@@ -735,7 +984,8 @@
           "displayName": "Enable Conditional Formatting",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0147"
         },
         "conditionalDirection": {
           "displayName": "Direction",
@@ -743,26 +993,31 @@
             "enumeration": [
               {
                 "value": "ascending",
-                "displayName": "Ascending (Low = Bad)"
+                "displayName": "Ascending (Low = Bad)",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0149"
               },
               {
                 "value": "descending",
-                "displayName": "Descending (Low = Good)"
+                "displayName": "Descending (Low = Good)",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0150"
               }
             ]
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0148"
         },
         "threshold1": {
           "displayName": "Threshold 1",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0151"
         },
         "threshold2": {
           "displayName": "Threshold 2",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0152"
         },
         "conditionalColor1": {
           "displayName": "Color 1 (Bad)",
@@ -772,7 +1027,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0153"
         },
         "conditionalColor2": {
           "displayName": "Color 2 (Warning)",
@@ -782,7 +1038,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0154"
         },
         "conditionalColor3": {
           "displayName": "Color 3 (Good)",
@@ -792,9 +1049,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0155"
         }
-      }
+      },
+      "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0146"
     },
     "accessibilityFormatting": {
       "displayName": "Accessibility",
@@ -803,9 +1062,50 @@
           "displayName": "Enable Keyboard Navigation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0157"
         }
-      }
+      },
+      "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0156"
+    },
+    "sortFormatting": {
+      "displayName": "Sort Order",
+      "properties": {
+        "sortBy": {
+          "displayName": "Sort By",
+          "type": {
+            "enumeration": [
+              {
+                "value": "dataOrder",
+                "displayName": "Data Order",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0160"
+              },
+              {
+                "value": "valueAsc",
+                "displayName": "Value (Ascending)",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0161"
+              },
+              {
+                "value": "valueDesc",
+                "displayName": "Value (Descending)",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0162"
+              },
+              {
+                "value": "nameAsc",
+                "displayName": "Name (A-Z)",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0163"
+              },
+              {
+                "value": "nameDesc",
+                "displayName": "Name (Z-A)",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0164"
+              }
+            ]
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0159"
+        }
+      },
+      "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0158"
     },
     "numberFormatting": {
       "displayName": "Number Format",
@@ -816,46 +1116,56 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0167"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0168"
               },
               {
                 "value": "thousands",
-                "displayName": "Thousands (K)"
+                "displayName": "Thousands (K)",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0169"
               },
               {
                 "value": "millions",
-                "displayName": "Millions (M)"
+                "displayName": "Millions (M)",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0170"
               },
               {
                 "value": "billions",
-                "displayName": "Billions (B)"
+                "displayName": "Billions (B)",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0171"
               }
             ]
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0166"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0172"
         },
         "valuePrefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0173"
         },
         "valueSuffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0174"
         }
-      }
+      },
+      "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0165"
     },
     "legendFormatting": {
       "displayName": "Legend",
@@ -864,7 +1174,8 @@
           "displayName": "Show Legend",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0176"
         },
         "legendPosition": {
           "displayName": "Position",
@@ -872,28 +1183,34 @@
             "enumeration": [
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0178"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0179"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0180"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0181"
               }
             ]
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0177"
         },
         "legendFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0182"
         },
         "legendFontColor": {
           "displayName": "Font Color",
@@ -903,7 +1220,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0183"
         },
         "legendFontFamily": {
           "displayName": "Font",
@@ -911,54 +1229,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0185"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0186"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0187"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0188"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0189"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0190"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0191"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0192"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0193"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0194"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0195"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0196"
               }
             ]
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0184"
         },
         "legendFontWeight": {
           "displayName": "Font Weight",
@@ -966,22 +1297,27 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0198"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0199"
               }
             ]
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0197"
         },
         "legendAliases": {
           "displayName": "Rename Labels",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0200"
         }
-      }
+      },
+      "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0175"
     },
     "dateFilterFormatting": {
       "displayName": "Date Filter",
@@ -990,27 +1326,32 @@
           "displayName": "Enable Date Filter",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0202"
         },
         "startDate": {
           "displayName": "Start Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0203"
         },
         "endAtCurrentDate": {
           "displayName": "End at Current Date",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0204"
         },
         "endDate": {
           "displayName": "End Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0205"
         }
-      }
+      },
+      "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0201"
     },
     "colorThemeFormatting": {
       "properties": {
@@ -1020,42 +1361,60 @@
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0208"
               },
               {
                 "value": "ocean",
-                "displayName": "Ocean"
+                "displayName": "Ocean",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0209"
               },
               {
                 "value": "sunset",
-                "displayName": "Sunset"
+                "displayName": "Sunset",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0210"
               },
               {
                 "value": "forest",
-                "displayName": "Forest"
+                "displayName": "Forest",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0211"
               },
               {
                 "value": "berry",
-                "displayName": "Berry"
+                "displayName": "Berry",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0212"
               },
               {
                 "value": "monochrome",
-                "displayName": "Monochrome"
+                "displayName": "Monochrome",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0213"
               },
               {
                 "value": "earth",
-                "displayName": "Earth"
+                "displayName": "Earth",
+                "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0214"
               }
             ]
-          }
+          },
+          "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0207"
         }
       },
-      "displayName": "Color Theme"
+      "displayName": "Color Theme",
+      "displayNameKey": "StatusIndicatorCapabilities_DisplayName_0206"
     }
   },
   "supportsKeyboardFocus": true,
   "supportsHighlight": true,
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
   "supportsMultiVisualSelection": true,
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
   "privileges": [],
   "suppressDefaultTitle": true
 }

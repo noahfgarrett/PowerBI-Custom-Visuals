@@ -88,7 +88,7 @@
   left: 12px;
   z-index: 14;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   pointer-events: auto;
 }
@@ -181,16 +181,26 @@
 .network-detail-filter-panel {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  width: max-content;
-  max-width: min(380px, calc(100vw - 76px));
-  padding: 10px;
+  gap: 10px;
+  box-sizing: border-box;
+  width: min(600px, calc(100vw - 32px));
+  max-width: min(600px, calc(100vw - 32px));
+  max-height: min(520px, calc(100vh - 96px));
+  overflow: auto;
+  padding: 14px;
   border: 1px solid rgba(148, 163, 184, 0.34);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.16);
-  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.2);
+  backdrop-filter: blur(12px);
   color: #0f172a;
+}
+
+.network-detail-filter-panel-overlay {
+  position: absolute;
+  top: 38px;
+  left: 0;
+  z-index: 2;
 }
 
 .network-detail-filter-count {
@@ -223,7 +233,7 @@
   min-width: 0;
   overflow: hidden;
   color: #0f172a;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 800;
   line-height: 1.2;
   text-overflow: ellipsis;
@@ -233,9 +243,39 @@
 .network-detail-filter-match-count {
   flex: 0 0 auto;
   color: #64748b;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1.2;
+}
+
+.network-detail-filter-tabs {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 999px;
+  background: rgba(241, 245, 249, 0.72);
+}
+
+.network-detail-filter-tab {
+  border: 0;
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1;
+  transition: background 0.14s ease, color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.network-detail-filter-tab[aria-selected='true'] {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.12);
 }
 
 .network-detail-filter-chips {
@@ -256,7 +296,7 @@
   border-radius: 999px;
   background: rgba(219, 234, 254, 0.9);
   color: #1e40af;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   line-height: 1.15;
   text-overflow: ellipsis;
@@ -288,6 +328,91 @@
   max-width: 100%;
 }
 
+.network-detail-filter-builder-advanced .network-detail-filter-field {
+  flex: 1 1 300px;
+  min-width: min(280px, 100%);
+}
+
+.network-detail-filter-builder-advanced .network-detail-filter-value {
+  flex: 1 1 220px;
+  min-width: min(220px, 100%);
+}
+
+.network-detail-filter-basic {
+  display: grid;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.network-detail-filter-basic-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.network-detail-filter-basic-field {
+  flex: 1 1 300px;
+  min-width: min(280px, 100%);
+}
+
+.network-detail-filter-basic-count {
+  flex: 0 0 auto;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.network-detail-filter-basic-values {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 5px;
+  max-height: 170px;
+  overflow: auto;
+  padding: 2px;
+}
+
+.network-detail-filter-basic-option {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 8px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  background: rgba(248, 250, 252, 0.94);
+  color: #334155;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.network-detail-filter-basic-checkbox {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  accent-color: #2563eb;
+}
+
+.network-detail-filter-basic-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.network-detail-filter-basic-empty {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(241, 245, 249, 0.8);
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 750;
+}
+
 .network-detail-filter-field,
 .network-detail-filter-value,
 .network-detail-filter-operator,
@@ -309,15 +434,15 @@
 
 .network-detail-filter-field,
 .network-detail-filter-value {
-  max-width: 156px;
+  max-width: 320px;
 }
 
 .network-detail-filter-operator {
-  width: 62px;
+  width: 218px;
 }
 
 .network-detail-filter-number {
-  width: 72px;
+  width: 96px;
   box-sizing: border-box;
 }
 
@@ -345,6 +470,8 @@
 .network-detail-filter-more-toggle,
 .network-detail-filter-focus-matched,
 .network-detail-filter-result,
+.network-detail-filter-select-all,
+.network-detail-filter-clear-field,
 .network-detail-filter-clear,
 .network-detail-filter-done {
   min-width: 0;
@@ -355,9 +482,9 @@
   color: #334155;
   cursor: pointer;
   font: inherit;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
-  line-height: 1;
+  line-height: 1.1;
   transition: transform 0.14s ease, background 0.14s ease, color 0.14s ease, opacity 0.14s ease;
 }
 
@@ -386,6 +513,8 @@
 .network-detail-filter-more-toggle:hover,
 .network-detail-filter-focus-matched:hover,
 .network-detail-filter-result:hover,
+.network-detail-filter-select-all:hover,
+.network-detail-filter-clear-field:hover,
 .network-detail-filter-clear:hover,
 .network-detail-filter-done:hover,
 .network-detail-filter-add:focus-visible,
@@ -394,6 +523,8 @@
 .network-detail-filter-more-toggle:focus-visible,
 .network-detail-filter-focus-matched:focus-visible,
 .network-detail-filter-result:focus-visible,
+.network-detail-filter-select-all:focus-visible,
+.network-detail-filter-clear-field:focus-visible,
 .network-detail-filter-clear:focus-visible,
 .network-detail-filter-done:focus-visible {
   transform: translateY(-1px);
@@ -419,6 +550,8 @@
 .network-detail-filter-more-toggle:disabled,
 .network-detail-filter-focus-matched:disabled,
 .network-detail-filter-result:disabled,
+.network-detail-filter-select-all:disabled,
+.network-detail-filter-clear-field:disabled,
 .network-detail-filter-clear:disabled,
 .network-detail-filter-done:disabled {
   cursor: default;
@@ -574,4 +707,14 @@
   padding: 8px 0 2px;
   color: #64748b;
   font-size: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .network-node,
+  .network-link,
+  .network-label,
+  .network-search-controls,
+  .network-node-inspector {
+    transition: none !important;
+  }
 }

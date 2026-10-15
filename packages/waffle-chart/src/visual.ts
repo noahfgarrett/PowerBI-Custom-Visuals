@@ -14,7 +14,6 @@ import {
   applyCardStyle,
   type CardStyleMode,
   renderChartTitle,
-  applyDataLabelFormatting,
   renderLegend,
   getHostChartColor,
   resolveColorTheme,
@@ -24,11 +23,20 @@ import {
   applyChartAria,
   attachKeyboardNav,
   ensureFocusRingStyles,
+  allowInteractions,
+  applyBasicHighContrastStyles,
+  getHostHighContrastColors,
+  getLocalizedString,
+  getVisualEmptyStateMode,
+  notifyRenderingFailed,
+  notifyRenderingFinished,
+  notifyRenderingStarted,
+  syncCardStyleVisibility,
+  syncLegendFormattingVisibility,
+  syncTitleFormattingVisibility,
   formatWithSettings,
+  attachEmptySpaceContextMenu,
   type LegendItem,
-  getDateFilterIndices,
-  isDateColumn,
-  type DateFilterConfig,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -85,23 +93,34 @@ export class WaffleChartVisual implements IVisual {
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
   private currentWaffleData: WaffleChartData | null = null;
+  private emptyStateMode: 'unconfigured' | 'noData' = 'unconfigured';
+  private detachContextMenu: () => void;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
     this.selectionManager = options.host.createSelectionManager();
     this.container = options.element;
     this.settings = new WaffleChartSettings();
-    this.formattingSettingsService = new FormattingSettingsService();
+    this.formattingSettingsService = new FormattingSettingsService(options.host.createLocalizationManager());
     this.container.classList.add('waffle-container');
+    this.detachContextMenu = attachEmptySpaceContextMenu(
+      this.container,
+      this.selectionManager,
+      () => this.host.createSelectionIdBuilder().createSelectionId(),
+      () => allowInteractions(this.host),
+    );
   }
 
   public update(options: VisualUpdateOptions): void {
+    notifyRenderingStarted(this.host, options);
+    try {
     // Cancel any running animations
     this.cancelAnimations.forEach((cancel) => cancel());
     this.cancelAnimations = [];
 
     // Parse settings from dataView
     const dataView = options.dataViews?.[0];
+    this.emptyStateMode = getVisualEmptyStateMode(dataView);
     if (dataView) {
       this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
         WaffleChartSettings,
@@ -111,48 +130,69 @@ export class WaffleChartVisual implements IVisual {
 
     // Migrate legacy enableGlass -> cardStyleMode (backward compat)
     const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
-    if (legacyCardObj) {
-      const legacyGlass = legacyCardObj['enableGlass'];
-      if (legacyGlass === false) {
-        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
-      }
+    const legacyGlass = legacyCardObj?.['enableGlass'];
+    if (legacyCardObj?.['cardStyleMode'] === undefined && legacyGlass === false) {
+      this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
     }
+    syncTitleFormattingVisibility(this.settings.titleFormattingCard);
+    syncLegendFormattingVisibility(this.settings.legendFormattingCard);
 
-    // Date filter: hide start/end when disabled
-    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
+    this.settings.dataLabelFormattingCard.visible = false;
+    this.settings.dateFilterFormattingCard.visible = false;
+    this.settings.legendFormattingCard.showInlineLabels.visible = false;
+    this.settings.legendFormattingCard.inlineLabelFontSize.visible = false;
+    this.settings.legendFormattingCard.inlineLabelOffset.visible = false;
 
-    this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
-    // Hide data label position — position is determined by chart geometry
-    this.settings.dataLabelFormattingCard.dataLabelPosition.visible = false;
+    const conditionalEnabled = this.settings.conditionalFormattingCard.enableConditional.value;
+    this.settings.conditionalFormattingCard.conditionalDirection.visible = conditionalEnabled;
+    this.settings.conditionalFormattingCard.threshold1.visible = conditionalEnabled;
+    this.settings.conditionalFormattingCard.threshold2.visible = conditionalEnabled;
+    this.settings.conditionalFormattingCard.conditionalColor1.visible = conditionalEnabled;
+    this.settings.conditionalFormattingCard.conditionalColor2.visible = conditionalEnabled;
+    this.settings.conditionalFormattingCard.conditionalColor3.visible = conditionalEnabled;
 
     // Conditional visibility: hide pictogram sub-settings when pictogram is off
     const pictoOn = this.settings.pictogramSettings.enabled.value;
-    this.settings.pictogramSettings.iconShape.visible = pictoOn;
+    const iconSet = resolveDropdown(this.settings.pictogramSettings.iconSet) ?? 'default';
+    this.settings.pictogramSettings.iconShape.visible = pictoOn && iconSet === 'default';
     this.settings.pictogramSettings.iconSet.visible = pictoOn;
     this.settings.pictogramSettings.iconSize.visible = pictoOn;
     this.settings.pictogramSettings.outlineOpacity.visible = pictoOn;
+    this.settings.gridSettings.rows.visible = !this.settings.gridSettings.autoFitCells.value;
+    this.settings.gridSettings.cols.visible = !this.settings.gridSettings.autoFitCells.value;
+    const shape = resolveDropdown(this.settings.gridSettings.shape) ?? 'square';
+    this.settings.gridSettings.shape.visible = !pictoOn;
+    this.settings.gridSettings.cellCornerRadius.visible = !pictoOn && shape === 'square';
+    this.settings.colorSettings.cellStrokeColor.visible = !pictoOn;
 
     // Hide animation duration when animations are disabled
     this.settings.animationSettings.duration.visible = this.settings.animationSettings.enabled.value;
 
-    // Card Style — hide sub-settings when mode is 'none'
-    const cardModeVis = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
-    this.settings.cardSettings.backgroundOpacity.visible = cardModeVis !== 'none';
-    this.settings.cardSettings.backgroundColor.visible = cardModeVis !== 'none';
+    syncCardStyleVisibility(this.settings.cardSettings);
 
     // Hide value display sub-settings when show is off
     this.settings.valueSettings.fontSize.visible = this.settings.valueSettings.show.value;
+    this.settings.valueSettings.displayMode.visible = this.settings.valueSettings.show.value;
     this.settings.valueSettings.fontColor.visible = this.settings.valueSettings.show.value;
     this.settings.valueSettings.fontFamily.visible = this.settings.valueSettings.show.value;
     this.settings.valueSettings.fontWeight.visible = this.settings.valueSettings.show.value;
+    this.settings.valueSettings.valueSpacing.visible = this.settings.valueSettings.show.value;
 
     // Extract data
     const data = this.extractData(dataView);
     this.currentWaffleData = data;
 
     this.render(data, options.viewport);
+    notifyRenderingFinished(this.host, options);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      notifyRenderingFailed(this.host, options, reason);
+      while (this.container.firstChild) this.container.removeChild(this.container.firstChild);
+      const message = document.createElement('div');
+      message.className = 'waffle-empty';
+      message.textContent = getLocalizedString(this.host, 'WaffleChart_RenderError', 'Unable to render the waffle chart.');
+      this.container.appendChild(message);
+    }
   }
 
   private extractData(dataView: DataView | undefined): WaffleChartData {
@@ -169,16 +209,6 @@ export class WaffleChartVisual implements IVisual {
 
     const categorical = dataView.categorical;
 
-    // Date filter (applied if a category column is present)
-    const categoryColumn = categorical.categories?.[0];
-    const dateConfig: DateFilterConfig = {
-      enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
-      startDate: this.settings.dateFilterFormattingCard.startDate.value,
-      endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
-      endDate: this.settings.dateFilterFormattingCard.endDate.value,
-    };
-    const _dateIndices = categoryColumn && isDateColumn(categoryColumn.source) ? getDateFilterIndices(categoryColumn.values, dateConfig) : null;
-
     const values = categorical.values;
 
     if (!values) return result;
@@ -194,12 +224,9 @@ export class WaffleChartVisual implements IVisual {
         // Cross-highlight detection
         const hlRaw = col.highlights as unknown[] | undefined;
         if (hlRaw) {
-          for (const h of hlRaw) {
-            if (h !== null && h !== undefined) {
-              result.hasHighlights = true;
-              break;
-            }
-          }
+          // Power BI sends an all-null highlight array when the measure does
+          // not match the active cross-highlight. Presence is the signal.
+          result.hasHighlights = true;
           // Check if the last value's highlight is non-null
           if (hlRaw.length > 0) {
             const lastHl = hlRaw[hlRaw.length - 1];
@@ -229,6 +256,7 @@ export class WaffleChartVisual implements IVisual {
   }
 
   private render(data: WaffleChartData, viewport: powerbi.IViewport): void {
+    this.hideTooltip();
     // Clear container (no innerHTML)
     while (this.container.firstChild) {
       this.container.removeChild(this.container.firstChild);
@@ -236,31 +264,44 @@ export class WaffleChartVisual implements IVisual {
     renderChartTitle(this.container, this.settings.titleFormattingCard);
 
     const s = this.settings;
-    const rows = Math.max(1, s.gridSettings.rows.value);
-    const cols = Math.max(1, s.gridSettings.cols.value);
+    const highContrast = getHostHighContrastColors(this.host);
+    const interactionsEnabled = allowInteractions(this.host);
+    const rows = clampInteger(s.gridSettings.rows.value, 1, 50);
+    const cols = clampInteger(s.gridSettings.cols.value, 1, 50);
     const gap = Math.max(0, s.gridSettings.gap.value);
     const shapeValue = s.gridSettings.shape.value?.value ?? 'square';
-    const cellStrokeColor = s.colorSettings.cellStrokeColor.value?.value;
+    const cellStrokeColor = highContrast.enabled
+      ? highContrast.foreground
+      : s.colorSettings.cellStrokeColor.value?.value;
     const cellCornerRadius = s.gridSettings.cellCornerRadius.value;
     // emptyColor: use Colors card (canonical), no longer duplicated in Grid
     const themeName = resolveColorTheme(s.colorThemeFormattingCard);
     const userFillColor = s.colorSettings.fillColor.value?.value;
     const baseFillColor = (userFillColor && userFillColor.length > 0) ? userFillColor : getHostChartColor(this.host.colorPalette, 0, themeName);
-    const conditionalColor = data.value !== null ? this.getConditionalColor(data.value) : undefined;
-    const fillColor = conditionalColor ?? baseFillColor;
-    const emptyColor = s.colorSettings.emptyColor.value?.value || '#E2E8F0';
+    const conditionalColor = !highContrast.enabled && data.value !== null
+      ? this.getConditionalColor(data.value)
+      : undefined;
+    const fillColor = highContrast.enabled
+      ? highContrast.foregroundSelected
+      : conditionalColor ?? baseFillColor;
+    const emptyColor = highContrast.enabled
+      ? highContrast.background
+      : s.colorSettings.emptyColor.value?.value || '#E2E8F0';
     const showValue = s.valueSettings.show.value;
     const fontSize = s.valueSettings.fontSize.value;
-    const fontColor = s.valueSettings.fontColor.value?.value;
-    const animEnabled = s.animationSettings.enabled.value;
-    const animDuration = s.animationSettings.duration.value;
+    const fontColor = highContrast.enabled
+      ? highContrast.foreground
+      : s.valueSettings.fontColor.value?.value;
+    const valueSpacing = Math.max(0, s.valueSettings.valueSpacing.value);
+    const animEnabled = s.animationSettings.enabled.value && !prefersReducedMotion();
+    const animDuration = Math.max(0, s.animationSettings.duration.value);
 
     // Pictogram settings
     const pictogramEnabled = s.pictogramSettings.enabled.value;
     const iconShapeRaw = s.pictogramSettings.iconShape.value?.value ?? 'person';
     const iconShape: PictogramIconShape =
       iconShapeRaw in PICTOGRAM_ICON_PATHS ? (iconShapeRaw as PictogramIconShape) : 'person';
-    const iconSizePct = Math.max(80, Math.min(100, s.pictogramSettings.iconSize.value)) / 100;
+    const iconSizePct = Math.max(10, Math.min(100, s.pictogramSettings.iconSize.value)) / 100;
     const outlineOpacity = Math.max(0, Math.min(100, s.pictogramSettings.outlineOpacity.value)) / 100;
 
     // Icon Set (merged from Icon Library into Pictogram) — maps sets to shape overrides
@@ -291,6 +332,28 @@ export class WaffleChartVisual implements IVisual {
         borderRadius: s.cardSettings.borderRadius.value,
       },
     );
+    const contentPadding = Math.max(0, s.cardSettings.contentPadding.value);
+    this.container.style.padding = `${contentPadding}px`;
+    this.container.style.boxSizing = 'border-box';
+    this.container.style.position = 'relative';
+    if (highContrast.enabled) {
+      this.container.style.background = highContrast.background;
+      this.container.style.boxShadow = 'none';
+      this.container.style.border = `1px solid ${highContrast.foreground}`;
+      this.container.style.color = highContrast.foreground;
+    }
+
+    if (data.value === null) {
+      const empty = document.createElement('div');
+      empty.className = 'waffle-empty';
+      empty.setAttribute('role', 'status');
+      empty.textContent = this.emptyStateMode === 'noData'
+        ? getLocalizedString(this.host, 'WaffleChart_NoDataState', 'No data for the current selection.')
+        : getLocalizedString(this.host, 'WaffleChart_EmptyState', 'Add a value to build a waffle chart.');
+      this.container.appendChild(empty);
+      applyBasicHighContrastStyles(this.container, highContrast);
+      return;
+    }
 
     // Wrapper
     const wrapper = document.createElement('div');
@@ -298,8 +361,11 @@ export class WaffleChartVisual implements IVisual {
     wrapper.style.flexDirection = 'column';
     wrapper.style.alignItems = 'center';
     wrapper.style.justifyContent = 'center';
+    wrapper.style.gap = `${valueSpacing}px`;
     wrapper.style.width = '100%';
-    wrapper.style.height = '100%';
+    wrapper.style.flex = '1 1 auto';
+    wrapper.style.minHeight = '0';
+    wrapper.style.boxSizing = 'border-box';
 
     // Fill direction setting (merged from Layout into Grid)
     const fillDirRaw = s.gridSettings.fillDirection.value;
@@ -311,10 +377,26 @@ export class WaffleChartVisual implements IVisual {
     const autoFitCells = s.gridSettings.autoFitCells.value;
 
     // Calculate cell size
-    const padding = 12;
-    const valueAreaHeight = showValue ? 50 : 0;
-    const availW = viewport.width - padding * 2;
-    const availH = viewport.height - padding * 2 - valueAreaHeight;
+    const padding = Math.max(0, s.gridSettings.chartPadding.value + contentPadding);
+    const valueAreaHeight = showValue ? Math.ceil(fontSize * 1.2) : 0;
+    const effectiveValueSpacing = showValue ? valueSpacing : 0;
+    const headingHeight = Array.from(this.container.querySelectorAll<HTMLElement>('.chart-title, .chart-subtitle'))
+      .reduce((total, element) => total + element.offsetHeight, 0);
+    const legendPosition = this.getLegendPosition();
+    const showLegend = s.legendFormattingCard.showLegend.value;
+    const legendHeight = showLegend && (legendPosition === 'top' || legendPosition === 'bottom')
+      ? Math.max(20, s.legendFormattingCard.legendFontSize.value + 12)
+      : 0;
+    const legendWidth = showLegend && (legendPosition === 'left' || legendPosition === 'right')
+      ? Math.min(120, Math.max(0, viewport.width * 0.3))
+      : 0;
+    if (legendPosition === 'left') wrapper.style.paddingLeft = `${legendWidth}px`;
+    if (legendPosition === 'right') wrapper.style.paddingRight = `${legendWidth}px`;
+    const availW = Math.max(1, viewport.width - padding * 2 - legendWidth);
+    const availH = Math.max(
+      1,
+      viewport.height - padding * 2 - headingHeight - legendHeight - valueAreaHeight - effectiveValueSpacing,
+    );
 
     let effectiveRows = rows;
     let effectiveCols = cols;
@@ -322,12 +404,12 @@ export class WaffleChartVisual implements IVisual {
     if (autoFitCells) {
       // Auto-compute: target cell size ~20px, compute how many fit
       const targetCellSize = 20;
-      effectiveCols = Math.max(1, Math.floor((availW + gap) / (targetCellSize + gap)));
-      effectiveRows = Math.max(1, Math.floor((availH + gap) / (targetCellSize + gap)));
+      effectiveCols = clampInteger(Math.floor((availW + gap) / (targetCellSize + gap)), 1, 50);
+      effectiveRows = clampInteger(Math.floor((availH + gap) / (targetCellSize + gap)), 1, 50);
     }
 
     const cellSize = Math.max(
-      4,
+      1,
       Math.floor(
         Math.min(
           (availW - (effectiveCols - 1) * gap) / effectiveCols,
@@ -338,13 +420,18 @@ export class WaffleChartVisual implements IVisual {
 
     // Background click clears selection
     this.container.removeEventListener('click', this.handleBackgroundClick);
-    this.container.addEventListener('click', this.handleBackgroundClick);
+    if (interactionsEnabled) this.container.addEventListener('click', this.handleBackgroundClick);
 
     // Grid container
     const grid = document.createElement('div');
     grid.className = 'waffle-grid';
     grid.style.gridTemplateColumns = `repeat(${effectiveCols}, ${cellSize}px)`;
     grid.style.gap = `${gap}px`;
+    grid.setAttribute('role', 'group');
+    grid.setAttribute(
+      'aria-label',
+      `${formatPercentValue(data.percentage, this.getHostLocale())}% filled`,
+    );
     const onMouseEnter = (event: MouseEvent): void => { this.showWaffleTooltip(data, event); };
     const onMouseMove = (event: MouseEvent): void => { this.moveTooltip(event); };
     const onMouseLeave = (): void => { this.hideTooltip(); };
@@ -382,6 +469,7 @@ export class WaffleChartVisual implements IVisual {
           const dist = Math.sqrt((gridRow - centerRow) ** 2 + (gridCol - centerCol) ** 2);
           // Invert so center fills first
           const maxDist = Math.sqrt(centerRow ** 2 + centerCol ** 2);
+          if (maxDist === 0) return 0;
           return Math.round(dist / maxDist * totalCells);
         }
       }
@@ -421,7 +509,7 @@ export class WaffleChartVisual implements IVisual {
             emptyColor,
             outlineOpacity
           );
-          if (isFilled && data.selectionId) {
+          if (isFilled && data.selectionId && interactionsEnabled) {
             cellEl.style.cursor = 'pointer';
             const sid = data.selectionId;
             cellEl.addEventListener('click', (event: MouseEvent) => {
@@ -430,6 +518,7 @@ export class WaffleChartVisual implements IVisual {
             });
             cellEl.addEventListener('contextmenu', (event: MouseEvent) => {
               event.preventDefault();
+              event.stopPropagation();
               void this.selectionManager.showContextMenu(sid, {
                 x: event.clientX,
                 y: event.clientY,
@@ -459,7 +548,7 @@ export class WaffleChartVisual implements IVisual {
             cell.style.borderRadius = `${cellCornerRadius}px`;
           }
 
-          if (isFilled && data.selectionId) {
+          if (isFilled && data.selectionId && interactionsEnabled) {
             cell.style.cursor = 'pointer';
             const sid = data.selectionId;
             cell.addEventListener('click', (event: MouseEvent) => {
@@ -468,6 +557,7 @@ export class WaffleChartVisual implements IVisual {
             });
             cell.addEventListener('contextmenu', (event: MouseEvent) => {
               event.preventDefault();
+              event.stopPropagation();
               void this.selectionManager.showContextMenu(sid, {
                 x: event.clientX,
                 y: event.clientY,
@@ -486,7 +576,7 @@ export class WaffleChartVisual implements IVisual {
 
     wrapper.appendChild(grid);
 
-    // Percentage display
+    // Value display
     if (showValue) {
       const valueEl = document.createElement('div');
       valueEl.className = 'waffle-value';
@@ -499,7 +589,9 @@ export class WaffleChartVisual implements IVisual {
       const waffleFontWeight = resolveDropdown(s.valueSettings.fontWeight);
       valueEl.style.fontWeight = waffleFontWeight || 'normal';
 
-      if (data.value !== null && animEnabled) {
+      const displayMode = resolveDropdown(s.valueSettings.displayMode) ?? 'percentage';
+      const formattedValue = this.formatDisplayedValue(data, displayMode);
+      if (displayMode === 'percentage' && animEnabled) {
         // Count-up animation
         valueEl.textContent = '0%';
         const cancel = countUp(
@@ -507,17 +599,15 @@ export class WaffleChartVisual implements IVisual {
           data.percentage,
           animDuration,
           (v) => {
-            valueEl.textContent = `${Math.round(v)}%`;
+            valueEl.textContent = `${formatPercentValue(v, this.getHostLocale())}%`;
           },
           () => {
-            valueEl.textContent = `${Math.round(data.percentage)}%`;
+            valueEl.textContent = formattedValue;
           }
         );
         this.cancelAnimations.push(cancel);
       } else {
-        valueEl.textContent = data.value !== null
-          ? `${Math.round(data.percentage)}%`
-          : '--';
+        valueEl.textContent = formattedValue;
       }
 
       wrapper.appendChild(valueEl);
@@ -561,7 +651,7 @@ export class WaffleChartVisual implements IVisual {
 
       // Override: after setting up the ripple, immediately finalize empty cells
       // so they don't animate (rippleFill sets opacity:0 and scale:0 on all)
-      requestAnimationFrame(() => {
+      const frameId = requestAnimationFrame(() => {
         allCells.forEach((cell, i) => {
           const gridRow = Math.floor(i / effectiveCols);
           const gridCol = i % effectiveCols;
@@ -573,7 +663,7 @@ export class WaffleChartVisual implements IVisual {
         });
       });
 
-      this.cancelAnimations.push(cancel);
+      this.cancelAnimations.push(cancel, () => cancelAnimationFrame(frameId));
     }
 
     // Entrance animation for the wrapper
@@ -594,19 +684,31 @@ export class WaffleChartVisual implements IVisual {
 
     // ── Legend ────────────────────────────────────────────────────
     if (s.legendFormattingCard.showLegend.value) {
-      this.renderSharedLegend(fillColor, emptyColor);
+      this.renderSharedLegend(fillColor, emptyColor, legendWidth, headingHeight);
     }
 
-    // Apply shared formatting settings
-    applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.waffle-value');
-
     // Accessibility
-    this.applyAccessibility(filledCells);
+    this.applyAccessibility(data, grid);
+
+    applyBasicHighContrastStyles(this.container, highContrast, {
+      textSelectors: [
+        '.chart-title',
+        '.chart-subtitle',
+        '.waffle-value',
+        '.pbi-shared-legend span',
+      ],
+      strokeSelectors: ['.waffle-cell'],
+    });
   }
 
   // ── Legend Rendering ────────────────────────────────────────
 
-  private renderSharedLegend(fillColor: string, emptyColor: string): void {
+  private renderSharedLegend(
+    fillColor: string,
+    emptyColor: string,
+    reservedWidth: number,
+    headingHeight: number,
+  ): void {
     const legendFmtCard = this.settings.legendFormattingCard;
     const rawFontColor = legendFmtCard.legendFontColor.value?.value;
     const legendFontColor = rawFontColor != null && rawFontColor.length > 0 ? rawFontColor : '';
@@ -619,15 +721,22 @@ export class WaffleChartVisual implements IVisual {
     ];
 
     const rawLegendFontFamily = resolveDropdown(legendFmtCard.legendFontFamily) || undefined;
+    const rawLegendFontWeight = resolveDropdown(legendFmtCard.legendFontWeight) || undefined;
 
-    renderLegend(this.container, {
+    const legend = renderLegend(this.container, {
       items,
       position,
       fontSize: legendFontSize,
       fontColor: legendFontColor,
       fontFamily: rawLegendFontFamily,
+      fontWeight: rawLegendFontWeight,
       aliases: legendFmtCard.legendAliases.value,
     });
+    if (position === 'left' || position === 'right') {
+      legend.style.width = `${reservedWidth}px`;
+      legend.style.top = `${headingHeight}px`;
+      legend.style.height = `calc(100% - ${headingHeight}px)`;
+    }
   }
 
   private getConditionalColor(value: number): string | undefined {
@@ -645,19 +754,35 @@ export class WaffleChartVisual implements IVisual {
     return resolveConditionalColor(value, config);
   }
 
-  private applyAccessibility(dataPointCount: number): void {
+  private applyAccessibility(data: WaffleChartData, grid: HTMLElement): void {
     const acc = this.settings.accessibilityFormattingCard;
-    if (!acc.enableKeyboardNav.value) return;
-    ensureFocusRingStyles();
     applyChartAria(this.container, {
       chartType: 'waffle chart',
       title: this.settings.titleFormattingCard?.titleText?.value || undefined,
-      dataPointCount,
+      dataPointCount: 1,
     });
+    if (!acc.enableKeyboardNav.value || !allowInteractions(this.host) || !data.selectionId) return;
+
+    ensureFocusRingStyles();
+    this.container.setAttribute('role', 'group');
+    grid.dataset.selectable = 'true';
+    grid.classList.add('pbi-data-point');
+    grid.tabIndex = 0;
+    const highContrast = getHostHighContrastColors(this.host);
+    if (highContrast.enabled) grid.style.outlineColor = highContrast.foregroundSelected;
+    grid.setAttribute('role', 'button');
+    grid.setAttribute(
+      'aria-label',
+      `Value ${formatWithSettings(data.value ?? 0, this.settings.numberFormattingCard)}, `
+        + `${formatPercentValue(data.percentage, this.getHostLocale())}% of maximum`,
+    );
     const cleanup = attachKeyboardNav({
       container: this.container,
-      itemSelector: '.waffle-cell',
-      onActivate: (el) => (el as HTMLElement).click?.(),
+      itemSelector: '.waffle-grid[data-selectable="true"]',
+      onActivate: () => {
+        if (!data.selectionId) return;
+        void this.selectionManager.select(data.selectionId, false);
+      },
     });
     this.cancelAnimations.push(cleanup);
   }
@@ -720,6 +845,7 @@ export class WaffleChartVisual implements IVisual {
   }
 
   private handleBackgroundClick = (): void => {
+    if (!allowInteractions(this.host)) return;
     void this.selectionManager.clear();
   };
 
@@ -734,7 +860,7 @@ export class WaffleChartVisual implements IVisual {
       tooltipData.push(
         { displayName: 'Value', value: formatWithSettings(data.value, this.settings.numberFormattingCard) },
         { displayName: 'Max', value: formatWithSettings(data.maxValue, this.settings.numberFormattingCard) },
-        { displayName: 'Percent', value: `${Math.round(data.percentage)}%` },
+        { displayName: 'Percent', value: `${formatPercentValue(data.percentage, locale)}%` },
       );
     } else {
       tooltipData.push({ displayName: 'Value', value: 'No value' });
@@ -742,7 +868,7 @@ export class WaffleChartVisual implements IVisual {
 
     this.host.tooltipService.show({
       dataItems: tooltipData,
-      identities: [],
+      identities: data.selectionId ? [data.selectionId] : [],
       coordinates: [event.clientX, event.clientY],
       isTouchEvent: false,
     });
@@ -766,15 +892,37 @@ export class WaffleChartVisual implements IVisual {
     return typeof locale === 'string' && locale.length > 0 ? locale : undefined;
   }
 
-  // Render lifecycle notifications removed — Power BI's eventService.renderingStarted()
-  // requires VisualUpdateOptions with updateId, and calling without args crashes the visual.
+  private formatDisplayedValue(
+    data: WaffleChartData,
+    displayMode: string,
+  ): string {
+    if (data.value === null) return '--';
+    const formattedValue = formatWithSettings(data.value, this.settings.numberFormattingCard);
+    if (displayMode === 'value') return formattedValue;
+    if (displayMode === 'valueAndMax') {
+      return `${formattedValue} / ${formatWithSettings(data.maxValue, this.settings.numberFormattingCard)}`;
+    }
+    return `${formatPercentValue(data.percentage, this.getHostLocale())}%`;
+  }
 
   public destroy(): void {
     this.hideTooltip();
     this.container.removeEventListener('click', this.handleBackgroundClick);
+    this.detachContextMenu();
     this.cancelAnimations.forEach((cancel) => cancel());
     this.cancelAnimations = [];
   }
+}
+
+function clampInteger(value: number, min: number, max: number): number {
+  if (!Number.isFinite(value)) return min;
+  return Math.min(max, Math.max(min, Math.floor(value)));
+}
+
+function prefersReducedMotion(): boolean {
+  return typeof window !== 'undefined'
+    && typeof window.matchMedia === 'function'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
 function formatPercentValue(value: number, locale?: string): string {

@@ -20,7 +20,6 @@ import {
   getChartColor,
   withOpacity,
   renderChartTitle,
-  applyDataLabelFormatting,
   applyChartAria,
   applyDataPointAria,
   attachKeyboardNav,
@@ -32,6 +31,8 @@ import {
   resolveDropdown,
   syncLegendFormattingVisibility,
   syncTitleFormattingVisibility,
+  syncDateFilterFormattingVisibility,
+  syncCardStyleVisibility,
   renderLegend,
   type LegendItem,
   getDateFilterIndices,
@@ -41,6 +42,12 @@ import {
   attachEmptySpaceContextMenu,
   getVisualEmptyStateMode,
   getLocalizedString,
+  allowInteractions,
+  getHostHighContrastColors,
+  applyBasicHighContrastStyles,
+  notifyRenderingStarted,
+  notifyRenderingFinished,
+  notifyRenderingFailed,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -96,7 +103,7 @@ interface NetworkData {
 }
 
 type NodeRole = 'source' | 'target' | 'both';
-type TargetSizeMode = 'fixed' | 'count' | 'weight';
+type TargetSizeMode = 'fixed' | 'count' | 'weight' | 'sourceTargetWeighted';
 type NodeLabelPosition = 'right' | 'inside' | 'left' | 'above' | 'below';
 type NetworkLayoutMode = 'sourceTarget' | 'force' | 'mapCanvas';
 type TargetRailPosition = 'right' | 'left' | 'top' | 'bottom';
@@ -104,6 +111,7 @@ type MapCanvasTargetLayoutPreset = 'orbit' | 'cluster' | 'hybrid' | 'rail';
 type PersistedSourcePositions = Record<string, { x: number; y: number }>;
 type DetailFilterKind = 'field' | 'measure' | 'target';
 type DetailFilterOperator = 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte';
+type DetailFilterTab = 'basic' | 'advanced';
 
 interface DetailFilterFieldOption {
   key: string;
@@ -162,7 +170,11 @@ export class NetworkGraphVisual implements IVisual {
   private pendingDetailFilterOperator: DetailFilterOperator = 'eq';
   private pendingDetailFilterValue = '';
   private detailFilterMoreOpen = false;
+  private detailFilterTab: DetailFilterTab = 'advanced';
+  private basicDetailFilterField = '';
   private nextDetailFilterRuleId = 1;
+  private interactionsEnabled = true;
+  private keyboardNavCleanup: (() => void) | null = null;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
@@ -173,13 +185,30 @@ export class NetworkGraphVisual implements IVisual {
     this.container.classList.add('network-container');
     attachEmptySpaceContextMenu(this.container, this.selectionManager, () =>
       this.host.createSelectionIdBuilder().createSelectionId(),
+      () => this.interactionsEnabled,
     );
   }
 
   public update(options: VisualUpdateOptions): void {
+    notifyRenderingStarted(this.host, options);
+    try {
+      this.updateVisual(options);
+      notifyRenderingFinished(this.host, options);
+    } catch (error) {
+      notifyRenderingFailed(
+        this.host,
+        options,
+        error instanceof Error ? error.message : String(error),
+      );
+      throw error;
+    }
+  }
+
+  private updateVisual(options: VisualUpdateOptions): void {
     // Cancel running animations
     this.cancelAnimations.forEach((cancel) => cancel());
     this.cancelAnimations = [];
+    this.interactionsEnabled = allowInteractions(this.host);
 
     // Stop previous simulation
     if (this.simulation) {
@@ -201,7 +230,7 @@ export class NetworkGraphVisual implements IVisual {
     const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
     if (legacyCardObj) {
       const legacyGlass = legacyCardObj['enableGlass'];
-      if (legacyGlass === false) {
+      if (legacyGlass === false && legacyCardObj['cardStyleMode'] == null) {
         this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
       }
     }
@@ -209,15 +238,14 @@ export class NetworkGraphVisual implements IVisual {
     syncTitleFormattingVisibility(this.settings.titleFormattingCard);
     syncLegendFormattingVisibility(this.settings.legendFormattingCard);
 
-    // Date filter: hide start/end when disabled
-    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
+    syncDateFilterFormattingVisibility(this.settings.dateFilterFormattingCard);
+    const sourceColumn = dataView?.categorical?.categories?.find((column) => column.source.roles?.['source']);
+    this.settings.dateFilterFormattingCard.visible = Boolean(sourceColumn && isDateColumn(sourceColumn.source));
+    syncCardStyleVisibility(this.settings.cardSettings);
 
-    this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
-    this.settings.dataLabelFormattingCard.dataLabelFontSize.visible = false;
     const targetSizeMode = this.getTargetSizeMode();
     const showDynamicRadiusBounds = this.settings.nodeSettings.sizeByDegree.value || targetSizeMode !== 'fixed';
+    this.settings.nodeSettings.sizeByDegree.visible = targetSizeMode === 'fixed';
     this.settings.nodeSettings.minRadius.visible = showDynamicRadiusBounds;
     this.settings.nodeSettings.maxRadius.visible = showDynamicRadiusBounds;
 
@@ -295,26 +323,28 @@ export class NetworkGraphVisual implements IVisual {
     this.settings.nodeInspectorSettings.showDetailColumns.visible = inspectorEnabled;
     this.settings.nodeInspectorSettings.maxDetailValues.visible = inspectorEnabled && this.settings.nodeInspectorSettings.showDetailColumns.value;
     this.settings.nodeInspectorSettings.focusOnClick.visible = inspectorEnabled;
-    this.settings.nodeInspectorSettings.focusZoomScale.visible = inspectorEnabled && this.settings.nodeInspectorSettings.focusOnClick.value;
+    this.settings.nodeInspectorSettings.focusZoomScale.visible = inspectorEnabled
+      && this.settings.nodeInspectorSettings.focusOnClick.value
+      && this.settings.interactionSettings.enableZoom.value;
 
     const colorByNodeRole = this.settings.colorsAndThemeSettings.colorByNodeRole.value;
     this.settings.colorsAndThemeSettings.sourceNodeColor.visible = colorByNodeRole;
     this.settings.colorsAndThemeSettings.targetNodeColor.visible = colorByNodeRole;
     this.settings.colorsAndThemeSettings.bothRoleNodeColor.visible = colorByNodeRole;
     this.settings.colorsAndThemeSettings.useChartPalette.visible = !colorByNodeRole;
+    this.settings.colorsAndThemeSettings.enableClustering.visible = !colorByNodeRole;
+    this.settings.colorThemeFormattingCard.visible = !colorByNodeRole;
 
     const enableClustering = this.settings.colorsAndThemeSettings.enableClustering.value;
     const canShowLegend = enableClustering || colorByNodeRole;
     this.settings.legendFormattingCard.showLegend.visible = canShowLegend;
-    this.settings.legendFormattingCard.legendPosition.visible = canShowLegend;
-    this.settings.legendFormattingCard.legendFontSize.visible = canShowLegend;
-    this.settings.legendFormattingCard.legendFontColor.visible = canShowLegend;
-    this.settings.legendFormattingCard.legendFontFamily.visible = canShowLegend;
-    this.settings.legendFormattingCard.legendFontWeight.visible = canShowLegend;
-    this.settings.legendFormattingCard.legendAliases.visible = canShowLegend;
-    this.settings.legendFormattingCard.showInlineLabels.visible = enableClustering;
-    this.settings.legendFormattingCard.inlineLabelFontSize.visible = enableClustering;
-    this.settings.legendFormattingCard.inlineLabelOffset.visible = enableClustering;
+    const showLegendControls = canShowLegend && this.settings.legendFormattingCard.showLegend.value;
+    this.settings.legendFormattingCard.legendPosition.visible = showLegendControls;
+    this.settings.legendFormattingCard.legendFontSize.visible = showLegendControls;
+    this.settings.legendFormattingCard.legendFontColor.visible = showLegendControls;
+    this.settings.legendFormattingCard.legendFontFamily.visible = showLegendControls;
+    this.settings.legendFormattingCard.legendFontWeight.visible = showLegendControls;
+    this.settings.legendFormattingCard.legendAliases.visible = showLegendControls;
 
     // Extract data
     const rawData = this.extractData(dataView);
@@ -555,6 +585,9 @@ export class NetworkGraphVisual implements IVisual {
   // ── Rendering ────────────────────────────────────────────────
 
   private render(data: NetworkData | null, viewport: powerbi.IViewport): void {
+    this.keyboardNavCleanup?.();
+    this.keyboardNavCleanup = null;
+    this.host.tooltipService.hide({ immediately: true, isTouchEvent: false });
     const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
     // Clear previous content
     this.container.removeEventListener('click', this.handleBackgroundClick);
@@ -580,13 +613,10 @@ export class NetworkGraphVisual implements IVisual {
     const contentPadding = Math.max(0, s.cardSettings.contentPadding.value);
     this.container.style.boxSizing = 'border-box';
     this.container.style.padding = `${contentPadding}px`;
-    if (cardMode === 'none') {
-      this.container.style.borderRadius = `${s.cardSettings.borderRadius.value}px`;
-    }
-
     // Handle empty/null data
     if (!data) {
       this.renderEmptyState();
+      this.applyHighContrast();
       return;
     }
 
@@ -695,6 +725,14 @@ export class NetworkGraphVisual implements IVisual {
     const targetLikeNodes = simNodes.filter((node) => node.role === 'target' || node.role === 'both');
     const maxTargetDegree = Math.max(1, ...targetLikeNodes.map((node) => degreeMap.get(node.id) ?? 0));
     const maxTargetWeight = Math.max(1, ...targetLikeNodes.map((node) => totalWeightMap.get(node.id) ?? 0));
+    const maxTotalNodeWeight = Math.max(1, ...Array.from(totalWeightMap.values()));
+    const getCombinedNodeSizeScore = (node: GraphNode): number => {
+      const degree = degreeMap.get(node.id) ?? 0;
+      const normalizedWeight = (totalWeightMap.get(node.id) ?? 0) / maxTotalNodeWeight;
+      return degree + normalizedWeight;
+    };
+    const maxCombinedNodeSizeScore = Math.max(1, ...simNodes.map((node) => getCombinedNodeSizeScore(node)));
+    const maxTargetCombinedNodeSizeScore = Math.max(1, ...targetLikeNodes.map((node) => getCombinedNodeSizeScore(node)));
 
     // Cluster detection: simple label propagation
     const clusterMap = new Map<string, number>();
@@ -918,6 +956,14 @@ export class NetworkGraphVisual implements IVisual {
     const nodeGroup = g.append('g').attr('class', 'network-nodes');
 
     const getNodeRadius = (d: GraphNode): number => {
+      if (targetNodeSizeMode === 'sourceTargetWeighted') {
+        const value = getCombinedNodeSizeScore(d);
+        if (d.role === 'target') {
+          const targetMaxRadius = minDegreeRadius + ((maxDegreeRadius - minDegreeRadius) * 0.7);
+          return this.getScaledRadius(value, maxTargetCombinedNodeSizeScore, minDegreeRadius, targetMaxRadius);
+        }
+        return this.getScaledRadius(value, maxCombinedNodeSizeScore, minDegreeRadius, maxDegreeRadius);
+      }
       if ((d.role === 'target' || d.role === 'both') && targetNodeSizeMode !== 'fixed') {
         const value = targetNodeSizeMode === 'weight'
           ? totalWeightMap.get(d.id) ?? 0
@@ -971,6 +1017,7 @@ export class NetworkGraphVisual implements IVisual {
       .style('cursor', 'pointer')
       .style('transition', 'opacity 0.15s ease, filter 0.15s ease, transform 0.15s ease')
       .on('click', (event: MouseEvent, d) => {
+        if (!this.interactionsEnabled) return;
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation?.();
@@ -985,6 +1032,7 @@ export class NetworkGraphVisual implements IVisual {
         });
       })
       .on('contextmenu', (event: MouseEvent, d) => {
+        if (!this.interactionsEnabled) return;
         event.preventDefault();
         event.stopPropagation();
         void this.selectionManager.showContextMenu(d.selectionId, {
@@ -1074,8 +1122,6 @@ export class NetworkGraphVisual implements IVisual {
       const labelPosition = this.getNodeLabelPosition();
       const labelOffset = Math.max(0, s.nodeSettings.labelOffset.value);
       const maxLabelCharacters = Math.max(4, Math.round(s.nodeSettings.maxLabelCharacters.value));
-      const sharedLabelFontFamily = resolveDropdown(s.dataLabelFormattingCard.dataLabelFontFamily) || undefined;
-      const sharedLabelFontWeight = resolveDropdown(s.dataLabelFormattingCard.dataLabelFontWeight) || undefined;
       labelElements = labelGroup.selectAll<SVGTextElement, GraphNode>('.network-label')
         .data(simNodes)
         .join('text')
@@ -1091,20 +1137,12 @@ export class NetworkGraphVisual implements IVisual {
         .style('pointer-events', 'none')
         .style('transition', 'opacity 0.15s ease')
         .text((d) => this.truncateLabel(d.displayLabel, maxLabelCharacters));
-      // Apply shared data-label formatting first (sets color, size, weight, font via inline style).
-      applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.network-label');
-
-      // Node-specific overrides: only apply when the user has explicitly set a value.
-      // Use .style() (not .attr()) so the inline style properly overrides applyDataLabelFormatting.
       labelElements.style('font-size', (d) => `${this.getNodeLabelFontSize(d)}px`);
       if (nodeFontColor) labelElements.style('fill', nodeFontColor);
       if (nodeFontFamily) labelElements.style('font-family', nodeFontFamily);
-      if (nodeFontWeight && nodeFontWeight !== 'normal') {
+      if (nodeFontWeight) {
         labelElements.style('font-weight', nodeFontWeight);
-      } else if (sharedLabelFontWeight) {
-        labelElements.style('font-weight', sharedLabelFontWeight);
       }
-      if (sharedLabelFontFamily) labelElements.style('font-family', sharedLabelFontFamily);
       if (s.nodeSettings.labelHalo.value) {
         labelElements
           .attr('paint-order', 'stroke')
@@ -1317,7 +1355,7 @@ export class NetworkGraphVisual implements IVisual {
     simulation.on('tick', updatePositions);
 
     // Drag behavior (configurable)
-    if (s.interactionSettings.enableDrag.value) {
+    if (s.interactionSettings.enableDrag.value && this.interactionsEnabled) {
       const dragBehavior = d3.drag<SVGCircleElement, GraphNode>()
         .on('start', (event: d3.D3DragEvent<SVGCircleElement, GraphNode, GraphNode>, d) => {
           if (!event.active) simulation.alphaTarget(0.3).restart();
@@ -1378,7 +1416,7 @@ export class NetworkGraphVisual implements IVisual {
 
     // ── Zoom & Pan ───────────────────────────────────────────────
 
-    if (s.interactionSettings.enableZoom.value) {
+    if (s.interactionSettings.enableZoom.value && this.interactionsEnabled) {
       const minZoom = s.interactionSettings.minZoom.value;
       const maxZoom = s.interactionSettings.maxZoom.value;
 
@@ -1438,11 +1476,11 @@ export class NetworkGraphVisual implements IVisual {
             simNodes.length,
           );
         });
-        attachKeyboardNav({
+        this.keyboardNavCleanup = attachKeyboardNav({
           container: this.container,
           itemSelector: '.network-node',
           onActivate: (el) => {
-            (el as HTMLElement).click();
+            el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
           },
         });
       }
@@ -1452,6 +1490,7 @@ export class NetworkGraphVisual implements IVisual {
 
       this.applyLabelVisibility();
       this.applyInteractiveFilters(data);
+      this.applyHighContrast();
       this.container.addEventListener('click', this.handleBackgroundClick);
       return;
     }
@@ -1565,11 +1604,11 @@ export class NetworkGraphVisual implements IVisual {
           simNodes.length,
         );
       });
-      attachKeyboardNav({
+      this.keyboardNavCleanup = attachKeyboardNav({
         container: this.container,
         itemSelector: '.network-node',
         onActivate: (el) => {
-          (el as HTMLElement).click();
+          el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         },
       });
     }
@@ -1579,6 +1618,7 @@ export class NetworkGraphVisual implements IVisual {
 
     this.applyLabelVisibility();
     this.applyInteractiveFilters(data);
+    this.applyHighContrast();
     this.container.addEventListener('click', this.handleBackgroundClick);
   }
 
@@ -2507,7 +2547,7 @@ export class NetworkGraphVisual implements IVisual {
     if (showDetailFilter && this.detailFilterOpen) {
       const panel = this.createDetailFilterPanel(data, detailFields);
       wrapper.appendChild(panel);
-      focusElement ??= panel.querySelector<HTMLElement>('.network-detail-filter-field');
+      focusElement ??= panel.querySelector<HTMLElement>('.network-detail-filter-field, .network-detail-filter-basic-field');
     }
 
     this.container.appendChild(wrapper);
@@ -2523,7 +2563,7 @@ export class NetworkGraphVisual implements IVisual {
 
   private createDetailFilterPanel(data: NetworkData, detailFields: DetailFilterFieldOption[]): HTMLDivElement {
     const panel = document.createElement('div');
-    panel.className = 'network-detail-filter-panel';
+    panel.className = 'network-detail-filter-panel network-detail-filter-panel-overlay network-detail-filter-panel-readable';
     panel.addEventListener('click', (event) => event.stopPropagation());
 
     const selectedFieldIsValid = detailFields.some((field) => field.key === this.pendingDetailFilterField);
@@ -2531,6 +2571,10 @@ export class NetworkGraphVisual implements IVisual {
       this.pendingDetailFilterField = '';
       this.pendingDetailFilterOperator = 'eq';
       this.pendingDetailFilterValue = '';
+    }
+    const basicFields = this.getBasicDetailFilterFields(data, detailFields);
+    if (!basicFields.some((field) => field.key === this.basicDetailFilterField)) {
+      this.basicDetailFilterField = basicFields[0]?.key ?? '';
     }
 
     const header = document.createElement('div');
@@ -2567,8 +2611,83 @@ export class NetworkGraphVisual implements IVisual {
       chips.appendChild(chip);
     }
 
+    const tabs = this.createDetailFilterTabs(data);
+    const builder = this.detailFilterTab === 'basic'
+      ? this.createBasicDetailFilterBuilder(data, detailFields)
+      : this.createAdvancedDetailFilterBuilder(data, detailFields);
+
+    const footer = document.createElement('div');
+    footer.className = 'network-detail-filter-footer';
+
+    const clear = document.createElement('button');
+    clear.type = 'button';
+    clear.className = 'network-detail-filter-clear';
+    clear.setAttribute('aria-label', 'Clear detail filters');
+    clear.textContent = 'Clear';
+    clear.disabled = !this.isDetailFilterActive() && !this.hasPendingDetailFilter();
+    clear.addEventListener('click', (event) => {
+      event.stopPropagation();
+      this.resetDetailFilters();
+      this.renderSearchInput(data);
+      this.applyInteractiveFilters(data);
+    });
+
+    const done = document.createElement('button');
+    done.type = 'button';
+    done.className = 'network-detail-filter-done';
+    done.setAttribute('aria-label', 'Close detail filter tray');
+    done.textContent = 'Done';
+    done.addEventListener('click', (event) => {
+      event.stopPropagation();
+      this.detailFilterOpen = false;
+      this.renderSearchInput(data);
+      this.applyInteractiveFilters(data);
+    });
+
+    footer.appendChild(clear);
+    footer.appendChild(done);
+
+    panel.appendChild(header);
+    panel.appendChild(tabs);
+    panel.appendChild(chips);
+    panel.appendChild(builder);
+    panel.appendChild(this.createDetailFilterMoreRow(data));
+    panel.appendChild(footer);
+    return panel;
+  }
+
+  private createDetailFilterTabs(data: NetworkData): HTMLDivElement {
+    const tabs = document.createElement('div');
+    tabs.className = 'network-detail-filter-tabs';
+    tabs.setAttribute('role', 'tablist');
+    tabs.setAttribute('aria-label', 'Detail filter mode');
+
+    const createTab = (tab: DetailFilterTab, label: string): HTMLButtonElement => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `network-detail-filter-tab network-detail-filter-tab-${tab}`;
+      button.setAttribute('role', 'tab');
+      button.setAttribute('aria-selected', this.detailFilterTab === tab ? 'true' : 'false');
+      button.textContent = label;
+      button.addEventListener('click', (event) => {
+        event.stopPropagation();
+        if (this.detailFilterTab === tab) return;
+        this.detailFilterTab = tab;
+        this.detailFilterMoreOpen = false;
+        this.renderSearchInput(data);
+        this.applyInteractiveFilters(data);
+      });
+      return button;
+    };
+
+    tabs.appendChild(createTab('basic', 'Basic'));
+    tabs.appendChild(createTab('advanced', 'Advanced'));
+    return tabs;
+  }
+
+  private createAdvancedDetailFilterBuilder(data: NetworkData, detailFields: DetailFilterFieldOption[]): HTMLDivElement {
     const builder = document.createElement('div');
-    builder.className = 'network-detail-filter-builder';
+    builder.className = 'network-detail-filter-builder network-detail-filter-builder-advanced';
 
     const fieldSelect = document.createElement('select');
     fieldSelect.className = 'network-detail-filter-field';
@@ -2578,7 +2697,7 @@ export class NetworkGraphVisual implements IVisual {
       fieldSelect.appendChild(this.createOption(field.key, field.label));
     }
     fieldSelect.value = this.pendingDetailFilterField;
-    this.applyDetailFilterSelectSizing(fieldSelect, 'Detail', 10, 26);
+    this.applyDetailFilterSelectSizing(fieldSelect, 'Detail', 28, 48);
     fieldSelect.addEventListener('change', () => {
       this.pendingDetailFilterField = fieldSelect.value;
       this.pendingDetailFilterOperator = 'eq';
@@ -2624,7 +2743,7 @@ export class NetworkGraphVisual implements IVisual {
       }
       valueSelect.value = this.pendingDetailFilterValue;
       valueSelect.disabled = this.pendingDetailFilterField.length === 0 || valueOptions.length === 0;
-      this.applyDetailFilterSelectSizing(valueSelect, 'Value', 8, 22);
+      this.applyDetailFilterSelectSizing(valueSelect, 'Value', 8, 34);
       valueSelect.addEventListener('change', () => {
         this.pendingDetailFilterValue = valueSelect.value;
         this.pendingDetailFilterOperator = this.getPendingDetailFilterOperator();
@@ -2635,43 +2754,116 @@ export class NetworkGraphVisual implements IVisual {
     }
     builder.appendChild(add);
 
-    const footer = document.createElement('div');
-    footer.className = 'network-detail-filter-footer';
+    return builder;
+  }
 
-    const clear = document.createElement('button');
-    clear.type = 'button';
-    clear.className = 'network-detail-filter-clear';
-    clear.setAttribute('aria-label', 'Clear detail filters');
-    clear.textContent = 'Clear';
-    clear.disabled = !this.isDetailFilterActive() && !this.hasPendingDetailFilter();
-    clear.addEventListener('click', (event) => {
-      event.stopPropagation();
-      this.resetDetailFilters();
+  private createBasicDetailFilterBuilder(data: NetworkData, detailFields: DetailFilterFieldOption[]): HTMLDivElement {
+    const basicFields = this.getBasicDetailFilterFields(data, detailFields);
+    const builder = document.createElement('div');
+    builder.className = 'network-detail-filter-basic';
+
+    const controls = document.createElement('div');
+    controls.className = 'network-detail-filter-basic-controls';
+
+    const fieldSelect = document.createElement('select');
+    fieldSelect.className = 'network-detail-filter-field network-detail-filter-basic-field';
+    fieldSelect.setAttribute('aria-label', 'Basic filter field');
+    for (const field of basicFields) {
+      fieldSelect.appendChild(this.createOption(field.key, field.label));
+    }
+    fieldSelect.value = this.basicDetailFilterField;
+    fieldSelect.disabled = basicFields.length === 0;
+    this.applyDetailFilterSelectSizing(fieldSelect, 'Field', 28, 48);
+    fieldSelect.addEventListener('change', () => {
+      this.basicDetailFilterField = fieldSelect.value;
       this.renderSearchInput(data);
       this.applyInteractiveFilters(data);
     });
 
-    const done = document.createElement('button');
-    done.type = 'button';
-    done.className = 'network-detail-filter-done';
-    done.setAttribute('aria-label', 'Close detail filter tray');
-    done.textContent = 'Done';
-    done.addEventListener('click', (event) => {
+    const parsedField = this.parseDetailFilterKey(this.basicDetailFilterField);
+    const valueOptions = this.getDetailFilterValueOptions(data, this.basicDetailFilterField);
+    const selectedValues = this.getSelectedBasicDetailFilterValues(parsedField);
+    const selectedCount = valueOptions.filter((option) => selectedValues.has(option.value)).length;
+
+    const count = document.createElement('span');
+    count.className = 'network-detail-filter-basic-count';
+    count.textContent = `${selectedCount} selected`;
+
+    const selectAll = document.createElement('button');
+    selectAll.type = 'button';
+    selectAll.className = 'network-detail-filter-select-all';
+    selectAll.textContent = 'Select All';
+    selectAll.disabled = !parsedField || valueOptions.length === 0 || selectedCount === valueOptions.length;
+    selectAll.addEventListener('click', (event) => {
       event.stopPropagation();
-      this.detailFilterOpen = false;
+      if (!parsedField) return;
+      for (const option of valueOptions) {
+        this.addDetailFilterRule(parsedField.kind, parsedField.label, 'eq', option.value);
+      }
       this.renderSearchInput(data);
       this.applyInteractiveFilters(data);
     });
 
-    footer.appendChild(clear);
-    footer.appendChild(done);
+    const clearField = document.createElement('button');
+    clearField.type = 'button';
+    clearField.className = 'network-detail-filter-clear-field';
+    clearField.textContent = 'Clear Field';
+    clearField.disabled = !parsedField || selectedCount === 0;
+    clearField.addEventListener('click', (event) => {
+      event.stopPropagation();
+      if (!parsedField) return;
+      this.removeDetailFilterRulesForField(parsedField);
+      this.renderSearchInput(data);
+      this.applyInteractiveFilters(data);
+    });
 
-    panel.appendChild(header);
-    panel.appendChild(chips);
-    panel.appendChild(builder);
-    panel.appendChild(this.createDetailFilterMoreRow(data));
-    panel.appendChild(footer);
-    return panel;
+    controls.appendChild(fieldSelect);
+    controls.appendChild(count);
+    controls.appendChild(selectAll);
+    controls.appendChild(clearField);
+    builder.appendChild(controls);
+
+    const values = document.createElement('div');
+    values.className = 'network-detail-filter-basic-values';
+
+    if (!parsedField || valueOptions.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'network-detail-filter-basic-empty';
+      empty.textContent = 'No quick filter values';
+      values.appendChild(empty);
+    } else {
+      for (const option of valueOptions) {
+        const label = document.createElement('label');
+        label.className = 'network-detail-filter-basic-option';
+        label.title = option.label;
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'network-detail-filter-basic-checkbox';
+        checkbox.value = option.value;
+        checkbox.checked = selectedValues.has(option.value);
+        checkbox.addEventListener('change', () => {
+          if (checkbox.checked) {
+            this.addDetailFilterRule(parsedField.kind, parsedField.label, 'eq', option.value);
+          } else {
+            this.removeExactDetailFilterRule(parsedField, option.value);
+          }
+          this.renderSearchInput(data);
+          this.applyInteractiveFilters(data);
+        });
+
+        const text = document.createElement('span');
+        text.className = 'network-detail-filter-basic-label';
+        text.textContent = option.label;
+
+        label.appendChild(checkbox);
+        label.appendChild(text);
+        values.appendChild(label);
+      }
+    }
+
+    builder.appendChild(values);
+    return builder;
   }
 
   private createOption(value: string, label: string): HTMLOptionElement {
@@ -2720,7 +2912,7 @@ export class NetworkGraphVisual implements IVisual {
     const zero = document.createElement('button');
     zero.type = 'button';
     zero.className = 'network-detail-filter-zero';
-    zero.textContent = '= 0';
+    zero.textContent = 'Equals 0';
     zero.addEventListener('click', (event) => {
       event.stopPropagation();
       this.addMeasureHelperRule(data, 'eq', 0);
@@ -2729,7 +2921,7 @@ export class NetworkGraphVisual implements IVisual {
     const positive = document.createElement('button');
     positive.type = 'button';
     positive.className = 'network-detail-filter-positive';
-    positive.textContent = '> 0';
+    positive.textContent = 'Greater than 0';
     positive.addEventListener('click', (event) => {
       event.stopPropagation();
       this.addMeasureHelperRule(data, 'gt', 0);
@@ -2827,6 +3019,7 @@ export class NetworkGraphVisual implements IVisual {
     this.pendingDetailFilterOperator = 'eq';
     this.pendingDetailFilterValue = '';
     this.detailFilterMoreOpen = false;
+    this.basicDetailFilterField = '';
   }
 
   private addPendingDetailFilterRule(data: NetworkData): void {
@@ -2897,6 +3090,34 @@ export class NetworkGraphVisual implements IVisual {
     ];
   }
 
+  private getSelectedBasicDetailFilterValues(field: DetailFilterFieldOption | null): Set<string> {
+    if (!field) return new Set<string>();
+    return new Set(
+      this.detailFilterRules
+        .filter((rule) =>
+          rule.kind === field.kind
+          && rule.label === field.label
+          && rule.operator === 'eq',
+        )
+        .map((rule) => rule.value),
+    );
+  }
+
+  private removeExactDetailFilterRule(field: DetailFilterFieldOption, value: string): void {
+    this.detailFilterRules = this.detailFilterRules.filter((rule) =>
+      !(rule.kind === field.kind
+        && rule.label === field.label
+        && rule.operator === 'eq'
+        && rule.value === value),
+    );
+  }
+
+  private removeDetailFilterRulesForField(field: DetailFilterFieldOption): void {
+    this.detailFilterRules = this.detailFilterRules.filter((rule) =>
+      !(rule.kind === field.kind && rule.label === field.label),
+    );
+  }
+
   private canAddPendingDetailFilter(): boolean {
     const parsed = this.parseDetailFilterKey(this.pendingDetailFilterField);
     if (!parsed || this.pendingDetailFilterValue.length === 0) return false;
@@ -2930,18 +3151,18 @@ export class NetworkGraphVisual implements IVisual {
 
   private getDetailFilterOperatorOptions(): Array<[DetailFilterOperator, string]> {
     return [
-      ['eq', '='],
-      ['ne', '!='],
-      ['gt', '>'],
-      ['gte', '>='],
-      ['lt', '<'],
-      ['lte', '<='],
+      ['eq', 'Equals'],
+      ['ne', 'Does not Equal'],
+      ['gt', 'Greater than'],
+      ['gte', 'Greater than or Equal to'],
+      ['lt', 'Less than'],
+      ['lte', 'Less than or Equal to'],
     ];
   }
 
   private getDetailFilterOperatorLabel(operator: DetailFilterOperator): string {
     return this.getDetailFilterOperatorOptions()
-      .find(([value]) => value === operator)?.[1] ?? '=';
+      .find(([value]) => value === operator)?.[1] ?? 'Equals';
   }
 
   private isDetailFilterOperator(value: string): value is DetailFilterOperator {
@@ -3091,6 +3312,13 @@ export class NetworkGraphVisual implements IVisual {
     ];
   }
 
+  private getBasicDetailFilterFields(data: NetworkData, detailFields: DetailFilterFieldOption[]): DetailFilterFieldOption[] {
+    return detailFields.filter((field) =>
+      field.kind !== 'measure'
+      && this.getDetailFilterValueOptions(data, field.key).length > 0,
+    );
+  }
+
   private getDetailFilterValueOptions(data: NetworkData, fieldKey: string): DetailFilterValueOption[] {
     const parsed = this.parseDetailFilterKey(fieldKey);
     if (!parsed) return [];
@@ -3139,10 +3367,6 @@ export class NetworkGraphVisual implements IVisual {
     return this.detailFilterRules.length > 0;
   }
 
-  private hasTargetDetailFilterRule(): boolean {
-    return this.detailFilterRules.some((rule) => rule.kind === 'target');
-  }
-
   private getMatchedNodeIds(data: NetworkData): Set<string> {
     const query = this.searchQuery.toLowerCase().trim();
     const detailFilterActive = this.isDetailFilterActive();
@@ -3163,7 +3387,7 @@ export class NetworkGraphVisual implements IVisual {
       }
     }
 
-    if (detailFilterActive && this.hasTargetDetailFilterRule()) {
+    if (detailFilterActive) {
       const connectedSourceIds = this.getConnectedSourceIdsForMatchedTargets(data, matchedIds);
       for (const sourceId of connectedSourceIds) {
         matchedIds.add(sourceId);
@@ -3533,14 +3757,12 @@ export class NetworkGraphVisual implements IVisual {
   // ── Formatting Pane ──────────────────────────────────────────
 
   public getFormattingModel(): powerbi.visuals.FormattingModel {
-    const s = this.settings;
-    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
-    s.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
-    s.cardSettings.backgroundColor.visible = cardMode !== 'none';
+    syncCardStyleVisibility(this.settings.cardSettings);
     return this.formattingSettingsService.buildFormattingModel(this.settings);
   }
 
   private handleBackgroundClick = (event?: MouseEvent): void => {
+    if (!this.interactionsEnabled) return;
     const target = event?.target as Element | null;
     if (target?.closest?.('.network-node, .network-node-inspector, .network-search-controls')) return;
 
@@ -3551,6 +3773,26 @@ export class NetworkGraphVisual implements IVisual {
       this.reapplyInteractiveState();
     });
   };
+
+  private applyHighContrast(): void {
+    const colors = getHostHighContrastColors(this.host);
+    applyBasicHighContrastStyles(this.container, colors, {
+      textSelectors: [
+        'svg text',
+        '.chart-title',
+        '.chart-subtitle',
+        '.pbi-shared-legend span',
+        '.network-empty',
+        '.network-search-controls',
+        '.network-node-inspector',
+      ],
+      fillSelectors: ['.network-node'],
+      strokeSelectors: ['.network-link'],
+    });
+    if (!colors.enabled) return;
+    this.container.style.background = colors.background;
+    this.container.style.boxShadow = 'none';
+  }
 
   private applyCrossHighlight(): void {
     const data = this.currentData;
@@ -3650,7 +3892,7 @@ export class NetworkGraphVisual implements IVisual {
 
   private getTargetSizeMode(): TargetSizeMode {
     const mode = resolveDropdown(this.settings.nodeSettings.targetSizeMode);
-    return mode === 'count' || mode === 'weight' ? mode : 'fixed';
+    return mode === 'count' || mode === 'weight' || mode === 'sourceTargetWeighted' ? mode : 'fixed';
   }
 
   private getScaledRadius(value: number, maxValue: number, minRadius: number, maxRadius: number): number {
@@ -3784,6 +4026,9 @@ export class NetworkGraphVisual implements IVisual {
 
   public destroy(): void {
     this.container.removeEventListener('click', this.handleBackgroundClick);
+    this.keyboardNavCleanup?.();
+    this.keyboardNavCleanup = null;
+    this.host.tooltipService.hide({ immediately: true, isTouchEvent: false });
     this.cancelAnimations.forEach((cancel) => cancel());
     this.cancelAnimations = [];
 

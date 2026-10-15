@@ -1,0 +1,20 @@
+{
+  "name": "@pbi/ssm-explorer",
+  "version": "1.7.0",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/ensure-api.cjs && pbiviz package --all-locales",
+    "start": "pbiviz start",
+    "dev": "vite --config dev/vite.config.ts"
+  },
+  "dependencies": {
+    "jszip": "3.10.1",
+    "powerbi-visuals-api": "~5.3.0",
+    "powerbi-visuals-utils-formattingmodel": "^6.0.0",
+    "powerbi-visuals-utils-formattingutils": "^7.0.0"
+  },
+  "devDependencies": {
+    "powerbi-visuals-tools": "^5.3.0",
+    "typescript": "^5.3.3"
+  }
+}

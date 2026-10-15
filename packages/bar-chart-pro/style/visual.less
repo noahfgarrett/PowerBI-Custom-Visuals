@@ -20,6 +20,29 @@
   z-index: 1;
 }
 
+.bar-chart-plot-scroll-wrapper {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+}
+
+.bar-chart-plot-scroll-wrapper > svg {
+  width: auto !important;
+}
+
+.bar-chart-plot-scroll-wrapper::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.bar-chart-plot-scroll-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.bar-chart-plot-scroll-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 3px;
+}
+
 /* Axis styles */
 .bar-chart-axis {
 
@@ -84,6 +107,124 @@
 
 .bar-chart-line-dot {
   cursor: pointer;
+}
+
+.bar-chart-sort-controls {
+  position: absolute;
+  z-index: 99;
+  display: grid;
+  gap: 5px;
+  padding: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.14);
+  pointer-events: auto;
+}
+
+.bar-chart-sort-controls-right {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.bar-chart-sort-controls-topRight {
+  top: 44px;
+}
+
+.bar-chart-sort-toggle {
+  appearance: none;
+  position: absolute;
+  top: 8px;
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 54px;
+  min-height: 28px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
+  padding: 5px 11px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 1;
+  pointer-events: auto;
+  transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease;
+}
+
+.bar-chart-sort-toggle-icon {
+  position: relative;
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+}
+
+.bar-chart-sort-toggle-icon::before,
+.bar-chart-sort-toggle-icon::after {
+  content: '';
+  position: absolute;
+  left: 1px;
+  right: 1px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.bar-chart-sort-toggle-icon::before {
+  top: 2px;
+  box-shadow: 0 4px 0 currentColor;
+}
+
+.bar-chart-sort-toggle-icon::after {
+  bottom: 0;
+}
+
+.bar-chart-sort-toggle-label {
+  white-space: nowrap;
+}
+
+.bar-chart-sort-toggle:hover,
+.bar-chart-sort-toggle:focus-visible {
+  border-color: rgba(59, 130, 246, 0.45);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.2);
+  transform: translateY(-1px);
+}
+
+.bar-chart-sort-toggle:active {
+  transform: translateY(0);
+}
+
+.bar-chart-sort-option {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  padding: 3px 5px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.bar-chart-sort-option::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.42;
+}
+
+.bar-chart-sort-option[aria-pressed='true']::before {
+  opacity: 1;
 }
 
 /* Target / reference line */

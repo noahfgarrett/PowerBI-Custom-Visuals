@@ -16,6 +16,7 @@ import * as d3 from 'd3';
 
 import {
   applyCardStyle,
+  allowInteractions,
   type CardStyleMode,
   formatPercent,
   formatWithSettings,
@@ -23,7 +24,6 @@ import {
   fadeSlideIn,
   DURATION,
   renderChartTitle,
-  applyDataLabelFormatting,
   applyAxisFormatting,
   applyGridFormatting,
   createScrollableChart,
@@ -32,6 +32,7 @@ import {
   buildConditionalConfig,
   resolveConditionalColor,
   applyChartAria,
+  applyDataPointAria,
   attachKeyboardNav,
   ensureFocusRingStyles,
   renderHorizontalReferenceLine,
@@ -49,6 +50,20 @@ import {
   type DateFilterConfig,
   resolveColorTheme,
   getHostChartColor,
+  syncCardStyleVisibility,
+  syncDateFilterFormattingVisibility,
+  syncLegendFormattingVisibility,
+  syncTitleFormattingVisibility,
+  attachEmptySpaceContextMenu,
+  notifyRenderingStarted,
+  notifyRenderingFinished,
+  notifyRenderingFailed,
+  renderLandingPage,
+  renderNoDataState,
+  getHostHighContrastColors,
+  applyBasicHighContrastStyles,
+  getLocalizedString,
+  getVisualEmptyStateMode,
 } from '../../core/src';
 
 import { HealthBarSettings } from './settings';
@@ -56,16 +71,18 @@ import { HealthBarSettings } from './settings';
 // ── Constants ────────────────────────────────────────────────────────
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const MARGIN = { top: 24, bottom: 28 };
-const PADDING = 12;
 const Y_AXIS_WIDTH = 40;
 const Y_TICKS = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
+const METRIC_MODES = ['normal', 'mean', 'median'] as const;
 
 // ── Types ────────────────────────────────────────────────────────────
+
+type MetricMode = typeof METRIC_MODES[number];
 
 interface HealthBarItem {
   label: string;
   value: number;
+  rawValue: number;
   pct: number; // clamped 0-1
   target: number | null;
   highlighted: boolean;
@@ -87,73 +104,190 @@ export class HealthBarVisual implements IVisual {
   private settings!: HealthBarSettings;
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
+  private emptyStateMode: 'unconfigured' | 'noData' = 'unconfigured';
+  private metricMode: MetricMode = 'normal';
+  private currentItems: HealthBarItem[] = [];
+  private currentHasHighlights = false;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
     this.selectionManager = this.host.createSelectionManager();
-    this.formattingSettingsService = new FormattingSettingsService();
+    this.formattingSettingsService = new FormattingSettingsService(options.host.createLocalizationManager());
 
     this.container = document.createElement('div');
     this.container.className = 'health-bar-container';
     options.element.appendChild(this.container);
+    attachEmptySpaceContextMenu(this.container, this.selectionManager, () =>
+      this.host.createSelectionIdBuilder().createSelectionId(),
+      () => allowInteractions(this.host),
+    );
   }
 
   // ── Update ──────────────────────────────────────────────────────────
 
   public update(options: VisualUpdateOptions): void {
-    // Cancel running animations
-    this.cancelAnimations.forEach((cancel) => cancel());
-    this.cancelAnimations = [];
+    notifyRenderingStarted(this.host, options);
+    try {
+      // Cancel running animations
+      this.cancelAnimations.forEach((cancel) => cancel());
+      this.cancelAnimations = [];
 
-    const dataView = options.dataViews?.[0];
-    this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
-      HealthBarSettings,
-      dataView,
-    );
+      const dataView = options.dataViews?.[0];
+      const hasCategoryRole = dataView?.metadata?.columns?.some((column) => column.roles?.['category']) ?? false;
+      const hasMeasureRole = dataView?.metadata?.columns?.some((column) => column.roles?.['measure']) ?? false;
+      this.emptyStateMode = hasCategoryRole && hasMeasureRole
+        ? getVisualEmptyStateMode(dataView)
+        : 'unconfigured';
+      this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
+        HealthBarSettings,
+        dataView,
+      );
+      syncTitleFormattingVisibility(this.settings.titleFormattingCard);
 
-    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
-    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
-    if (legacyCardObj) {
-      const legacyGlass = legacyCardObj['enableGlass'];
-      if (legacyGlass === false) {
+      // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+      const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+      const legacyGlass = legacyCardObj?.['enableGlass'];
+      if (legacyCardObj?.['cardStyleMode'] === undefined && legacyGlass === false) {
         this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
       }
+
+      // Hide inapplicable shared axis properties — health-bar only uses axisLabelColor and axisLabelSize
+
+      const categoryColumn = dataView?.categorical?.categories?.[0];
+      const hasDateAxis = Boolean(categoryColumn && isDateColumn(categoryColumn.source));
+      const hasTargetRole = dataView?.metadata?.columns?.some((column) => column.roles?.['target']) ?? false;
+      this.settings.dateFilterFormattingCard.visible = hasDateAxis;
+      syncDateFilterFormattingVisibility(this.settings.dateFilterFormattingCard);
+      if (!hasDateAxis) {
+        this.settings.dateFilterFormattingCard.startDate.visible = false;
+        this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = false;
+        this.settings.dateFilterFormattingCard.endDate.visible = false;
+      }
+      this.settings.axisFormattingCard.showXAxis.visible = false;
+      this.settings.axisFormattingCard.showYAxis.visible = false;
+      this.settings.axisFormattingCard.xAxisTitle.visible = false;
+      this.settings.axisFormattingCard.axisLabelFontFamily.visible = false;
+      this.settings.axisFormattingCard.axisLabelRotation.visible = false;
+      this.settings.axisFormattingCard.yAxisMin.visible = false;
+      this.settings.axisFormattingCard.yAxisMax.visible = false;
+
+      const referenceSettings = this.settings.referenceLineFormattingCard;
+      const showReferenceLine = referenceSettings.showReferenceLine.value;
+      const referenceType = resolveDropdown(referenceSettings.referenceLineType) ?? 'custom';
+      referenceSettings.referenceLineType.visible = showReferenceLine;
+      referenceSettings.referenceLineValue.visible = showReferenceLine && referenceType === 'custom';
+      referenceSettings.referenceLineColor.visible = showReferenceLine;
+      referenceSettings.referenceLineWidth.visible = showReferenceLine;
+      referenceSettings.referenceLineStyle.visible = showReferenceLine;
+      referenceSettings.showReferenceLabel.visible = showReferenceLine;
+      referenceSettings.referenceLabelText.visible = showReferenceLine
+        && referenceSettings.showReferenceLabel.value;
+      referenceSettings.showReferenceBand.visible = showReferenceLine;
+      referenceSettings.referenceBandOpacity.visible = showReferenceLine
+        && referenceSettings.showReferenceBand.value;
+      referenceSettings.referenceBandWidth.visible = showReferenceLine
+        && referenceSettings.showReferenceBand.value;
+      referenceSettings.referenceLineAxis.visible = false;
+
+      const trendSettings = this.settings.trendLineFormattingCard;
+      const showTrendLine = trendSettings.showTrendLine.value;
+      const trendType = resolveDropdown(trendSettings.trendLineType) ?? 'linear';
+      trendSettings.trendLineType.visible = showTrendLine;
+      trendSettings.trendLineColor.visible = showTrendLine;
+      trendSettings.trendLineWidth.visible = showTrendLine;
+      trendSettings.polynomialOrder.visible = showTrendLine && trendType === 'polynomial';
+      trendSettings.showEquation.visible = showTrendLine;
+      trendSettings.showR2.visible = showTrendLine;
+      trendSettings.trendLineAxis.visible = false;
+
+      const annotationSettings = this.settings.annotationFormattingCard;
+      const showAnnotations = annotationSettings.showAnnotations.value;
+      [
+        annotationSettings.annotation1Category,
+        annotationSettings.annotation1Text,
+        annotationSettings.annotation1Position,
+        annotationSettings.annotation2Category,
+        annotationSettings.annotation2Text,
+        annotationSettings.annotation2Position,
+        annotationSettings.annotation3Category,
+        annotationSettings.annotation3Text,
+        annotationSettings.annotation3Position,
+        annotationSettings.annotationFontSize,
+        annotationSettings.annotationFontColor,
+        annotationSettings.annotationFontFamily,
+        annotationSettings.annotationFontWeight,
+        annotationSettings.annotationConnectorColor,
+        annotationSettings.annotationOffset,
+        annotationSettings.annotationPadding,
+        annotationSettings.annotationBackgroundColor,
+        annotationSettings.annotationBackgroundOpacity,
+        annotationSettings.annotationCornerRadius,
+      ].forEach((slice) => {
+        slice.visible = showAnnotations;
+      });
+
+      // Value Labels is authoritative for this visual; the shared card would
+      // otherwise duplicate and override the same typography controls.
+      this.settings.dataLabelFormattingCard.visible = false;
+
+      // Conditional visibility: hide child settings when parent toggle is off
+      this.settings.animationSettings.duration.visible = this.settings.animationSettings.enabled.value;
+      this.settings.animationSettings.staggerDelay.visible = this.settings.animationSettings.enabled.value;
+      this.settings.targetSettings.visible = hasTargetRole;
+      this.settings.targetSettings.color.visible = this.settings.targetSettings.show.value;
+      this.settings.targetSettings.lineWidth.visible = this.settings.targetSettings.show.value;
+      this.settings.targetSettings.markerStyle.visible = this.settings.targetSettings.show.value;
+      const showValues = this.settings.valueLabelsSettings.showValue.value;
+      this.settings.valueLabelsSettings.showPercent.visible = showValues;
+      this.settings.valueLabelsSettings.position.visible = showValues;
+      this.settings.valueLabelsSettings.fontSize.visible = showValues;
+      this.settings.valueLabelsSettings.fontColor.visible = showValues;
+      this.settings.valueLabelsSettings.fontFamily.visible = showValues;
+      this.settings.valueLabelsSettings.fontWeight.visible = showValues;
+
+      const showCategories = this.settings.categoryLabelSettings.show.value;
+      this.settings.categoryLabelSettings.fontSize.visible = showCategories;
+      this.settings.categoryLabelSettings.fontColor.visible = showCategories;
+      this.settings.categoryLabelSettings.fontFamily.visible = showCategories;
+      this.settings.categoryLabelSettings.fontWeight.visible = showCategories;
+
+      const showZones = this.settings.healthBarZone.show.value;
+      this.settings.healthBarZone.zoneColors.visible = showZones;
+      this.settings.legendFormattingCard.visible = showZones;
+      syncLegendFormattingVisibility(this.settings.legendFormattingCard);
+
+      this.settings.metricToggleSettings.position.visible = this.settings.metricToggleSettings.show.value;
+      if (!this.settings.metricToggleSettings.show.value) {
+        this.metricMode = 'normal';
+      }
+      syncCardStyleVisibility(this.settings.cardSettings);
+      const conditionalEnabled = this.settings.conditionalFormattingCard.enableConditional.value;
+      this.settings.conditionalFormattingCard.conditionalDirection.visible = conditionalEnabled;
+      this.settings.conditionalFormattingCard.threshold1.visible = conditionalEnabled;
+      this.settings.conditionalFormattingCard.threshold2.visible = conditionalEnabled;
+      this.settings.conditionalFormattingCard.conditionalColor1.visible = conditionalEnabled;
+      this.settings.conditionalFormattingCard.conditionalColor2.visible = conditionalEnabled;
+      this.settings.conditionalFormattingCard.conditionalColor3.visible = conditionalEnabled;
+
+      // Extract data and apply user-configured sort order
+      const extracted = this.extractData(dataView);
+      const items = applySortOrder(
+        extracted.items.map((d) => ({ ...d, name: d.label })),
+        this.settings.sortFormattingCard,
+      );
+
+      const highContrast = getHostHighContrastColors(this.host);
+      this.render(items, options.viewport, extracted.hasHighlights, highContrast);
+      applyBasicHighContrastStyles(this.container, highContrast, {
+        textSelectors: ['svg text', '.health-bar-value', '.health-bar-label', '.health-bar-empty', '.pbi-landing-page-title', '.pbi-landing-page-description', '.pbi-landing-page-hint', '.pbi-landing-page li'],
+        fillSelectors: ['.health-bar-fill', '.health-bar-track', '.health-bar-zone', '.health-bar-target', '.pbi-landing-page'],
+        strokeSelectors: ['.health-bar-grid line'],
+      });
+      notifyRenderingFinished(this.host, options);
+    } catch (error) {
+      notifyRenderingFailed(this.host, options, error instanceof Error ? error.message : String(error));
+      throw error;
     }
-
-    // Hide inapplicable shared axis properties — health-bar only uses axisLabelColor and axisLabelSize
-
-    // Date filter: hide start/end when disabled
-    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
-    this.settings.axisFormattingCard.showXAxis.visible = false;
-    this.settings.axisFormattingCard.showYAxis.visible = false;
-    this.settings.axisFormattingCard.xAxisTitle.visible = false;
-    this.settings.axisFormattingCard.axisLabelFontFamily.visible = false;
-    this.settings.axisFormattingCard.axisLabelRotation.visible = false;
-    this.settings.axisFormattingCard.yAxisMin.visible = false;
-    this.settings.axisFormattingCard.yAxisMax.visible = false;
-
-    // Hide dual-axis-only properties (no combo/dual-axis support)
-    this.settings.referenceLineFormattingCard.referenceLineAxis.visible = false;
-    this.settings.referenceLineFormattingCard.referenceBandWidth.visible = false;
-    this.settings.trendLineFormattingCard.trendLineAxis.visible = false;
-
-    // Conditional visibility: hide child settings when parent toggle is off
-    this.settings.animationSettings.duration.visible = this.settings.animationSettings.enabled.value;
-    this.settings.animationSettings.staggerDelay.visible = this.settings.animationSettings.enabled.value;
-    this.settings.targetSettings.color.visible = this.settings.targetSettings.show.value;
-    this.settings.targetSettings.lineWidth.visible = this.settings.targetSettings.show.value;
-    this.settings.targetSettings.markerStyle.visible = this.settings.targetSettings.show.value;
-    this.settings.valueLabelsSettings.showPercent.visible = this.settings.valueLabelsSettings.showValue.value;
-
-    // Extract data and apply user-configured sort order
-    const extracted = this.extractData(dataView);
-    const items = applySortOrder(
-      extracted.items.map((d) => ({ ...d, name: d.label })),
-      this.settings.sortFormattingCard,
-    );
-    this.render(items, options.viewport, extracted.hasHighlights);
   }
 
   // ── Data Extraction ─────────────────────────────────────────────────
@@ -165,8 +299,12 @@ export class HealthBarVisual implements IVisual {
 
     const categories = dataView.categorical.categories[0];
     const allValues = dataView.categorical.values;
-    const maxVal = this.settings.scaleRangeSettings.maxValue.value ?? 100;
-    const minVal = this.settings.scaleRangeSettings.minValue.value ?? 0;
+    const configuredMax = this.settings.scaleRangeSettings.maxValue.value ?? 100;
+    const configuredMin = this.settings.scaleRangeSettings.minValue.value ?? 0;
+    const minVal = Math.min(configuredMin, configuredMax);
+    const maxVal = configuredMin === configuredMax
+      ? configuredMin + 1
+      : Math.max(configuredMin, configuredMax);
     const scaleRange = maxVal - minVal;
     const items: HealthBarItem[] = [];
 
@@ -213,7 +351,9 @@ export class HealthBarVisual implements IVisual {
         target = typeof raw === 'number' ? raw : null;
       }
 
-      const highlighted = measureHighlights ? measureHighlights[i] !== null : false;
+      const highlighted = measureHighlights
+        ? measureHighlights[i] !== null && measureHighlights[i] !== undefined
+        : false;
       if (highlighted) hasHighlights = true;
 
       const selectionId = this.host
@@ -221,15 +361,119 @@ export class HealthBarVisual implements IVisual {
         .withCategory(categories, i)
         .createSelectionId();
 
-      items.push({ label, value: clamped, pct, target, highlighted, selectionId });
+      items.push({ label, value: clamped, rawValue, pct, target, highlighted, selectionId });
     }
 
     return { items, hasHighlights };
   }
 
+  // ── Metric Toggle ──────────────────────────────────────────────────
+
+  private getScaledValue(rawValue: number): { value: number; pct: number } {
+    const configuredMax = this.settings.scaleRangeSettings.maxValue.value ?? 100;
+    const configuredMin = this.settings.scaleRangeSettings.minValue.value ?? 0;
+    const minVal = Math.min(configuredMin, configuredMax);
+    const maxVal = configuredMin === configuredMax
+      ? configuredMin + 1
+      : Math.max(configuredMin, configuredMax);
+    const scaleRange = maxVal - minVal;
+    const value = Math.max(minVal, Math.min(rawValue, maxVal));
+    const pct = scaleRange > 0 ? (value - minVal) / scaleRange : 0;
+
+    return { value, pct };
+  }
+
+  private getMetricDisplayItems(items: HealthBarItem[]): HealthBarItem[] {
+    if (!this.settings.metricToggleSettings.show.value || this.metricMode === 'normal') {
+      return items;
+    }
+
+    const rawValues = items.map((item) => item.rawValue).filter(Number.isFinite);
+    if (rawValues.length === 0) return [];
+
+    const statValue = computeStatValue(rawValues, this.metricMode as StatType);
+    if (!Number.isFinite(statValue)) return [];
+
+    const scaled = this.getScaledValue(statValue);
+    const label = this.getMetricModeLabel(this.metricMode);
+
+    return [{
+      label,
+      value: statValue,
+      rawValue: statValue,
+      pct: scaled.pct,
+      target: null,
+      highlighted: false,
+      selectionId: this.host.createSelectionIdBuilder().createSelectionId(),
+    }];
+  }
+
+  private getMetricModeLabel(mode: MetricMode): string {
+    switch (mode) {
+      case 'mean':
+        return 'Mean';
+      case 'median':
+        return 'Median';
+      case 'normal':
+        return 'Bars';
+    }
+  }
+
+  private getNextMetricMode(): MetricMode {
+    const currentIndex = METRIC_MODES.indexOf(this.metricMode);
+    return METRIC_MODES[(currentIndex + 1) % METRIC_MODES.length];
+  }
+
+  private renderMetricToggleButton(
+    baseItems: HealthBarItem[],
+    viewport: powerbi.IViewport,
+    hasHighlights: boolean | undefined,
+    highContrast: ReturnType<typeof getHostHighContrastColors>,
+  ): void {
+    if (!this.settings.metricToggleSettings.show.value) return;
+
+    const position = (resolveDropdown(this.settings.metricToggleSettings.position) ?? 'topRight') as 'topLeft' | 'topRight';
+    const positionClass = position === 'topLeft' ? 'top-left' : 'top-right';
+    const currentLabel = this.getMetricModeLabel(this.metricMode);
+    const nextLabel = this.getMetricModeLabel(this.getNextMetricMode());
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `health-bar-kpi-toggle health-bar-kpi-toggle--${positionClass}`;
+    button.textContent = currentLabel;
+    button.setAttribute('aria-label', `Metric view: ${currentLabel}. Click to show ${nextLabel}.`);
+    button.title = `Metric view: ${currentLabel}. Click to show ${nextLabel}.`;
+    const interactionsAllowed = allowInteractions(this.host);
+    button.disabled = !interactionsAllowed;
+    button.style.cursor = interactionsAllowed ? 'pointer' : 'default';
+
+    const stopPropagation = (event: Event): void => {
+      event.stopPropagation();
+    };
+    button.addEventListener('mousedown', stopPropagation);
+    button.addEventListener('mouseup', stopPropagation);
+    button.addEventListener('pointerdown', stopPropagation);
+    button.addEventListener('pointerup', stopPropagation);
+    button.addEventListener('contextmenu', (event: MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+    });
+    button.addEventListener('click', (event: MouseEvent) => {
+      if (!allowInteractions(this.host)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      this.metricMode = this.getNextMetricMode();
+      this.cancelAnimations.forEach((cancel) => cancel());
+      this.cancelAnimations = [];
+      this.render(baseItems, viewport, hasHighlights, highContrast);
+    });
+
+    this.container.appendChild(button);
+  }
+
   // ── Render ──────────────────────────────────────────────────────────
 
-  private render(items: HealthBarItem[], viewport: powerbi.IViewport, hasHighlights?: boolean): void {
+  private render(items: HealthBarItem[], viewport: powerbi.IViewport, hasHighlights: boolean | undefined, highContrast: ReturnType<typeof getHostHighContrastColors>): void {
     // Clear
     while (this.container.firstChild) {
       this.container.removeChild(this.container.firstChild);
@@ -245,37 +489,46 @@ export class HealthBarVisual implements IVisual {
       backgroundColor: s.cardSettings.backgroundColor?.value?.value,
       borderRadius: s.cardSettings.borderRadius.value,
     });
-    if (cardMode === 'none') {
-      this.container.style.borderRadius = `${s.cardSettings.borderRadius.value}px`;
-    }
-
-    // Conditional visibility for card style sub-settings
-    s.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
-    s.cardSettings.backgroundColor.visible = cardMode !== 'none';
+    const contentPadding = Math.max(0, s.cardSettings.contentPadding.value);
+    this.container.style.padding = `${contentPadding}px`;
 
     // Title
     renderChartTitle(this.container, s.titleFormattingCard);
 
     // Empty state
     if (items.length === 0) {
-      this.renderEmpty();
+      this.currentItems = [];
+      this.currentHasHighlights = false;
+      this.renderEmpty(highContrast);
       return;
     }
+    this.renderMetricToggleButton(items, viewport, hasHighlights, highContrast);
+    const renderItems = this.getMetricDisplayItems(items);
+    const renderHasHighlights = this.metricMode === 'normal' && Boolean(hasHighlights);
+    this.currentItems = renderItems;
+    this.currentHasHighlights = renderHasHighlights;
 
     // Dimensions
-    const titleEl = this.container.querySelector('.chart-title') as HTMLElement | null;
-    const titleHeight = titleEl ? titleEl.offsetHeight + 4 : 0;
-    const svgWidth = viewport.width - 2 * PADDING;
-    const svgHeight = viewport.height - titleHeight - 2 * PADDING;
+    const titleHeight = Array.from(
+      this.container.querySelectorAll<HTMLElement>('.chart-title, .chart-subtitle'),
+    ).reduce((height, element) => height + element.offsetHeight + 4, 0);
+    const toggleButton = this.container.querySelector<HTMLElement>('.health-bar-kpi-toggle');
+    if (toggleButton) {
+      toggleButton.style.top = `${Math.max(6, contentPadding + titleHeight)}px`;
+    }
+    const svgWidth = viewport.width - 2 * contentPadding;
+    const svgHeight = viewport.height - titleHeight - 2 * contentPadding;
 
     if (svgWidth <= 0 || svgHeight <= 0) {
-      this.renderEmpty();
+      this.renderEmpty(highContrast);
       return;
     }
 
     const showCategoryLabels = s.categoryLabelSettings.show.value;
-    const bottomMargin = showCategoryLabels ? MARGIN.bottom : 6;
-    const chartHeight = svgHeight - MARGIN.top - bottomMargin;
+    const chartPaddingTop = Math.max(0, s.barShapeSettings.chartPaddingTop.value);
+    const chartPaddingBottom = Math.max(0, s.barShapeSettings.chartPaddingBottom.value);
+    const bottomMargin = showCategoryLabels ? chartPaddingBottom : Math.min(chartPaddingBottom, 6);
+    const chartHeight = svgHeight - chartPaddingTop - bottomMargin;
     if (chartHeight <= 0) return;
 
     // Y-axis
@@ -286,7 +539,7 @@ export class HealthBarVisual implements IVisual {
     // Bar layout
     const gap = s.barShapeSettings.gap.value;
     const maxBarWidth = s.barShapeSettings.barWidth.value;
-    const barCount = items.length;
+    const barCount = renderItems.length;
     const totalGap = Math.max(0, barCount - 1) * gap;
     const availWidth = barAreaWidth - totalGap;
 
@@ -312,7 +565,7 @@ export class HealthBarVisual implements IVisual {
 
     // Settings
     const cornerRadius = s.barShapeSettings.barCornerRadius.value;
-    const showValue = s.valueLabelsSettings.showValue.value && s.dataLabelFormattingCard.showDataLabels.value;
+    const showValue = s.valueLabelsSettings.showValue.value;
     const showPercent = s.valueLabelsSettings.showPercent.value;
     const animEnabled = s.animationSettings.enabled.value;
     const animDuration = s.animationSettings.duration.value;
@@ -345,7 +598,7 @@ export class HealthBarVisual implements IVisual {
 
     // Chart group
     const chartGroup = document.createElementNS(SVG_NS, 'g');
-    chartGroup.setAttribute('transform', `translate(0, ${MARGIN.top})`);
+    chartGroup.setAttribute('transform', `translate(0, ${chartPaddingTop})`);
     svg.appendChild(chartGroup);
 
     // Gradient definition (only in gradient mode)
@@ -448,8 +701,8 @@ export class HealthBarVisual implements IVisual {
     }
 
     // Render bars
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
+    for (let i = 0; i < renderItems.length; i++) {
+      const item = renderItems[i];
       const barX = offsetX + i * (barWidth + gap);
       const fillHeight = Math.max(0, chartHeight * item.pct);
       const fillY = chartHeight - fillHeight;
@@ -470,6 +723,7 @@ export class HealthBarVisual implements IVisual {
       // Fill bar
       const fill = document.createElementNS(SVG_NS, 'rect');
       fill.setAttribute('class', 'health-bar-fill');
+      fill.setAttribute('data-selection-key', item.selectionId.getKey());
       fill.setAttribute('x', String(barX));
       fill.setAttribute('y', String(fillY));
       fill.setAttribute('width', String(barWidth));
@@ -490,13 +744,39 @@ export class HealthBarVisual implements IVisual {
 
       chartGroup.appendChild(fill);
 
-      // Click handlers
-      fill.style.cursor = 'pointer';
-      fill.addEventListener('click', (event: MouseEvent) => {
+      // Tooltip
+      const host = this.host;
+      const tooltipItems: VisualTooltipDataItem[] = [
+        { displayName: 'Category', value: item.label },
+        { displayName: 'Value', value: formatWithSettings(item.rawValue, this.settings.numberFormattingCard) },
+        { displayName: '% Complete', value: `${Math.round(item.pct * 100)}%` },
+      ];
+      if (item.target !== null) {
+        tooltipItems.push({ displayName: 'Target', value: formatWithSettings(item.target, this.settings.numberFormattingCard) });
+      }
+
+      const hitArea = document.createElementNS(SVG_NS, 'rect');
+      hitArea.setAttribute('class', 'health-bar-hit-area');
+      hitArea.setAttribute('x', String(barX));
+      hitArea.setAttribute('y', '0');
+      hitArea.setAttribute('width', String(barWidth));
+      hitArea.setAttribute('height', String(chartHeight));
+      hitArea.setAttribute('rx', String(cornerRadius));
+      hitArea.setAttribute('ry', String(cornerRadius));
+      hitArea.setAttribute('fill', 'transparent');
+      hitArea.setAttribute('data-selection-key', item.selectionId.getKey());
+      hitArea.style.cursor = allowInteractions(this.host) ? 'pointer' : 'default';
+      chartGroup.appendChild(hitArea);
+
+      hitArea.addEventListener('click', (event: MouseEvent) => {
+        if (!allowInteractions(this.host)) return;
         event.stopPropagation();
-        void this.selectionManager.select(item.selectionId, event.ctrlKey || event.metaKey);
+        void this.selectionManager.select(item.selectionId, event.ctrlKey || event.metaKey).then(() => {
+          this.applySelectionHighlight(renderItems, renderHasHighlights);
+        });
       });
-      fill.addEventListener('contextmenu', (event: MouseEvent) => {
+      hitArea.addEventListener('contextmenu', (event: MouseEvent) => {
+        if (!allowInteractions(this.host)) return;
         event.preventDefault();
         event.stopPropagation();
         void this.selectionManager.showContextMenu(item.selectionId, {
@@ -504,26 +784,15 @@ export class HealthBarVisual implements IVisual {
           y: event.clientY,
         });
       });
-
-      // Tooltip
-      const host = this.host;
-      const tooltipItems: VisualTooltipDataItem[] = [
-        { displayName: 'Category', value: item.label },
-        { displayName: 'Value', value: formatWithSettings(item.value, this.settings.numberFormattingCard) },
-        { displayName: '% Complete', value: `${Math.round(item.pct * 100)}%` },
-      ];
-      if (item.target !== null) {
-        tooltipItems.push({ displayName: 'Target', value: formatWithSettings(item.target, this.settings.numberFormattingCard) });
-      }
-      fill.addEventListener('mouseover', (event: MouseEvent) => {
+      hitArea.addEventListener('mouseover', (event: MouseEvent) => {
         host.tooltipService.show({
           dataItems: tooltipItems,
-          identities: [],
+          identities: [item.selectionId],
           coordinates: [event.clientX, event.clientY],
           isTouchEvent: false,
         });
       });
-      fill.addEventListener('mousemove', (event: MouseEvent) => {
+      hitArea.addEventListener('mousemove', (event: MouseEvent) => {
         host.tooltipService.move({
           dataItems: [],
           identities: [],
@@ -531,7 +800,7 @@ export class HealthBarVisual implements IVisual {
           isTouchEvent: false,
         });
       });
-      fill.addEventListener('mouseout', () => {
+      hitArea.addEventListener('mouseout', () => {
         host.tooltipService.hide({ immediately: true, isTouchEvent: false });
       });
 
@@ -592,7 +861,7 @@ export class HealthBarVisual implements IVisual {
       if (showValue) {
         const pctText = showPercent
           ? formatPercent(item.pct, { decimals: 0 })
-          : formatWithSettings(item.value, this.settings.numberFormattingCard);
+          : formatWithSettings(item.rawValue, this.settings.numberFormattingCard);
 
         const valuePosition = resolveDropdown(s.valueLabelsSettings.position) ?? 'above';
 
@@ -641,7 +910,9 @@ export class HealthBarVisual implements IVisual {
         catLabel.setAttribute('text-anchor', 'middle');
 
         // Truncate long text to fit bar width + gap
-        const maxTextWidth = barWidth + gap * 0.6;
+        const maxTextWidth = this.metricMode === 'normal'
+          ? barWidth + gap * 0.6
+          : Math.max(barWidth + gap * 0.6, effectiveBarAreaWidth);
         catLabel.textContent = item.label;
         chartGroup.appendChild(catLabel);
 
@@ -657,9 +928,6 @@ export class HealthBarVisual implements IVisual {
         }
       }
     }
-
-    // Apply shared formatting
-    applyDataLabelFormatting(this.container, s.dataLabelFormattingCard, '.health-bar-value');
 
     // Apply value label font overrides
     if (showValue) {
@@ -702,25 +970,26 @@ export class HealthBarVisual implements IVisual {
     const maxVal = s.scaleRangeSettings.maxValue.value ?? 100;
     const minVal = s.scaleRangeSettings.minValue.value ?? 0;
     const yScale = d3.scaleLinear().domain([minVal, maxVal]).range([chartHeight, 0]);
-    const allValues = items.map((d) => d.value);
+    const statValues = renderItems.map((d) => d.rawValue);
+    const trendValues = renderItems.map((d) => d.value);
 
     // Reference line
-    this.renderReferenceLine(d3ChartGroup, yScale, totalBarsWidth, allValues);
+    this.renderReferenceLine(d3ChartGroup, yScale, totalBarsWidth, statValues, barsLeft);
 
     // Trend line
     this.renderTrendLineOverlay(
       d3ChartGroup,
-      allValues,
+      trendValues,
       (idx: number) => offsetX + idx * (barWidth + gap) + barWidth / 2,
       yScale,
     );
 
     // Annotations
     this.renderAnnotationOverlay(d3ChartGroup, (category: string) => {
-      const idx = items.findIndex((d) => d.label === category);
+      const idx = renderItems.findIndex((d) => d.label === category);
       if (idx < 0) return null;
       const x = offsetX + idx * (barWidth + gap) + barWidth / 2;
-      const y = yScale(items[idx].value);
+      const y = yScale(renderItems[idx].value);
       return { x, y };
     });
 
@@ -750,20 +1019,16 @@ export class HealthBarVisual implements IVisual {
     }
 
     // Cross-highlight dimming: dim non-highlighted bars
-    if (hasHighlights) {
-      const fillBars = this.container.querySelectorAll<SVGRectElement>('.health-bar-fill');
-      fillBars.forEach((el, i) => {
-        if (i < items.length && !items[i].highlighted) {
-          el.style.opacity = '0.3';
-        }
-      });
-    }
+    this.applySelectionHighlight(renderItems, renderHasHighlights);
 
     // Accessibility
-    this.applyAccessibility(items);
+    this.applyAccessibility(renderItems);
 
     // Background click clears selection
-    this.container.addEventListener('click', this.handleBackgroundClick);
+    this.container.removeEventListener('click', this.handleBackgroundClick);
+    if (allowInteractions(this.host)) {
+      this.container.addEventListener('click', this.handleBackgroundClick);
+    }
   }
 
   // ── Color Interpolation ─────────────────────────────────────────────
@@ -782,18 +1047,46 @@ export class HealthBarVisual implements IVisual {
 
   // ── Empty State ─────────────────────────────────────────────────────
 
-  private renderEmpty(): void {
-    const el = document.createElement('div');
-    el.className = 'health-bar-empty';
-    el.textContent = 'Add a category and a measure to see health bars.';
-    this.container.appendChild(el);
+  private renderEmpty(highContrast: ReturnType<typeof getHostHighContrastColors>): void {
+    if (this.emptyStateMode === 'noData') {
+      renderNoDataState(
+        this.container,
+        getLocalizedString(this.host, 'HealthBar_NoDataState', 'No data for the current selection.'),
+        highContrast,
+      );
+      return;
+    }
+    renderLandingPage(this.container, {
+      title: getLocalizedString(this.host, 'HealthBar_LandingTitle', 'Add data to build health bars'),
+      description: getLocalizedString(this.host, 'HealthBar_LandingDescription', 'Bind a category and a measure to render the vertical health meter.'),
+      steps: [getLocalizedString(this.host, 'HealthBar_LandingStepCategory', 'Category'), getLocalizedString(this.host, 'HealthBar_LandingStepMeasure', 'Measure'), getLocalizedString(this.host, 'HealthBar_LandingStepOptional', 'Optional target')],
+    }, highContrast);
   }
 
   // ── Background Click ────────────────────────────────────────────────
 
   private handleBackgroundClick = (): void => {
-    void this.selectionManager.clear();
+    if (!allowInteractions(this.host)) return;
+    void this.selectionManager.clear().then(() => {
+      this.applySelectionHighlight(this.currentItems, this.currentHasHighlights);
+    });
   };
+
+  private applySelectionHighlight(items: HealthBarItem[], hasHighlights: boolean): void {
+    const selectedKeys = this.metricMode === 'normal'
+      ? new Set((this.selectionManager.getSelectionIds() as ISelectionId[]).map((id) => id.getKey()))
+      : new Set<string>();
+    const shouldDim = hasHighlights || selectedKeys.size > 0;
+    const fills = this.container.querySelectorAll<SVGRectElement>('.health-bar-fill');
+    fills.forEach((element, index) => {
+      const item = items[index];
+      if (!item) return;
+      element.setAttribute('data-highlighted', String(item.highlighted));
+      const isSelected = selectedKeys.has(item.selectionId.getKey());
+      element.style.opacity = shouldDim && !item.highlighted && !isSelected ? '0.3' : '';
+      element.style.filter = isSelected ? 'drop-shadow(0 0 4px rgba(37, 99, 235, 0.55))' : '';
+    });
+  }
 
   // ── Conditional Formatting ──────────────────────────────────────────
 
@@ -820,6 +1113,7 @@ export class HealthBarVisual implements IVisual {
     yScale: d3.ScaleLinear<number, number>,
     chartWidth: number,
     allValues: number[],
+    xOffset: number,
   ): void {
     const ref = this.settings.referenceLineFormattingCard;
     if (!ref.showReferenceLine.value) return;
@@ -837,7 +1131,11 @@ export class HealthBarVisual implements IVisual {
       ? ref.referenceLabelText.value
       : formatWithSettings(refValue, this.settings.numberFormattingCard);
 
-    renderHorizontalReferenceLine(g, {
+    const refGroup = g.append('g').attr('transform', `translate(${xOffset}, 0)`);
+    const [domainStart, domainEnd] = yScale.domain();
+    const bandDelta = Math.abs(domainEnd - domainStart)
+      * (Math.max(0, ref.referenceBandWidth.value) / 100);
+    renderHorizontalReferenceLine(refGroup, {
       value: refValue,
       yScale,
       chartWidth,
@@ -847,7 +1145,7 @@ export class HealthBarVisual implements IVisual {
       showLabel: ref.showReferenceLabel.value,
       labelText,
       showBand: ref.showReferenceBand.value,
-      bandUpperValue: refValue * 1.1,
+      bandUpperValue: refValue + bandDelta,
       bandOpacity: ref.referenceBandOpacity.value / 100,
     });
   }
@@ -902,6 +1200,15 @@ export class HealthBarVisual implements IVisual {
       ann.annotationFontColor.value?.value || '#475569',
       ann.annotationConnectorColor.value?.value || '#94A3B8',
       resolvePosition,
+      {
+        fontFamily: resolveDropdown(ann.annotationFontFamily) || undefined,
+        fontWeight: resolveDropdown(ann.annotationFontWeight) || '500',
+        offset: ann.annotationOffset.value,
+        padding: ann.annotationPadding.value,
+        backgroundColor: ann.annotationBackgroundColor.value?.value || '#FFFFFF',
+        backgroundOpacity: ann.annotationBackgroundOpacity.value / 100,
+        cornerRadius: ann.annotationCornerRadius.value,
+      },
     );
     if (config) renderAnnotations(g, config);
   }
@@ -920,11 +1227,27 @@ export class HealthBarVisual implements IVisual {
       dataPointCount: items.length,
     });
 
+    const hitAreas = this.container.querySelectorAll<SVGRectElement>('.health-bar-hit-area');
+    hitAreas.forEach((hitArea, index) => {
+      const item = items[index];
+      if (!item) return;
+      applyDataPointAria(
+        hitArea,
+        item.label,
+        formatWithSettings(item.rawValue, this.settings.numberFormattingCard),
+        index,
+        items.length,
+      );
+      hitArea.setAttribute('tabindex', '0');
+      hitArea.setAttribute('aria-keyshortcuts', 'Enter Space ArrowLeft ArrowRight Home End');
+      hitArea.setAttribute('aria-disabled', allowInteractions(this.host) ? 'false' : 'true');
+    });
+
     const cleanup = attachKeyboardNav({
       container: this.container,
-      itemSelector: '.health-bar-fill',
+      itemSelector: '.health-bar-hit-area',
       onActivate: (el) => {
-        (el as HTMLElement).click?.();
+        el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
       },
     });
     this.cancelAnimations.push(cleanup);

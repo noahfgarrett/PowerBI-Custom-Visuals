@@ -46,6 +46,22 @@ import {
   isDateColumn,
   type DateFilterConfig,
   formatWithSettings,
+  buildHighlightedCategoryKeys,
+  applyLinkedState,
+  buildCategoryBands,
+  syncLegendFormattingVisibility,
+  syncTitleFormattingVisibility,
+  syncCardStyleVisibility,
+  attachEmptySpaceContextMenu,
+  getVisualEmptyStateMode,
+  getLocalizedString,
+  allowInteractions,
+  getHostHighContrastColors,
+  applyBasicHighContrastStyles,
+  notifyRenderingStarted,
+  notifyRenderingFinished,
+  notifyRenderingFailed,
+  prefersReducedMotion,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -71,12 +87,16 @@ interface StreamRow {
 interface StreamData {
   rows: StreamRow[];
   seriesNames: string[];
+  /** Original measure-column index for each current series position. */
+  seriesSourceIndices: number[];
   categoryLabels: string[];
   categorySelectionIds: ISelectionId[];
   /** Whether cross-highlight data is present from another visual/slicer */
   hasHighlights: boolean;
   /** Per-series: true if any highlight is non-null for that series */
   seriesHighlighted: boolean[];
+  /** Per-series highlight arrays aligned with rows. */
+  seriesHighlights: Array<(number | null)[]>;
 }
 
 type OffsetType = 'wiggle' | 'silhouette' | 'expand' | 'none';
@@ -89,6 +109,7 @@ const MARGIN = { top: 10, right: 10, bottom: 30, left: 10 };
 const LEGEND_HEIGHT = 28;
 const LEGEND_SIDE_WIDTH = 90;
 const EMPTY_STATE_TEXT = 'Add a Category field and at least one Measure to build the stream graph.';
+let streamGraphInstanceCounter = 0;
 
 // ── Offset & Curve Maps ─────────────────────────────────────────
 
@@ -115,23 +136,46 @@ export class StreamGraphVisual implements IVisual {
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
   private svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null;
+  private currentData: StreamData | null = null;
+  private emptyStateMode: 'unconfigured' | 'noData' = 'unconfigured';
+  private readonly instanceId = ++streamGraphInstanceCounter;
+  private readonly detachEmptySpaceContextMenu: () => void;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
     this.selectionManager = options.host.createSelectionManager();
     this.container = options.element;
     this.settings = new StreamGraphSettings();
-    this.formattingSettingsService = new FormattingSettingsService();
+    this.formattingSettingsService = new FormattingSettingsService(options.host.createLocalizationManager());
     this.container.classList.add('stream-container');
+    this.detachEmptySpaceContextMenu = attachEmptySpaceContextMenu(
+      this.container,
+      this.selectionManager,
+      () => this.host.createSelectionIdBuilder().createSelectionId(),
+      () => allowInteractions(this.host),
+    );
   }
 
   public update(options: VisualUpdateOptions): void {
+    notifyRenderingStarted(this.host, options);
+    try {
+      this.updateVisual(options);
+      this.applyHighContrast();
+      notifyRenderingFinished(this.host, options);
+    } catch (error) {
+      notifyRenderingFailed(this.host, options, error instanceof Error ? error.message : String(error));
+      throw error;
+    }
+  }
+
+  private updateVisual(options: VisualUpdateOptions): void {
     // Cancel running animations
     this.cancelAnimations.forEach((cancel) => cancel());
     this.cancelAnimations = [];
 
     // Parse settings from dataView
     const dataView = options.dataViews?.[0];
+    this.emptyStateMode = getVisualEmptyStateMode(dataView);
     if (dataView) {
       this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
         StreamGraphSettings,
@@ -143,7 +187,7 @@ export class StreamGraphVisual implements IVisual {
     const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
     if (legacyCardObj) {
       const legacyGlass = legacyCardObj['enableGlass'];
-      if (legacyGlass === false) {
+      if (legacyGlass === false && legacyCardObj['cardStyleMode'] == null) {
         this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
       }
     }
@@ -154,11 +198,25 @@ export class StreamGraphVisual implements IVisual {
     this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
     this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
     this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
+
+    syncTitleFormattingVisibility(this.settings.titleFormattingCard);
+    syncLegendFormattingVisibility(this.settings.legendFormattingCard);
+    syncCardStyleVisibility(this.settings.cardSettings);
+
     this.settings.axisFormattingCard.showXAxis.visible = false;
     this.settings.axisFormattingCard.showYAxis.visible = false;
     this.settings.axisFormattingCard.showGridLines.visible = false;
     this.settings.axisFormattingCard.yAxisMin.visible = false;
     this.settings.axisFormattingCard.yAxisMax.visible = false;
+    this.settings.axisFormattingCard.integerTicks.visible = false;
+    this.settings.axisFormattingCard.xAxisTitle.visible = this.settings.streamDisplaySettings.showXAxis.value;
+    this.settings.axisFormattingCard.axisLabelRotation.visible = this.settings.streamDisplaySettings.showXAxis.value;
+    this.settings.axisFormattingCard.yAxisTitle.visible = this.settings.streamDisplaySettings.showYAxis.value;
+    this.settings.axisFormattingCard.gridLineColor.visible = false;
+    this.settings.axisFormattingCard.gridLineStyle.visible = false;
+    this.settings.axisFormattingCard.gridLineWidth.visible = false;
+    this.settings.axisFormattingCard.gridLineOpacity.visible = false;
+    this.settings.lineStrokeFormattingCard.lineWidth.visible = false;
 
     // Hide dual-axis-only properties (no combo/dual-axis support)
     this.settings.referenceLineFormattingCard.referenceLineAxis.visible = false;
@@ -176,12 +234,68 @@ export class StreamGraphVisual implements IVisual {
     this.settings.annotationFormattingCard.annotation3Category.visible = annVisible;
     this.settings.annotationFormattingCard.annotation3Text.visible = annVisible;
     this.settings.annotationFormattingCard.annotation3Position.visible = annVisible;
+    this.settings.annotationFormattingCard.annotationFontSize.visible = annVisible;
+    this.settings.annotationFormattingCard.annotationFontColor.visible = annVisible;
+    this.settings.annotationFormattingCard.annotationFontFamily.visible = annVisible;
+    this.settings.annotationFormattingCard.annotationFontWeight.visible = annVisible;
+    this.settings.annotationFormattingCard.annotationConnectorColor.visible = annVisible;
+    this.settings.annotationFormattingCard.annotationOffset.visible = annVisible;
+    this.settings.annotationFormattingCard.annotationPadding.visible = annVisible;
+    this.settings.annotationFormattingCard.annotationBackgroundColor.visible = annVisible;
+    this.settings.annotationFormattingCard.annotationBackgroundOpacity.visible = annVisible;
+    this.settings.annotationFormattingCard.annotationCornerRadius.visible = annVisible;
+
+    // The stream legend only supports the shared legend surface, not inline label controls.
+    this.settings.legendFormattingCard.showInlineLabels.visible = false;
+    this.settings.legendFormattingCard.inlineLabelFontSize.visible = false;
+    this.settings.legendFormattingCard.inlineLabelOffset.visible = false;
 
     // Hide animation duration when animations are disabled
     this.settings.animationSettings.duration.visible = this.settings.animationSettings.enabled.value;
 
+    const crosshair = this.settings.crosshairFormattingCard;
+    const crosshairOn = crosshair.showCrosshair.value;
+    crosshair.crosshairLineColor.visible = crosshairOn;
+    crosshair.crosshairLineWidth.visible = crosshairOn;
+    crosshair.crosshairLineStyle.visible = crosshairOn;
+    crosshair.crosshairOpacity.visible = crosshairOn;
+    crosshair.showCrosshairValues.visible = crosshairOn;
+
+    const conditional = this.settings.conditionalFormattingCard;
+    const conditionalOn = conditional.enableConditional.value;
+    conditional.conditionalDirection.visible = conditionalOn;
+    conditional.threshold1.visible = conditionalOn;
+    conditional.threshold2.visible = conditionalOn;
+    conditional.conditionalColor1.visible = conditionalOn;
+    conditional.conditionalColor2.visible = conditionalOn;
+    conditional.conditionalColor3.visible = conditionalOn;
+
+    const reference = this.settings.referenceLineFormattingCard;
+    const referenceOn = reference.showReferenceLine.value;
+    const referenceType = resolveDropdown(reference.referenceLineType) ?? 'custom';
+    reference.referenceLineType.visible = referenceOn;
+    reference.referenceLineValue.visible = referenceOn && referenceType === 'custom';
+    reference.referenceLineColor.visible = referenceOn;
+    reference.referenceLineWidth.visible = referenceOn;
+    reference.referenceLineStyle.visible = referenceOn;
+    reference.showReferenceLabel.visible = referenceOn;
+    reference.referenceLabelText.visible = referenceOn && reference.showReferenceLabel.value;
+    reference.showReferenceBand.visible = referenceOn;
+    reference.referenceBandOpacity.visible = referenceOn && reference.showReferenceBand.value;
+
+    const trend = this.settings.trendLineFormattingCard;
+    const trendOn = trend.showTrendLine.value;
+    const trendType = resolveDropdown(trend.trendLineType) ?? 'linear';
+    trend.trendLineType.visible = trendOn;
+    trend.polynomialOrder.visible = trendOn && trendType === 'polynomial';
+    trend.trendLineColor.visible = trendOn;
+    trend.trendLineWidth.visible = trendOn;
+    trend.showEquation.visible = trendOn;
+    trend.showR2.visible = trendOn;
+
     // Extract data and apply user-configured sort order to series
     const data = this.sortStreamSeries(this.extractData(dataView));
+    this.currentData = data;
 
     // Populate per-series formatting groups from value columns
     if (data) {
@@ -190,9 +304,10 @@ export class StreamGraphVisual implements IVisual {
       const defaultScheme = d3.scaleOrdinal(d3.schemeCategory10);
       const colorLookup = new Map<string, string>();
       data.seriesNames.forEach((name, i) => {
+        const sourceIndex = data.seriesSourceIndices[i] ?? i;
         colorLookup.set(name, useChartPal
-          ? getHostChartColor(this.host.colorPalette, i, themeName)
-          : defaultScheme(String(i)));
+          ? getHostChartColor(this.host.colorPalette, sourceIndex, themeName)
+          : defaultScheme(String(sourceIndex)));
       });
       populateSeriesFormattingGroups(
         this.settings.seriesFormattingCard,
@@ -243,6 +358,8 @@ export class StreamGraphVisual implements IVisual {
 
     // Build series names from measure display names
     const seriesNames = measureColumns.map((col) => col.source.displayName ?? 'Unknown');
+    const seriesSourceIndices = measureColumns.map((_col, index) => index);
+    const seriesHighlights = measureColumns.map(() => [] as (number | null)[]);
 
     // Build rows: one per category, with each measure as a named property
     const rows: StreamRow[] = [];
@@ -275,20 +392,31 @@ export class StreamGraphVisual implements IVisual {
         const rawVal = measureColumns[m].values[i];
         const numVal = typeof rawVal === 'number' ? rawVal : Number(rawVal);
         row[seriesNames[m]] = Number.isFinite(numVal) ? numVal : 0;
+
+        const rawHighlight = measureColumns[m].highlights?.[i];
+        seriesHighlights[m].push(typeof rawHighlight === 'number' ? rawHighlight : null);
       }
 
       rows.push(row);
     }
 
     // Determine cross-highlight state per series
-    const seriesHighlighted: boolean[] = measureColumns.map((col) => {
-      const hlRaw = col.highlights as unknown[] | undefined;
-      if (!hlRaw) return false;
-      return hlRaw.some((h) => h != null);
-    });
+    const seriesHighlighted: boolean[] = seriesHighlights.map((highlights) =>
+      highlights.some((value) => value !== null),
+    );
     const hasHighlights = seriesHighlighted.some((h) => h);
+    if (rows.length === 0) return null;
 
-    return { rows, seriesNames, categoryLabels, categorySelectionIds, hasHighlights, seriesHighlighted };
+    return {
+      rows,
+      seriesNames,
+      seriesSourceIndices,
+      categoryLabels,
+      categorySelectionIds,
+      hasHighlights,
+      seriesHighlighted,
+      seriesHighlights,
+    };
   }
 
   // ── Sort Series ──────────────────────────────────────────────
@@ -320,21 +448,18 @@ export class StreamGraphVisual implements IVisual {
       return {
         ...data,
         seriesNames: seriesTotals.map((s) => s.name),
+        seriesSourceIndices: seriesTotals.map((s) => data.seriesSourceIndices[s.origIndex]),
         seriesHighlighted: seriesTotals.map((s) => data.seriesHighlighted[s.origIndex]),
+        seriesHighlights: seriesTotals.map((s) => data.seriesHighlights[s.origIndex]),
       };
     } else if (streamSortOrder === 'appearance') {
       // Keep original data order (no sorting)
       return data;
     }
 
-    // Default 'inside-out': sort by total value descending (largest layers in center)
-    seriesTotals.sort((a, b) => b.value - a.value);
-
-    return {
-      ...data,
-      seriesNames: seriesTotals.map((s) => s.name),
-      seriesHighlighted: seriesTotals.map((s) => data.seriesHighlighted[s.origIndex]),
-    };
+    // D3's inside-out stack order uses the shape across categories, not just
+    // a total-value sort. Preserve source order here and let the stack own it.
+    return data;
   }
 
   // ── Rendering ────────────────────────────────────────────────
@@ -362,9 +487,9 @@ export class StreamGraphVisual implements IVisual {
         borderRadius: s.cardSettings.borderRadius.value,
       },
     );
-    if (cardMode === 'none') {
-      this.container.style.borderRadius = `${s.cardSettings.borderRadius.value}px`;
-    }
+
+    const contentPadding = Math.max(0, s.cardSettings.contentPadding.value);
+    this.container.style.padding = `${contentPadding}px`;
 
     // Handle empty/null data
     if (!data) {
@@ -373,7 +498,7 @@ export class StreamGraphVisual implements IVisual {
     }
 
     // Legend dimensions
-    const showLegend = s.legendFormattingCard.showLegend.value && data.seriesNames.length > 1;
+    const showLegend = s.legendFormattingCard.showLegend.value;
     const legendPos = this.getLegendPosition();
     const legendReserveV = showLegend && (legendPos === 'top' || legendPos === 'bottom') ? LEGEND_HEIGHT : 0;
     const legendReserveH = showLegend && (legendPos === 'left' || legendPos === 'right') ? LEGEND_SIDE_WIDTH : 0;
@@ -398,11 +523,13 @@ export class StreamGraphVisual implements IVisual {
     wrapper.className = 'stream-wrapper';
     if (showLegend && (legendPos === 'left' || legendPos === 'right')) {
       wrapper.style.display = 'flex';
+      wrapper.style.position = 'relative';
       wrapper.style.flexDirection = legendPos === 'left' ? 'row' : 'row-reverse';
       wrapper.style.width = '100%';
       wrapper.style.height = '100%';
     } else {
       wrapper.style.display = 'flex';
+      wrapper.style.position = 'relative';
       wrapper.style.flexDirection = 'column';
       wrapper.style.width = '100%';
       wrapper.style.height = '100%';
@@ -421,8 +548,8 @@ export class StreamGraphVisual implements IVisual {
     svgContainer.style.minHeight = '0';
     wrapper.appendChild(svgContainer);
 
-    const svgWidth = width - legendReserveH;
-    const svgHeight = height - legendReserveV;
+    const svgWidth = width - legendReserveH - contentPadding * 2;
+    const svgHeight = height - legendReserveV - contentPadding * 2;
     const innerWidth = svgWidth - leftMargin - MARGIN.right;
     const innerHeight = svgHeight - MARGIN.top - bottomMargin;
 
@@ -449,7 +576,11 @@ export class StreamGraphVisual implements IVisual {
     const stack = d3.stack<StreamRow>()
       .keys(data.seriesNames)
       .offset(offsetFn)
-      .order(d3.stackOrderNone);
+      .order(
+        (resolveDropdown(s.streamDisplaySettings.sortOrder) ?? 'inside-out') === 'inside-out'
+          ? d3.stackOrderInsideOut
+          : d3.stackOrderNone,
+      );
 
     const stackedData = stack(data.rows);
 
@@ -551,16 +682,24 @@ export class StreamGraphVisual implements IVisual {
     const defaultColorScale = d3.scaleOrdinal(d3.schemeCategory10);
     const useGradient = s.streamSettings.useGradient.value;
     const gradientDefs = svg.append('defs');
+    const seriesFormats = data.seriesNames.map((_name, index) => {
+      const sourceIndex = data.seriesSourceIndices[index] ?? index;
+      const baseColor = useChartPalette
+        ? getHostChartColor(this.host.colorPalette, sourceIndex, themeName)
+        : defaultColorScale(String(sourceIndex));
+      return resolveSeriesFormatting(this.settings.seriesFormattingCard, sourceIndex, baseColor);
+    });
+    const seriesFillColors = seriesFormats.map((format, index) =>
+      this.getConditionalColor(seriesTotals[index]) ?? format.color
+    );
+    const seriesOpacities = seriesFormats.map((format) =>
+      streamOpacity * Math.max(0, Math.min(100, format.opacity)) / 100
+    );
 
     // Create gradient definitions if gradient fill is enabled
     if (useGradient) {
       stackedData.forEach((layer, i) => {
-        const baseColor = useChartPalette
-          ? getHostChartColor(this.host.colorPalette, i, themeName)
-          : defaultColorScale(String(i));
-        const sf = resolveSeriesFormatting(this.settings.seriesFormattingCard, i, baseColor);
-
-        const gradientId = `stream-grad-${i}`;
+        const gradientId = `stream-grad-${this.instanceId}-${i}`;
         const gradient = gradientDefs.append('linearGradient')
           .attr('id', gradientId)
           .attr('gradientUnits', 'userSpaceOnUse')
@@ -572,18 +711,18 @@ export class StreamGraphVisual implements IVisual {
         // Full color at center (edges), lighter at extremes
         gradient.append('stop')
           .attr('offset', '0%')
-          .attr('stop-color', sf.color)
-          .attr('stop-opacity', streamOpacity * 0.4);
+          .attr('stop-color', seriesFillColors[i])
+          .attr('stop-opacity', seriesOpacities[i] * 0.4);
 
         gradient.append('stop')
           .attr('offset', '50%')
-          .attr('stop-color', sf.color)
-          .attr('stop-opacity', streamOpacity);
+          .attr('stop-color', seriesFillColors[i])
+          .attr('stop-opacity', seriesOpacities[i]);
 
         gradient.append('stop')
           .attr('offset', '100%')
-          .attr('stop-color', sf.color)
-          .attr('stop-opacity', streamOpacity * 0.4);
+          .attr('stop-color', seriesFillColors[i])
+          .attr('stop-opacity', seriesOpacities[i] * 0.4);
       });
     }
 
@@ -594,16 +733,9 @@ export class StreamGraphVisual implements IVisual {
       .attr('data-series', (_d, i) => String(i))
       .attr('fill', (_d, i) => {
         if (useGradient) {
-          return `url(#stream-grad-${i})`;
+          return `url(#stream-grad-${this.instanceId}-${i})`;
         }
-        const baseColor = useChartPalette
-          ? getHostChartColor(this.host.colorPalette, i, themeName)
-          : defaultColorScale(String(i));
-        const condColor = this.getConditionalColor(seriesTotals[i]);
-        const sf = resolveSeriesFormatting(this.settings.seriesFormattingCard, i, baseColor);
-        const effectiveOpacity = sf.opacity < 100 ? sf.opacity / 100 : streamOpacity;
-        if (condColor) return withOpacity(condColor, effectiveOpacity);
-        return withOpacity(sf.color, effectiveOpacity);
+        return withOpacity(seriesFillColors[i], seriesOpacities[i]);
       })
       .attr('stroke', effectiveStrokeColor)
       .attr('stroke-width', effectiveStrokeWidth)
@@ -611,41 +743,70 @@ export class StreamGraphVisual implements IVisual {
       .attr('d', (d) => areaGenerator(d) ?? '')
       .style('transition', 'opacity 0.15s ease');
 
+    const linkedBands = g.append('g')
+      .attr('class', 'stream-linked-bands')
+      .style('pointer-events', 'none');
+    buildCategoryBands(
+      data.rows.map((_row, index) => xScale(index)),
+      innerWidth,
+    ).forEach((band) => {
+      linkedBands.append('rect')
+        .attr('class', 'stream-linked-band')
+        .attr('data-selection-key', data.categorySelectionIds[band.index]?.getKey() ?? '')
+        .attr('x', band.x)
+        .attr('y', 0)
+        .attr('width', band.width)
+        .attr('height', innerHeight)
+        .attr('fill', '#0F172A')
+        .style('opacity', '0');
+    });
+
     // Tooltips via tooltipService
     const showPercentages = s.streamDisplaySettings.showPercentages.value;
-    const grandTotal = showPercentages ? seriesTotals.reduce((sum, t) => sum + t, 0) : 0;
     const streamHost = this.host;
     const streamNumberSettings = this.settings.numberFormattingCard;
     const gNode = g.node();
     layers.on('mouseover', (event: MouseEvent, d) => {
-      const seriesIdx = data.seriesNames.indexOf(d.key);
       const tooltipItems: VisualTooltipDataItem[] = [
         { displayName: 'Series', value: d.key },
       ];
+      let categoryIndex = 0;
+      let pointValue = 0;
       // Resolve the category index from the pointer position to show the actual value
       if (gNode) {
         const [mx] = d3.pointer(event, gNode);
         const rawIdx = Math.round(xScale.invert(mx));
-        const catIdx = Math.max(0, Math.min(data.rows.length - 1, rawIdx));
-        const row = data.rows[catIdx];
+        categoryIndex = Math.max(0, Math.min(data.rows.length - 1, rawIdx));
+        const row = data.rows[categoryIndex];
         if (row) {
-          const pointValue = row[d.key];
-          if (typeof pointValue === 'number') {
-            tooltipItems.push({ displayName: 'Value', value: formatWithSettings(pointValue, streamNumberSettings) });
+          const rawPointValue = row[d.key];
+          if (typeof rawPointValue === 'number') {
+            pointValue = rawPointValue;
+            tooltipItems.push({ displayName: 'Value', value: formatWithSettings(rawPointValue, streamNumberSettings) });
           }
-          if (data.categoryLabels[catIdx]) {
-            tooltipItems.push({ displayName: 'Category', value: data.categoryLabels[catIdx] });
+          if (data.categoryLabels[categoryIndex]) {
+            tooltipItems.push({ displayName: 'Category', value: data.categoryLabels[categoryIndex] });
           }
         }
       }
-      if (showPercentages && grandTotal > 0) {
-        const total = seriesIdx >= 0 ? seriesTotals[seriesIdx] : 0;
-        const pct = ((total / grandTotal) * 100).toFixed(1);
-        tooltipItems.push({ displayName: '% of Total', value: `${pct}%` });
+      if (showPercentages) {
+        const row = data.rows[categoryIndex];
+        const categoryTotal = row
+          ? data.seriesNames.reduce((sum, name) => {
+            const value = row[name];
+            return sum + (typeof value === 'number' ? value : 0);
+          }, 0)
+          : 0;
+        if (categoryTotal !== 0) {
+          const pct = ((pointValue / categoryTotal) * 100).toFixed(1);
+          tooltipItems.push({ displayName: '% of Category', value: `${pct}%` });
+        }
       }
       streamHost.tooltipService.show({
         dataItems: tooltipItems,
-        identities: [],
+        identities: data.categorySelectionIds[categoryIndex]
+          ? [data.categorySelectionIds[categoryIndex]]
+          : [],
         coordinates: [event.clientX, event.clientY],
         isTouchEvent: false,
       });
@@ -665,9 +826,10 @@ export class StreamGraphVisual implements IVisual {
     const chartGroupNode = g.node();
     if (chartGroupNode) {
       layers
-        .style('cursor', 'pointer')
+        .style('cursor', allowInteractions(this.host) ? 'pointer' : 'default')
         .on('click', (event: MouseEvent) => {
           event.stopPropagation();
+          if (!allowInteractions(this.host)) return;
           const selectionId = this.getSelectionIdFromPointer(
             event,
             chartGroupNode,
@@ -675,12 +837,15 @@ export class StreamGraphVisual implements IVisual {
             data.categorySelectionIds,
           );
           if (selectionId) {
-            void this.selectionManager.select(selectionId, event.ctrlKey || event.metaKey);
+            void this.selectionManager.select(selectionId, event.ctrlKey || event.metaKey).then(() => {
+              this.applyLinkedHighlight();
+            });
           }
         })
         .on('contextmenu', (event: MouseEvent) => {
           event.preventDefault();
           event.stopPropagation();
+          if (!allowInteractions(this.host)) return;
           const selectionId = this.getSelectionIdFromPointer(
             event,
             chartGroupNode,
@@ -835,11 +1000,19 @@ export class StreamGraphVisual implements IVisual {
       const chartGroupNode = g.node();
       if (svgEl2 && chartGroupNode) {
         const chStyleVal = resolveDropdown(s.crosshairFormattingCard.crosshairLineStyle) ?? 'dashed';
-        // Build series data for crosshair: mid-Y of stacked layers per category
+        // Use rendered layer midpoints for marker placement, but keep labels on raw series values.
         const crosshairSeries = stackedData.map((layer, layerIdx) => ({
           name: layer.key,
-          values: layer.map((point) => (point[0] + point[1]) / 2),
-          color: getHostChartColor(this.host.colorPalette, layerIdx, themeName),
+          values: data.rows.map((row) => {
+            const rawValue = row[layer.key];
+            return typeof rawValue === 'number' ? rawValue : NaN;
+          }),
+          markerValues: layer.map((point) => (point[0] + point[1]) / 2),
+          displayValues: data.rows.map((row) => {
+            const rawValue = row[layer.key];
+            return typeof rawValue === 'number' ? rawValue : NaN;
+          }),
+          color: seriesFillColors[layerIdx],
         }));
         const crosshairCleanup = attachCrosshair(buildCrosshairConfig({
           svg: svgEl2,
@@ -849,11 +1022,13 @@ export class StreamGraphVisual implements IVisual {
           chartWidth: innerWidth,
           chartHeight: innerHeight,
           categories: data.categoryLabels,
+          xPositions: data.categoryLabels.map((_label, index) => xScale(index)),
           series: crosshairSeries,
           yScale,
           lineColor: s.crosshairFormattingCard.crosshairLineColor.value?.value || '#94A3B8',
           lineWidth: s.crosshairFormattingCard.crosshairLineWidth.value,
           lineStyle: chStyleVal,
+          lineOpacity: Math.max(0, Math.min(100, s.crosshairFormattingCard.crosshairOpacity.value)) / 100,
           showValues: s.crosshairFormattingCard.showCrosshairValues.value,
           formatValue: (val: number) => formatWithSettings(val, this.settings.numberFormattingCard),
         }));
@@ -908,12 +1083,13 @@ export class StreamGraphVisual implements IVisual {
             // Restore: value labels hidden, everything else full opacity
             (other as SVGElement).style.opacity = isValueLabel ? '0' : '1';
           });
+          this.applyLinkedHighlight();
         });
       });
     }
 
     // Entrance animations
-    if (s.animationSettings.enabled.value) {
+    if (s.animationSettings.enabled.value && !prefersReducedMotion()) {
       this.animateEntrance(layers, stackedData, areaGenerator, flatAreaGenerator, s.animationSettings.duration.value);
     }
 
@@ -931,19 +1107,29 @@ export class StreamGraphVisual implements IVisual {
 
     this.container.addEventListener('click', this.handleBackgroundClick);
 
-    // ── Cross-Highlight Dimming ──────────────────────────────
-    this.applyCrossHighlight(data);
+    // ── Linked Selection / Cross-Highlight ───────────────────
+    this.applyLinkedHighlight();
   }
 
   // ── Empty State ──────────────────────────────────────────────
 
   private renderEmptyState(): void {
+    this.container.removeAttribute('role');
+    this.container.removeAttribute('aria-label');
     const empty = document.createElement('div');
     empty.className = 'stream-empty-state';
-    empty.textContent = EMPTY_STATE_TEXT;
+    empty.setAttribute('role', 'status');
+    empty.setAttribute('aria-live', 'polite');
+    empty.textContent = this.emptyStateMode === 'noData'
+      ? getLocalizedString(this.host, 'StreamGraph_NoDataState', 'No data for the current selection.')
+      : EMPTY_STATE_TEXT;
     this.container.appendChild(empty);
 
-    fadeSlideIn(empty as unknown as HTMLElement, 'up', DURATION.normal, 0);
+    if (!prefersReducedMotion()) {
+      this.cancelAnimations.push(
+        fadeSlideIn(empty as unknown as HTMLElement, 'up', DURATION.normal, 0),
+      );
+    }
   }
 
   // ── Legend (shared core) ────────────────────────────────────
@@ -958,10 +1144,27 @@ export class StreamGraphVisual implements IVisual {
     const rawFontColor = legendFmtCard.legendFontColor.value?.value;
     const fontColor = rawFontColor != null && rawFontColor.length > 0 ? rawFontColor : '#64748B';
 
-    const items: LegendItem[] = data.seriesNames.map((name, i) => ({
-      label: name,
-      color: getHostChartColor(this.host.colorPalette, i, themeName),
-    }));
+    const useChartPalette = this.settings.streamSettings.useChartPalette.value;
+    const defaultColorScale = d3.scaleOrdinal(d3.schemeCategory10);
+    const items: LegendItem[] = data.seriesNames.map((name, i) => {
+      const sourceIndex = data.seriesSourceIndices[i] ?? i;
+      const baseColor = useChartPalette
+        ? getHostChartColor(this.host.colorPalette, sourceIndex, themeName)
+        : defaultColorScale(String(sourceIndex));
+      const seriesFormatting = resolveSeriesFormatting(
+        this.settings.seriesFormattingCard,
+        sourceIndex,
+        baseColor,
+      );
+      const total = data.rows.reduce((sum, row) => {
+        const value = row[name];
+        return sum + (typeof value === 'number' ? value : 0);
+      }, 0);
+      return {
+        label: name,
+        color: this.getConditionalColor(total) ?? seriesFormatting.color,
+      };
+    });
     const rawLegendFontFamily = resolveDropdown(legendFmtCard.legendFontFamily) || undefined;
 
     const legendEl = renderLegend(parent, {
@@ -970,11 +1173,12 @@ export class StreamGraphVisual implements IVisual {
       fontSize: legendFmtCard.legendFontSize.value,
       fontColor,
       fontFamily: rawLegendFontFamily,
+      fontWeight: resolveDropdown(legendFmtCard.legendFontWeight) || 'normal',
       aliases: legendFmtCard.legendAliases.value,
     });
 
     // Animate legend entrance
-    if (this.settings.animationSettings.enabled.value) {
+    if (this.settings.animationSettings.enabled.value && !prefersReducedMotion()) {
       const cancel = fadeSlideIn(
         legendEl,
         position === 'top' || position === 'left' ? 'down' : 'up',
@@ -1030,17 +1234,39 @@ export class StreamGraphVisual implements IVisual {
 
   private applyAccessibility(dataPointCount: number): void {
     const acc = this.settings.accessibilityFormattingCard;
-    if (!acc.enableKeyboardNav.value) return;
+    if (!acc.enableKeyboardNav.value) {
+      this.container.removeAttribute('role');
+      this.container.removeAttribute('aria-label');
+      return;
+    }
     ensureFocusRingStyles();
     applyChartAria(this.container, {
       chartType: 'stream graph',
       title: this.settings.titleFormattingCard?.titleText?.value || undefined,
       dataPointCount,
     });
+    const bands = this.container.querySelectorAll<SVGRectElement>('.stream-linked-band');
+    bands.forEach((band, index) => {
+      band.setAttribute('role', 'listitem');
+      band.setAttribute('tabindex', '0');
+      band.setAttribute(
+        'aria-label',
+        this.currentData?.categoryLabels[index] ?? `Category ${index + 1}`,
+      );
+    });
+
     const cleanup = attachKeyboardNav({
       container: this.container,
-      itemSelector: '.stream-layer, [tabindex="0"]',
-      onActivate: (el) => { (el as HTMLElement).click?.(); },
+      itemSelector: '.stream-linked-band[tabindex="0"]',
+      onActivate: (_el, index) => {
+        if (!allowInteractions(this.host)) return;
+        const selectionId = this.currentData?.categorySelectionIds[index];
+        if (selectionId) {
+          void this.selectionManager.select(selectionId, false).then(() => {
+            this.applyLinkedHighlight();
+          });
+        }
+      },
     });
     this.cancelAnimations.push(cleanup);
   }
@@ -1159,6 +1385,15 @@ export class StreamGraphVisual implements IVisual {
       ann.annotationFontColor.value?.value || '#475569',
       ann.annotationConnectorColor.value?.value || '#94A3B8',
       resolvePosition,
+      {
+        fontFamily: resolveDropdown(ann.annotationFontFamily) || undefined,
+        fontWeight: resolveDropdown(ann.annotationFontWeight) || '500',
+        offset: ann.annotationOffset.value,
+        padding: ann.annotationPadding.value,
+        backgroundColor: ann.annotationBackgroundColor.value?.value || '#FFFFFF',
+        backgroundOpacity: ann.annotationBackgroundOpacity.value / 100,
+        cornerRadius: ann.annotationCornerRadius.value,
+      },
     );
 
     if (config) {
@@ -1250,53 +1485,73 @@ export class StreamGraphVisual implements IVisual {
   // ── Formatting Pane ──────────────────────────────────────────
 
   public getFormattingModel(): powerbi.visuals.FormattingModel {
-    const s = this.settings;
-    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
-    s.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
-    s.cardSettings.backgroundColor.visible = cardMode !== 'none';
+    syncCardStyleVisibility(this.settings.cardSettings);
     return this.formattingSettingsService.buildFormattingModel(this.settings);
   }
 
   private handleBackgroundClick = (): void => {
-    void this.selectionManager.clear();
+    if (!allowInteractions(this.host)) return;
+    void this.selectionManager.clear().then(() => {
+      this.applyLinkedHighlight();
+    });
   };
 
-  // ── Cross-Highlight ───────────────────────────────────────────
+  // ── Linked Selection / Cross-Highlight ───────────────────────
 
-  private applyCrossHighlight(data: StreamData): void {
-    if (!data.hasHighlights) return;
-
-    // Build a set of highlighted series indices
-    const highlightedSeries = new Set<string>();
-    data.seriesHighlighted.forEach((isHl, i) => {
-      if (isHl) highlightedSeries.add(String(i));
-    });
-
-    // Dim non-highlighted layers and associated elements
+  private applyLinkedHighlight(): void {
+    const data = this.currentData;
     const svgNode = this.svg?.node();
-    if (!svgNode) return;
+    if (!data || !svgNode) return;
 
-    const layers = svgNode.querySelectorAll('.stream-layer[data-series]');
-    for (const el of Array.from(layers)) {
-      const seriesIdx = el.getAttribute('data-series');
-      if (seriesIdx !== null && !highlightedSeries.has(seriesIdx)) {
-        (el as SVGElement).style.opacity = '0.3';
-      }
-    }
+    const selectedKeys = new Set(
+      (this.selectionManager.getSelectionIds() as ISelectionId[]).map((id) => id.getKey()),
+    );
+    const highlightedKeys = buildHighlightedCategoryKeys(
+      data.categorySelectionIds,
+      data.seriesHighlights.map((highlights) => ({ highlights })),
+    );
 
-    // Also dim data labels and value labels for non-highlighted series
-    const labelEls = svgNode.querySelectorAll('.stream-data-label[data-series], .stream-value-label[data-series]');
-    for (const el of Array.from(labelEls)) {
-      const seriesIdx = el.getAttribute('data-series');
-      if (seriesIdx !== null && !highlightedSeries.has(seriesIdx)) {
-        (el as SVGElement).style.opacity = '0.3';
-      }
-    }
+    applyLinkedState({
+      root: svgNode,
+      selector: '.stream-linked-band[data-selection-key]',
+      selectedKeys,
+      highlightedKeys,
+      dimOpacity: '0.18',
+      activeOpacity: '0',
+      clearOpacity: '0',
+    });
+  }
+
+  private applyHighContrast(): void {
+    applyBasicHighContrastStyles(this.container, getHostHighContrastColors(this.host), {
+      textSelectors: [
+        '.stream-empty-state',
+        '.chart-title',
+        '.chart-subtitle',
+        '.stream-axis text',
+        '.stream-axis-title',
+        '.stream-data-label',
+        '.stream-value-label',
+        '.pbi-shared-legend span',
+        '.crosshair-label',
+        '.annotation-label',
+      ],
+      lineSelectors: [
+        '.stream-axis line',
+        '.stream-axis path',
+        '.reference-line',
+        '.trend-line',
+        '.annotation-connector',
+      ],
+      fillSelectors: [],
+      strokeSelectors: [],
+    });
   }
 
   // ── Lifecycle ────────────────────────────────────────────────
 
   public destroy(): void {
+    this.detachEmptySpaceContextMenu();
     this.container.removeEventListener('click', this.handleBackgroundClick);
     this.cancelAnimations.forEach((cancel) => cancel());
     this.cancelAnimations = [];

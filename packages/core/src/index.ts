@@ -2,6 +2,8 @@
  * @pbi/core — Shared library for Power BI custom visuals.
  */
 
+import './localization-augmentations';
+
 // Colors & palette
 export {
   BRAND,
@@ -28,7 +30,7 @@ export {
   type GlassStyles,
 } from './glass';
 
-// Unified card styling (glass / elevated / neumorphic)
+// Unified card styling (glass / elevated / neumorphic / outlined / floating)
 export {
   applyCardStyle,
   type CardStyleMode,
@@ -121,7 +123,16 @@ export {
 
 // Shared formatting helpers
 export {
+  createLocalizationManager,
+  createLocalizedFormattingSettingsService,
+  getLocalizedString,
+} from './localization';
+
+export {
   renderChartTitle,
+  hideInlineLegendFormatting,
+  syncCardStyleVisibility,
+  syncDateFilterFormattingVisibility,
   syncLegendFormattingVisibility,
   syncTitleFormattingVisibility,
   applyDataLabelFormatting,
@@ -130,9 +141,17 @@ export {
   applyAllAxisFormatting,
   applySortOrder,
   attachEmptySpaceContextMenu,
-  formatWithSettings,
+  allowInteractions,
+  getHostHighContrastColors,
+  notifyRenderingStarted,
+  notifyRenderingFinished,
+  notifyRenderingFailed,
+  renderLandingPage,
+  renderNoDataState,
   getVisualEmptyStateMode,
-  getLocalizedString,
+  type EmptyVisualStateMode,
+  applyBasicHighContrastStyles,
+  formatWithSettings,
   createScrollableChart,
   ensureScrollStyles,
   resolveDropdown,
@@ -145,9 +164,11 @@ export {
   type ScrollableChartResult,
   type LegendItem,
   type LegendConfig,
+  type HostHighContrastColors,
+  type LandingPageConfig,
+  type HighContrastStyleConfig,
   type HoverDimConfig,
   type SparklineConfig,
-  type EmptyVisualStateMode,
   getDateFilterIndices,
   isDateColumn,
   type DateFilterConfig,
@@ -188,6 +209,18 @@ export {
   buildCrosshairConfig,
   type CrosshairConfig,
 } from './crosshair';
+
+// Selection and linked-state helpers
+export {
+  buildHighlightedCategoryKeys,
+  focusHighlightedData,
+  applyLinkedState,
+  buildCategoryBands,
+  type HighlightSeriesLike,
+  type HighlightedDatumLike,
+  type ApplyLinkedStateOptions,
+  type CategoryBand,
+} from './interactivity';
 
 // Accessibility
 export {

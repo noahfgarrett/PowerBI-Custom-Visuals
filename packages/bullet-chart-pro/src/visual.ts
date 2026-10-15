@@ -9,6 +9,9 @@ import * as d3 from 'd3';
 import { FormattingSettingsService } from 'powerbi-visuals-utils-formattingmodel';
 import { BulletChartProSettings } from './settings';
 import {
+  allowInteractions,
+  attachEmptySpaceContextMenu,
+  applyBasicHighContrastStyles,
   formatNumber,
   formatWithSettings,
   DURATION,
@@ -21,11 +24,17 @@ import {
   applyDataLabelFormatting,
   createScrollableChart,
   resolveDropdown,
+  applySortOrder,
   buildConditionalConfig,
   resolveConditionalColor,
   applyChartAria,
   attachKeyboardNav,
   ensureFocusRingStyles,
+  syncLegendFormattingVisibility,
+  syncTitleFormattingVisibility,
+  syncCardStyleVisibility,
+  syncDateFilterFormattingVisibility,
+  hideInlineLegendFormatting,
   renderHorizontalReferenceLine,
   computeStatValue,
   type StatType,
@@ -41,6 +50,15 @@ import {
   type DateFilterConfig,
   resolveColorTheme,
   getHostChartColor,
+  getHostHighContrastColors,
+  notifyRenderingStarted,
+  notifyRenderingFinished,
+  notifyRenderingFailed,
+  renderLandingPage,
+  renderNoDataState,
+  getVisualEmptyStateMode,
+  focusHighlightedData,
+  getLocalizedString,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -75,16 +93,12 @@ interface BulletData {
 
 // ── Constants ───────────────────────────────────────────────────────
 
-/** Padding inside the container (matches CSS) */
-const CONTAINER_PADDING = 12;
 /** Minimum width reserved for category labels on the left */
 const MIN_LABEL_WIDTH = 60;
 /** Maximum width reserved for category labels on the left */
 const MAX_LABEL_WIDTH = 120;
 /** Padding to the right for value labels */
 const VALUE_LABEL_WIDTH = 50;
-/** Vertical gap between bullet rows */
-const ROW_GAP = 8;
 
 // ── Visual ──────────────────────────────────────────────────────────
 
@@ -95,6 +109,8 @@ export class BulletChartProVisual implements IVisual {
   private settings: BulletChartProSettings;
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
+  private detachEmptySpaceContextMenu: (() => void) | null = null;
+  private emptyStateMode: 'unconfigured' | 'noData' = 'unconfigured';
 
   /** Cached data for cross-highlight support. */
   private currentData: BulletData | null = null;
@@ -104,17 +120,26 @@ export class BulletChartProVisual implements IVisual {
     this.selectionManager = options.host.createSelectionManager();
     this.container = options.element;
     this.settings = new BulletChartProSettings();
-    this.formattingSettingsService = new FormattingSettingsService();
+    this.formattingSettingsService = new FormattingSettingsService(options.host.createLocalizationManager());
     this.container.classList.add('bullet-container');
+    this.detachEmptySpaceContextMenu = attachEmptySpaceContextMenu(
+      this.container,
+      this.selectionManager,
+      () => this.host.createSelectionIdBuilder().createSelectionId(),
+      () => allowInteractions(this.host),
+    );
   }
 
   public update(options: VisualUpdateOptions): void {
-    // Cancel running animations before re-render
-    this.cancelAnimations.forEach((cancel) => cancel());
-    this.cancelAnimations = [];
+    notifyRenderingStarted(this.host, options);
+    try {
+      // Cancel running animations before re-render
+      this.cancelAnimations.forEach((cancel) => cancel());
+      this.cancelAnimations = [];
 
     // Parse settings from dataView
     const dataView = options.dataViews?.[0];
+    this.emptyStateMode = getVisualEmptyStateMode(dataView);
     if (dataView) {
       this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
         BulletChartProSettings,
@@ -126,29 +151,33 @@ export class BulletChartProVisual implements IVisual {
     const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
     if (legacyCardObj) {
       const legacyGlass = legacyCardObj['enableGlass'];
-      if (legacyGlass === false) {
+      const modernCardStyle = legacyCardObj['cardStyleMode'];
+      if (modernCardStyle === undefined && legacyGlass === false) {
         this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
       }
     }
-
-    // Date filter: hide start/end when disabled
-    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
-
-    // Card Style — hide sub-settings when mode is 'none'
+    syncTitleFormattingVisibility(this.settings.titleFormattingCard);
+    syncDateFilterFormattingVisibility(this.settings.dateFilterFormattingCard);
+    syncCardStyleVisibility(this.settings.cardSettings);
     const cardMode = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
-    this.settings.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
-    this.settings.cardSettings.backgroundColor.visible = cardMode !== 'none';
+    this.settings.cardSettings.borderRadius.visible = cardMode !== 'none';
 
+    const isVertical = (resolveDropdown(this.settings.bulletSettings.orientation) ?? 'horizontal') === 'vertical';
+    this.settings.legendFormattingCard.visible = !isVertical;
+    syncLegendFormattingVisibility(this.settings.legendFormattingCard);
+    hideInlineLegendFormatting(this.settings.legendFormattingCard);
+
+    this.settings.dataLabelFormattingCard.visible = this.settings.bulletSettings.showLabels.value;
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
+    // Value labels have chart-specific placement: above columns in vertical mode
+    // and in the reserved value gutter in horizontal mode.
+    this.settings.dataLabelFormattingCard.dataLabelPosition.visible = false;
 
     // Hide dead axis/grid properties — bullet-chart-pro has its own minimal axis
     this.settings.axisFormattingCard.xAxisTitle.visible = false;
     this.settings.axisFormattingCard.yAxisTitle.visible = false;
     this.settings.axisFormattingCard.yAxisMin.visible = false;
     this.settings.axisFormattingCard.yAxisMax.visible = false;
-    this.settings.axisFormattingCard.axisLabelFontFamily.visible = false;
     this.settings.axisFormattingCard.axisLabelRotation.visible = false;
     this.settings.axisFormattingCard.showXAxis.visible = false;
     this.settings.axisFormattingCard.showYAxis.visible = false;
@@ -162,8 +191,9 @@ export class BulletChartProVisual implements IVisual {
 
     // Hide dual-axis-only properties (no combo/dual-axis support)
     this.settings.referenceLineFormattingCard.referenceLineAxis.visible = false;
-    this.settings.referenceLineFormattingCard.referenceBandWidth.visible = false;
     this.settings.trendLineFormattingCard.trendLineAxis.visible = false;
+    this.settings.axisFormattingCard.integerTicks.visible = false;
+    this.settings.layoutSettings.valueLabelPadding.visible = this.settings.bulletSettings.showLabels.value;
 
     // ── Conditional visibility ──────────────────────────────────────
     // Forecast sub-settings: hide when show off
@@ -171,12 +201,57 @@ export class BulletChartProVisual implements IVisual {
     this.settings.bulletMarkers.forecastValue.visible = forecastOn;
     this.settings.bulletMarkers.bandWidth.visible = forecastOn;
     this.settings.bulletMarkers.forecastColor.visible = forecastOn;
+    this.settings.bulletSettings.labelPadding.visible = this.settings.bulletSettings.showLabels.value;
+    this.settings.bulletMarkers.targetMarkerWidth.visible = this.settings.bulletSettings.showTarget.value;
 
-    // Comparison sub-settings: hide when show off
-    this.settings.bulletMarkers.comparativeColor.visible = this.settings.bulletMarkers.showComparative.value;
+    const showRef = this.settings.referenceLineFormattingCard.showReferenceLine.value;
+    const refType = resolveDropdown(this.settings.referenceLineFormattingCard.referenceLineType) ?? 'custom';
+    const showRefLabel = showRef && this.settings.referenceLineFormattingCard.showReferenceLabel.value;
+    const showRefBand = showRef && !isVertical && this.settings.referenceLineFormattingCard.showReferenceBand.value;
+    this.settings.referenceLineFormattingCard.referenceLineType.visible = showRef;
+    this.settings.referenceLineFormattingCard.referenceLineValue.visible = showRef && refType === 'custom';
+    this.settings.referenceLineFormattingCard.referenceLineColor.visible = showRef;
+    this.settings.referenceLineFormattingCard.referenceLineWidth.visible = showRef;
+    this.settings.referenceLineFormattingCard.referenceLineStyle.visible = showRef;
+    this.settings.referenceLineFormattingCard.showReferenceLabel.visible = showRef;
+    this.settings.referenceLineFormattingCard.referenceLabelText.visible = showRefLabel;
+    this.settings.referenceLineFormattingCard.showReferenceBand.visible = showRef && !isVertical;
+    this.settings.referenceLineFormattingCard.referenceBandOpacity.visible = showRefBand;
+    this.settings.referenceLineFormattingCard.referenceBandWidth.visible = false;
+
+    const showTrend = this.settings.trendLineFormattingCard.showTrendLine.value;
+    const trendType = resolveDropdown(this.settings.trendLineFormattingCard.trendLineType) ?? 'linear';
+    this.settings.trendLineFormattingCard.trendLineType.visible = showTrend;
+    this.settings.trendLineFormattingCard.polynomialOrder.visible = showTrend && trendType === 'polynomial';
+    this.settings.trendLineFormattingCard.trendLineColor.visible = showTrend;
+    this.settings.trendLineFormattingCard.trendLineWidth.visible = showTrend;
+    this.settings.trendLineFormattingCard.showEquation.visible = showTrend;
+    this.settings.trendLineFormattingCard.showR2.visible = showTrend;
+
+    const showConditional = this.settings.conditionalFormattingCard.enableConditional.value;
+    this.settings.conditionalFormattingCard.conditionalDirection.visible = showConditional;
+    this.settings.conditionalFormattingCard.threshold1.visible = showConditional;
+    this.settings.conditionalFormattingCard.threshold2.visible = showConditional;
+    this.settings.conditionalFormattingCard.conditionalColor1.visible = showConditional;
+    this.settings.conditionalFormattingCard.conditionalColor2.visible = showConditional;
+    this.settings.conditionalFormattingCard.conditionalColor3.visible = showConditional;
+
+    const showAnnotations = this.settings.annotationFormattingCard.showAnnotations.value;
+    for (const slice of this.settings.annotationFormattingCard.slices) {
+      if (slice !== this.settings.annotationFormattingCard.showAnnotations) {
+        slice.visible = showAnnotations;
+      }
+    }
+    this.settings.animationSettings.duration.visible = this.settings.animationSettings.enabled.value;
 
     // Extract data
-    const data = this.extractData(dataView);
+    const extractedData = this.extractData(dataView);
+    const focusedItems = focusHighlightedData(extractedData.items, extractedData.hasHighlights);
+    const data: BulletData = {
+      ...extractedData,
+      items: focusedItems,
+      isEmpty: focusedItems.length === 0,
+    };
     this.currentData = data;
 
     // Render
@@ -186,11 +261,24 @@ export class BulletChartProVisual implements IVisual {
       this.render(data, options.viewport);
     }
 
-    // Apply cross-highlight dimming after render
-    this.applySelectionHighlight();
+      // Apply cross-highlight dimming after render
+      this.applySelectionHighlight();
 
-    // Apply card styling AFTER render — render clears the container, which would destroy the glass backdrop div.
-    this.applyCardStyle();
+      // Apply card styling AFTER render — render clears the container, which would destroy the glass backdrop div.
+      this.applyCardStyle();
+      const highContrastColors = getHostHighContrastColors(this.host);
+      if (highContrastColors.enabled) {
+        applyBasicHighContrastStyles(this.container, highContrastColors, {
+          textSelectors: ['.bullet-empty', '.bullet-label', '.bullet-value-label', '.bullet-target', '.bullet-forecast'],
+          fillSelectors: ['.bullet-range', '.bullet-value-bar'],
+          strokeSelectors: ['.bullet-target', '.bullet-forecast', '.bullet-svg line'],
+        });
+      }
+      notifyRenderingFinished(this.host, options);
+    } catch (error) {
+      notifyRenderingFailed(this.host, options, error instanceof Error ? error.message : String(error));
+      throw error;
+    }
   }
 
   // ── Data Extraction ─────────────────────────────────────────────
@@ -283,8 +371,13 @@ export class BulletChartProVisual implements IVisual {
       });
     }
 
-    const hasHighlights = items.some((item) => item.highlighted);
-    return { items, isEmpty: items.length === 0, hasHighlights };
+    const sortedItems = applySortOrder(
+      items.map((item) => ({ ...item, name: item.label })),
+      this.settings.sortFormattingCard,
+    ).map(({ name: _name, ...item }) => item);
+
+    const hasHighlights = sortedItems.some((item) => item.highlighted);
+    return { items: sortedItems, isEmpty: sortedItems.length === 0, hasHighlights };
   }
 
   // ── Card Style ────────────────────────────────────────────────────
@@ -301,9 +394,6 @@ export class BulletChartProVisual implements IVisual {
         borderRadius: s.borderRadius.value,
       },
     );
-    if (mode === 'none') {
-      this.container.style.borderRadius = `${s.borderRadius.value}px`;
-    }
   }
 
   // ── Empty State ───────────────────────────────────────────────────
@@ -312,10 +402,24 @@ export class BulletChartProVisual implements IVisual {
     while (this.container.firstChild) {
       this.container.removeChild(this.container.firstChild);
     }
-    const emptyEl = document.createElement('div');
-    emptyEl.className = 'bullet-empty';
-    emptyEl.textContent = 'Add a Category and Value to get started.';
-    this.container.appendChild(emptyEl);
+    if (this.emptyStateMode === 'noData') {
+      renderNoDataState(
+        this.container,
+        getLocalizedString(this.host, 'BulletChartPro_NoDataState', 'No data for the current selection.'),
+        getHostHighContrastColors(this.host),
+      );
+      return;
+    }
+    renderLandingPage(this.container, {
+      title: getLocalizedString(this.host, 'BulletChartPro_LandingTitle', 'Add data to build a bullet chart'),
+      description: getLocalizedString(this.host, 'BulletChartPro_LandingDescription', 'Bullet Chart Pro needs one category and one measure to render the actual bar.'),
+      steps: [
+        getLocalizedString(this.host, 'BulletChartPro_LandingStepAxis', 'Put a category on the axis.'),
+        getLocalizedString(this.host, 'BulletChartPro_LandingStepMeasure', 'Add a measure for the main value.'),
+        getLocalizedString(this.host, 'BulletChartPro_LandingStepOptional', 'Optionally add target and range measures for richer context.'),
+      ],
+      hint: getLocalizedString(this.host, 'BulletChartPro_LandingHint', 'This landing page appears until the visual has enough fields.'),
+    }, getHostHighContrastColors(this.host));
   }
 
   // ── Main Render ───────────────────────────────────────────────────
@@ -326,12 +430,18 @@ export class BulletChartProVisual implements IVisual {
     }
     renderChartTitle(this.container, this.settings.titleFormattingCard);
     this.container.removeEventListener('click', this.handleBackgroundClick);
+    this.container.addEventListener('click', this.handleBackgroundClick);
 
     const s = this.settings;
     const barHeight = Math.max(8, s.bulletSettings.barHeight.value);
     const showTarget = s.bulletSettings.showTarget.value;
     const showLabels = s.bulletSettings.showLabels.value;
+    const labelPadding = Math.max(0, s.bulletSettings.labelPadding.value);
+    const containerPadding = Math.max(0, s.layoutSettings.containerPadding.value + s.cardSettings.contentPadding.value);
+    const rowGap = Math.max(0, s.layoutSettings.rowGap.value);
+    const valueLabelPadding = Math.max(0, s.layoutSettings.valueLabelPadding.value);
     const isVertical = (resolveDropdown(s.bulletSettings.orientation) ?? 'horizontal') === 'vertical';
+    this.container.style.padding = `${containerPadding}px`;
 
     // Colors — theme overrides when non-default
     const themeName = resolveColorTheme(s.colorThemeFormattingCard);
@@ -364,31 +474,26 @@ export class BulletChartProVisual implements IVisual {
     // Forecast color
     const forecastColor = s.bulletMarkers.forecastColor.value?.value ?? '#6366F1';
 
-    // Comparison settings
-    const showComparative = s.bulletMarkers.showComparative.value;
-    const comparativeColor = s.bulletMarkers.comparativeColor.value?.value ?? '#94A3B8';
-
-    // Marker stroke widths
+    // Marker stroke width
     const targetMarkerWidth = s.bulletMarkers.targetMarkerWidth.value;
-    const comparativeMarkerWidth = s.bulletMarkers.comparativeMarkerWidth.value;
 
     // Layout calculations
-    const svgWidth = viewport.width - CONTAINER_PADDING * 2;
+    const svgWidth = viewport.width - containerPadding * 2;
     const totalRows = data.items.length;
 
     if (isVertical) {
       // ── Vertical layout: columns side by side ─────────────────
-      const colWidth = barHeight + ROW_GAP;
-      const labelReserve = showLabels ? 20 : 0; // bottom labels
-      const valueLabelReserve = showLabels ? 20 : 0; // top value labels
-      const svgHeight = viewport.height - CONTAINER_PADDING * 2;
-      const chartTop = valueLabelReserve + 4;
-      const chartBottom = svgHeight - labelReserve - 4;
+      const colWidth = barHeight + rowGap;
+      const labelReserve = showLabels ? 20 + labelPadding : 0; // bottom labels
+      const valueLabelReserve = showLabels ? 20 + valueLabelPadding : 0; // top value labels
+      const svgHeight = viewport.height - containerPadding * 2;
+      const chartTop = valueLabelReserve;
+      const chartBottom = svgHeight - labelReserve;
       const chartHeight = Math.max(0, chartBottom - chartTop);
       if (chartHeight <= 0) { this.renderEmpty(); return; }
 
       const globalMax = d3.max(data.items, (d) =>
-        Math.max(d.good, d.value, d.target ?? 0),
+        Math.max(d.good, d.value, d.target ?? 0, showForecast ? forecastValue : 0),
       ) ?? 100;
 
       const yScale = d3.scaleLinear()
@@ -405,7 +510,7 @@ export class BulletChartProVisual implements IVisual {
         availableChartWidth: svgWidth,
         availableChartHeight: chartHeight,
         direction: 'horizontal',
-        categoryPadding: ROW_GAP,
+        categoryPadding: rowGap,
       });
 
       const svg = d3.select(scroll.svgParent)
@@ -424,7 +529,7 @@ export class BulletChartProVisual implements IVisual {
           colGroup.append('text')
             .attr('class', 'bullet-label')
             .attr('x', 0)
-            .attr('y', chartBottom + 16)
+            .attr('y', chartBottom + 12 + labelPadding)
             .attr('text-anchor', 'middle')
             .text(this.truncateLabel(item.label, colWidth - 4));
         }
@@ -473,17 +578,22 @@ export class BulletChartProVisual implements IVisual {
           .attr('rx', barCornerRadius).attr('ry', barCornerRadius);
 
         this.attachTooltip(valueRect, item);
-        valueRect.style('cursor', 'pointer')
-          .on('click', (event: MouseEvent) => {
-            event.stopPropagation();
-            void this.selectionManager.select(item.selectionId, event.ctrlKey || event.metaKey).then(() => {
-              this.applySelectionHighlight();
-            });
-          })
-          .on('contextmenu', (event: MouseEvent) => {
-            event.preventDefault(); event.stopPropagation();
-            void this.selectionManager.showContextMenu(item.selectionId, { x: event.clientX, y: event.clientY });
-          });
+      valueRect.style('cursor', allowInteractions(this.host) ? 'pointer' : 'default')
+        .on('click', (event: MouseEvent) => {
+          if (!allowInteractions(this.host)) return;
+          event.stopPropagation();
+          const selectionPromise = this.selectionManager.select(
+            item.selectionId,
+            event.ctrlKey || event.metaKey,
+          );
+          this.applySelectionHighlight();
+          void selectionPromise.then(() => this.applySelectionHighlight());
+        })
+        .on('contextmenu', (event: MouseEvent) => {
+          if (!allowInteractions(this.host)) return;
+          event.preventDefault(); event.stopPropagation();
+          void this.selectionManager.showContextMenu(item.selectionId, { x: event.clientX, y: event.clientY });
+        });
 
         if (animEnabled) {
           const valueNode = valueRect.node();
@@ -513,16 +623,6 @@ export class BulletChartProVisual implements IVisual {
           }
         }
 
-        // Comparative marker
-        if (showComparative && item.target !== null) {
-          const compY = yScale(item.target);
-          colGroup.append('line')
-            .attr('class', 'bullet-comparative')
-            .attr('x1', -halfBar * 0.6).attr('x2', halfBar * 0.6)
-            .attr('y1', compY).attr('y2', compY)
-            .attr('stroke', comparativeColor).attr('stroke-width', comparativeMarkerWidth);
-        }
-
         // Forecast marker
         if (showForecast && forecastValue > 0) {
           const fcY = yScale(forecastValue);
@@ -549,7 +649,7 @@ export class BulletChartProVisual implements IVisual {
         if (showLabels) {
           colGroup.append('text')
             .attr('class', 'bullet-value-label')
-            .attr('x', 0).attr('y', valBarTop - 4)
+            .attr('x', 0).attr('y', valBarTop - Math.max(4, valueLabelPadding))
             .attr('text-anchor', 'middle')
             .text(formatWithSettings(item.value, this.settings.numberFormattingCard));
         }
@@ -560,10 +660,16 @@ export class BulletChartProVisual implements IVisual {
       const axisSettings = s.axisFormattingCard;
       const axisLabelColor = axisSettings.axisLabelColor.value?.value || '#64748B';
       const axisLabelSize = axisSettings.axisLabelSize.value;
+      const axisLabelFontFamily = resolveDropdown(axisSettings.axisLabelFontFamily);
+      const axisLabelFontWeight = resolveDropdown(axisSettings.axisLabelFontWeight) ?? 'normal';
       const labelEls = this.container.querySelectorAll<SVGTextElement>('.bullet-label');
       for (const el of labelEls) {
         el.style.setProperty('fill', axisLabelColor);
         el.style.setProperty('font-size', `${axisLabelSize}px`);
+        el.style.setProperty('font-weight', axisLabelFontWeight);
+        if (axisLabelFontFamily) {
+          el.style.setProperty('font-family', axisLabelFontFamily);
+        }
       }
 
       const svgGroup = svg.append('g').attr('class', 'bullet-overlays');
@@ -580,21 +686,20 @@ export class BulletChartProVisual implements IVisual {
         return { x: idx * colWidth + colWidth / 2, y: yScale(item.value) };
       });
       this.applyAccessibility(data);
-      this.container.addEventListener('click', this.handleBackgroundClick);
       return;
     }
 
     // ── Horizontal layout (original) ────────────────────────────────
-    const rowHeight = barHeight + ROW_GAP;
+    const rowHeight = barHeight + rowGap;
     const baseSvgHeight = Math.max(totalRows * rowHeight, barHeight);
 
     // Compute label width: measure text or use default
     const labelWidth = showLabels
       ? Math.min(MAX_LABEL_WIDTH, Math.max(MIN_LABEL_WIDTH, svgWidth * 0.2))
       : 0;
-    const valueLabelSpace = showLabels ? VALUE_LABEL_WIDTH : 0;
-    const chartLeft = labelWidth + 4;
-    const chartRight = svgWidth - valueLabelSpace;
+    const valueLabelSpace = showLabels ? VALUE_LABEL_WIDTH + valueLabelPadding : 0;
+    const chartLeft = labelWidth + labelPadding;
+    const chartRight = svgWidth - valueLabelSpace - labelPadding;
     const chartWidth = Math.max(0, chartRight - chartLeft);
 
     if (chartWidth <= 0) {
@@ -606,13 +711,13 @@ export class BulletChartProVisual implements IVisual {
     const scroll = createScrollableChart({
       container: this.container,
       viewportWidth: svgWidth,
-      viewportHeight: viewport.height - CONTAINER_PADDING * 2,
+      viewportHeight: viewport.height - containerPadding * 2,
       categoryCount: totalRows,
       scrollSettings: s.scrollFormattingCard,
       availableChartWidth: chartWidth,
-      availableChartHeight: viewport.height - CONTAINER_PADDING * 2,
+      availableChartHeight: viewport.height - containerPadding * 2,
       direction: 'vertical',
-      categoryPadding: ROW_GAP,
+      categoryPadding: rowGap,
     });
     const svgHeight = scroll.isScrolling
       ? Math.max(totalRows * rowHeight, barHeight)
@@ -620,7 +725,7 @@ export class BulletChartProVisual implements IVisual {
 
     // Find the global max across all "good" values for consistent scale
     const globalMax = d3.max(data.items, (d) =>
-      Math.max(d.good, d.value, d.target ?? 0),
+      Math.max(d.good, d.value, d.target ?? 0, showForecast ? forecastValue : 0),
     ) ?? 100;
 
     // xScale: maps data values to chart pixel coordinates
@@ -646,11 +751,11 @@ export class BulletChartProVisual implements IVisual {
       if (showLabels) {
         rowGroup.append('text')
           .attr('class', 'bullet-label')
-          .attr('x', labelWidth - 4)
+          .attr('x', Math.max(0, labelWidth - labelPadding))
           .attr('y', barHeight / 2)
           .attr('dy', '0.35em')
           .attr('text-anchor', 'end')
-          .text(this.truncateLabel(item.label, labelWidth - 8));
+          .text(this.truncateLabel(item.label, Math.max(8, labelWidth - Math.max(8, labelPadding * 2))));
       }
 
       // ── Qualitative range rectangles ────────────────────────────
@@ -714,14 +819,19 @@ export class BulletChartProVisual implements IVisual {
       // Tooltip on value bar
       this.attachTooltip(valueRect, item);
       valueRect
-        .style('cursor', 'pointer')
+        .style('cursor', allowInteractions(this.host) ? 'pointer' : 'default')
         .on('click', (event: MouseEvent) => {
+          if (!allowInteractions(this.host)) return;
           event.stopPropagation();
-          void this.selectionManager.select(item.selectionId, event.ctrlKey || event.metaKey).then(() => {
-            this.applySelectionHighlight();
-          });
+          const selectionPromise = this.selectionManager.select(
+            item.selectionId,
+            event.ctrlKey || event.metaKey,
+          );
+          this.applySelectionHighlight();
+          void selectionPromise.then(() => this.applySelectionHighlight());
         })
         .on('contextmenu', (event: MouseEvent) => {
+          if (!allowInteractions(this.host)) return;
           event.preventDefault();
           event.stopPropagation();
           void this.selectionManager.showContextMenu(item.selectionId, {
@@ -771,19 +881,6 @@ export class BulletChartProVisual implements IVisual {
         }
       }
 
-      // ── Comparative marker ──────────────────────────────────────
-      if (showComparative && item.target !== null) {
-        const compX = xScale(item.target);
-        rowGroup.append('line')
-          .attr('class', 'bullet-comparative')
-          .attr('x1', compX)
-          .attr('x2', compX)
-          .attr('y1', barHeight * 0.15)
-          .attr('y2', barHeight * 0.85)
-          .attr('stroke', comparativeColor)
-          .attr('stroke-width', comparativeMarkerWidth);
-      }
-
       // ── Forecast marker + band ──────────────────────────────────
       if (showForecast && forecastValue > 0) {
         const fcX = xScale(forecastValue);
@@ -819,7 +916,7 @@ export class BulletChartProVisual implements IVisual {
       if (showLabels) {
         rowGroup.append('text')
           .attr('class', 'bullet-value-label')
-          .attr('x', chartRight + 6)
+          .attr('x', chartRight + labelPadding)
           .attr('y', barHeight / 2)
           .attr('dy', '0.35em')
           .attr('text-anchor', 'start')
@@ -834,10 +931,16 @@ export class BulletChartProVisual implements IVisual {
     const axisSettings = this.settings.axisFormattingCard;
     const axisLabelColor = axisSettings.axisLabelColor.value?.value || '#64748B';
     const axisLabelSize = axisSettings.axisLabelSize.value;
+    const axisLabelFontFamily = resolveDropdown(axisSettings.axisLabelFontFamily);
+    const axisLabelFontWeight = resolveDropdown(axisSettings.axisLabelFontWeight) ?? 'normal';
     const labelEls = this.container.querySelectorAll<SVGTextElement>('.bullet-label');
     for (const el of labelEls) {
       el.style.setProperty('fill', axisLabelColor);
       el.style.setProperty('font-size', `${axisLabelSize}px`);
+      el.style.setProperty('font-weight', axisLabelFontWeight);
+      if (axisLabelFontFamily) {
+        el.style.setProperty('font-family', axisLabelFontFamily);
+      }
     }
 
     // d3 selection for the SVG root group (shared overlay helpers)
@@ -894,8 +997,6 @@ export class BulletChartProVisual implements IVisual {
 
     // Accessibility
     this.applyAccessibility(data);
-
-    this.container.addEventListener('click', this.handleBackgroundClick);
   }
 
   // ── Tooltip ───────────────────────────────────────────────────────
@@ -927,7 +1028,7 @@ export class BulletChartProVisual implements IVisual {
 
       host.tooltipService.show({
         dataItems: tooltipData,
-        identities: [],
+        identities: [item.selectionId],
         coordinates: [event.clientX, event.clientY],
         isTouchEvent: false,
       });
@@ -936,7 +1037,7 @@ export class BulletChartProVisual implements IVisual {
     rect.on('mousemove', (event: MouseEvent) => {
       host.tooltipService.move({
         dataItems: [],
-        identities: [],
+        identities: [item.selectionId],
         coordinates: [event.clientX, event.clientY],
         isTouchEvent: false,
       });
@@ -961,8 +1062,10 @@ export class BulletChartProVisual implements IVisual {
   }
 
   private handleBackgroundClick = (): void => {
-    void this.selectionManager.clear();
+    if (!allowInteractions(this.host)) return;
+    const clearPromise = this.selectionManager.clear();
     this.applySelectionHighlight();
+    void clearPromise.then(() => this.applySelectionHighlight());
   };
 
   // ── Selection & Cross-Highlight ─────────────────────────────────
@@ -1105,6 +1208,15 @@ export class BulletChartProVisual implements IVisual {
       ann.annotationFontColor.value?.value || '#475569',
       ann.annotationConnectorColor.value?.value || '#94A3B8',
       resolvePosition,
+      {
+        fontFamily: resolveDropdown(ann.annotationFontFamily) || undefined,
+        fontWeight: resolveDropdown(ann.annotationFontWeight) || '500',
+        offset: ann.annotationOffset.value,
+        padding: ann.annotationPadding.value,
+        backgroundColor: ann.annotationBackgroundColor.value?.value || '#FFFFFF',
+        backgroundOpacity: ann.annotationBackgroundOpacity.value / 100,
+        cornerRadius: ann.annotationCornerRadius.value,
+      },
     );
     if (config) renderAnnotations(g, config);
   }
@@ -1113,7 +1225,11 @@ export class BulletChartProVisual implements IVisual {
 
   private applyAccessibility(data: BulletData): void {
     const acc = this.settings.accessibilityFormattingCard;
-    if (!acc.enableKeyboardNav.value) return;
+    if (!acc.enableKeyboardNav.value) {
+      this.container.removeAttribute('role');
+      this.container.removeAttribute('aria-label');
+      return;
+    }
 
     ensureFocusRingStyles();
 
@@ -1123,11 +1239,27 @@ export class BulletChartProVisual implements IVisual {
       dataPointCount: data.items.length,
     });
 
+    const bars = Array.from(this.container.querySelectorAll<SVGRectElement>('.bullet-value-bar'));
+    bars.forEach((bar, index) => {
+      const item = data.items[index];
+      if (!item) return;
+      const target = item.target === null
+        ? ''
+        : `, target ${formatWithSettings(item.target, this.settings.numberFormattingCard)}`;
+      bar.setAttribute('role', 'listitem');
+      bar.setAttribute('tabindex', '0');
+      bar.setAttribute(
+        'aria-label',
+        `${item.label}: ${formatWithSettings(item.value, this.settings.numberFormattingCard)}${target}. Item ${index + 1} of ${data.items.length}.`,
+      );
+    });
+
     const cleanup = attachKeyboardNav({
       container: this.container,
-      itemSelector: '.bullet-value-bar',
+      itemSelector: '.bullet-value-bar[tabindex="0"]',
       onActivate: (el) => {
-        (el as HTMLElement).click?.();
+        if (!allowInteractions(this.host)) return;
+        el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
       },
     });
     this.cancelAnimations.push(cleanup);
@@ -1143,6 +1275,7 @@ export class BulletChartProVisual implements IVisual {
 
   public destroy(): void {
     this.container.removeEventListener('click', this.handleBackgroundClick);
+    this.detachEmptySpaceContextMenu?.();
     this.cancelAnimations.forEach((cancel) => cancel());
     this.cancelAnimations = [];
     while (this.container.firstChild) {

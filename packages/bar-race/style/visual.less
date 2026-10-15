@@ -4,6 +4,7 @@
   height: 100%;
   overflow: hidden;
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  box-sizing: border-box;
 }
 
 .bar-race-empty {
@@ -196,4 +197,13 @@
   flex-shrink: 0;
   min-width: 32px;
   text-align: right;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar-race-container *,
+  .bar-race-container *::before,
+  .bar-race-container *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

@@ -44,15 +44,21 @@ vi.mock('powerbi-visuals-utils-formattingmodel', () => {
 
 import { ChordDiagramVisual } from '../visual';
 import { ChordDiagramSettings } from '../settings';
+import capabilities from '../../capabilities.json';
 import {
   createConstructorOptions,
+  createUpdateOptions,
   DataViewBuilder,
   runFormattingCoverage,
   getSettingPaths,
   type HarnessConfig,
 } from '../../../core/src/__test-utils__';
 
-const testDV = DataViewBuilder.relational([{source:'A',target:'B',weight:10},{source:'B',target:'C',weight:20},{source:'A',target:'C',weight:15}]);
+const testDV = new DataViewBuilder()
+  .withCategory('Source', ['A', 'B', 'A'], 'source')
+  .withCategory('Target', ['B', 'C', 'C'], 'target')
+  .withValues('Measure', [10, 20, 15], 'measure')
+  .build();
 
 function createVisual() {
   const opts = createConstructorOptions();
@@ -75,7 +81,7 @@ function makeDeps(): Record<string, Record<string, unknown>> {
   for (const s of ['subtitleFontSize','subtitleFontColor','subtitleFontFamily','subtitleFontWeight']) {
     deps[`titleFormatting.${s}`] = { 'titleFormatting.showTitle': true, 'titleFormatting.titleText': 'Test', 'titleFormatting.subtitleText': 'Sub' };
   }
-  for (const s of ['legendPosition','legendFontSize','legendFontColor','legendFontWeight']) {
+  for (const s of ['legendPosition','legendFontSize','legendFontColor','legendFontWeight','legendAliases']) {
     deps[`legendFormatting.${s}`] = { 'legendFormatting.showLegend': true };
   }
   for (const s of ['dataLabelFontSize','dataLabelFontColor','dataLabelFontWeight','dataLabelFontFamily','dataLabelPosition']) {
@@ -120,7 +126,6 @@ const harnessConfig: HarnessConfig = {
     'chordRibbonSettings.gradientRibbons',
     'chordRibbonSettings.directional',
     'chordRibbonSettings.minArcAngle',
-    'chordLabelSettings.showEntityValues',
     'dataLabelFormatting.showDataLabels',
     'dataLabelFormatting.dataLabelFontSize',
     'dataLabelFormatting.dataLabelFontColor',
@@ -139,12 +144,68 @@ const harnessConfig: HarnessConfig = {
     'conditionalFormatting.threshold2',
     'conditionalFormatting.conditionalColor3',
     'colorThemeFormatting.colorTheme',
+    'colorThemeFormatting.useChartPalette',
+    'chordSettings.minArcAngle',
+    'chordSettings.arcThickness',
+    'chordRibbonSettings.ribbonOpacity',
+    'chordRibbonSettings.hoverOpacity',
+    'chordRibbonSettings.dimOpacity',
+    'chordInteractionSettings.showEntityValues',
+    'legendFormatting.legendAliases',
     'numberFormatting.valuePrefix',
     'numberFormatting.valueSuffix',
   ],
 };
 
 describe('chord-diagram formatting coverage', () => {
+  it('keeps capabilities aligned with the formatting model', () => {
+    const settings = new ChordDiagramSettings();
+    const settingPaths = new Set(getSettingPaths(
+      settings as unknown as { cards: Array<Record<string, unknown>> },
+    ).map(({ cardName, sliceName }) => `${cardName}.${sliceName}`));
+    const capabilityPaths = Object.entries(capabilities.objects).flatMap(([cardName, card]) =>
+      Object.keys(card.properties).map((sliceName) => `${cardName}.${sliceName}`)
+    );
+
+    expect(capabilityPaths.filter((path) => !settingPaths.has(path))).toEqual(['cardSettings.enableGlass']);
+    expect([...settingPaths].filter((path) => !capabilityPaths.includes(path))).toEqual([]);
+    expect(capabilities).toMatchObject({
+      supportsLandingPage: true,
+      supportsEmptyDataView: true,
+      supportsKeyboardFocus: true,
+      tooltips: { supportEnhancedTooltips: true },
+    });
+  });
+
+  it('applies dependent-control visibility consistently', () => {
+    const { visual, settings } = createVisual();
+    const typedSettings = settings as unknown as ChordDiagramSettings;
+    typedSettings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+    typedSettings.chordInteractionSettings.enableFiltering.value = false;
+
+    visual.update(createUpdateOptions([testDV]) as never);
+
+    expect(typedSettings.cardSettings.backgroundColor.visible).toBe(false);
+    expect(typedSettings.cardSettings.backgroundOpacity.visible).toBe(false);
+    expect(typedSettings.cardSettings.borderRadius.visible).toBe(false);
+    expect(typedSettings.cardSettings.contentPadding.visible).not.toBe(false);
+    expect(typedSettings.chordRibbonSettings.dimOpacity.visible).toBe(true);
+    visual.destroy();
+  });
+
+  it('uses minimum arc angle to suppress only undersized labels', () => {
+    const { visual, settings, element } = createVisual();
+    const typedSettings = settings as unknown as ChordDiagramSettings;
+    typedSettings.chordSettings.minArcAngle.value = 360;
+    typedSettings.animationSettings.enabled.value = false;
+
+    visual.update(createUpdateOptions([testDV]) as never);
+
+    expect(element.querySelectorAll('.chord-group-arc').length).toBeGreaterThan(0);
+    expect(element.querySelectorAll('.chord-label')).toHaveLength(0);
+    visual.destroy();
+  });
+
   it('detects settings from the model', () => {
     const settings = new ChordDiagramSettings();
     const paths = getSettingPaths(

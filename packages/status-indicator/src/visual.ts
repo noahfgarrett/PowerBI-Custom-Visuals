@@ -12,6 +12,7 @@ import {
   fadeSlideIn,
   formatWithSettings,
   applyCardStyle,
+  allowInteractions,
   type CardStyleMode,
   DURATION,
   renderChartTitle,
@@ -22,6 +23,7 @@ import {
   resolveConditionalColor,
   buildConditionalConfig,
   resolveDropdown,
+  applySortOrder,
   renderLegend,
   type LegendItem,
   getDateFilterIndices,
@@ -29,6 +31,21 @@ import {
   type DateFilterConfig,
   resolveColorTheme,
   getHostChartColor,
+  syncLegendFormattingVisibility,
+  syncTitleFormattingVisibility,
+  syncCardStyleVisibility,
+  syncDateFilterFormattingVisibility,
+  hideInlineLegendFormatting,
+  attachEmptySpaceContextMenu,
+  notifyRenderingStarted,
+  notifyRenderingFinished,
+  notifyRenderingFailed,
+  renderLandingPage,
+  renderNoDataState,
+  getHostHighContrastColors,
+  applyBasicHighContrastStyles,
+  getLocalizedString,
+  getVisualEmptyStateMode,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -43,7 +60,7 @@ import '../style/visual.less';
 
 // ── Data types ──────────────────────────────────────────────────────
 
-type StatusLevel = 'good' | 'warning' | 'critical' | 'level4' | 'level5';
+type StatusLevel = 'good' | 'warning' | 'critical' | 'level4' | 'level5' | 'unknown';
 
 interface StatusRow {
   label: string;
@@ -65,77 +82,119 @@ export class StatusIndicatorVisual implements IVisual {
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
   private currentHasHighlights = false;
+  private currentRows: StatusRow[] = [];
+  private emptyStateMode: 'unconfigured' | 'noData' = 'unconfigured';
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
     this.selectionManager = options.host.createSelectionManager();
     this.container = options.element;
     this.settings = new StatusIndicatorSettings();
-    this.formattingSettingsService = new FormattingSettingsService();
+    this.formattingSettingsService = new FormattingSettingsService(options.host.createLocalizationManager());
     this.container.classList.add('status-container');
+    attachEmptySpaceContextMenu(this.container, this.selectionManager, () =>
+      this.host.createSelectionIdBuilder().createSelectionId(),
+      () => allowInteractions(this.host),
+    );
   }
 
   public update(options: VisualUpdateOptions): void {
-    // Cancel running animations
-    this.cancelAnimations.forEach((cancel) => cancel());
-    this.cancelAnimations = [];
+    notifyRenderingStarted(this.host, options);
+    try {
+      // Cancel running animations
+      this.cancelAnimations.forEach((cancel) => cancel());
+      this.cancelAnimations = [];
 
-    // Parse settings
-    const dataView = options.dataViews?.[0];
-    if (dataView) {
-      this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
-        StatusIndicatorSettings,
-        dataView
-      );
-    }
+      // Parse settings
+      const dataView = options.dataViews?.[0];
+      const hasCategoryRole = dataView?.metadata?.columns?.some((column) => column.roles?.['category']) ?? false;
+      const hasMeasureRole = dataView?.metadata?.columns?.some((column) => column.roles?.['measure']) ?? false;
+      this.emptyStateMode = hasCategoryRole && hasMeasureRole
+        ? getVisualEmptyStateMode(dataView)
+        : 'unconfigured';
+      if (dataView) {
+        this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
+          StatusIndicatorSettings,
+          dataView
+        );
+      }
+      syncTitleFormattingVisibility(this.settings.titleFormattingCard);
+      syncLegendFormattingVisibility(this.settings.legendFormattingCard);
+      hideInlineLegendFormatting(this.settings.legendFormattingCard);
 
-    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
-    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
-    if (legacyCardObj) {
-      const legacyGlass = legacyCardObj['enableGlass'];
-      if (legacyGlass === false) {
+      // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+      const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+      const legacyGlass = legacyCardObj?.['enableGlass'];
+      if (legacyCardObj?.['cardStyleMode'] === undefined && legacyGlass === false) {
         this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
       }
+
+      // ── Conditional Visibility ──────────────────────────────────
+      const useCustom = this.settings.thresholdSettings.useCustomThresholds.value;
+
+      const categoryColumn = dataView?.categorical?.categories?.[0];
+      const hasDateAxis = Boolean(categoryColumn && isDateColumn(categoryColumn.source));
+      this.settings.dateFilterFormattingCard.visible = hasDateAxis;
+      syncDateFilterFormattingVisibility(this.settings.dateFilterFormattingCard);
+      if (!hasDateAxis) {
+        this.settings.dateFilterFormattingCard.startDate.visible = false;
+        this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = false;
+        this.settings.dateFilterFormattingCard.endDate.visible = false;
+      }
+      this.settings.thresholdSettings.threshold1.visible = useCustom;
+      this.settings.thresholdSettings.threshold2.visible = useCustom;
+
+      const showVal = this.settings.valueDisplaySettings.showValue.value;
+      this.settings.valueDisplaySettings.valueFontSize.visible = showVal;
+      this.settings.valueDisplaySettings.valueFontFamily.visible = showVal;
+      this.settings.valueDisplaySettings.valueFontWeight.visible = showVal;
+
+      const showSt = this.settings.valueDisplaySettings.showStatusText.value;
+      this.settings.valueDisplaySettings.statusFontSize.visible = showSt;
+      this.settings.valueDisplaySettings.statusFontColor.visible = showSt;
+      this.settings.valueDisplaySettings.statusFontFamily.visible = showSt;
+      this.settings.valueDisplaySettings.statusFontWeight.visible = showSt;
+
+      const levelCountRaw = this.settings.thresholdSettings.levelCount.value?.value ?? '3';
+      const levelCountNum = parseInt(String(levelCountRaw), 10) || 3;
+      this.settings.thresholdSettings.levelCount.visible = useCustom;
+      this.settings.thresholdSettings.threshold3.visible = useCustom && levelCountNum > 3;
+      this.settings.thresholdSettings.threshold4.visible = useCustom && levelCountNum > 4;
+      this.settings.thresholdSettings.level4Color.visible = useCustom && levelCountNum > 3;
+      this.settings.thresholdSettings.level5Color.visible = useCustom && levelCountNum > 4;
+      this.settings.animationSettings.duration.visible = this.settings.animationSettings.enabled.value;
+      this.settings.animationSettings.enablePulse.visible = this.settings.animationSettings.enabled.value;
+
+      syncCardStyleVisibility(this.settings.cardSettings);
+
+      // Extract data
+      const rows = this.extractData(dataView);
+      this.currentRows = rows;
+
+      // Track cross-highlight state
+      this.currentHasHighlights = rows.some((r) => r.highlighted);
+
+      const highContrast = getHostHighContrastColors(this.host);
+      this.render(rows, highContrast);
+      applyBasicHighContrastStyles(this.container, highContrast, {
+        textSelectors: ['.status-label', '.status-value', '.status-text', '.status-empty', '.pbi-landing-page-title', '.pbi-landing-page-description', '.pbi-landing-page-hint', '.pbi-landing-page li'],
+        fillSelectors: ['.status-shape', '.status-sparkline svg rect', '.pbi-landing-page'],
+        strokeSelectors: ['.status-row'],
+      });
+      if (highContrast.enabled) {
+        this.container.querySelectorAll<HTMLElement>('.status-shape').forEach((shape) => {
+          shape.style.border = `2px solid ${highContrast.foregroundSelected}`;
+          shape.style.boxSizing = 'border-box';
+          shape.querySelectorAll<SVGElement>('path, polygon').forEach((iconPart) => {
+            iconPart.setAttribute('fill', highContrast.foregroundSelected);
+          });
+        });
+      }
+      notifyRenderingFinished(this.host, options);
+    } catch (error) {
+      notifyRenderingFailed(this.host, options, error instanceof Error ? error.message : String(error));
+      throw error;
     }
-
-    // ── Conditional Visibility ──────────────────────────────────
-    const useCustom = this.settings.thresholdSettings.useCustomThresholds.value;
-
-    // Date filter: hide start/end when disabled
-    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
-    this.settings.thresholdSettings.threshold1.visible = useCustom;
-    this.settings.thresholdSettings.threshold2.visible = useCustom;
-
-    const showVal = this.settings.valueDisplaySettings.showValue.value;
-    this.settings.valueDisplaySettings.valueFontSize.visible = showVal;
-    this.settings.valueDisplaySettings.valueFontFamily.visible = showVal;
-    this.settings.valueDisplaySettings.valueFontWeight.visible = showVal;
-
-    const showSt = this.settings.valueDisplaySettings.showStatusText.value;
-    this.settings.valueDisplaySettings.statusFontSize.visible = showSt;
-    this.settings.valueDisplaySettings.statusFontColor.visible = showSt;
-    this.settings.valueDisplaySettings.statusFontFamily.visible = showSt;
-    this.settings.valueDisplaySettings.statusFontWeight.visible = showSt;
-
-    const levelCountRaw = this.settings.thresholdSettings.levelCount.value?.value ?? '3';
-    const levelCountNum = parseInt(String(levelCountRaw), 10) || 3;
-    this.settings.thresholdSettings.level4Color.visible = levelCountNum > 3;
-    this.settings.thresholdSettings.level5Color.visible = levelCountNum > 4;
-
-    // Card Style — hide sub-settings when mode is 'none'
-    const cardModeVis = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
-    this.settings.cardSettings.backgroundOpacity.visible = cardModeVis !== 'none';
-    this.settings.cardSettings.backgroundColor.visible = cardModeVis !== 'none';
-
-    // Extract data
-    const rows = this.extractData(dataView);
-
-    // Track cross-highlight state
-    this.currentHasHighlights = rows.some((r) => r.highlighted);
-
-    this.render(rows);
   }
 
   private extractData(dataView: DataView | undefined): StatusRow[] {
@@ -165,6 +224,7 @@ export class StatusIndicatorVisual implements IVisual {
       if (role['warningThreshold']) warnCol = col;
       if (role['criticalThreshold']) critCol = col;
     }
+    if (!measureCol) return rows;
 
     // Read cross-highlight data from the measure column
     const measureHighlights = measureCol ? (measureCol.highlights as unknown[] | undefined) : undefined;
@@ -200,7 +260,14 @@ export class StatusIndicatorVisual implements IVisual {
         .createSelectionId();
 
       const status = useCustom
-        ? this.computeCustomStatus(value, customThreshold1, customThreshold2, String(direction))
+        ? this.computeCustomStatus(
+          value,
+          customThreshold1,
+          customThreshold2,
+          this.settings.thresholdSettings.threshold3.value,
+          this.settings.thresholdSettings.threshold4.value,
+          String(direction),
+        )
         : this.computeStatus(value, warnThresh, critThresh, String(direction));
 
       // A row is highlighted if its highlight value is non-null
@@ -218,7 +285,14 @@ export class StatusIndicatorVisual implements IVisual {
       });
     }
 
-    return rows;
+    return applySortOrder(
+      rows.map((row) => ({
+        row,
+        name: row.label,
+        value: row.value ?? Number.NEGATIVE_INFINITY,
+      })),
+      this.settings.sortFormattingCard,
+    ).map(({ row }) => row);
   }
 
   private computeStatus(
@@ -227,7 +301,7 @@ export class StatusIndicatorVisual implements IVisual {
     critThresh: number | null,
     direction: string
   ): StatusLevel {
-    if (value === null) return 'warning';
+    if (value === null) return 'unknown';
     if (warnThresh === null && critThresh === null) return 'good';
 
     if (direction === 'higherIsBetter') {
@@ -253,75 +327,80 @@ export class StatusIndicatorVisual implements IVisual {
     value: number | null,
     threshold1: number,
     threshold2: number,
+    threshold3: number,
+    threshold4: number,
     direction: string
   ): StatusLevel {
-    if (value === null) return 'warning';
+    if (value === null) return 'unknown';
 
     const levelCountRaw = this.settings.thresholdSettings.levelCount.value?.value ?? '3';
     const levelCount = parseInt(String(levelCountRaw), 10) || 3;
+    const thresholds = [threshold1, threshold2, threshold3, threshold4]
+      .slice(0, Math.max(2, levelCount - 1))
+      .sort((a, b) => a - b);
+    const [t1, t2, t3, t4] = thresholds;
 
     if (levelCount >= 5 && direction === 'higherIsBetter') {
-      const range = threshold2 - threshold1;
-      const t3 = threshold2 + range * 0.5;
-      const t4 = threshold2 + range;
       if (value >= t4) return 'level5';
       if (value >= t3) return 'level4';
-      if (value >= threshold2) return 'good';
-      if (value >= threshold1) return 'warning';
+      if (value >= t2) return 'good';
+      if (value >= t1) return 'warning';
       return 'critical';
     }
 
     if (levelCount >= 4 && direction === 'higherIsBetter') {
-      const t3 = threshold2 + (threshold2 - threshold1) * 0.5;
       if (value >= t3) return 'level4';
-      if (value >= threshold2) return 'good';
-      if (value >= threshold1) return 'warning';
+      if (value >= t2) return 'good';
+      if (value >= t1) return 'warning';
       return 'critical';
     }
 
     if (levelCount >= 5 && direction === 'lowerIsBetter') {
-      const range = threshold2 - threshold1;
-      const t3 = threshold2 + range * 0.5;
-      const t4 = threshold2 + range;
       if (value >= t4) return 'level5';
       if (value >= t3) return 'level4';
-      if (value >= threshold2) return 'critical';
-      if (value >= threshold1) return 'warning';
+      if (value >= t2) return 'critical';
+      if (value >= t1) return 'warning';
       return 'good';
     }
 
     if (levelCount >= 4 && direction === 'lowerIsBetter') {
-      const t3 = threshold2 + (threshold2 - threshold1) * 0.5;
       if (value >= t3) return 'level4';
-      if (value >= threshold2) return 'critical';
-      if (value >= threshold1) return 'warning';
+      if (value >= t2) return 'critical';
+      if (value >= t1) return 'warning';
       return 'good';
     }
 
     if (direction === 'higherIsBetter') {
-      if (value >= threshold2) return 'good';
-      if (value >= threshold1) return 'warning';
+      if (value >= t2) return 'good';
+      if (value >= t1) return 'warning';
       return 'critical';
     } else {
-      if (value < threshold1) return 'good';
-      if (value < threshold2) return 'warning';
+      if (value < t1) return 'good';
+      if (value < t2) return 'warning';
       return 'critical';
     }
   }
 
-  private render(rows: StatusRow[]): void {
+  private render(rows: StatusRow[], highContrast: ReturnType<typeof getHostHighContrastColors>): void {
     // Clear container
     while (this.container.firstChild) {
       this.container.removeChild(this.container.firstChild);
     }
     renderChartTitle(this.container, this.settings.titleFormattingCard);
-    this.container.addEventListener('click', this.handleBackgroundClick);
+    this.container.removeEventListener('click', this.handleBackgroundClick);
+    if (allowInteractions(this.host)) {
+      this.container.addEventListener('click', this.handleBackgroundClick);
+    }
 
     const s = this.settings;
     const size = Math.max(6, s.indicatorSettings.size.value);
     const layout = s.layoutSettings.layout.value?.value ?? 'vertical';
     const iconSize = Math.max(6, s.indicatorSettings.iconSize.value);
     const labelColor = s.indicatorSettings.labelColor.value?.value ?? '';
+    const labelFontFamily = resolveDropdown(s.indicatorSettings.labelFontFamily);
+    const labelFontWeight = resolveDropdown(s.indicatorSettings.labelFontWeight) ?? 'normal';
+    const itemGap = Math.max(0, s.layoutSettings.itemGap.value);
+    const itemPadding = Math.max(0, s.layoutSettings.itemPadding.value);
     const themeName = resolveColorTheme(s.colorThemeFormattingCard);
     const goodColor = themeName !== 'default'
       ? getHostChartColor(this.host.colorPalette, 0, themeName)
@@ -332,7 +411,7 @@ export class StatusIndicatorVisual implements IVisual {
     const criticalColor = themeName !== 'default'
       ? getHostChartColor(this.host.colorPalette, 2, themeName)
       : (s.thresholdSettings.criticalColor.value?.value ?? '#EF4444');
-    const enablePulse = s.animationSettings.enablePulse.value;
+    const enablePulse = s.animationSettings.enabled.value && s.animationSettings.enablePulse.value;
     const showValue = s.valueDisplaySettings.showValue.value;
     const valueFontSize = Math.max(6, s.valueDisplaySettings.valueFontSize.value);
     const animEnabled = s.animationSettings.enabled.value;
@@ -349,13 +428,25 @@ export class StatusIndicatorVisual implements IVisual {
         borderRadius: s.cardSettings.borderRadius.value,
       },
     );
+    const contentPadding = Math.max(0, s.cardSettings.contentPadding.value);
+    this.container.style.padding = `${contentPadding}px`;
+    this.container.style.boxSizing = 'border-box';
 
     // Empty state
     if (rows.length === 0) {
-      const empty = document.createElement('div');
-      empty.className = 'status-empty';
-      empty.textContent = 'Add Category and Value fields';
-      this.container.appendChild(empty);
+      if (this.emptyStateMode === 'noData') {
+        renderNoDataState(
+          this.container,
+          getLocalizedString(this.host, 'StatusIndicator_NoDataState', 'No data for the current selection.'),
+          highContrast,
+        );
+        return;
+      }
+      renderLandingPage(this.container, {
+        title: getLocalizedString(this.host, 'StatusIndicator_LandingTitle', 'Add data to build status cards'),
+        description: getLocalizedString(this.host, 'StatusIndicator_LandingDescription', 'Bind a category and a measure to render each status indicator.'),
+        steps: [getLocalizedString(this.host, 'StatusIndicator_LandingStepCategory', 'Category'), getLocalizedString(this.host, 'StatusIndicator_LandingStepMeasure', 'Measure'), getLocalizedString(this.host, 'StatusIndicator_LandingStepOptional', 'Optional thresholds or status text')],
+      }, highContrast);
       return;
     }
 
@@ -372,6 +463,7 @@ export class StatusIndicatorVisual implements IVisual {
     // Status level settings
     const levelCountRaw = s.thresholdSettings.levelCount.value?.value ?? '3';
     const levelCount = parseInt(String(levelCountRaw), 10) || 3;
+    const useCustomThresholds = s.thresholdSettings.useCustomThresholds.value;
     const level4Color = s.thresholdSettings.level4Color.value?.value ?? '#60A5FA';
     const level5Color = s.thresholdSettings.level5Color.value?.value ?? '#A78BFA';
 
@@ -381,6 +473,7 @@ export class StatusIndicatorVisual implements IVisual {
       critical: criticalColor,
       level4: level4Color,
       level5: level5Color,
+      unknown: highContrast.enabled ? highContrast.foreground : '#94A3B8',
     };
 
     // Status display settings
@@ -408,23 +501,29 @@ export class StatusIndicatorVisual implements IVisual {
     rows.forEach((row, idx) => {
       const rowEl = document.createElement('div');
       rowEl.className = 'status-row';
-      rowEl.style.cursor = 'pointer';
+      rowEl.style.cursor = allowInteractions(this.host) ? 'pointer' : 'default';
+      rowEl.style.gap = `${itemGap}px`;
+      rowEl.style.padding = `${Math.max(2, Math.round(itemPadding / 2))}px ${itemPadding}px`;
       rowEl.setAttribute('data-row-index', String(idx));
       rowEl.addEventListener('mouseenter', (event) => this.showStatusTooltip(row, event));
       rowEl.addEventListener('mousemove', (event) => this.moveTooltip(event));
       rowEl.addEventListener('mouseleave', () => this.hideTooltip());
-      rowEl.addEventListener('click', (event) => {
-        event.stopPropagation();
-        void this.selectionManager.select(row.selectionId, event.ctrlKey || event.metaKey);
-      });
-      rowEl.addEventListener('contextmenu', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        void this.selectionManager.showContextMenu(row.selectionId, {
-          x: event.clientX,
-          y: event.clientY,
+      if (allowInteractions(this.host)) {
+        rowEl.addEventListener('click', (event) => {
+          event.stopPropagation();
+          void this.selectionManager.select(row.selectionId, event.ctrlKey || event.metaKey).then(() => {
+            this.applyCrossHighlight(this.currentRows);
+          });
         });
-      });
+        rowEl.addEventListener('contextmenu', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          void this.selectionManager.showContextMenu(row.selectionId, {
+            x: event.clientX,
+            y: event.clientY,
+          });
+        });
+      }
 
       // Shape indicator
       const statusColor = colorMap[row.status];
@@ -465,7 +564,10 @@ export class StatusIndicatorVisual implements IVisual {
 
       // Pulse animation for critical items
       if (enablePulse && row.status === 'critical') {
-        const cancel = pulseGlow(shapeEl, criticalColor);
+        const cancel = pulseGlow(
+          shapeEl,
+          highContrast.enabled ? highContrast.foregroundSelected : criticalColor,
+        );
         this.cancelAnimations.push(cancel);
       }
 
@@ -477,6 +579,10 @@ export class StatusIndicatorVisual implements IVisual {
       labelEl.style.fontSize = `${size}px`;
       if (labelColor) {
         labelEl.style.color = labelColor;
+      }
+      labelEl.style.fontWeight = labelFontWeight;
+      if (labelFontFamily) {
+        labelEl.style.fontFamily = labelFontFamily;
       }
       labelEl.textContent = row.label;
       rowEl.appendChild(labelEl);
@@ -506,7 +612,7 @@ export class StatusIndicatorVisual implements IVisual {
         statusTextEl.style.fontWeight = stFontWeight;
         const stFontFamily = resolveDropdown(s.valueDisplaySettings.statusFontFamily);
         if (stFontFamily) statusTextEl.style.fontFamily = stFontFamily;
-        statusTextEl.style.marginLeft = '4px';
+        statusTextEl.style.marginLeft = `${Math.max(2, Math.round(itemGap / 2))}px`;
         statusTextEl.textContent = this.getStatusText(row.status);
         rowEl.appendChild(statusTextEl);
       }
@@ -540,6 +646,12 @@ export class StatusIndicatorVisual implements IVisual {
         { label: 'Warning', color: warningColor },
         { label: 'Critical', color: criticalColor },
       ];
+      if (useCustomThresholds && levelCount > 3) {
+        legendItems.push({ label: 'Level 4', color: level4Color });
+      }
+      if (useCustomThresholds && levelCount > 4) {
+        legendItems.push({ label: 'Level 5', color: level5Color });
+      }
       renderLegend(this.container, {
         items: legendItems,
         position: legendPos as 'top' | 'bottom' | 'left' | 'right',
@@ -565,7 +677,7 @@ export class StatusIndicatorVisual implements IVisual {
     const tooltipData: VisualTooltipDataItem[] = [
       { displayName: 'Label', value: row.label },
       { displayName: 'Value', value: formatWithSettings(row.value, this.settings.numberFormattingCard) },
-      { displayName: 'Status', value: row.status },
+      { displayName: 'Status', value: this.getStatusText(row.status) },
     ];
     if (row.warningThreshold !== null) {
       tooltipData.push({
@@ -582,7 +694,7 @@ export class StatusIndicatorVisual implements IVisual {
 
     this.host.tooltipService.show({
       dataItems: tooltipData,
-      identities: [],
+      identities: [row.selectionId],
       coordinates: [event.clientX, event.clientY],
       isTouchEvent: false,
     });
@@ -601,17 +713,20 @@ export class StatusIndicatorVisual implements IVisual {
     this.host.tooltipService.hide({ immediately: true, isTouchEvent: false });
   }
 
-  // Render lifecycle notifications removed — Power BI's eventService.renderingStarted()
-  // requires VisualUpdateOptions with updateId, and calling without args crashes the visual.
-
   private handleBackgroundClick = (): void => {
-    void this.selectionManager.clear();
+    if (!allowInteractions(this.host)) return;
+    void this.selectionManager.clear().then(() => {
+      this.applyCrossHighlight(this.currentRows);
+    });
   };
 
   // ── Cross-Highlight ───────────────────────────────────────────
 
   private applyCrossHighlight(rows: StatusRow[]): void {
-    if (!this.currentHasHighlights) return;
+    const selectedKeys = new Set(
+      (this.selectionManager.getSelectionIds() as ISelectionId[]).map((id) => id.getKey()),
+    );
+    const shouldDim = this.currentHasHighlights || selectedKeys.size > 0;
 
     const rowElements = this.container.querySelectorAll<HTMLElement>('.status-row');
     for (const el of Array.from(rowElements)) {
@@ -620,7 +735,18 @@ export class StatusIndicatorVisual implements IVisual {
       const idx = parseInt(idxStr, 10);
       const row = rows[idx];
       if (!row) continue;
-      el.style.opacity = row.highlighted ? '' : '0.3';
+      if (!shouldDim) {
+        el.style.opacity = '';
+        el.style.boxShadow = '';
+        continue;
+      }
+      const isSelected = selectedKeys.has(row.selectionId.getKey());
+      el.style.opacity = (row.highlighted || isSelected) ? '' : '0.3';
+      el.style.boxShadow = isSelected
+        ? '0 0 0 2px rgba(59, 130, 246, 0.35)'
+        : row.highlighted
+          ? '0 0 0 1px rgba(59, 130, 246, 0.18)'
+          : '';
     }
   }
 
@@ -633,6 +759,7 @@ export class StatusIndicatorVisual implements IVisual {
       case 'critical': return 'Critical';
       case 'level4': return 'Level 4';
       case 'level5': return 'Level 5';
+      case 'unknown': return 'No Data';
       default: return '';
     }
   }
@@ -723,15 +850,25 @@ export class StatusIndicatorVisual implements IVisual {
 
       rows.forEach((rowEl, i) => {
         const label = rowEl.querySelector('.status-label')?.textContent ?? '';
-        const value = rowEl.querySelector('.status-value')?.textContent ?? '';
+        const row = this.currentRows[i];
+        const value = row
+          ? `${row.value === null
+            ? 'No data'
+            : formatWithSettings(row.value, this.settings.numberFormattingCard)}, ${this.getStatusText(row.status)}`
+          : (rowEl.querySelector('.status-value')?.textContent ?? '');
         applyDataPointAria(rowEl, label, value, i, rows.length);
+        rowEl.setAttribute('tabindex', '0');
+        rowEl.setAttribute('aria-keyshortcuts', 'Enter Space ArrowLeft ArrowRight ArrowUp ArrowDown Home End');
+        rowEl.setAttribute('aria-disabled', allowInteractions(this.host) ? 'false' : 'true');
       });
 
       const cleanup = attachKeyboardNav({
         container: this.container,
         itemSelector: '.status-row',
         onActivate: (el: Element) => {
-          (el as HTMLElement).click();
+          if (allowInteractions(this.host)) {
+            (el as HTMLElement).click();
+          }
         },
       });
       this.cancelAnimations.push(cleanup);

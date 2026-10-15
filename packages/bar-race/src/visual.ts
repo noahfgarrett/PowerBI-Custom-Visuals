@@ -16,7 +16,6 @@ import {
   type CardStyleMode,
   getHostChartColor,
   renderChartTitle,
-  applyDataLabelFormatting,
   resolveColorTheme,
   resolveDropdown,
   buildConditionalConfig,
@@ -37,6 +36,20 @@ import {
   getDateFilterIndices,
   isDateColumn,
   type DateFilterConfig,
+  hideInlineLegendFormatting,
+  syncCardStyleVisibility,
+  syncDateFilterFormattingVisibility,
+  syncLegendFormattingVisibility,
+  syncTitleFormattingVisibility,
+  getLocalizedString,
+  getVisualEmptyStateMode,
+  allowInteractions,
+  getHostHighContrastColors,
+  applyBasicHighContrastStyles,
+  notifyRenderingStarted,
+  notifyRenderingFinished,
+  notifyRenderingFailed,
+  prefersReducedMotion,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -92,6 +105,8 @@ const CONTROLS_HEIGHT = 28;
 // ── Visual ──────────────────────────────────────────────────────────
 
 export class BarRaceVisual implements IVisual {
+  private static readonly DEFAULT_BAR_COLOR = '#64748B';
+
   private host: IVisualHost;
   private selectionManager: powerbi.extensibility.ISelectionManager;
   private container: HTMLElement;
@@ -118,6 +133,7 @@ export class BarRaceVisual implements IVisual {
     hasHighlights: false,
     highlightedCategories: new Set(),
   };
+  private emptyStateMode: 'unconfigured' | 'noData' = 'unconfigured';
 
   /** DOM references for bar elements keyed by category name. */
   private barElements: Map<string, HTMLElement> = new Map();
@@ -131,7 +147,6 @@ export class BarRaceVisual implements IVisual {
   /** Time period label element. */
   private timeLabel: HTMLElement | null = null;
   /** Period label overlay element (large period/year watermark). */
-  private periodLabelOverlay: HTMLElement | null = null;
 
   /** Playback control DOM references. */
   private controlsBar: HTMLElement | null = null;
@@ -145,16 +160,29 @@ export class BarRaceVisual implements IVisual {
     this.selectionManager = options.host.createSelectionManager();
     this.container = options.element;
     this.settings = new BarRaceSettings();
-    this.formattingSettingsService = new FormattingSettingsService();
+    this.formattingSettingsService = new FormattingSettingsService(options.host.createLocalizationManager());
     this.container.classList.add('bar-race-container');
   }
 
   public update(options: VisualUpdateOptions): void {
+    notifyRenderingStarted(this.host, options);
+    try {
+      this.updateVisual(options);
+      this.applyHighContrast();
+      notifyRenderingFinished(this.host, options);
+    } catch (error) {
+      notifyRenderingFailed(this.host, options, error instanceof Error ? error.message : String(error));
+      throw error;
+    }
+  }
+
+  private updateVisual(options: VisualUpdateOptions): void {
     // Cancel all running animations and intervals
     this.cleanup();
 
     // Parse settings from dataView
     const dataView = options.dataViews?.[0];
+    this.emptyStateMode = getVisualEmptyStateMode(dataView);
     if (dataView) {
       this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
         BarRaceSettings,
@@ -166,15 +194,14 @@ export class BarRaceVisual implements IVisual {
     const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
     if (legacyCardObj) {
       const legacyGlass = legacyCardObj['enableGlass'];
-      if (legacyGlass === false) {
+      if (legacyGlass === false && legacyCardObj['cardStyleMode'] == null) {
         this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
       }
     }
 
-    // Date filter: hide start/end when disabled
-    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
+    syncDateFilterFormattingVisibility(this.settings.dateFilterFormattingCard);
+    syncTitleFormattingVisibility(this.settings.titleFormattingCard);
+    syncLegendFormattingVisibility(this.settings.legendFormattingCard);
 
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
 
@@ -197,6 +224,9 @@ export class BarRaceVisual implements IVisual {
     this.settings.axisFormattingCard.gridLineStyle.visible = false;
     this.settings.axisFormattingCard.gridLineWidth.visible = false;
     this.settings.axisFormattingCard.gridLineOpacity.visible = false;
+    this.settings.axisFormattingCard.integerTicks.visible = false;
+    this.settings.axisFormattingCard.axisLabelColor.visible = false;
+    this.settings.axisFormattingCard.axisLabelSize.visible = false;
 
     // Hide dual-axis-only properties (no combo/dual-axis support)
     this.settings.referenceLineFormattingCard.referenceLineAxis.visible = false;
@@ -213,12 +243,64 @@ export class BarRaceVisual implements IVisual {
 
     // Playback controls sub-settings: hide when showControls false
     const ctrlOn = this.settings.playbackSettings.showControls.value;
-    this.settings.playbackSettings.speed.visible = ctrlOn;
-    this.settings.playbackSettings.loop.visible = ctrlOn;
+    const playbackOn = ctrlOn || this.settings.playbackSettings.autoPlay.value;
+    this.settings.playbackSettings.speed.visible = playbackOn;
+    this.settings.playbackSettings.loop.visible = playbackOn;
     this.settings.playbackSettings.controlPosition.visible = ctrlOn;
+    this.settings.playbackSettings.pauseDuration.visible = playbackOn;
+    this.settings.raceSettings.playSpeed.visible = playbackOn;
 
-    // Period label size: hide when showPeriodLabel off
-    this.settings.raceDisplay.periodLabelSize.visible = this.settings.raceDisplay.showPeriodLabel.value;
+    const valuesOn = this.settings.valueSettings.showValues.value;
+    this.settings.valueSettings.fontSize.visible = valuesOn;
+    this.settings.valueSettings.fontColor.visible = valuesOn;
+    this.settings.valueSettings.fontFamily.visible = valuesOn;
+    this.settings.valueSettings.fontWeight.visible = valuesOn;
+
+    this.settings.animationSettings.duration.visible = this.settings.animationSettings.enabled.value;
+
+    // Shared value label controls that are overridden by the race-specific value settings.
+    this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
+    this.settings.dataLabelFormattingCard.dataLabelFontSize.visible = false;
+    this.settings.dataLabelFormattingCard.dataLabelFontFamily.visible = false;
+    this.settings.dataLabelFormattingCard.dataLabelFontWeight.visible = false;
+    this.settings.dataLabelFormattingCard.dataLabelFontColor.visible = false;
+    this.settings.dataLabelFormattingCard.dataLabelPosition.visible = false;
+    hideInlineLegendFormatting(this.settings.legendFormattingCard);
+
+    const reference = this.settings.referenceLineFormattingCard;
+    const referenceOn = reference.showReferenceLine.value;
+    const referenceType = resolveDropdown(reference.referenceLineType) ?? 'custom';
+    reference.referenceLineType.visible = referenceOn;
+    reference.referenceLineValue.visible = referenceOn && referenceType === 'custom';
+    reference.referenceLineColor.visible = referenceOn;
+    reference.referenceLineWidth.visible = referenceOn;
+    reference.referenceLineStyle.visible = referenceOn;
+    reference.showReferenceLabel.visible = referenceOn;
+    reference.referenceLabelText.visible = referenceOn && reference.showReferenceLabel.value;
+    reference.showReferenceBand.visible = referenceOn;
+    reference.referenceBandOpacity.visible = referenceOn && reference.showReferenceBand.value;
+
+    const trend = this.settings.trendLineFormattingCard;
+    const trendOn = trend.showTrendLine.value;
+    const trendType = resolveDropdown(trend.trendLineType) ?? 'linear';
+    trend.trendLineType.visible = trendOn;
+    trend.polynomialOrder.visible = trendOn && trendType === 'polynomial';
+    trend.trendLineColor.visible = trendOn;
+    trend.trendLineWidth.visible = trendOn;
+    trend.showEquation.visible = trendOn;
+    trend.showR2.visible = trendOn;
+
+    const conditional = this.settings.conditionalFormattingCard;
+    const conditionalOn = conditional.enableConditional.value;
+    conditional.conditionalDirection.visible = conditionalOn;
+    conditional.threshold1.visible = conditionalOn;
+    conditional.threshold2.visible = conditionalOn;
+    conditional.conditionalColor1.visible = conditionalOn;
+    conditional.conditionalColor2.visible = conditionalOn;
+    conditional.conditionalColor3.visible = conditionalOn;
+
+    const annotations = this.settings.annotationFormattingCard;
+    for (const slice of annotations.slices.slice(1)) slice.visible = annotations.showAnnotations.value;
 
     // Extract data
     this.raceData = this.extractData(dataView);
@@ -259,7 +341,7 @@ export class BarRaceVisual implements IVisual {
 
     // Start auto-play if enabled (uses new playback setting)
     const autoPlay = this.settings.playbackSettings.autoPlay.value;
-    if (autoPlay) {
+    if (autoPlay && !prefersReducedMotion()) {
       this.play();
     }
   }
@@ -297,6 +379,7 @@ export class BarRaceVisual implements IVisual {
 
     // Build frames: Map<timePeriod, Array<{name, value}>>
     const frames = new Map<string, RaceItem[]>();
+    const timePeriods: string[] = [];
     const uniqueCategories = new Set<string>();
     const selectionMap = new Map<string, ISelectionId>();
     const highlightedCategories = new Set<string>();
@@ -309,7 +392,9 @@ export class BarRaceVisual implements IVisual {
       endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
       endDate: this.settings.dateFilterFormattingCard.endDate.value,
     };
-    const dateIndices = isDateColumn(categoryColumn.source) ? getDateFilterIndices(categoryColumn.values, dateConfig) : null;
+    const dateIndices = isDateColumn(timeColumn.source)
+      ? getDateFilterIndices(timeColumn.values, dateConfig)
+      : null;
 
     for (let i = 0; i < rowCount; i++) {
       if (dateIndices && !dateIndices.has(i)) continue;
@@ -339,14 +424,12 @@ export class BarRaceVisual implements IVisual {
       if (!frame) {
         frame = [];
         frames.set(timePeriod, frame);
+        timePeriods.push(timePeriod);
       }
       frame.push({ name, value, highlighted });
     }
 
     if (frames.size === 0) return empty;
-
-    // Sort time periods chronologically (string sort works for most date formats)
-    const timePeriods = Array.from(frames.keys()).sort();
 
     // Sort items within each frame by value descending
     for (const [, items] of frames) {
@@ -362,7 +445,7 @@ export class BarRaceVisual implements IVisual {
         cat,
         usePalette
           ? getHostChartColor(this.host.colorPalette, idx, themeName)
-          : BarRaceVisual.DEFAULT_LABEL_COLOR,
+          : BarRaceVisual.DEFAULT_BAR_COLOR,
       );
     });
 
@@ -384,35 +467,13 @@ export class BarRaceVisual implements IVisual {
         borderRadius: s.borderRadius.value,
       },
     );
-    if (mode === 'none') {
-      this.container.style.borderRadius = `${s.borderRadius.value}px`;
-    }
+    const contentPadding = Math.max(0, s.contentPadding.value);
+    this.container.style.padding = `${contentPadding}px`;
   }
 
-  // ── Axis Label Formatting ────────────────────────────────────────
-
-  private static readonly DEFAULT_LABEL_COLOR = '#64748B';
-
-  /**
-   * Applies axis formatting card settings (label color + font size)
-   * to all `.bar-race-label` HTML spans.
-   * Bar-race uses HTML elements (not SVG), so the shared SVG-based
-   * `applyAxisFormatting` helper does not apply here.
-   */
-  private applyAxisLabelFormatting(): void {
-    const axis = this.settings.axisFormattingCard;
-    const rawColor = axis.axisLabelColor.value?.value;
-    const labelColor =
-      rawColor != null && rawColor.length > 0
-        ? rawColor
-        : BarRaceVisual.DEFAULT_LABEL_COLOR;
-    const labelSize = axis.axisLabelSize.value;
-
-    const labels = this.container.querySelectorAll<HTMLElement>('.bar-race-label');
-    for (const el of labels) {
-      el.style.color = labelColor;
-      el.style.fontSize = `${labelSize}px`;
-    }
+  private getContentWidth(): number {
+    const padding = Math.max(0, this.settings.cardSettings.contentPadding.value);
+    return Math.max(0, this.container.clientWidth - padding * 2);
   }
 
   // ── Value Settings Override ──────────────────────────────────────
@@ -441,7 +502,7 @@ export class BarRaceVisual implements IVisual {
   // ── Label Color Override ───────────────────────────────────────────
 
   /**
-   * Applies raceSettings.labelColor to all `.bar-race-label` elements,
+   * Applies raceDisplay.labelColor to all `.bar-race-label` elements,
    * overriding the shared AxisFormattingCard label color when the
    * race-specific label color is set by the user.
    */
@@ -459,9 +520,15 @@ export class BarRaceVisual implements IVisual {
 
   private renderEmpty(): void {
     this.clearContainer();
+    this.container.removeAttribute('role');
+    this.container.removeAttribute('aria-label');
     const emptyEl = document.createElement('div');
     emptyEl.className = 'bar-race-empty';
-    emptyEl.textContent = 'Add a Category, Time Axis, and Measure to get started.';
+    emptyEl.setAttribute('role', 'status');
+    emptyEl.setAttribute('aria-live', 'polite');
+    emptyEl.textContent = this.emptyStateMode === 'noData'
+      ? getLocalizedString(this.host, 'BarRace_NoDataState', 'No data for the current selection.')
+      : getLocalizedString(this.host, 'BarRace_EmptyState', 'Add a Category, Time Axis, and Measure to get started.');
     this.container.appendChild(emptyEl);
   }
 
@@ -474,11 +541,14 @@ export class BarRaceVisual implements IVisual {
     this.labelElements.clear();
     this.valueElements.clear();
     this.container.removeEventListener('click', this.handleBackgroundClick);
+    this.container.removeEventListener('contextmenu', this.handleBackgroundContextMenu);
 
     const s = this.settings;
     const topN = Math.max(1, s.raceSettings.topN.value);
     const barHeight = Math.max(10, s.raceSettings.barHeight.value);
-    const animDuration = s.animationSettings.enabled.value ? s.animationSettings.duration.value : 0;
+    const animDuration = s.animationSettings.enabled.value && !prefersReducedMotion()
+      ? s.animationSettings.duration.value
+      : 0;
     const fontSize = s.valueSettings.fontSize.value;
 
     // Viewport wrapper
@@ -516,13 +586,15 @@ export class BarRaceVisual implements IVisual {
       }
 
       barRow.style.backgroundColor = this.raceData.colorMap.get(catName) ?? '#64748B';
-      barRow.style.cursor = 'pointer';
+      barRow.style.cursor = allowInteractions(this.host) ? 'pointer' : 'default';
       barRow.setAttribute('data-cat', catName);
+      barRow.dataset['visible'] = 'false';
 
       const selectionId = this.raceData.selectionMap.get(catName);
       if (selectionId) {
         barRow.addEventListener('click', (event) => {
           event.stopPropagation();
+          if (!allowInteractions(this.host)) return;
           void this.selectionManager.select(selectionId, event.ctrlKey || event.metaKey).then(() => {
             this.applySelectionHighlight();
           });
@@ -530,6 +602,7 @@ export class BarRaceVisual implements IVisual {
         barRow.addEventListener('contextmenu', (event) => {
           event.preventDefault();
           event.stopPropagation();
+          if (!allowInteractions(this.host)) return;
           void this.selectionManager.showContextMenu(selectionId, {
             x: event.clientX,
             y: event.clientY,
@@ -544,7 +617,7 @@ export class BarRaceVisual implements IVisual {
       const label = document.createElement('span');
       label.className = 'bar-race-label';
       label.textContent = catName;
-      label.style.fontSize = `${fontSize}px`;
+      label.style.fontSize = `${s.raceDisplay.fontSize.value}px`;
       const rawLabelColor = s.raceDisplay.labelColor.value?.value;
       if (rawLabelColor != null && rawLabelColor.length > 0) {
         label.style.color = rawLabelColor;
@@ -568,11 +641,7 @@ export class BarRaceVisual implements IVisual {
     }
 
     this.container.appendChild(vp);
-    // Apply shared formatting settings (base layer)
-    applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.bar-race-value');
-    this.applyAxisLabelFormatting();
-
-    // Apply race-specific overrides on top of shared formatting
+    // Apply race-specific value formatting.
     this.applyValueSettingsOverrides();
     this.applyLabelColorOverride();
 
@@ -597,6 +666,7 @@ export class BarRaceVisual implements IVisual {
     }
 
     this.container.addEventListener('click', this.handleBackgroundClick);
+    this.container.addEventListener('contextmenu', this.handleBackgroundContextMenu);
 
     // Large timestamp watermark display
     const ts = this.settings.timestampSettings;
@@ -671,6 +741,8 @@ export class BarRaceVisual implements IVisual {
     // Controls container
     const bar = document.createElement('div');
     bar.className = `bar-race-controls bar-race-controls--${controlPosition}`;
+    bar.addEventListener('click', (event) => event.stopPropagation());
+    bar.addEventListener('contextmenu', (event) => event.stopPropagation());
     this.controlsBar = bar;
 
     // Adjust viewport padding so bars don't overlap controls
@@ -941,8 +1013,6 @@ export class BarRaceVisual implements IVisual {
     const barHeight = Math.max(10, s.raceSettings.barHeight.value);
     const showValues = s.valueSettings.showValues.value;
     const showRankNumbers = s.raceDisplay.showRankNumbers.value;
-    const showPeriodLabel = s.raceDisplay.showPeriodLabel.value;
-    const periodLabelSize = s.raceDisplay.periodLabelSize.value;
 
     const { timePeriods, frames } = this.raceData;
     if (timePeriods.length === 0) return;
@@ -960,7 +1030,7 @@ export class BarRaceVisual implements IVisual {
     const safeMax = maxVal > 0 ? maxVal : 1;
 
     // Compute available bar width
-    const containerWidth = this.container.clientWidth;
+      const containerWidth = this.getContentWidth();
     const availableBarWidth = Math.max(0, containerWidth - LABEL_AREA_WIDTH - VALUE_AREA_WIDTH - 16);
 
     // Build set of visible categories in this frame
@@ -981,6 +1051,8 @@ export class BarRaceVisual implements IVisual {
       barEl.style.left = `${LABEL_AREA_WIDTH}px`;
       barEl.style.width = `${widthPx}px`;
       barEl.style.opacity = String(s.raceSettings.barOpacity.value / 100);
+      barEl.style.backgroundColor = this.raceData.colorMap.get(item.name) ?? '#64748B';
+      barEl.dataset['visible'] = 'true';
 
       // Show rank number prefix on the label
       if (labelEl) {
@@ -1004,6 +1076,7 @@ export class BarRaceVisual implements IVisual {
     for (const [catName, barEl] of this.barElements) {
       if (!visibleSet.has(catName)) {
         barEl.style.opacity = '0';
+        barEl.dataset['visible'] = 'false';
       }
     }
 
@@ -1011,9 +1084,6 @@ export class BarRaceVisual implements IVisual {
     if (this.timeLabel) {
       this.timeLabel.textContent = currentPeriod;
     }
-
-    // Update period label overlay
-    this.updatePeriodLabelOverlay(currentPeriod, showPeriodLabel, periodLabelSize);
 
     // Re-apply conditional formatting for the new frame's values
     this.applyConditionalFormatting();
@@ -1023,49 +1093,12 @@ export class BarRaceVisual implements IVisual {
 
     // Re-apply cross-highlight dimming after frame update resets opacity
     this.applySelectionHighlight();
-  }
 
-  // ── Period Label Overlay ─────────────────────────────────────────────
-
-  /**
-   * Creates or updates the large period label overlay that displays the current
-   * time period (e.g. year) as a watermark in the chart area.
-   * Controlled by raceDisplay.showPeriodLabel and raceDisplay.periodLabelSize.
-   */
-  private updatePeriodLabelOverlay(
-    currentPeriod: string,
-    show: boolean,
-    fontSize: number,
-  ): void {
-    if (!show) {
-      if (this.periodLabelOverlay) {
-        this.periodLabelOverlay.style.display = 'none';
-      }
-      return;
+    // Playback updates happen after the host update lifecycle; keep host
+    // high-contrast styling in place as bars change frames.
+    if (getHostHighContrastColors(this.host).enabled) {
+      this.applyHighContrast();
     }
-
-    if (!this.periodLabelOverlay) {
-      const el = document.createElement('div');
-      el.className = 'bar-race-period-label';
-      el.style.position = 'absolute';
-      el.style.bottom = '40px';
-      el.style.right = '16px';
-      el.style.fontWeight = '700';
-      el.style.opacity = '0.15';
-      el.style.pointerEvents = 'none';
-      el.style.zIndex = '0';
-      el.style.lineHeight = '1';
-      if (this.viewport) {
-        this.viewport.appendChild(el);
-      } else {
-        this.container.appendChild(el);
-      }
-      this.periodLabelOverlay = el;
-    }
-
-    this.periodLabelOverlay.style.display = '';
-    this.periodLabelOverlay.style.fontSize = `${fontSize}px`;
-    this.periodLabelOverlay.textContent = currentPeriod;
   }
 
   // ── Conditional Formatting ──────────────────────────────────────────
@@ -1118,7 +1151,11 @@ export class BarRaceVisual implements IVisual {
    */
   private applyAccessibility(): void {
     const acc = this.settings.accessibilityFormattingCard;
-    if (!acc.enableKeyboardNav.value) return;
+    if (!acc.enableKeyboardNav.value) {
+      this.container.removeAttribute('role');
+      this.container.removeAttribute('aria-label');
+      return;
+    }
 
     ensureFocusRingStyles();
 
@@ -1146,7 +1183,8 @@ export class BarRaceVisual implements IVisual {
       container: this.container,
       itemSelector: '.bar-race-bar',
       onActivate: (el) => {
-        const catName = el.querySelector('.bar-race-label')?.textContent ?? '';
+        if (!allowInteractions(this.host)) return;
+        const catName = el.getAttribute('data-cat') ?? '';
         const selectionId = this.raceData.selectionMap.get(catName);
         if (selectionId) {
           void this.selectionManager.select(selectionId, false).then(() => {
@@ -1250,7 +1288,7 @@ export class BarRaceVisual implements IVisual {
 
     if (!isFinite(refValue)) return;
 
-    const containerWidth = this.container.clientWidth;
+    const containerWidth = this.getContentWidth();
     const availableBarWidth = Math.max(0, containerWidth - LABEL_AREA_WIDTH - VALUE_AREA_WIDTH - 16);
     const maxVal = allValues.length > 0 ? Math.max(...allValues) : 1;
     const safeMax = maxVal > 0 ? maxVal : 1;
@@ -1298,7 +1336,7 @@ export class BarRaceVisual implements IVisual {
     const result = computeRegression(allValues, trendType, tl.polynomialOrder.value);
     const trendColor = tl.trendLineColor.value?.value ?? '#6366F1';
 
-    const containerWidth = this.container.clientWidth;
+    const containerWidth = this.getContentWidth();
     const availableBarWidth = Math.max(0, containerWidth - LABEL_AREA_WIDTH - VALUE_AREA_WIDTH - 16);
     const maxVal = allValues.length > 0 ? Math.max(...allValues) : 1;
     const safeMax = maxVal > 0 ? maxVal : 1;
@@ -1361,6 +1399,15 @@ export class BarRaceVisual implements IVisual {
       ann.annotationFontColor.value?.value || '#475569',
       ann.annotationConnectorColor.value?.value || '#94A3B8',
       resolvePosition,
+      {
+        fontFamily: resolveDropdown(ann.annotationFontFamily) || undefined,
+        fontWeight: resolveDropdown(ann.annotationFontWeight) || '500',
+        offset: ann.annotationOffset.value,
+        padding: ann.annotationPadding.value,
+        backgroundColor: ann.annotationBackgroundColor.value?.value || '#FFFFFF',
+        backgroundOpacity: ann.annotationBackgroundOpacity.value / 100,
+        cornerRadius: ann.annotationCornerRadius.value,
+      },
     );
     if (config) renderAnnotations(g, config);
   }
@@ -1404,7 +1451,6 @@ export class BarRaceVisual implements IVisual {
     this.viewport = null;
     this.svgOverlay = null;
     this.timeLabel = null;
-    this.periodLabelOverlay = null;
     this.controlsBar = null;
     this.playPauseBtn = null;
     this.scrubSlider = null;
@@ -1416,9 +1462,7 @@ export class BarRaceVisual implements IVisual {
 
   public getFormattingModel(): powerbi.visuals.FormattingModel {
     const s = this.settings;
-    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
-    s.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
-    s.cardSettings.backgroundColor.visible = cardMode !== 'none';
+    syncCardStyleVisibility(s.cardSettings);
     return this.formattingSettingsService.buildFormattingModel(this.settings);
   }
 
@@ -1437,7 +1481,9 @@ export class BarRaceVisual implements IVisual {
 
     this.host.tooltipService.show({
       dataItems: tooltipData,
-      identities: [],
+      identities: this.raceData.selectionMap.has(categoryName)
+        ? [this.raceData.selectionMap.get(categoryName)!]
+        : [],
       coordinates: [event.clientX, event.clientY],
       isTouchEvent: false,
     });
@@ -1461,12 +1507,20 @@ export class BarRaceVisual implements IVisual {
     return typeof locale === 'string' && locale.length > 0 ? locale : undefined;
   }
 
-  // Render lifecycle notifications removed — Power BI's eventService.renderingStarted()
-  // requires VisualUpdateOptions with updateId, and calling without args crashes the visual.
-
   private handleBackgroundClick = (): void => {
+    if (!allowInteractions(this.host)) return;
     void this.selectionManager.clear();
     this.applySelectionHighlight();
+  };
+
+  private handleBackgroundContextMenu = (event: MouseEvent): void => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!allowInteractions(this.host)) return;
+    void this.selectionManager.showContextMenu({} as powerbi.visuals.ISelectionId, {
+      x: event.clientX,
+      y: event.clientY,
+    });
   };
 
   // ── Selection & Cross-Highlight ─────────────────────────────────
@@ -1485,25 +1539,59 @@ export class BarRaceVisual implements IVisual {
     }
 
     const hasHighlights = this.raceData.hasHighlights;
-    const highlightedCategories = this.raceData.highlightedCategories;
+    const currentPeriod = this.raceData.timePeriods[this.currentTimeIndex];
+    const currentItems = currentPeriod === undefined
+      ? []
+      : (this.raceData.frames.get(currentPeriod) ?? []);
+    const highlightedCategories = new Set(
+      currentItems.filter((item) => item.highlighted).map((item) => item.name),
+    );
+    const baseOpacity = Math.max(
+      0,
+      Math.min(100, this.settings.raceSettings.barOpacity.value),
+    ) / 100;
 
     const bars = this.container.querySelectorAll<HTMLElement>('.bar-race-bar');
     const shouldDim = hasSelection || hasHighlights;
 
     for (const el of bars) {
-      // Skip hidden bars (opacity 0 means the bar is not in the current frame)
-      if (el.style.opacity === '0') continue;
+      if (el.dataset['visible'] !== 'true') {
+        el.style.opacity = '0';
+        continue;
+      }
 
       if (shouldDim) {
         const catName = el.getAttribute('data-cat');
         const isSelected = hasSelection && catName !== null && selectedKeys.has(catName);
         const isHighlighted = hasHighlights && catName !== null && highlightedCategories.has(catName);
-        el.style.opacity = (isSelected || isHighlighted) ? '1' : '0.3';
+        el.style.opacity = String(
+          (isSelected || isHighlighted) ? baseOpacity : baseOpacity * 0.3,
+        );
       } else {
-        // Restore to '1' for visible bars (hidden ones stay at '0')
-        el.style.opacity = '1';
+        el.style.opacity = String(baseOpacity);
       }
     }
+  }
+
+  private applyHighContrast(): void {
+    applyBasicHighContrastStyles(this.container, getHostHighContrastColors(this.host), {
+      textSelectors: [
+        '.bar-race-empty',
+        '.chart-title',
+        '.chart-subtitle',
+        '.bar-race-label',
+        '.bar-race-value',
+        '.bar-race-time',
+        '.bar-race-controls',
+        '.bar-race-controls button',
+        '.bar-race-controls select',
+        '.pbi-shared-legend span',
+        '.bar-race-svg-overlay text',
+      ],
+      lineSelectors: ['.bar-race-svg-overlay line', '.bar-race-svg-overlay path'],
+      fillSelectors: ['.bar-race-bar'],
+      strokeSelectors: [],
+    });
   }
 
   // ── Destroy ───────────────────────────────────────────────────────
@@ -1512,6 +1600,7 @@ export class BarRaceVisual implements IVisual {
     this.cleanup();
     this.hideTooltip();
     this.container.removeEventListener('click', this.handleBackgroundClick);
+    this.container.removeEventListener('contextmenu', this.handleBackgroundContextMenu);
     this.clearContainer();
     this.barElements.clear();
     this.labelElements.clear();

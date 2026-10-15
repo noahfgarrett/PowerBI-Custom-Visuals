@@ -1,0 +1,1655 @@
+{
+  "date": "2026-10-09",
+  "version": "1.4.0.0",
+  "syntheticOnly": true,
+  "focusedTests": {
+    "passed": 137,
+    "visualTests": 64,
+    "skippedOptInScaleTests": 3
+  },
+  "repositoryVerificationFromRoot": {
+    "typecheck": "passed",
+    "testsPassed": 898,
+    "files": 82,
+    "skippedOptInScaleTests": 3
+  },
+  "source": {
+    "light": {
+      "parent": {
+        "key": "[\"equipment\",\"East Plant\",\"AHU-101\"]",
+        "role": "member",
+        "box": {
+          "x": 398.5416564941406,
+          "y": 212.69444274902344,
+          "width": 151.73611450195312,
+          "height": 51.11109924316406,
+          "top": 212.69444274902344,
+          "right": 550.2777709960938,
+          "bottom": 263.8055419921875,
+          "left": 398.5416564941406
+        },
+        "worldX": 32,
+        "worldY": 258,
+        "worldWidth": 190,
+        "color": "rgb(36, 49, 60)",
+        "background": "rgb(255, 255, 255)",
+        "matched": false,
+        "selected": false,
+        "branch": "[\"l2\",\"East Plant\",\"Airside ready\"]"
+      },
+      "source": {
+        "key": "[\"equipment\",\"East Plant\",\"FAN-101\"]",
+        "role": "member",
+        "box": {
+          "x": 409.72222900390625,
+          "y": 452.27777099609375,
+          "width": 140.5555419921875,
+          "height": 51.111114501953125,
+          "top": 452.27777099609375,
+          "right": 550.2777709960938,
+          "bottom": 503.3888854980469,
+          "left": 409.72222900390625
+        },
+        "worldX": 46,
+        "worldY": 558,
+        "worldWidth": 176,
+        "color": "rgb(255, 255, 255)",
+        "background": "rgb(36, 61, 73)",
+        "matched": false,
+        "selected": true,
+        "branch": "[\"l2\",\"East Plant\",\"Airside ready\"]"
+      },
+      "motor": {
+        "key": "[\"equipment\",\"East Plant\",\"MOTOR-101\"]",
+        "role": "member",
+        "box": {
+          "x": 420.90277099609375,
+          "y": 551.3055419921875,
+          "width": 129.375,
+          "height": 51.111083984375,
+          "top": 551.3055419921875,
+          "right": 550.2777709960938,
+          "bottom": 602.4166259765625,
+          "left": 420.90277099609375
+        },
+        "worldX": 60,
+        "worldY": 682,
+        "worldWidth": 162,
+        "color": "rgb(36, 49, 60)",
+        "background": "rgb(255, 255, 255)",
+        "matched": true,
+        "selected": false,
+        "badge": "Match",
+        "branch": "[\"l2\",\"East Plant\",\"Airside ready\"]"
+      },
+      "dependencies": [
+        {
+          "key": "[\"equipment\",\"East Plant\",\"DB-101\"]",
+          "role": "dependency",
+          "box": {
+            "x": 588.611083984375,
+            "y": 501.7916564941406,
+            "width": 151.73614501953125,
+            "height": 51.111114501953125,
+            "top": 501.7916564941406,
+            "right": 740.3472290039062,
+            "bottom": 552.9027709960938,
+            "left": 588.611083984375
+          },
+          "worldX": 270,
+          "worldY": 620,
+          "worldWidth": 190,
+          "color": "rgb(36, 49, 60)",
+          "background": "rgb(245, 247, 248)",
+          "matched": true,
+          "selected": false,
+          "badge": "Match"
+        },
+        {
+          "key": "[\"equipment\",\"East Plant\",\"CWP-101\"]",
+          "role": "dependency",
+          "box": {
+            "x": 588.611083984375,
+            "y": 600.8194580078125,
+            "width": 151.73614501953125,
+            "height": 51.111083984375,
+            "top": 600.8194580078125,
+            "right": 740.3472290039062,
+            "bottom": 651.9305419921875,
+            "left": 588.611083984375
+          },
+          "worldX": 270,
+          "worldY": 744,
+          "worldWidth": 190,
+          "color": "rgb(36, 49, 60)",
+          "background": "rgb(245, 247, 248)",
+          "matched": false,
+          "selected": false
+        }
+      ],
+      "connectors": [
+        {
+          "target": "[\"equipment\",\"East Plant\",\"DB-101\"]",
+          "path": "M222,590 C246,590 246,652 270,652"
+        },
+        {
+          "target": "[\"equipment\",\"East Plant\",\"CWP-101\"]",
+          "path": "M222,590 C246,590 246,776 270,776"
+        }
+      ],
+      "controlWidths": [
+        {
+          "action": "equipment-children",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 162,
+          "scrollWidth": 162
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        }
+      ],
+      "mounted": 10,
+      "count": "5 direct · 2 related · 10/21 nodes",
+      "highlighted": "2 matches shown",
+      "renderFailures": []
+    },
+    "dark": {
+      "parent": {
+        "key": "[\"equipment\",\"East Plant\",\"AHU-101\"]",
+        "role": "member",
+        "box": {
+          "x": 398.5416564941406,
+          "y": 212.69444274902344,
+          "width": 151.73611450195312,
+          "height": 51.11109924316406,
+          "top": 212.69444274902344,
+          "right": 550.2777709960938,
+          "bottom": 263.8055419921875,
+          "left": 398.5416564941406
+        },
+        "worldX": 32,
+        "worldY": 258,
+        "worldWidth": 190,
+        "color": "rgb(230, 237, 243)",
+        "background": "rgb(27, 32, 38)",
+        "matched": false,
+        "selected": false,
+        "branch": "[\"l2\",\"East Plant\",\"Airside ready\"]"
+      },
+      "source": {
+        "key": "[\"equipment\",\"East Plant\",\"FAN-101\"]",
+        "role": "member",
+        "box": {
+          "x": 409.72222900390625,
+          "y": 452.27777099609375,
+          "width": 140.5555419921875,
+          "height": 51.111114501953125,
+          "top": 452.27777099609375,
+          "right": 550.2777709960938,
+          "bottom": 503.3888854980469,
+          "left": 409.72222900390625
+        },
+        "worldX": 46,
+        "worldY": 558,
+        "worldWidth": 176,
+        "color": "rgb(27, 32, 38)",
+        "background": "rgb(214, 231, 235)",
+        "matched": false,
+        "selected": true,
+        "branch": "[\"l2\",\"East Plant\",\"Airside ready\"]"
+      },
+      "motor": {
+        "key": "[\"equipment\",\"East Plant\",\"MOTOR-101\"]",
+        "role": "member",
+        "box": {
+          "x": 420.90277099609375,
+          "y": 551.3055419921875,
+          "width": 129.375,
+          "height": 51.111083984375,
+          "top": 551.3055419921875,
+          "right": 550.2777709960938,
+          "bottom": 602.4166259765625,
+          "left": 420.90277099609375
+        },
+        "worldX": 60,
+        "worldY": 682,
+        "worldWidth": 162,
+        "color": "rgb(230, 237, 243)",
+        "background": "rgb(27, 32, 38)",
+        "matched": true,
+        "selected": false,
+        "badge": "Match",
+        "branch": "[\"l2\",\"East Plant\",\"Airside ready\"]"
+      },
+      "dependencies": [
+        {
+          "key": "[\"equipment\",\"East Plant\",\"DB-101\"]",
+          "role": "dependency",
+          "box": {
+            "x": 588.611083984375,
+            "y": 501.7916564941406,
+            "width": 151.73614501953125,
+            "height": 51.111114501953125,
+            "top": 501.7916564941406,
+            "right": 740.3472290039062,
+            "bottom": 552.9027709960938,
+            "left": 588.611083984375
+          },
+          "worldX": 270,
+          "worldY": 620,
+          "worldWidth": 190,
+          "color": "rgb(230, 237, 243)",
+          "background": "rgb(37, 44, 52)",
+          "matched": true,
+          "selected": false,
+          "badge": "Match"
+        },
+        {
+          "key": "[\"equipment\",\"East Plant\",\"CWP-101\"]",
+          "role": "dependency",
+          "box": {
+            "x": 588.611083984375,
+            "y": 600.8194580078125,
+            "width": 151.73614501953125,
+            "height": 51.111083984375,
+            "top": 600.8194580078125,
+            "right": 740.3472290039062,
+            "bottom": 651.9305419921875,
+            "left": 588.611083984375
+          },
+          "worldX": 270,
+          "worldY": 744,
+          "worldWidth": 190,
+          "color": "rgb(230, 237, 243)",
+          "background": "rgb(37, 44, 52)",
+          "matched": false,
+          "selected": false
+        }
+      ],
+      "connectors": [
+        {
+          "target": "[\"equipment\",\"East Plant\",\"DB-101\"]",
+          "path": "M222,590 C246,590 246,652 270,652"
+        },
+        {
+          "target": "[\"equipment\",\"East Plant\",\"CWP-101\"]",
+          "path": "M222,590 C246,590 246,776 270,776"
+        }
+      ],
+      "controlWidths": [
+        {
+          "action": "equipment-children",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 162,
+          "scrollWidth": 162
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        }
+      ],
+      "mounted": 10,
+      "count": "5 direct · 2 related · 10/21 nodes",
+      "highlighted": "2 matches shown",
+      "renderFailures": []
+    },
+    "status": {
+      "parent": {
+        "key": "[\"equipment\",\"East Plant\",\"AHU-101\"]",
+        "role": "member",
+        "box": {
+          "x": 398.5416564941406,
+          "y": 212.69444274902344,
+          "width": 151.73611450195312,
+          "height": 51.11109924316406,
+          "top": 212.69444274902344,
+          "right": 550.2777709960938,
+          "bottom": 263.8055419921875,
+          "left": 398.5416564941406
+        },
+        "worldX": 32,
+        "worldY": 258,
+        "worldWidth": 190,
+        "color": "rgb(36, 49, 60)",
+        "background": "rgb(255, 255, 255)",
+        "matched": false,
+        "selected": false,
+        "branch": "[\"l2\",\"East Plant\",\"Airside ready\"]"
+      },
+      "source": {
+        "key": "[\"equipment\",\"East Plant\",\"FAN-101\"]",
+        "role": "member",
+        "box": {
+          "x": 409.72222900390625,
+          "y": 452.27777099609375,
+          "width": 140.5555419921875,
+          "height": 51.111114501953125,
+          "top": 452.27777099609375,
+          "right": 550.2777709960938,
+          "bottom": 503.3888854980469,
+          "left": 409.72222900390625
+        },
+        "worldX": 46,
+        "worldY": 558,
+        "worldWidth": 176,
+        "color": "rgb(255, 255, 255)",
+        "background": "rgb(36, 61, 73)",
+        "matched": true,
+        "selected": true,
+        "badge": "Match",
+        "branch": "[\"l2\",\"East Plant\",\"Airside ready\"]"
+      },
+      "motor": {
+        "key": "[\"equipment\",\"East Plant\",\"MOTOR-101\"]",
+        "role": "member",
+        "box": {
+          "x": 420.90277099609375,
+          "y": 551.3055419921875,
+          "width": 129.375,
+          "height": 51.111083984375,
+          "top": 551.3055419921875,
+          "right": 550.2777709960938,
+          "bottom": 602.4166259765625,
+          "left": 420.90277099609375
+        },
+        "worldX": 60,
+        "worldY": 682,
+        "worldWidth": 162,
+        "color": "rgb(36, 49, 60)",
+        "background": "rgb(255, 255, 255)",
+        "matched": true,
+        "selected": false,
+        "badge": "Match",
+        "branch": "[\"l2\",\"East Plant\",\"Airside ready\"]"
+      },
+      "dependencies": [
+        {
+          "key": "[\"equipment\",\"East Plant\",\"DB-101\"]",
+          "role": "dependency",
+          "box": {
+            "x": 588.611083984375,
+            "y": 501.7916564941406,
+            "width": 151.73614501953125,
+            "height": 51.111114501953125,
+            "top": 501.7916564941406,
+            "right": 740.3472290039062,
+            "bottom": 552.9027709960938,
+            "left": 588.611083984375
+          },
+          "worldX": 270,
+          "worldY": 620,
+          "worldWidth": 190,
+          "color": "rgb(36, 49, 60)",
+          "background": "rgb(245, 247, 248)",
+          "matched": true,
+          "selected": false,
+          "badge": "Match"
+        },
+        {
+          "key": "[\"equipment\",\"East Plant\",\"CWP-101\"]",
+          "role": "dependency",
+          "box": {
+            "x": 588.611083984375,
+            "y": 600.8194580078125,
+            "width": 151.73614501953125,
+            "height": 51.111083984375,
+            "top": 600.8194580078125,
+            "right": 740.3472290039062,
+            "bottom": 651.9305419921875,
+            "left": 588.611083984375
+          },
+          "worldX": 270,
+          "worldY": 744,
+          "worldWidth": 190,
+          "color": "rgb(36, 49, 60)",
+          "background": "rgb(245, 247, 248)",
+          "matched": false,
+          "selected": false
+        }
+      ],
+      "connectors": [
+        {
+          "target": "[\"equipment\",\"East Plant\",\"DB-101\"]",
+          "path": "M222,590 C246,590 246,652 270,652"
+        },
+        {
+          "target": "[\"equipment\",\"East Plant\",\"CWP-101\"]",
+          "path": "M222,590 C246,590 246,776 270,776"
+        }
+      ],
+      "controlWidths": [
+        {
+          "action": "equipment-children",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 162,
+          "scrollWidth": 162
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        }
+      ],
+      "mounted": 10,
+      "count": "5 direct · 2 related · 10/21 nodes",
+      "highlighted": "3 matches shown",
+      "renderFailures": []
+    },
+    "highContrast": {
+      "parent": {
+        "key": "[\"equipment\",\"East Plant\",\"AHU-101\"]",
+        "role": "member",
+        "box": {
+          "x": 398.5416564941406,
+          "y": 212.69444274902344,
+          "width": 151.73611450195312,
+          "height": 51.11109924316406,
+          "top": 212.69444274902344,
+          "right": 550.2777709960938,
+          "bottom": 263.8055419921875,
+          "left": 398.5416564941406
+        },
+        "worldX": 32,
+        "worldY": 258,
+        "worldWidth": 190,
+        "color": "rgb(255, 255, 0)",
+        "background": "rgb(0, 0, 0)",
+        "matched": false,
+        "selected": false,
+        "branch": "[\"l2\",\"East Plant\",\"Airside ready\"]"
+      },
+      "source": {
+        "key": "[\"equipment\",\"East Plant\",\"FAN-101\"]",
+        "role": "member",
+        "box": {
+          "x": 409.72222900390625,
+          "y": 452.27777099609375,
+          "width": 140.5555419921875,
+          "height": 51.111114501953125,
+          "top": 452.27777099609375,
+          "right": 550.2777709960938,
+          "bottom": 503.3888854980469,
+          "left": 409.72222900390625
+        },
+        "worldX": 46,
+        "worldY": 558,
+        "worldWidth": 176,
+        "color": "rgb(0, 0, 0)",
+        "background": "rgb(255, 255, 0)",
+        "matched": false,
+        "selected": true,
+        "branch": "[\"l2\",\"East Plant\",\"Airside ready\"]"
+      },
+      "motor": {
+        "key": "[\"equipment\",\"East Plant\",\"MOTOR-101\"]",
+        "role": "member",
+        "box": {
+          "x": 420.90277099609375,
+          "y": 551.3055419921875,
+          "width": 129.375,
+          "height": 51.111083984375,
+          "top": 551.3055419921875,
+          "right": 550.2777709960938,
+          "bottom": 602.4166259765625,
+          "left": 420.90277099609375
+        },
+        "worldX": 60,
+        "worldY": 682,
+        "worldWidth": 162,
+        "color": "rgb(255, 255, 0)",
+        "background": "rgb(0, 0, 0)",
+        "matched": true,
+        "selected": false,
+        "badge": "Match",
+        "branch": "[\"l2\",\"East Plant\",\"Airside ready\"]"
+      },
+      "dependencies": [
+        {
+          "key": "[\"equipment\",\"East Plant\",\"DB-101\"]",
+          "role": "dependency",
+          "box": {
+            "x": 588.611083984375,
+            "y": 501.7916564941406,
+            "width": 151.73614501953125,
+            "height": 51.111114501953125,
+            "top": 501.7916564941406,
+            "right": 740.3472290039062,
+            "bottom": 552.9027709960938,
+            "left": 588.611083984375
+          },
+          "worldX": 270,
+          "worldY": 620,
+          "worldWidth": 190,
+          "color": "rgb(255, 255, 0)",
+          "background": "rgb(0, 0, 0)",
+          "matched": true,
+          "selected": false,
+          "badge": "Match"
+        },
+        {
+          "key": "[\"equipment\",\"East Plant\",\"CWP-101\"]",
+          "role": "dependency",
+          "box": {
+            "x": 588.611083984375,
+            "y": 600.8194580078125,
+            "width": 151.73614501953125,
+            "height": 51.111083984375,
+            "top": 600.8194580078125,
+            "right": 740.3472290039062,
+            "bottom": 651.9305419921875,
+            "left": 588.611083984375
+          },
+          "worldX": 270,
+          "worldY": 744,
+          "worldWidth": 190,
+          "color": "rgb(255, 255, 0)",
+          "background": "rgb(0, 0, 0)",
+          "matched": false,
+          "selected": false
+        }
+      ],
+      "connectors": [
+        {
+          "target": "[\"equipment\",\"East Plant\",\"DB-101\"]",
+          "path": "M222,590 C246,590 246,652 270,652"
+        },
+        {
+          "target": "[\"equipment\",\"East Plant\",\"CWP-101\"]",
+          "path": "M222,590 C246,590 246,776 270,776"
+        }
+      ],
+      "controlWidths": [
+        {
+          "action": "equipment-children",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 162,
+          "scrollWidth": 162
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        }
+      ],
+      "mounted": 10,
+      "count": "5 direct · 2 related · 10/21 nodes",
+      "highlighted": "2 matches shown",
+      "renderFailures": []
+    },
+    "tooltip": {
+      "hidden": false,
+      "box": {
+        "x": 542,
+        "y": 112,
+        "width": 260,
+        "height": 53.59375,
+        "top": 112,
+        "right": 802,
+        "bottom": 165.59375,
+        "left": 542
+      },
+      "text": "Emphasize matching equipment without hiding the surrounding equipment.",
+      "pointerEvents": "none"
+    },
+    "failures": [],
+    "powerBiHost": false
+  },
+  "compiled": {
+    "light": {
+      "parent": {
+        "key": "[\"equipment\",\"East Plant\",\"AHU-101\"]",
+        "role": "member",
+        "box": {
+          "x": 398.5416564941406,
+          "y": 189.69444274902344,
+          "width": 151.73611450195312,
+          "height": 51.11109924316406,
+          "top": 189.69444274902344,
+          "right": 550.2777709960938,
+          "bottom": 240.8055419921875,
+          "left": 398.5416564941406
+        },
+        "worldX": 32,
+        "worldY": 258,
+        "worldWidth": 190,
+        "color": "rgb(36, 49, 60)",
+        "background": "rgb(255, 255, 255)",
+        "matched": false,
+        "selected": false,
+        "branch": "[\"l2\",\"East Plant\",\"Airside ready\"]"
+      },
+      "source": {
+        "key": "[\"equipment\",\"East Plant\",\"FAN-101\"]",
+        "role": "member",
+        "box": {
+          "x": 409.72222900390625,
+          "y": 429.27777099609375,
+          "width": 140.5555419921875,
+          "height": 51.111114501953125,
+          "top": 429.27777099609375,
+          "right": 550.2777709960938,
+          "bottom": 480.3888854980469,
+          "left": 409.72222900390625
+        },
+        "worldX": 46,
+        "worldY": 558,
+        "worldWidth": 176,
+        "color": "rgb(255, 255, 255)",
+        "background": "rgb(36, 61, 73)",
+        "matched": false,
+        "selected": true,
+        "branch": "[\"l2\",\"East Plant\",\"Airside ready\"]"
+      },
+      "motor": {
+        "key": "[\"equipment\",\"East Plant\",\"MOTOR-101\"]",
+        "role": "member",
+        "box": {
+          "x": 420.90277099609375,
+          "y": 528.3055419921875,
+          "width": 129.375,
+          "height": 51.111083984375,
+          "top": 528.3055419921875,
+          "right": 550.2777709960938,
+          "bottom": 579.4166259765625,
+          "left": 420.90277099609375
+        },
+        "worldX": 60,
+        "worldY": 682,
+        "worldWidth": 162,
+        "color": "rgb(36, 49, 60)",
+        "background": "rgb(255, 255, 255)",
+        "matched": true,
+        "selected": false,
+        "badge": "Match",
+        "branch": "[\"l2\",\"East Plant\",\"Airside ready\"]"
+      },
+      "dependencies": [
+        {
+          "key": "[\"equipment\",\"East Plant\",\"DB-101\"]",
+          "role": "dependency",
+          "box": {
+            "x": 588.611083984375,
+            "y": 478.7916564941406,
+            "width": 151.73614501953125,
+            "height": 51.111114501953125,
+            "top": 478.7916564941406,
+            "right": 740.3472290039062,
+            "bottom": 529.9027709960938,
+            "left": 588.611083984375
+          },
+          "worldX": 270,
+          "worldY": 620,
+          "worldWidth": 190,
+          "color": "rgb(36, 49, 60)",
+          "background": "rgb(245, 247, 248)",
+          "matched": true,
+          "selected": false,
+          "badge": "Match"
+        },
+        {
+          "key": "[\"equipment\",\"East Plant\",\"CWP-101\"]",
+          "role": "dependency",
+          "box": {
+            "x": 588.611083984375,
+            "y": 577.8194580078125,
+            "width": 151.73614501953125,
+            "height": 51.111083984375,
+            "top": 577.8194580078125,
+            "right": 740.3472290039062,
+            "bottom": 628.9305419921875,
+            "left": 588.611083984375
+          },
+          "worldX": 270,
+          "worldY": 744,
+          "worldWidth": 190,
+          "color": "rgb(36, 49, 60)",
+          "background": "rgb(245, 247, 248)",
+          "matched": false,
+          "selected": false
+        }
+      ],
+      "connectors": [
+        {
+          "target": "[\"equipment\",\"East Plant\",\"DB-101\"]",
+          "path": "M222,590 C246,590 246,652 270,652"
+        },
+        {
+          "target": "[\"equipment\",\"East Plant\",\"CWP-101\"]",
+          "path": "M222,590 C246,590 246,776 270,776"
+        }
+      ],
+      "controlWidths": [
+        {
+          "action": "equipment-children",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 162,
+          "scrollWidth": 162
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        }
+      ],
+      "mounted": 10,
+      "count": "5 direct · 2 related · 10/21 nodes",
+      "highlighted": "2 matches shown",
+      "renderFailures": []
+    },
+    "dark": {
+      "parent": {
+        "key": "[\"equipment\",\"East Plant\",\"AHU-101\"]",
+        "role": "member",
+        "box": {
+          "x": 398.5416564941406,
+          "y": 189.69444274902344,
+          "width": 151.73611450195312,
+          "height": 51.11109924316406,
+          "top": 189.69444274902344,
+          "right": 550.2777709960938,
+          "bottom": 240.8055419921875,
+          "left": 398.5416564941406
+        },
+        "worldX": 32,
+        "worldY": 258,
+        "worldWidth": 190,
+        "color": "rgb(230, 237, 243)",
+        "background": "rgb(27, 32, 38)",
+        "matched": false,
+        "selected": false,
+        "branch": "[\"l2\",\"East Plant\",\"Airside ready\"]"
+      },
+      "source": {
+        "key": "[\"equipment\",\"East Plant\",\"FAN-101\"]",
+        "role": "member",
+        "box": {
+          "x": 409.72222900390625,
+          "y": 429.27777099609375,
+          "width": 140.5555419921875,
+          "height": 51.111114501953125,
+          "top": 429.27777099609375,
+          "right": 550.2777709960938,
+          "bottom": 480.3888854980469,
+          "left": 409.72222900390625
+        },
+        "worldX": 46,
+        "worldY": 558,
+        "worldWidth": 176,
+        "color": "rgb(27, 32, 38)",
+        "background": "rgb(214, 231, 235)",
+        "matched": false,
+        "selected": true,
+        "branch": "[\"l2\",\"East Plant\",\"Airside ready\"]"
+      },
+      "motor": {
+        "key": "[\"equipment\",\"East Plant\",\"MOTOR-101\"]",
+        "role": "member",
+        "box": {
+          "x": 420.90277099609375,
+          "y": 528.3055419921875,
+          "width": 129.375,
+          "height": 51.111083984375,
+          "top": 528.3055419921875,
+          "right": 550.2777709960938,
+          "bottom": 579.4166259765625,
+          "left": 420.90277099609375
+        },
+        "worldX": 60,
+        "worldY": 682,
+        "worldWidth": 162,
+        "color": "rgb(230, 237, 243)",
+        "background": "rgb(27, 32, 38)",
+        "matched": true,
+        "selected": false,
+        "badge": "Match",
+        "branch": "[\"l2\",\"East Plant\",\"Airside ready\"]"
+      },
+      "dependencies": [
+        {
+          "key": "[\"equipment\",\"East Plant\",\"DB-101\"]",
+          "role": "dependency",
+          "box": {
+            "x": 588.611083984375,
+            "y": 478.7916564941406,
+            "width": 151.73614501953125,
+            "height": 51.111114501953125,
+            "top": 478.7916564941406,
+            "right": 740.3472290039062,
+            "bottom": 529.9027709960938,
+            "left": 588.611083984375
+          },
+          "worldX": 270,
+          "worldY": 620,
+          "worldWidth": 190,
+          "color": "rgb(230, 237, 243)",
+          "background": "rgb(37, 44, 52)",
+          "matched": true,
+          "selected": false,
+          "badge": "Match"
+        },
+        {
+          "key": "[\"equipment\",\"East Plant\",\"CWP-101\"]",
+          "role": "dependency",
+          "box": {
+            "x": 588.611083984375,
+            "y": 577.8194580078125,
+            "width": 151.73614501953125,
+            "height": 51.111083984375,
+            "top": 577.8194580078125,
+            "right": 740.3472290039062,
+            "bottom": 628.9305419921875,
+            "left": 588.611083984375
+          },
+          "worldX": 270,
+          "worldY": 744,
+          "worldWidth": 190,
+          "color": "rgb(230, 237, 243)",
+          "background": "rgb(37, 44, 52)",
+          "matched": false,
+          "selected": false
+        }
+      ],
+      "connectors": [
+        {
+          "target": "[\"equipment\",\"East Plant\",\"DB-101\"]",
+          "path": "M222,590 C246,590 246,652 270,652"
+        },
+        {
+          "target": "[\"equipment\",\"East Plant\",\"CWP-101\"]",
+          "path": "M222,590 C246,590 246,776 270,776"
+        }
+      ],
+      "controlWidths": [
+        {
+          "action": "equipment-children",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 162,
+          "scrollWidth": 162
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        }
+      ],
+      "mounted": 10,
+      "count": "5 direct · 2 related · 10/21 nodes",
+      "highlighted": "2 matches shown",
+      "renderFailures": []
+    },
+    "status": {
+      "parent": {
+        "key": "[\"equipment\",\"East Plant\",\"AHU-101\"]",
+        "role": "member",
+        "box": {
+          "x": 398.5416564941406,
+          "y": 189.69444274902344,
+          "width": 151.73611450195312,
+          "height": 51.11109924316406,
+          "top": 189.69444274902344,
+          "right": 550.2777709960938,
+          "bottom": 240.8055419921875,
+          "left": 398.5416564941406
+        },
+        "worldX": 32,
+        "worldY": 258,
+        "worldWidth": 190,
+        "color": "rgb(36, 49, 60)",
+        "background": "rgb(255, 255, 255)",
+        "matched": false,
+        "selected": false,
+        "branch": "[\"l2\",\"East Plant\",\"Airside ready\"]"
+      },
+      "source": {
+        "key": "[\"equipment\",\"East Plant\",\"FAN-101\"]",
+        "role": "member",
+        "box": {
+          "x": 409.72222900390625,
+          "y": 429.27777099609375,
+          "width": 140.5555419921875,
+          "height": 51.111114501953125,
+          "top": 429.27777099609375,
+          "right": 550.2777709960938,
+          "bottom": 480.3888854980469,
+          "left": 409.72222900390625
+        },
+        "worldX": 46,
+        "worldY": 558,
+        "worldWidth": 176,
+        "color": "rgb(255, 255, 255)",
+        "background": "rgb(36, 61, 73)",
+        "matched": true,
+        "selected": true,
+        "badge": "Match",
+        "branch": "[\"l2\",\"East Plant\",\"Airside ready\"]"
+      },
+      "motor": {
+        "key": "[\"equipment\",\"East Plant\",\"MOTOR-101\"]",
+        "role": "member",
+        "box": {
+          "x": 420.90277099609375,
+          "y": 528.3055419921875,
+          "width": 129.375,
+          "height": 51.111083984375,
+          "top": 528.3055419921875,
+          "right": 550.2777709960938,
+          "bottom": 579.4166259765625,
+          "left": 420.90277099609375
+        },
+        "worldX": 60,
+        "worldY": 682,
+        "worldWidth": 162,
+        "color": "rgb(36, 49, 60)",
+        "background": "rgb(255, 255, 255)",
+        "matched": true,
+        "selected": false,
+        "badge": "Match",
+        "branch": "[\"l2\",\"East Plant\",\"Airside ready\"]"
+      },
+      "dependencies": [
+        {
+          "key": "[\"equipment\",\"East Plant\",\"DB-101\"]",
+          "role": "dependency",
+          "box": {
+            "x": 588.611083984375,
+            "y": 478.7916564941406,
+            "width": 151.73614501953125,
+            "height": 51.111114501953125,
+            "top": 478.7916564941406,
+            "right": 740.3472290039062,
+            "bottom": 529.9027709960938,
+            "left": 588.611083984375
+          },
+          "worldX": 270,
+          "worldY": 620,
+          "worldWidth": 190,
+          "color": "rgb(36, 49, 60)",
+          "background": "rgb(245, 247, 248)",
+          "matched": true,
+          "selected": false,
+          "badge": "Match"
+        },
+        {
+          "key": "[\"equipment\",\"East Plant\",\"CWP-101\"]",
+          "role": "dependency",
+          "box": {
+            "x": 588.611083984375,
+            "y": 577.8194580078125,
+            "width": 151.73614501953125,
+            "height": 51.111083984375,
+            "top": 577.8194580078125,
+            "right": 740.3472290039062,
+            "bottom": 628.9305419921875,
+            "left": 588.611083984375
+          },
+          "worldX": 270,
+          "worldY": 744,
+          "worldWidth": 190,
+          "color": "rgb(36, 49, 60)",
+          "background": "rgb(245, 247, 248)",
+          "matched": false,
+          "selected": false
+        }
+      ],
+      "connectors": [
+        {
+          "target": "[\"equipment\",\"East Plant\",\"DB-101\"]",
+          "path": "M222,590 C246,590 246,652 270,652"
+        },
+        {
+          "target": "[\"equipment\",\"East Plant\",\"CWP-101\"]",
+          "path": "M222,590 C246,590 246,776 270,776"
+        }
+      ],
+      "controlWidths": [
+        {
+          "action": "equipment-children",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 162,
+          "scrollWidth": 162
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        }
+      ],
+      "mounted": 10,
+      "count": "5 direct · 2 related · 10/21 nodes",
+      "highlighted": "3 matches shown",
+      "renderFailures": []
+    },
+    "highContrast": {
+      "parent": {
+        "key": "[\"equipment\",\"East Plant\",\"AHU-101\"]",
+        "role": "member",
+        "box": {
+          "x": 362.6999816894531,
+          "y": 64.5999755859375,
+          "width": 218.49996948242188,
+          "height": 73.60000610351562,
+          "top": 64.5999755859375,
+          "right": 581.199951171875,
+          "bottom": 138.19998168945312,
+          "left": 362.6999816894531
+        },
+        "worldX": 32,
+        "worldY": 258,
+        "worldWidth": 190,
+        "color": "rgb(255, 255, 0)",
+        "background": "rgb(0, 0, 0)",
+        "matched": false,
+        "selected": false,
+        "branch": "[\"l2\",\"East Plant\",\"Airside ready\"]"
+      },
+      "source": {
+        "key": "[\"equipment\",\"East Plant\",\"FAN-101\"]",
+        "role": "member",
+        "box": {
+          "x": 378.79998779296875,
+          "y": 409.6000061035156,
+          "width": 202.39996337890625,
+          "height": 73.5999755859375,
+          "top": 409.6000061035156,
+          "right": 581.199951171875,
+          "bottom": 483.1999816894531,
+          "left": 378.79998779296875
+        },
+        "worldX": 46,
+        "worldY": 558,
+        "worldWidth": 176,
+        "color": "rgb(0, 0, 0)",
+        "background": "rgb(255, 255, 0)",
+        "matched": false,
+        "selected": true,
+        "branch": "[\"l2\",\"East Plant\",\"Airside ready\"]"
+      },
+      "motor": {
+        "key": "[\"equipment\",\"East Plant\",\"MOTOR-101\"]",
+        "role": "member",
+        "box": {
+          "x": 394.8999938964844,
+          "y": 552.199951171875,
+          "width": 186.29995727539062,
+          "height": 73.5999755859375,
+          "top": 552.199951171875,
+          "right": 581.199951171875,
+          "bottom": 625.7999267578125,
+          "left": 394.8999938964844
+        },
+        "worldX": 60,
+        "worldY": 682,
+        "worldWidth": 162,
+        "color": "rgb(255, 255, 0)",
+        "background": "rgb(0, 0, 0)",
+        "matched": false,
+        "selected": false,
+        "branch": "[\"l2\",\"East Plant\",\"Airside ready\"]"
+      },
+      "dependencies": [
+        {
+          "key": "[\"equipment\",\"East Plant\",\"DB-101\"]",
+          "role": "dependency",
+          "box": {
+            "x": 636.4000244140625,
+            "y": 480.8999938964844,
+            "width": 218.5,
+            "height": 73.60000610351562,
+            "top": 480.8999938964844,
+            "right": 854.9000244140625,
+            "bottom": 554.5,
+            "left": 636.4000244140625
+          },
+          "worldX": 270,
+          "worldY": 620,
+          "worldWidth": 190,
+          "color": "rgb(255, 255, 0)",
+          "background": "rgb(0, 0, 0)",
+          "matched": false,
+          "selected": false
+        },
+        {
+          "key": "[\"equipment\",\"East Plant\",\"CWP-101\"]",
+          "role": "dependency",
+          "box": {
+            "x": 636.4000244140625,
+            "y": 623.5,
+            "width": 218.5,
+            "height": 73.5999755859375,
+            "top": 623.5,
+            "right": 854.9000244140625,
+            "bottom": 697.0999755859375,
+            "left": 636.4000244140625
+          },
+          "worldX": 270,
+          "worldY": 744,
+          "worldWidth": 190,
+          "color": "rgb(255, 255, 0)",
+          "background": "rgb(0, 0, 0)",
+          "matched": false,
+          "selected": false
+        }
+      ],
+      "connectors": [
+        {
+          "target": "[\"equipment\",\"East Plant\",\"DB-101\"]",
+          "path": "M222,590 C246,590 246,652 270,652"
+        },
+        {
+          "target": "[\"equipment\",\"East Plant\",\"CWP-101\"]",
+          "path": "M222,590 C246,590 246,776 270,776"
+        }
+      ],
+      "controlWidths": [
+        {
+          "action": "equipment-children",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 162,
+          "scrollWidth": 162
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "equipment-children",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 176,
+          "scrollWidth": 176
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        },
+        {
+          "action": "quick-dependencies",
+          "clientWidth": 190,
+          "scrollWidth": 190
+        }
+      ],
+      "mounted": 8,
+      "count": "5 direct · 2 related · 8/21 nodes",
+      "highlighted": "0 matches shown",
+      "renderFailures": []
+    },
+    "tooltip": {
+      "hidden": false,
+      "box": {
+        "x": 542,
+        "y": 89,
+        "width": 260,
+        "height": 53.59375,
+        "top": 89,
+        "right": 802,
+        "bottom": 142.59375,
+        "left": 542
+      },
+      "text": "Emphasize matching equipment without hiding the surrounding equipment.",
+      "pointerEvents": "none"
+    },
+    "failures": [],
+    "powerBiHost": false
+  },
+  "compiledPicker": {
+    "version": "1.4.0.0",
+    "lateCount": 20,
+    "smaller": [
+      "Energized",
+      "Inspection due",
+      "Ready"
+    ],
+    "field": "Discipline",
+    "query": "",
+    "values": [
+      "Controls",
+      "Electrical",
+      "Mechanical"
+    ],
+    "failures": [],
+    "renderFailures": []
+  },
+  "finalCompact": {
+    "tooltip": {
+      "x": 542,
+      "y": 89,
+      "width": 260,
+      "height": 53.59375,
+      "top": 89,
+      "right": 802,
+      "bottom": 142.59375,
+      "left": 542
+    },
+    "source": {
+      "x": 449.72222900390625,
+      "y": 458.77777099609375,
+      "width": 140.5555419921875,
+      "height": 51.111114501953125,
+      "top": 458.77777099609375,
+      "right": 590.2777709960938,
+      "bottom": 509.8888854980469,
+      "left": 449.72222900390625
+    },
+    "dependency": {
+      "x": 628.611083984375,
+      "y": 508.2916564941406,
+      "width": 151.73614501953125,
+      "height": 51.111114501953125,
+      "top": 508.2916564941406,
+      "right": 780.3472290039062,
+      "bottom": 559.4027709960938,
+      "left": 628.611083984375
+    },
+    "viewport": {
+      "x": 390,
+      "y": 344,
+      "width": 420,
+      "height": 319,
+      "top": 344,
+      "right": 810,
+      "bottom": 663,
+      "left": 390
+    }
+  },
+  "scale100k": {
+    "version": "1.4.0.0",
+    "size": 100000,
+    "boundColumns": 19,
+    "sourceRows": 100000,
+    "loadedEquipment": 100000,
+    "loadedNodes": 100120,
+    "loadedEdges": 588027,
+    "startupNodes": 20,
+    "parentExpandedNodes": 23,
+    "expansionNodes": 21,
+    "expandedBranch": {
+      "project": "Scale Alpha",
+      "milestone": "Milestone 001"
+    },
+    "finalDomNodes": 9,
+    "finalSvgPaths": 24,
+    "finalDomElements": 473,
+    "timings": {
+      "generationMs": 67.59999999403954,
+      "tableConstructionMs": 51.20000001788139,
+      "visualConstructionMs": 0.7999999821186066,
+      "ingestSynchronousMs": 1369.4000000059605,
+      "ingestReadyMs": 1371.9000000059605,
+      "parentExpansionSynchronousMs": 22.30000001192093,
+      "parentExpansionReadyMs": 30.599999994039536,
+      "expansionSynchronousMs": 20.30000001192093,
+      "expansionReadyMs": 24.80000001192093,
+      "equipmentChildrenExpansionSynchronousMs": 18.80000001192093,
+      "equipmentChildrenExpansionReadyMs": 25.700000017881393,
+      "denseConnectionsSynchronousMs": 4.5999999940395355,
+      "denseConnectionsReadyMs": 15.800000011920929,
+      "quickHubDependenciesSynchronousMs": 20.400000005960464,
+      "quickHubRequiredBySynchronousMs": 2.5,
+      "quickHubRequiredByReadyMs": 16.400000005960464,
+      "searchResultsMs": 136.30000001192093,
+      "searchRevealSynchronousMs": 36.30000001192093,
+      "searchRevealReadyMs": 47.599999994039536,
+      "highlightSelectSynchronousMs": 1.7999999821186066,
+      "highlightSelectReadyMs": 14.799999982118607,
+      "quickDependenciesSynchronousMs": 17,
+      "quickDependenciesReadyMs": 24.200000017881393,
+      "localSelectionSynchronousMs": 0.7000000178813934,
+      "localSelectionReadyMs": 16,
+      "panMeanSynchronousMs": 0.05500000268220902,
+      "panMaxSynchronousMs": 0.20000001788139343
+    },
+    "panSamples": [
+      0.20000001788139343,
+      0,
+      0,
+      0.10000002384185791,
+      0,
+      0,
+      0.09999999403953552,
+      0.09999999403953552,
+      0,
+      0,
+      0,
+      0.09999999403953552,
+      0.20000001788139343,
+      0,
+      0.10000002384185791,
+      0.09999999403953552,
+      0,
+      0,
+      0.09999999403953552,
+      0
+    ],
+    "longTasks": [],
+    "longTaskObserverAvailable": true,
+    "failures": [],
+    "counts": "4 direct · 0 related · 9/100120 nodes",
+    "environment": {
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "devicePixelRatio": 2,
+      "hardwareConcurrency": 18,
+      "powerBiHost": false
+    }
+  },
+  "scaleBuildNote": "Measured compiled 1.4 before two isolated picker-state reset corrections; final compiled smoke verifies both corrections. No repeated scale run.",
+  "screenshots": [
+    "/Users/noahgarrett/Codebase/PowerBI/.playwright-mcp/ssm-nested-compiled-showroom-light.png",
+    "/Users/noahgarrett/Codebase/PowerBI/.playwright-mcp/ssm-nested-compiled-showroom-dark.png",
+    "/Users/noahgarrett/Codebase/PowerBI/.playwright-mcp/ssm-nested-compiled-showroom-status.png",
+    "/Users/noahgarrett/Codebase/PowerBI/.playwright-mcp/ssm-nested-compiled-showroom-high-contrast.png",
+    "/Users/noahgarrett/Codebase/PowerBI/.playwright-mcp/ssm-nested-compiled-tooltip-compact.png",
+    "/Users/noahgarrett/Codebase/PowerBI/.playwright-mcp/ssm-nested-100k.png"
+  ],
+  "limitations": [
+    "All fixture records are synthetic; no confidential source was read.",
+    "Browser uses the actual source or generated visual.js with a mocked Power BI host on macOS. Real host report filtering, drillthrough, security and actual segmented fetching still require host verification.",
+    "Cold 100k snapshot ingestion remains synchronous, approximately1.37 seconds in this local single run.",
+    "Synchronous timings measure handler work; ready timings wait two animation frames and do not measure Power BI host latency or guaranteed sustained frame rate.",
+    "Resize preserves the camera intentionally. Compact proof uses actual Focus selected, zoom and keyboard pan controls.",
+    "Three opt-in model scale tests were skipped in the focused run; the actual100k compiled browser benchmark was executed once."
+  ]
+}

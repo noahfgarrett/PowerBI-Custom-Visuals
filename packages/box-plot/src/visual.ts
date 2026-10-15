@@ -25,10 +25,12 @@ import {
   applyAxisFormatting,
   applyGridFormatting,
   applyDataLabelFormatting,
+  applySortOrder,
   createScrollableChart,
   resolveDropdown,
   renderLegend,
   renderHorizontalReferenceLine,
+  renderVerticalReferenceLine,
   type LegendItem,
   type ReferenceLineConfig,
   resolveColorTheme,
@@ -37,6 +39,20 @@ import {
   applyChartAria,
   attachKeyboardNav,
   ensureFocusRingStyles,
+  attachEmptySpaceContextMenu,
+  allowInteractions,
+  applyBasicHighContrastStyles,
+  getHostHighContrastColors,
+  notifyRenderingStarted,
+  notifyRenderingFinished,
+  notifyRenderingFailed,
+  renderLandingPage,
+  renderNoDataState,
+  syncLegendFormattingVisibility,
+  syncTitleFormattingVisibility,
+  syncCardStyleVisibility,
+  syncDateFilterFormattingVisibility,
+  hideInlineLegendFormatting,
   computeStatValue,
   computeRegression,
   renderTrendLine,
@@ -47,6 +63,8 @@ import {
   getDateFilterIndices,
   isDateColumn,
   type DateFilterConfig,
+  getLocalizedString,
+  getVisualEmptyStateMode,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -73,6 +91,7 @@ interface BoxStats {
   rawValues: number[];
   selectionId: ISelectionId;
   highlighted: boolean;
+  formattingObjects?: powerbi.DataViewObjects;
 }
 
 interface BoxPlotData {
@@ -117,7 +136,7 @@ function computeStats(
   category: string,
   values: number[],
   whiskerCalc: WhiskerCalcMethod = 'iqr',
-): Omit<BoxStats, 'selectionId' | 'highlighted'> | null {
+): Omit<BoxStats, 'selectionId' | 'highlighted' | 'formattingObjects'> | null {
   if (values.length === 0) return null;
 
   const sorted = [...values].sort((a, b) => a - b);
@@ -197,60 +216,99 @@ export class BoxPlotVisual implements IVisual {
 
   /** Cached data for cross-highlight support. */
   private currentData: BoxPlotData | null = null;
+  private emptyStateMode: 'unconfigured' | 'noData' = 'unconfigured';
+  private detachEmptySpaceContextMenu: (() => void) | null = null;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
     this.selectionManager = options.host.createSelectionManager();
     this.container = options.element;
     this.settings = new BoxPlotSettings();
-    this.formattingSettingsService = new FormattingSettingsService();
+    this.formattingSettingsService = new FormattingSettingsService(options.host.createLocalizationManager());
     this.container.classList.add('box-plot-container');
+    this.detachEmptySpaceContextMenu = attachEmptySpaceContextMenu(
+      this.container,
+      this.selectionManager,
+      () => this.host.createSelectionIdBuilder().createSelectionId(),
+      () => allowInteractions(this.host),
+    );
   }
 
   public update(options: VisualUpdateOptions): void {
-    // Cancel running animations before re-render
-    this.cancelAnimations.forEach((cancel) => cancel());
-    this.cancelAnimations = [];
+    notifyRenderingStarted(this.host, options);
+    try {
+      // Cancel running animations before re-render
+      this.cancelAnimations.forEach((cancel) => cancel());
+      this.cancelAnimations = [];
 
-    // Parse settings from dataView
-    const dataView = options.dataViews?.[0];
-    if (dataView) {
-      this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
-        BoxPlotSettings,
-        dataView,
-      );
-    }
+      // Parse settings from dataView
+      const dataView = options.dataViews?.[0];
+      this.emptyStateMode = getVisualEmptyStateMode(dataView);
+      if (dataView) {
+        this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
+          BoxPlotSettings,
+          dataView,
+        );
+      }
 
-    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
-    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
-    if (legacyCardObj) {
-      const legacyGlass = legacyCardObj['enableGlass'];
-      if (legacyGlass === false) {
-        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+      const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+      if (legacyCardObj) {
+        const legacyGlass = legacyCardObj['enableGlass'];
+        const modernCardStyle = legacyCardObj['cardStyleMode'];
+        if (modernCardStyle === undefined && legacyGlass === false) {
+          this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+        }
+      }
+      syncTitleFormattingVisibility(this.settings.titleFormattingCard);
+      syncLegendFormattingVisibility(this.settings.legendFormattingCard);
+
+    // Migrate the retired local axis card to the shared axis card.
+    const legacyAxisObj = dataView?.metadata?.objects?.['axisSettings'];
+    const axisObj = dataView?.metadata?.objects?.['axisFormatting'];
+    if (legacyAxisObj) {
+      if (axisObj?.['showXAxis'] === undefined && typeof legacyAxisObj['showXAxis'] === 'boolean') {
+        this.settings.axisFormattingCard.showXAxis.value = legacyAxisObj['showXAxis'];
+      }
+      if (axisObj?.['showYAxis'] === undefined && typeof legacyAxisObj['showYAxis'] === 'boolean') {
+        this.settings.axisFormattingCard.showYAxis.value = legacyAxisObj['showYAxis'];
+      }
+      if (axisObj?.['showGridLines'] === undefined && typeof legacyAxisObj['gridLines'] === 'boolean') {
+        this.settings.axisFormattingCard.showGridLines.value = legacyAxisObj['gridLines'];
       }
     }
 
-    // Hide shared axis toggles that are shadowed by local settings
+      syncDateFilterFormattingVisibility(this.settings.dateFilterFormattingCard);
+      this.settings.layoutSettings.labelPadding.visible = this.settings.dataLabelFormattingCard.showDataLabels.value;
 
-    // Date filter: hide start/end when disabled
-    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
-    this.settings.axisFormattingCard.showXAxis.visible = false;
-    this.settings.axisFormattingCard.showYAxis.visible = false;
-    this.settings.axisFormattingCard.showGridLines.visible = false;
-
-    // Card Style — hide sub-settings when mode is 'none'
-    const cardMode = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
-    this.settings.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
-    this.settings.cardSettings.backgroundColor.visible = cardMode !== 'none';
+      syncCardStyleVisibility(this.settings.cardSettings);
 
     // Hide dual-axis-only properties (no combo/dual-axis support)
     this.settings.referenceLineFormattingCard.referenceLineAxis.visible = false;
-    this.settings.referenceLineFormattingCard.referenceBandWidth.visible = false;
     this.settings.trendLineFormattingCard.trendLineAxis.visible = false;
+    this.settings.axisFormattingCard.integerTicks.visible = false;
+      hideInlineLegendFormatting(this.settings.legendFormattingCard);
 
     // ── Conditional visibility ──────────────────────────────────────
+    const showDataLabels = this.settings.dataLabelFormattingCard.showDataLabels.value;
+    this.settings.dataLabelFormattingCard.dataLabelFontSize.visible = showDataLabels;
+    this.settings.dataLabelFormattingCard.dataLabelFontColor.visible = showDataLabels;
+    this.settings.dataLabelFormattingCard.dataLabelFontWeight.visible = showDataLabels;
+    this.settings.dataLabelFormattingCard.dataLabelFontFamily.visible = showDataLabels;
+    this.settings.dataLabelFormattingCard.dataLabelPosition.visible = showDataLabels;
+
+    const showGridLines = this.settings.axisFormattingCard.showGridLines.value;
+    this.settings.axisFormattingCard.xAxisTitle.visible = this.settings.axisFormattingCard.showXAxis.value;
+    this.settings.axisFormattingCard.yAxisTitle.visible = this.settings.axisFormattingCard.showYAxis.value;
+    this.settings.axisFormattingCard.gridLineColor.visible = showGridLines;
+    this.settings.axisFormattingCard.gridLineStyle.visible = showGridLines;
+    this.settings.axisFormattingCard.gridLineWidth.visible = showGridLines;
+    this.settings.axisFormattingCard.gridLineOpacity.visible = showGridLines;
+    const isHorizontal = (resolveDropdown(this.settings.boxPlotDisplaySettings.orientation) ?? 'vertical') === 'horizontal';
+    this.settings.axisFormattingCard.axisLabelRotation.visible = !isHorizontal && this.settings.axisFormattingCard.showXAxis.value;
+    this.settings.axisFormattingCard.yAxisMin.visible = !isHorizontal;
+    this.settings.axisFormattingCard.yAxisMax.visible = !isHorizontal;
+
     // Mean marker sub-settings: hide when showMean off
     const meanOn = this.settings.meanMarkerSettings.show.value;
     this.settings.meanMarkerSettings.shape.visible = meanOn;
@@ -267,29 +325,98 @@ export class BoxPlotVisual implements IVisual {
     // Outlier radius: hide when showOutliers off
     this.settings.boxSettings.outlierRadius.visible = this.settings.boxSettings.showOutliers.value;
 
+    const showMedian = this.settings.boxSettings.showMedianLine.value;
+    this.settings.boxSettings.medianColor.visible = showMedian;
+    this.settings.boxSettings.medianLineWidth.visible = showMedian;
+
+    const animationEnabled = this.settings.animationSettings.enabled.value;
+    this.settings.animationSettings.duration.visible = animationEnabled;
+    this.settings.animationSettings.staggerDelay.visible = animationEnabled;
+
+    const showReferenceLine = this.settings.referenceLineFormattingCard.showReferenceLine.value;
+    const referenceType = resolveDropdown(this.settings.referenceLineFormattingCard.referenceLineType) ?? 'custom';
+    this.settings.referenceLineFormattingCard.referenceLineType.visible = showReferenceLine;
+    this.settings.referenceLineFormattingCard.referenceLineValue.visible = showReferenceLine && referenceType === 'custom';
+    this.settings.referenceLineFormattingCard.referenceLineColor.visible = showReferenceLine;
+    this.settings.referenceLineFormattingCard.referenceLineWidth.visible = showReferenceLine;
+    this.settings.referenceLineFormattingCard.referenceLineStyle.visible = showReferenceLine;
+    this.settings.referenceLineFormattingCard.showReferenceLabel.visible = showReferenceLine;
+    this.settings.referenceLineFormattingCard.referenceLabelText.visible = showReferenceLine && this.settings.referenceLineFormattingCard.showReferenceLabel.value;
+    this.settings.referenceLineFormattingCard.showReferenceBand.visible = showReferenceLine;
+    const showReferenceBand = showReferenceLine && this.settings.referenceLineFormattingCard.showReferenceBand.value;
+    this.settings.referenceLineFormattingCard.referenceBandOpacity.visible = showReferenceBand;
+    this.settings.referenceLineFormattingCard.referenceBandWidth.visible = showReferenceBand;
+
+    const showTrendLine = this.settings.trendLineFormattingCard.showTrendLine.value;
+    const trendType = resolveDropdown(this.settings.trendLineFormattingCard.trendLineType) ?? 'linear';
+    this.settings.trendLineFormattingCard.showTrendLine.visible = !isHorizontal;
+    this.settings.trendLineFormattingCard.trendLineType.visible = !isHorizontal && showTrendLine;
+    this.settings.trendLineFormattingCard.polynomialOrder.visible = !isHorizontal && showTrendLine && trendType === 'polynomial';
+    this.settings.trendLineFormattingCard.trendLineColor.visible = !isHorizontal && showTrendLine;
+    this.settings.trendLineFormattingCard.trendLineWidth.visible = !isHorizontal && showTrendLine;
+    this.settings.trendLineFormattingCard.showEquation.visible = !isHorizontal && showTrendLine;
+    this.settings.trendLineFormattingCard.showR2.visible = !isHorizontal && showTrendLine;
+
+    const conditionalEnabled = this.settings.conditionalFormattingCard.enableConditional.value;
+    this.settings.conditionalFormattingCard.conditionalDirection.visible = conditionalEnabled;
+    this.settings.conditionalFormattingCard.threshold1.visible = conditionalEnabled;
+    this.settings.conditionalFormattingCard.threshold2.visible = conditionalEnabled;
+    this.settings.conditionalFormattingCard.conditionalColor1.visible = conditionalEnabled;
+    this.settings.conditionalFormattingCard.conditionalColor2.visible = conditionalEnabled;
+    this.settings.conditionalFormattingCard.conditionalColor3.visible = conditionalEnabled;
+
     // Violin settings: hide when showViolin off (no sub-settings beyond the toggle itself)
     // Notch settings: hide when showNotches off (no sub-settings beyond the toggle itself)
     // Note: showViolin and showNotches are simple toggles without child properties in boxPlotDisplaySettings
 
-    // Extract data
-    const data = this.extractData(dataView);
-    this.currentData = data;
+      // Extract data
+      const data = this.extractData(dataView);
+      this.currentData = data;
 
-    // Populate per-series formatting groups
-    this.populateSeriesGroups(data);
+      // Populate per-series formatting groups
+      this.populateSeriesGroups(data);
 
-    // Render
-    if (data.isEmpty) {
-      this.renderEmpty();
-    } else {
-      this.render(data, options.viewport);
+      // Render
+      if (data.isEmpty) {
+        this.renderEmpty();
+      } else {
+        this.render(data, options.viewport);
+      }
+
+      // Apply cross-highlight dimming after render
+      this.applySelectionHighlight();
+
+      // Apply card styling AFTER render — render clears the container, which would destroy the glass backdrop div.
+      this.applyCardStyle();
+      applyBasicHighContrastStyles(this.container, getHostHighContrastColors(this.host), {
+        textSelectors: [
+          '.box-plot-container svg text',
+          '.pbi-landing-page-title',
+          '.pbi-landing-page-description',
+          '.pbi-landing-page-hint',
+          '.pbi-no-data-state',
+        ],
+        lineSelectors: [
+          '.box-plot-whisker',
+          '.box-plot-whisker-cap',
+          '.box-plot-median',
+          '.box-plot-axis path',
+          '.box-plot-axis line',
+          '.box-plot-grid line',
+        ],
+        fillSelectors: [
+          '.box-plot-box',
+          '.box-plot-outlier',
+          '.box-plot-jitter-point',
+          '.box-plot-mean-marker',
+        ],
+        strokeSelectors: ['.box-plot-box', '.box-plot-outlier'],
+      });
+      notifyRenderingFinished(this.host, options);
+    } catch (error) {
+      notifyRenderingFailed(this.host, options, error instanceof Error ? error.message : String(error));
+      throw error;
     }
-
-    // Apply cross-highlight dimming after render
-    this.applySelectionHighlight();
-
-    // Apply card styling AFTER render — render clears the container, which would destroy the glass backdrop div.
-    this.applyCardStyle();
   }
 
   // -- Series Formatting ----------------------------------------------------
@@ -309,6 +436,21 @@ export class BoxPlotVisual implements IVisual {
       group.seriesColor.value = {
         value: perCategory ? getHostChartColor(this.host.colorPalette, i, themeName) : boxColor,
       };
+      group.lineStyle.visible = false;
+      group.lineWidth.visible = false;
+      const selector = data.boxes[i].selectionId.getSelector();
+      for (const slice of group.slices) {
+        slice.selector = selector;
+      }
+      const objects = data.boxes[i].formattingObjects?.['seriesFormatting'];
+      if (objects) {
+        const color = objects['seriesColor'] as { solid?: { color?: string } } | undefined;
+        if (color?.solid?.color) group.seriesColor.value = { value: color.solid.color };
+        if (typeof objects['seriesOpacity'] === 'number') group.seriesOpacity.value = objects['seriesOpacity'];
+        if (typeof objects['showDataLabels'] === 'boolean') {
+          group.showDataLabels.value = objects['showDataLabels'];
+        }
+      }
       card.groups.push(group);
     }
   }
@@ -342,7 +484,12 @@ export class BoxPlotVisual implements IVisual {
 
     // Group raw values by category
     const categoryLabels = categoryColumn.values;
-    const groupMap = new Map<string, { values: number[]; selectionId: ISelectionId; hasHighlight: boolean }>();
+    const groupMap = new Map<string, {
+      values: number[];
+      selectionId: ISelectionId;
+      hasHighlight: boolean;
+      formattingObjects?: powerbi.DataViewObjects;
+    }>();
 
     // Collect values per category across all value columns
     for (let rowIdx = 0; rowIdx < categoryLabels.length; rowIdx++) {
@@ -357,6 +504,7 @@ export class BoxPlotVisual implements IVisual {
             .withCategory(categoryColumn, rowIdx)
             .createSelectionId(),
           hasHighlight: false,
+          formattingObjects: categoryColumn.objects?.[rowIdx],
         });
       }
       const group = groupMap.get(key)!;
@@ -387,16 +535,22 @@ export class BoxPlotVisual implements IVisual {
           ...stats,
           selectionId: group.selectionId,
           highlighted: group.hasHighlight,
+          formattingObjects: group.formattingObjects,
         });
       }
     }
 
     if (boxes.length === 0) return empty;
 
+    const sortedBoxes = applySortOrder(
+      boxes.map((box) => ({ ...box, name: box.category, value: box.median })),
+      this.settings.sortFormattingCard,
+    ).map(({ name: _name, value: _value, ...box }) => box as BoxStats);
+
     // Global min/max including outliers and raw values for y-scale
     let globalMin = Infinity;
     let globalMax = -Infinity;
-    for (const box of boxes) {
+    for (const box of sortedBoxes) {
       globalMin = Math.min(globalMin, box.min, ...box.outliers, ...box.rawValues);
       globalMax = Math.max(globalMax, box.max, ...box.outliers, ...box.rawValues);
     }
@@ -409,7 +563,7 @@ export class BoxPlotVisual implements IVisual {
 
     const hasHighlights = boxes.some((b) => b.highlighted);
     return {
-      boxes,
+      boxes: sortedBoxes,
       globalMin,
       globalMax,
       isEmpty: false,
@@ -431,9 +585,6 @@ export class BoxPlotVisual implements IVisual {
         borderRadius: s.borderRadius.value,
       },
     );
-    if (mode === 'none') {
-      this.container.style.borderRadius = `${s.borderRadius.value}px`;
-    }
   }
 
   // -- Empty State --------------------------------------------------------
@@ -442,10 +593,34 @@ export class BoxPlotVisual implements IVisual {
     while (this.container.firstChild) {
       this.container.removeChild(this.container.firstChild);
     }
-    const emptyEl = document.createElement('div');
-    emptyEl.className = 'box-plot-empty';
-    emptyEl.textContent = 'Add a Category and at least one Value to get started.';
-    this.container.appendChild(emptyEl);
+    this.container.removeEventListener('click', this.handleBackgroundClick);
+    this.container.addEventListener('click', this.handleBackgroundClick);
+    const colors = getHostHighContrastColors(this.host);
+    if (this.emptyStateMode === 'noData') {
+      renderNoDataState(
+        this.container,
+        getLocalizedString(this.host, 'BoxPlot_NoDataState', 'No data for the current selection.'),
+        colors,
+      );
+      return;
+    }
+    renderLandingPage(this.container, {
+      title: getLocalizedString(this.host, 'BoxPlot_LandingTitle', 'Add data to build a box plot'),
+      description: getLocalizedString(
+        this.host,
+        'BoxPlot_LandingDescription',
+        'Add a category and at least one numeric value to compare distributions.',
+      ),
+      steps: [
+        getLocalizedString(this.host, 'BoxPlot_LandingStepCategory', 'Add a category to define each distribution.'),
+        getLocalizedString(this.host, 'BoxPlot_LandingStepValues', 'Add numeric values to calculate quartiles and outliers.'),
+      ],
+      hint: getLocalizedString(
+        this.host,
+        'BoxPlot_LandingHint',
+        'Add multiple rows per category to reveal a meaningful distribution.',
+      ),
+    }, colors);
   }
 
   // -- Main Render --------------------------------------------------------
@@ -456,6 +631,7 @@ export class BoxPlotVisual implements IVisual {
     }
     renderChartTitle(this.container, this.settings.titleFormattingCard);
     this.container.removeEventListener('click', this.handleBackgroundClick);
+    this.container.addEventListener('click', this.handleBackgroundClick);
 
     const s = this.settings;
     const isHorizontal = (resolveDropdown(s.boxPlotDisplaySettings.orientation) ?? 'vertical') === 'horizontal';
@@ -464,8 +640,16 @@ export class BoxPlotVisual implements IVisual {
     const showLegend = s.legendFormattingCard.showLegend.value;
     const legendPos = this.getLegendPosition();
     const legendReserve = showLegend ? LEGEND_HEIGHT : 0;
+    const containerPadding = Math.max(0, s.layoutSettings.containerPadding.value + s.cardSettings.contentPadding.value);
+    const categoryPaddingInner = Math.max(0, s.layoutSettings.categoryPaddingInner.value);
+    const categoryPaddingOuter = Math.max(0, s.layoutSettings.categoryPaddingOuter.value);
 
-    const margin: Margin = { ...MARGIN_DEFAULT };
+    const margin: Margin = {
+      top: MARGIN_DEFAULT.top + containerPadding,
+      right: MARGIN_DEFAULT.right + containerPadding,
+      bottom: MARGIN_DEFAULT.bottom + containerPadding,
+      left: MARGIN_DEFAULT.left + containerPadding,
+    };
     if (isHorizontal) {
       // Horizontal: categories on Y-axis, values on X-axis
       if (!s.axisFormattingCard.showXAxis.value) margin.bottom = 8;
@@ -478,14 +662,17 @@ export class BoxPlotVisual implements IVisual {
     if (legendPos === 'top') margin.top += legendReserve;
     if (legendPos === 'right') margin.right += 80;
 
-    const padding = 12;
-    const baseSvgWidth = viewport.width - padding * 2;
-    const baseSvgHeight = viewport.height - padding * 2 - (legendPos === 'bottom' || legendPos === 'top' ? legendReserve : 0);
+    const baseSvgWidth = viewport.width - containerPadding * 2;
+    const baseSvgHeight = viewport.height - containerPadding * 2 - (legendPos === 'bottom' || legendPos === 'top' ? legendReserve : 0);
     const baseChartWidth = Math.max(0, baseSvgWidth - margin.left - margin.right);
     const baseChartHeight = Math.max(0, baseSvgHeight - margin.top - margin.bottom);
 
     if (baseChartWidth <= 0 || baseChartHeight <= 0) {
-      this.renderEmpty();
+      renderNoDataState(
+        this.container,
+        getLocalizedString(this.host, 'BoxPlot_SizeState', 'Increase the visual size to display the box plot.'),
+        getHostHighContrastColors(this.host),
+      );
       return;
     }
 
@@ -528,11 +715,19 @@ export class BoxPlotVisual implements IVisual {
     const catScale = d3.scaleBand()
       .domain(categories)
       .range(isHorizontal ? [0, chartHeight] : [0, chartWidth])
-      .paddingInner(0.2)
-      .paddingOuter(0.1);
+      .paddingInner(categoryPaddingInner)
+      .paddingOuter(categoryPaddingOuter);
 
+    const configuredMin = !isHorizontal && Number.isFinite(s.axisFormattingCard.yAxisMin.value)
+      ? s.axisFormattingCard.yAxisMin.value
+      : data.globalMin - valPad;
+    const configuredMax = !isHorizontal && Number.isFinite(s.axisFormattingCard.yAxisMax.value)
+      ? s.axisFormattingCard.yAxisMax.value
+      : data.globalMax + valPad;
+    const domainMin = configuredMin < configuredMax ? configuredMin : data.globalMin - valPad;
+    const domainMax = configuredMin < configuredMax ? configuredMax : data.globalMax + valPad;
     const valScale = d3.scaleLinear()
-      .domain([data.globalMin - valPad, data.globalMax + valPad])
+      .domain([domainMin, domainMax])
       .nice()
       .range(isHorizontal ? [0, chartWidth] : [chartHeight, 0]);
 
@@ -607,13 +802,15 @@ export class BoxPlotVisual implements IVisual {
     // Reference line (rendered after axes/grid but before data elements)
     if (isHorizontal) {
       // For horizontal orientation, reference line is vertical
-      this.renderSharedReferenceLine(chartGroup, yScale, chartHeight);
+      this.renderSharedReferenceLine(chartGroup, yScale, chartHeight, data.boxes.map((box) => box.median), true);
     } else {
-      this.renderSharedReferenceLine(chartGroup, yScale, chartWidth);
+      this.renderSharedReferenceLine(chartGroup, yScale, chartWidth, data.boxes.map((box) => box.median), false);
     }
 
     // Trend line through median values
-    this.renderSharedTrendLine(chartGroup, data, xScale, yScale);
+    if (!isHorizontal) {
+      this.renderSharedTrendLine(chartGroup, data, xScale, yScale);
+    }
 
     // Settings
     const boxColor = s.colorSettings.boxColor.value?.value ?? '#3B82F6';
@@ -631,6 +828,7 @@ export class BoxPlotVisual implements IVisual {
     const animEnabled = s.animationSettings.enabled.value;
     const animDuration = s.animationSettings.duration.value;
     const staggerDelay = s.animationSettings.staggerDelay.value;
+    const labelPadding = Math.max(0, s.layoutSettings.labelPadding.value);
 
     // Mean marker settings
     const showMeanMarker = s.meanMarkerSettings.show.value;
@@ -648,6 +846,10 @@ export class BoxPlotVisual implements IVisual {
 
     // Render each box
     data.boxes.forEach((box, idx) => {
+      const categoryGroup = chartGroup.append('g')
+        .attr('class', 'box-plot-category')
+        .attr('data-selection-key', box.selectionId.getKey())
+        .style('transition', 'opacity 0.15s ease');
       const bandCenter = (catScale(box.category) ?? 0) + catScale.bandwidth() / 2;
       const effectiveBoxWidth = Math.min(userBoxWidth, catScale.bandwidth() * 0.8);
       const halfBox = effectiveBoxWidth / 2;
@@ -677,7 +879,7 @@ export class BoxPlotVisual implements IVisual {
             cy = valScale(val);
           }
 
-          const dot = chartGroup.append('circle')
+          const dot = categoryGroup.append('circle')
             .attr('class', 'box-plot-jitter-point')
             .attr('cx', cx)
             .attr('cy', cy)
@@ -698,7 +900,7 @@ export class BoxPlotVisual implements IVisual {
       }
 
       // -- Lower whisker line (min to Q1) --------------------------------
-      const lowerWhiskerPath = chartGroup.append('path')
+      const lowerWhiskerPath = categoryGroup.append('path')
         .attr('class', 'box-plot-whisker')
         .attr('d', isHorizontal
           ? `M${vMin},${bandCenter} L${vQ1},${bandCenter}`
@@ -716,7 +918,7 @@ export class BoxPlotVisual implements IVisual {
       }
 
       // -- Upper whisker line (Q3 to max) --------------------------------
-      const upperWhiskerPath = chartGroup.append('path')
+      const upperWhiskerPath = categoryGroup.append('path')
         .attr('class', 'box-plot-whisker')
         .attr('d', isHorizontal
           ? `M${vQ3},${bandCenter} L${vMax},${bandCenter}`
@@ -735,13 +937,13 @@ export class BoxPlotVisual implements IVisual {
 
       // -- Lower whisker cap ---------------------------------------------
       if (isHorizontal) {
-        chartGroup.append('line')
+        categoryGroup.append('line')
           .attr('class', 'box-plot-whisker-cap')
           .attr('x1', vMin).attr('x2', vMin)
           .attr('y1', bandCenter - capHalf).attr('y2', bandCenter + capHalf)
           .attr('stroke', whiskerColor).attr('stroke-width', whiskerWidth);
       } else {
-        chartGroup.append('line')
+        categoryGroup.append('line')
           .attr('class', 'box-plot-whisker-cap')
           .attr('x1', bandCenter - capHalf).attr('x2', bandCenter + capHalf)
           .attr('y1', vMin).attr('y2', vMin)
@@ -750,13 +952,13 @@ export class BoxPlotVisual implements IVisual {
 
       // -- Upper whisker cap ---------------------------------------------
       if (isHorizontal) {
-        chartGroup.append('line')
+        categoryGroup.append('line')
           .attr('class', 'box-plot-whisker-cap')
           .attr('x1', vMax).attr('x2', vMax)
           .attr('y1', bandCenter - capHalf).attr('y2', bandCenter + capHalf)
           .attr('stroke', whiskerColor).attr('stroke-width', whiskerWidth);
       } else {
-        chartGroup.append('line')
+        categoryGroup.append('line')
           .attr('class', 'box-plot-whisker-cap')
           .attr('x1', bandCenter - capHalf).attr('x2', bandCenter + capHalf)
           .attr('y1', vMax).attr('y2', vMax)
@@ -786,7 +988,7 @@ export class BoxPlotVisual implements IVisual {
       const condColor = this.getConditionalColor(box.median);
       const resolvedBoxFill = condColor ?? withOpacity(sf.color, sf.opacity / 100 * 0.6);
 
-      const boxRect = chartGroup.append('rect')
+      const boxRect = categoryGroup.append('rect')
         .attr('class', 'box-plot-box')
         .attr('data-selection-key', box.selectionId.getKey())
         .attr('x', boxX)
@@ -801,22 +1003,7 @@ export class BoxPlotVisual implements IVisual {
 
       // Tooltip on box
       this.attachBoxTooltip(boxRect, box);
-      boxRect
-        .style('cursor', 'pointer')
-        .on('click', (event: MouseEvent) => {
-          event.stopPropagation();
-          void this.selectionManager.select(box.selectionId, event.ctrlKey || event.metaKey).then(() => {
-            this.applySelectionHighlight();
-          });
-        })
-        .on('contextmenu', (event: MouseEvent) => {
-          event.preventDefault();
-          event.stopPropagation();
-          void this.selectionManager.showContextMenu(box.selectionId, {
-            x: event.clientX,
-            y: event.clientY,
-          });
-        });
+      this.attachSelection(boxRect, box.selectionId);
 
       // Animate box growing from median outward
       if (animEnabled) {
@@ -871,14 +1058,14 @@ export class BoxPlotVisual implements IVisual {
       // -- Median line ---------------------------------------------------
       if (showMedianLine) {
         const medianLine = isHorizontal
-          ? chartGroup.append('line')
+          ? categoryGroup.append('line')
               .attr('class', 'box-plot-median')
               .attr('x1', vMedian).attr('x2', vMedian)
               .attr('y1', bandCenter - halfBox).attr('y2', bandCenter + halfBox)
               .attr('stroke', medianColor)
               .attr('stroke-width', medianLineWidth)
               .attr('stroke-linecap', 'round')
-          : chartGroup.append('line')
+          : categoryGroup.append('line')
               .attr('class', 'box-plot-median')
               .attr('x1', bandCenter - halfBox).attr('x2', bandCenter + halfBox)
               .attr('y1', vMedian).attr('y2', vMedian)
@@ -910,11 +1097,12 @@ export class BoxPlotVisual implements IVisual {
             + ` L${meanCx},${meanCy + half}`
             + ` L${meanCx - half},${meanCy}`
             + ' Z';
-          const marker = chartGroup.append('path')
+          const marker = categoryGroup.append('path')
             .attr('class', 'box-plot-mean-marker')
             .attr('d', diamondPath)
             .attr('fill', meanColor)
-            .attr('stroke', 'none');
+            .attr('stroke', meanColor)
+            .attr('stroke-width', meanStrokeWidth);
 
           if (animEnabled) {
             const markerNode = marker.node();
@@ -925,7 +1113,7 @@ export class BoxPlotVisual implements IVisual {
           }
         } else if (meanShape === 'cross') {
           const half = meanSize / 2;
-          const crossGroup = chartGroup.append('g')
+          const crossGroup = categoryGroup.append('g')
             .attr('class', 'box-plot-mean-marker');
 
           crossGroup.append('line')
@@ -947,13 +1135,14 @@ export class BoxPlotVisual implements IVisual {
           }
         } else {
           // Circle
-          const marker = chartGroup.append('circle')
+          const marker = categoryGroup.append('circle')
             .attr('class', 'box-plot-mean-marker')
             .attr('cx', meanCx)
             .attr('cy', meanCy)
             .attr('r', meanSize / 2)
             .attr('fill', meanColor)
-            .attr('stroke', 'none');
+            .attr('stroke', meanColor)
+            .attr('stroke-width', meanStrokeWidth);
 
           if (animEnabled) {
             const markerNode = marker.node();
@@ -971,7 +1160,7 @@ export class BoxPlotVisual implements IVisual {
           const outlierValPos = valScale(outlierVal);
           const outlierCx = isHorizontal ? outlierValPos : bandCenter;
           const outlierCy = isHorizontal ? bandCenter : outlierValPos;
-          const outlierDot = chartGroup.append('circle')
+          const outlierDot = categoryGroup.append('circle')
             .attr('class', 'box-plot-outlier')
             .attr('cx', outlierCx)
             .attr('cy', outlierCy)
@@ -981,23 +1170,8 @@ export class BoxPlotVisual implements IVisual {
             .attr('stroke-width', boxStrokeWidth);
 
           // Tooltip on outlier
-          this.attachOutlierTooltip(outlierDot, box.category, outlierVal);
-          outlierDot
-            .style('cursor', 'pointer')
-            .on('click', (event: MouseEvent) => {
-              event.stopPropagation();
-              void this.selectionManager.select(box.selectionId, event.ctrlKey || event.metaKey).then(() => {
-                this.applySelectionHighlight();
-              });
-            })
-            .on('contextmenu', (event: MouseEvent) => {
-              event.preventDefault();
-              event.stopPropagation();
-              void this.selectionManager.showContextMenu(box.selectionId, {
-                x: event.clientX,
-                y: event.clientY,
-              });
-            });
+          this.attachOutlierTooltip(outlierDot, box, outlierVal);
+          this.attachSelection(outlierDot, box.selectionId);
 
           if (animEnabled) {
             const dotNode = outlierDot.node();
@@ -1011,10 +1185,10 @@ export class BoxPlotVisual implements IVisual {
       }
 
       // -- Data label (median value) ------------------------------------
-      if (showDataLabels) {
-        const labelX = isHorizontal ? vMedian + 6 : bandCenter;
-        const labelY = isHorizontal ? bandCenter : vMedian - 6;
-        const dataLabel = chartGroup.append('text')
+      if (showDataLabels && sf.showLabels) {
+        const labelX = isHorizontal ? vMedian + labelPadding : bandCenter;
+        const labelY = isHorizontal ? bandCenter : vMedian - labelPadding;
+        const dataLabel = categoryGroup.append('text')
           .attr('class', 'box-plot-label')
           .attr('x', labelX)
           .attr('y', labelY)
@@ -1044,6 +1218,16 @@ export class BoxPlotVisual implements IVisual {
     // Apply data label formatting from shared settings
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.box-plot-label');
 
+    this.renderAxisTitles(chartGroup, chartWidth, chartHeight);
+    if (!isHorizontal) {
+      const rotation = s.axisFormattingCard.axisLabelRotation.value;
+      if (rotation !== 0) {
+        chartGroup.selectAll<SVGTextElement, unknown>('.box-plot-axis-x .tick text')
+          .attr('transform', `rotate(${rotation})`)
+          .attr('text-anchor', rotation > 0 ? 'start' : 'end');
+      }
+    }
+
     // Legend (bottom or right)
     if (showLegend && (legendPos === 'bottom' || legendPos === 'right')) {
       this.renderSharedLegend(data);
@@ -1055,13 +1239,8 @@ export class BoxPlotVisual implements IVisual {
     // Render notches if enabled
     this.renderNotches(data, chartGroup, catScale, valScale, isHorizontal);
 
-    // Render per-category colors if enabled
-    this.applyPerCategoryColors(chartGroup, data);
-
-    this.container.addEventListener('click', this.handleBackgroundClick);
-
     // Accessibility (keyboard nav + ARIA)
-    this.applyAccessibility(data.boxes.length);
+    this.applyAccessibility(data.boxes);
   }
 
   // -- Tooltips -----------------------------------------------------------
@@ -1092,7 +1271,7 @@ export class BoxPlotVisual implements IVisual {
 
       host.tooltipService.show({
         dataItems: tooltipData,
-        identities: [],
+        identities: [box.selectionId],
         coordinates: [event.clientX, event.clientY],
         isTouchEvent: false,
       });
@@ -1101,7 +1280,7 @@ export class BoxPlotVisual implements IVisual {
     rect.on('mousemove', (event: MouseEvent) => {
       host.tooltipService.move({
         dataItems: [],
-        identities: [],
+        identities: [box.selectionId],
         coordinates: [event.clientX, event.clientY],
         isTouchEvent: false,
       });
@@ -1114,20 +1293,20 @@ export class BoxPlotVisual implements IVisual {
 
   private attachOutlierTooltip(
     circle: d3.Selection<SVGCircleElement, unknown, null, undefined>,
-    category: string,
+    box: BoxStats,
     value: number,
   ): void {
     const host = this.host;
 
     circle.on('mouseover', (event: MouseEvent) => {
       const tooltipData: VisualTooltipDataItem[] = [
-        { displayName: 'Category', value: category },
+        { displayName: 'Category', value: box.category },
         { displayName: 'Outlier Value', value: formatWithSettings(value, this.settings.numberFormattingCard) },
       ];
 
       host.tooltipService.show({
         dataItems: tooltipData,
-        identities: [],
+        identities: [box.selectionId],
         coordinates: [event.clientX, event.clientY],
         isTouchEvent: false,
       });
@@ -1136,7 +1315,7 @@ export class BoxPlotVisual implements IVisual {
     circle.on('mousemove', (event: MouseEvent) => {
       host.tooltipService.move({
         dataItems: [],
-        identities: [],
+        identities: [box.selectionId],
         coordinates: [event.clientX, event.clientY],
         isTouchEvent: false,
       });
@@ -1147,31 +1326,108 @@ export class BoxPlotVisual implements IVisual {
     });
   }
 
+  private renderAxisTitles(
+    chartGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
+    chartWidth: number,
+    chartHeight: number,
+  ): void {
+    const axis = this.settings.axisFormattingCard;
+    const color = axis.axisLabelColor.value?.value || '#475569';
+    const fontSize = axis.axisLabelSize.value;
+    const fontFamily = resolveDropdown(axis.axisLabelFontFamily) || undefined;
+    const fontWeight = resolveDropdown(axis.axisLabelFontWeight) || 'normal';
+
+    const styleTitle = (title: d3.Selection<SVGTextElement, unknown, null, undefined>) => {
+      title.attr('fill', color).attr('font-size', `${fontSize}px`).attr('font-weight', fontWeight);
+      if (fontFamily) title.attr('font-family', fontFamily);
+    };
+
+    if (axis.showXAxis.value && axis.xAxisTitle.value) {
+      const title = chartGroup.append('text')
+        .attr('class', 'box-plot-axis-title box-plot-x-axis-title')
+        .attr('x', chartWidth / 2)
+        .attr('y', chartHeight + 34)
+        .attr('text-anchor', 'middle')
+        .text(axis.xAxisTitle.value);
+      styleTitle(title);
+    }
+
+    if (axis.showYAxis.value && axis.yAxisTitle.value) {
+      const title = chartGroup.append('text')
+        .attr('class', 'box-plot-axis-title box-plot-y-axis-title')
+        .attr('transform', 'rotate(-90)')
+        .attr('x', -chartHeight / 2)
+        .attr('y', -42)
+        .attr('text-anchor', 'middle')
+        .text(axis.yAxisTitle.value);
+      styleTitle(title);
+    }
+  }
+
   // -- Reference Line (shared) ---------------------------------------------
 
   private renderSharedReferenceLine(
     g: d3.Selection<SVGGElement, unknown, null, undefined>,
     yScale: d3.ScaleLinear<number, number>,
     width: number,
+    values: number[],
+    isHorizontal: boolean,
   ): void {
     const ref = this.settings.referenceLineFormattingCard;
     if (!ref.showReferenceLine.value) return;
 
+    const refType = resolveDropdown(ref.referenceLineType) ?? 'custom';
+    const refValue = refType === 'custom'
+      ? ref.referenceLineValue.value
+      : computeStatValue(values, refType as StatType);
+    if (!Number.isFinite(refValue)) return;
+
     const refColor = ref.referenceLineColor.value?.value ?? '#EF4444';
     const refStyleVal = resolveDropdown(ref.referenceLineStyle) ?? 'dashed';
+    const labelText = ref.referenceLabelText.value.length > 0
+      ? ref.referenceLabelText.value
+      : formatWithSettings(refValue, this.settings.numberFormattingCard);
+    const valueRange = values.length > 0 ? Math.max(...values) - Math.min(...values) : 0;
+    const bandHalfWidth = (valueRange || Math.abs(refValue) || 1) * Math.max(0, ref.referenceBandWidth.value) / 200;
+
+    if (isHorizontal) {
+      if (ref.showReferenceBand.value && bandHalfWidth > 0) {
+        const x1 = yScale(refValue - bandHalfWidth);
+        const x2 = yScale(refValue + bandHalfWidth);
+        g.append('rect')
+          .attr('class', 'reference-band')
+          .attr('x', Math.min(x1, x2))
+          .attr('y', 0)
+          .attr('width', Math.abs(x2 - x1))
+          .attr('height', width)
+          .attr('fill', refColor)
+          .attr('opacity', Math.max(0, Math.min(100, ref.referenceBandOpacity.value)) / 100);
+      }
+      renderVerticalReferenceLine(g, {
+        xPosition: yScale(refValue),
+        yStart: 0,
+        yEnd: width,
+        lineColor: refColor,
+        lineWidth: ref.referenceLineWidth.value,
+        lineStyle: refStyleVal as 'solid' | 'dashed' | 'dotted',
+        showLabel: ref.showReferenceLabel.value,
+        labelText,
+      });
+      return;
+    }
 
     const config: ReferenceLineConfig = {
-      value: ref.referenceLineValue.value,
+      value: refValue,
       yScale,
       chartWidth: width,
       lineColor: refColor,
       lineWidth: ref.referenceLineWidth.value,
       lineStyle: refStyleVal as 'solid' | 'dashed' | 'dotted',
       showLabel: ref.showReferenceLabel.value,
-      labelText: ref.referenceLabelText.value.length > 0
-        ? ref.referenceLabelText.value
-        : formatWithSettings(ref.referenceLineValue.value, this.settings.numberFormattingCard),
+      labelText,
       showBand: ref.showReferenceBand.value,
+      bandLowerValue: refValue - bandHalfWidth,
+      bandUpperValue: refValue + bandHalfWidth,
       bandOpacity: Math.max(0, Math.min(100, ref.referenceBandOpacity.value)) / 100,
     };
 
@@ -1192,7 +1448,11 @@ export class BoxPlotVisual implements IVisual {
 
     const items: LegendItem[] = data.boxes.map((box, idx) => ({
       label: box.category,
-      color: perCategory ? getHostChartColor(this.host.colorPalette, idx, themeName) : boxColor,
+      color: resolveSeriesFormatting(
+        this.settings.seriesFormattingCard,
+        idx,
+        perCategory ? getHostChartColor(this.host.colorPalette, idx, themeName) : boxColor,
+      ).color,
     }));
 
     const rawLegendFontFamily = resolveDropdown(legendFmtCard.legendFontFamily) || undefined;
@@ -1203,6 +1463,7 @@ export class BoxPlotVisual implements IVisual {
       fontSize: legendFontSize,
       fontColor: legendFontColor,
       fontFamily: rawLegendFontFamily,
+      fontWeight: resolveDropdown(legendFmtCard.legendFontWeight) || 'normal',
       aliases: legendFmtCard.legendAliases.value,
     });
   }
@@ -1280,6 +1541,7 @@ export class BoxPlotVisual implements IVisual {
 
       chartGroup.append('path')
         .attr('class', 'box-plot-violin')
+        .attr('data-selection-key', box.selectionId.getKey())
         .attr('d', pathData)
         .attr('fill', withOpacity(boxColor, 0.15))
         .attr('stroke', withOpacity(boxColor, 0.3))
@@ -1324,11 +1586,13 @@ export class BoxPlotVisual implements IVisual {
         // Horizontal: notches indent vertically from box edges
         chartGroup.append('path')
           .attr('class', 'box-plot-notch')
+          .attr('data-selection-key', box.selectionId.getKey())
           .attr('d', `M${vNotchLower},${bandCenter - halfBox} L${vMedian},${bandCenter - halfBox + notchIndent} L${vNotchUpper},${bandCenter - halfBox}`)
           .attr('stroke', medianColor).attr('stroke-width', 1.5).attr('fill', 'none')
           .style('pointer-events', 'none');
         chartGroup.append('path')
           .attr('class', 'box-plot-notch')
+          .attr('data-selection-key', box.selectionId.getKey())
           .attr('d', `M${vNotchLower},${bandCenter + halfBox} L${vMedian},${bandCenter + halfBox - notchIndent} L${vNotchUpper},${bandCenter + halfBox}`)
           .attr('stroke', medianColor).attr('stroke-width', 1.5).attr('fill', 'none')
           .style('pointer-events', 'none');
@@ -1336,32 +1600,16 @@ export class BoxPlotVisual implements IVisual {
         // Vertical: notches indent horizontally from box edges
         chartGroup.append('path')
           .attr('class', 'box-plot-notch')
+          .attr('data-selection-key', box.selectionId.getKey())
           .attr('d', `M${bandCenter - halfBox},${vNotchLower} L${bandCenter - halfBox + notchIndent},${vMedian} L${bandCenter - halfBox},${vNotchUpper}`)
           .attr('stroke', medianColor).attr('stroke-width', 1.5).attr('fill', 'none')
           .style('pointer-events', 'none');
         chartGroup.append('path')
           .attr('class', 'box-plot-notch')
+          .attr('data-selection-key', box.selectionId.getKey())
           .attr('d', `M${bandCenter + halfBox},${vNotchLower} L${bandCenter + halfBox - notchIndent},${vMedian} L${bandCenter + halfBox},${vNotchUpper}`)
           .attr('stroke', medianColor).attr('stroke-width', 1.5).attr('fill', 'none')
           .style('pointer-events', 'none');
-      }
-    }
-  }
-
-  // -- Per-Category Colors ------------------------------------------------
-
-  private applyPerCategoryColors(
-    chartGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
-    data: BoxPlotData,
-  ): void {
-    const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
-    if (!this.settings.colorSettings.perCategoryColors.value) return;
-
-    const boxNodes = chartGroup.selectAll<SVGRectElement, unknown>('.box-plot-box').nodes();
-    for (let i = 0; i < boxNodes.length; i++) {
-      if (i < data.boxes.length) {
-        const color = getHostChartColor(this.host.colorPalette, i, themeName);
-        boxNodes[i].setAttribute('fill', withOpacity(color, 0.6));
       }
     }
   }
@@ -1385,19 +1633,43 @@ export class BoxPlotVisual implements IVisual {
 
   // -- Accessibility ------------------------------------------------------
 
-  private applyAccessibility(dataPointCount: number): void {
+  private applyAccessibility(boxes: BoxStats[]): void {
     const acc = this.settings.accessibilityFormattingCard;
-    if (!acc.enableKeyboardNav.value) return;
+    if (!acc.enableKeyboardNav.value) {
+      this.container.removeAttribute('role');
+      this.container.removeAttribute('aria-label');
+      return;
+    }
     ensureFocusRingStyles();
     applyChartAria(this.container, {
       chartType: 'box plot',
       title: this.settings.titleFormattingCard?.titleText?.value || undefined,
-      dataPointCount,
+      dataPointCount: boxes.length,
+    });
+    const boxElements = Array.from(this.container.querySelectorAll<SVGRectElement>('.box-plot-box'));
+    boxElements.forEach((element, index) => {
+      const box = boxes[index];
+      if (!box) return;
+      element.setAttribute('role', 'listitem');
+      element.setAttribute('tabindex', '0');
+      element.setAttribute(
+        'aria-label',
+        `${box.category}. Minimum ${formatWithSettings(box.min, this.settings.numberFormattingCard)}. `
+          + `First quartile ${formatWithSettings(box.q1, this.settings.numberFormattingCard)}. `
+          + `Median ${formatWithSettings(box.median, this.settings.numberFormattingCard)}. `
+          + `Third quartile ${formatWithSettings(box.q3, this.settings.numberFormattingCard)}. `
+          + `Maximum ${formatWithSettings(box.max, this.settings.numberFormattingCard)}. `
+          + `Item ${index + 1} of ${boxes.length}.`,
+      );
     });
     const cleanup = attachKeyboardNav({
       container: this.container,
-      itemSelector: '.box-group, [tabindex="0"]',
-      onActivate: (el) => (el as HTMLElement).click?.(),
+      itemSelector: '.box-plot-box[tabindex="0"]',
+      onActivate: (el) => {
+        if (allowInteractions(this.host)) {
+          el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        }
+      },
     });
     this.cancelAnimations.push(cleanup);
   }
@@ -1435,9 +1707,34 @@ export class BoxPlotVisual implements IVisual {
     return this.formattingSettingsService.buildFormattingModel(this.settings);
   }
 
+  private attachSelection<E extends SVGElement>(
+    node: d3.Selection<E, unknown, null, undefined>,
+    selectionId: ISelectionId,
+  ): void {
+    node.style('cursor', allowInteractions(this.host) ? 'pointer' : 'default');
+    node.on('click.selection', (event: MouseEvent) => {
+      if (!allowInteractions(this.host)) return;
+      event.stopPropagation();
+      const selectionPromise = this.selectionManager.select(selectionId, event.ctrlKey || event.metaKey);
+      this.applySelectionHighlight();
+      void selectionPromise.then(() => this.applySelectionHighlight());
+    });
+    node.on('contextmenu.selection', (event: MouseEvent) => {
+      if (!allowInteractions(this.host)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      void this.selectionManager.showContextMenu(selectionId, {
+        x: event.clientX,
+        y: event.clientY,
+      });
+    });
+  }
+
   private handleBackgroundClick = (): void => {
-    void this.selectionManager.clear();
+    if (!allowInteractions(this.host)) return;
+    const clearPromise = this.selectionManager.clear();
     this.applySelectionHighlight();
+    void clearPromise.then(() => this.applySelectionHighlight());
   };
 
   // -- Selection & Cross-Highlight ------------------------------------------
@@ -1458,7 +1755,9 @@ export class BoxPlotVisual implements IVisual {
       }
     }
 
-    const boxes = this.container.querySelectorAll<SVGRectElement>('.box-plot-box');
+    const boxes = this.container.querySelectorAll<SVGElement>(
+      '.box-plot-category, .box-plot-violin, .box-plot-notch',
+    );
     const shouldDim = hasSelection || hasHighlights;
 
     for (const el of boxes) {
@@ -1477,6 +1776,8 @@ export class BoxPlotVisual implements IVisual {
 
   public destroy(): void {
     this.container.removeEventListener('click', this.handleBackgroundClick);
+    this.detachEmptySpaceContextMenu?.();
+    this.detachEmptySpaceContextMenu = null;
     this.cancelAnimations.forEach((cancel) => cancel());
     this.cancelAnimations = [];
     while (this.container.firstChild) {

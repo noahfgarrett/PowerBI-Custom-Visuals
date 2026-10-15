@@ -35,14 +35,24 @@ import {
   applyChartAria,
   attachKeyboardNav,
   ensureFocusRingStyles,
+  attachEmptySpaceContextMenu,
   renderHorizontalReferenceLine,
   computeStatValue,
   type StatType,
   resolveSeriesFormatting,
-  populateSeriesFormattingGroups,
+  SeriesFormattingGroup,
   getDateFilterIndices,
   isDateColumn,
   type DateFilterConfig,
+  syncLegendFormattingVisibility,
+  syncTitleFormattingVisibility,
+  syncCardStyleVisibility,
+  syncDateFilterFormattingVisibility,
+  hideInlineLegendFormatting,
+  getLocalizedString,
+  getVisualEmptyStateMode,
+  renderLandingPage,
+  renderNoDataState,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -51,6 +61,7 @@ import IVisual = powerbi.extensibility.visual.IVisual;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import DataView = powerbi.DataView;
 import ISelectionId = powerbi.visuals.ISelectionId;
+import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 
 import '../style/visual.less';
 
@@ -78,6 +89,7 @@ interface ScatterPoint {
   color: string;
   selectionId: ISelectionId;
   highlighted: boolean;
+  formattingObjects?: powerbi.DataViewObjects;
 }
 
 interface ScatterData {
@@ -87,6 +99,14 @@ interface ScatterData {
   sizeExtent: [number, number] | null;
   isEmpty: boolean;
   hasHighlights: boolean;
+}
+
+interface HostHighContrastColors {
+  enabled: boolean;
+  foreground: string;
+  background: string;
+  foregroundSelected: string;
+  hyperlink: string;
 }
 
 interface Margin {
@@ -99,8 +119,6 @@ interface Margin {
 // ── Constants ────────────────────────────────────────────────────────
 
 const MARGIN: Margin = { top: 20, right: 20, bottom: 40, left: 50 };
-const DEFAULT_BUBBLE_RADIUS = 6;
-const TOOLTIP_OFFSET = 12;
 
 // ── Regression Helpers ───────────────────────────────────────────────
 
@@ -385,156 +403,266 @@ export class ScatterBubbleVisual implements IVisual {
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
   private currentData: ScatterData | null = null;
+  private emptyStateMode: 'unconfigured' | 'noData' = 'unconfigured';
+  private detachEmptySpaceContextMenu: (() => void) | null = null;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
     this.selectionManager = options.host.createSelectionManager();
     this.container = options.element;
     this.settings = new ScatterBubbleSettings();
-    this.formattingSettingsService = new FormattingSettingsService();
+    this.formattingSettingsService = new FormattingSettingsService(options.host.createLocalizationManager());
     this.container.classList.add('scatter-bubble-container');
+    this.detachEmptySpaceContextMenu = attachEmptySpaceContextMenu(
+      this.container,
+      this.selectionManager,
+      () => this.host.createSelectionIdBuilder().createSelectionId(),
+      () => this.allowInteractions(),
+    );
   }
 
   public update(options: VisualUpdateOptions): void {
-    // Cancel running animations before re-render
-    this.cancelAnimations.forEach((cancel) => cancel());
-    this.cancelAnimations = [];
+    this.notifyRenderingStarted(options);
+    try {
+      // Cancel running animations before re-render
+      this.cancelAnimations.forEach((cancel) => cancel());
+      this.cancelAnimations = [];
 
-    // Parse settings from dataView
-    const dataView = options.dataViews?.[0];
-    if (dataView) {
-      this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
-        ScatterBubbleSettings,
-        dataView,
-      );
-    }
-
-    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
-    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
-    if (legacyCardObj) {
-      const legacyGlass = legacyCardObj['enableGlass'];
-      if (legacyGlass === false) {
-        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      // Parse settings from dataView
+      const dataView = options.dataViews?.[0];
+      this.emptyStateMode = getVisualEmptyStateMode(dataView);
+      if (dataView) {
+        this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
+          ScatterBubbleSettings,
+          dataView,
+        );
       }
-    }
 
-    // Hide shared axis toggles that are shadowed by local settings
-
-    // Date filter: hide start/end when disabled
-    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
-    // Card Style — hide sub-settings when mode is 'none'
-    const cardStyleMode = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
-    this.settings.cardSettings.backgroundOpacity.visible = cardStyleMode !== 'none';
-    this.settings.cardSettings.backgroundColor.visible = cardStyleMode !== 'none';
-
-    this.settings.axisFormattingCard.showXAxis.visible = false;
-    this.settings.axisFormattingCard.showYAxis.visible = false;
-    this.settings.axisFormattingCard.showGridLines.visible = false;
-    this.settings.axisFormattingCard.yAxisMin.visible = false;
-    this.settings.axisFormattingCard.yAxisMax.visible = false;
-
-    // Hide dual-axis-only properties (no combo/dual-axis support)
-    this.settings.referenceLineFormattingCard.referenceLineAxis.visible = false;
-    this.settings.referenceLineFormattingCard.referenceBandWidth.visible = false;
-
-    // ── Conditional Visibility ──────────────────────────────────
-    const colorScaleVal = resolveDropdown(this.settings.scatterColorSettings.colorScale) ?? 'categorical';
-    this.settings.scatterColorSettings.startColor.visible = colorScaleVal !== 'categorical';
-    this.settings.scatterColorSettings.endColor.visible = colorScaleVal !== 'categorical';
-
-    const clusterEnabled = this.settings.scatterClusterSettings.enabled.value;
-    this.settings.scatterClusterSettings.clusters.visible = clusterEnabled;
-    this.settings.scatterClusterSettings.showHulls.visible = clusterEnabled;
-
-    this.settings.animationSettings.playSpeed.visible = this.settings.animationSettings.enablePlayAxis.value;
-
-    const quadrantShow = this.settings.quadrantSettings.show.value;
-    this.settings.quadrantSettings.xValue.visible = quadrantShow;
-    this.settings.quadrantSettings.yValue.visible = quadrantShow;
-    this.settings.quadrantSettings.lineColor.visible = quadrantShow;
-    this.settings.quadrantSettings.lineWidth.visible = quadrantShow;
-    this.settings.quadrantSettings.lineStyle.visible = quadrantShow;
-    this.settings.quadrantSettings.showLabels.visible = quadrantShow;
-    this.settings.quadrantSettings.topRightLabel.visible = quadrantShow;
-    this.settings.quadrantSettings.topLeftLabel.visible = quadrantShow;
-    this.settings.quadrantSettings.bottomRightLabel.visible = quadrantShow;
-    this.settings.quadrantSettings.bottomLeftLabel.visible = quadrantShow;
-    this.settings.quadrantSettings.labelFontSize.visible = quadrantShow;
-    this.settings.quadrantSettings.labelFontColor.visible = quadrantShow;
-    this.settings.quadrantSettings.labelFontFamily.visible = quadrantShow;
-    this.settings.quadrantSettings.labelFontWeight.visible = quadrantShow;
-    this.settings.quadrantSettings.zoneFillOpacity.visible = quadrantShow;
-    this.settings.quadrantSettings.zone1Color.visible = quadrantShow;
-    this.settings.quadrantSettings.zone2Color.visible = quadrantShow;
-    this.settings.quadrantSettings.zone3Color.visible = quadrantShow;
-    this.settings.quadrantSettings.zone4Color.visible = quadrantShow;
-
-    const trendShow = this.settings.trendlineSettings.show.value;
-    this.settings.trendlineSettings.type.visible = trendShow;
-    this.settings.trendlineSettings.polynomialOrder.visible = trendShow;
-    this.settings.trendlineSettings.lineColor.visible = trendShow;
-    this.settings.trendlineSettings.lineWidth.visible = trendShow;
-    this.settings.trendlineSettings.lineStyle.visible = trendShow;
-    this.settings.trendlineSettings.showEquation.visible = trendShow;
-    this.settings.trendlineSettings.showR2.visible = trendShow;
-    this.settings.trendlineSettings.labelFontSize.visible = trendShow;
-
-    const trendType = resolveDropdown(this.settings.trendlineSettings.type) ?? 'linear';
-    if (trendShow) {
-      this.settings.trendlineSettings.polynomialOrder.visible = trendType === 'polynomial';
-    }
-
-    // Extract data
-    const data = this.extractData(dataView);
-
-    // Populate per-series formatting groups from value columns
-    {
-      const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
-      const colorLookup = new Map<string, string>();
-      const valueColumns = dataView?.categorical?.values;
-      if (valueColumns) {
-        for (let i = 0; i < valueColumns.length; i++) {
-          const name = valueColumns[i].source.displayName;
-          if (name) {
-            colorLookup.set(name, getHostChartColor(this.host.colorPalette, i, themeName));
-          }
+      // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+      const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+      if (legacyCardObj) {
+        const legacyGlass = legacyCardObj['enableGlass'];
+        const modernCardStyle = legacyCardObj['cardStyleMode'];
+        if (modernCardStyle === undefined && legacyGlass === false) {
+          this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
         }
       }
-      populateSeriesFormattingGroups(
-        this.settings.seriesFormattingCard,
-        dataView,
-        ['xValue', 'yValue', 'size'],
-        colorLookup,
-      );
+
+      // Keep the retired shared trendLineFormatting object as a metadata-only
+      // compatibility alias for reports created before the chart-specific card.
+      const legacyTrendObj = dataView?.metadata?.objects?.['trendLineFormatting'];
+      const modernTrendObj = dataView?.metadata?.objects?.['trendlineSettings'];
+      if (legacyTrendObj) {
+        if (modernTrendObj?.['show'] === undefined && typeof legacyTrendObj['showTrendLine'] === 'boolean') {
+          this.settings.trendlineSettings.show.value = legacyTrendObj['showTrendLine'];
+        }
+        if (modernTrendObj?.['type'] === undefined) {
+          const legacyType = legacyTrendObj['trendLineType'];
+          const typeValue = typeof legacyType === 'string'
+            ? legacyType
+            : (legacyType as { value?: string } | undefined)?.value;
+          if (typeValue) {
+            this.settings.trendlineSettings.type.value = { value: typeValue, displayName: typeValue };
+          }
+        }
+        if (
+          modernTrendObj?.['polynomialOrder'] === undefined
+          && typeof legacyTrendObj['polynomialOrder'] === 'number'
+        ) {
+          this.settings.trendlineSettings.polynomialOrder.value = legacyTrendObj['polynomialOrder'];
+        }
+        if (modernTrendObj?.['lineColor'] === undefined) {
+          const legacyColor = legacyTrendObj['trendLineColor'] as { solid?: { color?: string } } | undefined;
+          if (legacyColor?.solid?.color) {
+            this.settings.trendlineSettings.lineColor.value = { value: legacyColor.solid.color };
+          }
+        }
+        if (
+          modernTrendObj?.['lineWidth'] === undefined
+          && typeof legacyTrendObj['trendLineWidth'] === 'number'
+        ) {
+          this.settings.trendlineSettings.lineWidth.value = legacyTrendObj['trendLineWidth'];
+        }
+        if (modernTrendObj?.['showEquation'] === undefined && typeof legacyTrendObj['showEquation'] === 'boolean') {
+          this.settings.trendlineSettings.showEquation.value = legacyTrendObj['showEquation'];
+        }
+        if (modernTrendObj?.['showR2'] === undefined && typeof legacyTrendObj['showR2'] === 'boolean') {
+          this.settings.trendlineSettings.showR2.value = legacyTrendObj['showR2'];
+        }
+      }
+
+      syncTitleFormattingVisibility(this.settings.titleFormattingCard);
+      syncLegendFormattingVisibility(this.settings.legendFormattingCard);
+
+      // Hide shared axis toggles that are shadowed by local settings
+
+      syncDateFilterFormattingVisibility(this.settings.dateFilterFormattingCard);
+      syncCardStyleVisibility(this.settings.cardSettings);
+
+      this.settings.axisFormattingCard.yAxisMin.visible = false;
+      this.settings.axisFormattingCard.yAxisMax.visible = false;
+      this.settings.axisFormattingCard.integerTicks.visible = false;
+
+      hideInlineLegendFormatting(this.settings.legendFormattingCard);
+
+      // Hide dual-axis-only properties (no combo/dual-axis support)
+      this.settings.referenceLineFormattingCard.referenceLineAxis.visible = false;
+
+      // ── Conditional Visibility ──────────────────────────────────
+      const showDataLabels = this.settings.dataLabelFormattingCard.showDataLabels.value;
+      this.settings.dataLabelFormattingCard.dataLabelFontSize.visible = showDataLabels;
+      this.settings.dataLabelFormattingCard.dataLabelFontColor.visible = showDataLabels;
+      this.settings.dataLabelFormattingCard.dataLabelFontWeight.visible = showDataLabels;
+      this.settings.dataLabelFormattingCard.dataLabelFontFamily.visible = showDataLabels;
+      this.settings.dataLabelFormattingCard.dataLabelPosition.visible = showDataLabels;
+
+      const showGridLines = this.settings.axisFormattingCard.showGridLines.value;
+      this.settings.axisFormattingCard.xAxisTitle.visible = this.settings.axisFormattingCard.showXAxis.value;
+      this.settings.axisFormattingCard.yAxisTitle.visible = this.settings.axisFormattingCard.showYAxis.value;
+      this.settings.axisFormattingCard.gridLineColor.visible = showGridLines;
+      this.settings.axisFormattingCard.gridLineStyle.visible = showGridLines;
+      this.settings.axisFormattingCard.gridLineWidth.visible = showGridLines;
+      this.settings.axisFormattingCard.gridLineOpacity.visible = showGridLines;
+
+      const colorScaleVal = resolveDropdown(this.settings.scatterColorSettings.colorScale) ?? 'categorical';
+      this.settings.scatterColorSettings.startColor.visible = colorScaleVal !== 'categorical';
+      this.settings.scatterColorSettings.endColor.visible = colorScaleVal !== 'categorical';
+
+      const clusterEnabled = this.settings.scatterClusterSettings.enabled.value;
+      this.settings.scatterClusterSettings.clusters.visible = clusterEnabled;
+      this.settings.scatterClusterSettings.showHulls.visible = clusterEnabled;
+
+      this.settings.animationSettings.duration.visible = this.settings.animationSettings.enabled.value
+        || this.settings.animationSettings.enableTransitions.value;
+      this.settings.animationSettings.playSpeed.visible = this.settings.animationSettings.enablePlayAxis.value;
+
+      const quadrantShow = this.settings.quadrantSettings.show.value;
+      this.settings.quadrantSettings.xValue.visible = quadrantShow;
+      this.settings.quadrantSettings.yValue.visible = quadrantShow;
+      this.settings.quadrantSettings.lineColor.visible = quadrantShow;
+      this.settings.quadrantSettings.lineWidth.visible = quadrantShow;
+      this.settings.quadrantSettings.lineStyle.visible = quadrantShow;
+      this.settings.quadrantSettings.showLabels.visible = quadrantShow;
+      const quadrantLabelsVisible = quadrantShow && this.settings.quadrantSettings.showLabels.value;
+      this.settings.quadrantSettings.topRightLabel.visible = quadrantLabelsVisible;
+      this.settings.quadrantSettings.topLeftLabel.visible = quadrantLabelsVisible;
+      this.settings.quadrantSettings.bottomRightLabel.visible = quadrantLabelsVisible;
+      this.settings.quadrantSettings.bottomLeftLabel.visible = quadrantLabelsVisible;
+      this.settings.quadrantSettings.labelFontSize.visible = quadrantLabelsVisible;
+      this.settings.quadrantSettings.labelFontColor.visible = quadrantLabelsVisible;
+      this.settings.quadrantSettings.labelFontFamily.visible = quadrantLabelsVisible;
+      this.settings.quadrantSettings.labelFontWeight.visible = quadrantLabelsVisible;
+      this.settings.quadrantSettings.zoneFillOpacity.visible = quadrantShow;
+      const quadrantFillsVisible = quadrantShow && this.settings.quadrantSettings.zoneFillOpacity.value > 0;
+      this.settings.quadrantSettings.zone1Color.visible = quadrantFillsVisible;
+      this.settings.quadrantSettings.zone2Color.visible = quadrantFillsVisible;
+      this.settings.quadrantSettings.zone3Color.visible = quadrantFillsVisible;
+      this.settings.quadrantSettings.zone4Color.visible = quadrantFillsVisible;
+
+      const trendShow = this.settings.trendlineSettings.show.value;
+      this.settings.trendlineSettings.type.visible = trendShow;
+      this.settings.trendlineSettings.polynomialOrder.visible = trendShow;
+      this.settings.trendlineSettings.lineColor.visible = trendShow;
+      this.settings.trendlineSettings.lineWidth.visible = trendShow;
+      this.settings.trendlineSettings.lineStyle.visible = trendShow;
+      this.settings.trendlineSettings.showEquation.visible = trendShow;
+      this.settings.trendlineSettings.showR2.visible = trendShow;
+      this.settings.trendlineSettings.labelFontSize.visible = trendShow
+        && (this.settings.trendlineSettings.showEquation.value || this.settings.trendlineSettings.showR2.value);
+
+      const trendType = resolveDropdown(this.settings.trendlineSettings.type) ?? 'linear';
+      if (trendShow) {
+        this.settings.trendlineSettings.polynomialOrder.visible = trendType === 'polynomial';
+      }
+
+      const showReferenceLine = this.settings.referenceLineFormattingCard.showReferenceLine.value;
+      const referenceType = resolveDropdown(this.settings.referenceLineFormattingCard.referenceLineType) ?? 'custom';
+      this.settings.referenceLineFormattingCard.referenceLineType.visible = showReferenceLine;
+      this.settings.referenceLineFormattingCard.referenceLineValue.visible = showReferenceLine && referenceType === 'custom';
+      this.settings.referenceLineFormattingCard.referenceLineColor.visible = showReferenceLine;
+      this.settings.referenceLineFormattingCard.referenceLineWidth.visible = showReferenceLine;
+      this.settings.referenceLineFormattingCard.referenceLineStyle.visible = showReferenceLine;
+      this.settings.referenceLineFormattingCard.showReferenceLabel.visible = showReferenceLine;
+      this.settings.referenceLineFormattingCard.referenceLabelText.visible = showReferenceLine && this.settings.referenceLineFormattingCard.showReferenceLabel.value;
+      this.settings.referenceLineFormattingCard.showReferenceBand.visible = showReferenceLine;
+      const showReferenceBand = showReferenceLine && this.settings.referenceLineFormattingCard.showReferenceBand.value;
+      this.settings.referenceLineFormattingCard.referenceBandOpacity.visible = showReferenceBand;
+      this.settings.referenceLineFormattingCard.referenceBandWidth.visible = showReferenceBand;
+
+      const conditionalEnabled = this.settings.conditionalFormattingCard.enableConditional.value;
+      this.settings.conditionalFormattingCard.conditionalDirection.visible = conditionalEnabled;
+      this.settings.conditionalFormattingCard.threshold1.visible = conditionalEnabled;
+      this.settings.conditionalFormattingCard.threshold2.visible = conditionalEnabled;
+      this.settings.conditionalFormattingCard.conditionalColor1.visible = conditionalEnabled;
+      this.settings.conditionalFormattingCard.conditionalColor2.visible = conditionalEnabled;
+      this.settings.conditionalFormattingCard.conditionalColor3.visible = conditionalEnabled;
+
+      // Extract data
+      const data = this.extractData(dataView);
+      this.settings.scatterSettings.maxRadius.visible = data.sizeExtent !== null;
+
+      this.populatePointFormattingGroups(data);
+
+      // Store data for cross-highlight logic
+      this.currentData = data;
+
+      // Render
+      if (data.isEmpty) {
+        this.renderEmpty();
+      } else {
+        this.render(data, options.viewport);
+      }
+
+      // Apply card styling AFTER render — render clears the container, which would destroy the glass backdrop div.
+      this.applyCardStyle();
+
+      // Apply cross-highlight dimming after render
+      this.applySelectionHighlight();
+      this.applyHighContrastStyling(data.isEmpty ? null : data);
+      this.notifyRenderingFinished(options);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      this.notifyRenderingFailed(options, reason);
+      throw error;
     }
-
-    // Store data for cross-highlight logic
-    this.currentData = data;
-
-    // Render
-    if (data.isEmpty) {
-      this.renderEmpty();
-    } else {
-      this.render(data, options.viewport);
-    }
-
-    // Apply card styling AFTER render — render clears the container, which would destroy the glass backdrop div.
-    this.applyCardStyle();
-
-    // Apply cross-highlight dimming after render
-    this.applyCrossHighlight();
   }
 
   public getFormattingModel(): powerbi.visuals.FormattingModel {
     return this.formattingSettingsService.buildFormattingModel(this.settings);
   }
 
+  private populatePointFormattingGroups(data: ScatterData): void {
+    const card = this.settings.seriesFormattingCard;
+    card.groups = [];
+    for (let i = 0; i < data.points.length; i++) {
+      const point = data.points[i];
+      const group = new SeriesFormattingGroup({
+        name: `series_${i}`,
+        displayName: point.label || `Point ${point.index + 1}`,
+      });
+      group.seriesColor.value = { value: point.color };
+      group.lineStyle.visible = false;
+      group.lineWidth.visible = false;
+      const selector = point.selectionId.getSelector();
+      for (const slice of group.slices) {
+        (slice as { selector?: unknown }).selector = selector;
+      }
+      const objects = point.formattingObjects?.['seriesFormatting'];
+      if (objects) {
+        const color = objects['seriesColor'] as { solid?: { color?: string } } | undefined;
+        if (color?.solid?.color) group.seriesColor.value = { value: color.solid.color };
+        if (typeof objects['seriesOpacity'] === 'number') group.seriesOpacity.value = objects['seriesOpacity'];
+        if (typeof objects['showDataLabels'] === 'boolean') group.showDataLabels.value = objects['showDataLabels'];
+      }
+      card.groups.push(group);
+    }
+  }
+
   // ── Data Extraction ──────────────────────────────────────────────
 
   private extractData(dataView: DataView | undefined): ScatterData {
     const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
+    const highContrast = this.getHighContrastColors();
     const empty: ScatterData = {
       points: [],
       xExtent: [0, 1],
@@ -608,11 +736,14 @@ export class ScatterBubbleVisual implements IVisual {
         y: yRaw,
         size: sizeVal,
         index: i,
-        color: getHostChartColor(this.host.colorPalette, i, themeName),
+        color: highContrast.enabled
+          ? highContrast.foreground
+          : getHostChartColor(this.host.colorPalette, i, themeName),
         selectionId: this.host.createSelectionIdBuilder()
           .withCategory(categoryColumn, i)
           .createSelectionId(),
         highlighted: isHighlighted,
+        formattingObjects: categoryColumn.objects?.[i],
       });
     }
 
@@ -620,7 +751,7 @@ export class ScatterBubbleVisual implements IVisual {
 
     // Apply sequential color scale if configured
     const colorScaleMode = resolveDropdown(this.settings.scatterColorSettings.colorScale) ?? 'categorical';
-    if (colorScaleMode === 'sequential' && points.length > 0) {
+    if (!highContrast.enabled && colorScaleMode === 'sequential' && points.length > 0) {
       const startColor = this.settings.scatterColorSettings.startColor.value?.value || '#3B82F6';
       const endColor = this.settings.scatterColorSettings.endColor.value?.value || '#EF4444';
       const yVals = points.map((p) => p.y);
@@ -672,9 +803,10 @@ export class ScatterBubbleVisual implements IVisual {
       backgroundColor: s.backgroundColor.value?.value,
       borderRadius: s.borderRadius.value,
     });
-    if (mode === 'none') {
-      this.container.style.borderRadius = `${s.borderRadius.value}px`;
-    }
+    const contentPadding = Math.max(0, s.contentPadding.value);
+    this.container.style.boxSizing = 'border-box';
+    this.container.style.padding = `${contentPadding}px`;
+    this.container.style.color = '';
   }
 
   // ── Empty State ────────────────────────────────────────────────
@@ -683,10 +815,32 @@ export class ScatterBubbleVisual implements IVisual {
     while (this.container.firstChild) {
       this.container.removeChild(this.container.firstChild);
     }
-    const emptyEl = document.createElement('div');
-    emptyEl.className = 'scatter-bubble-empty';
-    emptyEl.textContent = 'Add a Category, X Value, and Y Value to get started.';
-    this.container.appendChild(emptyEl);
+    if (this.emptyStateMode === 'noData') {
+      renderNoDataState(
+        this.container,
+        getLocalizedString(this.host, 'ScatterBubble_NoDataState', 'No data for the current selection.'),
+        this.getHighContrastColors(),
+      );
+      return;
+    }
+    renderLandingPage(this.container, {
+      title: getLocalizedString(this.host, 'ScatterBubble_LandingTitle', 'Add data to build a scatter plot'),
+      description: getLocalizedString(
+        this.host,
+        'ScatterBubble_LandingDescription',
+        'Compare two measures on X and Y, then optionally size bubbles with a third measure.',
+      ),
+      steps: [
+        getLocalizedString(this.host, 'ScatterBubble_LandingStepCategory', 'Add a category to label each point.'),
+        getLocalizedString(this.host, 'ScatterBubble_LandingStepValues', 'Add X and Y measures to position the points.'),
+        getLocalizedString(this.host, 'ScatterBubble_LandingStepSize', 'Optionally add Size to scale bubble area.'),
+      ],
+      hint: getLocalizedString(
+        this.host,
+        'ScatterBubble_LandingHint',
+        'Use quadrants, trend lines, clustering, or playback when the data calls for them.',
+      ),
+    }, this.getHighContrastColors());
   }
 
   // ── Main Render ────────────────────────────────────────────────
@@ -701,14 +855,19 @@ export class ScatterBubbleVisual implements IVisual {
     const s = this.settings;
     const width = viewport.width;
     const height = viewport.height;
-    const chartWidth = width - MARGIN.left - MARGIN.right;
-    const chartHeight = height - MARGIN.top - MARGIN.bottom;
+    const highContrast = this.getHighContrastColors();
+    const interactionsEnabled = this.allowInteractions();
+    const contentPadding = Math.max(0, s.cardSettings.contentPadding.value);
+    const chartWidth = width - MARGIN.left - MARGIN.right - (contentPadding * 2);
+    const chartHeight = height - MARGIN.top - MARGIN.bottom - (contentPadding * 2);
 
     if (chartWidth <= 0 || chartHeight <= 0) return;
 
     // ── Legend ──────────────────────────────────────────────────
     const legendFmtCard = s.legendFormattingCard;
-    const legendFontColor = legendFmtCard.legendFontColor.value?.value || '#1E293B';
+    const legendFontColor = highContrast.enabled
+      ? highContrast.foreground
+      : (legendFmtCard.legendFontColor.value?.value || '#1E293B');
     const legendFontSize = legendFmtCard.legendFontSize.value;
     const legendPositionValue = legendFmtCard.legendPosition.value;
     const legendPosition = typeof legendPositionValue === 'string'
@@ -729,6 +888,7 @@ export class ScatterBubbleVisual implements IVisual {
         fontSize: legendFontSize,
         fontColor: legendFontColor,
         fontFamily: rawLegendFontFamily,
+        fontWeight: resolveDropdown(legendFmtCard.legendFontWeight) || 'normal',
         aliases: legendFmtCard.legendAliases.value,
       });
 
@@ -747,7 +907,7 @@ export class ScatterBubbleVisual implements IVisual {
     this.container.appendChild(svg);
 
     const chartGroup = document.createElementNS(svgNs, 'g');
-    chartGroup.setAttribute('transform', `translate(${MARGIN.left}, ${MARGIN.top})`);
+    chartGroup.setAttribute('transform', `translate(${MARGIN.left + contentPadding}, ${MARGIN.top + contentPadding})`);
     svg.appendChild(chartGroup);
 
     // ── Scales ─────────────────────────────────────────────────
@@ -759,8 +919,8 @@ export class ScatterBubbleVisual implements IVisual {
       .domain(data.yExtent)
       .range([chartHeight, 0]);
 
-    const minRadius = s.scatterSettings.minRadius.value;
-    const maxRadius = s.scatterSettings.maxRadius.value;
+    const minRadius = Math.max(0, Math.min(s.scatterSettings.minRadius.value, s.scatterSettings.maxRadius.value));
+    const maxRadius = Math.max(minRadius, s.scatterSettings.maxRadius.value);
 
     const sizeScale = data.sizeExtent
       ? d3.scaleSqrt()
@@ -801,27 +961,33 @@ export class ScatterBubbleVisual implements IVisual {
 
     // ── Axes ───────────────────────────────────────────────────
     if (s.axisFormattingCard.showXAxis.value) {
-      this.renderXAxis(svg, xScale, chartWidth, chartHeight);
+      this.renderXAxis(svg, xScale, chartWidth, chartHeight, contentPadding);
     }
 
     if (s.axisFormattingCard.showYAxis.value) {
-      this.renderYAxis(svg, yScale, chartHeight);
+      this.renderYAxis(svg, yScale, chartHeight, contentPadding);
     }
 
     // ── Axis Titles ───────────────────────────────────────────
     {
       const axisTitleSize = `${s.axisFormattingCard.axisLabelSize.value}px`;
-      const axisTitleColor = s.axisFormattingCard.axisLabelColor.value?.value || '#64748B';
+      const axisTitleColor = highContrast.enabled
+        ? highContrast.foreground
+        : (s.axisFormattingCard.axisLabelColor.value?.value || '#64748B');
 
       const xTitle = s.axisFormattingCard.xAxisTitle.value;
       if (xTitle && s.axisFormattingCard.showXAxis.value) {
         const titleEl = document.createElementNS(svgNs, 'text');
         titleEl.setAttribute('class', 'scatter-bubble-axis-title');
-        titleEl.setAttribute('x', String(MARGIN.left + chartWidth / 2));
-        titleEl.setAttribute('y', String(MARGIN.top + chartHeight + 36));
+        titleEl.setAttribute('x', String(MARGIN.left + contentPadding + chartWidth / 2));
+        titleEl.setAttribute('y', String(MARGIN.top + contentPadding + chartHeight + 36));
         titleEl.setAttribute('text-anchor', 'middle');
         titleEl.setAttribute('font-size', axisTitleSize);
         titleEl.setAttribute('fill', axisTitleColor);
+        const titleFont = resolveDropdown(s.axisFormattingCard.axisLabelFontFamily);
+        const titleWeight = resolveDropdown(s.axisFormattingCard.axisLabelFontWeight);
+        if (titleFont) titleEl.setAttribute('font-family', titleFont);
+        if (titleWeight) titleEl.setAttribute('font-weight', titleWeight);
         titleEl.textContent = xTitle;
         svg.appendChild(titleEl);
       }
@@ -831,11 +997,15 @@ export class ScatterBubbleVisual implements IVisual {
         const titleEl = document.createElementNS(svgNs, 'text');
         titleEl.setAttribute('class', 'scatter-bubble-axis-title');
         titleEl.setAttribute('transform', `rotate(-90)`);
-        titleEl.setAttribute('x', String(-(MARGIN.top + chartHeight / 2)));
-        titleEl.setAttribute('y', String(MARGIN.left - 40));
+        titleEl.setAttribute('x', String(-(MARGIN.top + contentPadding + chartHeight / 2)));
+        titleEl.setAttribute('y', String(MARGIN.left + contentPadding - 40));
         titleEl.setAttribute('text-anchor', 'middle');
         titleEl.setAttribute('font-size', axisTitleSize);
         titleEl.setAttribute('fill', axisTitleColor);
+        const titleFont = resolveDropdown(s.axisFormattingCard.axisLabelFontFamily);
+        const titleWeight = resolveDropdown(s.axisFormattingCard.axisLabelFontWeight);
+        if (titleFont) titleEl.setAttribute('font-family', titleFont);
+        if (titleWeight) titleEl.setAttribute('font-weight', titleWeight);
         titleEl.textContent = yTitle;
         svg.appendChild(titleEl);
       }
@@ -883,7 +1053,7 @@ export class ScatterBubbleVisual implements IVisual {
       const cy = yScale(pt.y);
       const r = sizeScale && pt.size !== null
         ? sizeScale(pt.size)
-        : DEFAULT_BUBBLE_RADIUS;
+        : minRadius;
 
       const circle = document.createElementNS(svgNs, 'circle');
       circle.setAttribute('cx', String(cx));
@@ -892,11 +1062,21 @@ export class ScatterBubbleVisual implements IVisual {
       const conditionalFill = this.getConditionalBubbleColor(pt.y);
       const effectiveColor = conditionalFill ?? sf.color;
       const effectiveOpacity = (sf.opacity / 100) * bubbleOpacity;
-      circle.setAttribute('fill', withOpacity(effectiveColor, effectiveOpacity));
-      circle.setAttribute('stroke', this.settings.scatterSettings.bubbleStrokeColor.value?.value || sf.color);
-      circle.setAttribute('stroke-width', String(this.settings.scatterSettings.bubbleStrokeWidth.value));
+      const defaultStroke = this.settings.scatterSettings.bubbleStrokeColor.value?.value || sf.color;
+      const highContrastStroke = pt.highlighted ? highContrast.foregroundSelected : highContrast.foreground;
+      const highContrastFill = pt.highlighted ? highContrast.foregroundSelected : highContrast.background;
+      circle.setAttribute(
+        'fill',
+        highContrast.enabled ? highContrastFill : withOpacity(effectiveColor, effectiveOpacity),
+      );
+      circle.setAttribute('stroke', highContrast.enabled ? highContrastStroke : defaultStroke);
+      circle.setAttribute(
+        'stroke-width',
+        String(highContrast.enabled ? Math.max(2, this.settings.scatterSettings.bubbleStrokeWidth.value) : this.settings.scatterSettings.bubbleStrokeWidth.value),
+      );
       circle.setAttribute('class', 'scatter-bubble-point');
       circle.setAttribute('data-point-index', String(ptIdx));
+      circle.setAttribute('data-selection-key', pt.selectionId.getKey());
 
       // Apply CSS transitions for smooth data-update movement
       if (s.animationSettings.enableTransitions.value) {
@@ -921,15 +1101,25 @@ export class ScatterBubbleVisual implements IVisual {
       circle.addEventListener('mouseenter', (e: MouseEvent) => {
         this.showTooltip(pt, e);
       });
+      circle.addEventListener('mousemove', (event: MouseEvent) => {
+        this.moveTooltip(pt, event);
+      });
       circle.addEventListener('mouseleave', () => {
         this.hideTooltip();
       });
-      circle.style.cursor = 'pointer';
+      circle.style.cursor = interactionsEnabled ? 'pointer' : 'default';
       circle.addEventListener('click', (event: MouseEvent) => {
+        if (!this.allowInteractions()) return;
         event.stopPropagation();
-        void this.selectionManager.select(pt.selectionId, event.ctrlKey || event.metaKey);
+        const selectionPromise = this.selectionManager.select(
+          pt.selectionId,
+          event.ctrlKey || event.metaKey,
+        );
+        this.applySelectionHighlight();
+        void selectionPromise.then(() => this.applySelectionHighlight());
       });
       circle.addEventListener('contextmenu', (event: MouseEvent) => {
+        if (!this.allowInteractions()) return;
         event.preventDefault();
         event.stopPropagation();
         void this.selectionManager.showContextMenu(pt.selectionId, {
@@ -945,15 +1135,19 @@ export class ScatterBubbleVisual implements IVisual {
       labelsGroup.setAttribute('class', 'scatter-bubble-labels');
       chartGroup.appendChild(labelsGroup);
 
-      for (const pt of data.points) {
+      for (let ptIdx = 0; ptIdx < data.points.length; ptIdx++) {
+        const pt = data.points[ptIdx];
+        const sf = resolveSeriesFormatting(this.settings.seriesFormattingCard, ptIdx, pt.color);
+        if (!sf.showLabels) continue;
         const cx = xScale(pt.x);
         const cy = yScale(pt.y);
         const r = sizeScale && pt.size !== null
           ? sizeScale(pt.size)
-          : DEFAULT_BUBBLE_RADIUS;
+          : minRadius;
 
         const label = document.createElementNS(svgNs, 'text');
         label.setAttribute('class', 'scatter-bubble-label');
+        label.setAttribute('data-point-index', String(ptIdx));
         label.setAttribute('x', String(cx));
         label.setAttribute('y', String(cy - r - 4));
         label.setAttribute('text-anchor', 'middle');
@@ -965,14 +1159,11 @@ export class ScatterBubbleVisual implements IVisual {
     // ── Cluster Highlighting ─────────────────────────────────────
     this.renderClusterHighlighting(chartGroup, data, xScale, yScale, chartWidth, chartHeight);
 
-    // ── Density Contours ─────────────────────────────────────────
-    this.renderDensityContours(chartGroup, data, xScale, yScale, chartWidth, chartHeight);
-
     // ── Zoom & Pan ───────────────────────────────────────────────
     this.applyZoomPan(svg, chartGroup, xScale, yScale, chartWidth, chartHeight);
 
     // ── Play Axis ──────────────────────────────────────────────
-    if (s.animationSettings.enablePlayAxis.value && data.points.length > 1) {
+    if (interactionsEnabled && s.animationSettings.enablePlayAxis.value && data.points.length > 1) {
       this.renderPlayAxis(data, bubblesGroup, xScale, yScale, sizeScale, s);
     }
 
@@ -980,7 +1171,9 @@ export class ScatterBubbleVisual implements IVisual {
     applyAllAxisFormatting(this.container, this.settings.axisFormattingCard, '.scatter-bubble-axis', '.scatter-bubble-grid');
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.scatter-bubble-label');
 
-    this.container.addEventListener('click', this.handleBackgroundClick);
+    if (interactionsEnabled) {
+      this.container.addEventListener('click', this.handleBackgroundClick);
+    }
 
     // ── Accessibility ──────────────────────────────────────────
     this.applyAccessibility(data);
@@ -993,13 +1186,14 @@ export class ScatterBubbleVisual implements IVisual {
     xScale: d3.ScaleLinear<number, number>,
     chartWidth: number,
     chartHeight: number,
+    contentPadding: number,
   ): void {
     const svgNs = 'http://www.w3.org/2000/svg';
     const axisGroup = document.createElementNS(svgNs, 'g');
     axisGroup.setAttribute('class', 'scatter-bubble-axis scatter-bubble-axis-x');
     axisGroup.setAttribute(
       'transform',
-      `translate(${MARGIN.left}, ${MARGIN.top + chartHeight})`,
+      `translate(${MARGIN.left + contentPadding}, ${MARGIN.top + contentPadding + chartHeight})`,
     );
     svg.appendChild(axisGroup);
 
@@ -1026,7 +1220,9 @@ export class ScatterBubbleVisual implements IVisual {
 
       const tickLabel = document.createElementNS(svgNs, 'text');
       tickLabel.setAttribute('y', '20');
-      tickLabel.setAttribute('text-anchor', 'middle');
+      const rotation = this.settings.axisFormattingCard.axisLabelRotation.value;
+      tickLabel.setAttribute('text-anchor', rotation > 0 ? 'start' : rotation < 0 ? 'end' : 'middle');
+      if (rotation !== 0) tickLabel.setAttribute('transform', `rotate(${rotation})`);
       tickLabel.textContent = formatWithSettings(tick, this.settings.numberFormattingCard);
       tickGroup.appendChild(tickLabel);
 
@@ -1038,11 +1234,12 @@ export class ScatterBubbleVisual implements IVisual {
     svg: SVGSVGElement,
     yScale: d3.ScaleLinear<number, number>,
     chartHeight: number,
+    contentPadding: number,
   ): void {
     const svgNs = 'http://www.w3.org/2000/svg';
     const axisGroup = document.createElementNS(svgNs, 'g');
     axisGroup.setAttribute('class', 'scatter-bubble-axis scatter-bubble-axis-y');
-    axisGroup.setAttribute('transform', `translate(${MARGIN.left}, ${MARGIN.top})`);
+    axisGroup.setAttribute('transform', `translate(${MARGIN.left + contentPadding}, ${MARGIN.top + contentPadding})`);
     svg.appendChild(axisGroup);
 
     const ticks = yScale.ticks(Math.max(2, Math.floor(chartHeight / 50)));
@@ -1109,7 +1306,7 @@ export class ScatterBubbleVisual implements IVisual {
     else if (lineStyleRaw === 'dotted') dashArray = '2,2';
 
     // ── Zone fills (optional) ─────────────────────────────────
-    const zoneFillOpacity = Math.max(0, Math.min(q.zoneFillOpacity.value, 20));
+    const zoneFillOpacity = Math.max(0, Math.min(q.zoneFillOpacity.value, 100));
     if (zoneFillOpacity > 0) {
       const opacity = zoneFillOpacity / 100;
       const z1Color = q.zone1Color.value?.value ?? '#F59E0B';
@@ -1421,21 +1618,6 @@ export class ScatterBubbleVisual implements IVisual {
     return assignments;
   }
 
-  // ── Density Contours ──────────────────────────────────────────
-
-  private renderDensityContours(
-    _chartGroup: SVGGElement,
-    _data: ScatterData,
-    _xScale: d3.ScaleLinear<number, number>,
-    _yScale: d3.ScaleLinear<number, number>,
-    _chartWidth: number,
-    _chartHeight: number,
-  ): void {
-    // Density contour rendering is a placeholder for 2D KDE overlay.
-    // Full implementation requires d3-contour which is not yet included.
-    // The settings card (scatterClusterSettings) provides the toggle.
-  }
-
   // ── Zoom & Pan ────────────────────────────────────────────────
 
   private applyZoomPan(
@@ -1446,6 +1628,7 @@ export class ScatterBubbleVisual implements IVisual {
     chartWidth: number,
     chartHeight: number,
   ): void {
+    if (!this.allowInteractions()) return;
     const zs = this.settings.scatterClusterSettings;
     const isZoomEnabled = zs.enableZoom.value;
     const isPanEnabled = zs.enablePan.value;
@@ -1506,59 +1689,38 @@ export class ScatterBubbleVisual implements IVisual {
   // ── Tooltip ────────────────────────────────────────────────────
 
   private showTooltip(pt: ScatterPoint, event: MouseEvent): void {
-    this.hideTooltip();
-
-    const tooltip = document.createElement('div');
-    tooltip.className = 'scatter-bubble-tooltip';
-
-    const titleEl = document.createElement('div');
-    titleEl.className = 'scatter-bubble-tooltip-title';
-    titleEl.textContent = pt.label || `Point ${pt.index + 1}`;
-    tooltip.appendChild(titleEl);
-
     const numberSettings = this.settings.numberFormattingCard;
-
-    const xRow = document.createElement('div');
-    xRow.className = 'scatter-bubble-tooltip-row';
-    xRow.textContent = `X: ${formatWithSettings(pt.x, numberSettings)}`;
-    tooltip.appendChild(xRow);
-
-    const yRow = document.createElement('div');
-    yRow.className = 'scatter-bubble-tooltip-row';
-    yRow.textContent = `Y: ${formatWithSettings(pt.y, numberSettings)}`;
-    tooltip.appendChild(yRow);
+    const tooltipData: VisualTooltipDataItem[] = [
+      { displayName: 'Point', value: pt.label || `Point ${pt.index + 1}` },
+      { displayName: 'X', value: formatWithSettings(pt.x, numberSettings) },
+      { displayName: 'Y', value: formatWithSettings(pt.y, numberSettings) },
+    ];
 
     if (pt.size !== null) {
-      const sizeRow = document.createElement('div');
-      sizeRow.className = 'scatter-bubble-tooltip-row';
-      sizeRow.textContent = `Size: ${formatWithSettings(pt.size, numberSettings)}`;
-      tooltip.appendChild(sizeRow);
+      tooltipData.push({
+        displayName: 'Size',
+        value: formatWithSettings(pt.size, numberSettings),
+      });
     }
 
-    this.container.appendChild(tooltip);
+    this.host.tooltipService.show({
+      dataItems: tooltipData,
+      coordinates: [event.clientX, event.clientY],
+      identities: [pt.selectionId],
+      isTouchEvent: false,
+    });
+  }
 
-    // Position tooltip near the cursor
-    const containerRect = this.container.getBoundingClientRect();
-    const left = event.clientX - containerRect.left + TOOLTIP_OFFSET;
-    const top = event.clientY - containerRect.top + TOOLTIP_OFFSET;
-    tooltip.style.left = `${left}px`;
-    tooltip.style.top = `${top}px`;
-
-    // Clamp to container bounds
-    requestAnimationFrame(() => {
-      const tooltipRect = tooltip.getBoundingClientRect();
-      const maxLeft = containerRect.width - tooltipRect.width - 4;
-      const maxTop = containerRect.height - tooltipRect.height - 4;
-      if (left > maxLeft) tooltip.style.left = `${Math.max(0, maxLeft)}px`;
-      if (top > maxTop) tooltip.style.top = `${Math.max(0, maxTop)}px`;
+  private moveTooltip(pt: ScatterPoint, event: MouseEvent): void {
+    this.host.tooltipService.move({
+      coordinates: [event.clientX, event.clientY],
+      identities: [pt.selectionId],
+      isTouchEvent: false,
     });
   }
 
   private hideTooltip(): void {
-    const existing = this.container.querySelector('.scatter-bubble-tooltip');
-    if (existing) {
-      this.container.removeChild(existing);
-    }
+    this.host.tooltipService.hide({ immediately: true, isTouchEvent: false });
   }
 
   // ── Conditional Formatting ──────────────────────────────────────
@@ -1600,11 +1762,14 @@ export class ScatterBubbleVisual implements IVisual {
     playBar.style.display = 'flex';
     playBar.style.alignItems = 'center';
     playBar.style.gap = '8px';
-    playBar.style.padding = '4px 8px';
+    playBar.style.padding = `${Math.max(4, this.settings.cardSettings.contentPadding.value)}px ${Math.max(8, this.settings.cardSettings.contentPadding.value)}px`;
     playBar.style.justifyContent = 'center';
 
     const playBtn = document.createElement('button');
+    playBtn.type = 'button';
     playBtn.textContent = '\u25B6';
+    playBtn.setAttribute('aria-label', 'Play scatter sequence');
+    playBtn.title = 'Play scatter sequence';
     playBtn.style.cursor = 'pointer';
     playBtn.style.border = 'none';
     playBtn.style.background = 'none';
@@ -1638,6 +1803,8 @@ export class ScatterBubbleVisual implements IVisual {
     const stop = (): void => {
       playing = false;
       playBtn.textContent = '\u25B6';
+      playBtn.setAttribute('aria-label', 'Play scatter sequence');
+      playBtn.title = 'Play scatter sequence';
       if (intervalId !== null) {
         clearInterval(intervalId);
         intervalId = null;
@@ -1647,6 +1814,8 @@ export class ScatterBubbleVisual implements IVisual {
     const play = (): void => {
       playing = true;
       playBtn.textContent = '\u23F8';
+      playBtn.setAttribute('aria-label', 'Pause scatter sequence');
+      playBtn.title = 'Pause scatter sequence';
       intervalId = setInterval(() => {
         currentStep++;
         if (currentStep >= points.length) {
@@ -1681,7 +1850,11 @@ export class ScatterBubbleVisual implements IVisual {
 
   private applyAccessibility(data: ScatterData): void {
     const acc = this.settings.accessibilityFormattingCard;
-    if (!acc.enableKeyboardNav.value) return;
+    if (!acc.enableKeyboardNav.value) {
+      this.container.removeAttribute('role');
+      this.container.removeAttribute('aria-label');
+      return;
+    }
 
     ensureFocusRingStyles();
 
@@ -1691,11 +1864,30 @@ export class ScatterBubbleVisual implements IVisual {
       dataPointCount: data.points.length,
     });
 
+    const points = Array.from(this.container.querySelectorAll<SVGCircleElement>('.scatter-bubble-point'));
+    points.forEach((element, index) => {
+      const point = data.points[index];
+      if (!point) return;
+      const parts = [
+        point.label || `Point ${index + 1}`,
+        `X ${formatWithSettings(point.x, this.settings.numberFormattingCard)}`,
+        `Y ${formatWithSettings(point.y, this.settings.numberFormattingCard)}`,
+      ];
+      if (point.size !== null) {
+        parts.push(`Size ${formatWithSettings(point.size, this.settings.numberFormattingCard)}`);
+      }
+      parts.push(`Item ${index + 1} of ${data.points.length}`);
+      element.setAttribute('role', 'listitem');
+      element.setAttribute('tabindex', '0');
+      element.setAttribute('aria-label', `${parts.join('. ')}.`);
+    });
+
     const cleanup = attachKeyboardNav({
       container: this.container,
-      itemSelector: '.scatter-bubble-point, [tabindex="0"]',
+      itemSelector: '.scatter-bubble-point[tabindex="0"]',
       onActivate: (el) => {
-        (el as HTMLElement).click?.();
+        if (!this.allowInteractions()) return;
+        el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
       },
     });
     this.cancelAnimations.push(cleanup);
@@ -1725,6 +1917,9 @@ export class ScatterBubbleVisual implements IVisual {
     const refStyle = (resolveDropdown(ref.referenceLineStyle) ?? 'dashed') as 'solid' | 'dashed' | 'dotted';
     const labelText = ref.referenceLabelText.value
       || `${refTypeRaw}: ${formatWithSettings(refValue, this.settings.numberFormattingCard)}`;
+    const valueRange = Math.max(...yValues) - Math.min(...yValues);
+    const bandHalfWidth = (valueRange || Math.abs(refValue) || 1)
+      * Math.max(0, ref.referenceBandWidth.value) / 200;
 
     const g = d3.select(chartGroup);
     renderHorizontalReferenceLine(g as d3.Selection<SVGGElement, unknown, null, undefined>, {
@@ -1737,33 +1932,168 @@ export class ScatterBubbleVisual implements IVisual {
       showLabel: ref.showReferenceLabel.value,
       labelText,
       showBand: ref.showReferenceBand.value,
+      bandLowerValue: refValue - bandHalfWidth,
+      bandUpperValue: refValue + bandHalfWidth,
       bandOpacity: ref.referenceBandOpacity.value / 100,
     });
   }
 
   private handleBackgroundClick = (): void => {
-    void this.selectionManager.clear();
+    if (!this.allowInteractions()) return;
+    const clearPromise = this.selectionManager.clear();
+    this.applySelectionHighlight();
+    void clearPromise.then(() => this.applySelectionHighlight());
   };
 
-  // ── Cross-Highlight ───────────────────────────────────────────────
+  private notifyRenderingStarted(options: VisualUpdateOptions): void {
+    this.host.eventService?.renderingStarted?.(options);
+  }
 
-  private applyCrossHighlight(): void {
+  private notifyRenderingFinished(options: VisualUpdateOptions): void {
+    this.host.eventService?.renderingFinished?.(options);
+  }
+
+  private notifyRenderingFailed(options: VisualUpdateOptions, reason?: string): void {
+    this.host.eventService?.renderingFailed?.(options, reason);
+  }
+
+  // ── Selection and Cross-Highlight ────────────────────────────────
+
+  private applySelectionHighlight(): void {
     const data = this.currentData;
-    if (!data || !data.hasHighlights) return;
+    if (!data) return;
 
-    const circles = this.container.querySelectorAll<SVGCircleElement>('.scatter-bubble-point');
-    for (const circle of Array.from(circles)) {
-      const idxStr = circle.getAttribute('data-point-index');
+    const selectedKeys = new Set(
+      (this.selectionManager.getSelectionIds() as ISelectionId[]).map((id) => id.getKey()),
+    );
+    const hasSelection = selectedKeys.size > 0;
+    const shouldDim = hasSelection || data.hasHighlights;
+    const pointElements = this.container.querySelectorAll<SVGElement>('[data-point-index]');
+    for (const element of Array.from(pointElements)) {
+      const idxStr = element.getAttribute('data-point-index');
       if (idxStr === null) continue;
       const idx = parseInt(idxStr, 10);
       const pt = data.points[idx];
       if (!pt) continue;
-      circle.style.opacity = pt.highlighted ? '' : '0.3';
+      const isSelected = hasSelection && selectedKeys.has(pt.selectionId.getKey());
+      const isHighlighted = data.hasHighlights && pt.highlighted;
+      element.style.opacity = shouldDim && !isSelected && !isHighlighted ? '0.3' : '';
     }
+  }
+
+  private allowInteractions(): boolean {
+    const hostWithCapabilities = this.host as unknown as {
+      hostCapabilities?: { allowInteractions?: boolean };
+    };
+    return hostWithCapabilities.hostCapabilities?.allowInteractions !== false;
+  }
+
+  private getHighContrastColors(): HostHighContrastColors {
+    const palette = (this.host as unknown as {
+      colorPalette?: {
+        isHighContrast?: boolean;
+        foreground?: unknown;
+        background?: unknown;
+        foregroundSelected?: unknown;
+        hyperlink?: unknown;
+      };
+    }).colorPalette;
+
+    const colorValue = (value: unknown, fallback: string): string => {
+      if (typeof value === 'string' && value.length > 0) return value;
+      if (typeof value === 'object' && value !== null && 'value' in value) {
+        const nested = (value as { value?: unknown }).value;
+        if (typeof nested === 'string' && nested.length > 0) return nested;
+      }
+      return fallback;
+    };
+
+    return {
+      enabled: Boolean(palette?.isHighContrast),
+      foreground: colorValue(palette?.foreground, '#000000'),
+      background: colorValue(palette?.background, '#FFFFFF'),
+      foregroundSelected: colorValue(palette?.foregroundSelected, '#000000'),
+      hyperlink: colorValue(palette?.hyperlink, '#0000FF'),
+    };
+  }
+
+  private applyHighContrastStyling(data: ScatterData | null): void {
+    const highContrast = this.getHighContrastColors();
+    if (!highContrast.enabled) return;
+
+    this.container.style.backgroundColor = highContrast.background;
+    this.container.style.color = highContrast.foreground;
+
+    const emptyState = this.container.querySelector<HTMLElement>('.scatter-bubble-empty');
+    if (emptyState) {
+      emptyState.style.color = highContrast.foreground;
+      return;
+    }
+
+    this.container.querySelectorAll<HTMLElement>('.chart-title, .chart-subtitle').forEach((el) => {
+      el.style.color = highContrast.foreground;
+    });
+
+    this.container.querySelectorAll<HTMLElement>('.pbi-shared-legend .pbi-legend-item span').forEach((el, index) => {
+      el.style.color = highContrast.foreground;
+      if (index % 2 === 0) {
+        el.style.backgroundColor = highContrast.foreground;
+        el.style.border = `1px solid ${highContrast.foreground}`;
+      }
+    });
+
+    this.container.querySelectorAll<HTMLElement>('.scatter-play-axis, .scatter-play-axis span, .scatter-play-axis button').forEach((el) => {
+      el.style.color = highContrast.foreground;
+      if (el.tagName === 'BUTTON') {
+        el.style.border = `1px solid ${highContrast.foreground}`;
+      }
+    });
+
+    this.container.querySelectorAll<SVGTextElement>('svg text').forEach((el) => {
+      el.setAttribute('fill', highContrast.foreground);
+    });
+    this.container.querySelectorAll<SVGLineElement>('.scatter-bubble-axis line, .scatter-bubble-axis .domain').forEach((el) => {
+      el.setAttribute('stroke', highContrast.foreground);
+    });
+    this.container.querySelectorAll<SVGLineElement>('.scatter-bubble-grid line').forEach((el) => {
+      el.setAttribute('stroke', highContrast.foreground);
+      el.setAttribute('stroke-opacity', '0.4');
+    });
+    this.container.querySelectorAll<SVGLineElement>('.scatter-bubble-quadrants line, .reference-line').forEach((el) => {
+      el.setAttribute('stroke', highContrast.foreground);
+    });
+    this.container.querySelectorAll<SVGPathElement>('.scatter-bubble-trendline path, .trend-line, .reference-line').forEach((el) => {
+      el.setAttribute('stroke', highContrast.foreground);
+    });
+    this.container.querySelectorAll<SVGRectElement>('.scatter-bubble-quadrants rect, .reference-band').forEach((el) => {
+      el.setAttribute('fill', highContrast.foreground);
+      el.setAttribute('fill-opacity', '0.08');
+    });
+    this.container.querySelectorAll<SVGPathElement>('.scatter-cluster-hulls path').forEach((el) => {
+      el.setAttribute('fill', highContrast.background);
+      el.setAttribute('fill-opacity', '1');
+      el.setAttribute('stroke', highContrast.foreground);
+      el.setAttribute('stroke-width', '2');
+      el.setAttribute('stroke-opacity', '1');
+    });
+
+    if (!data) return;
+
+    const circles = this.container.querySelectorAll<SVGCircleElement>('.scatter-bubble-point');
+    circles.forEach((circle, index) => {
+      const point = data.points[index];
+      const bubbleColor = point?.highlighted ? highContrast.foregroundSelected : highContrast.foreground;
+      const fillColor = point?.highlighted ? highContrast.foregroundSelected : highContrast.background;
+      circle.setAttribute('fill', fillColor);
+      circle.setAttribute('stroke', bubbleColor);
+      circle.setAttribute('stroke-width', String(Math.max(2, Number(circle.getAttribute('stroke-width') ?? '2'))));
+    });
   }
 
   public destroy(): void {
     this.container.removeEventListener('click', this.handleBackgroundClick);
+    this.detachEmptySpaceContextMenu?.();
+    this.detachEmptySpaceContextMenu = null;
     this.cancelAnimations.forEach((cancel) => cancel());
     this.cancelAnimations = [];
     this.hideTooltip();

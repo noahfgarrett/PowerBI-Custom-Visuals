@@ -4,7 +4,7 @@
     "displayName": "Bar Chart Pro",
     "guid": "barChartPro_4B7E2F1A8C3D",
     "visualClassName": "BarChartProVisual",
-    "version": "1.0.1.0",
+    "version": "1.0.31.0",
     "description": "Advanced bar chart with grouped, stacked, combo, horizontal, and diverging modes. Glassmorphic styling and staggered animations.",
     "supportUrl": "https://github.com/noahfgarrett/PowerBI/issues",
     "gitHubUrl": "https://github.com/noahfgarrett/PowerBI"
@@ -18,5 +18,8 @@
     "icon": "assets/icon.png"
   },
   "style": "style/visual.less",
-  "capabilities": "capabilities.json"
+  "capabilities": "capabilities.json",
+  "stringResources": [
+    "stringResources/en-US/resources.resjson"
+  ]
 }

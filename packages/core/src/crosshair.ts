@@ -21,8 +21,18 @@ export interface CrosshairConfig {
   chartHeight: number;
   /** Category labels (X axis). */
   categories: string[];
+  /** Optional explicit x positions for each category. */
+  xPositions?: number[];
   /** Series data: array of { name, values[] } where values align with categories. */
-  series: Array<{ name: string; values: number[]; color: string }>;
+  series: Array<{
+    name: string;
+    values: number[];
+    color: string;
+    /** Display-space values used for marker placement. */
+    displayValues?: number[];
+    /** Optional label values when they should differ from display-space values. */
+    markerValues?: number[];
+  }>;
   /** Y-scale for positioning value markers. */
   yScale: d3.ScaleLinear<number, number>;
   /** Crosshair line color. */
@@ -31,6 +41,8 @@ export interface CrosshairConfig {
   lineWidth: number;
   /** Crosshair line style. */
   lineStyle: 'solid' | 'dashed' | 'dotted';
+  /** Crosshair line opacity (0-1). */
+  lineOpacity?: number;
   /** Whether to show value markers at series intersection points. */
   showValues: boolean;
   /** Optional format function for value labels. */
@@ -72,6 +84,7 @@ export function attachCrosshair(config: CrosshairConfig): () => void {
     lineColor,
     lineWidth,
     lineStyle,
+    lineOpacity,
     showValues,
     formatValue,
     onSnap,
@@ -84,7 +97,9 @@ export function attachCrosshair(config: CrosshairConfig): () => void {
 
   // Build category x-positions (evenly spaced, band center)
   const step = chartWidth / categories.length;
-  const categoryXs = categories.map((_, i) => i * step + step / 2);
+  const categoryXs = config.xPositions && config.xPositions.length === categories.length
+    ? config.xPositions
+    : categories.map((_, i) => i * step + step / 2);
 
   // Create crosshair group (hidden initially)
   const crosshairGroup = d3Group
@@ -102,7 +117,7 @@ export function attachCrosshair(config: CrosshairConfig): () => void {
     .attr('stroke', lineColor)
     .attr('stroke-width', lineWidth)
     .attr('stroke-dasharray', toDashArray(lineStyle))
-    .attr('opacity', 0.7);
+    .attr('opacity', lineOpacity ?? 0.7);
 
   // Value markers container
   const markersGroup = crosshairGroup
@@ -140,10 +155,11 @@ export function attachCrosshair(config: CrosshairConfig): () => void {
 
     if (showValues) {
       for (const s of series) {
-        const val = s.values[closestIndex];
-        if (val == null || !isFinite(val)) continue;
+        const displayVal = s.displayValues?.[closestIndex] ?? s.values[closestIndex];
+        const markerVal = s.markerValues?.[closestIndex] ?? s.values[closestIndex];
+        if (displayVal == null || markerVal == null || !isFinite(displayVal) || !isFinite(markerVal)) continue;
 
-        const y = yScale(val);
+        const y = yScale(markerVal);
         if (!isFinite(y) || y < 0 || y > chartHeight) continue;
 
         // Dot
@@ -157,7 +173,7 @@ export function attachCrosshair(config: CrosshairConfig): () => void {
           .attr('stroke-width', 1.5);
 
         // Value label
-        const formatted = formatValue ? formatValue(val) : val.toLocaleString();
+        const formatted = formatValue ? formatValue(displayVal) : displayVal.toLocaleString();
         markersGroup
           .append('text')
           .attr('x', snapX + 8)
@@ -199,6 +215,7 @@ export function buildCrosshairConfig(
     lineColor?: string;
     lineWidth?: number;
     lineStyle?: string;
+    lineOpacity?: number;
     showValues?: boolean;
   },
 ): CrosshairConfig {
@@ -207,6 +224,7 @@ export function buildCrosshairConfig(
     lineColor: partial.lineColor || '#94A3B8',
     lineWidth: partial.lineWidth ?? 1,
     lineStyle: (partial.lineStyle as CrosshairConfig['lineStyle']) || 'dashed',
+    lineOpacity: partial.lineOpacity ?? 0.7,
     showValues: partial.showValues ?? true,
   };
 }

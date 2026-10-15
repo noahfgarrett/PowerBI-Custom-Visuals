@@ -28,19 +28,25 @@
       "displayName": "Image URL",
       "name": "imageUrl",
       "kind": "Grouping",
-      "description": "Optional site map image URL or data URI"
+      "description": "Optional site map image URL or data URI",
+      "displayNameKey": "NetworkGraphCapabilities_DisplayName_0001",
+      "descriptionKey": "NetworkGraphCapabilities_Description_0001"
     },
     {
       "displayName": "Node Details",
       "name": "nodeDetail",
       "kind": "Grouping",
-      "description": "Optional text/category fields shown in the click inspector"
+      "description": "Optional text/category fields shown in the click inspector",
+      "displayNameKey": "NetworkGraphCapabilities_DisplayName_0002",
+      "descriptionKey": "NetworkGraphCapabilities_Description_0002"
     },
     {
       "displayName": "Detail Measures",
       "name": "detailMeasure",
       "kind": "Measure",
-      "description": "Optional extra metrics for badges and tooltips"
+      "description": "Optional extra metrics for badges and tooltips",
+      "displayNameKey": "NetworkGraphCapabilities_DisplayName_0003",
+      "descriptionKey": "NetworkGraphCapabilities_Description_0003"
     }
   ],
   "dataViewMappings": [
@@ -126,16 +132,18 @@
           "displayNameKey": "NetworkGraphCapabilities_DisplayName_0005"
         },
         "minRadius": {
-          "displayName": "Min Dynamic Radius",
+          "displayName": "Minimum Dynamic Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0004"
         },
         "maxRadius": {
-          "displayName": "Max Dynamic Radius",
+          "displayName": "Maximum Dynamic Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0005"
         },
         "showLabels": {
           "displayName": "Show Labels",
@@ -175,18 +183,27 @@
             "enumeration": [
               {
                 "value": "fixed",
-                "displayName": "Fixed"
+                "displayName": "Fixed",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0007"
               },
               {
                 "value": "count",
-                "displayName": "Connection Count"
+                "displayName": "Connection Count",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0008"
               },
               {
                 "value": "weight",
-                "displayName": "Total Weight"
+                "displayName": "Total Weight",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0009"
+              },
+              {
+                "value": "sourceTargetWeighted",
+                "displayName": "Source + Target Weighted",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0010"
               }
             ]
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0006"
         },
         "fontSize": {
           "displayName": "Label Font Size",
@@ -199,19 +216,22 @@
           "displayName": "Use Role Label Sizes",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0011"
         },
         "sourceLabelFontSize": {
           "displayName": "Source Label Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0012"
         },
         "targetLabelFontSize": {
           "displayName": "Target Label Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0013"
         },
         "fontColor": {
           "displayName": "Label Font Color",
@@ -296,26 +316,32 @@
             "enumeration": [
               {
                 "value": "smart",
-                "displayName": "Smart Density"
+                "displayName": "Smart Density",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0015"
               },
               {
                 "value": "always",
-                "displayName": "Always"
+                "displayName": "Always",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0016"
               },
               {
                 "value": "hover",
-                "displayName": "Hover"
+                "displayName": "Hover",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0017"
               },
               {
                 "value": "selected",
-                "displayName": "Selected"
+                "displayName": "Selected",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0018"
               },
               {
                 "value": "adaptive",
-                "displayName": "Adaptive Zoom"
+                "displayName": "Adaptive Zoom",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0019"
               }
             ]
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0014"
         },
         "labelPosition": {
           "displayName": "Label Position",
@@ -323,50 +349,60 @@
             "enumeration": [
               {
                 "value": "right",
-                "displayName": "Outside Right"
+                "displayName": "Outside Right",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0021"
               },
               {
                 "value": "inside",
-                "displayName": "Inside Node"
+                "displayName": "Inside Node",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0022"
               },
               {
                 "value": "left",
-                "displayName": "Outside Left"
+                "displayName": "Outside Left",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0023"
               },
               {
                 "value": "above",
-                "displayName": "Above Node"
+                "displayName": "Above Node",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0024"
               },
               {
                 "value": "below",
-                "displayName": "Below Node"
+                "displayName": "Below Node",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0025"
               }
             ]
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0020"
         },
         "adaptiveZoomThreshold": {
           "displayName": "Adaptive Zoom Threshold",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0026"
         },
         "labelOffset": {
           "displayName": "Label Offset",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0027"
         },
         "maxLabelCharacters": {
           "displayName": "Max Label Characters",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0028"
         },
         "labelHalo": {
           "displayName": "Label Halo",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0029"
         },
         "labelHaloColor": {
           "displayName": "Halo Color",
@@ -376,20 +412,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0030"
         },
         "labelHaloWidth": {
           "displayName": "Halo Width",
           "type": {
             "numeric": true
-          }
-        },
-        "nodeRadius": {
-          "displayName": "Node Radius",
-          "type": {
-            "numeric": true
           },
-          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0024"
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0031"
         }
       },
       "displayNameKey": "NetworkGraphCapabilities_DisplayName_0004"
@@ -454,13 +485,15 @@
           "displayName": "Show Weight Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0032"
         },
         "weightLabelFontSize": {
           "displayName": "Weight Label Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0033"
         },
         "weightLabelFontColor": {
           "displayName": "Weight Label Color",
@@ -470,7 +503,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0034"
         },
         "weightLabelBackgroundColor": {
           "displayName": "Weight Label Background",
@@ -480,31 +514,35 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0035"
         },
         "weightLabelBackgroundOpacity": {
           "displayName": "Weight Label Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0036"
         },
         "minWeightLabel": {
           "displayName": "Minimum Weight to Label",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0037"
         }
       },
       "displayNameKey": "NetworkGraphCapabilities_DisplayName_0025"
     },
     "colorSettings": {
-      "displayName": "Colors & Theme",
+      "displayName": "Node Colors",
       "properties": {
         "colorByNodeRole": {
-          "displayName": "Color by Source/Target Role",
+          "displayName": "Color Nodes by Role",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0038"
         },
         "sourceNodeColor": {
           "displayName": "Source Node Color",
@@ -514,7 +552,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0039"
         },
         "targetNodeColor": {
           "displayName": "Target Node Color",
@@ -524,7 +563,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0040"
         },
         "bothRoleNodeColor": {
           "displayName": "Source + Target Node Color",
@@ -534,7 +574,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0041"
         },
         "useChartPalette": {
           "displayName": "Use Chart Palette",
@@ -544,7 +585,7 @@
           "displayNameKey": "NetworkGraphCapabilities_DisplayName_0034"
         },
         "enableClustering": {
-          "displayName": "Cluster Detection & Coloring",
+          "displayName": "Detect and Color Clusters",
           "type": {
             "bool": true
           },
@@ -587,7 +628,8 @@
           "displayName": "Pin Dragged Nodes",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0042"
         },
         "enableSearch": {
           "displayName": "Enable Search",
@@ -628,22 +670,26 @@
           "displayName": "Zoom Wheel Sensitivity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0043"
         },
         "crossHighlightMode": {
-          "displayName": "Cross-Highlight Mode",
+          "displayName": "Cross-Highlight Behavior",
           "type": {
             "enumeration": [
               {
                 "value": "focus",
-                "displayName": "Focus"
+                "displayName": "Show Highlighted Data Only",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0045"
               },
               {
                 "value": "dim",
-                "displayName": "Dim Others"
+                "displayName": "Dim Unhighlighted Data",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0046"
               }
             ]
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0044"
         }
       },
       "displayNameKey": "NetworkGraphCapabilities_DisplayName_0039"
@@ -657,18 +703,17 @@
             "enumeration": [
               {
                 "value": "sourceTarget",
-                "displayName": "Source / Target Spread"
+                "displayName": "Source / Target Spread",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0048"
               },
               {
                 "value": "force",
-                "displayName": "Free Force"
-              },
-              {
-                "value": "mapCanvas",
-                "displayName": "Map Canvas"
+                "displayName": "Free Force",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0049"
               }
             ]
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0047"
         },
         "strength": {
           "displayName": "Link Strength",
@@ -695,19 +740,22 @@
           "displayName": "Source/Target Separation",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0050"
         },
         "roleSpread": {
           "displayName": "Lane Spread",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0051"
         },
         "roleForceStrength": {
           "displayName": "Lane Force Strength",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0052"
         },
         "enableCollision": {
           "displayName": "Collision Prevention",
@@ -727,25 +775,29 @@
           "displayName": "Auto-Center on Load",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0053"
         },
         "fitOnLoad": {
           "displayName": "Fit to View on Load",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0054"
         },
         "fitPadding": {
           "displayName": "Fit Padding",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0055"
         },
         "settleTicks": {
           "displayName": "Initial Settle Ticks",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0056"
         }
       },
       "displayNameKey": "NetworkGraphCapabilities_DisplayName_0046"
@@ -757,19 +809,22 @@
           "displayName": "Enable Map Canvas",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0058"
         },
         "showUploadControl": {
           "displayName": "Show Upload Button",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0059"
         },
         "imageSource": {
           "displayName": "Image URL/Data URI",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0060"
         },
         "imageFit": {
           "displayName": "Image Fit",
@@ -777,18 +832,22 @@
             "enumeration": [
               {
                 "value": "contain",
-                "displayName": "Contain"
+                "displayName": "Contain",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0062"
               },
               {
                 "value": "cover",
-                "displayName": "Cover"
+                "displayName": "Cover",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0063"
               },
               {
                 "value": "stretch",
-                "displayName": "Stretch"
+                "displayName": "Stretch",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0064"
               }
             ]
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0061"
         },
         "horizontalAlign": {
           "displayName": "Horizontal Align",
@@ -796,18 +855,22 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0066"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0067"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0068"
               }
             ]
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0065"
         },
         "verticalAlign": {
           "displayName": "Vertical Align",
@@ -815,30 +878,36 @@
             "enumeration": [
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0070"
               },
               {
                 "value": "middle",
-                "displayName": "Middle"
+                "displayName": "Middle",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0071"
               },
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0072"
               }
             ]
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0069"
         },
         "imageOpacity": {
           "displayName": "Image Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0073"
         },
         "dimOverlayOpacity": {
           "displayName": "Dim Overlay (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0074"
         },
         "targetLayoutPreset": {
           "displayName": "Target Layout Preset",
@@ -846,28 +915,34 @@
             "enumeration": [
               {
                 "value": "orbit",
-                "displayName": "Orbit Sources"
+                "displayName": "Orbit Sources",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0076"
               },
               {
                 "value": "cluster",
-                "displayName": "Source Clusters"
+                "displayName": "Source Clusters",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0077"
               },
               {
                 "value": "hybrid",
-                "displayName": "Hybrid Rings"
+                "displayName": "Hybrid Rings",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0078"
               },
               {
                 "value": "rail",
-                "displayName": "Rail"
+                "displayName": "Rail",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0079"
               }
             ]
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0075"
         },
         "targetOrbitRadius": {
           "displayName": "Target Link Length",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0080"
         },
         "targetRailPosition": {
           "displayName": "Target Rail Position",
@@ -875,36 +950,44 @@
             "enumeration": [
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0082"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0083"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0084"
               },
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0085"
               }
             ]
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0081"
         },
         "persistedSourcePositions": {
           "displayName": "Saved Source Positions",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0086"
         },
         "resetPositions": {
           "displayName": "Reset Saved Positions",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0087"
         }
-      }
+      },
+      "displayNameKey": "NetworkGraphCapabilities_DisplayName_0057"
     },
     "measureBadgeSettings": {
       "displayName": "Measure Badges",
@@ -913,13 +996,15 @@
           "displayName": "Show Measure Badges",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0089"
         },
         "badgeMeasureName": {
           "displayName": "Badge Measure Name",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0090"
         },
         "badgeDisplayMode": {
           "displayName": "Badge Text",
@@ -927,24 +1012,29 @@
             "enumeration": [
               {
                 "value": "value",
-                "displayName": "Value"
+                "displayName": "Value",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0092"
               },
               {
                 "value": "nameValue",
-                "displayName": "Name + Value"
+                "displayName": "Name + Value",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0093"
               },
               {
                 "value": "name",
-                "displayName": "Name"
+                "displayName": "Name",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0094"
               }
             ]
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0091"
         },
         "badgeFontSize": {
           "displayName": "Badge Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0095"
         },
         "badgeColor": {
           "displayName": "Badge Text Color",
@@ -954,7 +1044,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0096"
         },
         "badgeBackgroundColor": {
           "displayName": "Badge Background",
@@ -964,21 +1055,25 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0097"
         },
         "badgeBackgroundOpacity": {
           "displayName": "Badge Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0098"
         },
         "badgeOffset": {
           "displayName": "Badge Offset",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0099"
         }
-      }
+      },
+      "displayNameKey": "NetworkGraphCapabilities_DisplayName_0088"
     },
     "nodeInspectorSettings": {
       "displayName": "Node Inspector",
@@ -987,7 +1082,8 @@
           "displayName": "Enable Click Inspector",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0101"
         },
         "position": {
           "displayName": "Inspector Position",
@@ -995,206 +1091,67 @@
             "enumeration": [
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0103"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0104"
               },
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0105"
               }
             ]
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0102"
         },
         "showCoreMetrics": {
           "displayName": "Show Core Metrics",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0106"
         },
         "showDetailMeasures": {
           "displayName": "Show Detail Measures",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0107"
         },
         "showDetailColumns": {
           "displayName": "Show Detail Columns",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0108"
         },
         "maxDetailValues": {
           "displayName": "Max Values per Detail",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0109"
         },
         "focusOnClick": {
           "displayName": "Zoom to Clicked Node",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0110"
         },
         "focusZoomScale": {
           "displayName": "Focus Zoom Scale",
           "type": {
             "numeric": true
-          }
-        }
-      }
-    },
-    "dataLabelFormatting": {
-      "displayName": "Data Labels",
-      "properties": {
-        "dataLabelFontSize": {
-          "displayName": "Font Size",
-          "type": {
-            "numeric": true
           },
-          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0053"
-        },
-        "dataLabelFontColor": {
-          "displayName": "Font Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          },
-          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0054"
-        },
-        "dataLabelFontWeight": {
-          "displayName": "Font Weight",
-          "type": {
-            "enumeration": [
-              {
-                "value": "normal",
-                "displayName": "Normal",
-                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0056"
-              },
-              {
-                "value": "bold",
-                "displayName": "Bold",
-                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0057"
-              }
-            ]
-          },
-          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0055"
-        },
-        "showDataLabels": {
-          "displayName": "Show Data Labels",
-          "type": {
-            "bool": true
-          },
-          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0058"
-        },
-        "dataLabelFontFamily": {
-          "displayName": "Font",
-          "type": {
-            "enumeration": [
-              {
-                "value": "",
-                "displayName": "Default",
-                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0060"
-              },
-              {
-                "value": "Arial",
-                "displayName": "Arial",
-                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0061"
-              },
-              {
-                "value": "Calibri",
-                "displayName": "Calibri",
-                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0062"
-              },
-              {
-                "value": "Cambria",
-                "displayName": "Cambria",
-                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0063"
-              },
-              {
-                "value": "Courier New",
-                "displayName": "Courier New",
-                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0064"
-              },
-              {
-                "value": "Georgia",
-                "displayName": "Georgia",
-                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0065"
-              },
-              {
-                "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue",
-                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0066"
-              },
-              {
-                "value": "Segoe UI",
-                "displayName": "Segoe UI",
-                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0067"
-              },
-              {
-                "value": "Tahoma",
-                "displayName": "Tahoma",
-                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0068"
-              },
-              {
-                "value": "Times New Roman",
-                "displayName": "Times New Roman",
-                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0069"
-              },
-              {
-                "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS",
-                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0070"
-              },
-              {
-                "value": "Verdana",
-                "displayName": "Verdana",
-                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0071"
-              }
-            ]
-          },
-          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0059"
-        },
-        "dataLabelPosition": {
-          "displayName": "Position",
-          "type": {
-            "enumeration": [
-              {
-                "value": "auto",
-                "displayName": "Auto",
-                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0073"
-              },
-              {
-                "value": "above",
-                "displayName": "Above",
-                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0074"
-              },
-              {
-                "value": "below",
-                "displayName": "Below",
-                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0075"
-              },
-              {
-                "value": "inside",
-                "displayName": "Inside",
-                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0076"
-              },
-              {
-                "value": "outside",
-                "displayName": "Outside",
-                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0077"
-              }
-            ]
-          },
-          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0072"
+          "displayNameKey": "NetworkGraphCapabilities_DisplayName_0111"
         }
       },
-      "displayNameKey": "NetworkGraphCapabilities_DisplayName_0052"
+      "displayNameKey": "NetworkGraphCapabilities_DisplayName_0100"
     },
     "titleFormatting": {
       "displayName": "Chart Title",
@@ -1555,27 +1512,33 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0112"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0113"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0114"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0115"
               },
               {
                 "value": "outlined",
-                "displayName": "Outlined"
+                "displayName": "Border Only",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0116"
               },
               {
                 "value": "floating",
-                "displayName": "Floating"
+                "displayName": "Floating Shadow",
+                "displayNameKey": "NetworkGraphCapabilities_DisplayName_0117"
               }
             ]
           },
@@ -1918,9 +1881,18 @@
       "displayNameKey": "NetworkGraphCapabilities_DisplayName_0190"
     }
   },
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
   "supportsKeyboardFocus": true,
   "supportsHighlight": true,
   "supportsMultiVisualSelection": true,
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
   "privileges": [
     {
       "name": "WebAccess",

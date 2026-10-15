@@ -1,0 +1,483 @@
+{
+  "dataRoles": [
+    {
+      "displayName": "Filter Category",
+      "name": "filterCategory",
+      "kind": "Grouping",
+      "description": "Columns to expose as basic filter values.",
+      "displayNameKey": "FilterPaneProCapabilities_DisplayName_0061",
+      "descriptionKey": "FilterPaneProCapabilities_Description_0001"
+    },
+    {
+      "displayName": "Filter Measure",
+      "name": "filterMeasure",
+      "kind": "Measure",
+      "description": "Measures to expose for advanced numeric filtering where supported.",
+      "displayNameKey": "FilterPaneProCapabilities_DisplayName_0002",
+      "descriptionKey": "FilterPaneProCapabilities_Description_0002"
+    }
+  ],
+  "dataViewMappings": [
+    {
+      "conditions": [
+        {
+          "filterCategory": {
+            "max": 8
+          },
+          "filterMeasure": {
+            "max": 4
+          }
+        }
+      ],
+      "categorical": {
+        "categories": {
+          "for": {
+            "in": "filterCategory"
+          },
+          "dataReductionAlgorithm": {
+            "top": {
+              "count": 5000
+            }
+          }
+        },
+        "values": {
+          "select": [
+            {
+              "for": {
+                "in": "filterMeasure"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "objects": {
+    "general": {
+      "displayName": "General",
+      "properties": {
+        "filter": {
+          "type": {
+            "filter": true
+          }
+        }
+      },
+      "displayNameKey": "FilterPaneProCapabilities_DisplayName_0001"
+    },
+    "iconSettings": {
+      "displayName": "Filter Button",
+      "displayNameKey": "FilterPaneProCapabilities_DisplayName_0003",
+      "properties": {
+        "position": {
+          "displayName": "Button Position",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0004",
+          "type": {
+            "enumeration": [
+              {
+                "value": "topLeft",
+                "displayName": "Top Left",
+                "displayNameKey": "FilterPaneProCapabilities_DisplayName_0005"
+              },
+              {
+                "value": "topRight",
+                "displayName": "Top Right",
+                "displayNameKey": "FilterPaneProCapabilities_DisplayName_0006"
+              },
+              {
+                "value": "bottomLeft",
+                "displayName": "Bottom Left",
+                "displayNameKey": "FilterPaneProCapabilities_DisplayName_0007"
+              },
+              {
+                "value": "bottomRight",
+                "displayName": "Bottom Right",
+                "displayNameKey": "FilterPaneProCapabilities_DisplayName_0008"
+              },
+              {
+                "value": "center",
+                "displayName": "Center",
+                "displayNameKey": "FilterPaneProCapabilities_DisplayName_0042"
+              }
+            ]
+          }
+        },
+        "style": {
+          "displayName": "Button Style",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0043",
+          "type": {
+            "enumeration": [
+              {
+                "value": "glass",
+                "displayName": "Frosted Glass",
+                "displayNameKey": "FilterPaneProCapabilities_DisplayName_0044"
+              },
+              {
+                "value": "solid",
+                "displayName": "Solid",
+                "displayNameKey": "FilterPaneProCapabilities_DisplayName_0045"
+              },
+              {
+                "value": "outline",
+                "displayName": "Outline",
+                "displayNameKey": "FilterPaneProCapabilities_DisplayName_0046"
+              },
+              {
+                "value": "minimal",
+                "displayName": "Minimal",
+                "displayNameKey": "FilterPaneProCapabilities_DisplayName_0047"
+              }
+            ]
+          }
+        },
+        "size": {
+          "displayName": "Button Size (px)",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0009",
+          "type": {
+            "numeric": true
+          }
+        },
+        "iconColor": {
+          "displayName": "Icon Color",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0010",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "glassColor": {
+          "displayName": "Button Background",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0011",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "glassOpacity": {
+          "displayName": "Glass Opacity (%)",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0012",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "paneSettings": {
+      "displayName": "Filter Pane",
+      "displayNameKey": "FilterPaneProCapabilities_DisplayName_0013",
+      "properties": {
+        "side": {
+          "displayName": "Opening Position",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0048",
+          "type": {
+            "enumeration": [
+              {
+                "value": "right",
+                "displayName": "Right",
+                "displayNameKey": "FilterPaneProCapabilities_DisplayName_0049"
+              },
+              {
+                "value": "left",
+                "displayName": "Left",
+                "displayNameKey": "FilterPaneProCapabilities_DisplayName_0050"
+              },
+              {
+                "value": "top",
+                "displayName": "Top",
+                "displayNameKey": "FilterPaneProCapabilities_DisplayName_0051"
+              },
+              {
+                "value": "bottom",
+                "displayName": "Bottom",
+                "displayNameKey": "FilterPaneProCapabilities_DisplayName_0052"
+              },
+              {
+                "value": "modal",
+                "displayName": "Centered Modal",
+                "displayNameKey": "FilterPaneProCapabilities_DisplayName_0053"
+              }
+            ]
+          }
+        },
+        "defaultOpen": {
+          "displayName": "Open by Default",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0054",
+          "type": {
+            "bool": true
+          }
+        },
+        "columnCount": {
+          "displayName": "Filter Columns",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0055",
+          "type": {
+            "enumeration": [
+              {
+                "value": "auto",
+                "displayName": "Auto",
+                "displayNameKey": "FilterPaneProCapabilities_DisplayName_0056"
+              },
+              {
+                "value": "1",
+                "displayName": "1 Column",
+                "displayNameKey": "FilterPaneProCapabilities_DisplayName_0057"
+              },
+              {
+                "value": "2",
+                "displayName": "2 Columns",
+                "displayNameKey": "FilterPaneProCapabilities_DisplayName_0058"
+              },
+              {
+                "value": "3",
+                "displayName": "3 Columns",
+                "displayNameKey": "FilterPaneProCapabilities_DisplayName_0059"
+              }
+            ]
+          }
+        },
+        "width": {
+          "displayName": "Pane Width (px)",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0014",
+          "type": {
+            "numeric": true
+          }
+        },
+        "maxHeight": {
+          "displayName": "Maximum Height (px)",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0015",
+          "type": {
+            "numeric": true
+          }
+        },
+        "accentColor": {
+          "displayName": "Accent Color",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0016",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "textColor": {
+          "displayName": "Text Color",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0017",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "fontSize": {
+          "displayName": "Font Size",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0018",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "overlaySettings": {
+      "displayName": "Backdrop",
+      "displayNameKey": "FilterPaneProCapabilities_DisplayName_0019",
+      "properties": {
+        "overlayColor": {
+          "displayName": "Overlay Color",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0020",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "overlayOpacity": {
+          "displayName": "Overlay Opacity (%)",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0021",
+          "type": {
+            "numeric": true
+          }
+        },
+        "blurRadius": {
+          "displayName": "Blur Radius (px)",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0022",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "cardSettings": {
+      "displayName": "Panel Appearance",
+      "displayNameKey": "FilterPaneProCapabilities_DisplayName_0034",
+      "properties": {
+        "backgroundColor": {
+          "displayName": "Panel Background",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0035",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "backgroundOpacity": {
+          "displayName": "Panel Opacity (%)",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0036",
+          "type": {
+            "numeric": true
+          }
+        },
+        "borderRadius": {
+          "displayName": "Corner Radius",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0037",
+          "type": {
+            "numeric": true
+          }
+        },
+        "contentPadding": {
+          "displayName": "Panel Padding",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0038",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "animationSettings": {
+      "displayName": "Animation",
+      "displayNameKey": "FilterPaneProCapabilities_DisplayName_0039",
+      "properties": {
+        "enabled": {
+          "displayName": "Enable Animation",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0040",
+          "type": {
+            "bool": true
+          }
+        },
+        "duration": {
+          "displayName": "Duration (ms)",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0041",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "behaviorSettings": {
+      "displayName": "Behavior",
+      "displayNameKey": "FilterPaneProCapabilities_DisplayName_0023",
+      "properties": {
+        "defaultTab": {
+          "displayName": "Starting Tab",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0024",
+          "type": {
+            "enumeration": [
+              {
+                "value": "basic",
+                "displayName": "Basic",
+                "displayNameKey": "FilterPaneProCapabilities_DisplayName_0025"
+              },
+              {
+                "value": "advanced",
+                "displayName": "Advanced",
+                "displayNameKey": "FilterPaneProCapabilities_DisplayName_0026"
+              }
+            ]
+          }
+        },
+        "applyMode": {
+          "displayName": "Apply Changes",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0027",
+          "type": {
+            "enumeration": [
+              {
+                "value": "manual",
+                "displayName": "With Apply Button",
+                "displayNameKey": "FilterPaneProCapabilities_DisplayName_0028"
+              },
+              {
+                "value": "immediate",
+                "displayName": "Immediately",
+                "displayNameKey": "FilterPaneProCapabilities_DisplayName_0029"
+              }
+            ]
+          }
+        },
+        "persistenceMode": {
+          "displayName": "Filter State",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0030",
+          "type": {
+            "enumeration": [
+              {
+                "value": "bookmark",
+                "displayName": "Follow Report Filters",
+                "displayNameKey": "FilterPaneProCapabilities_DisplayName_0031"
+              },
+              {
+                "value": "manual",
+                "displayName": "Keep Current Session",
+                "displayNameKey": "FilterPaneProCapabilities_DisplayName_0032"
+              }
+            ]
+          }
+        },
+        "bookmarkOverlayMode": {
+          "displayName": "Always-Open Bookmark Layout",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0060",
+          "type": {
+            "bool": true
+          }
+        },
+        "activeTab": {
+          "displayName": "Saved Active Tab",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0033",
+          "filterState": true,
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "accessibilitySettings": {
+      "displayName": "Accessibility",
+      "displayNameKey": "FilterPaneProCapabilities_DisplayName_0062",
+      "properties": {
+        "focusPaneOnOpen": {
+          "displayName": "Focus Pane on Open",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0063",
+          "type": {
+            "bool": true
+          }
+        },
+        "announceFilterChanges": {
+          "displayName": "Announce Filter Changes",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0064",
+          "type": {
+            "bool": true
+          }
+        },
+        "paneAriaLabel": {
+          "displayName": "Screen Reader Label",
+          "displayNameKey": "FilterPaneProCapabilities_DisplayName_0065",
+          "type": {
+            "text": true
+          }
+        }
+      }
+    }
+  },
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
+  "supportsKeyboardFocus": true,
+  "privileges": []
+}

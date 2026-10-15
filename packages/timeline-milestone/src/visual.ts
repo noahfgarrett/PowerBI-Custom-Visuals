@@ -18,18 +18,30 @@ import {
   renderChartTitle,
   applyDataLabelFormatting,
   applyChartAria,
+  applyDataPointAria,
   ensureFocusRingStyles,
   resolveColorTheme,
   resolveDropdown,
   buildConditionalConfig,
   resolveConditionalColor,
   attachKeyboardNav,
+  attachEmptySpaceContextMenu,
+  allowInteractions,
+  notifyRenderingStarted,
+  notifyRenderingFinished,
+  notifyRenderingFailed,
   renderLegend,
-  formatWithSettings,
   type LegendItem,
   getDateFilterIndices,
   isDateColumn,
   type DateFilterConfig,
+  syncCardStyleVisibility,
+  syncDateFilterFormattingVisibility,
+  syncLegendFormattingVisibility,
+  syncTitleFormattingVisibility,
+  focusHighlightedData,
+  getLocalizedString,
+  getVisualEmptyStateMode,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -72,6 +84,38 @@ function formatDate(date: Date | null, format: string, locale?: string): string 
   return new Intl.DateTimeFormat(resolvedLocale, { month: 'short', day: 'numeric' }).format(date);
 }
 
+function parseTimelineDate(raw: unknown): Date | null {
+  if (raw instanceof Date) return Number.isNaN(raw.getTime()) ? null : raw;
+  if (typeof raw === 'string') {
+    const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw.trim());
+    if (dateOnly) {
+      const year = Number(dateOnly[1]);
+      const month = Number(dateOnly[2]);
+      const day = Number(dateOnly[3]);
+      const localDate = new Date(year, month - 1, day);
+      return localDate.getFullYear() === year
+        && localDate.getMonth() === month - 1
+        && localDate.getDate() === day
+        ? localDate
+        : null;
+    }
+    const parsed = new Date(raw);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+  if (typeof raw === 'number') {
+    const parsed = new Date(raw);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+  return null;
+}
+
+function normalizeDateFilterBoundary(value: string, endOfDay: boolean): string {
+  const trimmed = value.trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(trimmed)
+    ? `${trimmed}T${endOfDay ? '23:59:59.999' : '00:00:00.000'}`
+    : value;
+}
+
 // ── Visual class ────────────────────────────────────────────────────
 
 export class TimelineMilestoneVisual implements IVisual {
@@ -81,31 +125,44 @@ export class TimelineMilestoneVisual implements IVisual {
   private settings: TimelineMilestoneSettings;
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
+  private emptyStateMode: 'unconfigured' | 'noData' = 'unconfigured';
   private currentTimelineData: TimelineData | null = null;
+  private currentVisibleMilestones: Milestone[] = [];
+  private hasCategoryRole = false;
+  private hasDateRole = false;
+  private removeEmptySpaceContextMenu: (() => void) | null = null;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
     this.selectionManager = options.host.createSelectionManager();
     this.container = options.element;
     this.settings = new TimelineMilestoneSettings();
-    this.formattingSettingsService = new FormattingSettingsService();
+    this.formattingSettingsService = new FormattingSettingsService(options.host.createLocalizationManager());
     this.container.classList.add('timeline-container');
+    this.removeEmptySpaceContextMenu = attachEmptySpaceContextMenu(
+      this.container,
+      this.selectionManager,
+      () => this.host.createSelectionIdBuilder().createSelectionId(),
+      () => allowInteractions(this.host),
+    );
   }
 
   public update(options: VisualUpdateOptions): void {
+    notifyRenderingStarted(this.host, options);
+    try {
     // Cancel running animations
     this.cancelAnimations.forEach((cancel) => cancel());
     this.cancelAnimations = [];
 
     // Parse settings
     const dataView = options.dataViews?.[0];
+    this.emptyStateMode = getVisualEmptyStateMode(dataView);
     if (dataView) {
       this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
         TimelineMilestoneSettings,
         dataView
       );
     }
-
     // Migrate legacy enableGlass -> cardStyleMode (backward compat)
     const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
     if (legacyCardObj) {
@@ -114,43 +171,26 @@ export class TimelineMilestoneVisual implements IVisual {
         this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
       }
     }
-
-    // Conditional visibility: hide date format when showDates is off
-
-    // Date filter: hide start/end when disabled
-    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
-    this.settings.timelineSettings.dateFormat.visible = this.settings.timelineSettings.showDates.value;
-
-    // Hide today line settings when showTodayLine is off
-    this.settings.timelineMarkerSettings.todayLineColor.visible = this.settings.timelineMarkerSettings.showTodayLine.value;
-    this.settings.timelineMarkerSettings.todayLineWidth.visible = this.settings.timelineMarkerSettings.showTodayLine.value;
-    this.settings.timelineMarkerSettings.todayLineOpacity.visible = this.settings.timelineMarkerSettings.showTodayLine.value;
-
-    // Hide cluster threshold when clusterNearby is off
-    this.settings.timelineMarkerSettings.clusterThresholdDays.visible = this.settings.timelineMarkerSettings.clusterNearby.value;
-
-    // Hide data label position — position is determined by chart geometry
-    this.settings.dataLabelFormattingCard.dataLabelPosition.visible = false;
-
-    // Hide animation duration when animations are disabled
-    this.settings.animationSettings.duration.visible = this.settings.animationSettings.enabled.value;
-
-    // Hide duration bar sub-settings when duration bars are off
-    this.settings.spineAndConnectorsSettings.durationBarOpacity.visible = this.settings.spineAndConnectorsSettings.showDurationBars.value;
-    this.settings.spineAndConnectorsSettings.durationBarHeight.visible = this.settings.spineAndConnectorsSettings.showDurationBars.value;
-
-    // Card Style — hide sub-settings when mode is 'none'
-    const cardModeVis = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
-    this.settings.cardSettings.backgroundOpacity.visible = cardModeVis !== 'none';
-    this.settings.cardSettings.backgroundColor.visible = cardModeVis !== 'none';
+    this.migrateLegacyFormatting(dataView);
+    this.hasCategoryRole = Boolean(dataView?.categorical?.categories?.some((column) => column.source.roles?.['category']));
+    this.hasDateRole = Boolean(dataView?.categorical?.categories?.some((column) => column.source.roles?.['date']));
+    this.syncFormattingVisibility();
 
     // Extract data
-    const timelineData = this.extractData(dataView);
+    const extractedData = this.extractData(dataView);
+    const timelineData: TimelineData = {
+      milestones: focusHighlightedData(extractedData.milestones, extractedData.hasHighlights),
+      hasHighlights: extractedData.hasHighlights,
+    };
     this.currentTimelineData = timelineData;
+    this.syncFormattingVisibility();
 
     this.render(timelineData.milestones, options.viewport);
+    notifyRenderingFinished(this.host, options);
+    } catch (error) {
+      notifyRenderingFailed(this.host, options, error instanceof Error ? error.message : String(error));
+      throw error;
+    }
   }
 
   private extractData(dataView: DataView | undefined): TimelineData {
@@ -199,9 +239,9 @@ export class TimelineMilestoneVisual implements IVisual {
 
     const dateConfig: DateFilterConfig = {
       enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
-      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      startDate: normalizeDateFilterBoundary(this.settings.dateFilterFormattingCard.startDate.value, false),
       endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
-      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+      endDate: normalizeDateFilterBoundary(this.settings.dateFilterFormattingCard.endDate.value, true),
     };
     const dateIndices = isDateColumn(categories.source) ? getDateFilterIndices(categories.values, dateConfig) : null;
 
@@ -212,18 +252,12 @@ export class TimelineMilestoneVisual implements IVisual {
       let date: Date | null = null;
       let dateStr = '';
 
-      if (rawDate instanceof Date) {
-        date = rawDate;
-        dateStr = rawDate.toISOString();
-      } else if (typeof rawDate === 'string' || typeof rawDate === 'number') {
-        const parsed = new Date(rawDate);
-        if (!isNaN(parsed.getTime())) {
-          date = parsed;
-          dateStr = String(rawDate);
-        } else {
-          dateStr = String(rawDate);
-        }
-      }
+      date = parseTimelineDate(rawDate);
+      dateStr = rawDate instanceof Date ? rawDate.toISOString() : String(rawDate ?? '');
+
+      // A timeline cannot position an invalid date meaningfully; leave it out
+      // instead of stacking it at an arbitrary end position.
+      if (!date) continue;
 
       const label = labelCol && i < labelCol.values.length
         ? String(labelCol.values[i] ?? '')
@@ -288,6 +322,7 @@ export class TimelineMilestoneVisual implements IVisual {
 
   private render(milestones: Milestone[], viewport: powerbi.IViewport): void {
     const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
+    this.currentVisibleMilestones = [];
     this.hideTooltip();
 
     // Clear container
@@ -298,6 +333,8 @@ export class TimelineMilestoneVisual implements IVisual {
     this.container.removeEventListener('click', this.handleBackgroundClick);
 
     const s = this.settings;
+    const contentPadding = Math.max(0, s.cardSettings.contentPadding.value);
+    this.container.style.padding = `${contentPadding}px`;
     const orientation = String(s.timelineSettings.orientation.value?.value ?? 'horizontal');
     const showDates = s.timelineSettings.showDates.value;
     const dateFormatVal = String(s.timelineSettings.dateFormat.value?.value ?? 'medium');
@@ -309,7 +346,9 @@ export class TimelineMilestoneVisual implements IVisual {
     const timelineLineWidth = s.spineAndConnectorsSettings.lineWidth.value;
     const markerStrokeColorValue = s.markerSettings.markerStrokeColor.value?.value;
     const markerStrokeWidth = Math.max(0, s.markerSettings.markerStrokeWidth.value);
-    const markerStroke = markerStrokeColorValue && markerStrokeColorValue.length > 0 ? markerStrokeColorValue : '#fff';
+    const configuredMarkerStroke = markerStrokeColorValue && markerStrokeColorValue.length > 0
+      ? markerStrokeColorValue
+      : '#fff';
     const lineColorValue = s.spineAndConnectorsSettings.lineColor.value?.value;
     const labelColorValue = s.spineAndConnectorsSettings.labelColor.value?.value;
     const isHorizontal = orientation === 'horizontal';
@@ -326,22 +365,29 @@ export class TimelineMilestoneVisual implements IVisual {
 
     const locale = this.getHostLocale();
     const highContrast = this.getHighContrastColors();
-    const axisLabelColorValue = s.axisFormattingCard.axisLabelColor.value?.value || '';
-    const axisLineColorValue = s.axisFormattingCard.axisLineColor.value?.value || '';
-    const connectorColor = highContrast.enabled ? highContrast.foreground : (lineColorValue && lineColorValue.length > 0 ? lineColorValue : (axisLineColorValue && axisLineColorValue.length > 0 ? axisLineColorValue : '#CBD5E1'));
-    const axisLineWidth = s.axisFormattingCard.axisLineWidth.value;
-    const spineWidth = axisLineWidth > 1 ? axisLineWidth : timelineLineWidth;
-    const primaryTextColor = highContrast.enabled ? highContrast.foreground : (labelColorValue && labelColorValue.length > 0 ? labelColorValue : (axisLabelColorValue || '#1E293B'));
-    const secondaryTextColor = highContrast.enabled ? highContrast.foreground : (labelColorValue && labelColorValue.length > 0 ? labelColorValue : (axisLabelColorValue || '#64748B'));
+    const markerStroke = highContrast.enabled ? highContrast.background : configuredMarkerStroke;
+    const connectorColor = highContrast.enabled
+      ? highContrast.foreground
+      : (lineColorValue && lineColorValue.length > 0 ? lineColorValue : '#CBD5E1');
+    const spineWidth = timelineLineWidth;
+    const primaryTextColor = highContrast.enabled
+      ? highContrast.foreground
+      : (labelColorValue && labelColorValue.length > 0 ? labelColorValue : '#1E293B');
+    const secondaryTextColor = highContrast.enabled
+      ? highContrast.foreground
+      : (labelColorValue && labelColorValue.length > 0 ? labelColorValue : '#64748B');
     const labelFontSize = `${Math.max(6, s.axisFormattingCard.axisLabelSize.value)}px`;
     const showGridLines = s.axisFormattingCard.showGridLines.value;
-    const gridLineColor = s.axisFormattingCard.gridLineColor.value?.value || '#E2E8F0';
+    const gridLineColor = highContrast.enabled
+      ? highContrast.foreground
+      : (s.axisFormattingCard.gridLineColor.value?.value || '#E2E8F0');
     const gridLineStyleValue = s.axisFormattingCard.gridLineStyle.value;
     const gridLineStyle = typeof gridLineStyleValue === 'string'
       ? gridLineStyleValue
       : (gridLineStyleValue as { value?: string } | undefined)?.value ?? 'dashed';
     const gridDash = gridLineStyle === 'dashed' ? '4 3' : gridLineStyle === 'dotted' ? '2 2' : 'none';
     const labelFontFamily = resolveDropdown(s.axisFormattingCard.axisLabelFontFamily) || 'inherit';
+    const laneLabelFontWeight = resolveDropdown(s.axisFormattingCard.axisLabelFontWeight) || 'normal';
     const showDataLabels = s.dataLabelFormattingCard.showDataLabels.value;
 
     // Hide axis properties that don't apply to a timeline visual
@@ -378,51 +424,100 @@ export class TimelineMilestoneVisual implements IVisual {
     if (milestones.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'timeline-empty';
-      empty.textContent = 'Add Date and Label fields';
+      empty.textContent = this.hasDateRole && this.emptyStateMode === 'noData'
+        ? getLocalizedString(this.host, 'TimelineMilestone_NoDataState', 'No data for the current selection.')
+        : getLocalizedString(this.host, 'TimelineMilestone_EmptyState', 'Add a Date field; Label is optional.');
       this.container.appendChild(empty);
+      applyChartAria(this.container, {
+        chartType: 'timeline',
+        dataPointCount: 0,
+      });
       return;
     }
 
+    const maxVisible = Math.max(0, Math.floor(s.timelineSettings.maxVisible.value));
+    const requestedOffset = Math.max(0, Math.floor(s.timelineSettings.windowOffset.value));
+    const clampedOffset = maxVisible > 0
+      ? Math.min(requestedOffset, Math.max(0, milestones.length - maxVisible))
+      : 0;
+    const visibleMilestones = maxVisible > 0
+      ? milestones.slice(clampedOffset, clampedOffset + maxVisible)
+      : milestones;
+    this.currentVisibleMilestones = visibleMilestones;
+    const labelDensity = resolveDropdown(s.timelineSettings.labelDensity) ?? 'full';
+    const labelCharLimit = labelDensity === 'minimal' ? 8 : labelDensity === 'compact' ? 10 : 16;
+    const shouldShowDateForIndex = (index: number, total: number): boolean => {
+      if (!showDates) return false;
+      if (labelDensity === 'minimal') return total <= 6 || index === 0 || index === total - 1;
+      if (labelDensity === 'compact') return total <= 8 || index % 2 === 0;
+      return true;
+    };
+    const shouldShowLabelForIndex = (index: number, total: number): boolean => {
+      if (labelDensity === 'minimal') return total <= 6 || index === 0 || index === total - 1;
+      if (labelDensity === 'compact') return total <= 10 || index % 2 === 0;
+      return true;
+    };
+
     // Build category color map
-    const uniqueCategories = [...new Set(milestones.map((m) => m.category).filter(Boolean))];
+    const uniqueCategories = [...new Set(visibleMilestones.map((m) => m.category).filter(Boolean))];
     const catColorMap = new Map<string, string>();
     uniqueCategories.forEach((cat, i) => {
-      catColorMap.set(cat, getHostChartColor(this.host.colorPalette, i, themeName));
+      catColorMap.set(
+        cat,
+        highContrast.enabled
+          ? highContrast.foregroundSelected
+          : getHostChartColor(this.host.colorPalette, i, themeName),
+      );
     });
+    const categoryIndex = new Map(uniqueCategories.map((category, index) => [category, index]));
+    const useSwimlanes = showSwimlanes && uniqueCategories.length > 1;
     const defaultColor = highContrast.enabled ? highContrast.foregroundSelected : '#3B82F6';
 
     // SVG setup
-    const padding = 40;
-    const labelSpace = 60;
-    const svgWidth = viewport.width;
-    const svgHeight = viewport.height;
+    const chartPadding = Math.max(0, s.timelineSettings.chartPadding.value);
+    const labelSpacing = Math.max(0, s.timelineSettings.labelSpacing.value);
+    const svgWidth = Math.max(1, viewport.width - contentPadding * 2);
+    const svgHeight = Math.max(1, viewport.height - contentPadding * 2);
 
     const svg = d3.select(this.container)
       .append('svg')
       .attr('width', svgWidth)
-      .attr('height', svgHeight);
+      .attr('height', svgHeight)
+      .attr('data-layout-mode', layoutMode)
+      .attr('data-chart-padding', String(chartPadding))
+      .attr('data-label-spacing', String(labelSpacing));
 
-    const n = milestones.length;
+    const n = visibleMilestones.length;
+    const visibleTimes = visibleMilestones.map((milestone) => milestone.date?.getTime() ?? NaN);
+    const minVisibleTime = Math.min(...visibleTimes);
+    const maxVisibleTime = Math.max(...visibleTimes);
+    const hasDateRange = Number.isFinite(minVisibleTime)
+      && Number.isFinite(maxVisibleTime)
+      && maxVisibleTime > minVisibleTime;
+    const positionFraction = (milestone: Milestone, index: number): number => {
+      if (hasDateRange && milestone.date) {
+        return (milestone.date.getTime() - minVisibleTime) / (maxVisibleTime - minVisibleTime);
+      }
+      return n > 1 ? index / (n - 1) : 0.5;
+    };
 
     if (isHorizontal) {
-      const xStart = padding;
-      const xEnd = svgWidth - padding;
+      const xStart = chartPadding;
+      const xEnd = svgWidth - chartPadding;
       const cy = svgHeight / 2;
 
-      // Spine line
-      svg.append('line')
-        .attr('x1', xStart).attr('y1', cy)
-        .attr('x2', xEnd).attr('y2', cy)
-        .attr('stroke', connectorColor).attr('stroke-width', spineWidth);
-
-      // Position milestones evenly
-      const step = n > 1 ? (xEnd - xStart) / (n - 1) : 0;
+      if (!useSwimlanes) {
+        svg.append('line')
+          .attr('x1', xStart).attr('y1', cy)
+          .attr('x2', xEnd).attr('y2', cy)
+          .attr('stroke', connectorColor).attr('stroke-width', spineWidth);
+      }
 
       // Grid lines (vertical tick marks at each milestone position)
       if (showGridLines && n > 1) {
         const gridGroup = svg.append('g').attr('class', 'timeline-grid');
         for (let gi = 0; gi < n; gi++) {
-          const gx = xStart + gi * step;
+          const gx = xStart + positionFraction(visibleMilestones[gi], gi) * (xEnd - xStart);
           gridGroup.append('line')
             .attr('x1', gx).attr('y1', 0)
             .attr('x2', gx).attr('y2', svgHeight)
@@ -434,10 +529,11 @@ export class TimelineMilestoneVisual implements IVisual {
       }
 
       // Swimlane backgrounds (horizontal)
-      if (showSwimlanes && uniqueCategories.length > 1) {
+      if (useSwimlanes) {
         const laneHeight = svgHeight / uniqueCategories.length;
         uniqueCategories.forEach((cat, idx) => {
           const laneColor = catColorMap.get(cat) ?? defaultColor;
+          const laneCenter = idx * laneHeight + laneHeight / 2;
           svg.append('rect')
             .attr('x', xStart)
             .attr('y', idx * laneHeight)
@@ -448,19 +544,31 @@ export class TimelineMilestoneVisual implements IVisual {
             .attr('stroke', laneColor)
             .attr('stroke-opacity', 0.15)
             .attr('stroke-width', 0.5);
+          svg.append('line')
+            .attr('class', 'timeline-lane-spine')
+            .attr('x1', xStart).attr('y1', laneCenter)
+            .attr('x2', xEnd).attr('y2', laneCenter)
+            .attr('stroke', connectorColor).attr('stroke-width', spineWidth);
           svg.append('text')
+            .attr('class', 'timeline-lane-label')
             .attr('x', xStart - 4)
-            .attr('y', idx * laneHeight + laneHeight / 2)
+            .attr('y', laneCenter)
             .attr('text-anchor', 'end')
-            .attr('font-size', '9px')
+            .attr('font-size', labelFontSize)
+            .attr('font-family', labelFontFamily)
+            .attr('font-weight', laneLabelFontWeight)
             .attr('fill', secondaryTextColor)
             .attr('dominant-baseline', 'middle')
             .text(cat);
         });
       }
 
-      milestones.forEach((ms, i) => {
-        const cx = n > 1 ? xStart + i * step : svgWidth / 2;
+      visibleMilestones.forEach((ms, i) => {
+        const cx = xStart + positionFraction(ms, i) * (xEnd - xStart);
+        const laneIndex = categoryIndex.get(ms.category);
+        const markerCy = useSwimlanes && laneIndex !== undefined
+          ? (laneIndex + 0.5) * (svgHeight / uniqueCategories.length)
+          : cy;
         // Determine above/below based on layout mode
         let isAbove: boolean;
         let staggerLevel = 0; // 0 = normal offset, 1/2 = progressively further
@@ -477,15 +585,19 @@ export class TimelineMilestoneVisual implements IVisual {
           // 'alternating'
           isAbove = i % 2 === 0;
         }
-        const baseColor = colorByCat && ms.category ? (catColorMap.get(ms.category) ?? defaultColor) : getHostChartColor(this.host.colorPalette, i, themeName);
+        if (markerCy < labelSpacing + 24) isAbove = false;
+        if (markerCy > svgHeight - labelSpacing - 24) isAbove = true;
+        const baseColor = colorByCat && ms.category
+          ? (catColorMap.get(ms.category) ?? defaultColor)
+          : (highContrast.enabled ? defaultColor : getHostChartColor(this.host.colorPalette, i, themeName));
         const conditionalValue = ms.date ? ms.date.getTime() : i;
         const color = this.getConditionalColor(conditionalValue) ?? baseColor;
 
         // Connector line from spine to label area — staggered uses varying lengths
         const staggerMultiplier = layoutMode === 'staggered' ? (staggerLevel === 2 ? 1.6 : staggerLevel === 1 ? 1.0 : 0.6) : 1.0;
-        const connectorLen = (labelSpace - markerSize) * staggerMultiplier;
-        const y1 = isAbove ? cy - markerSize / 2 : cy + markerSize / 2;
-        const y2 = isAbove ? cy - connectorLen : cy + connectorLen;
+        const connectorLen = Math.max(0, (labelSpacing - markerSize) * staggerMultiplier);
+        const y1 = isAbove ? markerCy - markerSize / 2 : markerCy + markerSize / 2;
+        const y2 = isAbove ? markerCy - connectorLen : markerCy + connectorLen;
 
         if (showConnectors) {
           svg.append('line')
@@ -496,40 +608,48 @@ export class TimelineMilestoneVisual implements IVisual {
         }
 
         // Marker
-        const marker = this.createSvgMarker(svg, cx, cy, markerSize, markerShape, color, markerStroke, markerStrokeWidth);
+        const marker = this.createSvgMarker(svg, cx, markerCy, markerSize, markerShape, color, markerStroke, markerStrokeWidth);
         if (marker) {
-          marker.attr('data-milestone-idx', String(i));
+          marker
+            .attr('data-milestone-idx', String(i))
+            .attr('data-selection-key', ms.selectionId.getKey());
         }
 
         // Label text
         const labelY = isAbove ? y2 - 4 : y2 + 12;
+        const labelAnchor = cx < Math.max(64, chartPadding + 24)
+          ? 'start'
+          : cx > svgWidth - Math.max(64, chartPadding + 24)
+            ? 'end'
+            : 'middle';
         const labelGroup = svg.append('g')
-          .attr('data-milestone-idx', String(i));
+          .attr('data-milestone-idx', String(i))
+          .attr('data-selection-key', ms.selectionId.getKey());
 
-        if (showDataLabels) {
+        if (showDataLabels && shouldShowLabelForIndex(i, n)) {
           labelGroup.append('text')
             .attr('class', 'timeline-data-label')
             .attr('x', cx).attr('y', labelY)
-            .attr('text-anchor', 'middle')
+            .attr('text-anchor', labelAnchor)
             .attr('font-size', labelFontSize)
             .attr('font-family', labelFontFamily)
             .attr('font-weight', '600')
             .attr('fill', primaryTextColor)
-            .text(ms.label.length > 16 ? ms.label.slice(0, 14) + '...' : ms.label);
+            .text(ms.label.length > labelCharLimit ? ms.label.slice(0, Math.max(4, labelCharLimit - 2)) + '...' : ms.label);
 
-          if (showDates && ms.date) {
+          if (shouldShowDateForIndex(i, n) && ms.date) {
             const dateY = isAbove ? labelY - 14 : labelY + 14;
             labelGroup.append('text')
               .attr('class', 'timeline-data-label')
               .attr('x', cx).attr('y', dateY)
-              .attr('text-anchor', 'middle')
+              .attr('text-anchor', labelAnchor)
               .attr('font-size', labelFontSize)
               .attr('font-family', labelFontFamily)
               .attr('fill', secondaryTextColor)
               .text(formatDate(ms.date, dateFormatVal, locale));
           }
         }
-        this.attachSelection(marker, labelGroup, ms, dateFormatVal, locale);
+        this.attachSelection(marker, labelGroup, ms, dateFormatVal, locale, i, n);
 
         // Animations
         // Skip animation when cross-highlighting is active to avoid overwriting dimmed opacity
@@ -552,23 +672,22 @@ export class TimelineMilestoneVisual implements IVisual {
       });
     } else {
       // Vertical orientation
-      const yStart = padding;
-      const yEnd = svgHeight - padding;
+      const yStart = chartPadding;
+      const yEnd = svgHeight - chartPadding;
       const cx = svgWidth / 2;
 
-      // Spine line
-      svg.append('line')
-        .attr('x1', cx).attr('y1', yStart)
-        .attr('x2', cx).attr('y2', yEnd)
-        .attr('stroke', connectorColor).attr('stroke-width', spineWidth);
-
-      const step = n > 1 ? (yEnd - yStart) / (n - 1) : 0;
+      if (!useSwimlanes) {
+        svg.append('line')
+          .attr('x1', cx).attr('y1', yStart)
+          .attr('x2', cx).attr('y2', yEnd)
+          .attr('stroke', connectorColor).attr('stroke-width', spineWidth);
+      }
 
       // Grid lines (horizontal tick marks at each milestone position)
       if (showGridLines && n > 1) {
         const gridGroup = svg.append('g').attr('class', 'timeline-grid');
         for (let gi = 0; gi < n; gi++) {
-          const gy = yStart + gi * step;
+          const gy = yStart + positionFraction(visibleMilestones[gi], gi) * (yEnd - yStart);
           gridGroup.append('line')
             .attr('x1', 0).attr('y1', gy)
             .attr('x2', svgWidth).attr('y2', gy)
@@ -580,10 +699,11 @@ export class TimelineMilestoneVisual implements IVisual {
       }
 
       // Swimlane backgrounds (vertical)
-      if (showSwimlanes && uniqueCategories.length > 1) {
+      if (useSwimlanes) {
         const laneWidth = svgWidth / uniqueCategories.length;
         uniqueCategories.forEach((cat, idx) => {
           const laneColor = catColorMap.get(cat) ?? defaultColor;
+          const laneCenter = idx * laneWidth + laneWidth / 2;
           svg.append('rect')
             .attr('x', idx * laneWidth)
             .attr('y', yStart)
@@ -594,11 +714,30 @@ export class TimelineMilestoneVisual implements IVisual {
             .attr('stroke', laneColor)
             .attr('stroke-opacity', 0.15)
             .attr('stroke-width', 0.5);
+          svg.append('line')
+            .attr('class', 'timeline-lane-spine')
+            .attr('x1', laneCenter).attr('y1', yStart)
+            .attr('x2', laneCenter).attr('y2', yEnd)
+            .attr('stroke', connectorColor).attr('stroke-width', spineWidth);
+          svg.append('text')
+            .attr('class', 'timeline-lane-label')
+            .attr('x', laneCenter)
+            .attr('y', Math.max(10, yStart - 6))
+            .attr('text-anchor', 'middle')
+            .attr('font-size', labelFontSize)
+            .attr('font-family', labelFontFamily)
+            .attr('font-weight', laneLabelFontWeight)
+            .attr('fill', secondaryTextColor)
+            .text(cat);
         });
       }
 
-      milestones.forEach((ms, i) => {
-        const my = n > 1 ? yStart + i * step : svgHeight / 2;
+      visibleMilestones.forEach((ms, i) => {
+        const my = yStart + positionFraction(ms, i) * (yEnd - yStart);
+        const laneIndex = categoryIndex.get(ms.category);
+        const markerCx = useSwimlanes && laneIndex !== undefined
+          ? (laneIndex + 0.5) * (svgWidth / uniqueCategories.length)
+          : cx;
         // Determine left/right based on layout mode
         let isLeft: boolean;
         let staggerLevel = 0;
@@ -613,15 +752,19 @@ export class TimelineMilestoneVisual implements IVisual {
         } else {
           isLeft = i % 2 === 0;
         }
-        const baseColor = colorByCat && ms.category ? (catColorMap.get(ms.category) ?? defaultColor) : getHostChartColor(this.host.colorPalette, i, themeName);
+        if (markerCx < labelSpacing + 24) isLeft = false;
+        if (markerCx > svgWidth - labelSpacing - 24) isLeft = true;
+        const baseColor = colorByCat && ms.category
+          ? (catColorMap.get(ms.category) ?? defaultColor)
+          : (highContrast.enabled ? defaultColor : getHostChartColor(this.host.colorPalette, i, themeName));
         const conditionalValue = ms.date ? ms.date.getTime() : i;
         const color = this.getConditionalColor(conditionalValue) ?? baseColor;
 
         // Connector — staggered uses varying lengths
         const staggerMultiplier = layoutMode === 'staggered' ? (staggerLevel === 2 ? 1.6 : staggerLevel === 1 ? 1.0 : 0.6) : 1.0;
-        const connectorLen = 60 * staggerMultiplier;
-        const x1 = isLeft ? cx - markerSize / 2 : cx + markerSize / 2;
-        const x2 = isLeft ? cx - connectorLen : cx + connectorLen;
+        const connectorLen = labelSpacing * staggerMultiplier;
+        const x1 = isLeft ? markerCx - markerSize / 2 : markerCx + markerSize / 2;
+        const x2 = isLeft ? markerCx - connectorLen : markerCx + connectorLen;
 
         if (showConnectors) {
           svg.append('line')
@@ -632,18 +775,21 @@ export class TimelineMilestoneVisual implements IVisual {
         }
 
         // Marker
-        const marker = this.createSvgMarker(svg, cx, my, markerSize, markerShape, color, markerStroke, markerStrokeWidth);
+        const marker = this.createSvgMarker(svg, markerCx, my, markerSize, markerShape, color, markerStroke, markerStrokeWidth);
         if (marker) {
-          marker.attr('data-milestone-idx', String(i));
+          marker
+            .attr('data-milestone-idx', String(i))
+            .attr('data-selection-key', ms.selectionId.getKey());
         }
 
         // Label text
         const labelX = isLeft ? x2 - 4 : x2 + 4;
         const anchor = isLeft ? 'end' : 'start';
         const labelGroup = svg.append('g')
-          .attr('data-milestone-idx', String(i));
+          .attr('data-milestone-idx', String(i))
+          .attr('data-selection-key', ms.selectionId.getKey());
 
-        if (showDataLabels) {
+        if (showDataLabels && shouldShowLabelForIndex(i, n)) {
           labelGroup.append('text')
             .attr('class', 'timeline-data-label')
             .attr('x', labelX).attr('y', my + 4)
@@ -652,9 +798,9 @@ export class TimelineMilestoneVisual implements IVisual {
             .attr('font-family', labelFontFamily)
             .attr('font-weight', '600')
             .attr('fill', primaryTextColor)
-            .text(ms.label.length > 16 ? ms.label.slice(0, 14) + '...' : ms.label);
+            .text(ms.label.length > labelCharLimit ? ms.label.slice(0, Math.max(4, labelCharLimit - 2)) + '...' : ms.label);
 
-          if (showDates && ms.date) {
+          if (shouldShowDateForIndex(i, n) && ms.date) {
             labelGroup.append('text')
               .attr('class', 'timeline-data-label')
               .attr('x', labelX).attr('y', my + 18)
@@ -665,7 +811,7 @@ export class TimelineMilestoneVisual implements IVisual {
               .text(formatDate(ms.date, dateFormatVal, locale));
           }
         }
-        this.attachSelection(marker, labelGroup, ms, dateFormatVal, locale);
+        this.attachSelection(marker, labelGroup, ms, dateFormatVal, locale, i, n);
 
         // Animations
         // Skip animation when cross-highlighting is active to avoid overwriting dimmed opacity
@@ -689,17 +835,31 @@ export class TimelineMilestoneVisual implements IVisual {
     }
     // Apply shared formatting settings
     applyDataLabelFormatting(this.container, s.dataLabelFormattingCard, '.timeline-data-label');
+    if (highContrast.enabled) {
+      this.container.querySelectorAll<SVGTextElement>('.timeline-data-label, .timeline-lane-label').forEach((label) => {
+        label.setAttribute('fill', highContrast.foreground);
+      });
+    } else if (labelColorValue) {
+      this.container.querySelectorAll<SVGTextElement>('.timeline-lane-label').forEach((label) => {
+        label.setAttribute('fill', labelColorValue);
+      });
+    }
 
     // Duration bars between consecutive milestones
-    if (showDurationBars && milestones.length > 1) {
+    if (showDurationBars && visibleMilestones.length > 1) {
       const durationGroup = svg.append('g').attr('class', 'timeline-duration-bars');
-      for (let i = 0; i < milestones.length - 1; i++) {
-        if (!milestones[i].date || !milestones[i + 1].date) continue;
-        const barColor = catColorMap.get(milestones[i].category) ?? defaultColor;
+      for (let i = 0; i < visibleMilestones.length - 1; i++) {
+        if (!visibleMilestones[i].date || !visibleMilestones[i + 1].date) continue;
+        if (useSwimlanes && visibleMilestones[i].category !== visibleMilestones[i + 1].category) continue;
+        const barColor = catColorMap.get(visibleMilestones[i].category) ?? defaultColor;
         if (isHorizontal) {
-          const xStart2 = n > 1 ? padding + i * ((svgWidth - padding * 2) / (n - 1)) : svgWidth / 2;
-          const xEnd2 = n > 1 ? padding + (i + 1) * ((svgWidth - padding * 2) / (n - 1)) : svgWidth / 2;
-          const barY = svgHeight / 2 + markerSize + 2;
+          const xStart2 = chartPadding + positionFraction(visibleMilestones[i], i) * (svgWidth - chartPadding * 2);
+          const xEnd2 = chartPadding + positionFraction(visibleMilestones[i + 1], i + 1) * (svgWidth - chartPadding * 2);
+          const laneIndex = categoryIndex.get(visibleMilestones[i].category);
+          const laneCenter = useSwimlanes && laneIndex !== undefined
+            ? (laneIndex + 0.5) * (svgHeight / uniqueCategories.length)
+            : svgHeight / 2;
+          const barY = laneCenter + markerSize + 2;
           const durBarHeight = s.spineAndConnectorsSettings.durationBarHeight.value;
           const durBarOpacity = s.spineAndConnectorsSettings.durationBarOpacity.value / 100;
           durationGroup.append('rect')
@@ -711,9 +871,13 @@ export class TimelineMilestoneVisual implements IVisual {
             .attr('fill', barColor)
             .attr('fill-opacity', durBarOpacity);
         } else {
-          const yStart2 = n > 1 ? padding + i * ((svgHeight - padding * 2) / (n - 1)) : svgHeight / 2;
-          const yEnd2 = n > 1 ? padding + (i + 1) * ((svgHeight - padding * 2) / (n - 1)) : svgHeight / 2;
-          const barX = svgWidth / 2 + markerSize + 2;
+          const yStart2 = chartPadding + positionFraction(visibleMilestones[i], i) * (svgHeight - chartPadding * 2);
+          const yEnd2 = chartPadding + positionFraction(visibleMilestones[i + 1], i + 1) * (svgHeight - chartPadding * 2);
+          const laneIndex = categoryIndex.get(visibleMilestones[i].category);
+          const laneCenter = useSwimlanes && laneIndex !== undefined
+            ? (laneIndex + 0.5) * (svgWidth / uniqueCategories.length)
+            : svgWidth / 2;
+          const barX = laneCenter + markerSize + 2;
           const durBarHeight = s.spineAndConnectorsSettings.durationBarHeight.value;
           const durBarOpacity = s.spineAndConnectorsSettings.durationBarOpacity.value / 100;
           durationGroup.append('rect')
@@ -729,7 +893,7 @@ export class TimelineMilestoneVisual implements IVisual {
     }
 
     // Today line
-    this.renderTodayLine(svg, milestones, viewport, isHorizontal, padding);
+    this.renderTodayLine(svg, visibleMilestones, svgWidth, svgHeight, isHorizontal, chartPadding);
 
     // Legend — milestone category colors
     const legendCard = this.settings.legendFormattingCard;
@@ -752,7 +916,7 @@ export class TimelineMilestoneVisual implements IVisual {
     }
 
     // Apply cross-highlight dimming
-    this.applyCrossHighlight(milestones);
+    this.applyCrossHighlight(visibleMilestones);
 
     this.applyAccessibility();
     this.container.addEventListener('click', this.handleBackgroundClick);
@@ -762,17 +926,24 @@ export class TimelineMilestoneVisual implements IVisual {
 
   private applyCrossHighlight(milestones: Milestone[]): void {
     const data = this.currentTimelineData;
-    if (!data || !data.hasHighlights) return;
+    if (!data) return;
+
+    const selectedIds = this.selectionManager.getSelectionIds() as ISelectionId[];
+    const selectedKeys = new Set(selectedIds.map((selectionId) => selectionId.getKey()));
+    const hasSelection = selectedKeys.size > 0;
+    const highlightedKeys = new Set(
+      milestones
+        .filter((milestone) => milestone.highlighted)
+        .map((milestone) => milestone.selectionId.getKey()),
+    );
+    const shouldDim = hasSelection || data.hasHighlights;
 
     const elements = this.container.querySelectorAll<SVGElement>('[data-milestone-idx]');
     for (const el of elements) {
-      const idxStr = el.getAttribute('data-milestone-idx');
-      if (idxStr === null) continue;
-      const idx = parseInt(idxStr, 10);
-      const ms = milestones[idx];
-      if (ms && !ms.highlighted) {
-        el.style.opacity = '0.3';
-      }
+      const selectionKey = el.getAttribute('data-selection-key');
+      const selected = Boolean(selectionKey && selectedKeys.has(selectionKey));
+      const highlighted = Boolean(selectionKey && highlightedKeys.has(selectionKey));
+      el.style.opacity = shouldDim && !selected && !highlighted ? '0.3' : '';
     }
   }
 
@@ -790,6 +961,7 @@ export class TimelineMilestoneVisual implements IVisual {
 
     if (shape === 'circle') {
       return svg.append('circle')
+        .attr('class', 'timeline-marker')
         .attr('cx', cx).attr('cy', cy)
         .attr('r', half)
         .attr('fill', color)
@@ -798,6 +970,7 @@ export class TimelineMilestoneVisual implements IVisual {
 
     if (shape === 'square') {
       return svg.append('rect')
+        .attr('class', 'timeline-marker')
         .attr('x', cx - half).attr('y', cy - half)
         .attr('width', size).attr('height', size)
         .attr('rx', 2)
@@ -808,6 +981,7 @@ export class TimelineMilestoneVisual implements IVisual {
     if (shape === 'diamond') {
       const pts = `${cx},${cy - half} ${cx + half},${cy} ${cx},${cy + half} ${cx - half},${cy}`;
       return svg.append('polygon')
+        .attr('class', 'timeline-marker')
         .attr('points', pts)
         .attr('fill', color)
         .attr('stroke', strokeColor).attr('stroke-width', strokeWidth) as unknown as d3.Selection<SVGElement, unknown, null, undefined>;
@@ -817,7 +991,117 @@ export class TimelineMilestoneVisual implements IVisual {
   }
 
   public getFormattingModel(): powerbi.visuals.FormattingModel {
+    this.syncFormattingVisibility();
     return this.formattingSettingsService.buildFormattingModel(this.settings);
+  }
+
+  private migrateLegacyFormatting(dataView: DataView | undefined): void {
+    const objects = dataView?.metadata?.objects;
+    const legacy = objects?.['timelineSettings'] as Record<string, unknown> | undefined;
+    if (!legacy) return;
+
+    const spine = objects?.['spineAndConnectorsSettings'] as Record<string, unknown> | undefined;
+    const markers = objects?.['markerSettings'] as Record<string, unknown> | undefined;
+    const migrateSpineNumber = (name: 'lineWidth'): void => {
+      const value = legacy[name];
+      if (!(spine && Object.prototype.hasOwnProperty.call(spine, name)) && typeof value === 'number') {
+        this.settings.spineAndConnectorsSettings[name].value = value;
+      }
+    };
+    const migrateSpineColor = (name: 'lineColor' | 'labelColor'): void => {
+      const value = this.readFormattingColor(legacy[name]);
+      if (!(spine && Object.prototype.hasOwnProperty.call(spine, name)) && value) {
+        this.settings.spineAndConnectorsSettings[name].value = { value };
+      }
+    };
+
+    migrateSpineColor('lineColor');
+    migrateSpineNumber('lineWidth');
+    migrateSpineColor('labelColor');
+
+    const markerStroke = this.readFormattingColor(legacy['markerStrokeColor']);
+    if (!(markers && Object.prototype.hasOwnProperty.call(markers, 'markerStrokeColor')) && markerStroke) {
+      this.settings.markerSettings.markerStrokeColor.value = { value: markerStroke };
+    }
+  }
+
+  private readFormattingColor(value: unknown): string | undefined {
+    if (typeof value === 'string') return value;
+    if (!value || typeof value !== 'object') return undefined;
+    const candidate = value as { solid?: { color?: unknown }; value?: unknown };
+    if (typeof candidate.solid?.color === 'string') return candidate.solid.color;
+    return typeof candidate.value === 'string' ? candidate.value : undefined;
+  }
+
+  private syncFormattingVisibility(): void {
+    const s = this.settings;
+    syncTitleFormattingVisibility(s.titleFormattingCard);
+    syncLegendFormattingVisibility(s.legendFormattingCard);
+    syncDateFilterFormattingVisibility(s.dateFilterFormattingCard);
+    syncCardStyleVisibility(s.cardSettings);
+    s.cardSettings.borderRadius.visible = resolveDropdown(s.cardSettings.cardStyleMode) !== 'none';
+
+    const showDataLabels = s.dataLabelFormattingCard.showDataLabels.value;
+    s.dataLabelFormattingCard.dataLabelFontSize.visible = showDataLabels;
+    s.dataLabelFormattingCard.dataLabelFontColor.visible = showDataLabels;
+    s.dataLabelFormattingCard.dataLabelFontWeight.visible = showDataLabels;
+    s.dataLabelFormattingCard.dataLabelFontFamily.visible = showDataLabels;
+    s.dataLabelFormattingCard.dataLabelPosition.visible = false;
+    s.timelineSettings.showDates.visible = showDataLabels;
+    s.timelineSettings.dateFormat.visible = showDataLabels && s.timelineSettings.showDates.value;
+    const maxVisible = Math.max(0, Math.floor(s.timelineSettings.maxVisible.value));
+    s.timelineSettings.windowOffset.visible = maxVisible > 0
+      && (this.currentTimelineData?.milestones.length ?? 0) > maxVisible;
+
+    s.markerSettings.colorByCategory.visible = this.hasCategoryRole;
+    s.legendFormattingCard.visible = this.hasCategoryRole && s.markerSettings.colorByCategory.value;
+    s.legendFormattingCard.showInlineLabels.visible = false;
+    s.legendFormattingCard.inlineLabelFontSize.visible = false;
+    s.legendFormattingCard.inlineLabelOffset.visible = false;
+
+    const orientation = resolveDropdown(s.timelineSettings.orientation) ?? 'horizontal';
+    s.spineAndConnectorsSettings.showSwimlanes.visible = this.hasCategoryRole;
+    const showLaneLabels = this.hasCategoryRole
+      && s.spineAndConnectorsSettings.showSwimlanes.value;
+    s.spineAndConnectorsSettings.labelColor.visible = showLaneLabels;
+    const showDurationBars = s.spineAndConnectorsSettings.showDurationBars.value;
+    s.spineAndConnectorsSettings.durationBarOpacity.visible = showDurationBars;
+    s.spineAndConnectorsSettings.durationBarHeight.visible = showDurationBars;
+
+    const showTodayLine = s.timelineMarkerSettings.showTodayLine.value;
+    s.timelineMarkerSettings.todayLineColor.visible = showTodayLine;
+    s.timelineMarkerSettings.todayLineWidth.visible = showTodayLine;
+    s.timelineMarkerSettings.todayLineOpacity.visible = showTodayLine;
+    s.timelineMarkerSettings.clusterThresholdDays.visible = s.timelineMarkerSettings.clusterNearby.value;
+    s.animationSettings.duration.visible = s.animationSettings.enabled.value;
+
+    s.axisFormattingCard.showXAxis.visible = false;
+    s.axisFormattingCard.showYAxis.visible = false;
+    s.axisFormattingCard.xAxisTitle.visible = false;
+    s.axisFormattingCard.yAxisTitle.visible = false;
+    s.axisFormattingCard.axisLabelColor.visible = false;
+    s.axisFormattingCard.axisLabelSize.visible = showLaneLabels;
+    s.axisFormattingCard.axisLabelFontFamily.visible = showLaneLabels;
+    s.axisFormattingCard.axisLabelFontWeight.visible = showLaneLabels;
+    s.axisFormattingCard.axisLabelRotation.visible = false;
+    s.axisFormattingCard.yAxisMin.visible = false;
+    s.axisFormattingCard.yAxisMax.visible = false;
+    s.axisFormattingCard.axisLineColor.visible = false;
+    s.axisFormattingCard.axisLineWidth.visible = false;
+    s.axisFormattingCard.integerTicks.visible = false;
+    s.axisFormattingCard.gridLineWidth.visible = false;
+    s.axisFormattingCard.gridLineOpacity.visible = false;
+    const showGridLines = s.axisFormattingCard.showGridLines.value;
+    s.axisFormattingCard.gridLineColor.visible = showGridLines;
+    s.axisFormattingCard.gridLineStyle.visible = showGridLines;
+
+    const conditionalEnabled = s.conditionalFormattingCard.enableConditional.value;
+    s.conditionalFormattingCard.conditionalDirection.visible = conditionalEnabled;
+    s.conditionalFormattingCard.threshold1.visible = conditionalEnabled;
+    s.conditionalFormattingCard.threshold2.visible = conditionalEnabled;
+    s.conditionalFormattingCard.conditionalColor1.visible = conditionalEnabled;
+    s.conditionalFormattingCard.conditionalColor2.visible = conditionalEnabled;
+    s.conditionalFormattingCard.conditionalColor3.visible = conditionalEnabled;
   }
 
   private attachSelection(
@@ -826,14 +1110,20 @@ export class TimelineMilestoneVisual implements IVisual {
     milestone: Milestone,
     dateFormatVal: string,
     locale: string | undefined,
+    index: number,
+    total: number,
   ): void {
     const onClick = (event: MouseEvent): void => {
       event.stopPropagation();
-      void this.selectionManager.select(milestone.selectionId, event.ctrlKey || event.metaKey);
+      if (!allowInteractions(this.host)) return;
+      void this.selectionManager.select(milestone.selectionId, event.ctrlKey || event.metaKey).then(() => {
+        this.applyCrossHighlight(this.currentVisibleMilestones);
+      });
     };
     const onContextMenu = (event: MouseEvent): void => {
       event.preventDefault();
       event.stopPropagation();
+      if (!allowInteractions(this.host)) return;
       void this.selectionManager.showContextMenu(milestone.selectionId, {
         x: event.clientX,
         y: event.clientY,
@@ -850,15 +1140,25 @@ export class TimelineMilestoneVisual implements IVisual {
     };
 
     if (marker) {
-      marker.style('cursor', 'pointer');
+      marker.style('cursor', allowInteractions(this.host) ? 'pointer' : 'default');
       marker.on('click.selection', onClick);
       marker.on('contextmenu.selection', onContextMenu);
       marker.on('mouseenter.tooltip', onMouseEnter);
       marker.on('mousemove.tooltip', onMouseMove);
       marker.on('mouseleave.tooltip', onMouseLeave);
+      const markerNode = marker.node();
+      if (markerNode && this.settings.accessibilityFormattingCard.enableKeyboardNav.value) {
+        applyDataPointAria(
+          markerNode,
+          milestone.label,
+          [formatDate(milestone.date, dateFormatVal, locale), milestone.category].filter(Boolean).join(', '),
+          index,
+          total,
+        );
+      }
     }
 
-    labelGroup.style('cursor', 'pointer');
+    labelGroup.style('cursor', allowInteractions(this.host) ? 'pointer' : 'default');
     labelGroup.on('click.selection', onClick);
     labelGroup.on('contextmenu.selection', onContextMenu);
     labelGroup.on('mouseenter.tooltip', onMouseEnter);
@@ -939,7 +1239,10 @@ export class TimelineMilestoneVisual implements IVisual {
   // requires VisualUpdateOptions with updateId, and calling without args crashes the visual.
 
   private handleBackgroundClick = (): void => {
-    void this.selectionManager.clear();
+    if (!allowInteractions(this.host)) return;
+    void this.selectionManager.clear().then(() => {
+      this.applyCrossHighlight(this.currentVisibleMilestones);
+    });
   };
 
   // -- Today Line Rendering ---------------------------------------------------
@@ -947,9 +1250,10 @@ export class TimelineMilestoneVisual implements IVisual {
   private renderTodayLine(
     svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
     milestones: Milestone[],
-    viewport: powerbi.IViewport,
+    chartWidth: number,
+    chartHeight: number,
     isHorizontal: boolean,
-    padding: number,
+    chartPadding: number,
   ): void {
     const markerSettings = this.settings.timelineMarkerSettings;
     if (!markerSettings.showTodayLine.value) return;
@@ -965,28 +1269,31 @@ export class TimelineMilestoneVisual implements IVisual {
     if (now < minTime || now > maxTime) return;
 
     const frac = (now - minTime) / (maxTime - minTime);
-    const color = markerSettings.todayLineColor.value?.value ?? '#EF4444';
+    const highContrast = this.getHighContrastColors();
+    const color = highContrast.enabled
+      ? highContrast.foregroundSelected
+      : (markerSettings.todayLineColor.value?.value ?? '#EF4444');
     const todayWidth = markerSettings.todayLineWidth.value;
     const todayOpacity = markerSettings.todayLineOpacity.value / 100;
 
     if (isHorizontal) {
-      const xStart = padding;
-      const xEnd = viewport.width - padding;
+      const xStart = chartPadding;
+      const xEnd = chartWidth - chartPadding;
       const x = xStart + frac * (xEnd - xStart);
       svg.append('line')
         .attr('x1', x).attr('y1', 0)
-        .attr('x2', x).attr('y2', viewport.height)
+        .attr('x2', x).attr('y2', chartHeight)
         .attr('stroke', color)
         .attr('stroke-width', todayWidth)
         .attr('stroke-dasharray', '4,3')
         .attr('opacity', todayOpacity);
     } else {
-      const yStart = padding;
-      const yEnd = viewport.height - padding;
+      const yStart = chartPadding;
+      const yEnd = chartHeight - chartPadding;
       const y = yStart + frac * (yEnd - yStart);
       svg.append('line')
         .attr('x1', 0).attr('y1', y)
-        .attr('x2', viewport.width).attr('y2', y)
+        .attr('x2', chartWidth).attr('y2', y)
         .attr('stroke', color)
         .attr('stroke-width', todayWidth)
         .attr('stroke-dasharray', '4,3')
@@ -1017,21 +1324,24 @@ export class TimelineMilestoneVisual implements IVisual {
     const a11y = this.settings.accessibilityFormattingCard;
     if (a11y.enableKeyboardNav.value) {
       ensureFocusRingStyles();
-      attachKeyboardNav({
+      const cleanup = attachKeyboardNav({
         container: this.container,
-        itemSelector: 'circle, rect, polygon',
+        itemSelector: '.timeline-marker[tabindex="0"]',
         onActivate: (el: Element) => {
-          (el as HTMLElement).click?.();
+          el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         },
       });
+      this.cancelAnimations.push(cleanup);
     }
     applyChartAria(this.container, {
       chartType: 'timeline',
-      dataPointCount: this.container.querySelectorAll('circle, rect, polygon').length,
+      dataPointCount: this.container.querySelectorAll('.timeline-marker').length,
     });
   }
 
   public destroy(): void {
+    this.removeEmptySpaceContextMenu?.();
+    this.removeEmptySpaceContextMenu = null;
     this.container.removeEventListener('click', this.handleBackgroundClick);
     this.hideTooltip();
     this.cancelAnimations.forEach((cancel) => cancel());

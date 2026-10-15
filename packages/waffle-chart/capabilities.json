@@ -4,13 +4,17 @@
       "displayName": "Value",
       "name": "measure",
       "kind": "Measure",
-      "description": "The value to display (e.g., 73 out of 100)"
+      "description": "The value to display (e.g., 73 out of 100)",
+      "displayNameKey": "WaffleChartCapabilities_DisplayName_0210",
+      "descriptionKey": "WaffleChartCapabilities_Description_0001"
     },
     {
       "displayName": "Max Value",
       "name": "maxValue",
       "kind": "Measure",
-      "description": "Optional maximum value (default 100)"
+      "description": "Optional maximum value (default 100)",
+      "displayNameKey": "WaffleChartCapabilities_DisplayName_0211",
+      "descriptionKey": "WaffleChartCapabilities_Description_0002"
     }
   ],
   "dataViewMappings": [
@@ -51,19 +55,29 @@
           "displayName": "Rows",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0213"
         },
         "cols": {
           "displayName": "Columns",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0214"
         },
         "gap": {
-          "displayName": "Gap",
+          "displayName": "Cell Gap (px)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0215"
+        },
+        "chartPadding": {
+          "displayName": "Chart Padding (px)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0007"
         },
         "fillDirection": {
           "displayName": "Fill Direction",
@@ -71,28 +85,34 @@
             "enumeration": [
               {
                 "value": "lr",
-                "displayName": "Left to Right"
+                "displayName": "Left to Right",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0009"
               },
               {
                 "value": "bt",
-                "displayName": "Bottom to Top"
+                "displayName": "Bottom to Top",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0010"
               },
               {
                 "value": "diagonal",
-                "displayName": "Diagonal"
+                "displayName": "Diagonal",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0011"
               },
               {
                 "value": "radial",
-                "displayName": "Radial"
+                "displayName": "Radial",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0012"
               }
             ]
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0008"
         },
         "autoFitCells": {
-          "displayName": "Auto-Fit Cell Size",
+          "displayName": "Auto-Fit Rows and Columns",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0013"
         },
         "shape": {
           "displayName": "Cell Shape",
@@ -100,22 +120,27 @@
             "enumeration": [
               {
                 "value": "square",
-                "displayName": "Square"
+                "displayName": "Square",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0015"
               },
               {
                 "value": "circle",
-                "displayName": "Circle"
+                "displayName": "Circle",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0016"
               }
             ]
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0014"
         },
         "cellCornerRadius": {
-          "displayName": "Cell Corner Radius",
+          "displayName": "Cell Corner Radius (px)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0017"
         }
-      }
+      },
+      "displayNameKey": "WaffleChartCapabilities_DisplayName_0212"
     },
     "colorSettings": {
       "displayName": "Colors",
@@ -128,7 +153,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0021"
         },
         "emptyColor": {
           "displayName": "Empty Color",
@@ -138,34 +164,62 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0022"
         },
         "cellStrokeColor": {
-          "displayName": "Cell Stroke Color",
+          "displayName": "Cell Border Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0023"
         }
-      }
+      },
+      "displayNameKey": "WaffleChartCapabilities_DisplayName_0020"
     },
     "valueSettings": {
       "displayName": "Value Display",
       "properties": {
         "show": {
-          "displayName": "Show Percentage",
+          "displayName": "Show Value",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0025"
+        },
+        "displayMode": {
+          "displayName": "Show As",
+          "type": {
+            "enumeration": [
+              {
+                "value": "percentage",
+                "displayName": "Percentage",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0207"
+              },
+              {
+                "value": "value",
+                "displayName": "Actual Value",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0208"
+              },
+              {
+                "value": "valueAndMax",
+                "displayName": "Value and Maximum",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0209"
+              }
+            ]
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0216"
         },
         "fontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0026"
         },
         "fontColor": {
           "displayName": "Font Color",
@@ -175,7 +229,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0027"
         },
         "fontFamily": {
           "displayName": "Font Family",
@@ -183,34 +238,42 @@
             "enumeration": [
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0029"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0030"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0031"
               },
               {
                 "value": "Helvetica",
-                "displayName": "Helvetica"
+                "displayName": "Helvetica",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0032"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0033"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0034"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0035"
               }
             ]
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0028"
         },
         "fontWeight": {
           "displayName": "Font Weight",
@@ -218,20 +281,32 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0037"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0038"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0039"
               }
             ]
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0036"
+        },
+        "valueSpacing": {
+          "displayName": "Space Between Grid and Value",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0205"
         }
-      }
+      },
+      "displayNameKey": "WaffleChartCapabilities_DisplayName_0024"
     },
     "animationSettings": {
       "displayName": "Animation",
@@ -240,15 +315,18 @@
           "displayName": "Enable Animations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0041"
         },
         "duration": {
           "displayName": "Duration (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0042"
         }
-      }
+      },
+      "displayNameKey": "WaffleChartCapabilities_DisplayName_0040"
     },
     "dataLabelFormatting": {
       "displayName": "Data Labels",
@@ -257,13 +335,15 @@
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0044"
         },
         "dataLabelFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0045"
         },
         "dataLabelFontColor": {
           "displayName": "Font Color",
@@ -273,7 +353,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0046"
         },
         "dataLabelFontWeight": {
           "displayName": "Font Weight",
@@ -281,14 +362,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0048"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0049"
               }
             ]
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0047"
         },
         "dataLabelFontFamily": {
           "displayName": "Font",
@@ -296,54 +380,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0051"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0052"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0053"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0054"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0055"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0056"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0057"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0058"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0059"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0060"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0061"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0062"
               }
             ]
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0050"
         },
         "dataLabelPosition": {
           "displayName": "Position",
@@ -351,28 +448,35 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0064"
               },
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0065"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0066"
               },
               {
                 "value": "inside",
-                "displayName": "Inside"
+                "displayName": "Inside",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0067"
               },
               {
                 "value": "outside",
-                "displayName": "Outside"
+                "displayName": "Outside",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0068"
               }
             ]
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0063"
         }
-      }
+      },
+      "displayNameKey": "WaffleChartCapabilities_DisplayName_0043"
     },
     "titleFormatting": {
       "displayName": "Chart Title",
@@ -381,19 +485,22 @@
           "displayName": "Show Title",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0070"
         },
         "titleText": {
           "displayName": "Title Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0071"
         },
         "titleFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0072"
         },
         "titleFontColor": {
           "displayName": "Font Color",
@@ -403,7 +510,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0073"
         },
         "titleAlignment": {
           "displayName": "Alignment",
@@ -411,18 +519,22 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0075"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0076"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0077"
               }
             ]
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0074"
         },
         "titleFontFamily": {
           "displayName": "Font",
@@ -430,66 +542,81 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0079"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0080"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0081"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0082"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0083"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0084"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0085"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0086"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0087"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0088"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0089"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0090"
               }
             ]
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0078"
         },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0091"
         },
         "subtitleFontSize": {
           "displayName": "Subtitle Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0092"
         },
         "subtitleFontColor": {
           "displayName": "Subtitle Color",
@@ -499,7 +626,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0093"
         },
         "titleFontWeight": {
           "displayName": "Font Weight",
@@ -507,14 +635,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0095"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0096"
               }
             ]
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0094"
         },
         "subtitleFontFamily": {
           "displayName": "Subtitle Font",
@@ -522,54 +653,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0098"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0099"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0100"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0101"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0102"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0103"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0104"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0105"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0106"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0107"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0108"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0109"
               }
             ]
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0097"
         },
         "subtitleFontWeight": {
           "displayName": "Subtitle Font Weight",
@@ -577,16 +721,20 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0111"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0112"
               }
             ]
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0110"
         }
-      }
+      },
+      "displayNameKey": "WaffleChartCapabilities_DisplayName_0069"
     },
     "legendFormatting": {
       "displayName": "Legend",
@@ -595,7 +743,8 @@
           "displayName": "Show Legend",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0114"
         },
         "legendPosition": {
           "displayName": "Position",
@@ -603,28 +752,34 @@
             "enumeration": [
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0116"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0117"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0118"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0119"
               }
             ]
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0115"
         },
         "legendFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0120"
         },
         "legendFontColor": {
           "displayName": "Font Color",
@@ -634,7 +789,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0121"
         },
         "legendFontFamily": {
           "displayName": "Font",
@@ -642,54 +798,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0123"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0124"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0125"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0126"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0127"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0128"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0129"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0130"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0131"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0132"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0133"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0134"
               }
             ]
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0122"
         },
         "legendFontWeight": {
           "displayName": "Font Weight",
@@ -697,22 +866,48 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0136"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0137"
               }
             ]
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0135"
         },
         "legendAliases": {
           "displayName": "Rename Labels",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0138"
+        },
+        "showInlineLabels": {
+          "displayName": "Inline End Labels",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0139"
+        },
+        "inlineLabelFontSize": {
+          "displayName": "Inline Label Font Size",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0140"
+        },
+        "inlineLabelOffset": {
+          "displayName": "Inline Label Offset (px)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0141"
         }
-      }
+      },
+      "displayNameKey": "WaffleChartCapabilities_DisplayName_0113"
     },
     "pictogramSettings": {
       "displayName": "Pictogram",
@@ -721,7 +916,8 @@
           "displayName": "Enable Pictogram Mode",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0143"
         },
         "iconShape": {
           "displayName": "Icon Shape",
@@ -729,71 +925,87 @@
             "enumeration": [
               {
                 "value": "circle",
-                "displayName": "Circle"
+                "displayName": "Circle",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0145"
               },
               {
                 "value": "person",
-                "displayName": "Person"
+                "displayName": "Person",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0146"
               },
               {
                 "value": "star",
-                "displayName": "Star"
+                "displayName": "Star",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0147"
               },
               {
                 "value": "heart",
-                "displayName": "Heart"
+                "displayName": "Heart",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0148"
               },
               {
                 "value": "square",
-                "displayName": "Square"
+                "displayName": "Square",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0149"
               },
               {
                 "value": "checkmark",
-                "displayName": "Checkmark"
+                "displayName": "Checkmark",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0150"
               }
             ]
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0144"
         },
         "iconSize": {
           "displayName": "Icon Size (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0151"
         },
         "outlineOpacity": {
           "displayName": "Outline Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0152"
         },
         "iconSet": {
-          "displayName": "Icon Set",
+          "displayName": "Icon Preset",
           "type": {
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Custom Shape",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0154"
               },
               {
                 "value": "weather",
-                "displayName": "Weather"
+                "displayName": "Star",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0155"
               },
               {
                 "value": "arrows",
-                "displayName": "Arrows"
+                "displayName": "Checkmark",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0156"
               },
               {
                 "value": "shapes",
-                "displayName": "Shapes"
+                "displayName": "Square",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0157"
               },
               {
                 "value": "status",
-                "displayName": "Status"
+                "displayName": "Circle",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0158"
               }
             ]
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0153"
         }
-      }
+      },
+      "displayNameKey": "WaffleChartCapabilities_DisplayName_0142"
     },
     "cardSettings": {
       "displayName": "Card Style",
@@ -806,19 +1018,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0160"
         },
         "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0161"
         },
         "borderRadius": {
           "displayName": "Border Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0162"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0206"
         },
         "cardStyleMode": {
           "displayName": "Card Style",
@@ -826,30 +1048,47 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0001"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0002"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0003"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0004"
+              },
+              {
+                "value": "outlined",
+                "displayName": "Border Only",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0005"
+              },
+              {
+                "value": "floating",
+                "displayName": "Floating Shadow",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0006"
               }
             ]
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0163"
         },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "(Deprecated) Enable Glass"
+          "displayName": "(Deprecated) Enable Glass",
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0168"
         }
-      }
+      },
+      "displayNameKey": "WaffleChartCapabilities_DisplayName_0159"
     },
     "conditionalFormatting": {
       "displayName": "Conditional Formatting",
@@ -858,7 +1097,8 @@
           "displayName": "Enable Conditional Formatting",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0170"
         },
         "conditionalDirection": {
           "displayName": "Direction",
@@ -866,26 +1106,31 @@
             "enumeration": [
               {
                 "value": "ascending",
-                "displayName": "Ascending (Low = Bad)"
+                "displayName": "Ascending (Low = Bad)",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0172"
               },
               {
                 "value": "descending",
-                "displayName": "Descending (Low = Good)"
+                "displayName": "Descending (Low = Good)",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0173"
               }
             ]
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0171"
         },
         "threshold1": {
           "displayName": "Threshold 1",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0174"
         },
         "threshold2": {
           "displayName": "Threshold 2",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0175"
         },
         "conditionalColor1": {
           "displayName": "Color 1 (Bad)",
@@ -895,7 +1140,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0176"
         },
         "conditionalColor2": {
           "displayName": "Color 2 (Warning)",
@@ -905,7 +1151,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0177"
         },
         "conditionalColor3": {
           "displayName": "Color 3 (Good)",
@@ -915,9 +1162,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0178"
         }
-      }
+      },
+      "displayNameKey": "WaffleChartCapabilities_DisplayName_0169"
     },
     "accessibilityFormatting": {
       "displayName": "Accessibility",
@@ -926,9 +1175,11 @@
           "displayName": "Enable Keyboard Navigation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0180"
         }
-      }
+      },
+      "displayNameKey": "WaffleChartCapabilities_DisplayName_0179"
     },
     "colorThemeFormatting": {
       "properties": {
@@ -938,37 +1189,46 @@
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0183"
               },
               {
                 "value": "ocean",
-                "displayName": "Ocean"
+                "displayName": "Ocean",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0184"
               },
               {
                 "value": "sunset",
-                "displayName": "Sunset"
+                "displayName": "Sunset",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0185"
               },
               {
                 "value": "forest",
-                "displayName": "Forest"
+                "displayName": "Forest",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0186"
               },
               {
                 "value": "berry",
-                "displayName": "Berry"
+                "displayName": "Berry",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0187"
               },
               {
                 "value": "monochrome",
-                "displayName": "Monochrome"
+                "displayName": "Monochrome",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0188"
               },
               {
                 "value": "earth",
-                "displayName": "Earth"
+                "displayName": "Earth",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0189"
               }
             ]
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0182"
         }
       },
-      "displayName": "Color Theme"
+      "displayName": "Color Theme",
+      "displayNameKey": "WaffleChartCapabilities_DisplayName_0181"
     },
     "numberFormatting": {
       "displayName": "Number Format",
@@ -979,46 +1239,56 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0192"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0193"
               },
               {
                 "value": "thousands",
-                "displayName": "Thousands (K)"
+                "displayName": "Thousands (K)",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0194"
               },
               {
                 "value": "millions",
-                "displayName": "Millions (M)"
+                "displayName": "Millions (M)",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0195"
               },
               {
                 "value": "billions",
-                "displayName": "Billions (B)"
+                "displayName": "Billions (B)",
+                "displayNameKey": "WaffleChartCapabilities_DisplayName_0196"
               }
             ]
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0191"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0197"
         },
         "valuePrefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0198"
         },
         "valueSuffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0199"
         }
-      }
+      },
+      "displayNameKey": "WaffleChartCapabilities_DisplayName_0190"
     },
     "dateFilterFormatting": {
       "displayName": "Date Filter",
@@ -1027,32 +1297,46 @@
           "displayName": "Enable Date Filter",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0201"
         },
         "startDate": {
           "displayName": "Start Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0202"
         },
         "endAtCurrentDate": {
           "displayName": "End at Current Date",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0203"
         },
         "endDate": {
           "displayName": "End Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "WaffleChartCapabilities_DisplayName_0204"
         }
-      }
+      },
+      "displayNameKey": "WaffleChartCapabilities_DisplayName_0200"
     }
   },
   "supportsKeyboardFocus": true,
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
   "supportsHighlight": true,
   "supportsMultiVisualSelection": true,
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
   "privileges": [],
   "suppressDefaultTitle": true
 }

@@ -9,7 +9,9 @@
         {
           "numeric": true
         }
-      ]
+      ],
+      "displayNameKey": "RingStackCapabilities_DisplayName_0229",
+      "descriptionKey": "RingStackCapabilities_Description_0001"
     },
     {
       "displayName": "Ring 2 Value",
@@ -20,7 +22,9 @@
         {
           "numeric": true
         }
-      ]
+      ],
+      "displayNameKey": "RingStackCapabilities_DisplayName_0230",
+      "descriptionKey": "RingStackCapabilities_Description_0002"
     },
     {
       "displayName": "Ring 3 Value",
@@ -31,7 +35,9 @@
         {
           "numeric": true
         }
-      ]
+      ],
+      "displayNameKey": "RingStackCapabilities_DisplayName_0231",
+      "descriptionKey": "RingStackCapabilities_Description_0003"
     },
     {
       "displayName": "Ring 4 Value",
@@ -42,7 +48,9 @@
         {
           "numeric": true
         }
-      ]
+      ],
+      "displayNameKey": "RingStackCapabilities_DisplayName_0232",
+      "descriptionKey": "RingStackCapabilities_Description_0004"
     },
     {
       "displayName": "Ring 5 Value",
@@ -53,7 +61,9 @@
         {
           "numeric": true
         }
-      ]
+      ],
+      "displayNameKey": "RingStackCapabilities_DisplayName_0233",
+      "descriptionKey": "RingStackCapabilities_Description_0005"
     },
     {
       "displayName": "Ring 6 Value",
@@ -64,7 +74,9 @@
         {
           "numeric": true
         }
-      ]
+      ],
+      "displayNameKey": "RingStackCapabilities_DisplayName_0234",
+      "descriptionKey": "RingStackCapabilities_Description_0006"
     }
   ],
   "dataViewMappings": [
@@ -137,25 +149,36 @@
           "displayName": "Thickness (px)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0008"
         },
         "gap": {
           "displayName": "Gap (px)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0009"
+        },
+        "chartPadding": {
+          "displayName": "Chart Padding (px)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0010"
         },
         "maxValue": {
           "displayName": "Max Value",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0011"
         },
         "showLabels": {
-          "displayName": "Show Labels",
+          "displayName": "Show Side Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0012"
         },
         "trackColor": {
           "displayName": "Track Color",
@@ -165,13 +188,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0013"
         },
         "trackOpacity": {
           "displayName": "Track Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0014"
         },
         "ringStrokeColor": {
           "displayName": "Ring Stroke Color",
@@ -181,33 +206,39 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0015"
         },
         "roundedCaps": {
           "displayName": "Rounded Caps",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0016"
         },
         "gradientEnabled": {
           "displayName": "Enable Gradient Fill",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0017"
         },
         "showArcLabels": {
-          "displayName": "Show Arc Labels (textPath)",
+          "displayName": "Show Labels on Rings",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0018"
         },
         "showOverflow": {
-          "displayName": "Show Overflow Indicator (>100%)",
+          "displayName": "Show Values Above 100%",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0019"
         }
-      }
+      },
+      "displayNameKey": "RingStackCapabilities_DisplayName_0007"
     },
     "sideLabelSettings": {
       "displayName": "Side Labels",
@@ -216,7 +247,8 @@
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0021"
         },
         "fontColor": {
           "displayName": "Font Color",
@@ -226,7 +258,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0022"
         },
         "fontFamily": {
           "displayName": "Font Family",
@@ -234,38 +267,47 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0024"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0025"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0026"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0027"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0028"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0029"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0030"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0031"
               }
             ]
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0023"
         },
         "fontWeight": {
           "displayName": "Font Weight",
@@ -273,20 +315,32 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0033"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0034"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0035"
               }
             ]
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0032"
+        },
+        "labelPadding": {
+          "displayName": "Label Spacing",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0226"
         }
-      }
+      },
+      "displayNameKey": "RingStackCapabilities_DisplayName_0020"
     },
     "colorSettings": {
       "displayName": "Ring Colors",
@@ -299,7 +353,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0037"
         },
         "ring2Color": {
           "displayName": "Ring 2 Color",
@@ -309,7 +364,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0038"
         },
         "ring3Color": {
           "displayName": "Ring 3 Color",
@@ -319,7 +375,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0039"
         },
         "ring4Color": {
           "displayName": "Ring 4 Color",
@@ -329,7 +386,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0040"
         },
         "ring5Color": {
           "displayName": "Ring 5 Color",
@@ -339,7 +397,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0041"
         },
         "ring6Color": {
           "displayName": "Ring 6 Color",
@@ -349,9 +408,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0042"
         }
-      }
+      },
+      "displayNameKey": "RingStackCapabilities_DisplayName_0036"
     },
     "centerContentSettings": {
       "displayName": "Center Content",
@@ -360,7 +421,8 @@
           "displayName": "Show Center Content",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0044"
         },
         "displayMode": {
           "displayName": "Display Mode",
@@ -368,34 +430,41 @@
             "enumeration": [
               {
                 "value": "total",
-                "displayName": "Total"
+                "displayName": "Total",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0046"
               },
               {
                 "value": "count",
-                "displayName": "Count"
+                "displayName": "Count",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0047"
               },
               {
                 "value": "average",
-                "displayName": "Average"
+                "displayName": "Average",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0048"
               },
               {
                 "value": "custom",
-                "displayName": "Custom"
+                "displayName": "Custom",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0049"
               }
             ]
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0045"
         },
         "customText": {
           "displayName": "Custom Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0050"
         },
         "fontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0051"
         },
         "fontColor": {
           "displayName": "Font Color",
@@ -405,19 +474,22 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0052"
         },
         "showLabel": {
           "displayName": "Show Label",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0053"
         },
         "labelFontSize": {
           "displayName": "Label Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0054"
         },
         "fontFamily": {
           "displayName": "Font Family",
@@ -425,34 +497,42 @@
             "enumeration": [
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0056"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0057"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0058"
               },
               {
                 "value": "Helvetica",
-                "displayName": "Helvetica"
+                "displayName": "Helvetica",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0059"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0060"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0061"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0062"
               }
             ]
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0055"
         },
         "fontWeight": {
           "displayName": "Font Weight",
@@ -460,20 +540,32 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0064"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0065"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0066"
               }
             ]
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0063"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0227"
         }
-      }
+      },
+      "displayNameKey": "RingStackCapabilities_DisplayName_0043"
     },
     "animationSettings": {
       "displayName": "Animation",
@@ -482,15 +574,18 @@
           "displayName": "Enable Animations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0068"
         },
         "duration": {
           "displayName": "Duration (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0069"
         }
-      }
+      },
+      "displayNameKey": "RingStackCapabilities_DisplayName_0067"
     },
     "perRingMaxSettings": {
       "displayName": "Per-Ring Scale",
@@ -499,21 +594,25 @@
           "displayName": "Enable Per-Ring Scale",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0071"
         },
         "maxValues": {
-          "displayName": "Max Values (comma-separated)",
+          "displayName": "Maximum Values",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0072"
         },
         "showPercentage": {
           "displayName": "Show Percentage",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0073"
         }
-      }
+      },
+      "displayNameKey": "RingStackCapabilities_DisplayName_0070"
     },
     "legendFormatting": {
       "displayName": "Legend",
@@ -522,7 +621,8 @@
           "displayName": "Show Legend",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0075"
         },
         "legendPosition": {
           "displayName": "Position",
@@ -530,28 +630,34 @@
             "enumeration": [
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0077"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0078"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0079"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0080"
               }
             ]
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0076"
         },
         "legendFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0081"
         },
         "legendFontColor": {
           "displayName": "Font Color",
@@ -561,7 +667,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0082"
         },
         "legendFontFamily": {
           "displayName": "Font",
@@ -569,54 +676,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0084"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0085"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0086"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0087"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0088"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0089"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0090"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0091"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0092"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0093"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0094"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0095"
               }
             ]
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0083"
         },
         "legendFontWeight": {
           "displayName": "Font Weight",
@@ -624,22 +744,48 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0097"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0098"
               }
             ]
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0096"
         },
         "legendAliases": {
           "displayName": "Rename Labels",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0099"
+        },
+        "showInlineLabels": {
+          "displayName": "Inline End Labels",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0100"
+        },
+        "inlineLabelFontSize": {
+          "displayName": "Inline Label Font Size",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0101"
+        },
+        "inlineLabelOffset": {
+          "displayName": "Inline Label Offset (px)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0102"
         }
-      }
+      },
+      "displayNameKey": "RingStackCapabilities_DisplayName_0074"
     },
     "dataLabelFormatting": {
       "displayName": "Data Labels",
@@ -648,7 +794,8 @@
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0104"
         },
         "dataLabelFontColor": {
           "displayName": "Font Color",
@@ -658,7 +805,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0105"
         },
         "dataLabelFontWeight": {
           "displayName": "Font Weight",
@@ -666,20 +814,24 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0107"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0108"
               }
             ]
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0106"
         },
         "showDataLabels": {
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0109"
         },
         "dataLabelFontFamily": {
           "displayName": "Font",
@@ -687,54 +839,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0111"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0112"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0113"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0114"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0115"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0116"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0117"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0118"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0119"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0120"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0121"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0122"
               }
             ]
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0110"
         },
         "dataLabelPosition": {
           "displayName": "Position",
@@ -742,28 +907,35 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0124"
               },
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0125"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0126"
               },
               {
                 "value": "inside",
-                "displayName": "Inside"
+                "displayName": "Inside",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0127"
               },
               {
                 "value": "outside",
-                "displayName": "Outside"
+                "displayName": "Outside",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0128"
               }
             ]
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0123"
         }
-      }
+      },
+      "displayNameKey": "RingStackCapabilities_DisplayName_0103"
     },
     "titleFormatting": {
       "displayName": "Chart Title",
@@ -772,19 +944,22 @@
           "displayName": "Show Title",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0130"
         },
         "titleText": {
           "displayName": "Title Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0131"
         },
         "titleFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0132"
         },
         "titleFontColor": {
           "displayName": "Font Color",
@@ -794,7 +969,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0133"
         },
         "titleAlignment": {
           "displayName": "Alignment",
@@ -802,18 +978,22 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0135"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0136"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0137"
               }
             ]
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0134"
         },
         "titleFontFamily": {
           "displayName": "Font",
@@ -821,66 +1001,81 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0139"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0140"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0141"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0142"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0143"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0144"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0145"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0146"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0147"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0148"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0149"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0150"
               }
             ]
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0138"
         },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0151"
         },
         "subtitleFontSize": {
           "displayName": "Subtitle Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0152"
         },
         "subtitleFontColor": {
           "displayName": "Subtitle Color",
@@ -890,7 +1085,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0153"
         },
         "titleFontWeight": {
           "displayName": "Font Weight",
@@ -898,14 +1094,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0155"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0156"
               }
             ]
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0154"
         },
         "subtitleFontFamily": {
           "displayName": "Subtitle Font",
@@ -913,54 +1112,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0158"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0159"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0160"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0161"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0162"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0163"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0164"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0165"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0166"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0167"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0168"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0169"
               }
             ]
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0157"
         },
         "subtitleFontWeight": {
           "displayName": "Subtitle Font Weight",
@@ -968,16 +1180,20 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0171"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0172"
               }
             ]
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0170"
         }
-      }
+      },
+      "displayNameKey": "RingStackCapabilities_DisplayName_0129"
     },
     "cardSettings": {
       "displayName": "Card Style",
@@ -990,19 +1206,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0174"
         },
         "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0175"
         },
         "borderRadius": {
           "displayName": "Border Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0176"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0228"
         },
         "cardStyleMode": {
           "displayName": "Card Style",
@@ -1010,30 +1236,47 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0001"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0002"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0003"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0004"
+              },
+              {
+                "value": "outlined",
+                "displayName": "Border Only",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0005"
+              },
+              {
+                "value": "floating",
+                "displayName": "Floating Shadow",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0006"
               }
             ]
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0177"
         },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "(Deprecated) Enable Glass"
+          "displayName": "(Deprecated) Enable Glass",
+          "displayNameKey": "RingStackCapabilities_DisplayName_0182"
         }
-      }
+      },
+      "displayNameKey": "RingStackCapabilities_DisplayName_0173"
     },
     "sortFormatting": {
       "displayName": "Sort Order",
@@ -1044,28 +1287,35 @@
             "enumeration": [
               {
                 "value": "dataOrder",
-                "displayName": "Data Order"
+                "displayName": "Data Order",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0185"
               },
               {
                 "value": "valueAsc",
-                "displayName": "Value (Ascending)"
+                "displayName": "Value (Ascending)",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0186"
               },
               {
                 "value": "valueDesc",
-                "displayName": "Value (Descending)"
+                "displayName": "Value (Descending)",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0187"
               },
               {
                 "value": "nameAsc",
-                "displayName": "Name (A-Z)"
+                "displayName": "Name (A-Z)",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0188"
               },
               {
                 "value": "nameDesc",
-                "displayName": "Name (Z-A)"
+                "displayName": "Name (Z-A)",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0189"
               }
             ]
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0184"
         }
-      }
+      },
+      "displayNameKey": "RingStackCapabilities_DisplayName_0183"
     },
     "conditionalFormatting": {
       "displayName": "Conditional Formatting",
@@ -1074,7 +1324,8 @@
           "displayName": "Enable Conditional Formatting",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0191"
         },
         "conditionalDirection": {
           "displayName": "Direction",
@@ -1082,26 +1333,31 @@
             "enumeration": [
               {
                 "value": "ascending",
-                "displayName": "Ascending (Low = Bad)"
+                "displayName": "Ascending (Low = Bad)",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0193"
               },
               {
                 "value": "descending",
-                "displayName": "Descending (Low = Good)"
+                "displayName": "Descending (Low = Good)",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0194"
               }
             ]
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0192"
         },
         "threshold1": {
           "displayName": "Threshold 1",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0195"
         },
         "threshold2": {
           "displayName": "Threshold 2",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0196"
         },
         "conditionalColor1": {
           "displayName": "Color 1 (Bad)",
@@ -1111,7 +1367,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0197"
         },
         "conditionalColor2": {
           "displayName": "Color 2 (Warning)",
@@ -1121,7 +1378,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0198"
         },
         "conditionalColor3": {
           "displayName": "Color 3 (Good)",
@@ -1131,9 +1389,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0199"
         }
-      }
+      },
+      "displayNameKey": "RingStackCapabilities_DisplayName_0190"
     },
     "accessibilityFormatting": {
       "displayName": "Accessibility",
@@ -1142,9 +1402,11 @@
           "displayName": "Enable Keyboard Navigation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0201"
         }
-      }
+      },
+      "displayNameKey": "RingStackCapabilities_DisplayName_0200"
     },
     "colorThemeFormatting": {
       "properties": {
@@ -1154,37 +1416,46 @@
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0204"
               },
               {
                 "value": "ocean",
-                "displayName": "Ocean"
+                "displayName": "Ocean",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0205"
               },
               {
                 "value": "sunset",
-                "displayName": "Sunset"
+                "displayName": "Sunset",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0206"
               },
               {
                 "value": "forest",
-                "displayName": "Forest"
+                "displayName": "Forest",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0207"
               },
               {
                 "value": "berry",
-                "displayName": "Berry"
+                "displayName": "Berry",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0208"
               },
               {
                 "value": "monochrome",
-                "displayName": "Monochrome"
+                "displayName": "Monochrome",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0209"
               },
               {
                 "value": "earth",
-                "displayName": "Earth"
+                "displayName": "Earth",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0210"
               }
             ]
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0203"
         }
       },
-      "displayName": "Color Theme"
+      "displayName": "Color Theme",
+      "displayNameKey": "RingStackCapabilities_DisplayName_0202"
     },
     "numberFormatting": {
       "displayName": "Number Format",
@@ -1195,46 +1466,56 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0213"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0214"
               },
               {
                 "value": "thousands",
-                "displayName": "Thousands (K)"
+                "displayName": "Thousands (K)",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0215"
               },
               {
                 "value": "millions",
-                "displayName": "Millions (M)"
+                "displayName": "Millions (M)",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0216"
               },
               {
                 "value": "billions",
-                "displayName": "Billions (B)"
+                "displayName": "Billions (B)",
+                "displayNameKey": "RingStackCapabilities_DisplayName_0217"
               }
             ]
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0212"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0218"
         },
         "valuePrefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0219"
         },
         "valueSuffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0220"
         }
-      }
+      },
+      "displayNameKey": "RingStackCapabilities_DisplayName_0211"
     },
     "dateFilterFormatting": {
       "displayName": "Date Filter",
@@ -1243,32 +1524,46 @@
           "displayName": "Enable Date Filter",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0222"
         },
         "startDate": {
           "displayName": "Start Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0223"
         },
         "endAtCurrentDate": {
           "displayName": "End at Current Date",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0224"
         },
         "endDate": {
           "displayName": "End Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "RingStackCapabilities_DisplayName_0225"
         }
-      }
+      },
+      "displayNameKey": "RingStackCapabilities_DisplayName_0221"
     }
   },
   "supportsKeyboardFocus": true,
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
   "supportsHighlight": true,
   "supportsMultiVisualSelection": true,
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
   "privileges": [],
   "suppressDefaultTitle": true
 }

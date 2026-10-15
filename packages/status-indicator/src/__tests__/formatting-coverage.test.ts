@@ -44,6 +44,7 @@ vi.mock('powerbi-visuals-utils-formattingmodel', () => {
 
 import { StatusIndicatorVisual } from '../visual';
 import { StatusIndicatorSettings } from '../settings';
+import capabilities from '../../capabilities.json';
 import {
   createConstructorOptions,
   DataViewBuilder,
@@ -57,6 +58,7 @@ const testDV = new DataViewBuilder().withCategory('Item', ['A','B','C'], 'catego
 function createVisual() {
   const opts = createConstructorOptions();
   const settings = new StatusIndicatorSettings();
+  settings.animationSettings.enabled.value = false;
   settingsRef.current = settings;
   const visual = new StatusIndicatorVisual(opts as never);
   return {
@@ -82,6 +84,7 @@ function makeDeps(): Record<string, Record<string, unknown>> {
   for (const s of ['conditionalDirection','threshold1','threshold2','conditionalColor1','conditionalColor2','conditionalColor3']) {
     deps[`conditionalFormatting.${s}`] = { 'conditionalFormatting.enableConditional': true };
   }
+  deps['cardSettings.contentPadding'] = { 'cardSettings.enableGlass': true };
   return deps;
 }
 
@@ -99,6 +102,7 @@ const harnessConfig: HarnessConfig = {
     'cardSettings.backgroundOpacity',
     'cardSettings.backgroundColor',
     'cardSettings.enableGlass',
+    'cardSettings.contentPadding',
     'accessibilityFormatting.enableKeyboardNav',
     'animationSettings.staggerDelay',
     'animationSettings.duration',
@@ -109,7 +113,20 @@ const harnessConfig: HarnessConfig = {
     'thresholdSettings.threshold1',
     'thresholdSettings.threshold2',
     'thresholdSettings.valueFontSize',
+    'thresholdSettings.levelCount',
+    'thresholdSettings.level4Color',
+    'thresholdSettings.level5Color',
+    'valueDisplaySettings.showValue',
+    'valueDisplaySettings.valueFontSize',
+    'valueDisplaySettings.valueFontFamily',
+    'valueDisplaySettings.valueFontWeight',
+    'valueDisplaySettings.showStatusText',
+    'valueDisplaySettings.statusFontSize',
+    'valueDisplaySettings.statusFontColor',
+    'valueDisplaySettings.statusFontFamily',
+    'valueDisplaySettings.statusFontWeight',
     'pulseSettings.enablePulse',
+    'animationSettings.enablePulse',
     'statusLevelSettings.levelCount',
     'statusLevelSettings.level4Color',
     'statusLevelSettings.level5Color',
@@ -119,8 +136,15 @@ const harnessConfig: HarnessConfig = {
     'legendFormatting.legendFontColor',
     'legendFormatting.legendFontFamily',
     'legendFormatting.legendFontWeight',
+    'legendFormatting.showInlineLabels',
+    'legendFormatting.inlineLabelFontSize',
+    'legendFormatting.inlineLabelOffset',
     'numberFormatting.valuePrefix',
     'numberFormatting.valueSuffix',
+    'dateFilterFormatting.enableDateFilter',
+    'dateFilterFormatting.startDate',
+    'dateFilterFormatting.endAtCurrentDate',
+    'dateFilterFormatting.endDate',
   ],
 };
 
@@ -132,6 +156,14 @@ describe('status-indicator formatting coverage', () => {
       harnessConfig.skipCards,
     );
     expect(paths.length).toBeGreaterThan(0);
+  });
+
+  it('uses matching, plain-language labels in settings metadata', () => {
+    expect(capabilities.objects.indicatorSettings.properties.size.displayName).toBe('Label Font Size');
+    expect(capabilities.objects.thresholdSettings.displayName).toBe('Thresholds & Colors');
+    expect(capabilities.objects.thresholdSettings.properties.threshold1.displayName).toBe('Lower Threshold');
+    expect(capabilities.objects.thresholdSettings.properties.threshold2.displayName).toBe('Upper Threshold');
+    expect(capabilities.objects.valueDisplaySettings.properties.showSparkline.displayName).toBe('Show Value Bar');
   });
 
   it('every setting affects DOM output', () => {

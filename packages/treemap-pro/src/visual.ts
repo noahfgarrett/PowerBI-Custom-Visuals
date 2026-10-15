@@ -23,8 +23,13 @@ import {
   renderLegend,
   applyDataLabelFormatting,
   applyChartAria,
+  applyDataPointAria,
   attachKeyboardNav,
   ensureFocusRingStyles,
+  attachEmptySpaceContextMenu,
+  syncLegendFormattingVisibility,
+  syncTitleFormattingVisibility,
+  syncCardStyleVisibility,
   resolveColorTheme,
   buildConditionalConfig,
   resolveConditionalColor,
@@ -32,6 +37,14 @@ import {
   getDateFilterIndices,
   isDateColumn,
   type DateFilterConfig,
+  getLocalizedString,
+  getVisualEmptyStateMode,
+  allowInteractions,
+  getHostHighContrastColors,
+  applyBasicHighContrastStyles,
+  notifyRenderingStarted,
+  notifyRenderingFinished,
+  notifyRenderingFailed,
 } from '../../core/src';
 import type { LegendItem, ColorThemeName } from '../../core/src';
 
@@ -108,23 +121,47 @@ export class TreemapProVisual implements IVisual {
   private currentData: TreemapData | null = null;
   /** Last known viewport for re-renders on drill navigation */
   private currentViewport: powerbi.IViewport = { width: 300, height: 300 };
+  private emptyStateMode: 'unconfigured' | 'noData' = 'unconfigured';
+  private interactionsEnabled = true;
+  private keyboardNavCleanup: (() => void) | null = null;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
     this.selectionManager = options.host.createSelectionManager();
     this.container = options.element;
     this.settings = new TreemapProSettings();
-    this.formattingSettingsService = new FormattingSettingsService();
+    this.formattingSettingsService = new FormattingSettingsService(options.host.createLocalizationManager());
     this.container.classList.add('treemap-container');
+    attachEmptySpaceContextMenu(this.container, this.selectionManager, () =>
+      this.host.createSelectionIdBuilder().createSelectionId(),
+      () => this.interactionsEnabled,
+    );
   }
 
   public update(options: VisualUpdateOptions): void {
+    notifyRenderingStarted(this.host, options);
+    try {
+      this.updateVisual(options);
+      notifyRenderingFinished(this.host, options);
+    } catch (error) {
+      notifyRenderingFailed(
+        this.host,
+        options,
+        error instanceof Error ? error.message : String(error),
+      );
+      throw error;
+    }
+  }
+
+  private updateVisual(options: VisualUpdateOptions): void {
     // Cancel running animations before re-render
     for (const cancel of this.cancelAnimations) cancel();
     this.cancelAnimations = [];
+    this.interactionsEnabled = allowInteractions(this.host);
 
     // Parse settings from dataView
     const dataView = options.dataViews?.[0];
+    this.emptyStateMode = getVisualEmptyStateMode(dataView);
     if (dataView) {
       this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
         TreemapProSettings,
@@ -136,10 +173,12 @@ export class TreemapProVisual implements IVisual {
     const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
     if (legacyCardObj) {
       const legacyGlass = legacyCardObj['enableGlass'];
-      if (legacyGlass === false) {
+      if (legacyGlass === false && legacyCardObj['cardStyleMode'] == null) {
         this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
       }
     }
+    syncTitleFormattingVisibility(this.settings.titleFormattingCard);
+    syncLegendFormattingVisibility(this.settings.legendFormattingCard);
 
     // Conditional visibility: hide heat color sub-settings when heat mode is off
     const heatOn = this.settings.tileAppearanceSettings.heatEnabled.value;
@@ -148,6 +187,8 @@ export class TreemapProVisual implements IVisual {
     this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
     this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
     this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
+    const level1Column = dataView?.categorical?.categories?.find((column) => column.source.roles?.['level1']);
+    this.settings.dateFilterFormattingCard.visible = Boolean(level1Column && isDateColumn(level1Column.source));
     this.settings.tileAppearanceSettings.startColor.visible = heatOn;
     this.settings.tileAppearanceSettings.endColor.visible = heatOn;
 
@@ -163,6 +204,17 @@ export class TreemapProVisual implements IVisual {
     this.settings.treemapSettings.fontColor.visible = showLabelsProp;
     this.settings.treemapSettings.fontFamily.visible = showLabelsProp;
     this.settings.treemapSettings.fontWeight.visible = showLabelsProp;
+    this.settings.treemapDisplaySettings.labelOverflow.visible = showLabelsProp;
+    this.settings.treemapSettings.labelPadding.visible = showLabelsProp
+      || this.settings.treemapSettings.showValues.value
+      || this.settings.treemapDisplaySettings.showPercentage.value;
+
+    const showValueLabels = this.settings.treemapSettings.showValues.value
+      || this.settings.treemapDisplaySettings.showPercentage.value;
+    this.settings.dataLabelFormattingCard.dataLabelFontSize.visible = showValueLabels;
+    this.settings.dataLabelFormattingCard.dataLabelFontColor.visible = showValueLabels;
+    this.settings.dataLabelFormattingCard.dataLabelFontFamily.visible = showValueLabels;
+    this.settings.dataLabelFormattingCard.dataLabelFontWeight.visible = showValueLabels;
 
     // Hide breadcrumb font controls when breadcrumb is off
     this.settings.drillDownSettings.breadcrumbFontFamily.visible = drillOn && this.settings.drillDownSettings.showBreadcrumb.value;
@@ -185,9 +237,7 @@ export class TreemapProVisual implements IVisual {
     this.currentViewport = options.viewport;
 
     // Apply card style — visibility toggles (must happen before render for formatting pane)
-    const cardMode = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
-    this.settings.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
-    this.settings.cardSettings.backgroundColor.visible = cardMode !== 'none';
+    syncCardStyleVisibility(this.settings.cardSettings);
 
     // Reset drill if data changed structurally
     if (data.isEmpty || !data.hasLevel2) {
@@ -203,6 +253,7 @@ export class TreemapProVisual implements IVisual {
 
     // Apply card styling AFTER render — render clears the container, which would destroy the glass backdrop div.
     this.applyCardStyling();
+    this.applyHighContrast();
   }
 
   // -- Data Extraction --------------------------------------------------------
@@ -370,15 +421,13 @@ export class TreemapProVisual implements IVisual {
   private applyCardStyling(): void {
     const s = this.settings.cardSettings;
     const cardMode = (resolveDropdown(s.cardStyleMode) ?? 'glass') as CardStyleMode;
+    this.container.style.padding = '0';
     applyCardStyle(this.container, {
       mode: cardMode,
       opacity: s.backgroundOpacity.value / 100,
       backgroundColor: s.backgroundColor.value?.value,
       borderRadius: s.borderRadius.value,
     });
-    if (cardMode === 'none') {
-      this.container.style.borderRadius = `${s.borderRadius.value}px`;
-    }
   }
 
   // -- Empty State ------------------------------------------------------------
@@ -387,7 +436,9 @@ export class TreemapProVisual implements IVisual {
     this.clearContainer();
     const emptyEl = document.createElement('div');
     emptyEl.className = 'treemap-empty';
-    emptyEl.textContent = 'Add at least one grouping level and a measure to get started.';
+    emptyEl.textContent = this.emptyStateMode === 'noData'
+      ? getLocalizedString(this.host, 'TreemapPro_NoDataState', 'No data for the current selection.')
+      : getLocalizedString(this.host, 'TreemapPro_EmptyState', 'Add at least one grouping level and a measure to get started.');
     this.container.appendChild(emptyEl);
   }
 
@@ -398,7 +449,7 @@ export class TreemapProVisual implements IVisual {
     this.clearContainer();
     renderChartTitle(this.container, this.settings.titleFormattingCard);
 
-    const padding = 8;
+    const padding = Math.max(0, this.settings.treemapSettings.chartPadding.value + this.settings.cardSettings.contentPadding.value);
     const width = Math.max(0, viewport.width - padding * 2);
     const height = Math.max(0, viewport.height - padding * 2);
 
@@ -411,9 +462,13 @@ export class TreemapProVisual implements IVisual {
     const drillEnabled = this.settings.drillDownSettings.enabled.value;
     let renderRoot: TreeNode;
 
-    if (drillEnabled && this.drillPath.length > 0 && data.hasLevel2 && data.root.children) {
+    const interactionRoot = this.getCrossHighlightMode() === 'focus'
+      ? (this.focusHighlightedTree(data.root) ?? data.root)
+      : data.root;
+
+    if (drillEnabled && this.drillPath.length > 0 && data.hasLevel2 && interactionRoot.children) {
       // Walk the drill path to find the target sub-tree
-      let current: TreeNode = data.root;
+      let current: TreeNode = interactionRoot;
       let pathValid = true;
       for (const segment of this.drillPath) {
         const found = current.children?.find((c) => c.name === segment);
@@ -424,14 +479,14 @@ export class TreemapProVisual implements IVisual {
           break;
         }
       }
-      if (pathValid && current !== data.root) {
+      if (pathValid && current !== interactionRoot) {
         renderRoot = { name: current.name, children: current.children ?? [] };
       } else {
         this.drillPath = [];
-        renderRoot = data.root;
+        renderRoot = interactionRoot;
       }
     } else {
-      renderRoot = data.root;
+      renderRoot = interactionRoot;
     }
 
     // Breadcrumb trail for drill-up navigation
@@ -468,9 +523,8 @@ export class TreemapProVisual implements IVisual {
     // After treemapLayout(), nodes have x0/y0/x1/y1 from HierarchyRectangularNode
     const leaves = hierarchy.leaves() as d3.HierarchyRectangularNode<TreeNode>[];
     // Consolidate: local showLabels AND shared showDataLabels both must be true
-    const showLabels = this.settings.treemapSettings.showLabels.value && this.settings.dataLabelFormattingCard.showDataLabels.value;
+    const showLabels = this.settings.treemapSettings.showLabels.value;
     const showValues = this.settings.treemapSettings.showValues.value;
-    const showDataLabels = this.settings.dataLabelFormattingCard.showDataLabels.value;
     const tileStrokeColor = this.settings.tileAppearanceSettings.tileStrokeColor.value?.value || '';
     const tileStrokeWidth = this.settings.tileAppearanceSettings.tileStrokeWidth.value;
     const useChartPalette = this.settings.tileAppearanceSettings.useChartPalette.value;
@@ -487,6 +541,7 @@ export class TreemapProVisual implements IVisual {
     const labelOverflow: string = (typeof labelOverflowRaw === 'string'
       ? labelOverflowRaw
       : (labelOverflowRaw as { value?: string } | undefined)?.value) ?? 'truncate';
+    const labelPadding = Math.max(0, this.settings.treemapSettings.labelPadding.value);
     const colorByDepth = this.settings.tileAppearanceSettings.colorByDepth.value;
 
     // Compute total for percentage
@@ -511,6 +566,8 @@ export class TreemapProVisual implements IVisual {
       const g = document.createElementNS(svgNS, 'g');
       g.setAttribute('class', 'treemap-cell');
       g.setAttribute('transform', `translate(${x0},${y0})`);
+      g.setAttribute('data-highlighted', leaf.data.highlighted ? '1' : '0');
+      g.setAttribute('data-selection-key', leaf.data.selectionId?.getKey() ?? '');
 
       // Color
       const colorIdx = leaf.data.colorIndex ?? (leaf.parent?.data.colorIndex ?? idx);
@@ -548,15 +605,15 @@ export class TreemapProVisual implements IVisual {
 
       // Label overflow: 'hide' skips labels that don't fit, 'truncate' truncates to fit
       const fitsLabel = cellW >= LABEL_MIN_WIDTH && cellH >= LABEL_MIN_HEIGHT;
-      const textFitsCell = leaf.data.name.length * 7 <= cellW - 12;
+      const textFitsCell = leaf.data.name.length * 7 <= cellW - (labelPadding * 2 + 6);
       const shouldShowLabel = labelOverflow === 'hide' ? (fitsLabel && textFitsCell) : fitsLabel;
 
       // Label (category name)
       if (showLabels && shouldShowLabel) {
         const label = document.createElementNS(svgNS, 'text');
         label.setAttribute('class', 'treemap-label');
-        label.setAttribute('x', '6');
-        label.setAttribute('y', '16');
+        label.setAttribute('x', String(labelPadding));
+        label.setAttribute('y', String(labelPadding + this.settings.treemapSettings.fontSize.value + 2));
         const tileFontSize = this.settings.treemapSettings.fontSize.value;
         const tileFontColor = this.settings.treemapSettings.fontColor.value?.value;
         const tileFontFamily = resolveDropdown(this.settings.treemapSettings.fontFamily);
@@ -566,20 +623,24 @@ export class TreemapProVisual implements IVisual {
         if (tileFontFamily) label.style.fontFamily = tileFontFamily;
         label.style.fontWeight = tileFontWeight || 'normal';
         label.textContent = labelOverflow === 'truncate'
-          ? this.truncateLabel(leaf.data.name, cellW - 12)
+          ? this.truncateLabel(leaf.data.name, cellW - (labelPadding * 2))
           : leaf.data.name;
         if (label.textContent) {
           g.appendChild(label);
         }
       }
 
-      // Value
-      let valueYOffset = 30;
-      if (showValues && showDataLabels && cellW >= LABEL_MIN_WIDTH && cellH >= VALUE_MIN_HEIGHT) {
+      // Value. When category labels are hidden, reclaim their vertical space
+      // so values remain visible in shorter tiles.
+      const categoryLabelRendered = showLabels && shouldShowLabel;
+      let valueYOffset = categoryLabelRendered
+        ? Math.max(30, labelPadding + this.settings.treemapSettings.fontSize.value + 14)
+        : 14;
+      if (showValues && cellW >= LABEL_MIN_WIDTH && cellH >= VALUE_MIN_HEIGHT) {
         const valueText = document.createElementNS(svgNS, 'text');
         valueText.setAttribute('class', 'treemap-value');
-        valueText.setAttribute('x', '6');
-        valueText.setAttribute('y', String(valueYOffset));
+        valueText.setAttribute('x', String(labelPadding));
+        valueText.setAttribute('y', String(valueYOffset + labelPadding));
         const tileFontColor2 = this.settings.treemapSettings.fontColor.value?.value;
         const tileFontFamily2 = resolveDropdown(this.settings.treemapSettings.fontFamily);
         const tileFontWeight2 = resolveDropdown(this.settings.treemapSettings.fontWeight);
@@ -602,8 +663,8 @@ export class TreemapProVisual implements IVisual {
         const pctText = this.formatPercentage(leaf.value ?? 0, base);
         const pctEl = document.createElementNS(svgNS, 'text');
         pctEl.setAttribute('class', 'treemap-value');
-        pctEl.setAttribute('x', '6');
-        pctEl.setAttribute('y', String(valueYOffset));
+        pctEl.setAttribute('x', String(labelPadding));
+        pctEl.setAttribute('y', String(valueYOffset + labelPadding));
         pctEl.setAttribute('font-size', '10');
         pctEl.setAttribute('opacity', '0.7');
         pctEl.textContent = pctText;
@@ -624,16 +685,19 @@ export class TreemapProVisual implements IVisual {
         const parentNode = data.root.children?.find((c) => c.name === drillTarget);
         return parentNode !== undefined && parentNode.children !== undefined && parentNode.children.length > 0;
       })();
-      if ((selectionId !== undefined) || drillTargetHasChildren) {
+      const shouldDrill = Boolean(
+        drillTargetHasChildren
+        && drillTarget
+        && !this.drillPath.includes(drillTarget),
+      );
+      if ((selectionId !== undefined) || shouldDrill) {
         g.style.cursor = 'pointer';
         g.addEventListener('click', (event: MouseEvent) => {
+          if (!this.interactionsEnabled) return;
           event.stopPropagation();
 
-          if (drillTargetHasChildren && drillTarget && !event.ctrlKey && !event.metaKey) {
-            // Only drill if this category isn't already in the path
-            if (!this.drillPath.includes(drillTarget)) {
-              this.drillPath.push(drillTarget);
-            }
+          if (shouldDrill && drillTarget && !event.ctrlKey && !event.metaKey) {
+            this.drillPath.push(drillTarget);
             if (this.currentData) {
               for (const cancel of this.cancelAnimations) cancel();
               this.cancelAnimations = [];
@@ -643,12 +707,15 @@ export class TreemapProVisual implements IVisual {
           }
 
           if (selectionId) {
-            void this.selectionManager.select(selectionId, event.ctrlKey || event.metaKey);
+            void this.selectionManager
+              .select(selectionId, event.ctrlKey || event.metaKey)
+              .then(() => this.applySelectionHighlight());
           }
         });
       }
       if (selectionId) {
         g.addEventListener('contextmenu', (event: MouseEvent) => {
+          if (!this.interactionsEnabled) return;
           event.preventDefault();
           event.stopPropagation();
           void this.selectionManager.showContextMenu(selectionId, {
@@ -658,12 +725,17 @@ export class TreemapProVisual implements IVisual {
         });
       }
 
-      svg.appendChild(g);
-
-      // Cross-highlight dimming: dim non-highlighted tiles
-      if (data.hasHighlights && !leaf.data.highlighted) {
-        g.style.opacity = '0.3';
+      if (this.settings.accessibilityFormattingCard.enableKeyboardNav.value && selectionId) {
+        applyDataPointAria(
+          g,
+          leafName,
+          formatWithSettings(leafValue, this.settings.numberFormattingCard),
+          idx,
+          leaves.length,
+        );
       }
+
+      svg.appendChild(g);
 
       // Entrance animation: scale from center
       if (animEnabled) {
@@ -694,13 +766,14 @@ export class TreemapProVisual implements IVisual {
     }
 
     // Apply shared formatting settings
-    applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.treemap-label');
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.treemap-value');
 
     // Legend
     this.renderLegend(data, themeName);
 
     this.applyAccessibility(this.container);
+    this.applySelectionHighlight();
+    this.applyHighContrast();
     this.container.addEventListener('click', this.handleBackgroundClick);
   }
 
@@ -756,7 +829,7 @@ export class TreemapProVisual implements IVisual {
 
     // "All" root segment
     const allSpan = document.createElement('span');
-    allSpan.textContent = 'All';
+    allSpan.textContent = getLocalizedString(this.host, 'Common_BreadcrumbAll', 'All');
     allSpan.style.cursor = 'pointer';
     allSpan.style.textDecoration = 'underline';
     allSpan.style.color = color;
@@ -810,6 +883,31 @@ export class TreemapProVisual implements IVisual {
       const cancelBtn = fadeSlideIn(breadcrumb, 'left', DURATION.fast);
       this.cancelAnimations.push(cancelBtn);
     }
+  }
+
+  private getCrossHighlightMode(): 'focus' | 'dim' {
+    return resolveDropdown(this.settings.interactionSettings.crossHighlightMode) === 'dim' ? 'dim' : 'focus';
+  }
+
+  private focusHighlightedTree(node: TreeNode): TreeNode | null {
+    if (!node.children || node.children.length === 0) {
+      return node.highlighted ? { ...node } : null;
+    }
+
+    const focusedChildren = node.children
+      .map((child) => this.focusHighlightedTree(child))
+      .filter((child): child is TreeNode => child !== null);
+
+    if (focusedChildren.length === 0 && !node.highlighted) {
+      return null;
+    }
+
+    return {
+      ...node,
+      children: focusedChildren,
+      value: node.value ?? focusedChildren.reduce((sum, child) => sum + (child.value ?? 0), 0),
+      highlighted: node.highlighted || focusedChildren.some((child) => child.highlighted),
+    };
   }
 
   // -- Tooltip ----------------------------------------------------------------
@@ -884,15 +982,50 @@ export class TreemapProVisual implements IVisual {
   }
 
   private clearContainer(): void {
+    this.keyboardNavCleanup?.();
+    this.keyboardNavCleanup = null;
     this.container.removeEventListener('click', this.handleBackgroundClick);
+    this.host.tooltipService.hide({ immediately: true, isTouchEvent: false });
     while (this.container.firstChild) {
       this.container.removeChild(this.container.firstChild);
     }
   }
 
   private handleBackgroundClick = (): void => {
-    void this.selectionManager.clear();
+    if (!this.interactionsEnabled) return;
+    void this.selectionManager.clear().then(() => this.applySelectionHighlight());
   };
+
+  private applySelectionHighlight(): void {
+    const data = this.currentData;
+    if (!data) return;
+
+    const hasSelection = this.selectionManager.hasSelection();
+    const useHighlightDimming = data.hasHighlights && this.getCrossHighlightMode() === 'dim';
+    const selectedKeys = new Set(
+      (this.selectionManager.getSelectionIds() as ISelectionId[]).map((id) => id.getKey()),
+    );
+
+    this.container.querySelectorAll<SVGGElement>('.treemap-cell').forEach((cell) => {
+      const key = cell.getAttribute('data-selection-key');
+      const isSelected = hasSelection && key !== null && selectedKeys.has(key);
+      const isHighlighted = useHighlightDimming && cell.getAttribute('data-highlighted') === '1';
+      cell.style.opacity = (hasSelection || useHighlightDimming)
+        ? ((isSelected || isHighlighted) ? '' : '0.3')
+        : '';
+    });
+  }
+
+  private applyHighContrast(): void {
+    const colors = getHostHighContrastColors(this.host);
+    applyBasicHighContrastStyles(this.container, colors, {
+      textSelectors: ['svg text', '.chart-title', '.chart-subtitle', '.pbi-shared-legend span', '.treemap-empty', '.treemap-breadcrumb'],
+      fillSelectors: ['.treemap-cell rect'],
+    });
+    if (!colors.enabled) return;
+    this.container.style.background = colors.background;
+    this.container.style.boxShadow = 'none';
+  }
 
   // -- Conditional Formatting -------------------------------------------------
 
@@ -998,13 +1131,13 @@ export class TreemapProVisual implements IVisual {
       ensureFocusRingStyles();
       const focusableElements = container.querySelectorAll('.treemap-cell');
       if (focusableElements.length > 0) {
-        attachKeyboardNav({
+        this.keyboardNavCleanup = attachKeyboardNav({
           container,
           itemSelector: '.treemap-cell',
           onActivate: (_el: Element, index: number) => {
             const cells = container.querySelectorAll('.treemap-cell');
             if (index < cells.length) {
-              (cells[index] as HTMLElement).click();
+              cells[index].dispatchEvent(new MouseEvent('click', { bubbles: true }));
             }
           },
         });
@@ -1027,6 +1160,9 @@ export class TreemapProVisual implements IVisual {
   public destroy(): void {
     for (const cancel of this.cancelAnimations) cancel();
     this.cancelAnimations = [];
+    this.keyboardNavCleanup?.();
+    this.keyboardNavCleanup = null;
+    this.host.tooltipService.hide({ immediately: true, isTouchEvent: false });
     this.clearContainer();
   }
 }

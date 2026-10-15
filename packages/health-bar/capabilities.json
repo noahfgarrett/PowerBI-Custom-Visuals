@@ -16,7 +16,9 @@
       "name": "target",
       "kind": "Measure",
       "displayName": "Target",
-      "description": "Optional target value for each bar"
+      "description": "Optional target value for each bar",
+      "displayNameKey": "HealthBarCapabilities_DisplayName_0352",
+      "descriptionKey": "HealthBarCapabilities_Description_0001"
     }
   ],
   "dataViewMappings": [
@@ -70,23 +72,40 @@
     "barShapeSettings": {
       "displayName": "Bar Shape",
       "properties": {
+        "chartPaddingTop": {
+          "displayName": "Chart Top Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0354"
+        },
+        "chartPaddingBottom": {
+          "displayName": "Chart Bottom Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0355"
+        },
         "barWidth": {
           "displayName": "Bar Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0356"
         },
         "barCornerRadius": {
           "displayName": "Bar Corner Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0357"
         },
         "gap": {
           "displayName": "Gap Between Bars",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0007"
         },
         "fillMode": {
           "displayName": "Fill Mode",
@@ -94,16 +113,20 @@
             "enumeration": [
               {
                 "value": "gradient",
-                "displayName": "Gradient"
+                "displayName": "Gradient",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0009"
               },
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0010"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0008"
         }
-      }
+      },
+      "displayNameKey": "HealthBarCapabilities_DisplayName_0353"
     },
     "scaleRangeSettings": {
       "displayName": "Scale & Range",
@@ -112,21 +135,25 @@
           "displayName": "Min Value",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0012"
         },
         "maxValue": {
           "displayName": "Max Value",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0013"
         },
         "showYAxis": {
           "displayName": "Show Y-Axis Ticks",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0014"
         }
-      }
+      },
+      "displayNameKey": "HealthBarCapabilities_DisplayName_0011"
     },
     "valueLabelsSettings": {
       "displayName": "Value Labels",
@@ -135,13 +162,15 @@
           "displayName": "Show Value",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0016"
         },
         "showPercent": {
-          "displayName": "Show % Symbol",
+          "displayName": "Display as Percentage",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0017"
         },
         "position": {
           "displayName": "Value Position",
@@ -149,28 +178,34 @@
             "enumeration": [
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0019"
               },
               {
                 "value": "inside",
-                "displayName": "Inside"
+                "displayName": "Inside",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0020"
               },
               {
                 "value": "end",
-                "displayName": "End"
+                "displayName": "End",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0021"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0022"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0018"
         },
         "fontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0023"
         },
         "fontColor": {
           "displayName": "Font Color",
@@ -180,7 +215,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0024"
         },
         "fontFamily": {
           "displayName": "Font Family",
@@ -188,34 +224,42 @@
             "enumeration": [
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0026"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0027"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0028"
               },
               {
                 "value": "Helvetica",
-                "displayName": "Helvetica"
+                "displayName": "Helvetica",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0029"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0030"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0031"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0032"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0025"
         },
         "fontWeight": {
           "displayName": "Font Weight",
@@ -223,24 +267,33 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0034"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0035"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0036"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0033"
         }
-      }
+      },
+      "displayNameKey": "HealthBarCapabilities_DisplayName_0015"
     },
     "colorSettings": {
+      "displayName": "Colors",
+      "displayNameKey": "HealthBarSettings_DisplayName_0003",
       "properties": {
         "lowColor": {
+          "displayName": "Low Color (0%)",
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0329",
           "type": {
             "fill": {
               "solid": {
@@ -250,6 +303,8 @@
           }
         },
         "midColor": {
+          "displayName": "Mid Color (50%)",
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0330",
           "type": {
             "fill": {
               "solid": {
@@ -259,6 +314,8 @@
           }
         },
         "highColor": {
+          "displayName": "High Color (100%)",
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0331",
           "type": {
             "fill": {
               "solid": {
@@ -268,6 +325,8 @@
           }
         },
         "trackColor": {
+          "displayName": "Track Color",
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0332",
           "type": {
             "fill": {
               "solid": {
@@ -277,6 +336,8 @@
           }
         },
         "trackOpacity": {
+          "displayName": "Track Opacity (%)",
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0333",
           "type": {
             "numeric": true
           }
@@ -290,7 +351,8 @@
           "displayName": "Show Target",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0038"
         },
         "color": {
           "displayName": "Target Color",
@@ -300,13 +362,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0039"
         },
         "lineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0040"
         },
         "markerStyle": {
           "displayName": "Marker Style",
@@ -314,34 +378,47 @@
             "enumeration": [
               {
                 "value": "line",
-                "displayName": "Line"
+                "displayName": "Line",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0042"
               },
               {
                 "value": "triangle",
-                "displayName": "Triangle"
+                "displayName": "Triangle",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0043"
               },
               {
                 "value": "diamond",
-                "displayName": "Diamond"
+                "displayName": "Diamond",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0044"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0041"
         }
-      }
+      },
+      "displayNameKey": "HealthBarCapabilities_DisplayName_0037"
     },
     "animationSettings": {
+      "displayName": "Animation",
+      "displayNameKey": "HealthBarSettings_DisplayName_0008",
       "properties": {
         "enabled": {
+          "displayName": "Enable Animations",
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0334",
           "type": {
             "bool": true
           }
         },
         "duration": {
+          "displayName": "Duration (ms)",
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0335",
           "type": {
             "numeric": true
           }
         },
         "staggerDelay": {
+          "displayName": "Stagger Delay (ms)",
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0336",
           "type": {
             "numeric": true
           }
@@ -349,18 +426,26 @@
       }
     },
     "categoryLabelSettings": {
+      "displayName": "Category Labels",
+      "displayNameKey": "HealthBarSettings_DisplayName_0005",
       "properties": {
         "show": {
+          "displayName": "Show Category Labels",
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0337",
           "type": {
             "bool": true
           }
         },
         "fontSize": {
+          "displayName": "Font Size",
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0338",
           "type": {
             "numeric": true
           }
         },
         "fontColor": {
+          "displayName": "Font Color",
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0339",
           "type": {
             "fill": {
               "solid": {
@@ -375,34 +460,42 @@
             "enumeration": [
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0046"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0047"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0048"
               },
               {
                 "value": "Helvetica",
-                "displayName": "Helvetica"
+                "displayName": "Helvetica",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0049"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0050"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0051"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0052"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0045"
         },
         "fontWeight": {
           "displayName": "Font Weight",
@@ -410,24 +503,32 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0054"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0055"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0056"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0053"
         }
       }
     },
     "axisFormatting": {
+      "displayName": "Axis Formatting",
+      "displayNameKey": "SharedSettings_DisplayName_0001",
       "properties": {
         "axisLabelColor": {
+          "displayName": "Label Color",
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0340",
           "type": {
             "fill": {
               "solid": {
@@ -437,6 +538,8 @@
           }
         },
         "axisLabelSize": {
+          "displayName": "Label Font Size",
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0341",
           "type": {
             "numeric": true
           }
@@ -445,25 +548,29 @@
           "displayName": "Show X-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0057"
         },
         "showYAxis": {
           "displayName": "Show Y-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0058"
         },
         "xAxisTitle": {
           "displayName": "X-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0059"
         },
         "yAxisTitle": {
           "displayName": "Y-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0060"
         },
         "axisLabelFontFamily": {
           "displayName": "Label Font",
@@ -471,72 +578,88 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0062"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0063"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0064"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0065"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0066"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0067"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0068"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0069"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0070"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0071"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0072"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0073"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0061"
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (\u00b0)",
+          "displayName": "X-Label Rotation (°)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0074"
         },
         "yAxisMin": {
           "displayName": "Y-Axis Min",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0075"
         },
         "yAxisMax": {
           "displayName": "Y-Axis Max",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0076"
         },
         "axisLineColor": {
           "displayName": "Axis Line Color",
@@ -546,19 +669,22 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0077"
         },
         "axisLineWidth": {
           "displayName": "Axis Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0078"
         },
         "showGridLines": {
           "displayName": "Show Grid Lines",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0079"
         },
         "gridLineColor": {
           "displayName": "Grid Line Color",
@@ -568,7 +694,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0080"
         },
         "gridLineStyle": {
           "displayName": "Grid Line Style",
@@ -576,26 +703,31 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0082"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0083"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0081"
         },
         "gridLineWidth": {
           "displayName": "Grid Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0084"
         },
         "gridLineOpacity": {
           "displayName": "Grid Line Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0085"
         },
         "axisLabelFontWeight": {
           "displayName": "Label Font Weight",
@@ -603,30 +735,48 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0087"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0088"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0086"
+        },
+        "integerTicks": {
+          "displayName": "Integer Ticks Only",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0089"
         }
       }
     },
     "dataLabelFormatting": {
+      "displayName": "Data Labels (Legacy)",
+      "displayNameKey": "HealthBarCapabilities_DisplayName_0347",
       "properties": {
         "showDataLabels": {
+          "displayName": "Show Data Labels",
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0348",
           "type": {
             "bool": true
           }
         },
         "dataLabelFontSize": {
+          "displayName": "Font Size",
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0349",
           "type": {
             "numeric": true
           }
         },
         "dataLabelFontColor": {
+          "displayName": "Font Color",
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0350",
           "type": {
             "fill": {
               "solid": {
@@ -636,15 +786,19 @@
           }
         },
         "dataLabelFontWeight": {
+          "displayName": "Font Weight",
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0351",
           "type": {
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0090"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0091"
               }
             ]
           }
@@ -655,54 +809,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0093"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0094"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0095"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0096"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0097"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0098"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0099"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0100"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0101"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0102"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0103"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0104"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0092"
         },
         "dataLabelPosition": {
           "displayName": "Position",
@@ -710,47 +877,63 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0106"
               },
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0107"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0108"
               },
               {
                 "value": "inside",
-                "displayName": "Inside"
+                "displayName": "Inside",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0109"
               },
               {
                 "value": "outside",
-                "displayName": "Outside"
+                "displayName": "Outside",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0110"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0105"
         }
       }
     },
     "titleFormatting": {
+      "displayName": "Chart Title",
+      "displayNameKey": "SharedSettings_DisplayName_0004",
       "properties": {
         "showTitle": {
+          "displayName": "Show Title",
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0342",
           "type": {
             "bool": true
           }
         },
         "titleText": {
+          "displayName": "Title Text",
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0343",
           "type": {
             "text": true
           }
         },
         "titleFontSize": {
+          "displayName": "Font Size",
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0344",
           "type": {
             "numeric": true
           }
         },
         "titleFontColor": {
+          "displayName": "Font Color",
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0345",
           "type": {
             "fill": {
               "solid": {
@@ -760,19 +943,24 @@
           }
         },
         "titleAlignment": {
+          "displayName": "Alignment",
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0346",
           "type": {
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0111"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0112"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0113"
               }
             ]
           }
@@ -783,66 +971,81 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0115"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0116"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0117"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0118"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0119"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0120"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0121"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0122"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0123"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0124"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0125"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0126"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0114"
         },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0127"
         },
         "subtitleFontSize": {
           "displayName": "Subtitle Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0128"
         },
         "subtitleFontColor": {
           "displayName": "Subtitle Color",
@@ -852,7 +1055,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0129"
         },
         "titleFontWeight": {
           "displayName": "Font Weight",
@@ -860,14 +1064,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0131"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0132"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0130"
         },
         "subtitleFontFamily": {
           "displayName": "Subtitle Font",
@@ -875,54 +1082,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0134"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0135"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0136"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0137"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0138"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0139"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0140"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0141"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0142"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0143"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0144"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0145"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0133"
         },
         "subtitleFontWeight": {
           "displayName": "Subtitle Font Weight",
@@ -930,14 +1150,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0147"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0148"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0146"
         }
       }
     },
@@ -952,19 +1175,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0150"
         },
         "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0151"
         },
         "borderRadius": {
           "displayName": "Border Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0152"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0153"
         },
         "cardStyleMode": {
           "displayName": "Card Style",
@@ -972,30 +1205,47 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0001"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0002"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0003"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0004"
+              },
+              {
+                "value": "outlined",
+                "displayName": "Border Only",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0005"
+              },
+              {
+                "value": "floating",
+                "displayName": "Floating Shadow",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0006"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0154"
         },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "(Deprecated) Enable Glass"
+          "displayName": "(Deprecated) Enable Glass",
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0159"
         }
-      }
+      },
+      "displayNameKey": "HealthBarCapabilities_DisplayName_0149"
     },
     "scrollFormatting": {
       "displayName": "Scroll",
@@ -1004,15 +1254,18 @@
           "displayName": "Enable Scroll",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0161"
         },
         "minCategoryWidth": {
           "displayName": "Min Category Width (px)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0162"
         }
-      }
+      },
+      "displayNameKey": "HealthBarCapabilities_DisplayName_0160"
     },
     "sortFormatting": {
       "displayName": "Sort Order",
@@ -1023,28 +1276,35 @@
             "enumeration": [
               {
                 "value": "dataOrder",
-                "displayName": "Data Order"
+                "displayName": "Data Order",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0165"
               },
               {
                 "value": "valueAsc",
-                "displayName": "Value (Ascending)"
+                "displayName": "Value (Ascending)",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0166"
               },
               {
                 "value": "valueDesc",
-                "displayName": "Value (Descending)"
+                "displayName": "Value (Descending)",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0167"
               },
               {
                 "value": "nameAsc",
-                "displayName": "Name (A-Z)"
+                "displayName": "Name (A-Z)",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0168"
               },
               {
                 "value": "nameDesc",
-                "displayName": "Name (Z-A)"
+                "displayName": "Name (Z-A)",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0169"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0164"
         }
-      }
+      },
+      "displayNameKey": "HealthBarCapabilities_DisplayName_0163"
     },
     "referenceLineFormatting": {
       "displayName": "Reference Line",
@@ -1053,7 +1313,8 @@
           "displayName": "Show Reference Line",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0171"
         },
         "referenceLineType": {
           "displayName": "Type",
@@ -1061,36 +1322,44 @@
             "enumeration": [
               {
                 "value": "custom",
-                "displayName": "Custom Value"
+                "displayName": "Custom Value",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0173"
               },
               {
                 "value": "mean",
-                "displayName": "Mean"
+                "displayName": "Mean",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0174"
               },
               {
                 "value": "median",
-                "displayName": "Median"
+                "displayName": "Median",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0175"
               },
               {
                 "value": "percentile",
-                "displayName": "Percentile"
+                "displayName": "Percentile",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0176"
               },
               {
                 "value": "min",
-                "displayName": "Min"
+                "displayName": "Min",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0177"
               },
               {
                 "value": "max",
-                "displayName": "Max"
+                "displayName": "Max",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0178"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0172"
         },
         "referenceLineValue": {
           "displayName": "Value",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0179"
         },
         "referenceLineColor": {
           "displayName": "Line Color",
@@ -1100,13 +1369,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0180"
         },
         "referenceLineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0181"
         },
         "referenceLineStyle": {
           "displayName": "Line Style",
@@ -1114,48 +1385,57 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0183"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0184"
               },
               {
                 "value": "dotted",
-                "displayName": "Dotted"
+                "displayName": "Dotted",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0185"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0182"
         },
         "showReferenceLabel": {
           "displayName": "Show Label",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0186"
         },
         "referenceLabelText": {
           "displayName": "Label Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0187"
         },
         "showReferenceBand": {
           "displayName": "Show Band",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0188"
         },
         "referenceBandOpacity": {
           "displayName": "Band Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0189"
         },
         "referenceBandWidth": {
           "displayName": "Band Width (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0190"
         },
         "referenceLineAxis": {
           "displayName": "Target Axis",
@@ -1163,16 +1443,20 @@
             "enumeration": [
               {
                 "value": "primary",
-                "displayName": "Primary"
+                "displayName": "Primary",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0192"
               },
               {
                 "value": "secondary",
-                "displayName": "Secondary"
+                "displayName": "Secondary",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0193"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0191"
         }
-      }
+      },
+      "displayNameKey": "HealthBarCapabilities_DisplayName_0170"
     },
     "trendLineFormatting": {
       "displayName": "Trend Line",
@@ -1181,7 +1465,8 @@
           "displayName": "Show Trend Line",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0195"
         },
         "trendLineType": {
           "displayName": "Type",
@@ -1189,32 +1474,39 @@
             "enumeration": [
               {
                 "value": "linear",
-                "displayName": "Linear"
+                "displayName": "Linear",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0197"
               },
               {
                 "value": "polynomial",
-                "displayName": "Polynomial"
+                "displayName": "Polynomial",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0198"
               },
               {
                 "value": "exponential",
-                "displayName": "Exponential"
+                "displayName": "Exponential",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0199"
               },
               {
                 "value": "logarithmic",
-                "displayName": "Logarithmic"
+                "displayName": "Logarithmic",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0200"
               },
               {
                 "value": "power",
-                "displayName": "Power"
+                "displayName": "Power",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0201"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0196"
         },
         "polynomialOrder": {
           "displayName": "Polynomial Order",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0202"
         },
         "trendLineColor": {
           "displayName": "Line Color",
@@ -1224,25 +1516,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0203"
         },
         "trendLineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0204"
         },
         "showEquation": {
           "displayName": "Show Equation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0205"
         },
         "showR2": {
-          "displayName": "Show R\u00b2",
+          "displayName": "Show R²",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0206"
         },
         "trendLineAxis": {
           "displayName": "Target Axis",
@@ -1250,16 +1546,20 @@
             "enumeration": [
               {
                 "value": "primary",
-                "displayName": "Primary"
+                "displayName": "Primary",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0208"
               },
               {
                 "value": "secondary",
-                "displayName": "Secondary"
+                "displayName": "Secondary",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0209"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0207"
         }
-      }
+      },
+      "displayNameKey": "HealthBarCapabilities_DisplayName_0194"
     },
     "conditionalFormatting": {
       "displayName": "Conditional Formatting",
@@ -1268,7 +1568,8 @@
           "displayName": "Enable Conditional Formatting",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0211"
         },
         "conditionalDirection": {
           "displayName": "Direction",
@@ -1276,26 +1577,31 @@
             "enumeration": [
               {
                 "value": "ascending",
-                "displayName": "Ascending (Low = Bad)"
+                "displayName": "Ascending (Low = Bad)",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0213"
               },
               {
                 "value": "descending",
-                "displayName": "Descending (Low = Good)"
+                "displayName": "Descending (Low = Good)",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0214"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0212"
         },
         "threshold1": {
           "displayName": "Threshold 1",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0215"
         },
         "threshold2": {
           "displayName": "Threshold 2",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0216"
         },
         "conditionalColor1": {
           "displayName": "Color 1 (Bad)",
@@ -1305,7 +1611,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0217"
         },
         "conditionalColor2": {
           "displayName": "Color 2 (Warning)",
@@ -1315,7 +1622,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0218"
         },
         "conditionalColor3": {
           "displayName": "Color 3 (Good)",
@@ -1325,9 +1633,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0219"
         }
-      }
+      },
+      "displayNameKey": "HealthBarCapabilities_DisplayName_0210"
     },
     "annotationFormatting": {
       "displayName": "Annotations",
@@ -1336,118 +1646,141 @@
           "displayName": "Show Annotations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0221"
         },
         "annotation1Category": {
-          "displayName": "Annotation 1 \u2014 Category",
+          "displayName": "Annotation 1 — Category",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0222"
         },
         "annotation1Text": {
-          "displayName": "Annotation 1 \u2014 Text",
+          "displayName": "Annotation 1 — Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0223"
         },
         "annotation1Position": {
-          "displayName": "Annotation 1 \u2014 Position",
+          "displayName": "Annotation 1 — Position",
           "type": {
             "enumeration": [
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0225"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0226"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0227"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0228"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0224"
         },
         "annotation2Category": {
-          "displayName": "Annotation 2 \u2014 Category",
+          "displayName": "Annotation 2 — Category",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0229"
         },
         "annotation2Text": {
-          "displayName": "Annotation 2 \u2014 Text",
+          "displayName": "Annotation 2 — Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0230"
         },
         "annotation2Position": {
-          "displayName": "Annotation 2 \u2014 Position",
+          "displayName": "Annotation 2 — Position",
           "type": {
             "enumeration": [
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0232"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0233"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0234"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0235"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0231"
         },
         "annotation3Category": {
-          "displayName": "Annotation 3 \u2014 Category",
+          "displayName": "Annotation 3 — Category",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0236"
         },
         "annotation3Text": {
-          "displayName": "Annotation 3 \u2014 Text",
+          "displayName": "Annotation 3 — Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0237"
         },
         "annotation3Position": {
-          "displayName": "Annotation 3 \u2014 Position",
+          "displayName": "Annotation 3 — Position",
           "type": {
             "enumeration": [
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0239"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0240"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0241"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0242"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0238"
         },
         "annotationFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0243"
         },
         "annotationFontColor": {
           "displayName": "Font Color",
@@ -1457,7 +1790,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0244"
         },
         "annotationConnectorColor": {
           "displayName": "Connector Color",
@@ -1467,9 +1801,146 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0245"
+        },
+        "annotationFontFamily": {
+          "displayName": "Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0247"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0248"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0249"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0250"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0251"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0252"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0253"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0254"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0255"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0256"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0257"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0258"
+              }
+            ]
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0246"
+        },
+        "annotationFontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0260"
+              },
+              {
+                "value": "500",
+                "displayName": "Medium",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0261"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0262"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0263"
+              }
+            ]
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0259"
+        },
+        "annotationOffset": {
+          "displayName": "Callout Offset",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0264"
+        },
+        "annotationPadding": {
+          "displayName": "Badge Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0265"
+        },
+        "annotationBackgroundColor": {
+          "displayName": "Badge Background",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0266"
+        },
+        "annotationBackgroundOpacity": {
+          "displayName": "Badge Opacity (%)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0267"
+        },
+        "annotationCornerRadius": {
+          "displayName": "Badge Corner Radius",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0268"
         }
-      }
+      },
+      "displayNameKey": "HealthBarCapabilities_DisplayName_0220"
     },
     "accessibilityFormatting": {
       "displayName": "Accessibility",
@@ -1478,9 +1949,11 @@
           "displayName": "Enable Keyboard Navigation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0270"
         }
-      }
+      },
+      "displayNameKey": "HealthBarCapabilities_DisplayName_0269"
     },
     "healthBarZone": {
       "displayName": "Zone Background",
@@ -1489,15 +1962,49 @@
           "displayName": "Show Zone Background",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0272"
         },
         "zoneColors": {
-          "displayName": "Zone Colors (CSV)",
+          "displayName": "Zone Colors",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0273"
         }
-      }
+      },
+      "displayNameKey": "HealthBarCapabilities_DisplayName_0271"
+    },
+    "metricToggleSettings": {
+      "displayName": "Metric View Button",
+      "properties": {
+        "show": {
+          "displayName": "Show Metric View Button",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0324"
+        },
+        "position": {
+          "displayName": "Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "topLeft",
+                "displayName": "Top Left",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0326"
+              },
+              {
+                "value": "topRight",
+                "displayName": "Top Right",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0327"
+              }
+            ]
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0325"
+        }
+      },
+      "displayNameKey": "HealthBarCapabilities_DisplayName_0328"
     },
     "numberFormatting": {
       "displayName": "Number Format",
@@ -1508,46 +2015,56 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0276"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0277"
               },
               {
                 "value": "thousands",
-                "displayName": "Thousands (K)"
+                "displayName": "Thousands (K)",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0278"
               },
               {
                 "value": "millions",
-                "displayName": "Millions (M)"
+                "displayName": "Millions (M)",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0279"
               },
               {
                 "value": "billions",
-                "displayName": "Billions (B)"
+                "displayName": "Billions (B)",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0280"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0275"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0281"
         },
         "valuePrefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0282"
         },
         "valueSuffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0283"
         }
-      }
+      },
+      "displayNameKey": "HealthBarCapabilities_DisplayName_0274"
     },
     "legendFormatting": {
       "displayName": "Legend",
@@ -1556,7 +2073,8 @@
           "displayName": "Show Legend",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0285"
         },
         "legendPosition": {
           "displayName": "Position",
@@ -1564,28 +2082,34 @@
             "enumeration": [
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0287"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0288"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0289"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0290"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0286"
         },
         "legendFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0291"
         },
         "legendFontColor": {
           "displayName": "Font Color",
@@ -1595,7 +2119,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0292"
         },
         "legendFontFamily": {
           "displayName": "Font",
@@ -1603,54 +2128,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0294"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0295"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0296"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0297"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0298"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0299"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0300"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0301"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0302"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0303"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0304"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0305"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0293"
         },
         "legendFontWeight": {
           "displayName": "Font Weight",
@@ -1658,22 +2196,27 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0307"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0308"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0306"
         },
         "legendAliases": {
           "displayName": "Rename Labels",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0309"
         }
-      }
+      },
+      "displayNameKey": "HealthBarCapabilities_DisplayName_0284"
     },
     "dateFilterFormatting": {
       "displayName": "Date Filter",
@@ -1682,27 +2225,32 @@
           "displayName": "Enable Date Filter",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0311"
         },
         "startDate": {
           "displayName": "Start Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0312"
         },
         "endAtCurrentDate": {
           "displayName": "End at Current Date",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0313"
         },
         "endDate": {
           "displayName": "End Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0314"
         }
-      }
+      },
+      "displayNameKey": "HealthBarCapabilities_DisplayName_0310"
     },
     "colorThemeFormatting": {
       "properties": {
@@ -1712,42 +2260,60 @@
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0317"
               },
               {
                 "value": "ocean",
-                "displayName": "Ocean"
+                "displayName": "Ocean",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0318"
               },
               {
                 "value": "sunset",
-                "displayName": "Sunset"
+                "displayName": "Sunset",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0319"
               },
               {
                 "value": "forest",
-                "displayName": "Forest"
+                "displayName": "Forest",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0320"
               },
               {
                 "value": "berry",
-                "displayName": "Berry"
+                "displayName": "Berry",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0321"
               },
               {
                 "value": "monochrome",
-                "displayName": "Monochrome"
+                "displayName": "Monochrome",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0322"
               },
               {
                 "value": "earth",
-                "displayName": "Earth"
+                "displayName": "Earth",
+                "displayNameKey": "HealthBarCapabilities_DisplayName_0323"
               }
             ]
-          }
+          },
+          "displayNameKey": "HealthBarCapabilities_DisplayName_0316"
         }
       },
-      "displayName": "Color Theme"
+      "displayName": "Color Theme",
+      "displayNameKey": "HealthBarCapabilities_DisplayName_0315"
     }
   },
   "privileges": [],
   "supportsKeyboardFocus": true,
   "supportsHighlight": true,
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
   "supportsMultiVisualSelection": true,
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
   "suppressDefaultTitle": true
 }

@@ -43,8 +43,10 @@ vi.mock('powerbi-visuals-utils-formattingmodel', () => {
 
 import { SankeyDiagramVisual } from '../visual';
 import { SankeyDiagramSettings } from '../settings';
+import capabilities from '../../capabilities.json';
 import {
   createConstructorOptions,
+  createUpdateOptions,
   DataViewBuilder,
   runFormattingCoverage,
   getSettingPaths,
@@ -181,6 +183,62 @@ const harnessConfig: HarnessConfig = {
 // ── Tests ────────────────────────────────────────────────────────────
 
 describe('SankeyDiagram formatting coverage', () => {
+  it('keeps capabilities aligned with the formatting model', () => {
+    const settings = new SankeyDiagramSettings();
+    const settingPaths = new Set(getSettingPaths(
+      settings as unknown as { cards: Array<Record<string, unknown>> },
+    ).map(({ cardName, sliceName }) => `${cardName}.${sliceName}`));
+    const capabilityPaths = Object.entries(capabilities.objects).flatMap(([cardName, card]) =>
+      Object.keys(card.properties).map((sliceName) => `${cardName}.${sliceName}`)
+    );
+
+    expect(capabilityPaths.filter((path) => !settingPaths.has(path))).toEqual(['cardSettings.enableGlass']);
+    expect([...settingPaths].filter((path) => !capabilityPaths.includes(path))).toEqual([]);
+    expect(capabilities).toMatchObject({
+      supportsLandingPage: true,
+      supportsEmptyDataView: true,
+      supportsKeyboardFocus: true,
+      tooltips: { supportEnhancedTooltips: true },
+    });
+  });
+
+  it('shows link-label typography for persistent or hover labels', () => {
+    const { visual, settings } = createVisual();
+    const typedSettings = settings as unknown as SankeyDiagramSettings;
+    typedSettings.linkLabelSettings.showLinkLabels.value = false;
+    typedSettings.linkLabelSettings.showFlowLabels.value = true;
+    typedSettings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+
+    visual.update(createUpdateOptions([sankeyDV]) as never);
+
+    expect(typedSettings.linkLabelSettings.linkLabelFontSize.visible).toBe(true);
+    expect(typedSettings.linkLabelSettings.linkLabelFontColor.visible).toBe(true);
+    expect(typedSettings.linkLabelSettings.linkLabelFontFamily.visible).toBe(true);
+    expect(typedSettings.linkLabelSettings.linkLabelFontWeight.visible).toBe(true);
+    expect(typedSettings.linkLabelSettings.linkLabelFormat.visible).toBe(false);
+    expect(typedSettings.linkSettings.dimOpacity.visible).toBe(true);
+    expect(typedSettings.cardSettings.backgroundColor.visible).toBe(false);
+    expect(typedSettings.cardSettings.backgroundOpacity.visible).toBe(false);
+    expect(typedSettings.cardSettings.borderRadius.visible).toBe(false);
+    expect(typedSettings.cardSettings.contentPadding.visible).not.toBe(false);
+    visual.destroy();
+  });
+
+  it('uses the dedicated node-label typography without shared overrides', () => {
+    const { visual, settings, element } = createVisual();
+    const typedSettings = settings as unknown as SankeyDiagramSettings;
+    typedSettings.nodeLabelSettings.labelFontSize.value = 19;
+    typedSettings.nodeLabelSettings.labelFontFamily.value = { value: 'Georgia', displayName: 'Georgia' };
+    typedSettings.animationSettings.enabled.value = false;
+
+    visual.update(createUpdateOptions([sankeyDV]) as never);
+
+    const label = element.querySelector<SVGTextElement>('.sankey-node-label');
+    expect(label?.getAttribute('font-size')).toBe('19');
+    expect(label?.getAttribute('font-family')).toBe('Georgia');
+    visual.destroy();
+  });
+
   it('detects all settings from the model', () => {
     const settings = new SankeyDiagramSettings();
     const paths = getSettingPaths(

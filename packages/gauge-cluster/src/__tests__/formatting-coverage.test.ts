@@ -44,6 +44,7 @@ vi.mock('powerbi-visuals-utils-formattingmodel', () => {
 
 import { GaugeClusterVisual } from '../visual';
 import { GaugeClusterSettings } from '../settings';
+import capabilities from '../../capabilities.json';
 import {
   createConstructorOptions,
   DataViewBuilder,
@@ -52,11 +53,16 @@ import {
   type HarnessConfig,
 } from '../../../core/src/__test-utils__';
 
-const testDV = new DataViewBuilder().withCategory('Gauge', ['G1','G2'], 'category').withValues('Value', [75,45], 'measure').withValues('Target', [100,80], 'target').build();
+const testDV = new DataViewBuilder()
+  .withCategory('Gauge', ['G1', 'G2', 'G3', 'G4', 'G5', 'G6'], 'category')
+  .withValues('Value', [75, 45, 62, 88, 53, 71], 'measure')
+  .withValues('Target', [100, 80, 90, 100, 75, 95], 'target')
+  .build();
 
 function createVisual() {
   const opts = createConstructorOptions();
   const settings = new GaugeClusterSettings();
+  settings.animationSettings.enabled.value = false;
   settingsRef.current = settings;
   const visual = new GaugeClusterVisual(opts as never);
   return {
@@ -82,6 +88,7 @@ function makeDeps(): Record<string, Record<string, unknown>> {
   for (const s of ['conditionalDirection','threshold1','threshold2','conditionalColor1','conditionalColor2','conditionalColor3']) {
     deps[`conditionalFormatting.${s}`] = { 'conditionalFormatting.enableConditional': true };
   }
+  deps['cardSettings.contentPadding'] = { 'cardSettings.enableGlass': true };
   return deps;
 }
 
@@ -100,15 +107,34 @@ const harnessConfig: HarnessConfig = {
     'cardSettings.backgroundOpacity',
     'cardSettings.backgroundColor',
     'cardSettings.enableGlass',
+    'cardSettings.contentPadding',
     'accessibilityFormatting.enableKeyboardNav',
     'animationSettings.staggerDelay',
     'animationSettings.duration',
     'clusterSettings.showValues',
     'zoneSettings.lowColor',
+    'gridLayoutSettings.sortByValue',
+    'labelsSettings.showValues',
+    'labelsSettings.showSubtitle',
+    'labelsSettings.subtitleField',
+    'labelsSettings.subtitleFontSize',
+    'labelsSettings.subtitleFontColor',
+    'labelsSettings.subtitleFontFamily',
+    'labelsSettings.subtitleFontWeight',
+    'labelsSettings.subtitlePaddingTop',
+    'labelsSettings.showSparklines',
     'clusterDisplaySettings.showSparklines',
     'clusterDisplaySettings.sortByValue',
     'clusterLabelSettings.showSubtitle',
     'clusterLabelSettings.subtitleField',
+    'summarySettings.displayMode',
+    'legendFormatting.showInlineLabels',
+    'legendFormatting.inlineLabelFontSize',
+    'legendFormatting.inlineLabelOffset',
+    'dateFilterFormatting.enableDateFilter',
+    'dateFilterFormatting.startDate',
+    'dateFilterFormatting.endAtCurrentDate',
+    'dateFilterFormatting.endDate',
   ],
 };
 
@@ -120,6 +146,13 @@ describe('gauge-cluster formatting coverage', () => {
       harnessConfig.skipCards,
     );
     expect(paths.length).toBeGreaterThan(0);
+  });
+
+  it('keeps current formatting metadata aligned with the settings model', () => {
+    expect(capabilities.objects).not.toHaveProperty('clusterSettings');
+    expect(capabilities.objects.labelsSettings.properties.subtitleField.displayName).toBe('Subtitle Text');
+    expect(capabilities.objects.labelsSettings.properties.labelPosition.type.enumeration.map((item) => item.value))
+      .toEqual(['belowArc', 'aboveArc', 'insideGauge']);
   });
 
   it('every setting affects DOM output', () => {

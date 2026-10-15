@@ -4,7 +4,7 @@
     "displayName": "Dumbbell Chart",
     "guid": "dumbbellChart_3C4D5E6F7A8B",
     "visualClassName": "DumbbellChartVisual",
-    "version": "1.0.1.0",
+    "version": "1.0.14.0",
     "description": "Horizontal dumbbell chart showing start vs end comparisons with connected dots per category. Glassmorphic styling and staggered animations.",
     "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
     "gitHubUrl": "https://github.com/noahgarrett/PowerBI"
@@ -18,5 +18,8 @@
     "icon": "assets/icon.png"
   },
   "style": "style/visual.less",
-  "capabilities": "capabilities.json"
+  "capabilities": "capabilities.json",
+  "stringResources": [
+    "stringResources/en-US/resources.resjson"
+  ]
 }

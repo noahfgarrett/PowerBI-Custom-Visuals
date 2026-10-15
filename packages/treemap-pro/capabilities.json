@@ -4,19 +4,25 @@
       "displayName": "Level 1",
       "name": "level1",
       "kind": "Grouping",
-      "description": "Top-level category grouping"
+      "description": "Top-level category grouping",
+      "displayNameKey": "TreemapProCapabilities_DisplayName_0001",
+      "descriptionKey": "TreemapProCapabilities_Description_0001"
     },
     {
       "displayName": "Level 2",
       "name": "level2",
       "kind": "Grouping",
-      "description": "Sub-category grouping (optional)"
+      "description": "Sub-category grouping (optional)",
+      "displayNameKey": "TreemapProCapabilities_DisplayName_0002",
+      "descriptionKey": "TreemapProCapabilities_Description_0002"
     },
     {
       "displayName": "Measure",
       "name": "measure",
       "kind": "Measure",
-      "description": "Size value for treemap rectangles"
+      "description": "Size value for treemap rectangles",
+      "displayNameKey": "TreemapProCapabilities_DisplayName_0003",
+      "descriptionKey": "TreemapProCapabilities_Description_0003"
     }
   ],
   "dataViewMappings": [
@@ -68,7 +74,7 @@
   ],
   "objects": {
     "treemapSettings": {
-      "displayName": "Treemap",
+      "displayName": "Tile Layout & Labels",
       "properties": {
         "tiling": {
           "displayName": "Tiling Algorithm",
@@ -76,112 +82,149 @@
             "enumeration": [
               {
                 "value": "squarify",
-                "displayName": "Squarify"
+                "displayName": "Squarify",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0006"
               },
               {
                 "value": "binary",
-                "displayName": "Binary"
+                "displayName": "Binary",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0007"
               },
               {
                 "value": "slice",
-                "displayName": "Slice"
+                "displayName": "Slice",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0008"
               },
               {
                 "value": "dice",
-                "displayName": "Dice"
+                "displayName": "Dice",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0009"
               }
             ]
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0005"
         },
         "showLabels": {
-          "displayName": "Show Labels",
+          "displayName": "Show Category Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0010"
         },
         "showValues": {
           "displayName": "Show Values",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0011"
         },
         "tilePadding": {
           "displayName": "Tile Padding",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0012"
         },
-        "fontSize": {
-          "displayName": "Label Font Size",
+        "chartPadding": {
+          "displayName": "Chart Padding",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0013"
+        },
+        "labelPadding": {
+          "displayName": "Label Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0028"
+        },
+        "fontSize": {
+          "displayName": "Category Label Size",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0014"
         },
         "fontColor": {
-          "displayName": "Label Font Color",
+          "displayName": "Category Label Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0015"
         },
         "fontFamily": {
-          "displayName": "Font Family",
+          "displayName": "Category Label Font",
           "type": {
             "enumeration": [
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0017"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0018"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0019"
               },
               {
                 "value": "Helvetica",
-                "displayName": "Helvetica"
+                "displayName": "Helvetica",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0020"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0021"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0022"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0023"
               }
             ]
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0016"
         },
         "fontWeight": {
-          "displayName": "Font Weight",
+          "displayName": "Category Label Weight",
           "type": {
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0025"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0026"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0027"
               }
             ]
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0024"
         }
-      }
+      },
+      "displayNameKey": "TreemapProCapabilities_DisplayName_TreemapSettings"
     },
     "tileAppearanceSettings": {
       "displayName": "Tile Appearance",
@@ -194,31 +237,36 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0032"
         },
         "tileStrokeWidth": {
           "displayName": "Tile Stroke Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0033"
         },
         "useChartPalette": {
           "displayName": "Use Chart Palette",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0034"
         },
         "colorByDepth": {
           "displayName": "Color Variation by Depth",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0035"
         },
         "enabled": {
           "displayName": "Enable Heat Coloring",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0036"
         },
         "startColor": {
           "displayName": "Heat Start Color",
@@ -228,7 +276,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0037"
         },
         "endColor": {
           "displayName": "Heat End Color",
@@ -238,21 +287,25 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0038"
         },
         "tileOpacity": {
           "displayName": "Tile Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0039"
         },
         "tileCornerRadius": {
           "displayName": "Tile Corner Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0040"
         }
-      }
+      },
+      "displayNameKey": "TreemapProCapabilities_DisplayName_0031"
     },
     "animationSettings": {
       "displayName": "Animation",
@@ -261,15 +314,18 @@
           "displayName": "Enable Animations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0042"
         },
         "duration": {
           "displayName": "Duration (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0043"
         }
-      }
+      },
+      "displayNameKey": "TreemapProCapabilities_DisplayName_0041"
     },
     "legendFormatting": {
       "displayName": "Legend",
@@ -278,7 +334,8 @@
           "displayName": "Show Legend",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0045"
         },
         "legendPosition": {
           "displayName": "Position",
@@ -286,28 +343,34 @@
             "enumeration": [
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0047"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0048"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0049"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0050"
               }
             ]
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0046"
         },
         "legendFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0051"
         },
         "legendFontColor": {
           "displayName": "Font Color",
@@ -317,7 +380,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0052"
         },
         "legendFontFamily": {
           "displayName": "Font",
@@ -325,54 +389,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0054"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0055"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0056"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0057"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0058"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0059"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0060"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0061"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0062"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0063"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0064"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0065"
               }
             ]
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0053"
         },
         "legendFontWeight": {
           "displayName": "Font Weight",
@@ -380,22 +457,27 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0067"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0068"
               }
             ]
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0066"
         },
         "legendAliases": {
           "displayName": "Rename Labels",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0069"
         }
-      }
+      },
+      "displayNameKey": "TreemapProCapabilities_DisplayName_0044"
     },
     "dataLabelFormatting": {
       "displayName": "Data Labels",
@@ -404,13 +486,15 @@
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0071"
         },
         "dataLabelFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0072"
         },
         "dataLabelFontColor": {
           "displayName": "Font Color",
@@ -420,7 +504,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0073"
         },
         "dataLabelFontWeight": {
           "displayName": "Font Weight",
@@ -428,14 +513,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0075"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0076"
               }
             ]
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0074"
         },
         "dataLabelFontFamily": {
           "displayName": "Font",
@@ -443,54 +531,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0078"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0079"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0080"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0081"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0082"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0083"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0084"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0085"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0086"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0087"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0088"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0089"
               }
             ]
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0077"
         },
         "dataLabelPosition": {
           "displayName": "Position",
@@ -498,28 +599,35 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0091"
               },
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0092"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0093"
               },
               {
                 "value": "inside",
-                "displayName": "Inside"
+                "displayName": "Inside",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0094"
               },
               {
                 "value": "outside",
-                "displayName": "Outside"
+                "displayName": "Outside",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0095"
               }
             ]
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0090"
         }
-      }
+      },
+      "displayNameKey": "TreemapProCapabilities_DisplayName_0070"
     },
     "titleFormatting": {
       "displayName": "Chart Title",
@@ -528,19 +636,22 @@
           "displayName": "Show Title",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0097"
         },
         "titleText": {
           "displayName": "Title Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0098"
         },
         "titleFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0099"
         },
         "titleFontColor": {
           "displayName": "Font Color",
@@ -550,7 +661,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0100"
         },
         "titleAlignment": {
           "displayName": "Alignment",
@@ -558,18 +670,22 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0102"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0103"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0104"
               }
             ]
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0101"
         },
         "titleFontFamily": {
           "displayName": "Font",
@@ -577,66 +693,81 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0106"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0107"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0108"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0109"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0110"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0111"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0112"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0113"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0114"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0115"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0116"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0117"
               }
             ]
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0105"
         },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0118"
         },
         "subtitleFontSize": {
           "displayName": "Subtitle Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0119"
         },
         "subtitleFontColor": {
           "displayName": "Subtitle Color",
@@ -646,7 +777,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0120"
         },
         "titleFontWeight": {
           "displayName": "Font Weight",
@@ -654,14 +786,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0122"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0123"
               }
             ]
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0121"
         },
         "subtitleFontFamily": {
           "displayName": "Subtitle Font",
@@ -669,54 +804,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0125"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0126"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0127"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0128"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0129"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0130"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0131"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0132"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0133"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0134"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0135"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0136"
               }
             ]
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0124"
         },
         "subtitleFontWeight": {
           "displayName": "Subtitle Font Weight",
@@ -724,16 +872,20 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0138"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0139"
               }
             ]
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0137"
         }
-      }
+      },
+      "displayNameKey": "TreemapProCapabilities_DisplayName_0096"
     },
     "drillDownSettings": {
       "displayName": "Drill-Down",
@@ -742,19 +894,22 @@
           "displayName": "Enable Drill-Down",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0141"
         },
         "showBreadcrumb": {
           "displayName": "Show Breadcrumb",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0142"
         },
         "breadcrumbFontSize": {
           "displayName": "Breadcrumb Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0143"
         },
         "breadcrumbColor": {
           "displayName": "Breadcrumb Color",
@@ -764,7 +919,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0144"
         },
         "breadcrumbFontFamily": {
           "displayName": "Breadcrumb Font Family",
@@ -772,34 +928,42 @@
             "enumeration": [
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0146"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0147"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0148"
               },
               {
                 "value": "Helvetica",
-                "displayName": "Helvetica"
+                "displayName": "Helvetica",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0149"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0150"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0151"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0152"
               }
             ]
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0145"
         },
         "breadcrumbFontWeight": {
           "displayName": "Breadcrumb Font Weight",
@@ -807,20 +971,49 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0154"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0155"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0156"
               }
             ]
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0153"
         }
-      }
+      },
+      "displayNameKey": "TreemapProCapabilities_DisplayName_0140"
+    },
+    "interactionSettings": {
+      "displayName": "Interaction",
+      "properties": {
+        "crossHighlightMode": {
+          "displayName": "Cross-Highlight Behavior",
+          "type": {
+            "enumeration": [
+              {
+                "value": "focus",
+                "displayName": "Show Highlighted Data Only",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0003"
+              },
+              {
+                "value": "dim",
+                "displayName": "Dim Unhighlighted Data",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0004"
+              }
+            ]
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0002"
+        }
+      },
+      "displayNameKey": "TreemapProCapabilities_DisplayName_0001"
     },
     "cardSettings": {
       "displayName": "Card Style",
@@ -833,19 +1026,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0158"
         },
         "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0159"
         },
         "borderRadius": {
           "displayName": "Border Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0160"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0005"
         },
         "cardStyleMode": {
           "displayName": "Card Style",
@@ -853,30 +1056,47 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0006"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0007"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0008"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0009"
+              },
+              {
+                "value": "outlined",
+                "displayName": "Border Only",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0010"
+              },
+              {
+                "value": "floating",
+                "displayName": "Floating Shadow",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0011"
               }
             ]
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0161"
         },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "(Deprecated) Enable Glass"
+          "displayName": "(Deprecated) Enable Glass",
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0166"
         }
-      }
+      },
+      "displayNameKey": "TreemapProCapabilities_DisplayName_0157"
     },
     "treemapDisplaySettings": {
       "displayName": "Display",
@@ -885,7 +1105,8 @@
           "displayName": "Show Percentage",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0168"
         },
         "percentOf": {
           "displayName": "Percent Of",
@@ -893,14 +1114,17 @@
             "enumeration": [
               {
                 "value": "total",
-                "displayName": "Total"
+                "displayName": "Total",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0170"
               },
               {
                 "value": "parent",
-                "displayName": "Parent"
+                "displayName": "Parent",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0171"
               }
             ]
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0169"
         },
         "labelOverflow": {
           "displayName": "Label Overflow",
@@ -908,16 +1132,20 @@
             "enumeration": [
               {
                 "value": "truncate",
-                "displayName": "Truncate"
+                "displayName": "Truncate",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0173"
               },
               {
                 "value": "hide",
-                "displayName": "Hide"
+                "displayName": "Hide",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0174"
               }
             ]
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0172"
         }
-      }
+      },
+      "displayNameKey": "TreemapProCapabilities_DisplayName_0167"
     },
     "conditionalFormatting": {
       "displayName": "Conditional Formatting",
@@ -926,7 +1154,8 @@
           "displayName": "Enable Conditional Formatting",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0176"
         },
         "conditionalDirection": {
           "displayName": "Direction",
@@ -934,26 +1163,31 @@
             "enumeration": [
               {
                 "value": "ascending",
-                "displayName": "Ascending (Low = Bad)"
+                "displayName": "Ascending (Low = Bad)",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0178"
               },
               {
                 "value": "descending",
-                "displayName": "Descending (Low = Good)"
+                "displayName": "Descending (Low = Good)",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0179"
               }
             ]
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0177"
         },
         "threshold1": {
           "displayName": "Threshold 1",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0180"
         },
         "threshold2": {
           "displayName": "Threshold 2",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0181"
         },
         "conditionalColor1": {
           "displayName": "Color 1 (Bad)",
@@ -963,7 +1197,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0182"
         },
         "conditionalColor2": {
           "displayName": "Color 2 (Warning)",
@@ -973,7 +1208,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0183"
         },
         "conditionalColor3": {
           "displayName": "Color 3 (Good)",
@@ -983,9 +1219,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0184"
         }
-      }
+      },
+      "displayNameKey": "TreemapProCapabilities_DisplayName_0175"
     },
     "accessibilityFormatting": {
       "displayName": "Accessibility",
@@ -994,9 +1232,11 @@
           "displayName": "Enable Keyboard Navigation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0186"
         }
-      }
+      },
+      "displayNameKey": "TreemapProCapabilities_DisplayName_0185"
     },
     "numberFormatting": {
       "displayName": "Number Format",
@@ -1007,46 +1247,56 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0189"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0190"
               },
               {
                 "value": "thousands",
-                "displayName": "Thousands (K)"
+                "displayName": "Thousands (K)",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0191"
               },
               {
                 "value": "millions",
-                "displayName": "Millions (M)"
+                "displayName": "Millions (M)",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0192"
               },
               {
                 "value": "billions",
-                "displayName": "Billions (B)"
+                "displayName": "Billions (B)",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0193"
               }
             ]
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0188"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0194"
         },
         "valuePrefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0195"
         },
         "valueSuffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0196"
         }
-      }
+      },
+      "displayNameKey": "TreemapProCapabilities_DisplayName_0187"
     },
     "colorThemeFormatting": {
       "properties": {
@@ -1056,37 +1306,46 @@
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0199"
               },
               {
                 "value": "ocean",
-                "displayName": "Ocean"
+                "displayName": "Ocean",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0200"
               },
               {
                 "value": "sunset",
-                "displayName": "Sunset"
+                "displayName": "Sunset",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0201"
               },
               {
                 "value": "forest",
-                "displayName": "Forest"
+                "displayName": "Forest",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0202"
               },
               {
                 "value": "berry",
-                "displayName": "Berry"
+                "displayName": "Berry",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0203"
               },
               {
                 "value": "monochrome",
-                "displayName": "Monochrome"
+                "displayName": "Monochrome",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0204"
               },
               {
                 "value": "earth",
-                "displayName": "Earth"
+                "displayName": "Earth",
+                "displayNameKey": "TreemapProCapabilities_DisplayName_0205"
               }
             ]
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0198"
         }
       },
-      "displayName": "Color Theme"
+      "displayName": "Color Theme",
+      "displayNameKey": "TreemapProCapabilities_DisplayName_0197"
     },
     "dateFilterFormatting": {
       "displayName": "Date Filter",
@@ -1095,32 +1354,46 @@
           "displayName": "Enable Date Filter",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0207"
         },
         "startDate": {
           "displayName": "Start Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0208"
         },
         "endAtCurrentDate": {
           "displayName": "End at Current Date",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0209"
         },
         "endDate": {
           "displayName": "End Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "TreemapProCapabilities_DisplayName_0210"
         }
-      }
+      },
+      "displayNameKey": "TreemapProCapabilities_DisplayName_0206"
     }
   },
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
   "supportsKeyboardFocus": true,
   "supportsHighlight": true,
   "supportsMultiVisualSelection": true,
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
   "privileges": [],
   "suppressDefaultTitle": true
 }

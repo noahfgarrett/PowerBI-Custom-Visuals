@@ -7,7 +7,7 @@
   overflow: hidden;
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   box-sizing: border-box;
-  padding: 8px;
+  padding: 0;
   position: relative;
   flex-direction: column;
 }
@@ -16,7 +16,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
   height: 100%;
+  box-sizing: border-box;
+  padding: 16px;
+  text-align: center;
 }
 
 .treemap-svg {
@@ -41,3 +45,8 @@
   pointer-events: none;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .treemap-cell {
+    transition: none;
+  }
+}

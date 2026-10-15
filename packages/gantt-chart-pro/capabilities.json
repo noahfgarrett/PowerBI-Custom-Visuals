@@ -4,43 +4,57 @@
       "displayName": "Task Name",
       "name": "taskName",
       "kind": "Grouping",
-      "description": "Task name"
+      "description": "Task name",
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0001",
+      "descriptionKey": "GanttChartProCapabilities_Description_0001"
     },
     {
       "displayName": "Start Date",
       "name": "startDate",
       "kind": "Grouping",
-      "description": "Task start date"
+      "description": "Task start date",
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0002",
+      "descriptionKey": "GanttChartProCapabilities_Description_0002"
     },
     {
       "displayName": "End Date",
       "name": "endDate",
       "kind": "Grouping",
-      "description": "Task end date"
+      "description": "Task end date",
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0003",
+      "descriptionKey": "GanttChartProCapabilities_Description_0003"
     },
     {
       "displayName": "Progress (%)",
       "name": "progress",
       "kind": "Measure",
-      "description": "Task completion percentage (0-100)"
+      "description": "Task completion percentage (0-100)",
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0004",
+      "descriptionKey": "GanttChartProCapabilities_Description_0004"
     },
     {
       "displayName": "Category",
       "name": "category",
       "kind": "Grouping",
-      "description": "Optional category for color grouping"
+      "description": "Optional category for color grouping",
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0005",
+      "descriptionKey": "GanttChartProCapabilities_Description_0005"
     },
     {
       "displayName": "Dependency (Predecessor ID)",
       "name": "dependency",
       "kind": "Grouping",
-      "description": "ID of the predecessor task (finish-to-start)"
+      "description": "ID of the predecessor task (finish-to-start)",
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0006",
+      "descriptionKey": "GanttChartProCapabilities_Description_0006"
     },
     {
       "displayName": "Parent Task",
       "name": "parentTask",
       "kind": "Grouping",
-      "description": "Name of the parent task for hierarchy grouping"
+      "description": "Name of the parent task for hierarchy grouping",
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0007",
+      "descriptionKey": "GanttChartProCapabilities_Description_0007"
     }
   ],
   "dataViewMappings": [
@@ -126,43 +140,50 @@
           "displayName": "Bar Height",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0009"
         },
         "barOpacity": {
           "displayName": "Bar Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0010"
         },
         "barCornerRadius": {
           "displayName": "Bar Corner Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0011"
         },
         "rowGap": {
           "displayName": "Row Gap",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0012"
         },
         "labelWidth": {
           "displayName": "Label Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0013"
         },
         "showLabels": {
           "displayName": "Show Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0014"
         },
         "showProgress": {
           "displayName": "Show Progress",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0015"
         },
         "taskBorderColor": {
           "displayName": "Task Border Color",
@@ -172,19 +193,22 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0016"
         },
         "taskBorderWidth": {
           "displayName": "Task Border Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0017"
         },
         "labelFontSize": {
           "displayName": "Label Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0018"
         },
         "labelFontColor": {
           "displayName": "Label Font Color",
@@ -194,7 +218,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0019"
         },
         "labelFontFamily": {
           "displayName": "Label Font Family",
@@ -202,34 +227,42 @@
             "enumeration": [
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0021"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0022"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0023"
               },
               {
                 "value": "Helvetica",
-                "displayName": "Helvetica"
+                "displayName": "Helvetica",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0024"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0025"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0026"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0027"
               }
             ]
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0020"
         },
         "labelFontWeight": {
           "displayName": "Label Font Weight",
@@ -237,20 +270,25 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0029"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0030"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0031"
               }
             ]
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0028"
         }
-      }
+      },
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0008"
     },
     "colorSettings": {
       "displayName": "Colors",
@@ -263,7 +301,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0033"
         },
         "progressColor": {
           "displayName": "Progress Color",
@@ -273,9 +312,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0034"
         }
-      }
+      },
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0032"
     },
     "animationSettings": {
       "displayName": "Animation",
@@ -284,15 +325,18 @@
           "displayName": "Enable Animations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0036"
         },
         "duration": {
           "displayName": "Duration (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0037"
         }
-      }
+      },
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0035"
     },
     "legendFormatting": {
       "displayName": "Legend",
@@ -301,7 +345,8 @@
           "displayName": "Show Legend",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0039"
         },
         "legendPosition": {
           "displayName": "Position",
@@ -309,28 +354,34 @@
             "enumeration": [
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0041"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0042"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0043"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0044"
               }
             ]
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0040"
         },
         "legendFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0045"
         },
         "legendFontColor": {
           "displayName": "Font Color",
@@ -340,7 +391,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0046"
         },
         "legendFontFamily": {
           "displayName": "Font",
@@ -348,54 +400,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0048"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0049"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0050"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0051"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0052"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0053"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0054"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0055"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0056"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0057"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0058"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0059"
               }
             ]
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0047"
         },
         "legendFontWeight": {
           "displayName": "Font Weight",
@@ -403,22 +468,27 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0061"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0062"
               }
             ]
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0060"
         },
         "legendAliases": {
           "displayName": "Rename Labels",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0063"
         }
-      }
+      },
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0038"
     },
     "dataLabelFormatting": {
       "displayName": "Data Labels",
@@ -427,13 +497,15 @@
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0065"
         },
         "dataLabelFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0066"
         },
         "dataLabelFontColor": {
           "displayName": "Font Color",
@@ -443,7 +515,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0067"
         },
         "dataLabelFontWeight": {
           "displayName": "Font Weight",
@@ -451,14 +524,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0069"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0070"
               }
             ]
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0068"
         },
         "dataLabelFontFamily": {
           "displayName": "Font",
@@ -466,54 +542,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0072"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0073"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0074"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0075"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0076"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0077"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0078"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0079"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0080"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0081"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0082"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0083"
               }
             ]
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0071"
         },
         "dataLabelPosition": {
           "displayName": "Position",
@@ -521,28 +610,35 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0085"
               },
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0086"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0087"
               },
               {
                 "value": "inside",
-                "displayName": "Inside"
+                "displayName": "Inside",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0088"
               },
               {
                 "value": "outside",
-                "displayName": "Outside"
+                "displayName": "Outside",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0089"
               }
             ]
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0084"
         }
-      }
+      },
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0064"
     },
     "titleFormatting": {
       "displayName": "Chart Title",
@@ -551,19 +647,22 @@
           "displayName": "Show Title",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0091"
         },
         "titleText": {
           "displayName": "Title Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0092"
         },
         "titleFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0093"
         },
         "titleFontColor": {
           "displayName": "Font Color",
@@ -573,7 +672,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0094"
         },
         "titleAlignment": {
           "displayName": "Alignment",
@@ -581,18 +681,22 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0096"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0097"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0098"
               }
             ]
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0095"
         },
         "titleFontFamily": {
           "displayName": "Font",
@@ -600,66 +704,81 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0100"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0101"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0102"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0103"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0104"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0105"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0106"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0107"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0108"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0109"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0110"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0111"
               }
             ]
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0099"
         },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0112"
         },
         "subtitleFontSize": {
           "displayName": "Subtitle Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0113"
         },
         "subtitleFontColor": {
           "displayName": "Subtitle Color",
@@ -669,7 +788,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0114"
         },
         "titleFontWeight": {
           "displayName": "Font Weight",
@@ -677,14 +797,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0116"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0117"
               }
             ]
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0115"
         },
         "subtitleFontFamily": {
           "displayName": "Subtitle Font",
@@ -692,54 +815,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0119"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0120"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0121"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0122"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0123"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0124"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0125"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0126"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0127"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0128"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0129"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0130"
               }
             ]
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0118"
         },
         "subtitleFontWeight": {
           "displayName": "Subtitle Font Weight",
@@ -747,16 +883,20 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0132"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0133"
               }
             ]
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0131"
         }
-      }
+      },
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0090"
     },
     "axisFormatting": {
       "displayName": "Axis Formatting",
@@ -769,13 +909,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0135"
         },
         "axisLabelSize": {
           "displayName": "Label Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0136"
         },
         "axisLineColor": {
           "displayName": "Axis Line Color",
@@ -785,19 +927,22 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0137"
         },
         "axisLineWidth": {
           "displayName": "Axis Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0138"
         },
         "showGridLines": {
           "displayName": "Show Grid Lines",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0139"
         },
         "gridLineColor": {
           "displayName": "Grid Line Color",
@@ -807,7 +952,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0140"
         },
         "gridLineStyle": {
           "displayName": "Grid Line Style",
@@ -815,38 +961,45 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0142"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0143"
               }
             ]
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0141"
         },
         "showXAxis": {
           "displayName": "Show X-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0144"
         },
         "showYAxis": {
           "displayName": "Show Y-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0145"
         },
         "xAxisTitle": {
           "displayName": "X-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0146"
         },
         "yAxisTitle": {
           "displayName": "Y-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0147"
         },
         "axisLabelFontFamily": {
           "displayName": "Label Font",
@@ -854,84 +1007,102 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0149"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0150"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0151"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0152"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0153"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0154"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0155"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0156"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0157"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0158"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0159"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0160"
               }
             ]
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0148"
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (\u00b0)",
+          "displayName": "X-Label Rotation (°)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0161"
         },
         "yAxisMin": {
           "displayName": "Y-Axis Min",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0162"
         },
         "yAxisMax": {
           "displayName": "Y-Axis Max",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0163"
         },
         "gridLineWidth": {
           "displayName": "Grid Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0164"
         },
         "gridLineOpacity": {
           "displayName": "Grid Line Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0165"
         },
         "axisLabelFontWeight": {
           "displayName": "Label Font Weight",
@@ -939,16 +1110,27 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0167"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0168"
               }
             ]
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0166"
+        },
+        "integerTicks": {
+          "displayName": "Integer Ticks Only",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0169"
         }
-      }
+      },
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0134"
     },
     "dependencySettings": {
       "displayName": "Dependencies",
@@ -957,7 +1139,8 @@
           "displayName": "Show Dependencies",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0171"
         },
         "lineColor": {
           "displayName": "Arrow Color",
@@ -967,19 +1150,22 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0172"
         },
         "lineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0173"
         },
         "arrowSize": {
           "displayName": "Arrow Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0174"
         },
         "lineStyle": {
           "displayName": "Line Style",
@@ -987,16 +1173,20 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0176"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0177"
               }
             ]
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0175"
         }
-      }
+      },
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0170"
     },
     "hierarchyGroupingSettings": {
       "displayName": "Hierarchy & Grouping",
@@ -1005,33 +1195,150 @@
           "displayName": "Enable Grouping",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0179"
         },
         "collapsibleGroups": {
           "displayName": "Collapsible Groups",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0180"
         },
         "indentWidth": {
           "displayName": "Indent Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0181"
         },
         "showToggle": {
           "displayName": "Show Toggle",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0182"
         },
         "collapseByDefault": {
           "displayName": "Collapse By Default",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0183"
         }
-      }
+      },
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0178"
+    },
+    "drillDownSettings": {
+      "displayName": "Drill-Down",
+      "properties": {
+        "enabled": {
+          "displayName": "Enable Drill-Down",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0185"
+        },
+        "showBreadcrumb": {
+          "displayName": "Show Breadcrumb",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0186"
+        },
+        "breadcrumbFontSize": {
+          "displayName": "Breadcrumb Font Size",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0187"
+        },
+        "breadcrumbColor": {
+          "displayName": "Breadcrumb Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0188"
+        },
+        "breadcrumbFontFamily": {
+          "displayName": "Breadcrumb Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0190"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0191"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0192"
+              },
+              {
+                "value": "Helvetica",
+                "displayName": "Helvetica",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0193"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0194"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0195"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0196"
+              }
+            ]
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0189"
+        },
+        "breadcrumbFontWeight": {
+          "displayName": "Breadcrumb Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0198"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0199"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0200"
+              }
+            ]
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0197"
+        },
+        "breadcrumbPadding": {
+          "displayName": "Breadcrumb Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0201"
+        }
+      },
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0184"
     },
     "cardSettings": {
       "displayName": "Card Style",
@@ -1044,19 +1351,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0203"
         },
         "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0204"
         },
         "borderRadius": {
           "displayName": "Border Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0205"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_ContentPadding"
         },
         "cardStyleMode": {
           "displayName": "Card Style",
@@ -1064,30 +1381,47 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0001"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0002"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0003"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0004"
+              },
+              {
+                "value": "outlined",
+                "displayName": "Border Only",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0005"
+              },
+              {
+                "value": "floating",
+                "displayName": "Floating Shadow",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0006"
               }
             ]
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0206"
         },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "(Deprecated) Enable Glass"
+          "displayName": "(Deprecated) Enable Glass",
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0211"
         }
-      }
+      },
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0202"
     },
     "ganttMilestoneSettings": {
       "displayName": "Milestones",
@@ -1096,7 +1430,8 @@
           "displayName": "Show Milestones",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0213"
         },
         "shape": {
           "displayName": "Milestone Shape",
@@ -1104,18 +1439,22 @@
             "enumeration": [
               {
                 "value": "diamond",
-                "displayName": "Diamond"
+                "displayName": "Diamond",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0215"
               },
               {
                 "value": "circle",
-                "displayName": "Circle"
+                "displayName": "Circle",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0216"
               },
               {
                 "value": "triangle",
-                "displayName": "Triangle"
+                "displayName": "Triangle",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0217"
               }
             ]
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0214"
         },
         "color": {
           "displayName": "Milestone Color",
@@ -1125,63 +1464,73 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0218"
         }
-      }
+      },
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0212"
     },
     "ganttCriticalPathSettings": {
-      "displayName": "Critical Path",
+      "displayName": "Dependent Tasks",
       "properties": {
         "show": {
-          "displayName": "Show Critical Path",
+          "displayName": "Highlight Dependent Tasks",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0220"
         },
         "color": {
-          "displayName": "Critical Path Color",
+          "displayName": "Highlight Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0221"
         },
         "lineWidth": {
-          "displayName": "Line Width",
+          "displayName": "Outline Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0222"
         }
-      }
+      },
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0219"
     },
     "ganttBaselineSettings": {
-      "displayName": "Baseline",
+      "displayName": "Task Shadow",
       "properties": {
         "show": {
-          "displayName": "Show Baseline",
+          "displayName": "Show Task Shadow",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0224"
         },
         "color": {
-          "displayName": "Baseline Color",
+          "displayName": "Shadow Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0225"
         },
         "opacity": {
-          "displayName": "Baseline Opacity (%)",
+          "displayName": "Shadow Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0226"
         }
-      }
+      },
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0223"
     },
     "ganttTodaySettings": {
       "displayName": "Today Marker",
@@ -1190,7 +1539,8 @@
           "displayName": "Show Today Line",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0228"
         },
         "lineColor": {
           "displayName": "Today Line Color",
@@ -1200,13 +1550,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0229"
         },
         "todayLineWidth": {
           "displayName": "Today Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0230"
         },
         "todayLineStyle": {
           "displayName": "Today Line Style",
@@ -1214,16 +1566,20 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0232"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0233"
               }
             ]
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0231"
         }
-      }
+      },
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0227"
     },
     "conditionalFormatting": {
       "displayName": "Conditional Formatting",
@@ -1232,7 +1588,8 @@
           "displayName": "Enable Conditional Formatting",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0235"
         },
         "conditionalDirection": {
           "displayName": "Direction",
@@ -1240,26 +1597,31 @@
             "enumeration": [
               {
                 "value": "ascending",
-                "displayName": "Ascending (Low = Bad)"
+                "displayName": "Ascending (Low = Bad)",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0237"
               },
               {
                 "value": "descending",
-                "displayName": "Descending (Low = Good)"
+                "displayName": "Descending (Low = Good)",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0238"
               }
             ]
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0236"
         },
         "threshold1": {
           "displayName": "Threshold 1",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0239"
         },
         "threshold2": {
           "displayName": "Threshold 2",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0240"
         },
         "conditionalColor1": {
           "displayName": "Color 1 (Bad)",
@@ -1269,7 +1631,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0241"
         },
         "conditionalColor2": {
           "displayName": "Color 2 (Warning)",
@@ -1279,7 +1642,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0242"
         },
         "conditionalColor3": {
           "displayName": "Color 3 (Good)",
@@ -1289,9 +1653,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0243"
         }
-      }
+      },
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0234"
     },
     "accessibilityFormatting": {
       "displayName": "Accessibility",
@@ -1300,9 +1666,11 @@
           "displayName": "Enable Keyboard Navigation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0245"
         }
-      }
+      },
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0244"
     },
     "colorThemeFormatting": {
       "properties": {
@@ -1312,37 +1680,46 @@
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0248"
               },
               {
                 "value": "ocean",
-                "displayName": "Ocean"
+                "displayName": "Ocean",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0249"
               },
               {
                 "value": "sunset",
-                "displayName": "Sunset"
+                "displayName": "Sunset",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0250"
               },
               {
                 "value": "forest",
-                "displayName": "Forest"
+                "displayName": "Forest",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0251"
               },
               {
                 "value": "berry",
-                "displayName": "Berry"
+                "displayName": "Berry",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0252"
               },
               {
                 "value": "monochrome",
-                "displayName": "Monochrome"
+                "displayName": "Monochrome",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0253"
               },
               {
                 "value": "earth",
-                "displayName": "Earth"
+                "displayName": "Earth",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0254"
               }
             ]
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0247"
         }
       },
-      "displayName": "Color Theme"
+      "displayName": "Color Theme",
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0246"
     },
     "dateFilterFormatting": {
       "displayName": "Date Filter",
@@ -1351,27 +1728,32 @@
           "displayName": "Enable Date Filter",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0256"
         },
         "startDate": {
           "displayName": "Start Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0257"
         },
         "endAtCurrentDate": {
           "displayName": "End at Current Date",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0258"
         },
         "endDate": {
           "displayName": "End Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0259"
         }
-      }
+      },
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0255"
     },
     "numberFormatting": {
       "displayName": "Number Format",
@@ -1382,51 +1764,118 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0262"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0263"
               },
               {
                 "value": "thousands",
-                "displayName": "Thousands (K)"
+                "displayName": "Thousands (K)",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0264"
               },
               {
                 "value": "millions",
-                "displayName": "Millions (M)"
+                "displayName": "Millions (M)",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0265"
               },
               {
                 "value": "billions",
-                "displayName": "Billions (B)"
+                "displayName": "Billions (B)",
+                "displayNameKey": "GanttChartProCapabilities_DisplayName_0266"
               }
             ]
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0261"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0267"
         },
         "valuePrefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0268"
         },
         "valueSuffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0269"
+        }
+      },
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_0260"
+    },
+    "ganttSettings": {
+      "displayName": "Gantt Appearance (Legacy)",
+      "displayNameKey": "GanttChartProCapabilities_DisplayName_LegacyGantt",
+      "properties": {
+        "barOpacity": {
+          "displayName": "Bar Opacity (%)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0270"
+        },
+        "barCornerRadius": {
+          "displayName": "Bar Corner Radius",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0271"
+        },
+        "rowGap": {
+          "displayName": "Row Gap",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0272"
+        },
+        "labelWidth": {
+          "displayName": "Label Width",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0273"
+        },
+        "todayLineWidth": {
+          "displayName": "Today Line Width",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0274"
+        },
+        "todayLineStyle": {
+          "displayName": "Today Line Style",
+          "type": {
+            "enumeration": []
+          },
+          "displayNameKey": "GanttChartProCapabilities_DisplayName_0275"
         }
       }
     }
   },
   "supportsKeyboardFocus": true,
   "supportsHighlight": true,
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
   "supportsMultiVisualSelection": true,
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
   "privileges": [],
   "suppressDefaultTitle": true
 }

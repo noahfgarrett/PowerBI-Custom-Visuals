@@ -1,6 +1,6 @@
 {
   "name": "@pbi/gauge-cluster",
-  "version": "1.0.0",
+  "version": "1.0.14",
   "private": true,
   "scripts": {
     "build": "pbiviz package",

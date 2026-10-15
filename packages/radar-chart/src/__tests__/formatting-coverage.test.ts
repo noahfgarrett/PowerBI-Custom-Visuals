@@ -44,6 +44,7 @@ vi.mock('powerbi-visuals-utils-formattingmodel', () => {
 
 import { RadarChartVisual } from '../visual';
 import { RadarChartSettings } from '../settings';
+import capabilities from '../../capabilities.json';
 import {
   createConstructorOptions,
   DataViewBuilder,
@@ -113,6 +114,7 @@ const harnessConfig: HarnessConfig = {
     'radarBenchmarkSettings.dashPattern',
     'radarBenchmarkSettings.color',
     'radarInteractionSettings.hoverDim',
+    'radarSettings.axisLabelCollisionHandling',
     'axisFormatting.showXAxis',
     'axisFormatting.showYAxis',
     'axisFormatting.xAxisTitle',
@@ -133,6 +135,17 @@ const harnessConfig: HarnessConfig = {
 };
 
 describe('radar-chart formatting coverage', () => {
+  it('declares every formatting slice in capabilities', () => {
+    const paths = getSettingPaths(
+      new RadarChartSettings() as unknown as { cards: Array<Record<string, unknown>> },
+      [],
+    );
+    const objects = capabilities.objects as Record<string, { properties?: Record<string, unknown> }>;
+    expect(paths.filter(({ cardName, sliceName }) => {
+      return !objects[cardName]?.properties?.[sliceName];
+    })).toEqual([]);
+  });
+
   it('detects settings from the model', () => {
     const settings = new RadarChartSettings();
     const paths = getSettingPaths(

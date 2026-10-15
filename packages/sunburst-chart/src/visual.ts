@@ -30,11 +30,26 @@ import {
   resolveConditionalColor,
   resolveDropdown,
   applyChartAria,
+  applyDataPointAria,
   attachKeyboardNav,
   ensureFocusRingStyles,
+  attachEmptySpaceContextMenu,
+  syncCardStyleVisibility,
+  syncDateFilterFormattingVisibility,
+  syncLegendFormattingVisibility,
+  syncTitleFormattingVisibility,
   getDateFilterIndices,
   isDateColumn,
   type DateFilterConfig,
+  getLocalizedString,
+  getVisualEmptyStateMode,
+  allowInteractions,
+  getHostHighContrastColors,
+  applyBasicHighContrastStyles,
+  notifyRenderingStarted,
+  notifyRenderingFinished,
+  notifyRenderingFailed,
+  truncateText,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -96,6 +111,9 @@ export class SunburstChartVisual implements IVisual {
 
   /** Whether the current render is a drill transition (animate arcs from previous state). */
   private isDrillTransition = false;
+  private emptyStateMode: 'unconfigured' | 'noData' = 'unconfigured';
+  private interactionsEnabled = true;
+  private keyboardNavCleanup: (() => void) | null = null;
 
   /** Saved arc positions from before a drill, keyed by node name path. */
   private previousArcs: Map<string, { startAngle: number; endAngle: number; innerRadius: number; outerRadius: number }> = new Map();
@@ -105,21 +123,42 @@ export class SunburstChartVisual implements IVisual {
     this.selectionManager = options.host.createSelectionManager();
     this.container = options.element;
     this.settings = new SunburstChartSettings();
-    this.formattingSettingsService = new FormattingSettingsService();
+    this.formattingSettingsService = new FormattingSettingsService(options.host.createLocalizationManager());
     this.container.classList.add('sunburst-container');
+    attachEmptySpaceContextMenu(this.container, this.selectionManager, () =>
+      this.host.createSelectionIdBuilder().createSelectionId(),
+      () => this.interactionsEnabled,
+    );
   }
 
   public update(options: VisualUpdateOptions): void {
+    notifyRenderingStarted(this.host, options);
+    try {
+      this.updateVisual(options);
+      notifyRenderingFinished(this.host, options);
+    } catch (error) {
+      notifyRenderingFailed(
+        this.host,
+        options,
+        error instanceof Error ? error.message : String(error),
+      );
+      throw error;
+    }
+  }
+
+  private updateVisual(options: VisualUpdateOptions): void {
     // Cancel any running animations from previous render
     this.cancelAnimations.forEach((cancel) => cancel());
     this.cancelAnimations = [];
+    this.interactionsEnabled = allowInteractions(this.host);
 
-    // Reset zoom and drill on new data
+    // Host updates also include formatting and resize passes. Preserve the
+    // name-based drill path and validate it against the current hierarchy.
     this.zoomedNode = null;
-    this.drillPath = [];
 
     // Parse settings from dataView
     const dataView = options.dataViews?.[0];
+    this.emptyStateMode = getVisualEmptyStateMode(dataView);
     if (dataView) {
       this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
         SunburstChartSettings,
@@ -131,19 +170,23 @@ export class SunburstChartVisual implements IVisual {
     const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
     if (legacyCardObj) {
       const legacyGlass = legacyCardObj['enableGlass'];
-      if (legacyGlass === false) {
+      if (legacyGlass === false && legacyCardObj['cardStyleMode'] == null) {
         this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
       }
     }
+    syncTitleFormattingVisibility(this.settings.titleFormattingCard);
+    syncLegendFormattingVisibility(this.settings.legendFormattingCard);
+    this.settings.legendFormattingCard.showInlineLabels.visible = false;
+    this.settings.legendFormattingCard.inlineLabelFontSize.visible = false;
+    this.settings.legendFormattingCard.inlineLabelOffset.visible = false;
 
     // Conditional visibility: center content sub-settings hidden when show is off
     const ccShow = this.settings.centerContentSettings.show.value;
     const ccMode = resolveDropdown(this.settings.centerContentSettings.displayMode) ?? 'total';
 
-    // Date filter: hide start/end when disabled
-    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
+    syncDateFilterFormattingVisibility(this.settings.dateFilterFormattingCard);
+    const level1Column = dataView?.categorical?.categories?.find((column) => column.source.roles?.['level1']);
+    this.settings.dateFilterFormattingCard.visible = Boolean(level1Column && isDateColumn(level1Column.source));
     this.settings.centerContentSettings.displayMode.visible = ccShow;
     this.settings.centerContentSettings.customText.visible = ccShow && ccMode === 'custom';
     this.settings.centerContentSettings.fontSize.visible = ccShow;
@@ -153,29 +196,33 @@ export class SunburstChartVisual implements IVisual {
     this.settings.centerContentSettings.showLabel.visible = ccShow && ccMode !== 'custom';
     this.settings.centerContentSettings.labelFontSize.visible = ccShow && ccMode !== 'custom' && this.settings.centerContentSettings.showLabel.value;
 
-    // Card Style — hide sub-settings when mode is 'none'
-    const cardStyleMode = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
-    this.settings.cardSettings.backgroundOpacity.visible = cardStyleMode !== 'none';
-    this.settings.cardSettings.backgroundColor.visible = cardStyleMode !== 'none';
+    syncCardStyleVisibility(this.settings.cardSettings);
 
-    // Hide percentOf when showPercentages is off
-    this.settings.labelsAndPercentagesSettings.percentOf.visible = this.settings.labelsAndPercentagesSettings.showPercentages.value;
+    const showLabels = this.settings.labelsAndPercentagesSettings.showLabels.value;
+    this.settings.labelsAndPercentagesSettings.labelMinAngle.visible = showLabels;
+    this.settings.labelsAndPercentagesSettings.showPercentages.visible = showLabels;
+    this.settings.labelsAndPercentagesSettings.percentOf.visible = showLabels
+      && this.settings.labelsAndPercentagesSettings.showPercentages.value;
 
     // Hide drill breadcrumb sub-settings when drill is off
     const drillOn = this.settings.drillDownSettings.enabled.value;
     this.settings.drillDownSettings.showBreadcrumb.visible = drillOn;
     this.settings.drillDownSettings.breadcrumbFontSize.visible = drillOn && this.settings.drillDownSettings.showBreadcrumb.value;
     this.settings.drillDownSettings.breadcrumbColor.visible = drillOn && this.settings.drillDownSettings.showBreadcrumb.value;
+    this.settings.drillDownSettings.breadcrumbFontFamily.visible = drillOn && this.settings.drillDownSettings.showBreadcrumb.value;
+    this.settings.drillDownSettings.breadcrumbFontWeight.visible = drillOn && this.settings.drillDownSettings.showBreadcrumb.value;
+    this.settings.drillDownSettings.breadcrumbPadding.visible = drillOn && this.settings.drillDownSettings.showBreadcrumb.value;
 
     // Hide animation duration when animations are disabled
     this.settings.animationSettings.duration.visible = this.settings.animationSettings.enabled.value;
 
-    // Hide shared showDataLabels — local sunburstSettings.showLabels is the functional toggle
+    // The local Show Labels switch is authoritative; this card only controls typography.
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
-    // Hide data label position — position is determined by chart geometry
     this.settings.dataLabelFormattingCard.dataLabelPosition.visible = false;
-    // Hide label sub-settings when showLabels is off
-    this.settings.labelsAndPercentagesSettings.labelMinAngle.visible = this.settings.labelsAndPercentagesSettings.showLabels.value;
+    this.settings.dataLabelFormattingCard.dataLabelFontSize.visible = showLabels;
+    this.settings.dataLabelFormattingCard.dataLabelFontColor.visible = showLabels;
+    this.settings.dataLabelFormattingCard.dataLabelFontFamily.visible = showLabels;
+    this.settings.dataLabelFormattingCard.dataLabelFontWeight.visible = showLabels;
 
     // Extract hierarchical data
     const useChartPalette = this.settings.sunburstSettings.useChartPalette.value;
@@ -338,6 +385,8 @@ export class SunburstChartVisual implements IVisual {
     viewport: powerbi.IViewport,
     entrance: boolean
   ): void {
+    this.keyboardNavCleanup?.();
+    this.keyboardNavCleanup = null;
     const themeName = resolveColorTheme(this.settings.colorThemeFormattingCard);
     this.hideTooltip();
 
@@ -350,11 +399,14 @@ export class SunburstChartVisual implements IVisual {
 
     const s = this.settings;
     const drillEnabled = s.drillDownSettings.enabled.value;
+    const focusedRootData = this.getCrossHighlightMode() === 'focus' && this.currentHasHighlights
+      ? (this.focusHighlightedTree(rootData) ?? rootData)
+      : rootData;
 
     // Resolve drill path to a sub-tree
-    let effectiveRoot = rootData;
+    let effectiveRoot = focusedRootData;
     if (drillEnabled && this.drillPath.length > 0) {
-      let current = rootData;
+      let current = focusedRootData;
       let pathValid = true;
       for (const segment of this.drillPath) {
         const found = current.children.find((c) => c.name === segment);
@@ -365,7 +417,7 @@ export class SunburstChartVisual implements IVisual {
           break;
         }
       }
-      if (pathValid && current !== rootData) {
+      if (pathValid && current !== focusedRootData) {
         // Create a virtual root wrapping the drilled-into node's children
         effectiveRoot = {
           name: current.name,
@@ -382,7 +434,7 @@ export class SunburstChartVisual implements IVisual {
 
     // Render breadcrumb
     if (drillEnabled && this.drillPath.length > 0 && s.drillDownSettings.showBreadcrumb.value) {
-      this.renderBreadcrumb(rootData);
+      this.renderBreadcrumb(focusedRootData);
     }
 
     // Apply card style
@@ -393,10 +445,6 @@ export class SunburstChartVisual implements IVisual {
       backgroundColor: s.cardSettings.backgroundColor.value?.value,
       borderRadius: s.cardSettings.borderRadius.value,
     });
-    if (cardMode === 'none') {
-      this.container.style.borderRadius = `${s.cardSettings.borderRadius.value}px`;
-    }
-
     // Legend config
     const showLegend = s.legendFormattingCard.showLegend.value;
     const legendPosRaw = s.legendFormattingCard.legendPosition.value;
@@ -416,9 +464,12 @@ export class SunburstChartVisual implements IVisual {
     if (effectiveRoot.children.length === 0) {
       const emptyEl = document.createElement('div');
       emptyEl.className = 'sunburst-empty';
-      emptyEl.textContent = 'Add hierarchy levels and a measure';
+      emptyEl.textContent = this.emptyStateMode === 'noData'
+        ? getLocalizedString(this.host, 'SunburstChart_NoDataState', 'No data for the current selection.')
+        : getLocalizedString(this.host, 'SunburstChart_EmptyState', 'Add hierarchy levels and a measure');
       this.container.appendChild(emptyEl);
       this.isDrillTransition = false;
+      this.applyHighContrast();
       return;
     }
 
@@ -428,8 +479,9 @@ export class SunburstChartVisual implements IVisual {
     const size = Math.min(width, height);
     const cx = width / 2;
     const cy = height / 2;
-    const padding = 24;
+    const padding = Math.max(0, this.settings.sunburstDisplaySettings.chartPadding.value + this.settings.cardSettings.contentPadding.value);
     const radius = (size / 2) - padding;
+    if (radius <= 0) return;
 
     // ── D3 Hierarchy + Partition ────────────────────────────────
     // Sort order from display settings
@@ -465,9 +517,10 @@ export class SunburstChartVisual implements IVisual {
     if ((partitionedRoot.value ?? 0) <= 0) {
       const emptyEl = document.createElement('div');
       emptyEl.className = 'sunburst-empty';
-      emptyEl.textContent = 'All measure values are zero or negative — sunburst requires positive values.';
+      emptyEl.textContent = getLocalizedString(this.host, 'SunburstChart_NonPositiveEmptyState', 'All measure values are zero or negative — sunburst requires positive values.');
       this.container.appendChild(emptyEl);
       this.isDrillTransition = false;
+      this.applyHighContrast();
       return;
     }
 
@@ -510,9 +563,9 @@ export class SunburstChartVisual implements IVisual {
 
     const descendants = partitionedRoot.descendants().filter((d) => d.depth > 0);
 
-    for (const node of descendants) {
-      const startAngle = Math.max(0, Math.min(2 * Math.PI, xScale(node.x0)));
-      const endAngle = Math.max(0, Math.min(2 * Math.PI, xScale(node.x1)));
+    for (const [segmentIndex, node] of descendants.entries()) {
+      const startAngle = xScale(node.x0);
+      const endAngle = xScale(node.x1);
       const innerR = Math.max(0, yScale(node.y0));
       const outerR = Math.max(0, yScale(node.y1));
       const arcAngle = endAngle - startAngle;
@@ -529,12 +582,23 @@ export class SunburstChartVisual implements IVisual {
       const nodeData = node.data;
       const conditionalColor = this.getConditionalColor(node.value ?? 0);
       const segColor = conditionalColor ?? (nodeData.color || getHostChartColor(this.host.colorPalette, 0, themeName));
-      // Slightly lighten deeper rings for visual depth
       const segmentOpacityPct = Math.max(0, Math.min(100, s.sunburstSettings.segmentOpacity.value)) / 100;
-      const opacity = segmentOpacityPct * Math.max(0.6, 1 - (node.depth - 1) * 0.12);
+      const opacity = segmentOpacityPct;
 
-      const segGroup = g.append('g').attr('class', 'sunburst-segment');
-      segGroup.attr('data-highlighted', nodeData.highlighted ? '1' : '0');
+      const segGroup = g.append('g')
+        .attr('class', 'sunburst-segment')
+        .attr('data-highlighted', nodeData.highlighted ? '1' : '0')
+        .attr('data-selection-key', nodeData.selectionId?.getKey() ?? '');
+      const segGroupNode = segGroup.node();
+      if (segGroupNode && s.accessibilityFormattingCard.enableKeyboardNav.value) {
+        applyDataPointAria(
+          segGroupNode,
+          nodeData.name,
+          formatWithSettings(node.value ?? 0, this.settings.numberFormattingCard),
+          segmentIndex,
+          descendants.length,
+        );
+      }
 
       const segPath = segGroup.append('path')
         .attr('fill', segColor)
@@ -612,9 +676,19 @@ export class SunburstChartVisual implements IVisual {
       const segNode = segPath.node();
       if (segNode) {
         segNode.addEventListener('click', (event: MouseEvent) => {
+          if (!this.interactionsEnabled) return;
           event.stopPropagation();
           if ((event.ctrlKey || event.metaKey) && nodeData.selectionId) {
-            void this.selectionManager.select(nodeData.selectionId, true);
+            void this.selectionManager.select(nodeData.selectionId, true)
+              .then(() => this.applyCrossHighlight());
+            return;
+          }
+
+          // Leaf segments behave like normal Power BI data points. Parent
+          // segments retain the chart's zoom/drill affordance.
+          if (nodeData.children.length === 0 && nodeData.selectionId) {
+            void this.selectionManager.select(nodeData.selectionId, false)
+              .then(() => this.applyCrossHighlight());
             return;
           }
 
@@ -647,6 +721,7 @@ export class SunburstChartVisual implements IVisual {
           this.render(rootData, this.lastViewport, false);
         });
         segNode.addEventListener('contextmenu', (event: MouseEvent) => {
+          if (!this.interactionsEnabled) return;
           event.preventDefault();
           event.stopPropagation();
           if (nodeData.selectionId) {
@@ -687,10 +762,7 @@ export class SunburstChartVisual implements IVisual {
         });
       }
 
-      // ── Labels (gated by both sunburst showLabels and shared showDataLabels) ──
-      // Consolidate: local showLabels AND shared DataLabelFormattingCard.showDataLabels must both be true
-      const effectiveShowLabels = s.labelsAndPercentagesSettings.showLabels.value && s.dataLabelFormattingCard.showDataLabels.value;
-      if (effectiveShowLabels && arcAngle >= labelMinAngleRad) {
+      if (s.labelsAndPercentagesSettings.showLabels.value && arcAngle >= labelMinAngleRad) {
         const midAngle = (startAngle + endAngle) / 2;
         const labelRadius = (innerR + outerR) / 2;
         const labelX = labelRadius * Math.sin(midAngle);
@@ -726,7 +798,12 @@ export class SunburstChartVisual implements IVisual {
             .attr('x', labelX)
             .attr('y', labelY)
             .attr('dy', '0.35em');
-          labelEl.text(labelText);
+          const labelFontSize = Math.max(1, s.dataLabelFormattingCard.dataLabelFontSize.value);
+          const visibleLabel = truncateText(labelText, Math.max(8, radialSpace - 8), labelFontSize);
+          labelEl.text(visibleLabel);
+          if (visibleLabel !== labelText) {
+            labelEl.append('title').text(labelText);
+          }
 
           // Rotate label to follow arc
           const angleDeg = (midAngle * 180) / Math.PI;
@@ -860,6 +937,7 @@ export class SunburstChartVisual implements IVisual {
       const centerNode = centerCircle.node();
       if (centerNode) {
         centerNode.addEventListener('click', (event: MouseEvent) => {
+          if (!this.interactionsEnabled) return;
           event.stopPropagation();
           // If drilled, pop one level; otherwise zoom out
           if (drillEnabled && this.drillPath.length > 0) {
@@ -885,9 +963,7 @@ export class SunburstChartVisual implements IVisual {
       }
     }
 
-    // Apply shared data label formatting (font color, size, weight)
-    // Consolidated: local showLabels is ANDed with shared showDataLabels
-    if (s.labelsAndPercentagesSettings.showLabels.value && s.dataLabelFormattingCard.showDataLabels.value) {
+    if (s.labelsAndPercentagesSettings.showLabels.value) {
       applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.sunburst-label');
     }
 
@@ -903,6 +979,7 @@ export class SunburstChartVisual implements IVisual {
 
     // Apply cross-highlight dimming
     this.applyCrossHighlight();
+    this.applyHighContrast();
 
     // Clear drill transition flag after render completes
     this.isDrillTransition = false;
@@ -917,15 +994,48 @@ export class SunburstChartVisual implements IVisual {
   }
 
   private applyCrossHighlight(): void {
-    if (!this.currentHasHighlights) return;
+    const hasSelection = this.selectionManager.hasSelection();
+    const useHighlightDimming = this.currentHasHighlights && this.getCrossHighlightMode() === 'dim';
+    const selectedKeys = new Set(
+      (this.selectionManager.getSelectionIds() as ISelectionId[]).map((id) => id.getKey()),
+    );
 
-    const segments = this.container.querySelectorAll<SVGGElement>('.sunburst-segment[data-highlighted]');
+    const segments = this.container.querySelectorAll<SVGGElement>('.sunburst-segment');
     for (const seg of Array.from(segments)) {
-      const isHighlighted = seg.getAttribute('data-highlighted') === '1';
-      if (!isHighlighted) {
-        seg.style.opacity = '0.3';
-      }
+      const isHighlighted = useHighlightDimming && seg.getAttribute('data-highlighted') === '1';
+      const key = seg.getAttribute('data-selection-key');
+      const isSelected = hasSelection && key !== null && selectedKeys.has(key);
+      seg.style.opacity = (hasSelection || useHighlightDimming)
+        ? ((isSelected || isHighlighted) ? '' : '0.3')
+        : '';
     }
+  }
+
+  private getCrossHighlightMode(): 'focus' | 'dim' {
+    return resolveDropdown(this.settings.interactionSettings.crossHighlightMode) === 'dim' ? 'dim' : 'focus';
+  }
+
+  private focusHighlightedTree(node: SunburstNode): SunburstNode | null {
+    if (node.children.length === 0) {
+      return node.highlighted ? { ...node, children: [] } : null;
+    }
+
+    const focusedChildren = node.children
+      .map((child) => this.focusHighlightedTree(child))
+      .filter((child): child is SunburstNode => child !== null);
+
+    if (focusedChildren.length === 0 && !node.highlighted) {
+      return null;
+    }
+
+    return {
+      ...node,
+      children: focusedChildren,
+      value: focusedChildren.length > 0
+        ? focusedChildren.reduce((sum, child) => sum + child.value, 0)
+        : node.value,
+      highlighted: node.highlighted || focusedChildren.some((child) => child.highlighted),
+    };
   }
 
   // -- Conditional Formatting -------------------------------------------------
@@ -956,12 +1066,13 @@ export class SunburstChartVisual implements IVisual {
       title: this.settings.titleFormattingCard?.titleText?.value || undefined,
       dataPointCount,
     });
-    const cleanup = attachKeyboardNav({
+    this.keyboardNavCleanup = attachKeyboardNav({
       container: this.container,
       itemSelector: '.sunburst-segment',
-      onActivate: (el) => (el as HTMLElement).click?.(),
+      onActivate: (el) => {
+        el.querySelector('path')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      },
     });
-    this.cancelAnimations.push(cleanup);
   }
 
   public getFormattingModel(): powerbi.visuals.FormattingModel {
@@ -969,31 +1080,40 @@ export class SunburstChartVisual implements IVisual {
   }
 
   private handleBackgroundClick = (): void => {
-    void this.selectionManager.clear();
+    if (!this.interactionsEnabled) return;
+    void this.selectionManager.clear().then(() => this.applyCrossHighlight());
   };
 
   private renderBreadcrumb(fullRootData: SunburstNode): void {
     const ds = this.settings.drillDownSettings;
     const fontSize = ds.breadcrumbFontSize.value;
     const color = ds.breadcrumbColor.value?.value || '#64748B';
+    const fontFamily = resolveDropdown(ds.breadcrumbFontFamily);
+    const fontWeight = resolveDropdown(ds.breadcrumbFontWeight) ?? 'normal';
+    const padding = Math.max(0, ds.breadcrumbPadding.value);
 
     const breadcrumb = document.createElement('div');
     breadcrumb.className = 'sunburst-breadcrumb';
     breadcrumb.style.display = 'flex';
     breadcrumb.style.alignItems = 'center';
     breadcrumb.style.gap = '4px';
-    breadcrumb.style.padding = '4px 8px';
+    breadcrumb.style.padding = `${Math.max(2, Math.round(padding / 2))}px ${padding}px`;
     breadcrumb.style.fontSize = `${fontSize}px`;
     breadcrumb.style.color = color;
     breadcrumb.style.flexWrap = 'wrap';
+    breadcrumb.style.fontWeight = fontWeight;
+    if (fontFamily) {
+      breadcrumb.style.fontFamily = fontFamily;
+    }
 
     // "All" root segment
     const allSpan = document.createElement('span');
-    allSpan.textContent = 'All';
+    allSpan.textContent = getLocalizedString(this.host, 'Common_BreadcrumbAll', 'All');
     allSpan.style.cursor = 'pointer';
     allSpan.style.textDecoration = 'underline';
     allSpan.style.color = color;
     allSpan.addEventListener('click', (event: MouseEvent) => {
+      if (!this.interactionsEnabled) return;
       event.stopPropagation();
       this.drillPath = [];
       this.zoomedNode = null;
@@ -1018,6 +1138,7 @@ export class SunburstChartVisual implements IVisual {
         segment.style.textDecoration = 'underline';
         const targetIndex = i;
         segment.addEventListener('click', (event: MouseEvent) => {
+          if (!this.interactionsEnabled) return;
           event.stopPropagation();
           this.drillPath = this.drillPath.slice(0, targetIndex + 1);
           this.zoomedNode = null;
@@ -1071,6 +1192,7 @@ export class SunburstChartVisual implements IVisual {
       fontSize: legendFontSize,
       fontColor: legendFontColor,
       fontFamily: rawLegendFontFamily,
+      fontWeight: resolveDropdown(legendFmtCard.legendFontWeight) || 'normal',
       aliases: legendFmtCard.legendAliases.value,
     });
 
@@ -1117,11 +1239,21 @@ export class SunburstChartVisual implements IVisual {
     this.host.tooltipService.hide({ immediately: true, isTouchEvent: false });
   }
 
-  // Render lifecycle notifications removed — Power BI's eventService.renderingStarted()
-  // requires VisualUpdateOptions with updateId, and calling without args crashes the visual.
+  private applyHighContrast(): void {
+    const colors = getHostHighContrastColors(this.host);
+    applyBasicHighContrastStyles(this.container, colors, {
+      textSelectors: ['svg text', '.chart-title', '.chart-subtitle', '.pbi-shared-legend span', '.sunburst-empty', '.sunburst-breadcrumb'],
+      fillSelectors: ['.sunburst-segment path'],
+    });
+    if (!colors.enabled) return;
+    this.container.style.background = colors.background;
+    this.container.style.boxShadow = 'none';
+  }
 
   public destroy(): void {
     this.container.removeEventListener('click', this.handleBackgroundClick);
+    this.keyboardNavCleanup?.();
+    this.keyboardNavCleanup = null;
     this.hideTooltip();
     this.cancelAnimations.forEach((cancel) => cancel());
     this.cancelAnimations = [];

@@ -20,6 +20,12 @@
   dominant-baseline: central;
 }
 
+.donut-center-caption {
+  text-anchor: middle;
+  dominant-baseline: hanging;
+  opacity: 0.8;
+}
+
 .donut-label {
   text-anchor: middle;
 }
@@ -42,4 +48,13 @@
   justify-content: center;
   height: 100%;
   font-style: italic;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .donut-container *,
+  .donut-container *::before,
+  .donut-container *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

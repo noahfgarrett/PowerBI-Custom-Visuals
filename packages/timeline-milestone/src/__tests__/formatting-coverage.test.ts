@@ -52,11 +52,16 @@ import {
   type HarnessConfig,
 } from '../../../core/src/__test-utils__';
 
-const testDV = new DataViewBuilder().withCategory('Date', ['2024-01-01','2024-06-01','2024-12-01'], 'date').withCategory('Label', ['Start','Mid','End'], 'label').build();
+const testDV = new DataViewBuilder()
+  .withCategory('Date', ['2024-01-01', '2024-06-01', '2024-12-01'], 'date')
+  .withCategory('Label', ['Start', 'Mid', 'End'], 'label')
+  .withCategory('Category', ['North', 'South', 'North'], 'category')
+  .build();
 
 function createVisual() {
   const opts = createConstructorOptions();
   const settings = new TimelineMilestoneSettings();
+  settings.dataLabelFormattingCard.showDataLabels.value = true;
   settingsRef.current = settings;
   const visual = new TimelineMilestoneVisual(opts as never);
   return {
@@ -110,12 +115,13 @@ const harnessConfig: HarnessConfig = {
     'animationSettings.duration',
     'timelineSettings.showDates',
     'timelineSettings.dateFormat',
-    'timelineSettings.labelColor',
+    'timelineSettings.labelDensity',
+    'timelineSettings.maxVisible',
     'markerSettings.colorByCategory',
-    'timelineLayoutSettings.layout',
-    'timelineLayoutSettings.showSwimlanes',
-    'timelineLayoutSettings.durationBarOpacity',
-    'timelineLayoutSettings.durationBarHeight',
+    'timelineSettings.layout',
+    'spineAndConnectorsSettings.labelColor',
+    'spineAndConnectorsSettings.durationBarOpacity',
+    'spineAndConnectorsSettings.durationBarHeight',
     'timelineMarkerSettings.showTodayLine',
     'timelineMarkerSettings.todayLineColor',
     'timelineMarkerSettings.clusterNearby',
@@ -132,6 +138,10 @@ const harnessConfig: HarnessConfig = {
     'axisFormatting.axisLineWidth',
     'axisFormatting.gridLineWidth',
     'axisFormatting.gridLineOpacity',
+    'axisFormatting.integerTicks',
+    'legendFormatting.showInlineLabels',
+    'legendFormatting.inlineLabelFontSize',
+    'legendFormatting.inlineLabelOffset',
     'conditionalFormatting.threshold2',
     'numberFormatting.valuePrefix',
     'numberFormatting.valueSuffix',

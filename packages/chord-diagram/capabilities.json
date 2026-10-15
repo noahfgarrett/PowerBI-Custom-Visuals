@@ -4,19 +4,25 @@
       "displayName": "Source",
       "name": "source",
       "kind": "Grouping",
-      "description": "Source entity"
+      "description": "Source entity",
+      "displayNameKey": "ChordDiagramCapabilities_DisplayName_0001",
+      "descriptionKey": "ChordDiagramCapabilities_Description_0001"
     },
     {
       "displayName": "Target",
       "name": "target",
       "kind": "Grouping",
-      "description": "Target entity"
+      "description": "Target entity",
+      "displayNameKey": "ChordDiagramCapabilities_DisplayName_0002",
+      "descriptionKey": "ChordDiagramCapabilities_Description_0002"
     },
     {
       "displayName": "Measure",
       "name": "measure",
       "kind": "Measure",
-      "description": "Relationship weight/value"
+      "description": "Relationship weight/value",
+      "displayNameKey": "ChordDiagramCapabilities_DisplayName_0003",
+      "descriptionKey": "ChordDiagramCapabilities_Description_0003"
     }
   ],
   "dataViewMappings": [
@@ -71,16 +77,18 @@
       "displayName": "Chord Layout",
       "properties": {
         "padding": {
-          "displayName": "Padding",
+          "displayName": "Arc Gap",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0005"
         },
         "minArcAngle": {
-          "displayName": "Min Arc Angle (degrees)",
+          "displayName": "Minimum Label Angle (degrees)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0006"
         },
         "arcStrokeColor": {
           "displayName": "Arc Stroke Color",
@@ -90,15 +98,18 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0007"
         },
         "arcThickness": {
           "displayName": "Arc Thickness",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0008"
         }
-      }
+      },
+      "displayNameKey": "ChordDiagramCapabilities_DisplayName_0004"
     },
     "animationSettings": {
       "displayName": "Animation",
@@ -107,15 +118,18 @@
           "displayName": "Enable Animations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0012"
         },
         "duration": {
           "displayName": "Duration (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0013"
         }
-      }
+      },
+      "displayNameKey": "ChordDiagramCapabilities_DisplayName_0011"
     },
     "dataLabelFormatting": {
       "displayName": "Data Labels",
@@ -124,13 +138,15 @@
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0015"
         },
         "dataLabelFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0016"
         },
         "dataLabelFontColor": {
           "displayName": "Font Color",
@@ -140,7 +156,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0017"
         },
         "dataLabelFontWeight": {
           "displayName": "Font Weight",
@@ -148,14 +165,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0019"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0020"
               }
             ]
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0018"
         },
         "dataLabelFontFamily": {
           "displayName": "Font",
@@ -163,54 +183,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0022"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0023"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0024"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0025"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0026"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0027"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0028"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0029"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0030"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0031"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0032"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0033"
               }
             ]
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0021"
         },
         "dataLabelPosition": {
           "displayName": "Position",
@@ -218,28 +251,35 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0035"
               },
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0036"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0037"
               },
               {
                 "value": "inside",
-                "displayName": "Inside"
+                "displayName": "Inside",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0038"
               },
               {
                 "value": "outside",
-                "displayName": "Outside"
+                "displayName": "Outside",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0039"
               }
             ]
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0034"
         }
-      }
+      },
+      "displayNameKey": "ChordDiagramCapabilities_DisplayName_0014"
     },
     "titleFormatting": {
       "displayName": "Chart Title",
@@ -248,19 +288,22 @@
           "displayName": "Show Title",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0041"
         },
         "titleText": {
           "displayName": "Title Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0042"
         },
         "titleFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0043"
         },
         "titleFontColor": {
           "displayName": "Font Color",
@@ -270,7 +313,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0044"
         },
         "titleAlignment": {
           "displayName": "Alignment",
@@ -278,18 +322,22 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0046"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0047"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0048"
               }
             ]
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0045"
         },
         "titleFontFamily": {
           "displayName": "Font",
@@ -297,66 +345,81 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0050"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0051"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0052"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0053"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0054"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0055"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0056"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0057"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0058"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0059"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0060"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0061"
               }
             ]
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0049"
         },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0062"
         },
         "subtitleFontSize": {
           "displayName": "Subtitle Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0063"
         },
         "subtitleFontColor": {
           "displayName": "Subtitle Color",
@@ -366,7 +429,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0064"
         },
         "titleFontWeight": {
           "displayName": "Font Weight",
@@ -374,14 +438,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0066"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0067"
               }
             ]
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0065"
         },
         "subtitleFontFamily": {
           "displayName": "Subtitle Font",
@@ -389,54 +456,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0069"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0070"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0071"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0072"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0073"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0074"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0075"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0076"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0077"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0078"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0079"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0080"
               }
             ]
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0068"
         },
         "subtitleFontWeight": {
           "displayName": "Subtitle Font Weight",
@@ -444,16 +524,20 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0082"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0083"
               }
             ]
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0081"
         }
-      }
+      },
+      "displayNameKey": "ChordDiagramCapabilities_DisplayName_0040"
     },
     "legendFormatting": {
       "displayName": "Legend",
@@ -462,7 +546,8 @@
           "displayName": "Show Legend",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0085"
         },
         "legendPosition": {
           "displayName": "Position",
@@ -470,28 +555,34 @@
             "enumeration": [
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0087"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0088"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0089"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0090"
               }
             ]
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0086"
         },
         "legendFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0091"
         },
         "legendFontColor": {
           "displayName": "Font Color",
@@ -501,7 +592,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0092"
         },
         "legendFontFamily": {
           "displayName": "Font",
@@ -509,54 +601,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0094"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0095"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0096"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0097"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0098"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0099"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0100"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0101"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0102"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0103"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0104"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0105"
               }
             ]
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0093"
         },
         "legendFontWeight": {
           "displayName": "Font Weight",
@@ -564,22 +669,48 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0107"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0108"
               }
             ]
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0106"
         },
         "legendAliases": {
           "displayName": "Rename Labels",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0109"
+        },
+        "showInlineLabels": {
+          "displayName": "Inline End Labels",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0110"
+        },
+        "inlineLabelFontSize": {
+          "displayName": "Inline Label Font Size",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0111"
+        },
+        "inlineLabelOffset": {
+          "displayName": "Inline Label Offset (px)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0112"
         }
-      }
+      },
+      "displayNameKey": "ChordDiagramCapabilities_DisplayName_0084"
     },
     "cardSettings": {
       "displayName": "Card Style",
@@ -592,19 +723,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0114"
         },
         "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0115"
         },
         "borderRadius": {
           "displayName": "Border Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0116"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0117"
         },
         "cardStyleMode": {
           "displayName": "Card Style",
@@ -612,30 +753,47 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0001"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0002"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0003"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0004"
+              },
+              {
+                "value": "outlined",
+                "displayName": "Border Only",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0005"
+              },
+              {
+                "value": "floating",
+                "displayName": "Floating Shadow",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0006"
               }
             ]
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0118"
         },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "(Deprecated) Enable Glass"
+          "displayName": "(Deprecated) Enable Glass",
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0123"
         }
-      }
+      },
+      "displayNameKey": "ChordDiagramCapabilities_DisplayName_0113"
     },
     "chordRibbonSettings": {
       "displayName": "Ribbons",
@@ -644,33 +802,39 @@
           "displayName": "Ribbon Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0125"
         },
         "hoverOpacity": {
           "displayName": "Hover Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0126"
         },
         "dimOpacity": {
           "displayName": "Dim Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0127"
         },
         "gradientRibbons": {
           "displayName": "Gradient Ribbons",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0128"
         },
         "directional": {
           "displayName": "Directional Ribbons",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0129"
         }
-      }
+      },
+      "displayNameKey": "ChordDiagramCapabilities_DisplayName_0124"
     },
     "chordInteractionSettings": {
       "displayName": "Interaction",
@@ -679,21 +843,25 @@
           "displayName": "Enable Chord Filtering",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0131"
         },
         "showFlowLabels": {
           "displayName": "Show Flow Labels on Hover",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0132"
         },
         "showEntityValues": {
-          "displayName": "Show Entity Values",
+          "displayName": "Show Entity Totals",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0133"
         }
-      }
+      },
+      "displayNameKey": "ChordDiagramCapabilities_DisplayName_0130"
     },
     "conditionalFormatting": {
       "displayName": "Conditional Formatting",
@@ -702,7 +870,8 @@
           "displayName": "Enable Conditional Formatting",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0135"
         },
         "conditionalDirection": {
           "displayName": "Direction",
@@ -710,26 +879,31 @@
             "enumeration": [
               {
                 "value": "ascending",
-                "displayName": "Ascending (Low = Bad)"
+                "displayName": "Ascending (Low = Bad)",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0137"
               },
               {
                 "value": "descending",
-                "displayName": "Descending (Low = Good)"
+                "displayName": "Descending (Low = Good)",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0138"
               }
             ]
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0136"
         },
         "threshold1": {
           "displayName": "Threshold 1",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0139"
         },
         "threshold2": {
           "displayName": "Threshold 2",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0140"
         },
         "conditionalColor1": {
           "displayName": "Color 1 (Bad)",
@@ -739,7 +913,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0141"
         },
         "conditionalColor2": {
           "displayName": "Color 2 (Warning)",
@@ -749,7 +924,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0142"
         },
         "conditionalColor3": {
           "displayName": "Color 3 (Good)",
@@ -759,9 +935,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0143"
         }
-      }
+      },
+      "displayNameKey": "ChordDiagramCapabilities_DisplayName_0134"
     },
     "accessibilityFormatting": {
       "displayName": "Accessibility",
@@ -770,9 +948,11 @@
           "displayName": "Enable Keyboard Navigation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0145"
         }
-      }
+      },
+      "displayNameKey": "ChordDiagramCapabilities_DisplayName_0144"
     },
     "sortFormatting": {
       "displayName": "Sort Order",
@@ -783,28 +963,35 @@
             "enumeration": [
               {
                 "value": "dataOrder",
-                "displayName": "Data Order"
+                "displayName": "Data Order",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0148"
               },
               {
                 "value": "valueAsc",
-                "displayName": "Value (Ascending)"
+                "displayName": "Value (Ascending)",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0149"
               },
               {
                 "value": "valueDesc",
-                "displayName": "Value (Descending)"
+                "displayName": "Value (Descending)",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0150"
               },
               {
                 "value": "nameAsc",
-                "displayName": "Name (A-Z)"
+                "displayName": "Name (A-Z)",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0151"
               },
               {
                 "value": "nameDesc",
-                "displayName": "Name (Z-A)"
+                "displayName": "Name (Z-A)",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0152"
               }
             ]
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0147"
         }
-      }
+      },
+      "displayNameKey": "ChordDiagramCapabilities_DisplayName_0146"
     },
     "colorThemeFormatting": {
       "properties": {
@@ -812,7 +999,8 @@
           "displayName": "Use Chart Palette",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0154"
         },
         "colorTheme": {
           "displayName": "Theme",
@@ -820,37 +1008,46 @@
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0156"
               },
               {
                 "value": "ocean",
-                "displayName": "Ocean"
+                "displayName": "Ocean",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0157"
               },
               {
                 "value": "sunset",
-                "displayName": "Sunset"
+                "displayName": "Sunset",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0158"
               },
               {
                 "value": "forest",
-                "displayName": "Forest"
+                "displayName": "Forest",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0159"
               },
               {
                 "value": "berry",
-                "displayName": "Berry"
+                "displayName": "Berry",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0160"
               },
               {
                 "value": "monochrome",
-                "displayName": "Monochrome"
+                "displayName": "Monochrome",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0161"
               },
               {
                 "value": "earth",
-                "displayName": "Earth"
+                "displayName": "Earth",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0162"
               }
             ]
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0155"
         }
       },
-      "displayName": "Color Theme"
+      "displayName": "Color Theme",
+      "displayNameKey": "ChordDiagramCapabilities_DisplayName_0153"
     },
     "numberFormatting": {
       "displayName": "Number Format",
@@ -861,46 +1058,56 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0165"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0166"
               },
               {
                 "value": "thousands",
-                "displayName": "Thousands (K)"
+                "displayName": "Thousands (K)",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0167"
               },
               {
                 "value": "millions",
-                "displayName": "Millions (M)"
+                "displayName": "Millions (M)",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0168"
               },
               {
                 "value": "billions",
-                "displayName": "Billions (B)"
+                "displayName": "Billions (B)",
+                "displayNameKey": "ChordDiagramCapabilities_DisplayName_0169"
               }
             ]
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0164"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0170"
         },
         "valuePrefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0171"
         },
         "valueSuffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0172"
         }
-      }
+      },
+      "displayNameKey": "ChordDiagramCapabilities_DisplayName_0163"
     },
     "dateFilterFormatting": {
       "displayName": "Date Filter",
@@ -909,32 +1116,46 @@
           "displayName": "Enable Date Filter",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0174"
         },
         "startDate": {
           "displayName": "Start Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0175"
         },
         "endAtCurrentDate": {
           "displayName": "End at Current Date",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0176"
         },
         "endDate": {
           "displayName": "End Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ChordDiagramCapabilities_DisplayName_0177"
         }
-      }
+      },
+      "displayNameKey": "ChordDiagramCapabilities_DisplayName_0173"
     }
   },
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
   "supportsKeyboardFocus": true,
   "supportsHighlight": true,
   "supportsMultiVisualSelection": true,
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
   "privileges": [],
   "suppressDefaultTitle": true
 }

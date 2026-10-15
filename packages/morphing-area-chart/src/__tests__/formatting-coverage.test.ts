@@ -52,7 +52,14 @@ import {
   type HarnessConfig,
 } from '../../../core/src/__test-utils__';
 
-const testDV = DataViewBuilder.singleCategoryMeasure(['Jan','Feb','Mar','Apr'], [10,25,15,30], { categoryRole: 'category', valueRole: 'measure' });
+const testDV = DataViewBuilder.multiSeries(
+  ['Jan', 'Feb', 'Mar', 'Apr'],
+  [
+    { name: 'Revenue', values: [10, 25, null, 30], role: 'measure' },
+    { name: 'Cost', values: [8, 20, 15, 28], role: 'measure' },
+  ],
+  { categoryRole: 'category' },
+);
 
 function createVisual() {
   const opts = createConstructorOptions();
@@ -78,6 +85,11 @@ function makeDeps(): Record<string, Record<string, unknown>> {
   for (const s of ['legendPosition','legendFontSize','legendFontColor','legendFontWeight']) {
     deps[`legendFormatting.${s}`] = { 'legendFormatting.showLegend': true };
   }
+  deps['legendFormatting.legendAliases'] = { 'legendFormatting.showLegend': true };
+  deps['legendFormatting.showInlineLabels'] = { 'legendFormatting.showLegend': true };
+  for (const s of ['inlineLabelFontSize','inlineLabelOffset']) {
+    deps[`legendFormatting.${s}`] = { 'legendFormatting.showInlineLabels': true };
+  }
   for (const s of ['dataLabelFontSize','dataLabelFontColor','dataLabelFontWeight','dataLabelFontFamily','dataLabelPosition']) {
     deps[`dataLabelFormatting.${s}`] = { 'dataLabelFormatting.showDataLabels': true };
   }
@@ -85,6 +97,21 @@ function makeDeps(): Record<string, Record<string, unknown>> {
   deps['referenceLineFormatting.referenceLineType'] = { 'referenceLineFormatting.showReferenceLine': true };
   for (const s of ['referenceLineValue','referenceLineColor','referenceLineWidth','referenceLineStyle','showReferenceLabel','referenceLabelText','showReferenceBand','referenceBandOpacity','referenceBandWidth','referenceLineAxis']) {
     deps[`referenceLineFormatting.${s}`] = { 'referenceLineFormatting.showReferenceLine': true, 'referenceLineFormatting.referenceLineType': { value: 'mean', displayName: 'Mean' } };
+  }
+  deps['areaForecastSettings.show'] = {};
+  for (const s of ['periods','opacity']) {
+    deps[`areaForecastSettings.${s}`] = { 'areaForecastSettings.show': true };
+  }
+  for (const s of ['forecastLineOpacity','forecastBandOpacity']) {
+    deps[`areaFillSettings.${s}`] = { 'areaForecastSettings.show': true };
+  }
+  deps['areaFillSettings.showThreshold'] = {};
+  for (const s of ['threshold','thresholdLineColor','thresholdLineWidth','thresholdLineOpacity','aboveColor','belowColor']) {
+    deps[`areaFillSettings.${s}`] = { 'areaFillSettings.showThreshold': true };
+  }
+  deps['gapIndicatorSettings.showGapIndicator'] = {};
+  for (const s of ['gapSeriesA','gapSeriesB','gapInterval','gapColor','gapLineWidth','showGapValue','gapFontSize']) {
+    deps[`gapIndicatorSettings.${s}`] = { 'gapIndicatorSettings.showGapIndicator': true };
   }
   deps['trendLineFormatting.trendLineType'] = { 'trendLineFormatting.showTrendLine': true };
   for (const s of ['polynomialOrder','trendLineColor','trendLineWidth','showEquation','showR2','trendLineAxis']) {
@@ -94,9 +121,18 @@ function makeDeps(): Record<string, Record<string, unknown>> {
   for (const s of ['conditionalDirection','threshold1','threshold2','conditionalColor1','conditionalColor2','conditionalColor3']) {
     deps[`conditionalFormatting.${s}`] = { 'conditionalFormatting.enableConditional': true };
   }
-  deps['annotationFormatting.showAnnotations'] = { 'annotationFormatting.annotation1Category': 'A', 'annotationFormatting.annotation1Text': 'Note' };
+  deps['annotationFormatting.showAnnotations'] = { 'annotationFormatting.annotation1Category': 'Jan', 'annotationFormatting.annotation1Text': 'Note' };
   for (const s of ['annotation1Category','annotation1Text','annotation1Position','annotationFontSize','annotationFontColor','annotationConnectorColor']) {
-    deps[`annotationFormatting.${s}`] = { 'annotationFormatting.showAnnotations': true, 'annotationFormatting.annotation1Category': 'A', 'annotationFormatting.annotation1Text': 'Note' };
+    deps[`annotationFormatting.${s}`] = { 'annotationFormatting.showAnnotations': true, 'annotationFormatting.annotation1Category': 'Jan', 'annotationFormatting.annotation1Text': 'Note' };
+  }
+  for (const s of ['annotation2Category','annotation2Text','annotation2Position']) {
+    deps[`annotationFormatting.${s}`] = { 'annotationFormatting.showAnnotations': true, 'annotationFormatting.annotation2Category': 'Feb', 'annotationFormatting.annotation2Text': 'Note 2' };
+  }
+  for (const s of ['annotation3Category','annotation3Text','annotation3Position']) {
+    deps[`annotationFormatting.${s}`] = { 'annotationFormatting.showAnnotations': true, 'annotationFormatting.annotation3Category': 'Mar', 'annotationFormatting.annotation3Text': 'Note 3' };
+  }
+  for (const s of ['annotationFontFamily','annotationFontWeight','annotationOffset','annotationPadding','annotationBackgroundColor','annotationBackgroundOpacity','annotationCornerRadius']) {
+    deps[`annotationFormatting.${s}`] = { 'annotationFormatting.showAnnotations': true, 'annotationFormatting.annotation1Category': 'Jan', 'annotationFormatting.annotation1Text': 'Note' };
   }
   for (const s of ['xAxisTitle','yAxisTitle','axisFontSize','axisFontColor','axisFontFamily','axisLabelFontWeight','yAxisMin','yAxisMax','showGridLines','gridLineColor','gridLineOpacity','gridLineStyle']) {
     deps[`axisFormatting.${s}`] = { 'axisFormatting.showXAxis': true, 'axisFormatting.showYAxis': true };
@@ -108,6 +144,9 @@ const harnessConfig: HarnessConfig = {
   createVisual,
   dataView: testDV,
   deps: makeDeps(),
+  altValues: {
+    'dataHandlingSettings.nullHandling': 'interpolate',
+  },
   skipCards: ["seriesFormatting"],
   expectedPhantoms: [
     'scrollFormatting.minCategoryWidth',
@@ -128,8 +167,6 @@ const harnessConfig: HarnessConfig = {
     'animationSettings.staggerDelay',
     'animationSettings.duration',
     'lineSettings.lineWidth',
-    'areaForecastSettings.periods',
-    'areaForecastSettings.opacity',
     'areaGapSettings.nullHandling',
     'areaThresholdSettings.threshold',
     'areaThresholdSettings.aboveColor',
@@ -141,11 +178,14 @@ const harnessConfig: HarnessConfig = {
     'axisFormatting.showYAxis',
     'axisFormatting.axisLabelRotation',
     'legendFormatting.showLegend',
-    'legendFormatting.legendPosition',
     'legendFormatting.legendFontSize',
     'legendFormatting.legendFontColor',
     'legendFormatting.legendFontFamily',
     'legendFormatting.legendFontWeight',
+    'legendFormatting.legendAliases',
+    'legendFormatting.showInlineLabels',
+    'legendFormatting.inlineLabelFontSize',
+    'legendFormatting.inlineLabelOffset',
     'lineStrokeFormatting.lineWidth',
     'trendLineFormatting.trendLineType',
     'conditionalFormatting.threshold2',
@@ -162,6 +202,13 @@ const harnessConfig: HarnessConfig = {
     'annotationFormatting.annotation3Position',
     'annotationFormatting.annotationFontSize',
     'annotationFormatting.annotationFontColor',
+    'annotationFormatting.annotationFontFamily',
+    'annotationFormatting.annotationFontWeight',
+    'annotationFormatting.annotationOffset',
+    'annotationFormatting.annotationPadding',
+    'annotationFormatting.annotationBackgroundColor',
+    'annotationFormatting.annotationBackgroundOpacity',
+    'annotationFormatting.annotationCornerRadius',
     'annotationFormatting.annotationConnectorColor',
   ],
 };

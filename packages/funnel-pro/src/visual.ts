@@ -28,8 +28,13 @@ import {
   buildConditionalConfig,
   resolveConditionalColor,
   applyChartAria,
+  applyDataPointAria,
   attachKeyboardNav,
   ensureFocusRingStyles,
+  syncLegendFormattingVisibility,
+  syncTitleFormattingVisibility,
+  syncCardStyleVisibility,
+  syncDateFilterFormattingVisibility,
   renderHorizontalReferenceLine,
   computeStatValue,
   type StatType,
@@ -41,6 +46,18 @@ import {
   getDateFilterIndices,
   isDateColumn,
   type DateFilterConfig,
+  attachEmptySpaceContextMenu,
+  allowInteractions,
+  notifyRenderingStarted,
+  notifyRenderingFinished,
+  notifyRenderingFailed,
+  renderLandingPage,
+  renderNoDataState,
+  getHostHighContrastColors,
+  applyBasicHighContrastStyles,
+  focusHighlightedData,
+  getLocalizedString,
+  getVisualEmptyStateMode,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -70,11 +87,15 @@ const SEGMENT_STAGGER_MS = 80;
 /** Minimum width ratio for the narrowest segment (prevents invisible stages). */
 const MIN_WIDTH_RATIO = 0.20;
 
-/** Padding inside the SVG viewport (px). */
-const SVG_PADDING = 12;
-
 /** Height reserved for conversion rate labels between segments. */
 const CONVERSION_LABEL_HEIGHT = 16;
+
+function normalizeDateFilterBoundary(value: string, endOfDay: boolean): string {
+  const trimmed = value.trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(trimmed)
+    ? `${trimmed}T${endOfDay ? '23:59:59.999' : '00:00:00.000'}`
+    : value;
+}
 
 // ── Visual ───────────────────────────────────────────────────────────
 
@@ -87,101 +108,158 @@ export class FunnelProVisual implements IVisual {
   private cancelAnimations: Array<() => void> = [];
   private currentStages: FunnelStage[] = [];
   private hasHighlights = false;
+  private removeEmptySpaceContextMenu: (() => void) | null = null;
+  private emptyStateMode: 'unconfigured' | 'noData' = 'unconfigured';
+  private hasMeasureRole = false;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
     this.selectionManager = options.host.createSelectionManager();
     this.container = options.element;
     this.settings = new FunnelProSettings();
-    this.formattingSettingsService = new FormattingSettingsService();
+    this.formattingSettingsService = new FormattingSettingsService(options.host.createLocalizationManager());
     this.container.classList.add('funnel-container');
+    this.removeEmptySpaceContextMenu = attachEmptySpaceContextMenu(
+      this.container,
+      this.selectionManager,
+      () => this.host.createSelectionIdBuilder().createSelectionId(),
+      () => allowInteractions(this.host),
+    );
   }
 
   public update(options: VisualUpdateOptions): void {
-    // Cancel running animations before re-render
-    this.cancelAllAnimations();
+    notifyRenderingStarted(this.host, options);
+    try {
+      // Cancel running animations before re-render
+      this.cancelAllAnimations();
 
-    // Parse settings from dataView
-    const dataView = options.dataViews?.[0];
-    if (dataView) {
-      this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
-        FunnelProSettings,
-        dataView,
-      );
-    }
-
-    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
-    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
-    if (legacyCardObj) {
-      const legacyGlass = legacyCardObj['enableGlass'];
-      if (legacyGlass === false) {
-        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      // Parse settings from dataView
+      const dataView = options.dataViews?.[0];
+      this.emptyStateMode = getVisualEmptyStateMode(dataView);
+      this.hasMeasureRole = (dataView?.metadata?.columns ?? [])
+        .some((column) => Boolean(column.roles?.['measure']));
+      if (dataView) {
+        this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
+          FunnelProSettings,
+          dataView,
+        );
       }
+
+      // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+      const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+      if (legacyCardObj) {
+        const legacyGlass = legacyCardObj['enableGlass'];
+        if (legacyGlass === false) {
+          this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+        }
+      }
+      this.migrateLegacyFormatting(dataView);
+      this.syncFormattingVisibility();
+
+      // Extract data
+      const stages = focusHighlightedData(this.extractData(dataView), this.hasHighlights);
+      this.currentStages = stages;
+      this.syncFormattingVisibility();
+
+      // Render
+      if (stages.length === 0) {
+        this.renderEmpty();
+      } else {
+        this.render(stages, options.viewport);
+      }
+
+      // Apply card styling AFTER render — render clears the container, which would destroy the glass backdrop div.
+      this.applyCardStyle();
+
+      // Apply cross-highlight dimming after render
+      this.applySelectionHighlight();
+
+      const highContrast = getHostHighContrastColors(this.host);
+      applyBasicHighContrastStyles(this.container, highContrast, {
+        textSelectors: [
+          '.funnel-stage-label',
+          '.funnel-value-label',
+          '.funnel-conversion',
+          '.funnel-annotation-label',
+          '.funnel-empty',
+          '.pbi-landing-page-title',
+          '.pbi-landing-page-description',
+          '.pbi-landing-page-hint',
+        ],
+        lineSelectors: [
+          '.funnel-grid line',
+          '.funnel-axis-lines line',
+          '.funnel-overlay line',
+        ],
+        fillSelectors: [
+          '.funnel-stage',
+          '.funnel-dropoff',
+          '.funnel-empty',
+        ],
+        strokeSelectors: [
+          '.funnel-stage',
+          '.funnel-dropoff',
+        ],
+      });
+      if (!highContrast.enabled) this.applyCardStyle();
+
+      notifyRenderingFinished(this.host, options);
+    } catch (error) {
+      notifyRenderingFailed(this.host, options, error instanceof Error ? error.message : String(error));
+      throw error;
     }
-
-    // Hide inapplicable shared axis properties — funnel-pro doesn't use titles/rotation/min/max/fontFamily/gridLineWidth/gridLineOpacity
-
-    // Date filter: hide start/end when disabled
-    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
-    this.settings.axisFormattingCard.showXAxis.visible = false;
-    this.settings.axisFormattingCard.showYAxis.visible = false;
-    this.settings.axisFormattingCard.xAxisTitle.visible = false;
-    this.settings.axisFormattingCard.yAxisTitle.visible = false;
-    this.settings.axisFormattingCard.axisLabelFontFamily.visible = false;
-    this.settings.axisFormattingCard.axisLabelRotation.visible = false;
-    this.settings.axisFormattingCard.yAxisMin.visible = false;
-    this.settings.axisFormattingCard.yAxisMax.visible = false;
-    this.settings.axisFormattingCard.gridLineWidth.visible = false;
-    this.settings.axisFormattingCard.gridLineOpacity.visible = false;
-    this.settings.axisFormattingCard.axisLabelFontWeight.visible = false;
-    this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
-
-    // Hide dual-axis-only properties (no combo/dual-axis support)
-    this.settings.referenceLineFormattingCard.referenceLineAxis.visible = false;
-    this.settings.referenceLineFormattingCard.referenceBandWidth.visible = false;
-    this.settings.trendLineFormattingCard.trendLineAxis.visible = false;
-
-    // Conditional visibility: hide child settings when parent toggle is off
-    // Comparison: hide drop-off sub-settings when comparison is disabled
-    this.settings.funnelComparisonSettings.showDropOff.visible = this.settings.funnelComparisonSettings.enabled.value;
-    this.settings.funnelComparisonSettings.dropOffColor.visible = this.settings.funnelComparisonSettings.enabled.value;
-    // Gradient: hide baseColor when useGradient is off
-    this.settings.colorSettings.baseColor.visible = this.settings.colorSettings.useGradient.value;
-
-    // Extract data
-    const stages = this.extractData(dataView);
-    this.currentStages = stages;
-
-    // Hide neckWidth/neckHeight when only 1-2 stages (neck is irrelevant)
-    this.settings.funnelShapeSettings.neckWidth.visible = stages.length > 2;
-    this.settings.funnelShapeSettings.neckHeight.visible = stages.length > 2;
-
-    // Render
-    if (stages.length === 0) {
-      this.renderEmpty();
-    } else {
-      this.render(stages, options.viewport);
-    }
-
-    // Apply card styling AFTER render — render clears the container, which would destroy the glass backdrop div.
-    this.applyCardStyle();
-
-    // Apply cross-highlight dimming after render
-    this.applySelectionHighlight();
   }
 
   // ── Data Extraction ──────────────────────────────────────────────
 
   private extractData(dataView: DataView | undefined): FunnelStage[] {
+    this.hasHighlights = false;
     if (!dataView?.categorical) return [];
 
     const categorical = dataView.categorical;
     const categoryColumn = categorical.categories?.[0];
-    const valuesColumn = categorical.values?.[0];
+    const valueColumns = categorical.values;
+    if (!valueColumns || valueColumns.length === 0) return [];
 
-    if (!categoryColumn || !valuesColumn) return [];
+    const measureColumns = valueColumns.filter((col) => col.source.roles?.['measure']);
+    if (measureColumns.length === 0) return [];
+
+    if (!categoryColumn) {
+      const stages: FunnelStage[] = [];
+      let anyHighlight = false;
+
+      for (let i = 0; i < measureColumns.length; i++) {
+        const valuesColumn = measureColumns[i];
+        const rawVal = valuesColumn.values?.[0];
+        const value = typeof rawVal === 'number' && !Number.isNaN(rawVal) ? rawVal : 0;
+
+        // Keep zero-value stages visible so a complete drop-off is not mistaken
+        // for a missing category. Negative values are not meaningful in a funnel.
+        if (value < 0) continue;
+
+        const hlRaw = (valuesColumn as unknown as { highlights?: unknown[] }).highlights as unknown[] | undefined;
+        const isHighlighted = hlRaw != null && hlRaw[0] != null;
+        if (isHighlighted) anyHighlight = true;
+
+        const builder = this.host.createSelectionIdBuilder();
+        const queryName = valuesColumn.source.queryName;
+        const selectionId = queryName
+          ? builder.withMeasure(queryName).createSelectionId()
+          : builder.createSelectionId();
+
+        stages.push({
+          label: valuesColumn.source.displayName ?? `Measure ${i + 1}`,
+          value,
+          selectionId,
+          highlighted: isHighlighted,
+        });
+      }
+
+      this.hasHighlights = anyHighlight;
+      return stages;
+    }
+
+    const valuesColumn = measureColumns[0];
 
     const categories = categoryColumn.values;
     const values = valuesColumn.values;
@@ -196,9 +274,9 @@ export class FunnelProVisual implements IVisual {
 
     const dateConfig: DateFilterConfig = {
       enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
-      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      startDate: normalizeDateFilterBoundary(this.settings.dateFilterFormattingCard.startDate.value, false),
       endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
-      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+      endDate: normalizeDateFilterBoundary(this.settings.dateFilterFormattingCard.endDate.value, true),
     };
     const dateIndices = isDateColumn(categoryColumn.source) ? getDateFilterIndices(categoryColumn.values, dateConfig) : null;
 
@@ -211,8 +289,8 @@ export class FunnelProVisual implements IVisual {
       const rawVal = values[i];
       const value = typeof rawVal === 'number' && !Number.isNaN(rawVal) ? rawVal : 0;
 
-      // Skip zero/negative values
-      if (value <= 0) continue;
+      // Keep zero-value stages visible when a slicer removes all activity.
+      if (value < 0) continue;
 
       const isHighlighted = hlRaw != null && hlRaw[i] != null;
       if (isHighlighted) anyHighlight = true;
@@ -246,19 +324,32 @@ export class FunnelProVisual implements IVisual {
         borderRadius: s.borderRadius.value,
       },
     );
-    if (mode === 'none') {
-      this.container.style.borderRadius = `${s.borderRadius.value}px`;
-    }
   }
 
   // ── Empty State ────────────────────────────────────────────────
 
   private renderEmpty(): void {
     this.clearContainer();
-    const emptyEl = document.createElement('div');
-    emptyEl.className = 'funnel-empty';
-    emptyEl.textContent = 'Add a Stage and a Value to get started.';
-    this.container.appendChild(emptyEl);
+    const colors = getHostHighContrastColors(this.host);
+    if (this.hasMeasureRole && this.emptyStateMode === 'noData') {
+      renderNoDataState(
+        this.container,
+        getLocalizedString(this.host, 'FunnelPro_NoDataState', 'No data for the current selection.'),
+        colors,
+      );
+      applyChartAria(this.container, { chartType: 'funnel chart', dataPointCount: 0 });
+      return;
+    }
+    renderLandingPage(this.container, {
+      title: getLocalizedString(this.host, 'FunnelPro_LandingTitle', 'No data to display'),
+      description: getLocalizedString(this.host, 'FunnelPro_LandingDescription', 'Add one numeric value field to build the funnel. Optionally bind a stage field, or use multiple measures for one stage per measure.'),
+      steps: [
+        getLocalizedString(this.host, 'FunnelPro_LandingStepCategory', 'Optional: bind a category field for the funnel stages.'),
+        getLocalizedString(this.host, 'FunnelPro_LandingStepMeasure', 'Bind a numeric measure for stage values.'),
+      ],
+      hint: getLocalizedString(this.host, 'FunnelPro_LandingHint', 'When data is present, the funnel supports selection and empty-space context menus like native charts.'),
+    }, colors);
+    applyChartAria(this.container, { chartType: 'funnel chart', dataPointCount: 0 });
   }
 
   // ── Main Render ────────────────────────────────────────────────
@@ -280,6 +371,15 @@ export class FunnelProVisual implements IVisual {
     const animDuration = animEnabled ? s.animationSettings.duration.value : 0;
     const axisColor = s.axisFormattingCard.axisLabelColor.value?.value || '#64748B';
     const axisLabelSize = s.axisFormattingCard.axisLabelSize.value;
+    const secondaryLabelColor = s.stageAppearanceSettings.secondaryLabelColor.value?.value || axisColor;
+    const secondaryFontSize = s.stageAppearanceSettings.secondaryFontSize.value || axisLabelSize;
+    const secondaryFontFamily = resolveDropdown(s.stageAppearanceSettings.secondaryFontFamily);
+    const secondaryFontWeight = resolveDropdown(s.stageAppearanceSettings.secondaryFontWeight) ?? 'normal';
+    const secondaryLabelOffset = Math.max(0, s.stageAppearanceSettings.secondaryLabelOffset.value);
+    const secondaryLabelPadding = Math.max(0, s.stageAppearanceSettings.secondaryLabelPadding.value);
+    const labelAlignment = resolveDropdown(s.stageAppearanceSettings.labelAlignment) ?? 'center';
+    const labelPadding = Math.max(0, s.stageAppearanceSettings.labelPadding.value);
+    const containerPadding = Math.max(0, s.layoutSettings.containerPadding.value + s.cardSettings.contentPadding.value);
     const axisLineColor = s.axisFormattingCard.axisLineColor.value?.value || '#CBD5E1';
     const axisLineWidth = s.axisFormattingCard.axisLineWidth.value;
     const showGridLines = s.axisFormattingCard.showGridLines.value;
@@ -289,8 +389,8 @@ export class FunnelProVisual implements IVisual {
       ? gridLineStyleValue
       : (gridLineStyleValue as { value?: string } | undefined)?.value ?? 'dashed';
     const gridDash = gridLineStyle === 'dashed' ? '4 3' : 'none';
-    const svgWidth = viewport.width - SVG_PADDING * 2;
-    const svgHeight = viewport.height - SVG_PADDING * 2;
+    const svgWidth = viewport.width - containerPadding * 2;
+    const svgHeight = viewport.height - containerPadding * 2;
 
     if (svgWidth <= 0 || svgHeight <= 0) {
       this.renderEmpty();
@@ -314,8 +414,9 @@ export class FunnelProVisual implements IVisual {
     // Calculate total gaps and conversion label space
     const totalGaps = gap * (stageCount - 1);
     const conversionRows = showConversion ? stageCount - 1 : 0;
-    const totalConversionHeight = conversionRows * CONVERSION_LABEL_HEIGHT;
-    const availableHeight = svgHeight - totalGaps - totalConversionHeight;
+    const conversionContentHeight = CONVERSION_LABEL_HEIGHT + secondaryLabelPadding + secondaryLabelOffset;
+    const totalConversionHeight = conversionRows * conversionContentHeight;
+    const availableHeight = Math.max(stageCount, svgHeight - totalGaps - totalConversionHeight);
 
     // Compute per-stage heights: when dynamicHeight is enabled, heights vary by value
     let segmentHeights: number[];
@@ -384,7 +485,7 @@ export class FunnelProVisual implements IVisual {
         if (gi < stageCount) {
           gridY += segmentHeights[gi];
           if (showConversion && gi < stageCount - 1) {
-            gridY += gap + CONVERSION_LABEL_HEIGHT;
+            gridY += gap + conversionContentHeight;
           } else if (gi < stageCount - 1) {
             gridY += gap;
           }
@@ -408,7 +509,7 @@ export class FunnelProVisual implements IVisual {
           .attr('stroke-opacity', 0.5);
         sepY += segmentHeights[si + 1] + gap;
         if (showConversion) {
-          sepY += CONVERSION_LABEL_HEIGHT;
+          sepY += conversionContentHeight;
         }
       }
     }
@@ -451,14 +552,18 @@ export class FunnelProVisual implements IVisual {
       // Hover tooltip
       this.attachStageTooltip(polygon, stage, stages, index);
       polygon
-        .style('cursor', 'pointer')
+        .style('cursor', allowInteractions(this.host) ? 'pointer' : 'default')
         .on('click', (event: MouseEvent) => {
           event.stopPropagation();
-          void this.selectionManager.select(stage.selectionId, event.ctrlKey || event.metaKey);
+          if (!allowInteractions(this.host)) return;
+          void this.selectionManager.select(stage.selectionId, event.ctrlKey || event.metaKey).then(() => {
+            this.applySelectionHighlight();
+          });
         })
         .on('contextmenu', (event: MouseEvent) => {
           event.preventDefault();
           event.stopPropagation();
+          if (!allowInteractions(this.host)) return;
           void this.selectionManager.showContextMenu(stage.selectionId, {
             x: event.clientX,
             y: event.clientY,
@@ -477,16 +582,26 @@ export class FunnelProVisual implements IVisual {
 
       // Stage label (centered within trapezoid)
       const labelY = currentY + stageH / 2;
-      const labelX = funnelStyle === 'symmetric' ? centerX : topWidth / 2;
+      const stageMidWidth = (topWidth + bottomWidth) / 2;
+      const labelLeft = funnelStyle === 'symmetric' ? centerX - stageMidWidth / 2 : 0;
+      const labelRight = funnelStyle === 'symmetric' ? centerX + stageMidWidth / 2 : stageMidWidth;
 
       const stageLabelColor = s.stageAppearanceSettings.labelColor.value?.value;
       const stageFontSize = s.stageAppearanceSettings.fontSize.value;
       const stageFontFamily = resolveDropdown(s.stageAppearanceSettings.fontFamily);
       const stageFontWeight = resolveDropdown(s.stageAppearanceSettings.fontWeight);
+      const labelAnchor = labelAlignment === 'start' ? 'start' : labelAlignment === 'end' ? 'end' : 'middle';
+      const safeLabelPadding = Math.min(labelPadding, Math.max(0, stageMidWidth / 2));
+      const labelX = labelAlignment === 'start'
+        ? labelLeft + safeLabelPadding
+        : labelAlignment === 'end'
+          ? labelRight - safeLabelPadding
+          : (labelLeft + labelRight) / 2;
       const labelText = svg.append('text')
         .attr('class', 'funnel-stage-label')
         .attr('x', labelX)
         .attr('y', labelY)
+        .attr('text-anchor', labelAnchor)
         .attr('font-size', `${stageFontSize}px`)
         .text(stage.label);
 
@@ -507,6 +622,7 @@ export class FunnelProVisual implements IVisual {
           .attr('class', 'funnel-value-label')
           .attr('x', labelX)
           .attr('y', labelY + 14)
+          .attr('text-anchor', labelAnchor)
           .text(formatWithSettings(stage.value, this.settings.numberFormattingCard));
 
         if (animEnabled && animDuration > 0) {
@@ -539,15 +655,20 @@ export class FunnelProVisual implements IVisual {
           ? ((nextStage.value / stage.value) * 100).toFixed(1)
           : '0.0';
 
-        const convLabelY = currentY + gap / 2 + CONVERSION_LABEL_HEIGHT / 2;
+        const conversionBandHeight = gap + conversionContentHeight;
+        const convLabelY = currentY + conversionBandHeight / 2;
 
         const convText = svg.append('text')
           .attr('class', 'funnel-conversion')
           .attr('x', funnelStyle === 'symmetric' ? centerX : maxFunnelWidth / 2)
           .attr('y', convLabelY)
-          .attr('fill', axisColor)
-          .attr('font-size', `${axisLabelSize}px`)
+          .attr('fill', secondaryLabelColor)
+          .attr('font-size', `${secondaryFontSize}px`)
           .text(`\u2192 ${conversionPct}%`);
+        if (secondaryFontFamily) {
+          convText.attr('font-family', secondaryFontFamily);
+        }
+        convText.attr('font-weight', secondaryFontWeight);
 
         if (animEnabled && animDuration > 0) {
           const convNode = convText.node();
@@ -558,14 +679,24 @@ export class FunnelProVisual implements IVisual {
           }
         }
 
-        currentY += gap + CONVERSION_LABEL_HEIGHT;
+        currentY += conversionBandHeight;
       } else if (index < stageCount - 1) {
         // Gap only, no conversion label
         currentY += gap;
       }
     });
     // Render drop-off highlighting between stages
-    this.renderDropOffHighlighting(svg, stages, widths, segmentHeights, gap, showConversion, funnelStyle, centerX);
+    this.renderDropOffHighlighting(
+      svg,
+      stages,
+      widths,
+      segmentHeights,
+      gap,
+      showConversion,
+      conversionContentHeight,
+      funnelStyle,
+      centerX,
+    );
 
     // ── Stage Annotations (conversion rates next to segments) ──────
     if (s.stageAppearanceSettings.showAnnotations.value && stages.length >= 2) {
@@ -583,22 +714,26 @@ export class FunnelProVisual implements IVisual {
 
           const annotLabelY = annotY + stageH / 2;
           const annotLabelX = funnelStyle === 'symmetric'
-            ? centerX + widths[ai] / 2 + 10
-            : widths[ai] + 10;
+            ? centerX + widths[ai] / 2 + secondaryLabelOffset + secondaryLabelPadding
+            : widths[ai] + secondaryLabelOffset + secondaryLabelPadding;
 
-          annotGroup.append('text')
+          const annotationText = annotGroup.append('text')
             .attr('class', 'funnel-annotation-label')
             .attr('x', annotLabelX)
             .attr('y', annotLabelY)
-            .attr('fill', axisColor)
-            .attr('font-size', `${axisLabelSize}px`)
+            .attr('fill', secondaryLabelColor)
+            .attr('font-size', `${secondaryFontSize}px`)
             .attr('dominant-baseline', 'middle')
             .text(`${convPct}% conversion`);
+          if (secondaryFontFamily) {
+            annotationText.attr('font-family', secondaryFontFamily);
+          }
+          annotationText.attr('font-weight', secondaryFontWeight);
         }
 
         annotY += stageH;
         if (showConversion && ai < stages.length - 1) {
-          annotY += gap + CONVERSION_LABEL_HEIGHT;
+          annotY += gap + conversionContentHeight;
         } else if (ai < stages.length - 1) {
           annotY += gap;
         }
@@ -620,7 +755,7 @@ export class FunnelProVisual implements IVisual {
       let cy = 0;
       for (let k = 0; k < i; k++) {
         cy += segmentHeights[k];
-        if (showConversion && k < stageCount - 1) cy += gap + CONVERSION_LABEL_HEIGHT;
+        if (showConversion && k < stageCount - 1) cy += gap + conversionContentHeight;
         else if (k < stageCount - 1) cy += gap;
       }
       return cy + segmentHeights[i] / 2;
@@ -644,6 +779,7 @@ export class FunnelProVisual implements IVisual {
     segmentHeights: number[],
     gap: number,
     showConversion: boolean,
+    conversionContentHeight: number,
     funnelStyle: string,
     centerX: number,
   ): void {
@@ -661,7 +797,7 @@ export class FunnelProVisual implements IVisual {
       if (currentWidth <= nextWidth) {
         // No drop-off when next stage is wider
         currentY += segmentHeights[i];
-        if (showConversion) currentY += gap + CONVERSION_LABEL_HEIGHT;
+        if (showConversion) currentY += gap + conversionContentHeight;
         else currentY += gap;
         continue;
       }
@@ -703,7 +839,7 @@ export class FunnelProVisual implements IVisual {
       }
 
       currentY += segmentHeights[i];
-      if (showConversion) currentY += gap + CONVERSION_LABEL_HEIGHT;
+      if (showConversion) currentY += gap + conversionContentHeight;
       else currentY += gap;
     }
   }
@@ -844,7 +980,7 @@ export class FunnelProVisual implements IVisual {
 
       host.tooltipService.show({
         dataItems: tooltipData,
-        identities: [],
+        identities: [stage.selectionId],
         coordinates: [event.clientX, event.clientY],
         isTouchEvent: false,
       });
@@ -1006,9 +1142,6 @@ export class FunnelProVisual implements IVisual {
    */
   private applyAccessibility(stages: FunnelStage[]): void {
     const acc = this.settings.accessibilityFormattingCard;
-    if (!acc.enableKeyboardNav.value) return;
-
-    ensureFocusRingStyles();
 
     applyChartAria(this.container, {
       chartType: 'funnel chart',
@@ -1016,9 +1149,25 @@ export class FunnelProVisual implements IVisual {
       dataPointCount: stages.length,
     });
 
+    if (!acc.enableKeyboardNav.value) return;
+
+    ensureFocusRingStyles();
+    const stageElements = this.container.querySelectorAll<SVGPathElement>('.funnel-stage');
+    stageElements.forEach((element, index) => {
+      const stage = stages[index];
+      if (!stage) return;
+      applyDataPointAria(
+        element,
+        stage.label,
+        formatWithSettings(stage.value, this.settings.numberFormattingCard),
+        index,
+        stages.length,
+      );
+    });
+
     const cleanup = attachKeyboardNav({
       container: this.container,
-      itemSelector: '.funnel-stage, [tabindex="0"]',
+      itemSelector: '.funnel-stage[tabindex="0"]',
       onActivate: (el) => {
         (el as HTMLElement).click?.();
       },
@@ -1029,11 +1178,130 @@ export class FunnelProVisual implements IVisual {
   // ── Formatting Model ───────────────────────────────────────────
 
   public getFormattingModel(): powerbi.visuals.FormattingModel {
-    const s = this.settings;
-    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
-    s.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
-    s.cardSettings.backgroundColor.visible = cardMode !== 'none';
+    this.syncFormattingVisibility();
     return this.formattingSettingsService.buildFormattingModel(this.settings);
+  }
+
+  private migrateLegacyFormatting(dataView: DataView | undefined): void {
+    const objects = dataView?.metadata?.objects;
+    const legacy = objects?.['funnelSettings'] as Record<string, unknown> | undefined;
+    const current = objects?.['stageAppearanceSettings'] as Record<string, unknown> | undefined;
+    if (!legacy) return;
+
+    const migrateNumber = (name: 'segmentStrokeWidth'): void => {
+      const value = legacy[name];
+      if (!(current && Object.prototype.hasOwnProperty.call(current, name)) && typeof value === 'number') {
+        this.settings.stageAppearanceSettings[name].value = value;
+      }
+    };
+    const migrateColor = (name: 'segmentStrokeColor' | 'labelColor'): void => {
+      const value = this.readFormattingColor(legacy[name]);
+      if (!(current && Object.prototype.hasOwnProperty.call(current, name)) && value) {
+        this.settings.stageAppearanceSettings[name].value = { value };
+      }
+    };
+
+    migrateColor('segmentStrokeColor');
+    migrateNumber('segmentStrokeWidth');
+    migrateColor('labelColor');
+  }
+
+  private readFormattingColor(value: unknown): string | undefined {
+    if (typeof value === 'string') return value;
+    if (!value || typeof value !== 'object') return undefined;
+    const candidate = value as { solid?: { color?: unknown }; value?: unknown };
+    if (typeof candidate.solid?.color === 'string') return candidate.solid.color;
+    return typeof candidate.value === 'string' ? candidate.value : undefined;
+  }
+
+  private syncFormattingVisibility(): void {
+    const s = this.settings;
+    syncTitleFormattingVisibility(s.titleFormattingCard);
+    syncLegendFormattingVisibility(s.legendFormattingCard);
+    syncDateFilterFormattingVisibility(s.dateFilterFormattingCard);
+    syncCardStyleVisibility(s.cardSettings);
+
+    const cardStyleEnabled = resolveDropdown(s.cardSettings.cardStyleMode) !== 'none';
+    s.cardSettings.borderRadius.visible = cardStyleEnabled;
+
+    s.axisFormattingCard.showXAxis.visible = false;
+    s.axisFormattingCard.showYAxis.visible = false;
+    s.axisFormattingCard.xAxisTitle.visible = false;
+    s.axisFormattingCard.yAxisTitle.visible = false;
+    s.axisFormattingCard.axisLabelFontFamily.visible = false;
+    s.axisFormattingCard.axisLabelRotation.visible = false;
+    s.axisFormattingCard.yAxisMin.visible = false;
+    s.axisFormattingCard.yAxisMax.visible = false;
+    s.axisFormattingCard.gridLineWidth.visible = false;
+    s.axisFormattingCard.gridLineOpacity.visible = false;
+    s.axisFormattingCard.axisLabelFontWeight.visible = false;
+    s.axisFormattingCard.integerTicks.visible = false;
+    const showGridLines = s.axisFormattingCard.showGridLines.value;
+    s.axisFormattingCard.gridLineColor.visible = showGridLines;
+    s.axisFormattingCard.gridLineStyle.visible = showGridLines;
+
+    s.legendFormattingCard.showInlineLabels.visible = false;
+    s.legendFormattingCard.inlineLabelFontSize.visible = false;
+    s.legendFormattingCard.inlineLabelOffset.visible = false;
+
+    const showValues = s.stageAppearanceSettings.showValues.value;
+    s.dataLabelFormattingCard.showDataLabels.visible = false;
+    s.dataLabelFormattingCard.dataLabelFontSize.visible = showValues;
+    s.dataLabelFormattingCard.dataLabelFontColor.visible = showValues;
+    s.dataLabelFormattingCard.dataLabelFontWeight.visible = showValues;
+    s.dataLabelFormattingCard.dataLabelFontFamily.visible = showValues;
+    s.dataLabelFormattingCard.dataLabelPosition.visible = showValues;
+
+    s.stageAppearanceSettings.segmentStrokeColor.visible = s.stageAppearanceSettings.segmentStrokeWidth.value > 0;
+    s.stageAppearanceSettings.labelPadding.visible = resolveDropdown(s.stageAppearanceSettings.labelAlignment) !== 'center';
+    const showSecondaryLabels = s.stageAppearanceSettings.showConversionRate.value || s.stageAppearanceSettings.showAnnotations.value;
+    s.stageAppearanceSettings.secondaryLabelColor.visible = showSecondaryLabels;
+    s.stageAppearanceSettings.secondaryFontSize.visible = showSecondaryLabels;
+    s.stageAppearanceSettings.secondaryFontFamily.visible = showSecondaryLabels;
+    s.stageAppearanceSettings.secondaryFontWeight.visible = showSecondaryLabels;
+    s.stageAppearanceSettings.secondaryLabelOffset.visible = showSecondaryLabels;
+    s.stageAppearanceSettings.secondaryLabelPadding.visible = showSecondaryLabels;
+
+    const comparisonEnabled = s.funnelComparisonSettings.enabled.value;
+    s.funnelComparisonSettings.showDropOff.visible = comparisonEnabled;
+    s.funnelComparisonSettings.dropOffColor.visible = comparisonEnabled && s.funnelComparisonSettings.showDropOff.value;
+    s.colorSettings.baseColor.visible = s.colorSettings.useGradient.value;
+    s.colorThemeFormattingCard.colorTheme.visible = !s.colorSettings.useGradient.value;
+    s.animationSettings.duration.visible = s.animationSettings.enabled.value;
+
+    const showReferenceLine = s.referenceLineFormattingCard.showReferenceLine.value;
+    s.referenceLineFormattingCard.referenceLineType.visible = showReferenceLine;
+    s.referenceLineFormattingCard.referenceLineValue.visible = showReferenceLine && resolveDropdown(s.referenceLineFormattingCard.referenceLineType) === 'custom';
+    s.referenceLineFormattingCard.referenceLineColor.visible = showReferenceLine;
+    s.referenceLineFormattingCard.referenceLineWidth.visible = showReferenceLine;
+    s.referenceLineFormattingCard.referenceLineStyle.visible = showReferenceLine;
+    s.referenceLineFormattingCard.showReferenceLabel.visible = showReferenceLine;
+    s.referenceLineFormattingCard.referenceLabelText.visible = showReferenceLine && s.referenceLineFormattingCard.showReferenceLabel.value;
+    s.referenceLineFormattingCard.showReferenceBand.visible = showReferenceLine;
+    s.referenceLineFormattingCard.referenceBandOpacity.visible = showReferenceLine && s.referenceLineFormattingCard.showReferenceBand.value;
+    s.referenceLineFormattingCard.referenceBandWidth.visible = false;
+    s.referenceLineFormattingCard.referenceLineAxis.visible = false;
+
+    const showTrendLine = s.trendLineFormattingCard.showTrendLine.value;
+    s.trendLineFormattingCard.trendLineType.visible = showTrendLine;
+    s.trendLineFormattingCard.polynomialOrder.visible = showTrendLine && resolveDropdown(s.trendLineFormattingCard.trendLineType) === 'polynomial';
+    s.trendLineFormattingCard.trendLineColor.visible = showTrendLine;
+    s.trendLineFormattingCard.trendLineWidth.visible = showTrendLine;
+    s.trendLineFormattingCard.showEquation.visible = showTrendLine;
+    s.trendLineFormattingCard.showR2.visible = showTrendLine;
+    s.trendLineFormattingCard.trendLineAxis.visible = false;
+
+    const conditionalEnabled = s.conditionalFormattingCard.enableConditional.value;
+    s.conditionalFormattingCard.conditionalDirection.visible = conditionalEnabled;
+    s.conditionalFormattingCard.threshold1.visible = conditionalEnabled;
+    s.conditionalFormattingCard.threshold2.visible = conditionalEnabled;
+    s.conditionalFormattingCard.conditionalColor1.visible = conditionalEnabled;
+    s.conditionalFormattingCard.conditionalColor2.visible = conditionalEnabled;
+    s.conditionalFormattingCard.conditionalColor3.visible = conditionalEnabled;
+
+    const showNeckControls = this.currentStages.length > 2;
+    s.funnelShapeSettings.neckWidth.visible = showNeckControls;
+    s.funnelShapeSettings.neckHeight.visible = showNeckControls;
   }
 
   // ── Utilities ──────────────────────────────────────────────────
@@ -1078,8 +1346,10 @@ export class FunnelProVisual implements IVisual {
   }
 
   private handleBackgroundClick = (): void => {
-    void this.selectionManager.clear();
-    this.applySelectionHighlight();
+    if (!allowInteractions(this.host)) return;
+    void this.selectionManager.clear().then(() => {
+      this.applySelectionHighlight();
+    });
   };
 
   private cancelAllAnimations(): void {
@@ -1092,6 +1362,7 @@ export class FunnelProVisual implements IVisual {
   // ── Cleanup ────────────────────────────────────────────────────
 
   public destroy(): void {
+    this.removeEmptySpaceContextMenu?.();
     this.cancelAllAnimations();
     this.clearContainer();
   }

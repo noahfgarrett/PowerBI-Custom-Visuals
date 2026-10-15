@@ -8,6 +8,9 @@ const settingsRef: { current: unknown } = { current: undefined };
 
 vi.mock('../../style/visual.less', () => ({}));
 
+vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => setTimeout(() => cb(performance.now()), 0));
+vi.stubGlobal('cancelAnimationFrame', (id: number) => clearTimeout(id));
+
 vi.mock('powerbi-visuals-utils-formattingmodel', () => {
   class SliceBase {
     constructor(init?: Record<string, unknown>) { if (init) Object.assign(this, init); }
@@ -42,10 +45,15 @@ vi.mock('powerbi-visuals-utils-formattingmodel', () => {
   };
 });
 
+vi.stubGlobal('requestAnimationFrame', () => 0);
+vi.stubGlobal('cancelAnimationFrame', () => {});
+
 import { SunburstChartVisual } from '../visual';
 import { SunburstChartSettings } from '../settings';
+import capabilities from '../../capabilities.json';
 import {
   createConstructorOptions,
+  createUpdateOptions,
   DataViewBuilder,
   runFormattingCoverage,
   getSettingPaths,
@@ -58,6 +66,7 @@ function createVisual() {
   const opts = createConstructorOptions();
   const settings = new SunburstChartSettings();
   settingsRef.current = settings;
+  settings.animationSettings.enabled.value = false;
   const visual = new SunburstChartVisual(opts as never);
   return {
     visual,
@@ -111,6 +120,7 @@ const harnessConfig: HarnessConfig = {
     'sunburstSettings.segmentOpacity',
     'centerContentSettings.customText',
     'drillDownSettings.enabled',
+    'interactionSettings.crossHighlightMode',
     'drillDownSettings.showBreadcrumb',
     'drillDownSettings.breadcrumbFontSize',
     'drillDownSettings.breadcrumbColor',
@@ -131,10 +141,76 @@ const harnessConfig: HarnessConfig = {
     'dateFilterFormatting.endDate',
     'conditionalFormatting.threshold2',
     'conditionalFormatting.conditionalColor3',
+    'drillDownSettings.breadcrumbFontFamily',
+    'drillDownSettings.breadcrumbFontWeight',
+    'drillDownSettings.breadcrumbPadding',
   ],
 };
 
 describe('sunburst-chart formatting coverage', () => {
+  it('keeps capabilities aligned with the formatting model', () => {
+    const settings = new SunburstChartSettings();
+    const settingPaths = new Set(getSettingPaths(
+      settings as unknown as { cards: Array<Record<string, unknown>> },
+    ).map(({ cardName, sliceName }) => `${cardName}.${sliceName}`));
+    const capabilityPaths = Object.entries(capabilities.objects).flatMap(([cardName, card]) =>
+      Object.keys(card.properties).map((sliceName) => `${cardName}.${sliceName}`)
+    );
+
+    expect(capabilityPaths.filter((path) => !settingPaths.has(path))).toEqual(['cardSettings.enableGlass']);
+    expect([...settingPaths].filter((path) => !capabilityPaths.includes(path))).toEqual([]);
+    expect(capabilities).toMatchObject({
+      supportsLandingPage: true,
+      supportsEmptyDataView: true,
+      supportsKeyboardFocus: true,
+      tooltips: { supportEnhancedTooltips: true },
+    });
+  });
+
+  it('hides label and card-style dependents when their parent controls are off', () => {
+    const { visual, settings } = createVisual();
+    const typedSettings = settings as unknown as SunburstChartSettings;
+    typedSettings.labelsAndPercentagesSettings.showLabels.value = false;
+    typedSettings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+
+    visual.update(createUpdateOptions([testDV]) as never);
+
+    expect(typedSettings.labelsAndPercentagesSettings.labelMinAngle.visible).toBe(false);
+    expect(typedSettings.labelsAndPercentagesSettings.showPercentages.visible).toBe(false);
+    expect(typedSettings.labelsAndPercentagesSettings.percentOf.visible).toBe(false);
+    expect(typedSettings.dataLabelFormattingCard.dataLabelFontSize.visible).toBe(false);
+    expect(typedSettings.cardSettings.backgroundColor.visible).toBe(false);
+    expect(typedSettings.cardSettings.backgroundOpacity.visible).toBe(false);
+    expect(typedSettings.cardSettings.borderRadius.visible).toBe(false);
+    expect(typedSettings.cardSettings.contentPadding.visible).not.toBe(false);
+    visual.destroy();
+  });
+
+  it('uses the visible Show Labels toggle as the authoritative label control', () => {
+    const { visual, settings, element } = createVisual();
+    const typedSettings = settings as unknown as SunburstChartSettings;
+    typedSettings.labelsAndPercentagesSettings.showLabels.value = true;
+    typedSettings.dataLabelFormattingCard.showDataLabels.value = false;
+
+    visual.update(createUpdateOptions([testDV]) as never);
+
+    expect(element.querySelectorAll('.sunburst-label').length).toBeGreaterThan(0);
+    visual.destroy();
+  });
+
+  it('rotates every segment without clipping arcs at the angle boundary', () => {
+    const { visual, settings, element } = createVisual();
+    const typedSettings = settings as unknown as SunburstChartSettings;
+    typedSettings.sunburstDisplaySettings.startAngle.value = 180;
+
+    visual.update(createUpdateOptions([testDV]) as never);
+
+    const paths = [...element.querySelectorAll<SVGPathElement>('.sunburst-segment path')];
+    expect(paths.length).toBeGreaterThan(0);
+    expect(paths.every((path) => path.getAttribute('d')?.includes('A'))).toBe(true);
+    visual.destroy();
+  });
+
   it('detects settings from the model', () => {
     const settings = new SunburstChartSettings();
     const paths = getSettingPaths(

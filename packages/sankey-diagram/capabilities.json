@@ -4,43 +4,57 @@
       "displayName": "Source",
       "name": "source",
       "kind": "Grouping",
-      "description": "Source node category"
+      "description": "Source node category",
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0001",
+      "descriptionKey": "SankeyDiagramCapabilities_Description_0001"
     },
     {
       "displayName": "Step 2",
       "name": "step2",
       "kind": "Grouping",
-      "description": "Intermediate node between Source and Target"
+      "description": "Intermediate node between Source and Target",
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0002",
+      "descriptionKey": "SankeyDiagramCapabilities_Description_0002"
     },
     {
       "displayName": "Step 3",
       "name": "step3",
       "kind": "Grouping",
-      "description": "Second intermediate node (used with Step 2)"
+      "description": "Second intermediate node (used with Step 2)",
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0003",
+      "descriptionKey": "SankeyDiagramCapabilities_Description_0003"
     },
     {
       "displayName": "Step 4",
       "name": "step4",
       "kind": "Grouping",
-      "description": "Third intermediate node (used with Step 2 and Step 3)"
+      "description": "Third intermediate node (used with Step 2 and Step 3)",
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0004",
+      "descriptionKey": "SankeyDiagramCapabilities_Description_0004"
     },
     {
       "displayName": "Step 5",
       "name": "step5",
       "kind": "Grouping",
-      "description": "Fourth intermediate node (used with Step 2, Step 3, and Step 4)"
+      "description": "Fourth intermediate node (used with Step 2, Step 3, and Step 4)",
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0005",
+      "descriptionKey": "SankeyDiagramCapabilities_Description_0005"
     },
     {
       "displayName": "Target",
       "name": "target",
       "kind": "Grouping",
-      "description": "Target node category"
+      "description": "Target node category",
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0006",
+      "descriptionKey": "SankeyDiagramCapabilities_Description_0006"
     },
     {
       "displayName": "Weight",
       "name": "weight",
       "kind": "Measure",
-      "description": "Flow value/weight between source and target"
+      "description": "Flow value/weight between source and target",
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0007",
+      "descriptionKey": "SankeyDiagramCapabilities_Description_0007"
     }
   ],
   "dataViewMappings": [
@@ -130,31 +144,36 @@
           "displayName": "Node Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0009"
         },
         "padding": {
           "displayName": "Node Padding",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0010"
         },
         "cornerRadius": {
           "displayName": "Corner Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0011"
         },
         "opacity": {
           "displayName": "Node Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0012"
         },
         "minHeight": {
           "displayName": "Minimum Height",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0013"
         },
         "nodeBorderColor": {
           "displayName": "Node Border Color",
@@ -164,15 +183,18 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0014"
         },
         "nodeBorderWidth": {
           "displayName": "Node Border Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0015"
         }
-      }
+      },
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0008"
     },
     "nodeColorSettings": {
       "displayName": "Node Colors",
@@ -183,14 +205,17 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto (Theme)"
+                "displayName": "Auto (Theme)",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0018"
               },
               {
                 "value": "byLayer",
-                "displayName": "By Layer"
+                "displayName": "By Layer",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0019"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0017"
         },
         "sourceColor": {
           "displayName": "Source Color",
@@ -200,7 +225,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0020"
         },
         "step2Color": {
           "displayName": "Step 2 Color",
@@ -210,7 +236,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0021"
         },
         "step3Color": {
           "displayName": "Step 3 Color",
@@ -220,7 +247,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0022"
         },
         "step4Color": {
           "displayName": "Step 4 Color",
@@ -230,7 +258,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0023"
         },
         "step5Color": {
           "displayName": "Step 5 Color",
@@ -240,7 +269,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0024"
         },
         "targetColor": {
           "displayName": "Target Color",
@@ -250,9 +280,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0025"
         }
-      }
+      },
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0016"
     },
     "nodeLabelSettings": {
       "displayName": "Node Labels",
@@ -263,32 +295,39 @@
             "enumeration": [
               {
                 "value": "inside",
-                "displayName": "Inside"
+                "displayName": "Inside",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0028"
               },
               {
                 "value": "beside",
-                "displayName": "Beside"
+                "displayName": "Beside",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0029"
               },
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0030"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0031"
               },
               {
                 "value": "none",
-                "displayName": "None (Hover)"
+                "displayName": "None (Hover)",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0032"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0027"
         },
         "labelFontSize": {
           "displayName": "Label Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0033"
         },
         "labelFontFamily": {
           "displayName": "Label Font Family",
@@ -296,54 +335,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0035"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0036"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0037"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0038"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0039"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0040"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0041"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0042"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0043"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0044"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0045"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0046"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0034"
         },
         "labelFontWeight": {
           "displayName": "Label Font Weight",
@@ -351,14 +403,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0048"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0049"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0047"
         },
         "labelFontStyle": {
           "displayName": "Label Font Style",
@@ -366,14 +421,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0051"
               },
               {
                 "value": "italic",
-                "displayName": "Italic"
+                "displayName": "Italic",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0052"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0050"
         },
         "labelColor": {
           "displayName": "Label Color (All)",
@@ -383,7 +441,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0053"
         },
         "sourceLabelColor": {
           "displayName": "Source Label Color",
@@ -393,7 +452,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0054"
         },
         "step2LabelColor": {
           "displayName": "Step 2 Label Color",
@@ -403,7 +463,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0055"
         },
         "step3LabelColor": {
           "displayName": "Step 3 Label Color",
@@ -413,7 +474,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0056"
         },
         "step4LabelColor": {
           "displayName": "Step 4 Label Color",
@@ -423,7 +485,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0057"
         },
         "step5LabelColor": {
           "displayName": "Step 5 Label Color",
@@ -433,7 +496,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0058"
         },
         "targetLabelColor": {
           "displayName": "Target Label Color",
@@ -443,9 +507,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0059"
         }
-      }
+      },
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0026"
     },
     "linkSettings": {
       "displayName": "Links",
@@ -454,13 +520,15 @@
           "displayName": "Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0061"
         },
         "hoverOpacity": {
           "displayName": "Hover Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0062"
         },
         "colorMode": {
           "displayName": "Color Mode",
@@ -468,28 +536,34 @@
             "enumeration": [
               {
                 "value": "source",
-                "displayName": "Source"
+                "displayName": "Source",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0064"
               },
               {
                 "value": "target",
-                "displayName": "Target"
+                "displayName": "Target",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0065"
               },
               {
                 "value": "gradient",
-                "displayName": "Gradient"
+                "displayName": "Gradient",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0066"
               },
               {
                 "value": "custom",
-                "displayName": "Custom"
+                "displayName": "Custom",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0067"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0063"
         },
         "dimOpacity": {
           "displayName": "Dim Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0068"
         },
         "customColor": {
           "displayName": "Custom Color",
@@ -499,27 +573,25 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0069"
         },
         "curvature": {
           "displayName": "Curvature",
           "type": {
             "numeric": true
-          }
-        },
-        "gradientLinks": {
-          "displayName": "Gradient Links",
-          "type": {
-            "bool": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0070"
         },
         "opacityByValue": {
           "displayName": "Opacity by Value",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0072"
         }
-      }
+      },
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0060"
     },
     "linkLabelSettings": {
       "displayName": "Link Labels",
@@ -528,13 +600,15 @@
           "displayName": "Show Link Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0074"
         },
         "linkLabelFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0075"
         },
         "linkLabelFontColor": {
           "displayName": "Font Color",
@@ -544,7 +618,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0076"
         },
         "linkLabelFontFamily": {
           "displayName": "Font Family",
@@ -552,54 +627,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0078"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0079"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0080"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0081"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0082"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0083"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0084"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0085"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0086"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0087"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0088"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0089"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0077"
         },
         "linkLabelFontWeight": {
           "displayName": "Font Weight",
@@ -607,14 +695,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0091"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0092"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0090"
         },
         "linkLabelFormat": {
           "displayName": "Label Format",
@@ -622,26 +713,32 @@
             "enumeration": [
               {
                 "value": "value",
-                "displayName": "Value"
+                "displayName": "Value",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0094"
               },
               {
                 "value": "percent",
-                "displayName": "Percent"
+                "displayName": "Percent",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0095"
               },
               {
                 "value": "both",
-                "displayName": "Both"
+                "displayName": "Both",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0096"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0093"
         },
         "showFlowLabels": {
           "displayName": "Show Flow Labels on Hover",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0097"
         }
-      }
+      },
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0073"
     },
     "totalSettings": {
       "displayName": "Totals",
@@ -650,7 +747,8 @@
           "displayName": "Show Node Values",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0099"
         },
         "nodeValueFormat": {
           "displayName": "Node Value Format",
@@ -658,24 +756,29 @@
             "enumeration": [
               {
                 "value": "value",
-                "displayName": "Value"
+                "displayName": "Value",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0101"
               },
               {
                 "value": "percent",
-                "displayName": "Percent"
+                "displayName": "Percent",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0102"
               },
               {
                 "value": "both",
-                "displayName": "Both"
+                "displayName": "Both",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0103"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0100"
         },
         "showLayerTotals": {
           "displayName": "Show Layer Totals",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0104"
         },
         "layerTotalPosition": {
           "displayName": "Layer Total Position",
@@ -683,20 +786,24 @@
             "enumeration": [
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0106"
               },
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0107"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0105"
         },
         "totalFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0108"
         },
         "totalFontColor": {
           "displayName": "Font Color",
@@ -706,7 +813,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0109"
         },
         "totalFontFamily": {
           "displayName": "Font Family",
@@ -714,54 +822,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0111"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0112"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0113"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0114"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0115"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0116"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0117"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0118"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0119"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0120"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0121"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0122"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0110"
         },
         "totalFontWeight": {
           "displayName": "Font Weight",
@@ -769,20 +890,25 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0124"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0125"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0126"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0123"
         }
-      }
+      },
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0098"
     },
     "layoutSettings": {
       "displayName": "Layout",
@@ -793,22 +919,27 @@
             "enumeration": [
               {
                 "value": "justify",
-                "displayName": "Justify"
+                "displayName": "Justify",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0129"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0130"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0131"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0132"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0128"
         },
         "sortOrder": {
           "displayName": "Sort Order",
@@ -816,30 +947,37 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Automatic"
+                "displayName": "Automatic",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0134"
               },
               {
                 "value": "ascending",
-                "displayName": "Ascending"
+                "displayName": "Ascending",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0135"
               },
               {
                 "value": "descending",
-                "displayName": "Descending"
+                "displayName": "Descending",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0136"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0137"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0133"
         },
         "iterations": {
           "displayName": "Layout Iterations",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0138"
         }
-      }
+      },
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0127"
     },
     "tooltipSettings": {
       "displayName": "Tooltips",
@@ -848,13 +986,15 @@
           "displayName": "Show Tooltips",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0140"
         },
         "showPercentage": {
           "displayName": "Show Percentage",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0141"
         },
         "valueFormat": {
           "displayName": "Value Format",
@@ -862,20 +1002,25 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0143"
               },
               {
                 "value": "full",
-                "displayName": "Full"
+                "displayName": "Full",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0144"
               },
               {
                 "value": "abbreviated",
-                "displayName": "Abbreviated"
+                "displayName": "Abbreviated",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0145"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0142"
         }
-      }
+      },
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0139"
     },
     "animationSettings": {
       "displayName": "Animation",
@@ -884,15 +1029,18 @@
           "displayName": "Enable Animations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0147"
         },
         "duration": {
           "displayName": "Duration (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0148"
         }
-      }
+      },
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0146"
     },
     "legendFormatting": {
       "displayName": "Legend",
@@ -901,7 +1049,8 @@
           "displayName": "Show Legend",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0150"
         },
         "legendPosition": {
           "displayName": "Position",
@@ -909,28 +1058,34 @@
             "enumeration": [
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0152"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0153"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0154"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0155"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0151"
         },
         "legendFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0156"
         },
         "legendFontColor": {
           "displayName": "Font Color",
@@ -940,7 +1095,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0157"
         },
         "legendFontFamily": {
           "displayName": "Font",
@@ -948,54 +1104,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0159"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0160"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0161"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0162"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0163"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0164"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0165"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0166"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0167"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0168"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0169"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0170"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0158"
         },
         "legendFontWeight": {
           "displayName": "Font Weight",
@@ -1003,146 +1172,27 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0172"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0173"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0171"
         },
         "legendAliases": {
           "displayName": "Rename Labels",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0174"
         }
-      }
-    },
-    "dataLabelFormatting": {
-      "displayName": "Data Labels",
-      "properties": {
-        "showDataLabels": {
-          "displayName": "Show Data Labels",
-          "type": {
-            "bool": true
-          }
-        },
-        "dataLabelFontSize": {
-          "displayName": "Font Size",
-          "type": {
-            "numeric": true
-          }
-        },
-        "dataLabelFontColor": {
-          "displayName": "Font Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        },
-        "dataLabelFontWeight": {
-          "displayName": "Font Weight",
-          "type": {
-            "enumeration": [
-              {
-                "value": "normal",
-                "displayName": "Normal"
-              },
-              {
-                "value": "bold",
-                "displayName": "Bold"
-              }
-            ]
-          }
-        },
-        "dataLabelFontFamily": {
-          "displayName": "Font",
-          "type": {
-            "enumeration": [
-              {
-                "value": "",
-                "displayName": "Default"
-              },
-              {
-                "value": "Arial",
-                "displayName": "Arial"
-              },
-              {
-                "value": "Calibri",
-                "displayName": "Calibri"
-              },
-              {
-                "value": "Cambria",
-                "displayName": "Cambria"
-              },
-              {
-                "value": "Courier New",
-                "displayName": "Courier New"
-              },
-              {
-                "value": "Georgia",
-                "displayName": "Georgia"
-              },
-              {
-                "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
-              },
-              {
-                "value": "Segoe UI",
-                "displayName": "Segoe UI"
-              },
-              {
-                "value": "Tahoma",
-                "displayName": "Tahoma"
-              },
-              {
-                "value": "Times New Roman",
-                "displayName": "Times New Roman"
-              },
-              {
-                "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
-              },
-              {
-                "value": "Verdana",
-                "displayName": "Verdana"
-              }
-            ]
-          }
-        },
-        "dataLabelPosition": {
-          "displayName": "Position",
-          "type": {
-            "enumeration": [
-              {
-                "value": "auto",
-                "displayName": "Auto"
-              },
-              {
-                "value": "above",
-                "displayName": "Above"
-              },
-              {
-                "value": "below",
-                "displayName": "Below"
-              },
-              {
-                "value": "inside",
-                "displayName": "Inside"
-              },
-              {
-                "value": "outside",
-                "displayName": "Outside"
-              }
-            ]
-          }
-        }
-      }
+      },
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0149"
     },
     "titleFormatting": {
       "displayName": "Chart Title",
@@ -1151,19 +1201,22 @@
           "displayName": "Show Title",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0202"
         },
         "titleText": {
           "displayName": "Title Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0203"
         },
         "titleFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0204"
         },
         "titleFontColor": {
           "displayName": "Font Color",
@@ -1173,7 +1226,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0205"
         },
         "titleAlignment": {
           "displayName": "Alignment",
@@ -1181,18 +1235,22 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0207"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0208"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0209"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0206"
         },
         "titleFontFamily": {
           "displayName": "Font",
@@ -1200,54 +1258,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0211"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0212"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0213"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0214"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0215"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0216"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0217"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0218"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0219"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0220"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0221"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0222"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0210"
         },
         "titleFontWeight": {
           "displayName": "Font Weight",
@@ -1255,26 +1326,31 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0224"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0225"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0223"
         },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0226"
         },
         "subtitleFontSize": {
           "displayName": "Subtitle Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0227"
         },
         "subtitleFontColor": {
           "displayName": "Subtitle Color",
@@ -1284,7 +1360,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0228"
         },
         "subtitleFontFamily": {
           "displayName": "Subtitle Font",
@@ -1292,54 +1369,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0230"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0231"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0232"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0233"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0234"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0235"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0236"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0237"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0238"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0239"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0240"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0241"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0229"
         },
         "subtitleFontWeight": {
           "displayName": "Subtitle Font Weight",
@@ -1347,16 +1437,20 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0243"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0244"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0242"
         }
-      }
+      },
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0201"
     },
     "scrollFormatting": {
       "displayName": "Scroll",
@@ -1365,15 +1459,18 @@
           "displayName": "Enable Scroll",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0246"
         },
         "minCategoryWidth": {
           "displayName": "Min Node Height (px)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0247"
         }
-      }
+      },
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0245"
     },
     "cardSettings": {
       "displayName": "Card Style",
@@ -1386,19 +1483,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0249"
         },
         "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0250"
         },
         "borderRadius": {
           "displayName": "Border Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0251"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0252"
         },
         "cardStyleMode": {
           "displayName": "Card Style",
@@ -1406,30 +1513,47 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0001"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0002"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0003"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0004"
+              },
+              {
+                "value": "outlined",
+                "displayName": "Border Only",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0005"
+              },
+              {
+                "value": "floating",
+                "displayName": "Floating Shadow",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0006"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0253"
         },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "(Deprecated) Enable Glass"
+          "displayName": "(Deprecated) Enable Glass",
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0258"
         }
-      }
+      },
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0248"
     },
     "sankeyInteractionSettings": {
       "displayName": "Interaction",
@@ -1438,21 +1562,43 @@
           "displayName": "Highlight Flow Path",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0260"
         },
         "enableDrag": {
           "displayName": "Enable Node Drag",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0261"
         },
         "enableFiltering": {
           "displayName": "Enable Flow Filtering",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0262"
+        },
+        "crossHighlightMode": {
+          "displayName": "Cross-Highlight Behavior",
+          "type": {
+            "enumeration": [
+              {
+                "value": "focus",
+                "displayName": "Show Highlighted Data Only",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0008"
+              },
+              {
+                "value": "dim",
+                "displayName": "Dim Unhighlighted Data",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0009"
+              }
+            ]
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0007"
         }
-      }
+      },
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0259"
     },
     "conditionalFormatting": {
       "displayName": "Conditional Formatting",
@@ -1461,7 +1607,8 @@
           "displayName": "Enable Conditional Formatting",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0264"
         },
         "conditionalDirection": {
           "displayName": "Direction",
@@ -1469,26 +1616,31 @@
             "enumeration": [
               {
                 "value": "ascending",
-                "displayName": "Ascending (Low = Bad)"
+                "displayName": "Ascending (Low = Bad)",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0266"
               },
               {
                 "value": "descending",
-                "displayName": "Descending (Low = Good)"
+                "displayName": "Descending (Low = Good)",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0267"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0265"
         },
         "threshold1": {
           "displayName": "Threshold 1",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0268"
         },
         "threshold2": {
           "displayName": "Threshold 2",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0269"
         },
         "conditionalColor1": {
           "displayName": "Color 1 (Bad)",
@@ -1498,7 +1650,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0270"
         },
         "conditionalColor2": {
           "displayName": "Color 2 (Warning)",
@@ -1508,7 +1661,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0271"
         },
         "conditionalColor3": {
           "displayName": "Color 3 (Good)",
@@ -1518,9 +1672,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0272"
         }
-      }
+      },
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0263"
     },
     "accessibilityFormatting": {
       "displayName": "Accessibility",
@@ -1529,9 +1685,11 @@
           "displayName": "Enable Keyboard Navigation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0274"
         }
-      }
+      },
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0273"
     },
     "colorThemeFormatting": {
       "properties": {
@@ -1541,37 +1699,46 @@
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0277"
               },
               {
                 "value": "ocean",
-                "displayName": "Ocean"
+                "displayName": "Ocean",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0278"
               },
               {
                 "value": "sunset",
-                "displayName": "Sunset"
+                "displayName": "Sunset",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0279"
               },
               {
                 "value": "forest",
-                "displayName": "Forest"
+                "displayName": "Forest",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0280"
               },
               {
                 "value": "berry",
-                "displayName": "Berry"
+                "displayName": "Berry",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0281"
               },
               {
                 "value": "monochrome",
-                "displayName": "Monochrome"
+                "displayName": "Monochrome",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0282"
               },
               {
                 "value": "earth",
-                "displayName": "Earth"
+                "displayName": "Earth",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0283"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0276"
         }
       },
-      "displayName": "Color Theme"
+      "displayName": "Color Theme",
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0275"
     },
     "numberFormatting": {
       "displayName": "Number Format",
@@ -1582,46 +1749,56 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0286"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0287"
               },
               {
                 "value": "thousands",
-                "displayName": "Thousands (K)"
+                "displayName": "Thousands (K)",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0288"
               },
               {
                 "value": "millions",
-                "displayName": "Millions (M)"
+                "displayName": "Millions (M)",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0289"
               },
               {
                 "value": "billions",
-                "displayName": "Billions (B)"
+                "displayName": "Billions (B)",
+                "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0290"
               }
             ]
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0285"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0291"
         },
         "valuePrefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0292"
         },
         "valueSuffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0293"
         }
-      }
+      },
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0284"
     },
     "dateFilterFormatting": {
       "displayName": "Date Filter",
@@ -1630,32 +1807,46 @@
           "displayName": "Enable Date Filter",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0295"
         },
         "startDate": {
           "displayName": "Start Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0296"
         },
         "endAtCurrentDate": {
           "displayName": "End at Current Date",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0297"
         },
         "endDate": {
           "displayName": "End Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0298"
         }
-      }
+      },
+      "displayNameKey": "SankeyDiagramCapabilities_DisplayName_0294"
     }
   },
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
   "supportsKeyboardFocus": true,
   "supportsHighlight": true,
   "supportsMultiVisualSelection": true,
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
   "privileges": [],
   "suppressDefaultTitle": true
 }

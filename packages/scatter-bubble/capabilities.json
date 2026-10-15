@@ -4,25 +4,33 @@
       "displayName": "Category",
       "name": "category",
       "kind": "Grouping",
-      "description": "Point labels for each data point"
+      "description": "Point labels for each data point",
+      "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0001",
+      "descriptionKey": "ScatterBubbleCapabilities_Description_0001"
     },
     {
       "displayName": "X Value",
       "name": "xValue",
       "kind": "Measure",
-      "description": "X-axis value for each point"
+      "description": "X-axis value for each point",
+      "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0002",
+      "descriptionKey": "ScatterBubbleCapabilities_Description_0002"
     },
     {
       "displayName": "Y Value",
       "name": "yValue",
       "kind": "Measure",
-      "description": "Y-axis value for each point"
+      "description": "Y-axis value for each point",
+      "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0003",
+      "descriptionKey": "ScatterBubbleCapabilities_Description_0003"
     },
     {
       "displayName": "Size",
       "name": "size",
       "kind": "Measure",
-      "description": "Optional bubble size dimension"
+      "description": "Optional bubble size dimension",
+      "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0004",
+      "descriptionKey": "ScatterBubbleCapabilities_Description_0004"
     }
   ],
   "dataViewMappings": [
@@ -82,25 +90,28 @@
   ],
   "objects": {
     "scatterSettings": {
-      "displayName": "Scatter Settings",
+      "displayName": "Bubble Appearance",
       "properties": {
         "minRadius": {
-          "displayName": "Min Radius",
+          "displayName": "Minimum Bubble Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0006"
         },
         "maxRadius": {
-          "displayName": "Max Radius",
+          "displayName": "Maximum Bubble Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0007"
         },
         "opacity": {
           "displayName": "Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0008"
         },
         "bubbleStrokeColor": {
           "displayName": "Bubble Stroke Color",
@@ -110,71 +121,83 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0009"
         },
         "bubbleStrokeWidth": {
           "displayName": "Bubble Stroke Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0010"
         }
-      }
+      },
+      "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0005"
     },
     "animationSettings": {
       "displayName": "Animation & Playback",
       "properties": {
         "enabled": {
-          "displayName": "Enable Animations",
+          "displayName": "Animate Bubble Entry",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0012"
         },
         "duration": {
           "displayName": "Duration (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0013"
         },
         "enableTransitions": {
           "displayName": "Animated Transitions",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0014"
         },
         "enablePlayAxis": {
           "displayName": "Enable Play Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0015"
         },
         "playSpeed": {
           "displayName": "Play Speed (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0016"
         }
-      }
+      },
+      "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0011"
     },
     "quadrantSettings": {
-      "displayName": "Quadrant Lines",
+      "displayName": "Quadrants",
       "properties": {
         "show": {
           "displayName": "Show Quadrants",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0018"
         },
         "xValue": {
           "displayName": "X Divider Value",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0019"
         },
         "yValue": {
           "displayName": "Y Divider Value",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0020"
         },
         "lineColor": {
           "displayName": "Line Color",
@@ -184,13 +207,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0021"
         },
         "lineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0022"
         },
         "lineStyle": {
           "displayName": "Line Style",
@@ -198,54 +223,64 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0024"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0025"
               },
               {
                 "value": "dotted",
-                "displayName": "Dotted"
+                "displayName": "Dotted",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0026"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0023"
         },
         "showLabels": {
           "displayName": "Show Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0027"
         },
         "topRightLabel": {
           "displayName": "Top-Right Label",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0028"
         },
         "topLeftLabel": {
           "displayName": "Top-Left Label",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0029"
         },
         "bottomRightLabel": {
           "displayName": "Bottom-Right Label",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0030"
         },
         "bottomLeftLabel": {
           "displayName": "Bottom-Left Label",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0031"
         },
         "labelFontSize": {
           "displayName": "Label Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0032"
         },
         "labelFontColor": {
           "displayName": "Label Font Color",
@@ -255,7 +290,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0033"
         },
         "labelFontFamily": {
           "displayName": "Label Font",
@@ -263,38 +299,47 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0035"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0036"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0037"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0038"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0039"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0040"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0041"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0042"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0034"
         },
         "labelFontWeight": {
           "displayName": "Label Font Weight",
@@ -302,24 +347,29 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0044"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0045"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0046"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0043"
         },
         "zoneFillOpacity": {
-          "displayName": "Zone Fill Opacity",
+          "displayName": "Zone Fill Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0047"
         },
         "zone1Color": {
           "displayName": "Top-Left Zone Color",
@@ -329,7 +379,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0048"
         },
         "zone2Color": {
           "displayName": "Top-Right Zone Color",
@@ -339,7 +390,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0049"
         },
         "zone3Color": {
           "displayName": "Bottom-Left Zone Color",
@@ -349,7 +401,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0050"
         },
         "zone4Color": {
           "displayName": "Bottom-Right Zone Color",
@@ -359,18 +412,21 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0051"
         }
-      }
+      },
+      "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0017"
     },
     "trendlineSettings": {
-      "displayName": "Trendline",
+      "displayName": "Trend Line",
       "properties": {
         "show": {
           "displayName": "Show Trendline",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0053"
         },
         "type": {
           "displayName": "Regression Type",
@@ -378,32 +434,39 @@
             "enumeration": [
               {
                 "value": "linear",
-                "displayName": "Linear"
+                "displayName": "Linear",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0055"
               },
               {
                 "value": "polynomial",
-                "displayName": "Polynomial"
+                "displayName": "Polynomial",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0056"
               },
               {
                 "value": "exponential",
-                "displayName": "Exponential"
+                "displayName": "Exponential",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0057"
               },
               {
                 "value": "logarithmic",
-                "displayName": "Logarithmic"
+                "displayName": "Logarithmic",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0058"
               },
               {
                 "value": "power",
-                "displayName": "Power"
+                "displayName": "Power",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0059"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0054"
         },
         "polynomialOrder": {
           "displayName": "Polynomial Order",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0060"
         },
         "lineColor": {
           "displayName": "Line Color",
@@ -413,13 +476,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0061"
         },
         "lineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0062"
         },
         "lineStyle": {
           "displayName": "Line Style",
@@ -427,34 +492,41 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0064"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0065"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0063"
         },
         "showEquation": {
           "displayName": "Show Equation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0066"
         },
         "showR2": {
-          "displayName": "Show R\u00b2",
+          "displayName": "Show R²",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0067"
         },
         "labelFontSize": {
           "displayName": "Label Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0068"
         }
-      }
+      },
+      "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0052"
     },
     "axisFormatting": {
       "displayName": "Axis Formatting",
@@ -467,13 +539,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0070"
         },
         "axisLabelSize": {
           "displayName": "Label Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0071"
         },
         "axisLineColor": {
           "displayName": "Axis Line Color",
@@ -483,19 +557,22 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0072"
         },
         "axisLineWidth": {
           "displayName": "Axis Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0073"
         },
         "showGridLines": {
           "displayName": "Show Grid Lines",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0074"
         },
         "gridLineColor": {
           "displayName": "Grid Line Color",
@@ -505,7 +582,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0075"
         },
         "gridLineStyle": {
           "displayName": "Grid Line Style",
@@ -513,38 +591,45 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0077"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0078"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0076"
         },
         "showXAxis": {
           "displayName": "Show X-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0079"
         },
         "showYAxis": {
           "displayName": "Show Y-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0080"
         },
         "xAxisTitle": {
           "displayName": "X-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0081"
         },
         "yAxisTitle": {
           "displayName": "Y-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0082"
         },
         "axisLabelFontFamily": {
           "displayName": "Label Font",
@@ -552,84 +637,102 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0084"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0085"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0086"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0087"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0088"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0089"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0090"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0091"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0092"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0093"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0094"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0095"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0083"
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (\u00b0)",
+          "displayName": "X-Label Rotation (°)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0096"
         },
         "yAxisMin": {
           "displayName": "Y-Axis Min",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0097"
         },
         "yAxisMax": {
           "displayName": "Y-Axis Max",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0098"
         },
         "gridLineWidth": {
           "displayName": "Grid Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0099"
         },
         "gridLineOpacity": {
           "displayName": "Grid Line Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0100"
         },
         "axisLabelFontWeight": {
           "displayName": "Label Font Weight",
@@ -637,16 +740,27 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0102"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0103"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0101"
+        },
+        "integerTicks": {
+          "displayName": "Integer Ticks Only",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0104"
         }
-      }
+      },
+      "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0069"
     },
     "legendFormatting": {
       "displayName": "Legend",
@@ -655,7 +769,8 @@
           "displayName": "Show Legend",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0106"
         },
         "legendPosition": {
           "displayName": "Position",
@@ -663,28 +778,34 @@
             "enumeration": [
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0108"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0109"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0110"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0111"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0107"
         },
         "legendFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0112"
         },
         "legendFontColor": {
           "displayName": "Font Color",
@@ -694,7 +815,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0113"
         },
         "legendFontFamily": {
           "displayName": "Font",
@@ -702,54 +824,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0115"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0116"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0117"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0118"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0119"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0120"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0121"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0122"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0123"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0124"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0125"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0126"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0114"
         },
         "legendFontWeight": {
           "displayName": "Font Weight",
@@ -757,22 +892,48 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0128"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0129"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0127"
         },
         "legendAliases": {
           "displayName": "Rename Labels",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0130"
+        },
+        "showInlineLabels": {
+          "displayName": "Inline End Labels",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0131"
+        },
+        "inlineLabelFontSize": {
+          "displayName": "Inline Label Font Size",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0132"
+        },
+        "inlineLabelOffset": {
+          "displayName": "Inline Label Offset (px)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0133"
         }
-      }
+      },
+      "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0105"
     },
     "dataLabelFormatting": {
       "displayName": "Data Labels",
@@ -781,13 +942,15 @@
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0135"
         },
         "dataLabelFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0136"
         },
         "dataLabelFontColor": {
           "displayName": "Font Color",
@@ -797,7 +960,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0137"
         },
         "dataLabelFontWeight": {
           "displayName": "Font Weight",
@@ -805,14 +969,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0139"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0140"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0138"
         },
         "dataLabelFontFamily": {
           "displayName": "Font",
@@ -820,54 +987,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0142"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0143"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0144"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0145"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0146"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0147"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0148"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0149"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0150"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0151"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0152"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0153"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0141"
         },
         "dataLabelPosition": {
           "displayName": "Position",
@@ -875,28 +1055,35 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0155"
               },
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0156"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0157"
               },
               {
                 "value": "inside",
-                "displayName": "Inside"
+                "displayName": "Inside",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0158"
               },
               {
                 "value": "outside",
-                "displayName": "Outside"
+                "displayName": "Outside",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0159"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0154"
         }
-      }
+      },
+      "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0134"
     },
     "titleFormatting": {
       "displayName": "Chart Title",
@@ -905,19 +1092,22 @@
           "displayName": "Show Title",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0161"
         },
         "titleText": {
           "displayName": "Title Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0162"
         },
         "titleFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0163"
         },
         "titleFontColor": {
           "displayName": "Font Color",
@@ -927,7 +1117,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0164"
         },
         "titleAlignment": {
           "displayName": "Alignment",
@@ -935,18 +1126,22 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0166"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0167"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0168"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0165"
         },
         "titleFontFamily": {
           "displayName": "Font",
@@ -954,66 +1149,81 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0170"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0171"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0172"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0173"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0174"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0175"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0176"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0177"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0178"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0179"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0180"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0181"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0169"
         },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0182"
         },
         "subtitleFontSize": {
           "displayName": "Subtitle Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0183"
         },
         "subtitleFontColor": {
           "displayName": "Subtitle Color",
@@ -1023,7 +1233,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0184"
         },
         "titleFontWeight": {
           "displayName": "Font Weight",
@@ -1031,14 +1242,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0186"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0187"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0185"
         },
         "subtitleFontFamily": {
           "displayName": "Subtitle Font",
@@ -1046,54 +1260,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0189"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0190"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0191"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0192"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0193"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0194"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0195"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0196"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0197"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0198"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0199"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0200"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0188"
         },
         "subtitleFontWeight": {
           "displayName": "Subtitle Font Weight",
@@ -1101,51 +1328,61 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0202"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0203"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0201"
         }
-      }
+      },
+      "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0160"
     },
     "scatterClusterSettings": {
-      "displayName": "Analytics",
+      "displayName": "Clustering and Navigation",
       "properties": {
         "enabled": {
           "displayName": "Enable Clustering",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0205"
         },
         "clusters": {
           "displayName": "Number of Clusters",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0206"
         },
         "showHulls": {
           "displayName": "Show Convex Hulls",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0207"
         },
         "enableZoom": {
           "displayName": "Enable Zoom",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0208"
         },
         "enablePan": {
           "displayName": "Enable Pan",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0209"
         }
-      }
+      },
+      "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0204"
     },
     "scatterColorSettings": {
       "displayName": "Color Scale",
@@ -1156,14 +1393,17 @@
             "enumeration": [
               {
                 "value": "categorical",
-                "displayName": "Categorical"
+                "displayName": "Categorical",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0212"
               },
               {
                 "value": "sequential",
-                "displayName": "Sequential"
+                "displayName": "Sequential",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0213"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0211"
         },
         "startColor": {
           "displayName": "Start Color",
@@ -1173,7 +1413,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0214"
         },
         "endColor": {
           "displayName": "End Color",
@@ -1183,9 +1424,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0215"
         }
-      }
+      },
+      "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0210"
     },
     "referenceLineFormatting": {
       "displayName": "Reference Line",
@@ -1194,7 +1437,8 @@
           "displayName": "Show Reference Line",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0217"
         },
         "referenceLineType": {
           "displayName": "Type",
@@ -1202,36 +1446,44 @@
             "enumeration": [
               {
                 "value": "custom",
-                "displayName": "Custom Value"
+                "displayName": "Custom Value",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0219"
               },
               {
                 "value": "mean",
-                "displayName": "Mean"
+                "displayName": "Mean",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0220"
               },
               {
                 "value": "median",
-                "displayName": "Median"
+                "displayName": "Median",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0221"
               },
               {
                 "value": "percentile",
-                "displayName": "Percentile"
+                "displayName": "Percentile",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0222"
               },
               {
                 "value": "min",
-                "displayName": "Min"
+                "displayName": "Min",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0223"
               },
               {
                 "value": "max",
-                "displayName": "Max"
+                "displayName": "Max",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0224"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0218"
         },
         "referenceLineValue": {
           "displayName": "Value",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0225"
         },
         "referenceLineColor": {
           "displayName": "Line Color",
@@ -1241,13 +1493,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0226"
         },
         "referenceLineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0227"
         },
         "referenceLineStyle": {
           "displayName": "Line Style",
@@ -1255,48 +1509,57 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0229"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0230"
               },
               {
                 "value": "dotted",
-                "displayName": "Dotted"
+                "displayName": "Dotted",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0231"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0228"
         },
         "showReferenceLabel": {
           "displayName": "Show Label",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0232"
         },
         "referenceLabelText": {
           "displayName": "Label Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0233"
         },
         "showReferenceBand": {
           "displayName": "Show Band",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0234"
         },
         "referenceBandOpacity": {
           "displayName": "Band Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0235"
         },
         "referenceBandWidth": {
           "displayName": "Band Width (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0236"
         },
         "referenceLineAxis": {
           "displayName": "Target Axis",
@@ -1304,16 +1567,20 @@
             "enumeration": [
               {
                 "value": "primary",
-                "displayName": "Primary"
+                "displayName": "Primary",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0238"
               },
               {
                 "value": "secondary",
-                "displayName": "Secondary"
+                "displayName": "Secondary",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0239"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0237"
         }
-      }
+      },
+      "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0216"
     },
     "conditionalFormatting": {
       "displayName": "Conditional Formatting",
@@ -1322,7 +1589,8 @@
           "displayName": "Enable Conditional Formatting",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0241"
         },
         "conditionalDirection": {
           "displayName": "Direction",
@@ -1330,26 +1598,31 @@
             "enumeration": [
               {
                 "value": "ascending",
-                "displayName": "Ascending (Low = Bad)"
+                "displayName": "Ascending (Low = Bad)",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0243"
               },
               {
                 "value": "descending",
-                "displayName": "Descending (Low = Good)"
+                "displayName": "Descending (Low = Good)",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0244"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0242"
         },
         "threshold1": {
           "displayName": "Threshold 1",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0245"
         },
         "threshold2": {
           "displayName": "Threshold 2",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0246"
         },
         "conditionalColor1": {
           "displayName": "Color 1 (Bad)",
@@ -1359,7 +1632,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0247"
         },
         "conditionalColor2": {
           "displayName": "Color 2 (Warning)",
@@ -1369,7 +1643,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0248"
         },
         "conditionalColor3": {
           "displayName": "Color 3 (Good)",
@@ -1379,9 +1654,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0249"
         }
-      }
+      },
+      "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0240"
     },
     "accessibilityFormatting": {
       "displayName": "Accessibility",
@@ -1390,9 +1667,11 @@
           "displayName": "Enable Keyboard Navigation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0251"
         }
-      }
+      },
+      "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0250"
     },
     "cardSettings": {
       "displayName": "Card Style",
@@ -1405,19 +1684,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0253"
         },
         "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0254"
         },
         "borderRadius": {
           "displayName": "Border Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0255"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0256"
         },
         "cardStyleMode": {
           "displayName": "Card Style",
@@ -1425,30 +1714,47 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0001"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0002"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0003"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0004"
+              },
+              {
+                "value": "outlined",
+                "displayName": "Border Only",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0005"
+              },
+              {
+                "value": "floating",
+                "displayName": "Floating Shadow",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0006"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0257"
         },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "(Deprecated) Enable Glass"
+          "displayName": "(Deprecated) Enable Glass",
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0262"
         }
-      }
+      },
+      "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0252"
     },
     "numberFormatting": {
       "displayName": "Number Format",
@@ -1459,46 +1765,56 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0265"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0266"
               },
               {
                 "value": "thousands",
-                "displayName": "Thousands (K)"
+                "displayName": "Thousands (K)",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0267"
               },
               {
                 "value": "millions",
-                "displayName": "Millions (M)"
+                "displayName": "Millions (M)",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0268"
               },
               {
                 "value": "billions",
-                "displayName": "Billions (B)"
+                "displayName": "Billions (B)",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0269"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0264"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0270"
         },
         "valuePrefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0271"
         },
         "valueSuffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0272"
         }
-      }
+      },
+      "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0263"
     },
     "colorThemeFormatting": {
       "properties": {
@@ -1508,59 +1824,74 @@
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0275"
               },
               {
                 "value": "ocean",
-                "displayName": "Ocean"
+                "displayName": "Ocean",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0276"
               },
               {
                 "value": "sunset",
-                "displayName": "Sunset"
+                "displayName": "Sunset",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0277"
               },
               {
                 "value": "forest",
-                "displayName": "Forest"
+                "displayName": "Forest",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0278"
               },
               {
                 "value": "berry",
-                "displayName": "Berry"
+                "displayName": "Berry",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0279"
               },
               {
                 "value": "monochrome",
-                "displayName": "Monochrome"
+                "displayName": "Monochrome",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0280"
               },
               {
                 "value": "earth",
-                "displayName": "Earth"
+                "displayName": "Earth",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0281"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0274"
         }
       },
-      "displayName": "Color Theme"
+      "displayName": "Color Theme",
+      "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0273"
     },
     "seriesFormatting": {
+      "displayName": "Series Formatting",
       "properties": {
         "seriesColor": {
+          "displayName": "Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0310"
         },
         "seriesOpacity": {
+          "displayName": "Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0311"
         },
         "showDataLabels": {
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0282"
         },
         "lineStyle": {
           "displayName": "Line Style",
@@ -1568,26 +1899,32 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0284"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0285"
               },
               {
                 "value": "dotted",
-                "displayName": "Dotted"
+                "displayName": "Dotted",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0286"
               }
             ]
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0283"
         },
         "lineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0287"
         }
-      }
+      },
+      "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0309"
     },
     "dateFilterFormatting": {
       "displayName": "Date Filter",
@@ -1596,32 +1933,149 @@
           "displayName": "Enable Date Filter",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0289"
         },
         "startDate": {
           "displayName": "Start Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0290"
         },
         "endAtCurrentDate": {
           "displayName": "End at Current Date",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0291"
         },
         "endDate": {
           "displayName": "End Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0292"
         }
-      }
+      },
+      "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0288"
+    },
+    "trendLineFormatting": {
+      "displayName": "Trend Line",
+      "properties": {
+        "showTrendLine": {
+          "displayName": "Show Trend Line",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0294"
+        },
+        "trendLineType": {
+          "displayName": "Type",
+          "type": {
+            "enumeration": [
+              {
+                "value": "linear",
+                "displayName": "Linear",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0296"
+              },
+              {
+                "value": "polynomial",
+                "displayName": "Polynomial",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0297"
+              },
+              {
+                "value": "exponential",
+                "displayName": "Exponential",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0298"
+              },
+              {
+                "value": "logarithmic",
+                "displayName": "Logarithmic",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0299"
+              },
+              {
+                "value": "power",
+                "displayName": "Power",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0300"
+              }
+            ]
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0295"
+        },
+        "polynomialOrder": {
+          "displayName": "Polynomial Order",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0301"
+        },
+        "trendLineColor": {
+          "displayName": "Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0302"
+        },
+        "trendLineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0303"
+        },
+        "showEquation": {
+          "displayName": "Show Equation",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0304"
+        },
+        "showR2": {
+          "displayName": "Show R²",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0305"
+        },
+        "trendLineAxis": {
+          "displayName": "Target Axis",
+          "type": {
+            "enumeration": [
+              {
+                "value": "primary",
+                "displayName": "Primary",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0307"
+              },
+              {
+                "value": "secondary",
+                "displayName": "Secondary",
+                "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0308"
+              }
+            ]
+          },
+          "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0306"
+        }
+      },
+      "displayNameKey": "ScatterBubbleCapabilities_DisplayName_0293"
     }
   },
   "supportsKeyboardFocus": true,
   "supportsHighlight": true,
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
   "supportsMultiVisualSelection": true,
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
   "privileges": [],
   "suppressDefaultTitle": true
 }

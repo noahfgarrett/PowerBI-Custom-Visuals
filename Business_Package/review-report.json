@@ -1,14 +1,15 @@
 {
-  "generatedAt": "2026-02-23T19:15:36.118Z",
+  "generatedAt": "2026-10-09T15:43:14.745Z",
   "summary": {
-    "packageCount": 30,
-    "warningCount": 0,
+    "packageCount": 33,
+    "warningCount": 7,
     "errorCount": 0
   },
   "packages": [
     {
       "package": "animated-donut-pro",
       "files": {
+        "package": "packages/animated-donut-pro/package.json",
         "pbiviz": "packages/animated-donut-pro/pbiviz.json",
         "capabilities": "packages/animated-donut-pro/capabilities.json",
         "visual": "packages/animated-donut-pro/src/visual.ts",
@@ -20,6 +21,7 @@
     {
       "package": "animated-waterfall",
       "files": {
+        "package": "packages/animated-waterfall/package.json",
         "pbiviz": "packages/animated-waterfall/pbiviz.json",
         "capabilities": "packages/animated-waterfall/capabilities.json",
         "visual": "packages/animated-waterfall/src/visual.ts",
@@ -31,6 +33,7 @@
     {
       "package": "bar-chart-pro",
       "files": {
+        "package": "packages/bar-chart-pro/package.json",
         "pbiviz": "packages/bar-chart-pro/pbiviz.json",
         "capabilities": "packages/bar-chart-pro/capabilities.json",
         "visual": "packages/bar-chart-pro/src/visual.ts",
@@ -42,6 +45,7 @@
     {
       "package": "bar-race",
       "files": {
+        "package": "packages/bar-race/package.json",
         "pbiviz": "packages/bar-race/pbiviz.json",
         "capabilities": "packages/bar-race/capabilities.json",
         "visual": "packages/bar-race/src/visual.ts",
@@ -53,6 +57,7 @@
     {
       "package": "box-plot",
       "files": {
+        "package": "packages/box-plot/package.json",
         "pbiviz": "packages/box-plot/pbiviz.json",
         "capabilities": "packages/box-plot/capabilities.json",
         "visual": "packages/box-plot/src/visual.ts",
@@ -64,6 +69,7 @@
     {
       "package": "bullet-chart-pro",
       "files": {
+        "package": "packages/bullet-chart-pro/package.json",
         "pbiviz": "packages/bullet-chart-pro/pbiviz.json",
         "capabilities": "packages/bullet-chart-pro/capabilities.json",
         "visual": "packages/bullet-chart-pro/src/visual.ts",
@@ -75,6 +81,7 @@
     {
       "package": "bump-chart",
       "files": {
+        "package": "packages/bump-chart/package.json",
         "pbiviz": "packages/bump-chart/pbiviz.json",
         "capabilities": "packages/bump-chart/capabilities.json",
         "visual": "packages/bump-chart/src/visual.ts",
@@ -86,6 +93,7 @@
     {
       "package": "chord-diagram",
       "files": {
+        "package": "packages/chord-diagram/package.json",
         "pbiviz": "packages/chord-diagram/pbiviz.json",
         "capabilities": "packages/chord-diagram/capabilities.json",
         "visual": "packages/chord-diagram/src/visual.ts",
@@ -97,6 +105,7 @@
     {
       "package": "dumbbell-chart",
       "files": {
+        "package": "packages/dumbbell-chart/package.json",
         "pbiviz": "packages/dumbbell-chart/pbiviz.json",
         "capabilities": "packages/dumbbell-chart/capabilities.json",
         "visual": "packages/dumbbell-chart/src/visual.ts",
@@ -106,8 +115,21 @@
       "issues": []
     },
     {
+      "package": "filter-pane-pro",
+      "files": {
+        "package": "packages/filter-pane-pro/package.json",
+        "pbiviz": "packages/filter-pane-pro/pbiviz.json",
+        "capabilities": "packages/filter-pane-pro/capabilities.json",
+        "visual": "packages/filter-pane-pro/src/visual.ts",
+        "settings": "packages/filter-pane-pro/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
       "package": "funnel-pro",
       "files": {
+        "package": "packages/funnel-pro/package.json",
         "pbiviz": "packages/funnel-pro/pbiviz.json",
         "capabilities": "packages/funnel-pro/capabilities.json",
         "visual": "packages/funnel-pro/src/visual.ts",
@@ -119,6 +141,7 @@
     {
       "package": "gantt-chart-pro",
       "files": {
+        "package": "packages/gantt-chart-pro/package.json",
         "pbiviz": "packages/gantt-chart-pro/pbiviz.json",
         "capabilities": "packages/gantt-chart-pro/capabilities.json",
         "visual": "packages/gantt-chart-pro/src/visual.ts",
@@ -130,6 +153,7 @@
     {
       "package": "gauge-cluster",
       "files": {
+        "package": "packages/gauge-cluster/package.json",
         "pbiviz": "packages/gauge-cluster/pbiviz.json",
         "capabilities": "packages/gauge-cluster/capabilities.json",
         "visual": "packages/gauge-cluster/src/visual.ts",
@@ -139,8 +163,21 @@
       "issues": []
     },
     {
+      "package": "health-bar",
+      "files": {
+        "package": "packages/health-bar/package.json",
+        "pbiviz": "packages/health-bar/pbiviz.json",
+        "capabilities": "packages/health-bar/capabilities.json",
+        "visual": "packages/health-bar/src/visual.ts",
+        "settings": "packages/health-bar/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
       "package": "heatmap-calendar",
       "files": {
+        "package": "packages/heatmap-calendar/package.json",
         "pbiviz": "packages/heatmap-calendar/pbiviz.json",
         "capabilities": "packages/heatmap-calendar/capabilities.json",
         "visual": "packages/heatmap-calendar/src/visual.ts",
@@ -152,6 +189,7 @@
     {
       "package": "kpi-card",
       "files": {
+        "package": "packages/kpi-card/package.json",
         "pbiviz": "packages/kpi-card/pbiviz.json",
         "capabilities": "packages/kpi-card/capabilities.json",
         "visual": "packages/kpi-card/src/visual.ts",
@@ -163,6 +201,7 @@
     {
       "package": "morphing-area-chart",
       "files": {
+        "package": "packages/morphing-area-chart/package.json",
         "pbiviz": "packages/morphing-area-chart/pbiviz.json",
         "capabilities": "packages/morphing-area-chart/capabilities.json",
         "visual": "packages/morphing-area-chart/src/visual.ts",
@@ -174,6 +213,7 @@
     {
       "package": "network-graph",
       "files": {
+        "package": "packages/network-graph/package.json",
         "pbiviz": "packages/network-graph/pbiviz.json",
         "capabilities": "packages/network-graph/capabilities.json",
         "visual": "packages/network-graph/src/visual.ts",
@@ -185,6 +225,7 @@
     {
       "package": "polar-chart",
       "files": {
+        "package": "packages/polar-chart/package.json",
         "pbiviz": "packages/polar-chart/pbiviz.json",
         "capabilities": "packages/polar-chart/capabilities.json",
         "visual": "packages/polar-chart/src/visual.ts",
@@ -196,6 +237,7 @@
     {
       "package": "progress-bar-stack",
       "files": {
+        "package": "packages/progress-bar-stack/package.json",
         "pbiviz": "packages/progress-bar-stack/pbiviz.json",
         "capabilities": "packages/progress-bar-stack/capabilities.json",
         "visual": "packages/progress-bar-stack/src/visual.ts",
@@ -207,6 +249,7 @@
     {
       "package": "radar-chart",
       "files": {
+        "package": "packages/radar-chart/package.json",
         "pbiviz": "packages/radar-chart/pbiviz.json",
         "capabilities": "packages/radar-chart/capabilities.json",
         "visual": "packages/radar-chart/src/visual.ts",
@@ -218,6 +261,7 @@
     {
       "package": "radial-gauge",
       "files": {
+        "package": "packages/radial-gauge/package.json",
         "pbiviz": "packages/radial-gauge/pbiviz.json",
         "capabilities": "packages/radial-gauge/capabilities.json",
         "visual": "packages/radial-gauge/src/visual.ts",
@@ -229,6 +273,7 @@
     {
       "package": "ring-stack",
       "files": {
+        "package": "packages/ring-stack/package.json",
         "pbiviz": "packages/ring-stack/pbiviz.json",
         "capabilities": "packages/ring-stack/capabilities.json",
         "visual": "packages/ring-stack/src/visual.ts",
@@ -240,6 +285,7 @@
     {
       "package": "sankey-diagram",
       "files": {
+        "package": "packages/sankey-diagram/package.json",
         "pbiviz": "packages/sankey-diagram/pbiviz.json",
         "capabilities": "packages/sankey-diagram/capabilities.json",
         "visual": "packages/sankey-diagram/src/visual.ts",
@@ -251,6 +297,7 @@
     {
       "package": "scatter-bubble",
       "files": {
+        "package": "packages/scatter-bubble/package.json",
         "pbiviz": "packages/scatter-bubble/pbiviz.json",
         "capabilities": "packages/scatter-bubble/capabilities.json",
         "visual": "packages/scatter-bubble/src/visual.ts",
@@ -262,6 +309,7 @@
     {
       "package": "slope-chart",
       "files": {
+        "package": "packages/slope-chart/package.json",
         "pbiviz": "packages/slope-chart/pbiviz.json",
         "capabilities": "packages/slope-chart/capabilities.json",
         "visual": "packages/slope-chart/src/visual.ts",
@@ -271,8 +319,64 @@
       "issues": []
     },
     {
+      "package": "ssm-explorer",
+      "files": {
+        "package": "packages/ssm-explorer/package.json",
+        "pbiviz": "packages/ssm-explorer/pbiviz.json",
+        "capabilities": "packages/ssm-explorer/capabilities.json",
+        "visual": "packages/ssm-explorer/src/visual.ts",
+        "settings": "packages/ssm-explorer/src/settings.ts"
+      },
+      "issueCount": 7,
+      "issues": [
+        {
+          "severity": "warning",
+          "code": "capabilities.cardSettings",
+          "message": "cardSettings object is missing from capabilities.",
+          "file": "packages/ssm-explorer/capabilities.json"
+        },
+        {
+          "severity": "warning",
+          "code": "capabilities.animationSettings",
+          "message": "animationSettings object is missing from capabilities.",
+          "file": "packages/ssm-explorer/capabilities.json"
+        },
+        {
+          "severity": "warning",
+          "code": "settings.cardSettingsModel",
+          "message": "A cardSettings formatting model is missing in settings.ts.",
+          "file": "packages/ssm-explorer/src/settings.ts"
+        },
+        {
+          "severity": "warning",
+          "code": "settings.animationSettingsModel",
+          "message": "animationSettings model binding is missing in settings.ts.",
+          "file": "packages/ssm-explorer/src/settings.ts"
+        },
+        {
+          "severity": "warning",
+          "code": "ux.noDataState",
+          "message": "No dedicated empty-selection state detected.",
+          "file": "packages/ssm-explorer/src/visual.ts"
+        },
+        {
+          "severity": "warning",
+          "code": "capabilities.accessibilityFormatting",
+          "message": "No accessibility formatting card is exposed.",
+          "file": "packages/ssm-explorer/capabilities.json"
+        },
+        {
+          "severity": "warning",
+          "code": "capabilities.cardBackgroundColor",
+          "message": "No card background color property found in cardSettings.",
+          "file": "packages/ssm-explorer/capabilities.json"
+        }
+      ]
+    },
+    {
       "package": "status-indicator",
       "files": {
+        "package": "packages/status-indicator/package.json",
         "pbiviz": "packages/status-indicator/pbiviz.json",
         "capabilities": "packages/status-indicator/capabilities.json",
         "visual": "packages/status-indicator/src/visual.ts",
@@ -284,6 +388,7 @@
     {
       "package": "stream-graph",
       "files": {
+        "package": "packages/stream-graph/package.json",
         "pbiviz": "packages/stream-graph/pbiviz.json",
         "capabilities": "packages/stream-graph/capabilities.json",
         "visual": "packages/stream-graph/src/visual.ts",
@@ -295,6 +400,7 @@
     {
       "package": "sunburst-chart",
       "files": {
+        "package": "packages/sunburst-chart/package.json",
         "pbiviz": "packages/sunburst-chart/pbiviz.json",
         "capabilities": "packages/sunburst-chart/capabilities.json",
         "visual": "packages/sunburst-chart/src/visual.ts",
@@ -306,6 +412,7 @@
     {
       "package": "timeline-milestone",
       "files": {
+        "package": "packages/timeline-milestone/package.json",
         "pbiviz": "packages/timeline-milestone/pbiviz.json",
         "capabilities": "packages/timeline-milestone/capabilities.json",
         "visual": "packages/timeline-milestone/src/visual.ts",
@@ -317,6 +424,7 @@
     {
       "package": "treemap-pro",
       "files": {
+        "package": "packages/treemap-pro/package.json",
         "pbiviz": "packages/treemap-pro/pbiviz.json",
         "capabilities": "packages/treemap-pro/capabilities.json",
         "visual": "packages/treemap-pro/src/visual.ts",
@@ -328,6 +436,7 @@
     {
       "package": "waffle-chart",
       "files": {
+        "package": "packages/waffle-chart/package.json",
         "pbiviz": "packages/waffle-chart/pbiviz.json",
         "capabilities": "packages/waffle-chart/capabilities.json",
         "visual": "packages/waffle-chart/src/visual.ts",

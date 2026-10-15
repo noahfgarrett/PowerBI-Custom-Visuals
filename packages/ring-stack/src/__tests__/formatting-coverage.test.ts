@@ -8,6 +8,9 @@ const settingsRef: { current: unknown } = { current: undefined };
 
 vi.mock('../../style/visual.less', () => ({}));
 
+vi.stubGlobal('requestAnimationFrame', () => 0);
+vi.stubGlobal('cancelAnimationFrame', () => {});
+
 vi.mock('powerbi-visuals-utils-formattingmodel', () => {
   class SliceBase {
     constructor(init?: Record<string, unknown>) { if (init) Object.assign(this, init); }
@@ -44,6 +47,7 @@ vi.mock('powerbi-visuals-utils-formattingmodel', () => {
 
 import { RingStackVisual } from '../visual';
 import { RingStackSettings } from '../settings';
+import capabilities from '../../capabilities.json';
 import {
   createConstructorOptions,
   DataViewBuilder,
@@ -52,12 +56,13 @@ import {
   type HarnessConfig,
 } from '../../../core/src/__test-utils__';
 
-const testDV = DataViewBuilder.measuresOnly([{name:'Ring1',values:[80],role:'measure'},{name:'Ring2',values:[60],role:'measure'},{name:'Ring3',values:[40],role:'measure'}]);
+const testDV = DataViewBuilder.measuresOnly([{name:'Ring1',values:[80],role:'measure1'},{name:'Ring2',values:[60],role:'measure2'},{name:'Ring3',values:[40],role:'measure3'}]);
 
 function createVisual() {
   const opts = createConstructorOptions();
   const settings = new RingStackSettings();
   settingsRef.current = settings;
+  settings.animationSettings.enabled.value = false;
   const visual = new RingStackVisual(opts as never);
   return {
     visual,
@@ -81,6 +86,14 @@ function makeDeps(): Record<string, Record<string, unknown>> {
   for (const s of ['dataLabelFontSize','dataLabelFontColor','dataLabelFontWeight','dataLabelFontFamily','dataLabelPosition']) {
     deps[`dataLabelFormatting.${s}`] = { 'dataLabelFormatting.showDataLabels': true };
   }
+  deps['centerContentSettings.contentPadding'] = {
+    'centerContentSettings.show': true,
+    'centerContentSettings.displayMode': 'custom',
+    'centerContentSettings.customText': 'Center',
+  };
+  deps['sideLabelSettings.labelPadding'] = {
+    'ringSettings.showLabels': true,
+  };
   deps['conditionalFormatting.enableConditional'] = {};
   for (const s of ['conditionalDirection','threshold1','threshold2','conditionalColor1','conditionalColor2','conditionalColor3']) {
     deps[`conditionalFormatting.${s}`] = { 'conditionalFormatting.enableConditional': true };
@@ -105,6 +118,7 @@ const harnessConfig: HarnessConfig = {
     'cardSettings.backgroundOpacity',
     'cardSettings.backgroundColor',
     'cardSettings.enableGlass',
+    'cardSettings.contentPadding',
     'accessibilityFormatting.enableKeyboardNav',
     'animationSettings.staggerDelay',
     'animationSettings.duration',
@@ -129,6 +143,7 @@ const harnessConfig: HarnessConfig = {
     'centerContentSettings.fontColor',
     'centerContentSettings.showLabel',
     'centerContentSettings.labelFontSize',
+    'centerContentSettings.contentPadding',
     'animationSettings.enabled',
     'perRingMaxSettings.enabled',
     'perRingMaxSettings.maxValues',
@@ -156,10 +171,46 @@ const harnessConfig: HarnessConfig = {
     'colorThemeFormatting.colorTheme',
     'numberFormatting.valuePrefix',
     'numberFormatting.valueSuffix',
+    'ringSettings.chartPadding',
+    'ringSettings.gradientEnabled',
+    'ringSettings.showArcLabels',
+    'ringSettings.showOverflow',
+    'centerContentSettings.fontFamily',
+    'centerContentSettings.fontWeight',
+    'legendFormatting.legendAliases',
+    'legendFormatting.showInlineLabels',
+    'legendFormatting.inlineLabelFontSize',
+    'legendFormatting.inlineLabelOffset',
+    'sideLabelSettings.fontSize',
+    'sideLabelSettings.fontColor',
+    'sideLabelSettings.fontFamily',
+    'sideLabelSettings.fontWeight',
+    'sideLabelSettings.labelPadding',
+    'dateFilterFormatting.enableDateFilter',
+    'dateFilterFormatting.startDate',
+    'dateFilterFormatting.endAtCurrentDate',
+    'dateFilterFormatting.endDate',
   ],
 };
 
 describe('ring-stack formatting coverage', () => {
+  it('declares its rendered landing, empty, and keyboard states', () => {
+    expect(capabilities.supportsLandingPage).toBe(true);
+    expect(capabilities.supportsEmptyDataView).toBe(true);
+    expect(capabilities.supportsKeyboardFocus).toBe(true);
+    expect(capabilities.tooltips.supportEnhancedTooltips).toBe(true);
+  });
+
+  it('declares every formatting slice in capabilities', () => {
+    const paths = getSettingPaths(new RingStackSettings() as unknown as { cards: Array<Record<string, unknown>> }, []);
+    const objects = capabilities.objects as Record<string, { properties?: Record<string, unknown> }>;
+    const localCards = new Set(['ringSettings', 'colorSettings', 'perRingMaxSettings', 'centerContentSettings', 'sideLabelSettings', 'cardSettings', 'animationSettings']);
+    expect(paths.filter(({ cardName, sliceName }) => localCards.has(cardName) && !objects[cardName]?.properties?.[sliceName])).toEqual([]);
+    expect(objects.centerContentSettings.properties).toHaveProperty('contentPadding');
+    expect(objects.sideLabelSettings.properties).toHaveProperty('labelPadding');
+    expect(objects.cardSettings.properties).toHaveProperty('enableGlass');
+  });
+
   it('detects settings from the model', () => {
     const settings = new RingStackSettings();
     const paths = getSettingPaths(

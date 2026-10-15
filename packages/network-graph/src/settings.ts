@@ -7,7 +7,6 @@ import { formattingSettings } from 'powerbi-visuals-utils-formattingmodel';
 
 import {
   LegendFormattingCard,
-  DataLabelFormattingCard,
   TitleFormattingCard,
   ConditionalFormattingCard,
   AccessibilityFormattingCard,
@@ -28,13 +27,13 @@ class NodeSettings extends formattingSettings.SimpleCard {
 
   minRadius = new formattingSettings.NumUpDown({
     name: 'minRadius',
-    displayName: 'Min Dynamic Radius',
+    displayName: 'Minimum Dynamic Radius', displayNameKey: 'NetworkGraphSettings_DisplayName_0064',
     value: 4,
   });
 
   maxRadius = new formattingSettings.NumUpDown({
     name: 'maxRadius',
-    displayName: 'Max Dynamic Radius',
+    displayName: 'Maximum Dynamic Radius', displayNameKey: 'NetworkGraphSettings_DisplayName_0065',
     value: 20,
   });
 
@@ -65,13 +64,14 @@ class NodeSettings extends formattingSettings.SimpleCard {
 
   targetSizeMode = new formattingSettings.ItemDropdown({
     name: 'targetSizeMode',
-    displayName: 'Target Size Mode',
+    displayName: 'Target Size Mode', displayNameKey: 'NetworkGraphSettings_DisplayName_0066',
     items: [
-      { value: 'fixed', displayName: 'Fixed' },
-      { value: 'count', displayName: 'Connection Count' },
-      { value: 'weight', displayName: 'Total Weight' },
+      { value: 'fixed', displayName: 'Fixed', displayNameKey: 'NetworkGraphSettings_DisplayName_0067' },
+      { value: 'count', displayName: 'Connection Count', displayNameKey: 'NetworkGraphSettings_DisplayName_0068' },
+      { value: 'weight', displayName: 'Total Weight', displayNameKey: 'NetworkGraphSettings_DisplayName_0069' },
+      { value: 'sourceTargetWeighted', displayName: 'Source + Target Weighted', displayNameKey: 'NetworkGraphSettings_DisplayName_0070' },
     ],
-    value: { value: 'fixed', displayName: 'Fixed' },
+    value: { value: 'fixed', displayName: 'Fixed', displayNameKey: 'NetworkGraphSettings_DisplayName_0071' },
   });
 
   fontSize = new formattingSettings.NumUpDown({
@@ -82,19 +82,19 @@ class NodeSettings extends formattingSettings.SimpleCard {
 
   useRoleLabelFontSizes = new formattingSettings.ToggleSwitch({
     name: 'useRoleLabelFontSizes',
-    displayName: 'Use Role Label Sizes',
+    displayName: 'Use Role Label Sizes', displayNameKey: 'NetworkGraphSettings_DisplayName_0072',
     value: false,
   });
 
   sourceLabelFontSize = new formattingSettings.NumUpDown({
     name: 'sourceLabelFontSize',
-    displayName: 'Source Label Font Size',
+    displayName: 'Source Label Font Size', displayNameKey: 'NetworkGraphSettings_DisplayName_0073',
     value: 11,
   });
 
   targetLabelFontSize = new formattingSettings.NumUpDown({
     name: 'targetLabelFontSize',
-    displayName: 'Target Label Font Size',
+    displayName: 'Target Label Font Size', displayNameKey: 'NetworkGraphSettings_DisplayName_0074',
     value: 11,
   });
 
@@ -132,63 +132,63 @@ class NodeSettings extends formattingSettings.SimpleCard {
 
   labelVisibility = new formattingSettings.ItemDropdown({
     name: 'labelVisibility',
-    displayName: 'Label Visibility',
+    displayName: 'Label Visibility', displayNameKey: 'NetworkGraphSettings_DisplayName_0075',
     items: [
-      { value: 'smart', displayName: 'Smart Density' },
-      { value: 'always', displayName: 'Always' },
-      { value: 'hover', displayName: 'Hover' },
-      { value: 'selected', displayName: 'Selected' },
-      { value: 'adaptive', displayName: 'Adaptive Zoom' },
+      { value: 'smart', displayName: 'Smart Density', displayNameKey: 'NetworkGraphSettings_DisplayName_0076' },
+      { value: 'always', displayName: 'Always', displayNameKey: 'NetworkGraphSettings_DisplayName_0077' },
+      { value: 'hover', displayName: 'Hover', displayNameKey: 'NetworkGraphSettings_DisplayName_0078' },
+      { value: 'selected', displayName: 'Selected', displayNameKey: 'NetworkGraphSettings_DisplayName_0079' },
+      { value: 'adaptive', displayName: 'Adaptive Zoom', displayNameKey: 'NetworkGraphSettings_DisplayName_0080' },
     ],
-    value: { value: 'smart', displayName: 'Smart Density' },
+    value: { value: 'smart', displayName: 'Smart Density', displayNameKey: 'NetworkGraphSettings_DisplayName_0081' },
   });
 
   labelPosition = new formattingSettings.ItemDropdown({
     name: 'labelPosition',
-    displayName: 'Label Position',
+    displayName: 'Label Position', displayNameKey: 'NetworkGraphSettings_DisplayName_0082',
     items: [
-      { value: 'right', displayName: 'Outside Right' },
-      { value: 'inside', displayName: 'Inside Node' },
-      { value: 'left', displayName: 'Outside Left' },
-      { value: 'above', displayName: 'Above Node' },
-      { value: 'below', displayName: 'Below Node' },
+      { value: 'right', displayName: 'Outside Right', displayNameKey: 'NetworkGraphSettings_DisplayName_0083' },
+      { value: 'inside', displayName: 'Inside Node', displayNameKey: 'NetworkGraphSettings_DisplayName_0084' },
+      { value: 'left', displayName: 'Outside Left', displayNameKey: 'NetworkGraphSettings_DisplayName_0085' },
+      { value: 'above', displayName: 'Above Node', displayNameKey: 'NetworkGraphSettings_DisplayName_0086' },
+      { value: 'below', displayName: 'Below Node', displayNameKey: 'NetworkGraphSettings_DisplayName_0087' },
     ],
-    value: { value: 'right', displayName: 'Outside Right' },
+    value: { value: 'right', displayName: 'Outside Right', displayNameKey: 'NetworkGraphSettings_DisplayName_0088' },
   });
 
   adaptiveZoomThreshold = new formattingSettings.NumUpDown({
     name: 'adaptiveZoomThreshold',
-    displayName: 'Adaptive Zoom Threshold',
+    displayName: 'Adaptive Zoom Threshold', displayNameKey: 'NetworkGraphSettings_DisplayName_0089',
     value: 1.2,
   });
 
   labelOffset = new formattingSettings.NumUpDown({
     name: 'labelOffset',
-    displayName: 'Label Offset',
+    displayName: 'Label Offset', displayNameKey: 'NetworkGraphSettings_DisplayName_0090',
     value: 8,
   });
 
   maxLabelCharacters = new formattingSettings.NumUpDown({
     name: 'maxLabelCharacters',
-    displayName: 'Max Label Characters',
+    displayName: 'Max Label Characters', displayNameKey: 'NetworkGraphSettings_DisplayName_0091',
     value: 28,
   });
 
   labelHalo = new formattingSettings.ToggleSwitch({
     name: 'labelHalo',
-    displayName: 'Label Halo',
+    displayName: 'Label Halo', displayNameKey: 'NetworkGraphSettings_DisplayName_0092',
     value: true,
   });
 
   labelHaloColor = new formattingSettings.ColorPicker({
     name: 'labelHaloColor',
-    displayName: 'Halo Color',
+    displayName: 'Halo Color', displayNameKey: 'NetworkGraphSettings_DisplayName_0093',
     value: { value: '#ffffff' },
   });
 
   labelHaloWidth = new formattingSettings.NumUpDown({
     name: 'labelHaloWidth',
-    displayName: 'Halo Width',
+    displayName: 'Halo Width', displayNameKey: 'NetworkGraphSettings_DisplayName_0094',
     value: 3,
   });
 
@@ -269,37 +269,37 @@ class LinkSettings extends formattingSettings.SimpleCard {
 
   showWeightLabels = new formattingSettings.ToggleSwitch({
     name: 'showWeightLabels',
-    displayName: 'Show Weight Labels',
+    displayName: 'Show Weight Labels', displayNameKey: 'NetworkGraphSettings_DisplayName_0095',
     value: false,
   });
 
   weightLabelFontSize = new formattingSettings.NumUpDown({
     name: 'weightLabelFontSize',
-    displayName: 'Weight Label Font Size',
+    displayName: 'Weight Label Font Size', displayNameKey: 'NetworkGraphSettings_DisplayName_0096',
     value: 11,
   });
 
   weightLabelFontColor = new formattingSettings.ColorPicker({
     name: 'weightLabelFontColor',
-    displayName: 'Weight Label Color',
+    displayName: 'Weight Label Color', displayNameKey: 'NetworkGraphSettings_DisplayName_0097',
     value: { value: '#0F172A' },
   });
 
   weightLabelBackgroundColor = new formattingSettings.ColorPicker({
     name: 'weightLabelBackgroundColor',
-    displayName: 'Weight Label Background',
+    displayName: 'Weight Label Background', displayNameKey: 'NetworkGraphSettings_DisplayName_0098',
     value: { value: '#ffffff' },
   });
 
   weightLabelBackgroundOpacity = new formattingSettings.NumUpDown({
     name: 'weightLabelBackgroundOpacity',
-    displayName: 'Weight Label Background Opacity (%)',
+    displayName: 'Weight Label Background Opacity (%)', displayNameKey: 'NetworkGraphSettings_DisplayName_0099',
     value: 85,
   });
 
   minWeightLabel = new formattingSettings.NumUpDown({
     name: 'minWeightLabel',
-    displayName: 'Minimum Weight to Label',
+    displayName: 'Minimum Weight to Label', displayNameKey: 'NetworkGraphSettings_DisplayName_0100',
     value: 0,
   });
 
@@ -328,25 +328,25 @@ class LinkSettings extends formattingSettings.SimpleCard {
 class ColorsAndThemeSettings extends formattingSettings.SimpleCard {
   colorByNodeRole = new formattingSettings.ToggleSwitch({
     name: 'colorByNodeRole',
-    displayName: 'Color by Source/Target Role',
+    displayName: 'Color Nodes by Role', displayNameKey: 'NetworkGraphSettings_DisplayName_0101',
     value: true,
   });
 
   sourceNodeColor = new formattingSettings.ColorPicker({
     name: 'sourceNodeColor',
-    displayName: 'Source Node Color',
+    displayName: 'Source Node Color', displayNameKey: 'NetworkGraphSettings_DisplayName_0102',
     value: { value: '#2563EB' },
   });
 
   targetNodeColor = new formattingSettings.ColorPicker({
     name: 'targetNodeColor',
-    displayName: 'Target Node Color',
+    displayName: 'Target Node Color', displayNameKey: 'NetworkGraphSettings_DisplayName_0103',
     value: { value: '#DC2626' },
   });
 
   bothRoleNodeColor = new formattingSettings.ColorPicker({
     name: 'bothRoleNodeColor',
-    displayName: 'Source + Target Node Color',
+    displayName: 'Source + Target Node Color', displayNameKey: 'NetworkGraphSettings_DisplayName_0104',
     value: { value: '#D97706' },
   });
 
@@ -359,12 +359,12 @@ class ColorsAndThemeSettings extends formattingSettings.SimpleCard {
   // Clustering moved here from NetworkLayoutSettings
   enableClustering = new formattingSettings.ToggleSwitch({
     name: 'enableClustering',
-    displayName: 'Cluster Detection & Coloring', displayNameKey: 'NetworkGraphSettings_DisplayName_0037',
+    displayName: 'Detect and Color Clusters', displayNameKey: 'NetworkGraphSettings_DisplayName_0037',
     value: false,
   });
 
   name = 'colorSettings';
-  displayName = 'Colors & Theme';
+  displayName = 'Node Colors';
   displayNameKey = 'NetworkGraphSettings_DisplayName_0003';
   slices = [
     this.colorByNodeRole,
@@ -383,7 +383,7 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
     name: 'cardStyleMode',
     displayName: 'Card Style', displayNameKey: 'NetworkGraphSettings_DisplayName_0038',
     items: CARD_STYLE_MODE_ITEMS,
-    value: { value: 'glass', displayName: 'Glass', displayNameKey: 'NetworkGraphSettings_DisplayName_0043' },
+    value: { value: 'glass', displayName: 'Frosted Glass', displayNameKey: 'NetworkGraphSettings_DisplayName_0043' },
   });
 
   backgroundColor = new formattingSettings.ColorPicker({
@@ -427,7 +427,7 @@ class InteractionSettings extends formattingSettings.SimpleCard {
 
   pinDraggedNodes = new formattingSettings.ToggleSwitch({
     name: 'pinDraggedNodes',
-    displayName: 'Pin Dragged Nodes',
+    displayName: 'Pin Dragged Nodes', displayNameKey: 'NetworkGraphSettings_DisplayName_0105',
     value: true,
   });
 
@@ -463,18 +463,18 @@ class InteractionSettings extends formattingSettings.SimpleCard {
 
   zoomWheelSensitivity = new formattingSettings.NumUpDown({
     name: 'zoomWheelSensitivity',
-    displayName: 'Zoom Wheel Sensitivity (%)',
+    displayName: 'Zoom Wheel Sensitivity (%)', displayNameKey: 'NetworkGraphSettings_DisplayName_0106',
     value: 50,
   });
 
   crossHighlightMode = new formattingSettings.ItemDropdown({
     name: 'crossHighlightMode',
-    displayName: 'Cross-Highlight Mode',
+    displayName: 'Cross-Highlight Behavior', displayNameKey: 'NetworkGraphSettings_DisplayName_0107',
     items: [
-      { value: 'focus', displayName: 'Focus' },
-      { value: 'dim', displayName: 'Dim Others' },
+      { value: 'focus', displayName: 'Show Highlighted Data Only', displayNameKey: 'NetworkGraphSettings_DisplayName_0108' },
+      { value: 'dim', displayName: 'Dim Unhighlighted Data', displayNameKey: 'NetworkGraphSettings_DisplayName_0109' },
     ],
-    value: { value: 'focus', displayName: 'Focus' },
+    value: { value: 'focus', displayName: 'Show Highlighted Data Only', displayNameKey: 'NetworkGraphSettings_DisplayName_0110' },
   });
 
   name = 'zoomSettings';
@@ -488,13 +488,12 @@ class InteractionSettings extends formattingSettings.SimpleCard {
 class PhysicsAndLayoutSettings extends formattingSettings.SimpleCard {
   layoutMode = new formattingSettings.ItemDropdown({
     name: 'layoutMode',
-    displayName: 'Layout Preset',
+    displayName: 'Layout Preset', displayNameKey: 'NetworkGraphSettings_DisplayName_0111',
     items: [
-      { value: 'sourceTarget', displayName: 'Source / Target Spread' },
-      { value: 'force', displayName: 'Free Force' },
-      { value: 'mapCanvas', displayName: 'Map Canvas' },
+      { value: 'sourceTarget', displayName: 'Source / Target Spread', displayNameKey: 'NetworkGraphSettings_DisplayName_0112' },
+      { value: 'force', displayName: 'Free Force', displayNameKey: 'NetworkGraphSettings_DisplayName_0113' },
     ],
-    value: { value: 'sourceTarget', displayName: 'Source / Target Spread' },
+    value: { value: 'sourceTarget', displayName: 'Source / Target Spread', displayNameKey: 'NetworkGraphSettings_DisplayName_0114' },
   });
 
   strength = new formattingSettings.NumUpDown({
@@ -517,19 +516,19 @@ class PhysicsAndLayoutSettings extends formattingSettings.SimpleCard {
 
   roleSeparation = new formattingSettings.NumUpDown({
     name: 'roleSeparation',
-    displayName: 'Source/Target Separation',
+    displayName: 'Source/Target Separation', displayNameKey: 'NetworkGraphSettings_DisplayName_0115',
     value: 320,
   });
 
   roleSpread = new formattingSettings.NumUpDown({
     name: 'roleSpread',
-    displayName: 'Lane Spread',
+    displayName: 'Lane Spread', displayNameKey: 'NetworkGraphSettings_DisplayName_0116',
     value: 300,
   });
 
   roleForceStrength = new formattingSettings.NumUpDown({
     name: 'roleForceStrength',
-    displayName: 'Lane Force Strength',
+    displayName: 'Lane Force Strength', displayNameKey: 'NetworkGraphSettings_DisplayName_0117',
     value: 0.24,
   });
 
@@ -547,25 +546,25 @@ class PhysicsAndLayoutSettings extends formattingSettings.SimpleCard {
 
   autoCenter = new formattingSettings.ToggleSwitch({
     name: 'autoCenter',
-    displayName: 'Auto-Center on Load',
+    displayName: 'Auto-Center on Load', displayNameKey: 'NetworkGraphSettings_DisplayName_0118',
     value: true,
   });
 
   fitOnLoad = new formattingSettings.ToggleSwitch({
     name: 'fitOnLoad',
-    displayName: 'Fit to View on Load',
+    displayName: 'Fit to View on Load', displayNameKey: 'NetworkGraphSettings_DisplayName_0119',
     value: true,
   });
 
   fitPadding = new formattingSettings.NumUpDown({
     name: 'fitPadding',
-    displayName: 'Fit Padding',
+    displayName: 'Fit Padding', displayNameKey: 'NetworkGraphSettings_DisplayName_0120',
     value: 24,
   });
 
   settleTicks = new formattingSettings.NumUpDown({
     name: 'settleTicks',
-    displayName: 'Initial Settle Ticks',
+    displayName: 'Initial Settle Ticks', displayNameKey: 'NetworkGraphSettings_DisplayName_0121',
     value: 100,
   });
 
@@ -594,113 +593,114 @@ class PhysicsAndLayoutSettings extends formattingSettings.SimpleCard {
 class MapCanvasSettings extends formattingSettings.SimpleCard {
   enabled = new formattingSettings.ToggleSwitch({
     name: 'enabled',
-    displayName: 'Enable Map Canvas',
+    displayName: 'Enable Map Canvas', displayNameKey: 'NetworkGraphSettings_DisplayName_0122',
     value: false,
   });
 
   showUploadControl = new formattingSettings.ToggleSwitch({
     name: 'showUploadControl',
-    displayName: 'Show Upload Button',
+    displayName: 'Show Upload Button', displayNameKey: 'NetworkGraphSettings_DisplayName_0123',
     value: false,
   });
 
   imageSource = new formattingSettings.TextInput({
     name: 'imageSource',
-    displayName: 'Image URL/Data URI',
+    displayName: 'Image URL/Data URI', displayNameKey: 'NetworkGraphSettings_DisplayName_0124',
     value: '',
-    placeholder: 'Auto-filled by Upload Map, or paste WebP, PNG, SVG, or image URL',
+    placeholder: 'Auto-filled by Upload Map, or paste WebP, PNG, SVG, or image URL', placeholderKey: 'NetworkGraphSettings_Placeholder_0001',
   });
 
   imageFit = new formattingSettings.ItemDropdown({
     name: 'imageFit',
-    displayName: 'Image Fit',
+    displayName: 'Image Fit', displayNameKey: 'NetworkGraphSettings_DisplayName_0125',
     items: [
-      { value: 'contain', displayName: 'Contain' },
-      { value: 'cover', displayName: 'Cover' },
-      { value: 'stretch', displayName: 'Stretch' },
+      { value: 'contain', displayName: 'Contain', displayNameKey: 'NetworkGraphSettings_DisplayName_0126' },
+      { value: 'cover', displayName: 'Cover', displayNameKey: 'NetworkGraphSettings_DisplayName_0127' },
+      { value: 'stretch', displayName: 'Stretch', displayNameKey: 'NetworkGraphSettings_DisplayName_0128' },
     ],
-    value: { value: 'contain', displayName: 'Contain' },
+    value: { value: 'contain', displayName: 'Contain', displayNameKey: 'NetworkGraphSettings_DisplayName_0129' },
   });
 
   horizontalAlign = new formattingSettings.ItemDropdown({
     name: 'horizontalAlign',
-    displayName: 'Horizontal Align',
+    displayName: 'Horizontal Align', displayNameKey: 'NetworkGraphSettings_DisplayName_0130',
     items: [
-      { value: 'left', displayName: 'Left' },
-      { value: 'center', displayName: 'Center' },
-      { value: 'right', displayName: 'Right' },
+      { value: 'left', displayName: 'Left', displayNameKey: 'NetworkGraphSettings_DisplayName_0131' },
+      { value: 'center', displayName: 'Center', displayNameKey: 'NetworkGraphSettings_DisplayName_0132' },
+      { value: 'right', displayName: 'Right', displayNameKey: 'NetworkGraphSettings_DisplayName_0133' },
     ],
-    value: { value: 'center', displayName: 'Center' },
+    value: { value: 'center', displayName: 'Center', displayNameKey: 'NetworkGraphSettings_DisplayName_0134' },
   });
 
   verticalAlign = new formattingSettings.ItemDropdown({
     name: 'verticalAlign',
-    displayName: 'Vertical Align',
+    displayName: 'Vertical Align', displayNameKey: 'NetworkGraphSettings_DisplayName_0135',
     items: [
-      { value: 'top', displayName: 'Top' },
-      { value: 'middle', displayName: 'Middle' },
-      { value: 'bottom', displayName: 'Bottom' },
+      { value: 'top', displayName: 'Top', displayNameKey: 'NetworkGraphSettings_DisplayName_0136' },
+      { value: 'middle', displayName: 'Middle', displayNameKey: 'NetworkGraphSettings_DisplayName_0137' },
+      { value: 'bottom', displayName: 'Bottom', displayNameKey: 'NetworkGraphSettings_DisplayName_0138' },
     ],
-    value: { value: 'middle', displayName: 'Middle' },
+    value: { value: 'middle', displayName: 'Middle', displayNameKey: 'NetworkGraphSettings_DisplayName_0139' },
   });
 
   imageOpacity = new formattingSettings.NumUpDown({
     name: 'imageOpacity',
-    displayName: 'Image Opacity (%)',
+    displayName: 'Image Opacity (%)', displayNameKey: 'NetworkGraphSettings_DisplayName_0140',
     value: 85,
   });
 
   dimOverlayOpacity = new formattingSettings.NumUpDown({
     name: 'dimOverlayOpacity',
-    displayName: 'Dim Overlay (%)',
+    displayName: 'Dim Overlay (%)', displayNameKey: 'NetworkGraphSettings_DisplayName_0141',
     value: 12,
   });
 
   targetLayoutPreset = new formattingSettings.ItemDropdown({
     name: 'targetLayoutPreset',
-    displayName: 'Target Layout Preset',
+    displayName: 'Target Layout Preset', displayNameKey: 'NetworkGraphSettings_DisplayName_0142',
     items: [
-      { value: 'orbit', displayName: 'Orbit Sources' },
-      { value: 'cluster', displayName: 'Source Clusters' },
-      { value: 'hybrid', displayName: 'Hybrid Rings' },
-      { value: 'rail', displayName: 'Rail' },
+      { value: 'orbit', displayName: 'Orbit Sources', displayNameKey: 'NetworkGraphSettings_DisplayName_0143' },
+      { value: 'cluster', displayName: 'Source Clusters', displayNameKey: 'NetworkGraphSettings_DisplayName_0144' },
+      { value: 'hybrid', displayName: 'Hybrid Rings', displayNameKey: 'NetworkGraphSettings_DisplayName_0145' },
+      { value: 'rail', displayName: 'Rail', displayNameKey: 'NetworkGraphSettings_DisplayName_0146' },
     ],
-    value: { value: 'orbit', displayName: 'Orbit Sources' },
+    value: { value: 'orbit', displayName: 'Orbit Sources', displayNameKey: 'NetworkGraphSettings_DisplayName_0147' },
   });
 
   targetOrbitRadius = new formattingSettings.NumUpDown({
     name: 'targetOrbitRadius',
-    displayName: 'Target Link Length',
+    displayName: 'Target Link Length', displayNameKey: 'NetworkGraphSettings_DisplayName_0148',
     value: 40,
   });
 
   targetRailPosition = new formattingSettings.ItemDropdown({
     name: 'targetRailPosition',
-    displayName: 'Target Rail Position',
+    displayName: 'Target Rail Position', displayNameKey: 'NetworkGraphSettings_DisplayName_0149',
     items: [
-      { value: 'right', displayName: 'Right' },
-      { value: 'left', displayName: 'Left' },
-      { value: 'top', displayName: 'Top' },
-      { value: 'bottom', displayName: 'Bottom' },
+      { value: 'right', displayName: 'Right', displayNameKey: 'NetworkGraphSettings_DisplayName_0150' },
+      { value: 'left', displayName: 'Left', displayNameKey: 'NetworkGraphSettings_DisplayName_0151' },
+      { value: 'top', displayName: 'Top', displayNameKey: 'NetworkGraphSettings_DisplayName_0152' },
+      { value: 'bottom', displayName: 'Bottom', displayNameKey: 'NetworkGraphSettings_DisplayName_0153' },
     ],
-    value: { value: 'right', displayName: 'Right' },
+    value: { value: 'right', displayName: 'Right', displayNameKey: 'NetworkGraphSettings_DisplayName_0154' },
   });
 
   persistedSourcePositions = new formattingSettings.TextInput({
     name: 'persistedSourcePositions',
-    displayName: 'Saved Source Positions',
+    displayName: 'Saved Source Positions', displayNameKey: 'NetworkGraphSettings_DisplayName_0155',
     value: '',
-    placeholder: 'Saved automatically when source nodes are dragged',
+    placeholder: 'Saved automatically when source nodes are dragged', placeholderKey: 'NetworkGraphSettings_Placeholder_0002',
   });
 
   resetPositions = new formattingSettings.ToggleSwitch({
     name: 'resetPositions',
-    displayName: 'Reset Saved Positions',
+    displayName: 'Reset Saved Positions', displayNameKey: 'NetworkGraphSettings_DisplayName_0156',
     value: false,
   });
 
   name = 'mapCanvasSettings';
   displayName = 'Map Canvas';
+  displayNameKey = 'NetworkGraphSettings_DisplayName_0061';
   slices = [
     this.enabled,
     this.showUploadControl,
@@ -723,60 +723,61 @@ class MapCanvasSettings extends formattingSettings.SimpleCard {
 class MeasureBadgeSettings extends formattingSettings.SimpleCard {
   showBadges = new formattingSettings.ToggleSwitch({
     name: 'showBadges',
-    displayName: 'Show Measure Badges',
+    displayName: 'Show Measure Badges', displayNameKey: 'NetworkGraphSettings_DisplayName_0157',
     value: false,
   });
 
   badgeMeasureName = new formattingSettings.TextInput({
     name: 'badgeMeasureName',
-    displayName: 'Badge Measure Name',
+    displayName: 'Badge Measure Name', displayNameKey: 'NetworkGraphSettings_DisplayName_0158',
     value: '',
-    placeholder: 'Blank uses first detail measure',
+    placeholder: 'Blank uses first detail measure', placeholderKey: 'NetworkGraphSettings_Placeholder_0003',
   });
 
   badgeDisplayMode = new formattingSettings.ItemDropdown({
     name: 'badgeDisplayMode',
-    displayName: 'Badge Text',
+    displayName: 'Badge Text', displayNameKey: 'NetworkGraphSettings_DisplayName_0159',
     items: [
-      { value: 'value', displayName: 'Value' },
-      { value: 'nameValue', displayName: 'Name + Value' },
-      { value: 'name', displayName: 'Name' },
+      { value: 'value', displayName: 'Value', displayNameKey: 'NetworkGraphSettings_DisplayName_0160' },
+      { value: 'nameValue', displayName: 'Name + Value', displayNameKey: 'NetworkGraphSettings_DisplayName_0161' },
+      { value: 'name', displayName: 'Name', displayNameKey: 'NetworkGraphSettings_DisplayName_0162' },
     ],
-    value: { value: 'value', displayName: 'Value' },
+    value: { value: 'value', displayName: 'Value', displayNameKey: 'NetworkGraphSettings_DisplayName_0163' },
   });
 
   badgeFontSize = new formattingSettings.NumUpDown({
     name: 'badgeFontSize',
-    displayName: 'Badge Font Size',
+    displayName: 'Badge Font Size', displayNameKey: 'NetworkGraphSettings_DisplayName_0164',
     value: 11,
   });
 
   badgeColor = new formattingSettings.ColorPicker({
     name: 'badgeColor',
-    displayName: 'Badge Text Color',
+    displayName: 'Badge Text Color', displayNameKey: 'NetworkGraphSettings_DisplayName_0165',
     value: { value: '#0F172A' },
   });
 
   badgeBackgroundColor = new formattingSettings.ColorPicker({
     name: 'badgeBackgroundColor',
-    displayName: 'Badge Background',
+    displayName: 'Badge Background', displayNameKey: 'NetworkGraphSettings_DisplayName_0166',
     value: { value: '#FFFFFF' },
   });
 
   badgeBackgroundOpacity = new formattingSettings.NumUpDown({
     name: 'badgeBackgroundOpacity',
-    displayName: 'Badge Background Opacity (%)',
+    displayName: 'Badge Background Opacity (%)', displayNameKey: 'NetworkGraphSettings_DisplayName_0167',
     value: 90,
   });
 
   badgeOffset = new formattingSettings.NumUpDown({
     name: 'badgeOffset',
-    displayName: 'Badge Offset',
+    displayName: 'Badge Offset', displayNameKey: 'NetworkGraphSettings_DisplayName_0168',
     value: 16,
   });
 
   name = 'measureBadgeSettings';
   displayName = 'Measure Badges';
+  displayNameKey = 'NetworkGraphSettings_DisplayName_0062';
   slices = [
     this.showBadges,
     this.badgeMeasureName,
@@ -794,59 +795,60 @@ class MeasureBadgeSettings extends formattingSettings.SimpleCard {
 class NodeInspectorSettings extends formattingSettings.SimpleCard {
   enabled = new formattingSettings.ToggleSwitch({
     name: 'enabled',
-    displayName: 'Enable Click Inspector',
+    displayName: 'Enable Click Inspector', displayNameKey: 'NetworkGraphSettings_DisplayName_0169',
     value: true,
   });
 
   position = new formattingSettings.ItemDropdown({
     name: 'position',
-    displayName: 'Inspector Position',
+    displayName: 'Inspector Position', displayNameKey: 'NetworkGraphSettings_DisplayName_0170',
     items: [
-      { value: 'right', displayName: 'Right' },
-      { value: 'left', displayName: 'Left' },
-      { value: 'bottom', displayName: 'Bottom' },
+      { value: 'right', displayName: 'Right', displayNameKey: 'NetworkGraphSettings_DisplayName_0171' },
+      { value: 'left', displayName: 'Left', displayNameKey: 'NetworkGraphSettings_DisplayName_0172' },
+      { value: 'bottom', displayName: 'Bottom', displayNameKey: 'NetworkGraphSettings_DisplayName_0173' },
     ],
-    value: { value: 'right', displayName: 'Right' },
+    value: { value: 'right', displayName: 'Right', displayNameKey: 'NetworkGraphSettings_DisplayName_0174' },
   });
 
   showCoreMetrics = new formattingSettings.ToggleSwitch({
     name: 'showCoreMetrics',
-    displayName: 'Show Core Metrics',
+    displayName: 'Show Core Metrics', displayNameKey: 'NetworkGraphSettings_DisplayName_0175',
     value: true,
   });
 
   showDetailMeasures = new formattingSettings.ToggleSwitch({
     name: 'showDetailMeasures',
-    displayName: 'Show Detail Measures',
+    displayName: 'Show Detail Measures', displayNameKey: 'NetworkGraphSettings_DisplayName_0176',
     value: true,
   });
 
   showDetailColumns = new formattingSettings.ToggleSwitch({
     name: 'showDetailColumns',
-    displayName: 'Show Detail Columns',
+    displayName: 'Show Detail Columns', displayNameKey: 'NetworkGraphSettings_DisplayName_0177',
     value: true,
   });
 
   maxDetailValues = new formattingSettings.NumUpDown({
     name: 'maxDetailValues',
-    displayName: 'Max Values per Detail',
+    displayName: 'Max Values per Detail', displayNameKey: 'NetworkGraphSettings_DisplayName_0178',
     value: 6,
   });
 
   focusOnClick = new formattingSettings.ToggleSwitch({
     name: 'focusOnClick',
-    displayName: 'Zoom to Clicked Node',
+    displayName: 'Zoom to Clicked Node', displayNameKey: 'NetworkGraphSettings_DisplayName_0179',
     value: true,
   });
 
   focusZoomScale = new formattingSettings.NumUpDown({
     name: 'focusZoomScale',
-    displayName: 'Focus Zoom Scale',
+    displayName: 'Focus Zoom Scale', displayNameKey: 'NetworkGraphSettings_DisplayName_0180',
     value: 1.45,
   });
 
   name = 'nodeInspectorSettings';
   displayName = 'Node Inspector';
+  displayNameKey = 'NetworkGraphSettings_DisplayName_0063';
   slices = [
     this.enabled,
     this.position,
@@ -894,33 +896,37 @@ export class NetworkGraphSettings extends formattingSettings.Model {
   nodeInspectorSettings = new NodeInspectorSettings();
   animationSettings = new AnimationSettings();
 
-  dataLabelFormattingCard = new DataLabelFormattingCard();
   titleFormattingCard = new TitleFormattingCard();
   numberFormattingCard = new NumberFormattingCard();
   conditionalFormattingCard = new ConditionalFormattingCard();
   accessibilityFormattingCard = new AccessibilityFormattingCard();
   colorThemeFormattingCard = new ColorThemeFormattingCard();
-  legendFormattingCard = new LegendFormattingCard();
+  legendFormattingCard = (() => {
+    const card = new LegendFormattingCard();
+    card.slices = card.slices.filter((slice) =>
+      !['showInlineLabels', 'inlineLabelFontSize', 'inlineLabelOffset'].includes(slice.name)
+    );
+    return card;
+  })();
   dateFilterFormattingCard = new DateFilterFormattingCard();
 
   cards = [
     this.nodeSettings,
     this.linkSettings,
     this.colorsAndThemeSettings,
-    this.dataLabelFormattingCard,
-    this.titleFormattingCard,
-    this.numberFormattingCard,
-    this.cardSettings,
     this.interactionSettings,
     this.physicsAndLayoutSettings,
     this.mapCanvasSettings,
     this.measureBadgeSettings,
     this.nodeInspectorSettings,
-    this.animationSettings,
-    this.conditionalFormattingCard,
-    this.accessibilityFormattingCard,
-    this.colorThemeFormattingCard,
     this.legendFormattingCard,
+    this.numberFormattingCard,
+    this.conditionalFormattingCard,
+    this.animationSettings,
+    this.titleFormattingCard,
+    this.cardSettings,
+    this.colorThemeFormattingCard,
     this.dateFilterFormattingCard,
+    this.accessibilityFormattingCard,
   ];
 }

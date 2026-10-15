@@ -4,25 +4,41 @@
       "displayName": "Value",
       "name": "measure",
       "kind": "Measure",
-      "description": "The main KPI value to display"
+      "description": "The main KPI value to display",
+      "displayNameKey": "KpiCardCapabilities_DisplayName_0335",
+      "descriptionKey": "KpiCardCapabilities_Description_0001"
     },
     {
       "displayName": "Target",
       "name": "target",
       "kind": "Measure",
-      "description": "Target or comparison value for trend calculation"
+      "description": "Target or comparison value for trend calculation",
+      "displayNameKey": "KpiCardCapabilities_DisplayName_0336",
+      "descriptionKey": "KpiCardCapabilities_Description_0002"
     },
     {
       "displayName": "Trend Axis",
       "name": "trendAxis",
       "kind": "Grouping",
-      "description": "Category axis for the sparkline (e.g., date, week)"
+      "description": "Category axis for the sparkline (e.g., date, week)",
+      "displayNameKey": "KpiCardCapabilities_DisplayName_0337",
+      "descriptionKey": "KpiCardCapabilities_Description_0003"
     },
     {
       "displayName": "Trend Values",
       "name": "trendValues",
       "kind": "Measure",
-      "description": "Values for the sparkline trend line"
+      "description": "Values for the sparkline trend line",
+      "displayNameKey": "KpiCardCapabilities_DisplayName_0338",
+      "descriptionKey": "KpiCardCapabilities_Description_0004"
+    },
+    {
+      "displayName": "Change Indicator",
+      "name": "change",
+      "kind": "Measure",
+      "description": "Measure to show increase or decrease, such as vs last work week",
+      "displayNameKey": "KpiCardCapabilities_DisplayName_0339",
+      "descriptionKey": "KpiCardCapabilities_Description_0005"
     }
   ],
   "dataViewMappings": [
@@ -39,6 +55,9 @@
             "max": 1
           },
           "trendValues": {
+            "max": 1
+          },
+          "change": {
             "max": 1
           }
         }
@@ -70,6 +89,11 @@
               "bind": {
                 "to": "trendValues"
               }
+            },
+            {
+              "bind": {
+                "to": "change"
+              }
             }
           ]
         }
@@ -84,7 +108,8 @@
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0007"
         },
         "fontColor": {
           "displayName": "Font Color",
@@ -94,7 +119,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0008"
         },
         "fontFamily": {
           "displayName": "Font Family",
@@ -102,34 +128,42 @@
             "enumeration": [
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0010"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0011"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0012"
               },
               {
                 "value": "Helvetica",
-                "displayName": "Helvetica"
+                "displayName": "Helvetica",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0013"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0014"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0015"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0016"
               }
             ]
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0009"
         },
         "fontWeight": {
           "displayName": "Font Weight",
@@ -137,18 +171,22 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0018"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0019"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0020"
               }
             ]
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0017"
         },
         "alignment": {
           "displayName": "Horizontal Alignment",
@@ -156,39 +194,48 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0022"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0023"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0024"
               }
             ]
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0021"
         },
         "verticalAlignment": {
-          "displayName": "Vertical Alignment",
+          "displayName": "Content Vertical Alignment",
           "type": {
             "enumeration": [
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0026"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0027"
               },
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0028"
               }
             ]
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0025"
         }
-      }
+      },
+      "displayNameKey": "KpiCardCapabilities_DisplayName_0340"
     },
     "labelSettings": {
       "displayName": "Label",
@@ -197,7 +244,8 @@
           "displayName": "Show Label",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0030"
         },
         "position": {
           "displayName": "Position",
@@ -205,14 +253,17 @@
             "enumeration": [
               {
                 "value": "above",
-                "displayName": "Above Value"
+                "displayName": "Above Value",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0032"
               },
               {
                 "value": "below",
-                "displayName": "Below Value"
+                "displayName": "Below Value",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0033"
               }
             ]
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0031"
         },
         "alignment": {
           "displayName": "Horizontal Alignment",
@@ -220,43 +271,29 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0035"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0036"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0037"
               }
             ]
-          }
-        },
-        "verticalAlignment": {
-          "displayName": "Vertical Alignment",
-          "type": {
-            "enumeration": [
-              {
-                "value": "top",
-                "displayName": "Top"
-              },
-              {
-                "value": "center",
-                "displayName": "Center"
-              },
-              {
-                "value": "bottom",
-                "displayName": "Bottom"
-              }
-            ]
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0034"
         },
         "fontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0042"
         },
         "fontColor": {
           "displayName": "Font Color",
@@ -266,7 +303,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0043"
         },
         "fontFamily": {
           "displayName": "Font Family",
@@ -274,34 +312,42 @@
             "enumeration": [
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0045"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0046"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0047"
               },
               {
                 "value": "Helvetica",
-                "displayName": "Helvetica"
+                "displayName": "Helvetica",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0048"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0049"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0050"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0051"
               }
             ]
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0044"
         },
         "fontWeight": {
           "displayName": "Font Weight",
@@ -309,71 +355,82 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0053"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0054"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0055"
               }
             ]
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0052"
         },
         "text": {
           "displayName": "Custom Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0056"
         }
-      }
+      },
+      "displayNameKey": "KpiCardCapabilities_DisplayName_0029"
     },
     "trendSettings": {
-      "displayName": "Trend Arrow",
+      "displayName": "Target Variance",
       "properties": {
         "show": {
-          "displayName": "Show Trend",
+          "displayName": "Show Target Variance",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0058"
         },
         "fontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0059"
         },
         "positiveColor": {
-          "displayName": "Positive Color",
+          "displayName": "Above Target Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0060"
         },
         "negativeColor": {
-          "displayName": "Negative Color",
+          "displayName": "Below Target Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0061"
         },
         "neutralColor": {
-          "displayName": "Neutral Color",
+          "displayName": "At Target Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0062"
         },
         "fontFamily": {
           "displayName": "Font Family",
@@ -381,34 +438,42 @@
             "enumeration": [
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0064"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0065"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0066"
               },
               {
                 "value": "Helvetica",
-                "displayName": "Helvetica"
+                "displayName": "Helvetica",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0067"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0068"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0069"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0070"
               }
             ]
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0063"
         },
         "fontWeight": {
           "displayName": "Font Weight",
@@ -416,20 +481,25 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0072"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0073"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0074"
               }
             ]
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0071"
         }
-      }
+      },
+      "displayNameKey": "KpiCardCapabilities_DisplayName_0057"
     },
     "sparklineSettings": {
       "displayName": "Sparkline",
@@ -438,39 +508,44 @@
           "displayName": "Show Sparkline",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0076"
         },
         "lineColor": {
-          "displayName": "Line Color",
+          "displayName": "Area Fill Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0077"
         },
         "fillOpacity": {
-          "displayName": "Fill Opacity",
+          "displayName": "Area Fill Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0078"
         },
         "sparklineColor": {
-          "displayName": "Sparkline Color",
+          "displayName": "Series Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0079"
         },
         "sparklineWidth": {
           "displayName": "Sparkline Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0080"
         },
         "dividerColor": {
           "displayName": "Divider Color",
@@ -480,13 +555,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0081"
         },
         "showMinMax": {
           "displayName": "Show Min/Max",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0082"
         },
         "minColor": {
           "displayName": "Min Marker Color",
@@ -496,7 +573,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0083"
         },
         "maxColor": {
           "displayName": "Max Marker Color",
@@ -506,13 +584,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0084"
         },
         "cumulative": {
-          "displayName": "Cumulative Mode",
+          "displayName": "Show Cumulative Total",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0085"
         },
         "endpointMarker": {
           "displayName": "Endpoint Marker",
@@ -520,22 +600,27 @@
             "enumeration": [
               {
                 "value": "circle",
-                "displayName": "Circle"
+                "displayName": "Circle",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0087"
               },
               {
                 "value": "triangle",
-                "displayName": "Triangle"
+                "displayName": "Triangle",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0088"
               },
               {
                 "value": "diamond",
-                "displayName": "Diamond"
+                "displayName": "Diamond",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0089"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0090"
               }
             ]
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0086"
         },
         "sparklineType": {
           "displayName": "Sparkline Type",
@@ -543,20 +628,25 @@
             "enumeration": [
               {
                 "value": "line",
-                "displayName": "Line"
+                "displayName": "Line",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0092"
               },
               {
                 "value": "area",
-                "displayName": "Area"
+                "displayName": "Area",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0093"
               },
               {
                 "value": "bar",
-                "displayName": "Bar"
+                "displayName": "Bar",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0094"
               }
             ]
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0091"
         }
-      }
+      },
+      "displayNameKey": "KpiCardCapabilities_DisplayName_0075"
     },
     "animationSettings": {
       "displayName": "Animation",
@@ -565,15 +655,18 @@
           "displayName": "Enable Animations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0096"
         },
         "duration": {
           "displayName": "Duration (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0097"
         }
-      }
+      },
+      "displayNameKey": "KpiCardCapabilities_DisplayName_0095"
     },
     "titleFormatting": {
       "displayName": "Chart Title",
@@ -582,19 +675,22 @@
           "displayName": "Show Title",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0099"
         },
         "titleText": {
           "displayName": "Title Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0100"
         },
         "titleFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0101"
         },
         "titleFontColor": {
           "displayName": "Font Color",
@@ -604,7 +700,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0102"
         },
         "titleAlignment": {
           "displayName": "Alignment",
@@ -612,18 +709,22 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0104"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0105"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0106"
               }
             ]
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0103"
         },
         "titleFontFamily": {
           "displayName": "Font",
@@ -631,54 +732,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0108"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0109"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0110"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0111"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0112"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0113"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0114"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0115"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0116"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0117"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0118"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0119"
               }
             ]
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0107"
         },
         "titleFontWeight": {
           "displayName": "Font Weight",
@@ -686,26 +800,31 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0121"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0122"
               }
             ]
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0120"
         },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0123"
         },
         "subtitleFontSize": {
           "displayName": "Subtitle Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0124"
         },
         "subtitleFontColor": {
           "displayName": "Subtitle Color",
@@ -715,7 +834,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0125"
         },
         "subtitleFontFamily": {
           "displayName": "Subtitle Font",
@@ -723,54 +843,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0127"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0128"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0129"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0130"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0131"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0132"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0133"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0134"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0135"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0136"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0137"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0138"
               }
             ]
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0126"
         },
         "subtitleFontWeight": {
           "displayName": "Subtitle Font Weight",
@@ -778,16 +911,20 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0140"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0141"
               }
             ]
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0139"
         }
-      }
+      },
+      "displayNameKey": "KpiCardCapabilities_DisplayName_0098"
     },
     "cardSettings": {
       "displayName": "Card Style",
@@ -800,19 +937,22 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0143"
         },
         "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0144"
         },
         "borderRadius": {
           "displayName": "Border Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0145"
         },
         "cardStyleMode": {
           "displayName": "Card Style",
@@ -820,22 +960,37 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0001"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0002"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0003"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0004"
+              },
+              {
+                "value": "outlined",
+                "displayName": "Border Only",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0005"
+              },
+              {
+                "value": "floating",
+                "displayName": "Floating Shadow",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0006"
               }
             ]
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0146"
         },
         "kpiCount": {
           "displayName": "KPI Count",
@@ -843,30 +998,44 @@
             "enumeration": [
               {
                 "value": "1",
-                "displayName": "1"
+                "displayName": "1",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0152"
               },
               {
                 "value": "2",
-                "displayName": "2"
+                "displayName": "2",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0153"
               },
               {
                 "value": "3",
-                "displayName": "3"
+                "displayName": "3",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0154"
               },
               {
                 "value": "4",
-                "displayName": "4"
+                "displayName": "4",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0155"
               }
             ]
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0151"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0156"
         },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "(Deprecated) Enable Glass"
+          "displayName": "(Deprecated) Enable Glass",
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0157"
         }
-      }
+      },
+      "displayNameKey": "KpiCardCapabilities_DisplayName_0142"
     },
     "numberFormatting": {
       "displayName": "Number Format",
@@ -877,46 +1046,56 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0160"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0161"
               },
               {
                 "value": "thousands",
-                "displayName": "Thousands (K)"
+                "displayName": "Thousands (K)",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0162"
               },
               {
                 "value": "millions",
-                "displayName": "Millions (M)"
+                "displayName": "Millions (M)",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0163"
               },
               {
                 "value": "billions",
-                "displayName": "Billions (B)"
+                "displayName": "Billions (B)",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0164"
               }
             ]
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0159"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0165"
         },
         "valuePrefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0166"
         },
         "valueSuffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0167"
         }
-      }
+      },
+      "displayNameKey": "KpiCardCapabilities_DisplayName_0158"
     },
     "kpiComparisonSettings": {
       "displayName": "Comparison",
@@ -925,7 +1104,8 @@
           "displayName": "Show Comparison",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0169"
         },
         "compareMode": {
           "displayName": "Compare Against",
@@ -933,30 +1113,36 @@
             "enumeration": [
               {
                 "value": "target",
-                "displayName": "Target"
+                "displayName": "Target",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0171"
               },
               {
                 "value": "previous",
-                "displayName": "Previous Period"
+                "displayName": "Previous Period",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0172"
               },
               {
                 "value": "first",
-                "displayName": "First Period"
+                "displayName": "First Period",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0173"
               }
             ]
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0170"
         },
         "showPercentChange": {
           "displayName": "Show % Change",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0174"
         },
         "fontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0175"
         },
         "fontColor": {
           "displayName": "Font Color",
@@ -966,36 +1152,318 @@
                 "color": true
               }
             }
-          }
-        }
-      }
-    },
-    "kpiGoalSettings": {
-      "displayName": "Goal / Target",
-      "properties": {
-        "show": {
-          "displayName": "Show Goal",
-          "type": {
-            "bool": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0176"
         },
-        "goalValue": {
-          "displayName": "Goal Value",
+        "fontFamily": {
+          "displayName": "Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0178"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0179"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0180"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0181"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0182"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0183"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0184"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0185"
+              }
+            ]
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0177"
+        },
+        "fontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0187"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0188"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0189"
+              }
+            ]
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0186"
+        },
+        "alignment": {
+          "displayName": "Alignment",
+          "type": {
+            "enumeration": [
+              {
+                "value": "left",
+                "displayName": "Left",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0191"
+              },
+              {
+                "value": "center",
+                "displayName": "Center",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0192"
+              },
+              {
+                "value": "right",
+                "displayName": "Right",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0193"
+              }
+            ]
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0190"
+        },
+        "paddingTop": {
+          "displayName": "Top Padding",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0194"
+        }
+      },
+      "displayNameKey": "KpiCardCapabilities_DisplayName_0168"
+    },
+    "kpiChangeIndicatorSettings": {
+      "displayName": "Change Indicator",
+      "properties": {
+        "show": {
+          "displayName": "Show Change Indicator",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0196"
+        },
+        "showIcon": {
+          "displayName": "Show Direction Icon",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0197"
+        },
+        "fontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0198"
+        },
+        "fontFamily": {
+          "displayName": "Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0200"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0201"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0202"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0203"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0204"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0205"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0206"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0207"
+              }
+            ]
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0199"
+        },
+        "fontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0209"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0210"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0211"
+              }
+            ]
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0208"
+        },
+        "alignment": {
+          "displayName": "Alignment",
+          "type": {
+            "enumeration": [
+              {
+                "value": "left",
+                "displayName": "Left",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0213"
+              },
+              {
+                "value": "center",
+                "displayName": "Center",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0214"
+              },
+              {
+                "value": "right",
+                "displayName": "Right",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0215"
+              }
+            ]
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0212"
+        },
+        "paddingTop": {
+          "displayName": "Top Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0216"
+        },
+        "iconSize": {
+          "displayName": "Arrow Size",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0217"
+        },
+        "positiveColor": {
+          "displayName": "Increase Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0218"
+        },
+        "negativeColor": {
+          "displayName": "Decrease Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0219"
+        },
+        "neutralColor": {
+          "displayName": "Neutral Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0220"
+        }
+      },
+      "displayNameKey": "KpiCardCapabilities_DisplayName_0195"
+    },
+    "kpiGoalSettings": {
+      "displayName": "Goal Progress",
+      "properties": {
+        "show": {
+          "displayName": "Show Goal Progress",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0222"
+        },
+        "goalValue": {
+          "displayName": "Goal Override (0 Uses Target)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0223"
+        },
+        "goalWarningValue": {
+          "displayName": "Caution Value",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0330"
         },
         "showProgressBar": {
           "displayName": "Show Progress Bar",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0224"
         },
         "gradientProgress": {
-          "displayName": "Gradient Color",
+          "displayName": "Use Gradient Colors",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0225"
         },
         "metColor": {
           "displayName": "Goal Met Color",
@@ -1005,7 +1473,19 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0226"
+        },
+        "warningColor": {
+          "displayName": "Caution Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0331"
         },
         "unmetColor": {
           "displayName": "Goal Unmet Color",
@@ -1015,34 +1495,165 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0227"
+        },
+        "progressBarHeight": {
+          "displayName": "Progress Bar Height",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0228"
+        },
+        "showGoalLegend": {
+          "displayName": "Show Goal Legend",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0332"
+        },
+        "invertLegendDirection": {
+          "displayName": "Low-to-High Legend Order",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0333"
+        },
+        "goalBlockPaddingTop": {
+          "displayName": "Goal Area Top Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0334"
         },
         "showGoalText": {
           "type": {
             "bool": true
           },
-          "displayName": "Show Goal Text"
+          "displayName": "Show Goal Text",
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0229"
         },
         "goalTextAlignment": {
           "type": {
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0231"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0232"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0233"
               }
             ]
           },
-          "displayName": "Goal Text Alignment"
+          "displayName": "Goal Text Alignment",
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0230"
+        },
+        "goalTextFontSize": {
+          "displayName": "Goal Text Font Size",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0234"
+        },
+        "goalTextColor": {
+          "displayName": "Goal Text Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0235"
+        },
+        "goalTextFontFamily": {
+          "displayName": "Goal Text Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0237"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0238"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0239"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0240"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0241"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0242"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0243"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0244"
+              }
+            ]
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0236"
+        },
+        "goalTextFontWeight": {
+          "displayName": "Goal Text Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0246"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0247"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0248"
+              }
+            ]
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0245"
+        },
+        "goalTextPaddingTop": {
+          "displayName": "Goal Text Top Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0249"
         }
-      }
+      },
+      "displayNameKey": "KpiCardCapabilities_DisplayName_0221"
     },
     "conditionalFormatting": {
       "displayName": "Conditional Formatting",
@@ -1051,7 +1662,8 @@
           "displayName": "Enable Conditional Formatting",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0251"
         },
         "conditionalDirection": {
           "displayName": "Direction",
@@ -1059,26 +1671,31 @@
             "enumeration": [
               {
                 "value": "ascending",
-                "displayName": "Ascending (Low = Bad)"
+                "displayName": "Ascending (Low = Bad)",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0253"
               },
               {
                 "value": "descending",
-                "displayName": "Descending (Low = Good)"
+                "displayName": "Descending (Low = Good)",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0254"
               }
             ]
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0252"
         },
         "threshold1": {
           "displayName": "Threshold 1",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0255"
         },
         "threshold2": {
           "displayName": "Threshold 2",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0256"
         },
         "conditionalColor1": {
           "displayName": "Color 1 (Bad)",
@@ -1088,7 +1705,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0257"
         },
         "conditionalColor2": {
           "displayName": "Color 2 (Warning)",
@@ -1098,7 +1716,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0258"
         },
         "conditionalColor3": {
           "displayName": "Color 3 (Good)",
@@ -1108,9 +1727,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0259"
         }
-      }
+      },
+      "displayNameKey": "KpiCardCapabilities_DisplayName_0250"
     },
     "accessibilityFormatting": {
       "displayName": "Accessibility",
@@ -1119,9 +1740,11 @@
           "displayName": "Enable Keyboard Navigation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0261"
         }
-      }
+      },
+      "displayNameKey": "KpiCardCapabilities_DisplayName_0260"
     },
     "colorThemeFormatting": {
       "properties": {
@@ -1131,37 +1754,46 @@
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0264"
               },
               {
                 "value": "ocean",
-                "displayName": "Ocean"
+                "displayName": "Ocean",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0265"
               },
               {
                 "value": "sunset",
-                "displayName": "Sunset"
+                "displayName": "Sunset",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0266"
               },
               {
                 "value": "forest",
-                "displayName": "Forest"
+                "displayName": "Forest",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0267"
               },
               {
                 "value": "berry",
-                "displayName": "Berry"
+                "displayName": "Berry",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0268"
               },
               {
                 "value": "monochrome",
-                "displayName": "Monochrome"
+                "displayName": "Monochrome",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0269"
               },
               {
                 "value": "earth",
-                "displayName": "Earth"
+                "displayName": "Earth",
+                "displayNameKey": "KpiCardCapabilities_DisplayName_0270"
               }
             ]
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0263"
         }
       },
-      "displayName": "Color Theme"
+      "displayName": "Color Theme",
+      "displayNameKey": "KpiCardCapabilities_DisplayName_0262"
     },
     "dateFilterFormatting": {
       "displayName": "Date Filter",
@@ -1170,32 +1802,46 @@
           "displayName": "Enable Date Filter",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0272"
         },
         "startDate": {
           "displayName": "Start Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0273"
         },
         "endAtCurrentDate": {
           "displayName": "End at Current Date",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0274"
         },
         "endDate": {
           "displayName": "End Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "KpiCardCapabilities_DisplayName_0275"
         }
-      }
+      },
+      "displayNameKey": "KpiCardCapabilities_DisplayName_0271"
     }
   },
   "supportsKeyboardFocus": true,
   "supportsHighlight": true,
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
   "supportsMultiVisualSelection": true,
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
   "privileges": [],
   "suppressDefaultTitle": true
 }

@@ -4,7 +4,9 @@
       "displayName": "Category",
       "name": "category",
       "kind": "Grouping",
-      "description": "Segment labels for each petal"
+      "description": "Segment labels for each petal",
+      "displayNameKey": "PolarChartCapabilities_DisplayName_0001",
+      "descriptionKey": "PolarChartCapabilities_Description_0001"
     },
     {
       "displayName": "Measure",
@@ -15,7 +17,9 @@
         {
           "numeric": true
         }
-      ]
+      ],
+      "displayNameKey": "PolarChartCapabilities_DisplayName_0002",
+      "descriptionKey": "PolarChartCapabilities_Description_0002"
     }
   ],
   "dataViewMappings": [
@@ -58,28 +62,32 @@
       "displayName": "Segments",
       "properties": {
         "innerRadius": {
-          "displayName": "Inner Radius",
+          "displayName": "Inner Radius (px)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0004"
         },
         "startAngle": {
-          "displayName": "Start Angle",
+          "displayName": "Start Angle (degrees)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0005"
         },
         "endAngle": {
-          "displayName": "End Angle",
+          "displayName": "End Angle (degrees)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0006"
         },
         "segmentPadding": {
-          "displayName": "Segment Padding",
+          "displayName": "Segment Padding (degrees)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0007"
         },
         "segmentStrokeColor": {
           "displayName": "Segment Stroke Color",
@@ -89,18 +97,21 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0008"
         },
         "segmentStrokeWidth": {
           "displayName": "Segment Stroke Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0009"
         }
-      }
+      },
+      "displayNameKey": "PolarChartCapabilities_DisplayName_0003"
     },
     "colorsAndFillSettings": {
-      "displayName": "Colors & Fill",
+      "displayName": "Colors and Fill",
       "properties": {
         "baseColor": {
           "displayName": "Base Color",
@@ -110,36 +121,42 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0011"
         },
         "enableGradientFill": {
           "displayName": "Enable Gradient Fill",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0012"
         }
-      }
+      },
+      "displayNameKey": "PolarChartCapabilities_DisplayName_0010"
     },
     "labelSettings": {
-      "displayName": "Labels",
+      "displayName": "Category Labels",
       "properties": {
         "showLabels": {
-          "displayName": "Show Labels",
+          "displayName": "Show Category Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0014"
         },
         "showRadialLabels": {
-          "displayName": "Show Radial Labels",
+          "displayName": "Show Outside Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0015"
         },
         "showInnerLabels": {
-          "displayName": "Show Inner Labels",
+          "displayName": "Show Inside Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0016"
         },
         "labelColor": {
           "displayName": "Label Color",
@@ -149,13 +166,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0017"
         },
         "fontSize": {
           "displayName": "Label Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0018"
         },
         "fontFamily": {
           "displayName": "Font Family",
@@ -163,34 +182,42 @@
             "enumeration": [
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0020"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0021"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0022"
               },
               {
                 "value": "Helvetica",
-                "displayName": "Helvetica"
+                "displayName": "Helvetica",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0023"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0024"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0025"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0026"
               }
             ]
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0019"
         },
         "fontWeight": {
           "displayName": "Font Weight",
@@ -198,20 +225,25 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0028"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0029"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0030"
               }
             ]
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0027"
         }
-      }
+      },
+      "displayNameKey": "PolarChartCapabilities_DisplayName_0013"
     },
     "animationSettings": {
       "displayName": "Animation",
@@ -220,19 +252,26 @@
           "displayName": "Enable Animations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0032"
         },
         "duration": {
           "displayName": "Duration (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0033"
         }
-      }
+      },
+      "displayNameKey": "PolarChartCapabilities_DisplayName_0031"
     },
     "axisFormatting": {
+      "displayName": "Axis Formatting",
+      "displayNameKey": "PolarChartCapabilities_DisplayName_AxisFormatting",
       "properties": {
         "axisLabelColor": {
+          "displayName": "Label Color",
+          "displayNameKey": "SharedSettings_DisplayName_0038",
           "type": {
             "fill": {
               "solid": {
@@ -242,11 +281,15 @@
           }
         },
         "axisLabelSize": {
+          "displayName": "Label Font Size",
+          "displayNameKey": "SharedSettings_DisplayName_0039",
           "type": {
             "numeric": true
           }
         },
         "axisLineColor": {
+          "displayName": "Axis Line Color",
+          "displayNameKey": "SharedSettings_DisplayName_0047",
           "type": {
             "fill": {
               "solid": {
@@ -256,16 +299,22 @@
           }
         },
         "axisLineWidth": {
+          "displayName": "Axis Line Width",
+          "displayNameKey": "SharedSettings_DisplayName_0048",
           "type": {
             "numeric": true
           }
         },
         "showGridLines": {
+          "displayName": "Show Grid Lines",
+          "displayNameKey": "SharedSettings_DisplayName_0049",
           "type": {
             "bool": true
           }
         },
         "gridLineColor": {
+          "displayName": "Grid Line Color",
+          "displayNameKey": "SharedSettings_DisplayName_0050",
           "type": {
             "fill": {
               "solid": {
@@ -275,15 +324,19 @@
           }
         },
         "gridLineStyle": {
+          "displayName": "Grid Line Style",
+          "displayNameKey": "SharedSettings_DisplayName_0051",
           "type": {
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0034"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0035"
               }
             ]
           }
@@ -292,25 +345,29 @@
           "displayName": "Show X-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0036"
         },
         "showYAxis": {
           "displayName": "Show Y-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0037"
         },
         "xAxisTitle": {
           "displayName": "X-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0038"
         },
         "yAxisTitle": {
           "displayName": "Y-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0039"
         },
         "axisLabelFontFamily": {
           "displayName": "Label Font",
@@ -318,84 +375,102 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0041"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0042"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0043"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0044"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0045"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0046"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0047"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0048"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0049"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0050"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0051"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0052"
               }
             ]
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0040"
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (\u00b0)",
+          "displayName": "X-Label Rotation (°)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0053"
         },
         "yAxisMin": {
           "displayName": "Y-Axis Min",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0054"
         },
         "yAxisMax": {
           "displayName": "Y-Axis Max",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0055"
         },
         "gridLineWidth": {
           "displayName": "Grid Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0056"
         },
         "gridLineOpacity": {
           "displayName": "Grid Line Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0057"
         },
         "axisLabelFontWeight": {
           "displayName": "Label Font Weight",
@@ -403,14 +478,24 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0059"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0060"
               }
             ]
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0058"
+        },
+        "integerTicks": {
+          "displayName": "Integer Ticks Only",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0061"
         }
       }
     },
@@ -421,13 +506,15 @@
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0063"
         },
         "dataLabelFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0064"
         },
         "dataLabelFontColor": {
           "displayName": "Font Color",
@@ -437,7 +524,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0065"
         },
         "dataLabelFontWeight": {
           "displayName": "Font Weight",
@@ -445,14 +533,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0067"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0068"
               }
             ]
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0066"
         },
         "dataLabelFontFamily": {
           "displayName": "Font",
@@ -460,54 +551,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0070"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0071"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0072"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0073"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0074"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0075"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0076"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0077"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0078"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0079"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0080"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0081"
               }
             ]
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0069"
         },
         "dataLabelPosition": {
           "displayName": "Position",
@@ -515,28 +619,35 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0083"
               },
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0084"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0085"
               },
               {
                 "value": "inside",
-                "displayName": "Inside"
+                "displayName": "Inside",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0086"
               },
               {
                 "value": "outside",
-                "displayName": "Outside"
+                "displayName": "Outside",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0087"
               }
             ]
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0082"
         }
-      }
+      },
+      "displayNameKey": "PolarChartCapabilities_DisplayName_0062"
     },
     "titleFormatting": {
       "displayName": "Chart Title",
@@ -545,19 +656,22 @@
           "displayName": "Show Title",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0089"
         },
         "titleText": {
           "displayName": "Title Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0090"
         },
         "titleFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0091"
         },
         "titleFontColor": {
           "displayName": "Font Color",
@@ -567,7 +681,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0092"
         },
         "titleAlignment": {
           "displayName": "Alignment",
@@ -575,18 +690,22 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0094"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0095"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0096"
               }
             ]
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0093"
         },
         "titleFontFamily": {
           "displayName": "Font",
@@ -594,66 +713,81 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0098"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0099"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0100"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0101"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0102"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0103"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0104"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0105"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0106"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0107"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0108"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0109"
               }
             ]
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0097"
         },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0110"
         },
         "subtitleFontSize": {
           "displayName": "Subtitle Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0111"
         },
         "subtitleFontColor": {
           "displayName": "Subtitle Color",
@@ -663,7 +797,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0112"
         },
         "titleFontWeight": {
           "displayName": "Font Weight",
@@ -671,14 +806,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0114"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0115"
               }
             ]
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0113"
         },
         "subtitleFontFamily": {
           "displayName": "Subtitle Font",
@@ -686,54 +824,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0117"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0118"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0119"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0120"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0121"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0122"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0123"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0124"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0125"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0126"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0127"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0128"
               }
             ]
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0116"
         },
         "subtitleFontWeight": {
           "displayName": "Subtitle Font Weight",
@@ -741,16 +892,20 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0130"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0131"
               }
             ]
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0129"
         }
-      }
+      },
+      "displayNameKey": "PolarChartCapabilities_DisplayName_0088"
     },
     "legendFormatting": {
       "displayName": "Legend",
@@ -759,7 +914,8 @@
           "displayName": "Show Legend",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0133"
         },
         "legendPosition": {
           "displayName": "Position",
@@ -767,28 +923,34 @@
             "enumeration": [
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0135"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0136"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0137"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0138"
               }
             ]
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0134"
         },
         "legendFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0139"
         },
         "legendFontColor": {
           "displayName": "Font Color",
@@ -798,7 +960,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0140"
         },
         "legendFontFamily": {
           "displayName": "Font",
@@ -806,54 +969,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0142"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0143"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0144"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0145"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0146"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0147"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0148"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0149"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0150"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0151"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0152"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0153"
               }
             ]
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0141"
         },
         "legendFontWeight": {
           "displayName": "Font Weight",
@@ -861,22 +1037,48 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0155"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0156"
               }
             ]
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0154"
         },
         "legendAliases": {
           "displayName": "Rename Labels",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0157"
+        },
+        "showInlineLabels": {
+          "displayName": "Inline End Labels",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0158"
+        },
+        "inlineLabelFontSize": {
+          "displayName": "Inline Label Font Size",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0159"
+        },
+        "inlineLabelOffset": {
+          "displayName": "Inline Label Offset (px)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0160"
         }
-      }
+      },
+      "displayNameKey": "PolarChartCapabilities_DisplayName_0132"
     },
     "cardSettings": {
       "displayName": "Card Style",
@@ -889,19 +1091,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0162"
         },
         "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0163"
         },
         "borderRadius": {
           "displayName": "Border Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0164"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0165"
         },
         "cardStyleMode": {
           "displayName": "Card Style",
@@ -909,30 +1121,47 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0001"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0002"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0003"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0004"
+              },
+              {
+                "value": "outlined",
+                "displayName": "Border Only",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0005"
+              },
+              {
+                "value": "floating",
+                "displayName": "Floating Shadow",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0006"
               }
             ]
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0166"
         },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "(Deprecated) Enable Glass"
+          "displayName": "(Deprecated) Enable Glass",
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0171"
         }
-      }
+      },
+      "displayNameKey": "PolarChartCapabilities_DisplayName_0161"
     },
     "sortFormatting": {
       "displayName": "Sort Order",
@@ -943,28 +1172,35 @@
             "enumeration": [
               {
                 "value": "dataOrder",
-                "displayName": "Data Order"
+                "displayName": "Data Order",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0174"
               },
               {
                 "value": "valueAsc",
-                "displayName": "Value (Ascending)"
+                "displayName": "Value (Ascending)",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0175"
               },
               {
                 "value": "valueDesc",
-                "displayName": "Value (Descending)"
+                "displayName": "Value (Descending)",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0176"
               },
               {
                 "value": "nameAsc",
-                "displayName": "Name (A-Z)"
+                "displayName": "Name (A-Z)",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0177"
               },
               {
                 "value": "nameDesc",
-                "displayName": "Name (Z-A)"
+                "displayName": "Name (Z-A)",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0178"
               }
             ]
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0173"
         }
-      }
+      },
+      "displayNameKey": "PolarChartCapabilities_DisplayName_0172"
     },
     "conditionalFormatting": {
       "displayName": "Conditional Formatting",
@@ -973,7 +1209,8 @@
           "displayName": "Enable Conditional Formatting",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0180"
         },
         "conditionalDirection": {
           "displayName": "Direction",
@@ -981,26 +1218,31 @@
             "enumeration": [
               {
                 "value": "ascending",
-                "displayName": "Ascending (Low = Bad)"
+                "displayName": "Ascending (Low = Bad)",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0182"
               },
               {
                 "value": "descending",
-                "displayName": "Descending (Low = Good)"
+                "displayName": "Descending (Low = Good)",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0183"
               }
             ]
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0181"
         },
         "threshold1": {
           "displayName": "Threshold 1",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0184"
         },
         "threshold2": {
           "displayName": "Threshold 2",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0185"
         },
         "conditionalColor1": {
           "displayName": "Color 1 (Bad)",
@@ -1010,7 +1252,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0186"
         },
         "conditionalColor2": {
           "displayName": "Color 2 (Warning)",
@@ -1020,7 +1263,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0187"
         },
         "conditionalColor3": {
           "displayName": "Color 3 (Good)",
@@ -1030,9 +1274,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0188"
         }
-      }
+      },
+      "displayNameKey": "PolarChartCapabilities_DisplayName_0179"
     },
     "accessibilityFormatting": {
       "displayName": "Accessibility",
@@ -1041,9 +1287,11 @@
           "displayName": "Enable Keyboard Navigation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0190"
         }
-      }
+      },
+      "displayNameKey": "PolarChartCapabilities_DisplayName_0189"
     },
     "colorThemeFormatting": {
       "properties": {
@@ -1053,41 +1301,54 @@
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0193"
               },
               {
                 "value": "ocean",
-                "displayName": "Ocean"
+                "displayName": "Ocean",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0194"
               },
               {
                 "value": "sunset",
-                "displayName": "Sunset"
+                "displayName": "Sunset",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0195"
               },
               {
                 "value": "forest",
-                "displayName": "Forest"
+                "displayName": "Forest",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0196"
               },
               {
                 "value": "berry",
-                "displayName": "Berry"
+                "displayName": "Berry",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0197"
               },
               {
                 "value": "monochrome",
-                "displayName": "Monochrome"
+                "displayName": "Monochrome",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0198"
               },
               {
                 "value": "earth",
-                "displayName": "Earth"
+                "displayName": "Earth",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0199"
               }
             ]
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0192"
         }
       },
-      "displayName": "Color Theme"
+      "displayName": "Color Theme",
+      "displayNameKey": "PolarChartCapabilities_DisplayName_0191"
     },
     "seriesFormatting": {
+      "displayName": "Series Formatting",
+      "displayNameKey": "PolarChartCapabilities_DisplayName_SeriesFormatting",
       "properties": {
         "seriesColor": {
+          "displayName": "Color",
+          "displayNameKey": "SharedSettings_DisplayName_0252",
           "type": {
             "fill": {
               "solid": {
@@ -1097,6 +1358,8 @@
           }
         },
         "seriesOpacity": {
+          "displayName": "Opacity (%)",
+          "displayNameKey": "SharedSettings_DisplayName_0253",
           "type": {
             "numeric": true
           }
@@ -1105,7 +1368,8 @@
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0200"
         },
         "lineStyle": {
           "displayName": "Line Style",
@@ -1113,24 +1377,29 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0202"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0203"
               },
               {
                 "value": "dotted",
-                "displayName": "Dotted"
+                "displayName": "Dotted",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0204"
               }
             ]
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0201"
         },
         "lineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0205"
         }
       }
     },
@@ -1143,46 +1412,56 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0208"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0209"
               },
               {
                 "value": "thousands",
-                "displayName": "Thousands (K)"
+                "displayName": "Thousands (K)",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0210"
               },
               {
                 "value": "millions",
-                "displayName": "Millions (M)"
+                "displayName": "Millions (M)",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0211"
               },
               {
                 "value": "billions",
-                "displayName": "Billions (B)"
+                "displayName": "Billions (B)",
+                "displayNameKey": "PolarChartCapabilities_DisplayName_0212"
               }
             ]
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0207"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0213"
         },
         "valuePrefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0214"
         },
         "valueSuffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0215"
         }
-      }
+      },
+      "displayNameKey": "PolarChartCapabilities_DisplayName_0206"
     },
     "dateFilterFormatting": {
       "displayName": "Date Filter",
@@ -1191,32 +1470,81 @@
           "displayName": "Enable Date Filter",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0217"
         },
         "startDate": {
           "displayName": "Start Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0218"
         },
         "endAtCurrentDate": {
           "displayName": "End at Current Date",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0219"
         },
         "endDate": {
           "displayName": "End Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0220"
+        }
+      },
+      "displayNameKey": "PolarChartCapabilities_DisplayName_0216"
+    },
+    "polarSettings": {
+      "displayName": "Legacy Polar Settings",
+      "displayNameKey": "PolarChartCapabilities_DisplayName_LegacyPolarSettings",
+      "properties": {
+        "segmentStrokeColor": {
+          "displayName": "Segment Stroke Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0221"
+        },
+        "segmentStrokeWidth": {
+          "displayName": "Segment Stroke Width",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0222"
+        },
+        "labelColor": {
+          "displayName": "Label Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "PolarChartCapabilities_DisplayName_0223"
         }
       }
     }
   },
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
   "supportsKeyboardFocus": true,
   "supportsHighlight": true,
   "supportsMultiVisualSelection": true,
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
   "privileges": [],
   "suppressDefaultTitle": true
 }

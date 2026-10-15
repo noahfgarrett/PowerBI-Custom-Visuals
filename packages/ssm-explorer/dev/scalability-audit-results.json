@@ -1,0 +1,131 @@
+{
+  "date": "2026-10-08",
+  "subject": "Actual SsmExplorerVisual, indexed model, viewport culling and segmented data store",
+  "fixture": {
+    "projects": 4,
+    "boundColumns": 18,
+    "equipmentPerMilestone": 1000,
+    "parentChainLevels": 12,
+    "dependencies": "Four backward references within each 200-equipment neighborhood, plus explicit cross-project references every 2500 equipment",
+    "metadata": "Owner, model-formatted numeric progress, typed calendar date, notes and separate milestone/parent metadata",
+    "privacy": "Synthetic only; no private registries or workbooks"
+  },
+  "environment": {
+    "browser": "Chromium 154.0.0.0 on macOS",
+    "hardwareConcurrency": 18,
+    "devicePixelRatio": 2,
+    "visualViewport": "1280x720",
+    "powerBiHostAvailable": false
+  },
+  "coldSnapshotCases": [
+    {
+      "equipment": 10000,
+      "loadedNodes": 10016,
+      "loadedEdges": 58752,
+      "startupDomNodes": 16,
+      "expandedDomNodes": 23,
+      "ingestSynchronousMs": 129.6,
+      "ingestReadyMs": 133.7,
+      "expansionSynchronousMs": 8.7,
+      "denseConnectionsSynchronousMs": 4.8,
+      "searchResultsMs": 124.3,
+      "searchRevealSynchronousMs": 6.9,
+      "localSelectionSynchronousMs": 0.7,
+      "panMeanSynchronousMs": 0.09,
+      "panMaxSynchronousMs": 0.2,
+      "failures": []
+    },
+    {
+      "equipment": 50000,
+      "loadedNodes": 50064,
+      "loadedEdges": 293964,
+      "startupDomNodes": 63,
+      "expandedDomNodes": 78,
+      "ingestSynchronousMs": 661.6,
+      "ingestReadyMs": 665.8,
+      "expansionSynchronousMs": 25.0,
+      "denseConnectionsSynchronousMs": 6.3,
+      "searchResultsMs": 128.6,
+      "searchRevealSynchronousMs": 23.6,
+      "localSelectionSynchronousMs": 0.7,
+      "panMeanSynchronousMs": 0.105,
+      "panMaxSynchronousMs": 0.2,
+      "failures": []
+    },
+    {
+      "equipment": 100000,
+      "loadedNodes": 100120,
+      "loadedEdges": 588027,
+      "startupDomNodes": 61,
+      "expandedDomNodes": 77,
+      "ingestSynchronousMs": 1465.5,
+      "ingestReadyMs": 1469.5,
+      "expansionSynchronousMs": 37.4,
+      "denseConnectionsSynchronousMs": 5.1,
+      "searchResultsMs": 134.3,
+      "searchRevealSynchronousMs": 33.5,
+      "localSelectionSynchronousMs": 0.6,
+      "panMeanSynchronousMs": 0.1,
+      "panMaxSynchronousMs": 0.2,
+      "failures": []
+    }
+  ],
+  "segmented100k": {
+    "sourceRows": 100000,
+    "segmentRows": 2000,
+    "segments": 50,
+    "operationKind": "Create=0 followed by delta Segment=2 without overlap",
+    "totalSynchronousUpdateMs": 4367.0,
+    "maxSynchronousUpdateMs": 206.8,
+    "ingestWallMs": 4460.0,
+    "loadedEquipment": 100000,
+    "loadedNodes": 100120,
+    "loadedEdges": 588027,
+    "maxObservedDomNodes": 6,
+    "finalNativeSelectionIdentity": "table:Scale Delta:SCALE-024999:99999",
+    "acceptedMockHostFetches": 16,
+    "renderFailures": 0
+  },
+  "productionBundle": {
+    "version": "1.1.0.0",
+    "source": "Generated .tmp/drop/visual.js and visual.css, not a TypeScript source import",
+    "equipment": 10000,
+    "loadedNodes": 10016,
+    "loadedEdges": 58752,
+    "ingestSynchronousMs": 145.4,
+    "expansionSynchronousMs": 9.4,
+    "searchResultsMs": 123.8,
+    "searchRevealSynchronousMs": 6.9,
+    "localSelectionSynchronousMs": 0.6,
+    "panMeanSynchronousMs": 0.075,
+    "failures": []
+  },
+  "screenshots": [
+    ".playwright-mcp/ssm-scalable-light.png",
+    ".playwright-mcp/ssm-scalable-dark.png",
+    ".playwright-mcp/ssm-scalable-high-contrast.png",
+    ".playwright-mcp/ssm-scalable-compact-startup.png",
+    ".playwright-mcp/ssm-scalable-compact.png",
+    ".playwright-mcp/ssm-scalable-bundle.png"
+  ],
+  "verified": [
+    "Default startup renders only L1/L2 milestones; equipment opens on milestone or parent click",
+    "All three cold cases retain exact loaded equipment totals and distinct project-scoped identities",
+    "Live node DOM stays within its 300-node default cap through expansion, search, selection and pan",
+    "Dense 1000-child hub connection lists are paged rather than rendering every connection",
+    "Search reaches the last Delta record and native report selection uses its actual supplied row identity",
+    "Fixed drawer bounds remain unchanged during 20 canvas pan operations",
+    "Delta segments and cumulative append preserve original identities and compatible selection",
+    "Selected label, discipline/type and tag remain readable under hostile inherited text CSS in light, dark and high contrast",
+    "Relationship legend lines are 25px wide and 2px thick, with 12px labels"
+  ],
+  "limitations": [
+    "A 100k-row monolithic snapshot blocks synchronous ingestion for approximately 1.5 seconds on this machine; an earlier observation reached 1.7 seconds",
+    "The segmented audit yielded between 2000-row windows, but a single update still reached 207ms and total ingestion took 4.46 seconds",
+    "Search timings include the intentional 120ms debounce; pan timings measure handler work rather than full frame paint",
+    "Measurements are representative observations rather than universal timing guarantees or statistics over repeated runs",
+    "Overview culling can hide off-screen milestone columns; benchmarks expand a visible milestone rather than assuming Alpha is on screen",
+    "Browser host mocks do not verify Power BI report filtering, drillthrough, row-level security, persisted host formatting or real data-delivery latency",
+    "Audit data, synthetic benchmark scripts and local screenshots are excluded from distributed pbiviz packages"
+  ]
+}

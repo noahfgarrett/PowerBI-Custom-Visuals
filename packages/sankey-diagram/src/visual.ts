@@ -29,12 +29,12 @@ import {
   applyCardStyle,
   type CardStyleMode,
   renderChartTitle,
-  applyDataLabelFormatting,
   ensureScrollStyles,
   applyChartAria,
   applyDataPointAria,
   attachKeyboardNav,
   ensureFocusRingStyles,
+  attachEmptySpaceContextMenu,
   resolveColorTheme,
   buildConditionalConfig,
   resolveConditionalColor,
@@ -45,6 +45,19 @@ import {
   getDateFilterIndices,
   isDateColumn,
   type DateFilterConfig,
+  syncLegendFormattingVisibility,
+  syncTitleFormattingVisibility,
+  syncDateFilterFormattingVisibility,
+  syncCardStyleVisibility,
+  getVisualEmptyStateMode,
+  getLocalizedString,
+  allowInteractions,
+  getHostHighContrastColors,
+  applyBasicHighContrastStyles,
+  notifyRenderingStarted,
+  notifyRenderingFinished,
+  notifyRenderingFailed,
+  truncateText,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -114,8 +127,11 @@ export class SankeyDiagramVisual implements IVisual {
   private svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null;
   private filteredNodeIndex: number | null = null;
   private currentData: SankeyData | null = null;
+  private emptyStateMode: 'unconfigured' | 'noData' = 'unconfigured';
   private resolveNodeColor: (d: { depth?: number; index?: number }) => string = () => '#64748B';
   private currentViewport: powerbi.IViewport = { width: 0, height: 0 };
+  private interactionsEnabled = true;
+  private keyboardNavCleanup: (() => void) | null = null;
   private instanceId = (typeof crypto !== 'undefined' && crypto.getRandomValues
     ? Array.from(crypto.getRandomValues(new Uint8Array(5)), (b) => b.toString(36)).join('')
     : Date.now().toString(36));
@@ -125,17 +141,38 @@ export class SankeyDiagramVisual implements IVisual {
     this.selectionManager = options.host.createSelectionManager();
     this.container = options.element;
     this.settings = new SankeyDiagramSettings();
-    this.formattingSettingsService = new FormattingSettingsService();
+    this.formattingSettingsService = new FormattingSettingsService(options.host.createLocalizationManager());
     this.container.classList.add('sankey-container');
+    attachEmptySpaceContextMenu(this.container, this.selectionManager, () =>
+      this.host.createSelectionIdBuilder().createSelectionId(),
+      () => this.interactionsEnabled,
+    );
   }
 
   public update(options: VisualUpdateOptions): void {
+    notifyRenderingStarted(this.host, options);
+    try {
+      this.updateVisual(options);
+      notifyRenderingFinished(this.host, options);
+    } catch (error) {
+      notifyRenderingFailed(
+        this.host,
+        options,
+        error instanceof Error ? error.message : String(error),
+      );
+      throw error;
+    }
+  }
+
+  private updateVisual(options: VisualUpdateOptions): void {
     // Cancel running animations
     this.cancelAnimations.forEach((cancel) => cancel());
     this.cancelAnimations = [];
+    this.interactionsEnabled = allowInteractions(this.host);
 
     // Parse settings from dataView
     const dataView = options.dataViews?.[0];
+    this.emptyStateMode = getVisualEmptyStateMode(dataView);
     if (dataView) {
       this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
         SankeyDiagramSettings,
@@ -147,28 +184,21 @@ export class SankeyDiagramVisual implements IVisual {
     const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
     if (legacyCardObj) {
       const legacyGlass = legacyCardObj['enableGlass'];
-      if (legacyGlass === false) {
+      if (legacyGlass === false && legacyCardObj['cardStyleMode'] == null) {
         this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
       }
     }
 
-    // Date filter: hide start/end when disabled
-    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
-
-    this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
-    // Hide data label position — position is determined by chart geometry
-    this.settings.dataLabelFormattingCard.dataLabelPosition.visible = false;
+    syncDateFilterFormattingVisibility(this.settings.dateFilterFormattingCard);
+    const sourceColumn = dataView?.categorical?.categories?.find((column) => column.source.roles?.['source']);
+    this.settings.dateFilterFormattingCard.visible = Boolean(sourceColumn && isDateColumn(sourceColumn.source));
 
     // ── Conditional Visibility ──────────────────────────────────
     const linkColorMode = resolveDropdown(this.settings.linkSettings.colorMode) ?? 'gradient';
     this.settings.linkSettings.customColor.visible = linkColorMode === 'custom';
 
-    // dimOpacity only relevant when interaction or filtering is enabled
-    const hasInteraction = this.settings.sankeyInteractionSettings.highlightFlows.value
-      || this.settings.sankeyInteractionSettings.enableFiltering.value;
-    this.settings.linkSettings.dimOpacity.visible = hasInteraction;
+    // Hover highlighting always uses the dim opacity.
+    this.settings.linkSettings.dimOpacity.visible = true;
 
     // totalFontSize/totalFontColor visible when any totals feature is on
     const showNodeValues = this.settings.totalSettings.showNodeValues.value;
@@ -184,14 +214,13 @@ export class SankeyDiagramVisual implements IVisual {
 
     // Link label sub-settings hidden when showLinkLabels is off
     const showLinkLabels = this.settings.linkLabelSettings.showLinkLabels.value;
-    this.settings.linkLabelSettings.linkLabelFontSize.visible = showLinkLabels;
-    this.settings.linkLabelSettings.linkLabelFontColor.visible = showLinkLabels;
-    this.settings.linkLabelSettings.linkLabelFontFamily.visible = showLinkLabels;
-    this.settings.linkLabelSettings.linkLabelFontWeight.visible = showLinkLabels;
+    const showFlowLabels = this.settings.linkLabelSettings.showFlowLabels.value;
+    const showAnyLinkLabels = showLinkLabels || showFlowLabels;
+    this.settings.linkLabelSettings.linkLabelFontSize.visible = showAnyLinkLabels;
+    this.settings.linkLabelSettings.linkLabelFontColor.visible = showAnyLinkLabels;
+    this.settings.linkLabelSettings.linkLabelFontFamily.visible = showAnyLinkLabels;
+    this.settings.linkLabelSettings.linkLabelFontWeight.visible = showAnyLinkLabels;
     this.settings.linkLabelSettings.linkLabelFormat.visible = showLinkLabels;
-
-    // Hide gradientLinks toggle when colorMode is already 'gradient' (redundant)
-    this.settings.linkSettings.gradientLinks.visible = linkColorMode !== 'gradient';
 
     // Animation duration hidden when animations are disabled
     this.settings.animationSettings.duration.visible = this.settings.animationSettings.enabled.value;
@@ -203,27 +232,9 @@ export class SankeyDiagramVisual implements IVisual {
     // Scroll sub-settings
     this.settings.scrollFormattingCard.minCategoryWidth.visible = this.settings.scrollFormattingCard.enableScroll.value;
 
-    // Legend sub-settings
-    const showLegend = this.settings.legendFormattingCard.showLegend.value;
-    this.settings.legendFormattingCard.legendPosition.visible = showLegend;
-    this.settings.legendFormattingCard.legendFontSize.visible = showLegend;
-    this.settings.legendFormattingCard.legendFontColor.visible = showLegend;
-    this.settings.legendFormattingCard.legendFontFamily.visible = showLegend;
-    this.settings.legendFormattingCard.legendFontWeight.visible = showLegend;
-
-    // Title sub-settings
-    const showTitle = this.settings.titleFormattingCard.showTitle.value;
-    this.settings.titleFormattingCard.titleText.visible = showTitle;
-    this.settings.titleFormattingCard.titleFontSize.visible = showTitle;
-    this.settings.titleFormattingCard.titleFontColor.visible = showTitle;
-    this.settings.titleFormattingCard.titleAlignment.visible = showTitle;
-    this.settings.titleFormattingCard.titleFontFamily.visible = showTitle;
-    this.settings.titleFormattingCard.titleFontWeight.visible = showTitle;
-    this.settings.titleFormattingCard.subtitleText.visible = showTitle;
-    this.settings.titleFormattingCard.subtitleFontSize.visible = showTitle;
-    this.settings.titleFormattingCard.subtitleFontColor.visible = showTitle;
-    this.settings.titleFormattingCard.subtitleFontFamily.visible = showTitle;
-    this.settings.titleFormattingCard.subtitleFontWeight.visible = showTitle;
+    // Legend/title sub-settings
+    syncLegendFormattingVisibility(this.settings.legendFormattingCard);
+    syncTitleFormattingVisibility(this.settings.titleFormattingCard);
 
     // Conditional formatting sub-settings
     const showCond = this.settings.conditionalFormattingCard.enableConditional.value;
@@ -235,9 +246,7 @@ export class SankeyDiagramVisual implements IVisual {
     this.settings.conditionalFormattingCard.conditionalColor3.visible = showCond;
 
     // Card style sub-settings
-    const cardMode = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
-    this.settings.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
-    this.settings.cardSettings.backgroundColor.visible = cardMode !== 'none';
+    syncCardStyleVisibility(this.settings.cardSettings);
 
     // Extract data
     const data = this.extractData(dataView);
@@ -456,6 +465,8 @@ export class SankeyDiagramVisual implements IVisual {
   // ── Rendering ────────────────────────────────────────────────
 
   private render(data: SankeyData | null, viewport: powerbi.IViewport): void {
+    this.keyboardNavCleanup?.();
+    this.keyboardNavCleanup = null;
     this.currentData = data;
     this.currentViewport = viewport;
     this.host.tooltipService.hide({ immediately: true, isTouchEvent: false });
@@ -478,24 +489,37 @@ export class SankeyDiagramVisual implements IVisual {
       backgroundColor: s.cardSettings.backgroundColor?.value?.value,
       borderRadius: s.cardSettings.borderRadius.value,
     });
-    if (cardMode === 'none') {
-      this.container.style.borderRadius = `${s.cardSettings.borderRadius.value}px`;
-    }
-
+    const contentPadding = Math.max(0, s.cardSettings.contentPadding.value);
+    this.container.style.boxSizing = 'border-box';
+    this.container.style.padding = `${contentPadding}px`;
     // Handle empty/null data
     if (!data) {
       this.renderEmptyState();
+      this.applyHighContrast();
       return;
     }
+
+    const renderData = this.getCrossHighlightMode() === 'focus'
+      ? (this.getFocusedHighlightData(data) ?? data)
+      : data;
 
     // Dynamic margins based on label position and layer totals
     const labelPos = resolveDropdown(s.nodeLabelSettings.labelPosition) ?? 'beside';
     const labelFontSizeVal = s.nodeLabelSettings.labelFontSize.value;
+    const baseWidth = Math.max(0, viewport.width - (contentPadding * 2));
+    const baseHeight = Math.max(0, viewport.height - (contentPadding * 2));
     // Extra bottom margin so bottom node labels aren't clipped
     const extraBottom = labelPos === 'below'
       ? labelFontSizeVal + 4
       : labelPos === 'none' ? 0 : Math.ceil(labelFontSizeVal / 2) + 2;
-    const besidePad = Math.max(16, labelFontSizeVal * 3);
+    const estimatedLabelWidth = Math.max(
+      0,
+      ...renderData.nodes.map((node) => (node.name?.length ?? 0) * labelFontSizeVal * 0.55),
+    );
+    const besidePad = Math.max(
+      16,
+      Math.min(estimatedLabelWidth + 10, Math.max(16, baseWidth * 0.24)),
+    );
     const MARGIN = {
       top: s.totalSettings.showLayerTotals.value ? BASE_MARGIN.top + 20 : BASE_MARGIN.top,
       right: labelPos === 'beside' ? besidePad : BASE_MARGIN.right,
@@ -503,8 +527,6 @@ export class SankeyDiagramVisual implements IVisual {
       left: labelPos === 'beside' ? besidePad : BASE_MARGIN.left,
     };
 
-    const baseWidth = viewport.width;
-    const baseHeight = viewport.height;
     const baseInnerWidth = baseWidth - MARGIN.left - MARGIN.right;
     const baseInnerHeight = baseHeight - MARGIN.top - MARGIN.bottom;
 
@@ -534,8 +556,8 @@ export class SankeyDiagramVisual implements IVisual {
       }
 
       return layout({
-        nodes: data.nodes.map((d) => ({ ...d })),
-        links: data.links.map((d) => ({ ...d })),
+        nodes: renderData.nodes.map((d) => ({ ...d })),
+        links: renderData.links.map((d) => ({ ...d })),
       });
     };
 
@@ -593,14 +615,12 @@ export class SankeyDiagramVisual implements IVisual {
       .attr('transform', `translate(${MARGIN.left},${MARGIN.top})`);
 
     // Compute total weight for percentage calculations
-    const totalWeight = data.links.reduce((sum, l) => sum + l.value, 0);
+    const totalWeight = renderData.links.reduce((sum, l) => sum + l.value, 0);
 
     // Gradient definitions for links
     const defs = svg.append('defs');
     const colorMode = this.getLinkColorMode();
-    const useGradientLinks = s.linkSettings.gradientLinks.value;
-
-    if (colorMode === 'gradient' || useGradientLinks) {
+    if (colorMode === 'gradient') {
       layoutLinks.forEach((link) => {
         const sourceNode = link.source as LayoutNode;
         const targetNode = link.target as LayoutNode;
@@ -631,6 +651,12 @@ export class SankeyDiagramVisual implements IVisual {
     const maxLinkValue = Math.max(1, ...layoutLinks.map((l) => l.value));
 
     // Flow filtering: if a node is filtered, only show connected flows
+    const hasFilteredNode = this.filteredNodeIndex != null
+      && layoutNodes.some((node) => (node.index ?? -1) === this.filteredNodeIndex);
+    if (!hasFilteredNode) {
+      this.filteredNodeIndex = null;
+    }
+
     const filteredLinks = this.filteredNodeIndex != null
       ? layoutLinks.filter((l) => {
           const src = l.source as LayoutNode;
@@ -654,18 +680,22 @@ export class SankeyDiagramVisual implements IVisual {
       .attr('d', linkPathGenerator as unknown as (d: LayoutLink) => string | null)
       .attr('fill', 'none')
       .attr('stroke-width', (d) => Math.max(1, d.width ?? 0))
-      .attr('stroke', (d, i) => this.getLinkStroke(d, i, useGradientLinks ? 'gradient' : colorMode))
+      .attr('stroke', (d, i) => this.getLinkStroke(d, i, colorMode))
       .attr('stroke-opacity', (d) =>
         opacityByValue ? Math.max(0.15, (d.value / maxLinkValue) * linkOpacity) : linkOpacity
       )
       .style('cursor', 'pointer')
       .on('click', (event: MouseEvent, d) => {
+        if (!this.interactionsEnabled) return;
         event.stopPropagation();
         if (d.selectionId) {
-          void this.selectionManager.select(d.selectionId, event.ctrlKey || event.metaKey);
+          void this.selectionManager
+            .select(d.selectionId, event.ctrlKey || event.metaKey)
+            .then(() => this.applyCrossHighlight());
         }
       })
       .on('contextmenu', (event: MouseEvent, d) => {
+        if (!this.interactionsEnabled) return;
         event.preventDefault();
         event.stopPropagation();
         if (d.selectionId) {
@@ -713,6 +743,7 @@ export class SankeyDiagramVisual implements IVisual {
       .attr('data-selection-key', (d) => d.selectionId ? d.selectionId.getKey() : '')
       .style('cursor', 'pointer')
       .on('click', (event: MouseEvent, d) => {
+        if (!this.interactionsEnabled) return;
         event.stopPropagation();
         if (s.sankeyInteractionSettings.enableFiltering.value) {
           // Toggle filtering on this node
@@ -721,14 +752,17 @@ export class SankeyDiagramVisual implements IVisual {
           } else {
             this.filteredNodeIndex = d.index ?? -1;
           }
-          this.render(data, viewport);
+          this.render(this.currentData, viewport);
           return;
         }
         if (d.selectionId) {
-          void this.selectionManager.select(d.selectionId, event.ctrlKey || event.metaKey);
+          void this.selectionManager
+            .select(d.selectionId, event.ctrlKey || event.metaKey)
+            .then(() => this.applyCrossHighlight());
         }
       })
       .on('contextmenu', (event: MouseEvent, d) => {
+        if (!this.interactionsEnabled) return;
         event.preventDefault();
         event.stopPropagation();
         if (d.selectionId) {
@@ -869,7 +903,18 @@ export class SankeyDiagramVisual implements IVisual {
       .attr('font-weight', labelFontWeight)
       .attr('font-style', labelFontStyle)
       .attr('fill', (d) => resolveLabelColor(d.depth ?? 0))
-      .text((d) => d.name ?? '');
+      .text((d) => {
+        const fullLabel = d.name ?? '';
+        return effectiveLabelPos === 'beside'
+          ? truncateText(fullLabel, Math.max(12, besidePad - 10), labelFontSize)
+          : fullLabel;
+      })
+      .each(function (d) {
+        const fullLabel = d.name ?? '';
+        if (d3.select(this).text() !== fullLabel) {
+          d3.select(this).append('title').text(fullLabel);
+        }
+      });
 
     // When labels are hidden, start them invisible with a fade transition
     if (labelsHidden) {
@@ -880,7 +925,7 @@ export class SankeyDiagramVisual implements IVisual {
     }
 
     // Node drag repositioning (vertical only)
-    if (s.sankeyInteractionSettings.enableDrag.value) {
+    if (s.sankeyInteractionSettings.enableDrag.value && this.interactionsEnabled) {
       const dragBehavior = d3.drag<SVGGElement, LayoutNode>()
         .on('drag', (event: d3.D3DragEvent<SVGGElement, LayoutNode, LayoutNode>, d) => {
           const dy = event.dy;
@@ -912,7 +957,7 @@ export class SankeyDiagramVisual implements IVisual {
 
     // Link labels (new)
     if (s.linkLabelSettings.showLinkLabels.value) {
-      this.renderLinkLabels(g, layoutLinks, totalWeight);
+      this.renderLinkLabels(g, filteredLinks, totalWeight);
     }
 
     // Link & node tooltips via PBI tooltipService
@@ -994,15 +1039,21 @@ export class SankeyDiagramVisual implements IVisual {
           flowLabelGroup.selectAll('*').remove();
           const flowFontSize = s.linkLabelSettings.linkLabelFontSize.value;
           const flowFontColor = s.linkLabelSettings.linkLabelFontColor.value?.value || theme.text.primary;
-          flowLabelGroup.append('text')
+          const flowFontFamily = resolveDropdown(s.linkLabelSettings.linkLabelFontFamily);
+          const flowFontWeight = resolveDropdown(s.linkLabelSettings.linkLabelFontWeight) ?? 'normal';
+          const flowLabel = flowLabelGroup.append('text')
             .attr('x', midX)
             .attr('y', midY)
             .attr('dy', '-0.5em')
             .attr('text-anchor', 'middle')
             .attr('font-size', flowFontSize)
+            .attr('font-weight', flowFontWeight)
             .attr('fill', flowFontColor)
             .attr('pointer-events', 'none')
             .text(formatWithSettings(d.value, this.settings.numberFormattingCard));
+          if (flowFontFamily) {
+            flowLabel.attr('font-family', flowFontFamily);
+          }
         })
         .on('mouseleave.flowlabel', () => {
           flowLabelGroup.selectAll('*').remove();
@@ -1017,9 +1068,6 @@ export class SankeyDiagramVisual implements IVisual {
     if (s.animationSettings.enabled.value) {
       this.animateEntrance(nodeGroups, linkPaths, s.animationSettings.duration.value);
     }
-
-    // Apply shared formatting settings
-    applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.sankey-node-label');
 
     // Accessibility
     if (s.accessibilityFormattingCard.enableKeyboardNav.value) {
@@ -1041,11 +1089,11 @@ export class SankeyDiagramVisual implements IVisual {
           );
         }
       });
-      attachKeyboardNav({
+      this.keyboardNavCleanup = attachKeyboardNav({
         container: this.container,
         itemSelector: '.sankey-node rect',
         onActivate: (el) => {
-          (el as HTMLElement).click();
+          el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         },
       });
     }
@@ -1055,6 +1103,7 @@ export class SankeyDiagramVisual implements IVisual {
 
     // Cross-highlight dimming
     this.applyCrossHighlight();
+    this.applyHighContrast();
 
     this.container.addEventListener('click', this.handleBackgroundClick);
   }
@@ -1268,7 +1317,9 @@ export class SankeyDiagramVisual implements IVisual {
   private renderEmptyState(): void {
     const empty = document.createElement('div');
     empty.className = 'sankey-empty-state';
-    empty.textContent = EMPTY_STATE_TEXT;
+    empty.textContent = this.emptyStateMode === 'noData'
+      ? getLocalizedString(this.host, 'SankeyDiagram_NoDataState', 'No data for the current selection.')
+      : EMPTY_STATE_TEXT;
     this.container.appendChild(empty);
   }
 
@@ -1600,16 +1651,23 @@ export class SankeyDiagramVisual implements IVisual {
 
   private applyCrossHighlight(): void {
     const data = this.currentData;
-    if (!data || !data.hasHighlights) return;
+    if (!data) return;
 
     const hasSelection = this.selectionManager.hasSelection();
+    const useHighlightDimming = data.hasHighlights && this.getCrossHighlightMode() === 'dim';
+    if (!hasSelection && !useHighlightDimming) {
+      this.container.querySelectorAll<SVGElement>('.sankey-link, .sankey-node').forEach((element) => {
+        element.style.opacity = '';
+      });
+      return;
+    }
     const selectedIds = this.selectionManager.getSelectionIds() as ISelectionId[];
     const selectedKeys = new Set(selectedIds.map((id) => id.getKey()));
 
     // Dim links
     const links = this.container.querySelectorAll<SVGPathElement>('.sankey-link');
     for (const el of Array.from(links)) {
-      const isHighlighted = el.getAttribute('data-link-highlighted') === 'true';
+      const isHighlighted = useHighlightDimming && el.getAttribute('data-link-highlighted') === 'true';
       const elKey = el.getAttribute('data-selection-key');
       const isSelected = hasSelection && elKey !== null && selectedKeys.has(elKey);
       el.style.opacity = (isHighlighted || isSelected) ? '' : '0.3';
@@ -1618,7 +1676,7 @@ export class SankeyDiagramVisual implements IVisual {
     // Dim node groups (rect + labels together)
     const nodeGroups = this.container.querySelectorAll<SVGGElement>('.sankey-node');
     for (const group of Array.from(nodeGroups)) {
-      const isHighlighted = group.getAttribute('data-node-highlighted') === 'true';
+      const isHighlighted = useHighlightDimming && group.getAttribute('data-node-highlighted') === 'true';
       const nodeKey = group.getAttribute('data-selection-key');
       const isSelected = hasSelection && nodeKey !== null && selectedKeys.has(nodeKey);
       (group as SVGGElement).style.opacity = (isHighlighted || isSelected) ? '' : '0.3';
@@ -1626,21 +1684,92 @@ export class SankeyDiagramVisual implements IVisual {
   }
 
   private handleBackgroundClick = (): void => {
+    if (!this.interactionsEnabled) return;
     const wasFiltered = this.filteredNodeIndex != null;
     this.filteredNodeIndex = null;
-    void this.selectionManager.clear();
+    const clearPromise = this.selectionManager.clear();
     if (wasFiltered) {
       this.render(this.currentData, this.currentViewport);
     }
+    void clearPromise.then(() => this.applyCrossHighlight());
   };
+
+  private applyHighContrast(): void {
+    const colors = getHostHighContrastColors(this.host);
+    applyBasicHighContrastStyles(this.container, colors, {
+      textSelectors: ['svg text', '.chart-title', '.chart-subtitle', '.pbi-shared-legend span', '.sankey-empty-state'],
+      fillSelectors: ['.sankey-node rect'],
+      strokeSelectors: ['.sankey-link'],
+    });
+    if (!colors.enabled) return;
+    this.container.style.background = colors.background;
+    this.container.style.boxShadow = 'none';
+  }
 
   // ── Lifecycle ────────────────────────────────────────────────
 
   public destroy(): void {
     this.container.removeEventListener('click', this.handleBackgroundClick);
+    this.keyboardNavCleanup?.();
+    this.keyboardNavCleanup = null;
     this.host.tooltipService.hide({ immediately: true, isTouchEvent: false });
     this.cancelAnimations.forEach((cancel) => cancel());
     this.cancelAnimations = [];
     this.svg = null;
+  }
+
+  private getCrossHighlightMode(): 'focus' | 'dim' {
+    return resolveDropdown(this.settings.sankeyInteractionSettings.crossHighlightMode) === 'dim' ? 'dim' : 'focus';
+  }
+
+  private getFocusedHighlightData(data: SankeyData): SankeyData | null {
+    if (!data.hasHighlights) return data;
+
+    const highlightedLinks = data.links.filter((link) => link.highlighted);
+    const highlightedNodeIndices = new Set<number>();
+    for (const link of highlightedLinks) {
+      highlightedNodeIndices.add(Number(link.source));
+      highlightedNodeIndices.add(Number(link.target));
+    }
+    for (const node of data.nodes) {
+      if (node.highlighted) {
+        highlightedNodeIndices.add(node.index);
+      }
+    }
+
+    if (highlightedNodeIndices.size === 0) {
+      return data;
+    }
+
+    const nodeIndexMap = new Map<number, number>();
+    const nodes = data.nodes
+      .filter((node) => highlightedNodeIndices.has(node.index))
+      .map((node, index) => {
+        nodeIndexMap.set(node.index, index);
+        return { ...node, index };
+      });
+
+    const links = highlightedLinks
+      .map((link) => {
+        const sourceIndex = nodeIndexMap.get(Number(link.source));
+        const targetIndex = nodeIndexMap.get(Number(link.target));
+        if (sourceIndex == null || targetIndex == null) {
+          return null;
+        }
+
+        return {
+          ...link,
+          source: sourceIndex,
+          target: targetIndex,
+        };
+      })
+      .filter((link): link is SankeyLinkDatum => link !== null);
+
+    return {
+      nodes,
+      links,
+      layerCount: data.layerCount,
+      hasHighlights: data.hasHighlights,
+    };
   }
 }

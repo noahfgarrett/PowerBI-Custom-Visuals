@@ -52,7 +52,11 @@ import {
   type HarnessConfig,
 } from '../../../core/src/__test-utils__';
 
-const testDV = new DataViewBuilder().withCategory('Item', ['A','B'], 'item').withCategory('Time', ['T1','T2'], 'timeAxis').withValues('Rank', [1,2], 'measure').build();
+const testDV = new DataViewBuilder()
+  .withCategory('Item', ['A', 'A', 'B', 'B'], 'item')
+  .withCategory('Time', ['T1', 'T2', 'T1', 'T2'], 'timeAxis')
+  .withValues('Rank', [1, 3, 2, 1], 'measure')
+  .build();
 
 function createVisual() {
   const opts = createConstructorOptions();
@@ -94,10 +98,20 @@ function makeDeps(): Record<string, Record<string, unknown>> {
   for (const s of ['conditionalDirection','threshold1','threshold2','conditionalColor1','conditionalColor2','conditionalColor3']) {
     deps[`conditionalFormatting.${s}`] = { 'conditionalFormatting.enableConditional': true };
   }
-  deps['annotationFormatting.showAnnotations'] = { 'annotationFormatting.annotation1Category': 'A', 'annotationFormatting.annotation1Text': 'Note' };
+  deps['annotationFormatting.showAnnotations'] = { 'annotationFormatting.annotation1Category': 'T1', 'annotationFormatting.annotation1Text': 'Note' };
   for (const s of ['annotation1Category','annotation1Text','annotation1Position','annotationFontSize','annotationFontColor','annotationConnectorColor']) {
-    deps[`annotationFormatting.${s}`] = { 'annotationFormatting.showAnnotations': true, 'annotationFormatting.annotation1Category': 'A', 'annotationFormatting.annotation1Text': 'Note' };
+    deps[`annotationFormatting.${s}`] = { 'annotationFormatting.showAnnotations': true, 'annotationFormatting.annotation1Category': 'T1', 'annotationFormatting.annotation1Text': 'Note' };
   }
+  for (const s of ['annotation2Category','annotation2Text','annotation2Position']) {
+    deps[`annotationFormatting.${s}`] = { 'annotationFormatting.showAnnotations': true, 'annotationFormatting.annotation2Category': 'T2', 'annotationFormatting.annotation2Text': 'Note 2' };
+  }
+  for (const s of ['annotation3Category','annotation3Text','annotation3Position']) {
+    deps[`annotationFormatting.${s}`] = { 'annotationFormatting.showAnnotations': true, 'annotationFormatting.annotation3Category': 'T1', 'annotationFormatting.annotation3Text': 'Note 3' };
+  }
+  for (const s of ['annotationFontFamily','annotationFontWeight','annotationOffset','annotationPadding','annotationBackgroundColor','annotationBackgroundOpacity','annotationCornerRadius']) {
+    deps[`annotationFormatting.${s}`] = { 'annotationFormatting.showAnnotations': true, 'annotationFormatting.annotation1Category': 'T1', 'annotationFormatting.annotation1Text': 'Note' };
+  }
+  deps['bumpRankChangeSettings.offset'] = { 'bumpRankChangeSettings.showComparison': true };
   for (const s of ['xAxisTitle','yAxisTitle','axisFontSize','axisFontColor','axisFontFamily','axisLabelFontWeight','yAxisMin','yAxisMax','showGridLines','gridLineColor','gridLineOpacity','gridLineStyle']) {
     deps[`axisFormatting.${s}`] = { 'axisFormatting.showXAxis': true, 'axisFormatting.showYAxis': true };
   }
@@ -129,7 +143,6 @@ const harnessConfig: HarnessConfig = {
     'accessibilityFormatting.enableKeyboardNav',
     'animationSettings.staggerDelay',
     'animationSettings.duration',
-    'bumpSettings.lineWidth',
     'bumpSettings.areaOpacity',
     'bumpHighlightSettings.enabled',
     'bumpHighlightSettings.topN',

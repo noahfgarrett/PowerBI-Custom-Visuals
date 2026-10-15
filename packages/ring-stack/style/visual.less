@@ -5,6 +5,7 @@
   height: 100%;
   overflow: hidden;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 8px;
@@ -12,8 +13,21 @@
   box-sizing: border-box;
 }
 
+.ring-stack-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
 .ring-stack-svg {
-  flex-shrink: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  max-height: 100%;
 }
 
 .ring-stack-track {
@@ -37,6 +51,8 @@
   gap: 6px;
   padding-left: 8px;
   min-width: 48px;
+  max-width: 160px;
+  overflow: hidden;
 }
 
 .ring-label {
@@ -55,7 +71,15 @@
 }
 
 .ring-label-pct {
+  flex: 0 0 auto;
   line-height: 1;
+}
+
+.ring-label-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .ring-stack-empty {
@@ -65,4 +89,10 @@
   width: 100%;
   height: 100%;
   font-style: italic;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ring-stack-arc {
+    transition: none;
+  }
 }

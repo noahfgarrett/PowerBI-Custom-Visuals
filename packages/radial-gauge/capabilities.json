@@ -9,25 +9,41 @@
         {
           "numeric": true
         }
-      ]
+      ],
+      "displayNameKey": "RadialGaugeCapabilities_DisplayName_0231",
+      "descriptionKey": "RadialGaugeCapabilities_Description_0001"
+    },
+    {
+      "displayName": "Trend Axis",
+      "name": "trendAxis",
+      "kind": "Grouping",
+      "description": "Optional date or category used for the latest value, date filtering, and mini sparkline",
+      "displayNameKey": "RadialGaugeCapabilities_DisplayName_0232",
+      "descriptionKey": "RadialGaugeCapabilities_Description_0005"
     },
     {
       "displayName": "Target",
       "name": "target",
       "kind": "Measure",
-      "description": "Target value (tick mark on arc)"
+      "description": "Target value (tick mark on arc)",
+      "displayNameKey": "RadialGaugeCapabilities_DisplayName_0233",
+      "descriptionKey": "RadialGaugeCapabilities_Description_0002"
     },
     {
       "displayName": "Min Value",
       "name": "minValue",
       "kind": "Measure",
-      "description": "Minimum value (default 0)"
+      "description": "Minimum value (default 0)",
+      "displayNameKey": "RadialGaugeCapabilities_DisplayName_0234",
+      "descriptionKey": "RadialGaugeCapabilities_Description_0003"
     },
     {
       "displayName": "Max Value",
       "name": "maxValue",
       "kind": "Measure",
-      "description": "Maximum value (default 100)"
+      "description": "Maximum value (default 100)",
+      "displayNameKey": "RadialGaugeCapabilities_DisplayName_0235",
+      "descriptionKey": "RadialGaugeCapabilities_Description_0004"
     }
   ],
   "dataViewMappings": [
@@ -35,6 +51,9 @@
       "conditions": [
         {
           "value": {
+            "max": 1
+          },
+          "trendAxis": {
             "max": 1
           },
           "target": {
@@ -49,6 +68,16 @@
         }
       ],
       "categorical": {
+        "categories": {
+          "for": {
+            "in": "trendAxis"
+          },
+          "dataReductionAlgorithm": {
+            "top": {
+              "count": 1000
+            }
+          }
+        },
         "values": {
           "select": [
             {
@@ -86,59 +115,76 @@
             "enumeration": [
               {
                 "value": "thin",
-                "displayName": "Thin"
+                "displayName": "Thin",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0238"
               },
               {
                 "value": "medium",
-                "displayName": "Medium"
+                "displayName": "Medium",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0239"
               },
               {
                 "value": "thick",
-                "displayName": "Thick"
+                "displayName": "Thick",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0240"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0237"
         },
         "roundedCaps": {
           "displayName": "Rounded Caps",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0241"
         },
         "startAngle": {
-          "displayName": "Arc Preset",
+          "displayName": "Arc Range Preset",
           "type": {
             "enumeration": [
               {
+                "value": "custom",
+                "displayName": "Custom",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0228"
+              },
+              {
                 "value": "half",
-                "displayName": "Half Circle"
+                "displayName": "Half Circle",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0243"
               },
               {
                 "value": "full",
-                "displayName": "Full Circle"
+                "displayName": "Full Circle",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0244"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0242"
         },
         "arcRange": {
-          "displayName": "Arc Range (degrees)",
+          "displayName": "Custom Arc Range (°)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0245"
         },
         "segmented": {
           "displayName": "LED-Style Segments",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0246"
         },
         "segmentCount": {
           "displayName": "Segment Count",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0247"
         }
-      }
+      },
+      "displayNameKey": "RadialGaugeCapabilities_DisplayName_0236"
     },
     "arcColorSettings": {
       "displayName": "Arc Colors",
@@ -151,27 +197,32 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0021"
         },
         "trackOpacity": {
           "displayName": "Track Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0022"
         },
         "zoneBorderWidth": {
           "displayName": "Zone Border Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0023"
         },
         "zoneBorderOpacity": {
           "displayName": "Zone Border Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0024"
         }
-      }
+      },
+      "displayNameKey": "RadialGaugeCapabilities_DisplayName_0020"
     },
     "zoneSettings": {
       "displayName": "Color Zones",
@@ -180,7 +231,8 @@
           "displayName": "Zone 1 Threshold (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0026"
         },
         "zone1Color": {
           "displayName": "Zone 1 Color",
@@ -190,13 +242,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0027"
         },
         "zone2Threshold": {
           "displayName": "Zone 2 Threshold (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0028"
         },
         "zone2Color": {
           "displayName": "Zone 2 Color",
@@ -206,7 +260,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0029"
         },
         "zone3Color": {
           "displayName": "Zone 3 Color",
@@ -216,18 +271,56 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0030"
         }
-      }
+      },
+      "displayNameKey": "RadialGaugeCapabilities_DisplayName_0025"
     },
     "valueSettings": {
       "displayName": "Center Value",
       "properties": {
+        "displayMode": {
+          "displayName": "Display Mode",
+          "type": {
+            "enumeration": [
+              {
+                "value": "value",
+                "displayName": "Value",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0002"
+              },
+              {
+                "value": "target",
+                "displayName": "Target",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0003"
+              },
+              {
+                "value": "delta",
+                "displayName": "Delta vs Target",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0004"
+              },
+              {
+                "value": "custom",
+                "displayName": "Custom Text",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0005"
+              }
+            ]
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0001"
+        },
+        "customText": {
+          "displayName": "Custom Text",
+          "type": {
+            "text": true
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0006"
+        },
         "fontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0032"
         },
         "fontColor": {
           "displayName": "Font Color",
@@ -237,7 +330,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0033"
         },
         "fontFamily": {
           "displayName": "Font Family",
@@ -245,34 +339,42 @@
             "enumeration": [
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0035"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0036"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0037"
               },
               {
                 "value": "Helvetica",
-                "displayName": "Helvetica"
+                "displayName": "Helvetica",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0038"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0039"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0040"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0041"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0034"
         },
         "fontWeight": {
           "displayName": "Font Weight",
@@ -280,20 +382,73 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0043"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0044"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0045"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0042"
+        },
+        "captionMode": {
+          "displayName": "Caption",
+          "type": {
+            "enumeration": [
+              {
+                "value": "auto",
+                "displayName": "Auto",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0008"
+              },
+              {
+                "value": "none",
+                "displayName": "None",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0009"
+              },
+              {
+                "value": "custom",
+                "displayName": "Custom",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0010"
+              }
+            ]
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0007"
+        },
+        "customCaption": {
+          "displayName": "Custom Caption",
+          "type": {
+            "text": true
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0011"
+        },
+        "captionFontSize": {
+          "displayName": "Caption Font Size",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0012"
+        },
+        "captionFontColor": {
+          "displayName": "Caption Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0013"
         }
-      }
+      },
+      "displayNameKey": "RadialGaugeCapabilities_DisplayName_0031"
     },
     "targetSettings": {
       "displayName": "Target",
@@ -302,7 +457,8 @@
           "displayName": "Show Target",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0047"
         },
         "color": {
           "displayName": "Target Color",
@@ -312,15 +468,18 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0048"
         },
         "lineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0049"
         }
-      }
+      },
+      "displayNameKey": "RadialGaugeCapabilities_DisplayName_0046"
     },
     "needleSettings": {
       "displayName": "Needle",
@@ -329,7 +488,8 @@
           "displayName": "Show Needle",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0051"
         },
         "color": {
           "displayName": "Needle Color",
@@ -339,27 +499,32 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0052"
         },
         "width": {
           "displayName": "Width (px)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0053"
         },
         "showHub": {
           "displayName": "Show Hub",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0054"
         },
         "hubRadius": {
           "displayName": "Hub Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0055"
         }
-      }
+      },
+      "displayNameKey": "RadialGaugeCapabilities_DisplayName_0050"
     },
     "animationSettings": {
       "displayName": "Animation",
@@ -368,139 +533,18 @@
           "displayName": "Enable Animations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0057"
         },
         "duration": {
           "displayName": "Duration (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0058"
         }
-      }
-    },
-    "dataLabelFormatting": {
-      "displayName": "Data Labels",
-      "properties": {
-        "dataLabelFontSize": {
-          "displayName": "Font Size",
-          "type": {
-            "numeric": true
-          }
-        },
-        "dataLabelFontColor": {
-          "displayName": "Font Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        },
-        "dataLabelFontWeight": {
-          "displayName": "Font Weight",
-          "type": {
-            "enumeration": [
-              {
-                "value": "normal",
-                "displayName": "Normal"
-              },
-              {
-                "value": "bold",
-                "displayName": "Bold"
-              }
-            ]
-          }
-        },
-        "showDataLabels": {
-          "displayName": "Show Data Labels",
-          "type": {
-            "bool": true
-          }
-        },
-        "dataLabelFontFamily": {
-          "displayName": "Font",
-          "type": {
-            "enumeration": [
-              {
-                "value": "",
-                "displayName": "Default"
-              },
-              {
-                "value": "Arial",
-                "displayName": "Arial"
-              },
-              {
-                "value": "Calibri",
-                "displayName": "Calibri"
-              },
-              {
-                "value": "Cambria",
-                "displayName": "Cambria"
-              },
-              {
-                "value": "Courier New",
-                "displayName": "Courier New"
-              },
-              {
-                "value": "Georgia",
-                "displayName": "Georgia"
-              },
-              {
-                "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
-              },
-              {
-                "value": "Segoe UI",
-                "displayName": "Segoe UI"
-              },
-              {
-                "value": "Tahoma",
-                "displayName": "Tahoma"
-              },
-              {
-                "value": "Times New Roman",
-                "displayName": "Times New Roman"
-              },
-              {
-                "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
-              },
-              {
-                "value": "Verdana",
-                "displayName": "Verdana"
-              }
-            ]
-          }
-        },
-        "dataLabelPosition": {
-          "displayName": "Position",
-          "type": {
-            "enumeration": [
-              {
-                "value": "auto",
-                "displayName": "Auto"
-              },
-              {
-                "value": "above",
-                "displayName": "Above"
-              },
-              {
-                "value": "below",
-                "displayName": "Below"
-              },
-              {
-                "value": "inside",
-                "displayName": "Inside"
-              },
-              {
-                "value": "outside",
-                "displayName": "Outside"
-              }
-            ]
-          }
-        }
-      }
+      },
+      "displayNameKey": "RadialGaugeCapabilities_DisplayName_0056"
     },
     "titleFormatting": {
       "displayName": "Chart Title",
@@ -509,19 +553,22 @@
           "displayName": "Show Title",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0086"
         },
         "titleText": {
           "displayName": "Title Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0087"
         },
         "titleFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0088"
         },
         "titleFontColor": {
           "displayName": "Font Color",
@@ -531,7 +578,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0089"
         },
         "titleAlignment": {
           "displayName": "Alignment",
@@ -539,18 +587,22 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0091"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0092"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0093"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0090"
         },
         "titleFontFamily": {
           "displayName": "Font",
@@ -558,66 +610,81 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0095"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0096"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0097"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0098"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0099"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0100"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0101"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0102"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0103"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0104"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0105"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0106"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0094"
         },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0107"
         },
         "subtitleFontSize": {
           "displayName": "Subtitle Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0108"
         },
         "subtitleFontColor": {
           "displayName": "Subtitle Color",
@@ -627,7 +694,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0109"
         },
         "titleFontWeight": {
           "displayName": "Font Weight",
@@ -635,14 +703,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0111"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0112"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0110"
         },
         "subtitleFontFamily": {
           "displayName": "Subtitle Font",
@@ -650,54 +721,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0114"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0115"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0116"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0117"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0118"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0119"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0120"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0121"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0122"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0123"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0124"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0125"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0113"
         },
         "subtitleFontWeight": {
           "displayName": "Subtitle Font Weight",
@@ -705,16 +789,20 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0127"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0128"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0126"
         }
-      }
+      },
+      "displayNameKey": "RadialGaugeCapabilities_DisplayName_0085"
     },
     "cardSettings": {
       "displayName": "Card Style",
@@ -727,19 +815,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0130"
         },
         "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0131"
         },
         "borderRadius": {
           "displayName": "Border Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0132"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0133"
         },
         "cardStyleMode": {
           "displayName": "Card Style",
@@ -747,57 +845,78 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0014"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0015"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0016"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0017"
+              },
+              {
+                "value": "outlined",
+                "displayName": "Border Only",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0018"
+              },
+              {
+                "value": "floating",
+                "displayName": "Floating Shadow",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0019"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0134"
         },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "(Deprecated) Enable Glass"
+          "displayName": "(Deprecated) Enable Glass",
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0139"
         }
-      }
+      },
+      "displayNameKey": "RadialGaugeCapabilities_DisplayName_0129"
     },
     "gaugeScaleSettings": {
-      "displayName": "Scale",
+      "displayName": "Scale & Ticks",
       "properties": {
         "showTicks": {
           "displayName": "Show Tick Marks",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0141"
         },
         "showLabels": {
           "displayName": "Show Scale Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0142"
         },
         "majorTicks": {
           "displayName": "Major Ticks",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0143"
         },
         "minorTicks": {
           "displayName": "Minor Ticks",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0144"
         },
         "majorTickColor": {
           "displayName": "Major Tick Color",
@@ -807,7 +926,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0145"
         },
         "minorTickColor": {
           "displayName": "Minor Tick Color",
@@ -817,46 +937,149 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0146"
+        },
+        "labelFontSize": {
+          "displayName": "Label Font Size",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0229"
+        },
+        "labelFontColor": {
+          "displayName": "Label Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0230"
+        },
+        "labelFontFamily": {
+          "displayName": "Label Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0148"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0149"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0150"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0151"
+              },
+              {
+                "value": "Helvetica",
+                "displayName": "Helvetica",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0152"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0153"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0154"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0155"
+              }
+            ]
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0147"
+        },
+        "labelFontWeight": {
+          "displayName": "Label Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0157"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0158"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0159"
+              }
+            ]
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0156"
+        },
+        "labelOffset": {
+          "displayName": "Label Offset",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0160"
         }
-      }
+      },
+      "displayNameKey": "RadialGaugeCapabilities_DisplayName_0140"
     },
     "gaugeComparisonSettings": {
       "displayName": "Comparison",
       "properties": {
         "showDelta": {
-          "displayName": "Show Delta Indicator",
+          "displayName": "Show Target Delta",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0162"
         },
         "deltaPositiveColor": {
-          "displayName": "Delta Positive Color",
+          "displayName": "Increase Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0163"
         },
         "deltaNegativeColor": {
-          "displayName": "Delta Negative Color",
+          "displayName": "Decrease Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0164"
         },
         "showSparkline": {
           "displayName": "Show Mini Sparkline",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0165"
         }
-      }
+      },
+      "displayNameKey": "RadialGaugeCapabilities_DisplayName_0161"
     },
     "conditionalFormatting": {
       "displayName": "Conditional Formatting",
@@ -865,7 +1088,8 @@
           "displayName": "Enable Conditional Formatting",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0167"
         },
         "conditionalDirection": {
           "displayName": "Direction",
@@ -873,26 +1097,31 @@
             "enumeration": [
               {
                 "value": "ascending",
-                "displayName": "Ascending (Low = Bad)"
+                "displayName": "Ascending (Low = Bad)",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0169"
               },
               {
                 "value": "descending",
-                "displayName": "Descending (Low = Good)"
+                "displayName": "Descending (Low = Good)",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0170"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0168"
         },
         "threshold1": {
           "displayName": "Threshold 1",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0171"
         },
         "threshold2": {
           "displayName": "Threshold 2",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0172"
         },
         "conditionalColor1": {
           "displayName": "Color 1 (Bad)",
@@ -902,7 +1131,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0173"
         },
         "conditionalColor2": {
           "displayName": "Color 2 (Warning)",
@@ -912,7 +1142,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0174"
         },
         "conditionalColor3": {
           "displayName": "Color 3 (Good)",
@@ -922,9 +1153,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0175"
         }
-      }
+      },
+      "displayNameKey": "RadialGaugeCapabilities_DisplayName_0166"
     },
     "accessibilityFormatting": {
       "displayName": "Accessibility",
@@ -933,9 +1166,11 @@
           "displayName": "Enable Keyboard Navigation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0177"
         }
-      }
+      },
+      "displayNameKey": "RadialGaugeCapabilities_DisplayName_0176"
     },
     "numberFormatting": {
       "displayName": "Number Format",
@@ -946,46 +1181,56 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0180"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0181"
               },
               {
                 "value": "thousands",
-                "displayName": "Thousands (K)"
+                "displayName": "Thousands (K)",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0182"
               },
               {
                 "value": "millions",
-                "displayName": "Millions (M)"
+                "displayName": "Millions (M)",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0183"
               },
               {
                 "value": "billions",
-                "displayName": "Billions (B)"
+                "displayName": "Billions (B)",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0184"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0179"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0185"
         },
         "valuePrefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0186"
         },
         "valueSuffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0187"
         }
-      }
+      },
+      "displayNameKey": "RadialGaugeCapabilities_DisplayName_0178"
     },
     "legendFormatting": {
       "displayName": "Legend",
@@ -994,7 +1239,8 @@
           "displayName": "Show Legend",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0189"
         },
         "legendPosition": {
           "displayName": "Position",
@@ -1002,28 +1248,34 @@
             "enumeration": [
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0191"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0192"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0193"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0194"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0190"
         },
         "legendFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0195"
         },
         "legendFontColor": {
           "displayName": "Font Color",
@@ -1033,7 +1285,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0196"
         },
         "legendFontFamily": {
           "displayName": "Font",
@@ -1041,54 +1294,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0198"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0199"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0200"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0201"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0202"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0203"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0204"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0205"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0206"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0207"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0208"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0209"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0197"
         },
         "legendFontWeight": {
           "displayName": "Font Weight",
@@ -1096,22 +1362,27 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0211"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0212"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0210"
         },
         "legendAliases": {
           "displayName": "Rename Labels",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0213"
         }
-      }
+      },
+      "displayNameKey": "RadialGaugeCapabilities_DisplayName_0188"
     },
     "dateFilterFormatting": {
       "displayName": "Date Filter",
@@ -1120,27 +1391,32 @@
           "displayName": "Enable Date Filter",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0215"
         },
         "startDate": {
           "displayName": "Start Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0216"
         },
         "endAtCurrentDate": {
           "displayName": "End at Current Date",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0217"
         },
         "endDate": {
           "displayName": "End Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0218"
         }
-      }
+      },
+      "displayNameKey": "RadialGaugeCapabilities_DisplayName_0214"
     },
     "colorThemeFormatting": {
       "properties": {
@@ -1150,42 +1426,60 @@
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0221"
               },
               {
                 "value": "ocean",
-                "displayName": "Ocean"
+                "displayName": "Ocean",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0222"
               },
               {
                 "value": "sunset",
-                "displayName": "Sunset"
+                "displayName": "Sunset",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0223"
               },
               {
                 "value": "forest",
-                "displayName": "Forest"
+                "displayName": "Forest",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0224"
               },
               {
                 "value": "berry",
-                "displayName": "Berry"
+                "displayName": "Berry",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0225"
               },
               {
                 "value": "monochrome",
-                "displayName": "Monochrome"
+                "displayName": "Monochrome",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0226"
               },
               {
                 "value": "earth",
-                "displayName": "Earth"
+                "displayName": "Earth",
+                "displayNameKey": "RadialGaugeCapabilities_DisplayName_0227"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadialGaugeCapabilities_DisplayName_0220"
         }
       },
-      "displayName": "Color Theme"
+      "displayName": "Color Theme",
+      "displayNameKey": "RadialGaugeCapabilities_DisplayName_0219"
     }
   },
   "supportsKeyboardFocus": true,
   "supportsHighlight": true,
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
   "supportsMultiVisualSelection": true,
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
   "privileges": [],
   "suppressDefaultTitle": true
 }

@@ -9,6 +9,9 @@ import * as d3 from 'd3';
 import { FormattingSettingsService } from 'powerbi-visuals-utils-formattingmodel';
 import { AnimatedWaterfallSettings } from './settings';
 import {
+  allowInteractions,
+  attachEmptySpaceContextMenu,
+  applyBasicHighContrastStyles,
   fallIn,
   drawPath,
   fadeSlideIn,
@@ -17,7 +20,6 @@ import {
   applyCardStyle,
   type CardStyleMode,
   renderChartTitle,
-  applyDataLabelFormatting,
   applyAllAxisFormatting,
   createScrollableChart,
   buildConditionalConfig,
@@ -41,6 +43,20 @@ import {
   type DateFilterConfig,
   resolveColorTheme,
   getHostChartColor,
+  hideInlineLegendFormatting,
+  syncCardStyleVisibility,
+  syncDateFilterFormattingVisibility,
+  syncLegendFormattingVisibility,
+  syncTitleFormattingVisibility,
+  getHostHighContrastColors,
+  notifyRenderingStarted,
+  notifyRenderingFinished,
+  notifyRenderingFailed,
+  renderLandingPage,
+  renderNoDataState,
+  getVisualEmptyStateMode,
+  getLocalizedString,
+  prefersReducedMotion,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -103,6 +119,8 @@ export class AnimatedWaterfallVisual implements IVisual {
   private settings: AnimatedWaterfallSettings;
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
+  private detachEmptySpaceContextMenu: (() => void) | null = null;
+  private emptyStateMode: 'unconfigured' | 'noData' = 'unconfigured';
 
   /** Chain of category values the user has drilled into */
   private drillPath: string[] = [];
@@ -116,17 +134,26 @@ export class AnimatedWaterfallVisual implements IVisual {
     this.selectionManager = options.host.createSelectionManager();
     this.container = options.element;
     this.settings = new AnimatedWaterfallSettings();
-    this.formattingSettingsService = new FormattingSettingsService();
+    this.formattingSettingsService = new FormattingSettingsService(options.host.createLocalizationManager());
     this.container.classList.add('waterfall-container');
+    this.detachEmptySpaceContextMenu = attachEmptySpaceContextMenu(
+      this.container,
+      this.selectionManager,
+      () => this.host.createSelectionIdBuilder().createSelectionId(),
+      () => allowInteractions(this.host),
+    );
   }
 
   public update(options: VisualUpdateOptions): void {
-    // Cancel running animations before re-render
-    this.cancelAnimations.forEach((cancel) => cancel());
-    this.cancelAnimations = [];
+    notifyRenderingStarted(this.host, options);
+    try {
+      // Cancel running animations before re-render
+      this.cancelAnimations.forEach((cancel) => cancel());
+      this.cancelAnimations = [];
 
     // Parse settings from dataView
     const dataView = options.dataViews?.[0];
+    this.emptyStateMode = getVisualEmptyStateMode(dataView);
     if (dataView) {
       this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
         AnimatedWaterfallSettings,
@@ -138,27 +165,38 @@ export class AnimatedWaterfallVisual implements IVisual {
     const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
     if (legacyCardObj) {
       const legacyGlass = legacyCardObj['enableGlass'];
-      if (legacyGlass === false) {
+      if (legacyGlass === false && legacyCardObj['cardStyleMode'] == null) {
         this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
       }
     }
 
-    // Hide shared axis toggles that are shadowed by local settings
+    syncDateFilterFormattingVisibility(this.settings.dateFilterFormattingCard);
+    syncTitleFormattingVisibility(this.settings.titleFormattingCard);
+    syncLegendFormattingVisibility(this.settings.legendFormattingCard);
 
-    // Date filter: hide start/end when disabled
-    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
-    this.settings.axisFormattingCard.showXAxis.visible = false;
-    this.settings.axisFormattingCard.showYAxis.visible = false;
-    this.settings.axisFormattingCard.yAxisMin.visible = false;
-    this.settings.axisFormattingCard.yAxisMax.visible = false;
+    const axis = this.settings.axisFormattingCard;
+    axis.xAxisTitle.visible = axis.showXAxis.value;
+    axis.yAxisTitle.visible = axis.showYAxis.value;
+    axis.axisLabelRotation.visible = axis.showXAxis.value;
+    axis.yAxisMin.visible = axis.showYAxis.value;
+    axis.yAxisMax.visible = axis.showYAxis.value;
+    axis.integerTicks.visible = axis.showYAxis.value;
+    axis.gridLineColor.visible = axis.showGridLines.value;
+    axis.gridLineStyle.visible = axis.showGridLines.value;
+    axis.gridLineWidth.visible = axis.showGridLines.value;
+    axis.gridLineOpacity.visible = axis.showGridLines.value;
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
+    this.settings.dataLabelFormattingCard.dataLabelFontSize.visible = false;
+    this.settings.dataLabelFormattingCard.dataLabelFontColor.visible = false;
+    this.settings.dataLabelFormattingCard.dataLabelFontWeight.visible = false;
+    this.settings.dataLabelFormattingCard.dataLabelFontFamily.visible = false;
+    this.settings.dataLabelFormattingCard.dataLabelPosition.visible = false;
 
     // Hide dual-axis-only properties (no combo/dual-axis support)
     this.settings.referenceLineFormattingCard.referenceLineAxis.visible = false;
     this.settings.referenceLineFormattingCard.referenceBandWidth.visible = false;
     this.settings.trendLineFormattingCard.trendLineAxis.visible = false;
+    hideInlineLegendFormatting(this.settings.legendFormattingCard);
 
     // ── Conditional visibility ──────────────────────────────────────
     // Subtotal sub-settings: hide when subtotals disabled
@@ -168,10 +206,17 @@ export class AnimatedWaterfallVisual implements IVisual {
     this.settings.subtotalSettings.indices.visible = subtotalOn;
 
     // Drill-down sub-settings: hide when drill disabled
-    const drillOn = this.settings.drillDownSettings.enabled.value;
+    const hasSubCategory = dataView?.categorical?.categories?.some(
+      (column) => column.source.roles?.['subCategory'] === true,
+    ) ?? false;
+    const drillOn = hasSubCategory && this.settings.drillDownSettings.enabled.value;
+    this.settings.drillDownSettings.enabled.visible = hasSubCategory;
     this.settings.drillDownSettings.showBreadcrumb.visible = drillOn;
-    this.settings.drillDownSettings.breadcrumbFontSize.visible = drillOn;
-    this.settings.drillDownSettings.breadcrumbColor.visible = drillOn;
+    this.settings.drillDownSettings.breadcrumbFontSize.visible = drillOn && this.settings.drillDownSettings.showBreadcrumb.value;
+    this.settings.drillDownSettings.breadcrumbColor.visible = drillOn && this.settings.drillDownSettings.showBreadcrumb.value;
+    this.settings.drillDownSettings.breadcrumbFontFamily.visible = drillOn && this.settings.drillDownSettings.showBreadcrumb.value;
+    this.settings.drillDownSettings.breadcrumbFontWeight.visible = drillOn && this.settings.drillDownSettings.showBreadcrumb.value;
+    this.settings.drillDownSettings.breadcrumbPadding.visible = drillOn && this.settings.drillDownSettings.showBreadcrumb.value;
 
     // Value label sub-settings: hide when values off
     const showValuesToggle = this.settings.valueSettings.show.value;
@@ -180,8 +225,14 @@ export class AnimatedWaterfallVisual implements IVisual {
     this.settings.valueSettings.fontFamily.visible = showValuesToggle;
     this.settings.valueSettings.fontWeight.visible = showValuesToggle;
 
-    // Summary banner fontSize: hide when banner off
-    this.settings.waterfallSummary.fontSize.visible = this.settings.waterfallSummary.show.value;
+    // Summary banner sub-settings: hide when banner off
+    const summaryOn = this.settings.waterfallSummary.show.value;
+    this.settings.waterfallSummary.fontSize.visible = summaryOn;
+    this.settings.waterfallSummary.fontColor.visible = summaryOn;
+    this.settings.waterfallSummary.fontFamily.visible = summaryOn;
+    this.settings.waterfallSummary.fontWeight.visible = summaryOn;
+    this.settings.waterfallSummary.alignment.visible = summaryOn;
+    this.settings.waterfallSummary.paddingTop.visible = summaryOn;
 
     // Connector sub-settings: hide when showConnectors false
     const connectorsOn = this.settings.waterfallSettings.showConnectors.value;
@@ -193,6 +244,45 @@ export class AnimatedWaterfallVisual implements IVisual {
     const totalBarOn = this.settings.waterfallTotalBar.show.value;
     this.settings.waterfallTotalBar.label.visible = totalBarOn;
     this.settings.waterfallTotalBar.color.visible = totalBarOn;
+
+    const animationOn = this.settings.animationSettings.enabled.value;
+    this.settings.animationSettings.duration.visible = animationOn;
+    this.settings.animationSettings.staggerDelay.visible = animationOn;
+
+    const reference = this.settings.referenceLineFormattingCard;
+    const referenceOn = reference.showReferenceLine.value;
+    const referenceType = resolveDropdown(reference.referenceLineType) ?? 'custom';
+    reference.referenceLineType.visible = referenceOn;
+    reference.referenceLineValue.visible = referenceOn && referenceType === 'custom';
+    reference.referenceLineColor.visible = referenceOn;
+    reference.referenceLineWidth.visible = referenceOn;
+    reference.referenceLineStyle.visible = referenceOn;
+    reference.showReferenceLabel.visible = referenceOn;
+    reference.referenceLabelText.visible = referenceOn && reference.showReferenceLabel.value;
+    reference.showReferenceBand.visible = referenceOn;
+    reference.referenceBandOpacity.visible = referenceOn && reference.showReferenceBand.value;
+
+    const trend = this.settings.trendLineFormattingCard;
+    const trendOn = trend.showTrendLine.value;
+    const trendType = resolveDropdown(trend.trendLineType) ?? 'linear';
+    trend.trendLineType.visible = trendOn;
+    trend.polynomialOrder.visible = trendOn && trendType === 'polynomial';
+    trend.trendLineColor.visible = trendOn;
+    trend.trendLineWidth.visible = trendOn;
+    trend.showEquation.visible = trendOn;
+    trend.showR2.visible = trendOn;
+
+    const conditional = this.settings.conditionalFormattingCard;
+    const conditionalOn = conditional.enableConditional.value;
+    conditional.conditionalDirection.visible = conditionalOn;
+    conditional.threshold1.visible = conditionalOn;
+    conditional.threshold2.visible = conditionalOn;
+    conditional.conditionalColor1.visible = conditionalOn;
+    conditional.conditionalColor2.visible = conditionalOn;
+    conditional.conditionalColor3.visible = conditionalOn;
+
+    const annotations = this.settings.annotationFormattingCard;
+    for (const slice of annotations.slices.slice(1)) slice.visible = annotations.showAnnotations.value;
 
     // Extract data
     const data = this.extractData(dataView);
@@ -214,11 +304,17 @@ export class AnimatedWaterfallVisual implements IVisual {
       this.render(effectiveData, options.viewport);
     }
 
-    // Apply cross-highlight dimming after render
-    this.applySelectionHighlight();
+      // Apply cross-highlight dimming after render
+      this.applySelectionHighlight();
 
-    // Apply card styling AFTER render — render clears the container, which would destroy the glass backdrop div.
-    this.applyCardStyle();
+      // Apply card styling AFTER render — render clears the container, which would destroy the glass backdrop div.
+      this.applyCardStyle();
+      this.applyHighContrast();
+      notifyRenderingFinished(this.host, options);
+    } catch (error) {
+      notifyRenderingFailed(this.host, options, error instanceof Error ? error.message : String(error));
+      throw error;
+    }
   }
 
   // -- Data Extraction --------------------------------------------------------
@@ -482,6 +578,7 @@ export class AnimatedWaterfallVisual implements IVisual {
       // Group rows by parent category
       const catGroups = new Map<string, number[]>();
       for (let i = 0; i < categories.length; i++) {
+        if (dateIndices && !dateIndices.has(i)) continue;
         const catLabel = categories[i];
         const existing = catGroups.get(catLabel);
         if (existing) {
@@ -595,20 +692,27 @@ export class AnimatedWaterfallVisual implements IVisual {
 
     const fontSize = ds.breadcrumbFontSize.value;
     const color = ds.breadcrumbColor.value?.value || '#64748B';
+    const fontFamily = resolveDropdown(ds.breadcrumbFontFamily);
+    const fontWeight = resolveDropdown(ds.breadcrumbFontWeight) ?? 'normal';
+    const padding = Math.max(0, ds.breadcrumbPadding.value);
 
     const breadcrumb = document.createElement('div');
     breadcrumb.className = 'waterfall-breadcrumb';
     breadcrumb.style.display = 'flex';
     breadcrumb.style.alignItems = 'center';
     breadcrumb.style.gap = '4px';
-    breadcrumb.style.padding = '4px 8px';
+    breadcrumb.style.padding = `${Math.max(2, Math.round(padding / 2))}px ${padding}px`;
     breadcrumb.style.fontSize = `${fontSize}px`;
     breadcrumb.style.color = color;
     breadcrumb.style.flexWrap = 'wrap';
+    breadcrumb.style.fontWeight = fontWeight;
+    if (fontFamily) {
+      breadcrumb.style.fontFamily = fontFamily;
+    }
 
     // "All" root segment
     const allSpan = document.createElement('span');
-    allSpan.textContent = 'All';
+    allSpan.textContent = getLocalizedString(this.host, 'Common_BreadcrumbAll', 'All');
     allSpan.style.cursor = 'pointer';
     allSpan.style.textDecoration = 'underline';
     allSpan.style.color = color;
@@ -647,7 +751,7 @@ export class AnimatedWaterfallVisual implements IVisual {
 
     this.container.appendChild(breadcrumb);
 
-    if (this.settings.animationSettings.enabled.value) {
+    if (this.settings.animationSettings.enabled.value && !prefersReducedMotion()) {
       const cancel = fadeSlideIn(
         breadcrumb as unknown as HTMLElement,
         'left',
@@ -668,6 +772,8 @@ export class AnimatedWaterfallVisual implements IVisual {
       this.render(effectiveData, this.currentViewport);
     }
     this.applySelectionHighlight();
+    this.applyCardStyle();
+    this.applyHighContrast();
   }
 
   // -- Card Style -------------------------------------------------------------
@@ -684,9 +790,6 @@ export class AnimatedWaterfallVisual implements IVisual {
         borderRadius: s.borderRadius.value,
       },
     );
-    if (mode === 'none') {
-      this.container.style.borderRadius = `${s.borderRadius.value}px`;
-    }
   }
 
   // -- Empty State ------------------------------------------------------------
@@ -695,10 +798,23 @@ export class AnimatedWaterfallVisual implements IVisual {
     while (this.container.firstChild) {
       this.container.removeChild(this.container.firstChild);
     }
-    const emptyEl = document.createElement('div');
-    emptyEl.className = 'waterfall-empty';
-    emptyEl.textContent = 'Add a Category and a Measure to get started.';
-    this.container.appendChild(emptyEl);
+    if (this.emptyStateMode === 'noData') {
+      renderNoDataState(
+        this.container,
+        getLocalizedString(this.host, 'AnimatedWaterfall_NoDataState', 'No data for the current selection.'),
+        getHostHighContrastColors(this.host),
+      );
+      return;
+    }
+    renderLandingPage(this.container, {
+      title: getLocalizedString(this.host, 'AnimatedWaterfall_LandingTitle', 'Add data to build a waterfall chart'),
+      description: getLocalizedString(this.host, 'AnimatedWaterfall_LandingDescription', 'Animated Waterfall needs a category and a measure to show cumulative change.'),
+      steps: [
+        getLocalizedString(this.host, 'AnimatedWaterfall_LandingStepAxis', 'Put a category on the axis.'),
+        getLocalizedString(this.host, 'AnimatedWaterfall_LandingStepMeasure', 'Add a measure for the change value.'),
+        getLocalizedString(this.host, 'AnimatedWaterfall_LandingStepOptional', 'Optional total and subtotal fields enable richer waterfalls.'),
+      ],
+    }, getHostHighContrastColors(this.host));
   }
 
   // -- Main Render ------------------------------------------------------------
@@ -724,11 +840,19 @@ export class AnimatedWaterfallVisual implements IVisual {
     if (breadcrumbEl) reservedHeight += breadcrumbEl.offsetHeight;
 
     const s = this.settings;
-    const padding = 8;
+    const padding = Math.max(0, s.waterfallSettings.outerPadding.value + s.cardSettings.contentPadding.value);
     const baseSvgWidth = viewport.width - padding * 2;
     const baseSvgHeight = viewport.height - padding * 2 - reservedHeight;
     const baseChartWidth = Math.max(0, baseSvgWidth - MARGIN.left - MARGIN.right);
-    const baseChartHeight = Math.max(0, baseSvgHeight - MARGIN.top - MARGIN.bottom);
+    const summaryReserve = s.waterfallSummary.show.value
+      ? Math.max(0, s.waterfallSummary.paddingTop.value)
+        + Math.max(8, s.waterfallSummary.fontSize.value)
+        + 6
+      : 0;
+    const baseChartHeight = Math.max(
+      0,
+      baseSvgHeight - MARGIN.top - MARGIN.bottom - summaryReserve,
+    );
 
     if (baseChartWidth <= 0 || baseChartHeight <= 0) {
       this.renderEmpty();
@@ -775,8 +899,16 @@ export class AnimatedWaterfallVisual implements IVisual {
     const yMin = Math.min(0, data.minValue);
     const yMax = data.maxValue;
     const yPadding = (yMax - yMin) * 0.1 || 10;
+    const configuredMin = s.axisFormattingCard.yAxisMin.value;
+    const configuredMax = s.axisFormattingCard.yAxisMax.value;
+    const domainMin = typeof configuredMin === 'number' && Number.isFinite(configuredMin)
+      ? configuredMin
+      : yMin - yPadding;
+    const domainMax = typeof configuredMax === 'number' && Number.isFinite(configuredMax) && configuredMax > domainMin
+      ? configuredMax
+      : yMax + yPadding;
     const yScale = d3.scaleLinear()
-      .domain([yMin - yPadding, yMax + yPadding])
+      .domain([domainMin, domainMax])
       .nice()
       .range([chartHeight, 0]);
 
@@ -796,13 +928,13 @@ export class AnimatedWaterfallVisual implements IVisual {
       : (s.colorSettings.negativeColor.value?.value ?? '#F87171');
     const totalColor = themeName !== 'default'
       ? getHostChartColor(this.host.colorPalette, 2, themeName)
-      : (s.waterfallTotalBar.color.value?.value || s.colorSettings.totalColor.value?.value || '#3B82F6');
+      : (s.waterfallTotalBar.color.value?.value || '#3B82F6');
     const subtotalColor = themeName !== 'default'
       ? getHostChartColor(this.host.colorPalette, 3, themeName)
       : (s.subtotalSettings.subtotalColor.value?.value ?? '#6366F1');
 
     // Animation settings
-    const animEnabled = s.animationSettings.enabled.value;
+    const animEnabled = s.animationSettings.enabled.value && !prefersReducedMotion();
     const animDuration = s.animationSettings.duration.value;
     const staggerDelay = s.animationSettings.staggerDelay.value;
     const showConnectors = s.waterfallSettings.showConnectors.value;
@@ -873,8 +1005,9 @@ export class AnimatedWaterfallVisual implements IVisual {
 
       // Tooltip
       this.attachTooltip(rect, step);
-      rect.style.cursor = 'pointer';
+      rect.style.cursor = allowInteractions(this.host) ? 'pointer' : 'default';
       rect.addEventListener('click', (event: MouseEvent) => {
+        if (!allowInteractions(this.host)) return;
         event.stopPropagation();
 
         // Drill-down: if enabled and this step has sub-categories, drill into it
@@ -899,6 +1032,7 @@ export class AnimatedWaterfallVisual implements IVisual {
         });
       });
       rect.addEventListener('contextmenu', (event: MouseEvent) => {
+        if (!allowInteractions(this.host)) return;
         event.preventDefault();
         event.stopPropagation();
         void this.selectionManager.showContextMenu(step.selectionId, {
@@ -1006,12 +1140,12 @@ export class AnimatedWaterfallVisual implements IVisual {
         text.style.setProperty('font-size', `${fontSize}px`);
         const valueFontColor = s.valueSettings.fontColor.value?.value;
         if (valueFontColor) text.setAttribute('fill', valueFontColor);
-        const valueFontFamily = resolveDropdown(s.valueSettings.fontFamily);
-        if (valueFontFamily) text.style.setProperty('font-family', valueFontFamily);
-        const valueFontWeight = resolveDropdown(s.valueSettings.fontWeight);
-        text.style.setProperty('font-weight', valueFontWeight || 'normal');
-        text.textContent = formattedValue;
-        chartGroup.appendChild(text);
+      const valueFontFamily = resolveDropdown(s.valueSettings.fontFamily);
+      if (valueFontFamily) text.style.setProperty('font-family', valueFontFamily);
+      const valueFontWeight = resolveDropdown(s.valueSettings.fontWeight);
+      text.style.setProperty('font-weight', valueFontWeight || 'normal');
+      text.textContent = formattedValue;
+      chartGroup.appendChild(text);
 
         // Animate value labels
         if (animEnabled) {
@@ -1062,8 +1196,7 @@ export class AnimatedWaterfallVisual implements IVisual {
       return { x: cx, y: cy };
     });
 
-    // Apply shared formatting settings
-    applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.waterfall-value');
+    // Value labels use the dedicated Value Labels card above.
     applyAllAxisFormatting(this.container, this.settings.axisFormattingCard, '.waterfall-axis', '.waterfall-grid');
 
     // Waterfall summary banner
@@ -1075,14 +1208,28 @@ export class AnimatedWaterfallVisual implements IVisual {
       const sign = netChange >= 0 ? '+' : '';
       const summaryText = `Increase: ${formatWithSettings(totalPositive, s.numberFormattingCard)}  |  Decrease: ${formatWithSettings(totalNegative, s.numberFormattingCard)}  |  Net Change: ${sign}${formatWithSettings(netChange, s.numberFormattingCard)}`;
       const summaryFontSize = s.waterfallSummary.fontSize.value ?? 11;
+      const summaryFontColor = s.waterfallSummary.fontColor.value?.value || s.axisFormattingCard.axisLabelColor.value?.value || '#64748B';
+      const summaryFontFamily = resolveDropdown(s.waterfallSummary.fontFamily);
+      const summaryFontWeight = resolveDropdown(s.waterfallSummary.fontWeight) ?? 'normal';
+      const summaryAlignment = resolveDropdown(s.waterfallSummary.alignment) ?? 'center';
+      const summaryPaddingTop = Math.max(0, s.waterfallSummary.paddingTop.value);
+      const summaryX = summaryAlignment === 'left'
+        ? 0
+        : summaryAlignment === 'right'
+          ? chartWidth
+          : chartWidth / 2;
 
       const summaryEl = document.createElementNS(SVG_NS, 'text');
       summaryEl.setAttribute('class', 'waterfall-summary');
-      summaryEl.setAttribute('x', String(chartWidth / 2));
-      summaryEl.setAttribute('y', String(chartHeight + MARGIN.bottom - 4));
-      summaryEl.setAttribute('text-anchor', 'middle');
+      summaryEl.setAttribute('x', String(summaryX));
+      summaryEl.setAttribute('y', String(chartHeight + MARGIN.bottom - 4 + summaryPaddingTop));
+      summaryEl.setAttribute('text-anchor', summaryAlignment === 'left' ? 'start' : summaryAlignment === 'right' ? 'end' : 'middle');
       summaryEl.style.setProperty('font-size', `${summaryFontSize}px`);
-      summaryEl.style.setProperty('fill', s.axisFormattingCard.axisLabelColor.value?.value || '#64748B');
+      summaryEl.style.setProperty('fill', summaryFontColor);
+      summaryEl.style.setProperty('font-weight', summaryFontWeight);
+      if (summaryFontFamily) {
+        summaryEl.style.setProperty('font-family', summaryFontFamily);
+      }
       summaryEl.textContent = summaryText;
       chartGroup.appendChild(summaryEl);
     }
@@ -1092,11 +1239,19 @@ export class AnimatedWaterfallVisual implements IVisual {
     if (legendCard.showLegend.value) {
       const legendPos = resolveDropdown(legendCard.legendPosition) ?? 'bottom';
       const rawFontColor = legendCard.legendFontColor.value?.value;
-      const legendItems: LegendItem[] = [
-        { label: 'Increase', color: positiveColor },
-        { label: 'Decrease', color: negativeColor },
-        { label: 'Total', color: totalColor },
-      ];
+      const legendItems: LegendItem[] = [];
+      if (data.steps.some((step) => !step.isTotal && !step.isSubtotal && step.value >= 0)) {
+        legendItems.push({ label: 'Increase', color: positiveColor });
+      }
+      if (data.steps.some((step) => !step.isTotal && !step.isSubtotal && step.value < 0)) {
+        legendItems.push({ label: 'Decrease', color: negativeColor });
+      }
+      if (data.steps.some((step) => step.isSubtotal)) {
+        legendItems.push({ label: 'Subtotal', color: subtotalColor });
+      }
+      if (data.steps.some((step) => step.isTotal)) {
+        legendItems.push({ label: 'Total', color: totalColor });
+      }
       renderLegend(this.container, {
         items: legendItems,
         position: legendPos as 'top' | 'bottom' | 'left' | 'right',
@@ -1136,7 +1291,11 @@ export class AnimatedWaterfallVisual implements IVisual {
 
   private applyAccessibility(data: WaterfallData): void {
     const acc = this.settings.accessibilityFormattingCard;
-    if (!acc.enableKeyboardNav.value) return;
+    if (!acc.enableKeyboardNav.value) {
+      this.container.removeAttribute('role');
+      this.container.removeAttribute('aria-label');
+      return;
+    }
 
     ensureFocusRingStyles();
 
@@ -1146,11 +1305,24 @@ export class AnimatedWaterfallVisual implements IVisual {
       dataPointCount: data.steps.length,
     });
 
+    const bars = this.container.querySelectorAll<SVGRectElement>('.waterfall-bar');
+    bars.forEach((bar, index) => {
+      const step = data.steps[index];
+      bar.setAttribute('role', 'listitem');
+      bar.setAttribute('tabindex', '0');
+      bar.setAttribute(
+        'aria-label',
+        step
+          ? `${step.label}, ${formatWithSettings(step.value, this.settings.numberFormattingCard)}`
+          : `Waterfall step ${index + 1}`,
+      );
+    });
+
     const cleanup = attachKeyboardNav({
       container: this.container,
-      itemSelector: '.waterfall-bar, [tabindex="0"]',
+      itemSelector: '.waterfall-bar[tabindex="0"]',
       onActivate: (el) => {
-        (el as HTMLElement).click?.();
+        if (allowInteractions(this.host)) (el as HTMLElement).click?.();
       },
     });
     this.cancelAnimations.push(cleanup);
@@ -1245,6 +1417,15 @@ export class AnimatedWaterfallVisual implements IVisual {
       ann.annotationFontColor.value?.value || '#475569',
       ann.annotationConnectorColor.value?.value || '#94A3B8',
       resolvePosition,
+      {
+        fontFamily: resolveDropdown(ann.annotationFontFamily) || undefined,
+        fontWeight: resolveDropdown(ann.annotationFontWeight) || '500',
+        offset: ann.annotationOffset.value,
+        padding: ann.annotationPadding.value,
+        backgroundColor: ann.annotationBackgroundColor.value?.value || '#FFFFFF',
+        backgroundOpacity: ann.annotationBackgroundOpacity.value / 100,
+        cornerRadius: ann.annotationCornerRadius.value,
+      },
     );
     if (config) renderAnnotations(g, config);
   }
@@ -1259,7 +1440,10 @@ export class AnimatedWaterfallVisual implements IVisual {
   ): void {
     const gridGroup = document.createElementNS(SVG_NS, 'g');
     gridGroup.setAttribute('class', 'waterfall-grid');
-    const ticks = yScale.ticks(6);
+    const rawTicks = yScale.ticks(6);
+    const ticks = this.settings.axisFormattingCard.integerTicks.value
+      ? rawTicks.filter(Number.isInteger)
+      : rawTicks;
 
     for (const tick of ticks) {
       const y = yScale(tick);
@@ -1295,6 +1479,7 @@ export class AnimatedWaterfallVisual implements IVisual {
       g.appendChild(xAxisGroup);
 
       const keys = xScale.domain();
+      const rotation = Math.max(-90, Math.min(90, s.axisFormattingCard.axisLabelRotation.value));
       for (const key of keys) {
         const x = (xScale(key) ?? 0) + xScale.bandwidth() / 2;
         const text = document.createElementNS(SVG_NS, 'text');
@@ -1304,10 +1489,9 @@ export class AnimatedWaterfallVisual implements IVisual {
         text.textContent = labelByKey.get(key) ?? '';
         xAxisGroup.appendChild(text);
 
-        // Rotate if many categories
-        if (keys.length > 8) {
-          text.setAttribute('transform', `rotate(-35, ${x}, 16)`);
-          text.setAttribute('text-anchor', 'end');
+        if (rotation !== 0) {
+          text.setAttribute('transform', `rotate(${rotation}, ${x}, 16)`);
+          text.setAttribute('text-anchor', rotation < 0 ? 'end' : 'start');
         }
       }
 
@@ -1318,6 +1502,15 @@ export class AnimatedWaterfallVisual implements IVisual {
       axisLine.setAttribute('x2', String(width));
       axisLine.setAttribute('y2', '0');
       xAxisGroup.appendChild(axisLine);
+
+      if (s.axisFormattingCard.xAxisTitle.value.trim()) {
+        const title = document.createElementNS(SVG_NS, 'text');
+        title.setAttribute('x', String(width / 2));
+        title.setAttribute('y', '40');
+        title.setAttribute('text-anchor', 'middle');
+        title.textContent = s.axisFormattingCard.xAxisTitle.value;
+        xAxisGroup.appendChild(title);
+      }
     }
 
     // Y-Axis
@@ -1326,7 +1519,10 @@ export class AnimatedWaterfallVisual implements IVisual {
       yAxisGroup.setAttribute('class', 'waterfall-axis waterfall-axis-y');
       g.appendChild(yAxisGroup);
 
-      const ticks = yScale.ticks(6);
+      const rawTicks = yScale.ticks(6);
+      const ticks = s.axisFormattingCard.integerTicks.value
+        ? rawTicks.filter(Number.isInteger)
+        : rawTicks;
       for (const tick of ticks) {
         const y = yScale(tick);
         const text = document.createElementNS(SVG_NS, 'text');
@@ -1344,6 +1540,16 @@ export class AnimatedWaterfallVisual implements IVisual {
       axisLine.setAttribute('x2', '0');
       axisLine.setAttribute('y2', String(height));
       yAxisGroup.appendChild(axisLine);
+
+      if (s.axisFormattingCard.yAxisTitle.value.trim()) {
+        const title = document.createElementNS(SVG_NS, 'text');
+        title.setAttribute('x', String(-height / 2));
+        title.setAttribute('y', '-44');
+        title.setAttribute('text-anchor', 'middle');
+        title.setAttribute('transform', 'rotate(-90)');
+        title.textContent = s.axisFormattingCard.yAxisTitle.value;
+        yAxisGroup.appendChild(title);
+      }
     }
   }
 
@@ -1367,7 +1573,7 @@ export class AnimatedWaterfallVisual implements IVisual {
 
       host.tooltipService.show({
         dataItems: tooltipItems,
-        identities: [],
+        identities: [step.selectionId],
         coordinates: [event.clientX, event.clientY],
         isTouchEvent: false,
       });
@@ -1391,16 +1597,33 @@ export class AnimatedWaterfallVisual implements IVisual {
 
   public getFormattingModel(): powerbi.visuals.FormattingModel {
     const s = this.settings;
-    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
-    s.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
-    s.cardSettings.backgroundColor.visible = cardMode !== 'none';
+    syncCardStyleVisibility(s.cardSettings);
     return this.formattingSettingsService.buildFormattingModel(this.settings);
   }
 
   private handleBackgroundClick = (): void => {
+    if (!allowInteractions(this.host)) return;
     void this.selectionManager.clear();
     this.applySelectionHighlight();
   };
+
+  private applyHighContrast(): void {
+    const highContrastColors = getHostHighContrastColors(this.host);
+    applyBasicHighContrastStyles(this.container, highContrastColors, {
+      textSelectors: [
+        '.waterfall-empty',
+        '.chart-title',
+        '.chart-subtitle',
+        '.waterfall-breadcrumb',
+        '.waterfall-value',
+        '.waterfall-summary',
+        '.waterfall-axis text',
+        '.pbi-shared-legend span',
+      ],
+      fillSelectors: ['.waterfall-bar'],
+      strokeSelectors: ['.waterfall-axis line', '.waterfall-grid-line', '.waterfall-connector'],
+    });
+  }
 
   // -- Selection & Cross-Highlight --------------------------------------------
 
@@ -1440,6 +1663,7 @@ export class AnimatedWaterfallVisual implements IVisual {
 
   public destroy(): void {
     this.container.removeEventListener('click', this.handleBackgroundClick);
+    this.detachEmptySpaceContextMenu?.();
     this.cancelAnimations.forEach((cancel) => cancel());
     this.cancelAnimations = [];
     while (this.container.firstChild) {

@@ -46,3 +46,14 @@
 
 .status-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .status-value { margin-left: auto; white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) {
+  .status-row,
+  .status-shape {
+    transition: none;
+  }
+
+  .status-row:hover {
+    transform: none;
+  }
+}

@@ -34,6 +34,15 @@ const FONT_FAMILY_ITEMS = [
   { value: 'Verdana', displayName: 'Verdana' },
 ];
 
+const CARD_STYLE_MODE_ITEMS = [
+  { value: 'none', displayName: 'None' },
+  { value: 'glass', displayName: 'Glass' },
+  { value: 'elevated', displayName: 'Elevated' },
+  { value: 'neumorphic', displayName: 'Neumorphic' },
+  { value: 'outlined', displayName: 'Outlined' },
+  { value: 'floating', displayName: 'Floating' },
+];
+
 // ── Shared capabilities templates (synced from CAPABILITIES_TEMPLATES) ──
 
 const SHARED_TEMPLATES = {
@@ -48,6 +57,7 @@ const SHARED_TEMPLATES = {
       axisLabelSize: { displayName: 'Label Font Size', type: { numeric: true } },
       axisLabelFontFamily: { displayName: 'Label Font', type: { enumeration: FONT_FAMILY_ITEMS } },
       axisLabelRotation: { displayName: 'X-Label Rotation (°)', type: { numeric: true } },
+      integerTicks: { displayName: 'Integer Ticks Only', type: { bool: true } },
       yAxisMin: { displayName: 'Y-Axis Min', type: { numeric: true } },
       yAxisMax: { displayName: 'Y-Axis Max', type: { numeric: true } },
       axisLineColor: { displayName: 'Axis Line Color', type: { fill: { solid: { color: true } } } },
@@ -67,6 +77,11 @@ const SHARED_TEMPLATES = {
       legendFontSize: { displayName: 'Font Size', type: { numeric: true } },
       legendFontColor: { displayName: 'Font Color', type: { fill: { solid: { color: true } } } },
       legendFontFamily: { displayName: 'Font', type: { enumeration: FONT_FAMILY_ITEMS } },
+      legendFontWeight: { displayName: 'Font Weight', type: { enumeration: [{ value: 'normal', displayName: 'Normal' }, { value: 'bold', displayName: 'Bold' }] } },
+      legendAliases: { displayName: 'Rename Labels', type: { text: true } },
+      showInlineLabels: { displayName: 'Inline End Labels', type: { bool: true } },
+      inlineLabelFontSize: { displayName: 'Inline Label Font Size', type: { numeric: true } },
+      inlineLabelOffset: { displayName: 'Inline Label Offset (px)', type: { numeric: true } },
     },
   },
   dataLabelFormatting: {
@@ -88,10 +103,13 @@ const SHARED_TEMPLATES = {
       titleFontSize: { displayName: 'Font Size', type: { numeric: true } },
       titleFontColor: { displayName: 'Font Color', type: { fill: { solid: { color: true } } } },
       titleFontFamily: { displayName: 'Font', type: { enumeration: FONT_FAMILY_ITEMS } },
+      titleFontWeight: { displayName: 'Font Weight', type: { enumeration: [{ value: 'normal', displayName: 'Normal' }, { value: 'bold', displayName: 'Bold' }] } },
       titleAlignment: { displayName: 'Alignment', type: { enumeration: [{ value: 'left', displayName: 'Left' }, { value: 'center', displayName: 'Center' }, { value: 'right', displayName: 'Right' }] } },
       subtitleText: { displayName: 'Subtitle', type: { text: true } },
       subtitleFontSize: { displayName: 'Subtitle Font Size', type: { numeric: true } },
       subtitleFontColor: { displayName: 'Subtitle Color', type: { fill: { solid: { color: true } } } },
+      subtitleFontFamily: { displayName: 'Subtitle Font', type: { enumeration: FONT_FAMILY_ITEMS } },
+      subtitleFontWeight: { displayName: 'Subtitle Font Weight', type: { enumeration: [{ value: 'normal', displayName: 'Normal' }, { value: 'bold', displayName: 'Bold' }] } },
     },
   },
   numberFormatting: {
@@ -171,6 +189,7 @@ const SHARED_TEMPLATES = {
       crosshairLineColor: { displayName: 'Line Color', type: { fill: { solid: { color: true } } } },
       crosshairLineWidth: { displayName: 'Line Width', type: { numeric: true } },
       crosshairLineStyle: { displayName: 'Line Style', type: { enumeration: [{ value: 'solid', displayName: 'Solid' }, { value: 'dashed', displayName: 'Dashed' }, { value: 'dotted', displayName: 'Dotted' }] } },
+      crosshairOpacity: { displayName: 'Opacity (%)', type: { numeric: true } },
       showCrosshairValues: { displayName: 'Show Values', type: { bool: true } },
     },
   },
@@ -195,7 +214,14 @@ const SHARED_TEMPLATES = {
       annotation3Position: { displayName: 'Annotation 3 — Position', type: { enumeration: [{ value: 'above', displayName: 'Above' }, { value: 'below', displayName: 'Below' }, { value: 'left', displayName: 'Left' }, { value: 'right', displayName: 'Right' }] } },
       annotationFontSize: { displayName: 'Font Size', type: { numeric: true } },
       annotationFontColor: { displayName: 'Font Color', type: { fill: { solid: { color: true } } } },
+      annotationFontFamily: { displayName: 'Font Family', type: { enumeration: FONT_FAMILY_ITEMS } },
+      annotationFontWeight: { displayName: 'Font Weight', type: { enumeration: [{ value: 'normal', displayName: 'Normal' }, { value: '500', displayName: 'Medium' }, { value: '600', displayName: 'Semi-Bold' }, { value: 'bold', displayName: 'Bold' }] } },
       annotationConnectorColor: { displayName: 'Connector Color', type: { fill: { solid: { color: true } } } },
+      annotationOffset: { displayName: 'Callout Offset', type: { numeric: true } },
+      annotationPadding: { displayName: 'Badge Padding', type: { numeric: true } },
+      annotationBackgroundColor: { displayName: 'Badge Background', type: { fill: { solid: { color: true } } } },
+      annotationBackgroundOpacity: { displayName: 'Badge Opacity (%)', type: { numeric: true } },
+      annotationCornerRadius: { displayName: 'Badge Corner Radius', type: { numeric: true } },
     },
   },
   colorThemeFormatting: {
@@ -624,6 +650,16 @@ async function main() {
           }
           cap.objects[cardName].properties = existing;
         }
+      }
+    }
+
+    const cardStyleMode = cap.objects.cardSettings?.properties?.cardStyleMode;
+    if (cardStyleMode) {
+      const currentEnum = JSON.stringify(cardStyleMode.type?.enumeration ?? []);
+      const nextEnum = JSON.stringify(CARD_STYLE_MODE_ITEMS);
+      if (currentEnum !== nextEnum) {
+        cardStyleMode.type = { enumeration: JSON.parse(nextEnum) };
+        changed = true;
       }
     }
 

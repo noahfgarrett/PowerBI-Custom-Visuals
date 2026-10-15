@@ -43,38 +43,52 @@ export function getGlassStyle(options: GlassStyleOptions): GlassStyles {
 
   const isLight = mode === 'light';
 
-  // Light default uses a very slight cool tint (5, 10, 20 blue bias) so the
-  // card reads as frosted glass rather than a flat white rectangle.
+  // Neutral white tint. Previously carried a 5/10/20 blue bias to look
+  // "frosted," but in Power BI Service the visual runs in a sandboxed iframe
+  // where backdrop-filter can't sample the parent canvas — the bias then
+  // stacked on top of the page background and read as a flat sky-blue cast.
   const defaultBg = isLight
-    ? `rgba(245, 249, 255, ${opacity})`
+    ? `rgba(255, 255, 255, ${opacity})`
     : `rgba(20, 22, 30, ${opacity})`;
 
-  const bg = withAlpha(backgroundColor, opacity) ?? defaultBg;
+  const baseBg = withAlpha(backgroundColor, opacity) ?? defaultBg;
 
-  // Light mode uses a visible grey-blue border and layered shadow so the card
-  // is clearly defined on white Power BI report canvases (where white-on-white
-  // borders and faint shadows are invisible).
+  // Top-down white highlight layered over the base tint. Creates a "glass
+  // shine" that survives in Service, where backdrop-filter can't sample the
+  // parent page and so produces no edge highlight on its own.
+  const highlight = `linear-gradient(180deg, rgba(255, 255, 255, ${
+    isLight ? 0.35 : 0.06
+  }) 0%, rgba(255, 255, 255, 0) 45%)`;
+  const bg = `${highlight}, ${baseBg}`;
+
   const borderColor = isLight
-    ? 'rgba(180, 200, 230, 0.55)'
+    ? 'rgba(255, 255, 255, 0.55)'
     : 'rgba(255, 255, 255, 0.10)';
 
-  // Layered shadow: a tight subtle drop + a wider soft ambient.
-  const shadowBase = isLight
-    ? '0 2px 8px rgba(0, 0, 0, 0.10), 0 8px 32px rgba(100, 120, 160, 0.10)'
-    : '0 8px 32px rgba(0, 0, 0, 0.35)';
+  // Light mode uses NO outer shadow. The visual fills a rectangular PBI
+  // viewport, so any outward shadow drawn on a rounded card bleeds into the
+  // four triangular "corner gap" regions between the rounded edge and the
+  // square viewport — reading as dark smudges over colored page backgrounds
+  // (Service gradients). Dark mode keeps its shadow because PBI's dark host
+  // chrome absorbs black cleanly with no visible smudging.
+  const outerShadow = isLight
+    ? ''
+    : '0 8px 32px -4px rgba(0, 0, 0, 0.35)';
 
   const edgeShadow = edgeLight
-    ? `, inset 0 1px 0 rgba(255, 255, 255, ${isLight ? 0.80 : 0.08})`
+    ? `inset 0 1px 0 rgba(255, 255, 255, ${isLight ? 1 : 0.12})`
     : '';
 
-  const backdrop = `blur(${blur}px) saturate(1.4)`;
+  const backdrop = `blur(${blur}px)`;
+
+  const boxShadow = [outerShadow, edgeShadow].filter(Boolean).join(', ') || 'none';
 
   return {
     background: bg,
     backdropFilter: backdrop,
     WebkitBackdropFilter: backdrop,
     border: `1px solid ${borderColor}`,
-    boxShadow: `${shadowBase}${edgeShadow}`,
+    boxShadow,
     borderRadius: `${borderRadius}px`,
   };
 }

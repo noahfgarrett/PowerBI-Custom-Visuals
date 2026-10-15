@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SSM Explorer — Production Bundle QA</title>
+    <link rel="stylesheet" href="/visual.css" />
+    <style>
+        body { margin: 0; background: #e9eef0; font: 13px system-ui, sans-serif; }
+        #status { margin: 12px 20px; }
+        .harness-controls { display:flex; gap:12px; align-items:center; flex-wrap:wrap; padding:0 20px; }
+        .harness-controls button,.harness-controls select { font:inherit; padding:5px 9px; }
+        .delivery-controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:12px 20px; }
+        .delivery-controls button { font:inherit; padding:5px 9px; }
+        #delivery-status { color:#405763; }
+        .export-controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:12px 20px; }
+        .export-controls select { font:inherit; padding:5px 9px; }
+        #export-result { color:#405763; }
+        #benchmark-result { white-space:pre-wrap; margin:12px 20px; }
+        #visual { position: relative; width: 1280px; height: 720px; margin: 16px auto; background: white; overflow: hidden; }
+    </style>
+</head>
+<body>
+    <p id="status">Loading compiled production bundle with synthetic data…</p>
+    <div class="harness-controls" aria-label="Synthetic test harness">
+        <label>Viewport <select id="size"><option value="1280x720">1280 × 720</option><option value="800x600">800 × 600</option><option value="420x620">420 × 620</option><option value="320x280">320 × 280</option></select></label>
+        <label>Dataset <select id="dataset"><option value="showroom">East Plant · asset tree and status</option><option value="structural">Structural parents · direct dependencies</option></select></label>
+        <button id="page">Leave report page</button>
+        <button id="benchmark">Benchmark 100,000 equipment</button>
+        <label><input type="checkbox" id="high-contrast" /> High contrast</label>
+    </div>
+    <div class="delivery-controls" aria-label="Synthetic incremental delivery demo">
+        <button id="delivery-start" disabled>Start delivery demo</button>
+        <button id="delivery-next" disabled>Deliver next batch</button>
+        <span id="delivery-status" role="status" aria-live="polite">8,000 synthetic rows · 2,000 per batch</span>
+    </div>
+    <div class="export-controls" aria-label="Synthetic host export controls">
+        <label>Mock export access <select id="export-access"><option value="0">Allowed</option><option value="1">Not declared</option><option value="2">Not supported</option><option value="3">Disabled by admin</option></select></label>
+        <label><input type="checkbox" id="export-download" checked /> Download exported files</label>
+        <span id="export-result" role="status" aria-live="polite">Use Export workbook in an L2 details drawer.</span>
+    </div>
+    <main id="visual" aria-label="Packaged SSM Explorer"></main>
+    <pre id="benchmark-result" hidden></pre>
+    <script type="module" src="/packaged.ts"></script>
+</body>
+</html>

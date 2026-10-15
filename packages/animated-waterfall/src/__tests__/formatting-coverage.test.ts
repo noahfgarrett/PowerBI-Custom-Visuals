@@ -68,6 +68,7 @@ function createVisual() {
 
 function makeDeps(): Record<string, Record<string, unknown>> {
   const deps: Record<string, Record<string, unknown>> = {};
+  const summaryOn = { 'waterfallSummary.show': true };
   deps['titleFormatting.showTitle'] = { 'titleFormatting.titleText': 'Test Title' };
   for (const s of ['titleText','titleFontSize','titleFontColor','titleFontFamily','titleFontWeight','titleAlignment','subtitleText']) {
     deps[`titleFormatting.${s}`] = { 'titleFormatting.showTitle': true, 'titleFormatting.titleText': 'Test Title' };
@@ -98,8 +99,20 @@ function makeDeps(): Record<string, Record<string, unknown>> {
   for (const s of ['annotation1Category','annotation1Text','annotation1Position','annotationFontSize','annotationFontColor','annotationConnectorColor']) {
     deps[`annotationFormatting.${s}`] = { 'annotationFormatting.showAnnotations': true, 'annotationFormatting.annotation1Category': 'A', 'annotationFormatting.annotation1Text': 'Note' };
   }
+  for (const s of ['annotation2Category','annotation2Text','annotation2Position']) {
+    deps[`annotationFormatting.${s}`] = { 'annotationFormatting.showAnnotations': true, 'annotationFormatting.annotation2Category': 'B', 'annotationFormatting.annotation2Text': 'Note 2' };
+  }
+  for (const s of ['annotation3Category','annotation3Text','annotation3Position']) {
+    deps[`annotationFormatting.${s}`] = { 'annotationFormatting.showAnnotations': true, 'annotationFormatting.annotation3Category': 'C', 'annotationFormatting.annotation3Text': 'Note 3' };
+  }
+  for (const s of ['annotationFontFamily','annotationFontWeight','annotationOffset','annotationPadding','annotationBackgroundColor','annotationBackgroundOpacity','annotationCornerRadius']) {
+    deps[`annotationFormatting.${s}`] = { 'annotationFormatting.showAnnotations': true, 'annotationFormatting.annotation1Category': 'A', 'annotationFormatting.annotation1Text': 'Note' };
+  }
   for (const s of ['xAxisTitle','yAxisTitle','axisFontSize','axisFontColor','axisFontFamily','axisLabelFontWeight','yAxisMin','yAxisMax','showGridLines','gridLineColor','gridLineOpacity','gridLineStyle']) {
     deps[`axisFormatting.${s}`] = { 'axisFormatting.showXAxis': true, 'axisFormatting.showYAxis': true };
+  }
+  for (const s of ['fontSize', 'fontColor', 'fontFamily', 'fontWeight', 'alignment', 'paddingTop']) {
+    deps[`waterfallSummary.${s}`] = summaryOn;
   }
   return deps;
 }
@@ -110,6 +123,7 @@ const harnessConfig: HarnessConfig = {
   deps: makeDeps(),
   skipCards: [],
   expectedPhantoms: [
+    'axisFormatting.integerTicks',
     'scrollFormatting.minCategoryWidth',
     'scrollFormatting.enableScroll',
     'conditionalFormatting.conditionalColor2',
@@ -131,11 +145,13 @@ const harnessConfig: HarnessConfig = {
     'animationSettings.duration',
     'waterfallSettings.barBorderColor',
     'waterfallSettings.barBorderWidth',
-    'colorSettings.totalColor',
     'drillDownSettings.enabled',
     'drillDownSettings.showBreadcrumb',
     'drillDownSettings.breadcrumbFontSize',
     'drillDownSettings.breadcrumbColor',
+    'drillDownSettings.breadcrumbFontFamily',
+    'drillDownSettings.breadcrumbFontWeight',
+    'drillDownSettings.breadcrumbPadding',
     'axisFormatting.showXAxis',
     'axisFormatting.showYAxis',
     'axisFormatting.xAxisTitle',
@@ -162,7 +178,6 @@ const harnessConfig: HarnessConfig = {
     'annotationFormatting.annotation3Text',
     'annotationFormatting.annotation3Position',
     'waterfallTotalBar.label',
-    'waterfallSummary.fontSize',
   ],
 };
 

@@ -8,6 +8,9 @@ const settingsRef: { current: unknown } = { current: undefined };
 
 vi.mock('../../style/visual.less', () => ({}));
 
+vi.stubGlobal('requestAnimationFrame', () => 0);
+vi.stubGlobal('cancelAnimationFrame', () => {});
+
 vi.mock('powerbi-visuals-utils-formattingmodel', () => {
   class SliceBase {
     constructor(init?: Record<string, unknown>) { if (init) Object.assign(this, init); }
@@ -58,6 +61,7 @@ function createVisual() {
   const opts = createConstructorOptions();
   const settings = new HeatmapCalendarSettings();
   settingsRef.current = settings;
+  settings.animationSettings.enabled.value = false;
   const visual = new HeatmapCalendarVisual(opts as never);
   return {
     visual,
@@ -91,7 +95,11 @@ function makeDeps(): Record<string, Record<string, unknown>> {
 const harnessConfig: HarnessConfig = {
   createVisual,
   dataView: testDV,
+  viewport: { width: 1200, height: 600 },
   deps: makeDeps(),
+  altValues: {
+    'cardSettings.contentPadding': 160,
+  },
   skipCards: [],
   expectedPhantoms: [
     'conditionalFormatting.conditionalColor2',
@@ -129,6 +137,16 @@ const harnessConfig: HarnessConfig = {
     'axisFormatting.gridLineOpacity',
     'conditionalFormatting.threshold2',
     'conditionalFormatting.conditionalColor3',
+    'cellStyleSettings.cellStrokeWidth',
+    'colorScaleSettings.midColor',
+    'colorScaleSettings.midPoint',
+    'colorScaleSettings.bins',
+    'axisFormatting.integerTicks',
+    'legendSettings.legendLabelFontFamily',
+    'dateFilterFormatting.enableDateFilter',
+    'dateFilterFormatting.startDate',
+    'dateFilterFormatting.endAtCurrentDate',
+    'dateFilterFormatting.endDate',
   ],
 };
 

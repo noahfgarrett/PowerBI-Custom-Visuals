@@ -8,6 +8,9 @@ const settingsRef: { current: unknown } = { current: undefined };
 
 vi.mock('../../style/visual.less', () => ({}));
 
+vi.stubGlobal('requestAnimationFrame', () => 0);
+vi.stubGlobal('cancelAnimationFrame', () => {});
+
 vi.mock('powerbi-visuals-utils-formattingmodel', () => {
   class SliceBase {
     constructor(init?: Record<string, unknown>) { if (init) Object.assign(this, init); }
@@ -44,6 +47,7 @@ vi.mock('powerbi-visuals-utils-formattingmodel', () => {
 
 import { TreemapProVisual } from '../visual';
 import { TreemapProSettings } from '../settings';
+import capabilities from '../../capabilities.json';
 import {
   createConstructorOptions,
   DataViewBuilder,
@@ -58,6 +62,7 @@ function createVisual() {
   const opts = createConstructorOptions();
   const settings = new TreemapProSettings();
   settingsRef.current = settings;
+  settings.animationSettings.enabled.value = false;
   const visual = new TreemapProVisual(opts as never);
   return {
     visual,
@@ -81,6 +86,10 @@ function makeDeps(): Record<string, Record<string, unknown>> {
   for (const s of ['dataLabelFontSize','dataLabelFontColor','dataLabelFontWeight','dataLabelFontFamily','dataLabelPosition']) {
     deps[`dataLabelFormatting.${s}`] = { 'dataLabelFormatting.showDataLabels': true };
   }
+  deps['treemapSettings.labelPadding'] = {
+    'treemapSettings.showLabels': true,
+    'dataLabelFormatting.showDataLabels': true,
+  };
   deps['conditionalFormatting.enableConditional'] = {};
   for (const s of ['conditionalDirection','threshold1','threshold2','conditionalColor1','conditionalColor2','conditionalColor3']) {
     deps[`conditionalFormatting.${s}`] = { 'conditionalFormatting.enableConditional': true };
@@ -115,6 +124,7 @@ const harnessConfig: HarnessConfig = {
     'colorSettings.useChartPalette',
     'drillDownSettings.enabled',
     'drillDownSettings.showBreadcrumb',
+    'interactionSettings.crossHighlightMode',
     'drillDownSettings.breadcrumbFontSize',
     'drillDownSettings.breadcrumbColor',
     'treemapHeatSettings.startColor',
@@ -125,10 +135,43 @@ const harnessConfig: HarnessConfig = {
     'legendFormatting.legendFontWeight',
     'numberFormatting.valuePrefix',
     'numberFormatting.valueSuffix',
+    'treemapSettings.fontSize',
+    'treemapSettings.fontColor',
+    'treemapSettings.fontFamily',
+    'treemapSettings.fontWeight',
+    'tileAppearanceSettings.tileStrokeWidth',
+    'tileAppearanceSettings.useChartPalette',
+    'tileAppearanceSettings.tileOpacity',
+    'tileAppearanceSettings.startColor',
+    'tileAppearanceSettings.endColor',
+    'drillDownSettings.breadcrumbFontFamily',
+    'drillDownSettings.breadcrumbFontWeight',
+    'legendFormatting.showInlineLabels',
+    'legendFormatting.inlineLabelFontSize',
+    'legendFormatting.inlineLabelOffset',
+    'dateFilterFormatting.enableDateFilter',
+    'dateFilterFormatting.startDate',
+    'dateFilterFormatting.endAtCurrentDate',
+    'dateFilterFormatting.endDate',
   ],
 };
 
 describe('treemap-pro formatting coverage', () => {
+  it('matches the live treemap settings capability surface', () => {
+    const properties = capabilities.objects.treemapSettings.properties;
+    expect(properties).toHaveProperty('labelPadding');
+    expect(properties).not.toHaveProperty('tileStrokeColor');
+    expect(properties).not.toHaveProperty('tileStrokeWidth');
+    expect(properties).not.toHaveProperty('labelColor');
+    expect(capabilities.objects.treemapSettings.displayName).toBe('Tile Layout & Labels');
+    expect(capabilities).toMatchObject({
+      supportsLandingPage: true,
+      supportsEmptyDataView: true,
+      supportsKeyboardFocus: true,
+      tooltips: { supportEnhancedTooltips: true },
+    });
+  });
+
   it('detects settings from the model', () => {
     const settings = new TreemapProSettings();
     const paths = getSettingPaths(

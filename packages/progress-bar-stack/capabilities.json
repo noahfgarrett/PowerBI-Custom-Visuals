@@ -4,19 +4,25 @@
       "displayName": "Category",
       "name": "category",
       "kind": "Grouping",
-      "description": "Bar labels (e.g., department names)"
+      "description": "Optional bar labels (e.g., department names). If omitted, each Value measure becomes its own row.",
+      "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0299",
+      "descriptionKey": "ProgressBarStackCapabilities_Description_0001"
     },
     {
       "displayName": "Value",
       "name": "measure",
       "kind": "Measure",
-      "description": "Current value for each bar"
+      "description": "Current value for each bar. Multiple measures are supported; without a Category, each measure becomes its own row.",
+      "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0300",
+      "descriptionKey": "ProgressBarStackCapabilities_Description_0002"
     },
     {
       "displayName": "Target",
       "name": "target",
       "kind": "Measure",
-      "description": "Optional max/target value (defaults to max of all values)"
+      "description": "Optional max/target value (defaults to max of all values). Without a Category, bind one shared Target or one Target per Value measure.",
+      "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0301",
+      "descriptionKey": "ProgressBarStackCapabilities_Description_0003"
     }
   ],
   "dataViewMappings": [
@@ -31,6 +37,14 @@
           },
           "target": {
             "max": 1
+          }
+        },
+        {
+          "measure": {
+            "max": 30
+          },
+          "target": {
+            "max": 30
           }
         }
       ],
@@ -70,47 +84,61 @@
     "barSettings": {
       "displayName": "Bar Layout",
       "properties": {
+        "contentGap": {
+          "displayName": "Row Content Gap",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0303"
+        },
         "barHeight": {
           "displayName": "Bar Height",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0304"
         },
         "gap": {
           "displayName": "Row Gap",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0305"
         },
         "cornerRadius": {
           "displayName": "Corner Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0306"
         },
         "barCornerRadius": {
           "displayName": "Bar Corner Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0307"
         },
         "showValue": {
           "displayName": "Show Value",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0010"
         },
         "showPercent": {
           "displayName": "Show Percentage",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0011"
         },
         "showLabels": {
           "displayName": "Show Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0012"
         },
         "labelPosition": {
           "displayName": "Label Position",
@@ -118,20 +146,40 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0014"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0015"
               },
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0016"
+              },
+              {
+                "value": "insideStart",
+                "displayName": "Inside Start",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0001"
+              },
+              {
+                "value": "insideEnd",
+                "displayName": "Inside End",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0002"
+              },
+              {
+                "value": "inline",
+                "displayName": "Inline",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0003"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0013"
         }
-      }
+      },
+      "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0302"
     },
     "barAppearance": {
       "displayName": "Bar Appearance",
@@ -144,7 +192,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0020"
         },
         "trackColor": {
           "displayName": "Track Color",
@@ -154,83 +203,99 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0021"
         },
         "labelColor": {
-          "displayName": "Label Color",
+          "displayName": "Category Label Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0022"
         },
         "labelFontSize": {
-          "displayName": "Label Font Size",
+          "displayName": "Category Label Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0023"
         },
         "labelFontFamily": {
-          "displayName": "Label Font Family",
+          "displayName": "Category Label Font",
           "type": {
             "enumeration": [
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0025"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0026"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0027"
               },
               {
                 "value": "Helvetica",
-                "displayName": "Helvetica"
+                "displayName": "Helvetica",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0028"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0029"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0030"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0031"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0024"
         },
         "labelFontWeight": {
-          "displayName": "Label Font Weight",
+          "displayName": "Category Label Weight",
           "type": {
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0033"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0034"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0035"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0032"
         },
         "gradientEnabled": {
           "displayName": "Enable Gradient",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0036"
         },
         "gradientStartColor": {
           "displayName": "Gradient Start Color",
@@ -240,7 +305,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0037"
         },
         "gradientEndColor": {
           "displayName": "Gradient End Color",
@@ -250,9 +316,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0038"
         }
-      }
+      },
+      "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0019"
     },
     "targetSettings": {
       "displayName": "Target",
@@ -261,7 +329,8 @@
           "displayName": "Show Target",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0040"
         },
         "color": {
           "displayName": "Target Color",
@@ -271,15 +340,18 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0041"
         },
         "lineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0042"
         }
-      }
+      },
+      "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0039"
     },
     "animationSettings": {
       "displayName": "Animation",
@@ -288,15 +360,18 @@
           "displayName": "Enable Animations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0044"
         },
         "duration": {
           "displayName": "Duration (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0045"
         }
-      }
+      },
+      "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0043"
     },
     "dataLabelFormatting": {
       "displayName": "Data Labels",
@@ -305,7 +380,8 @@
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0047"
         },
         "dataLabelFontColor": {
           "displayName": "Font Color",
@@ -315,7 +391,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0048"
         },
         "dataLabelFontWeight": {
           "displayName": "Font Weight",
@@ -323,20 +400,24 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0050"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0051"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0049"
         },
         "showDataLabels": {
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0052"
         },
         "dataLabelFontFamily": {
           "displayName": "Font",
@@ -344,54 +425,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0054"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0055"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0056"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0057"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0058"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0059"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0060"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0061"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0062"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0063"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0064"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0065"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0053"
         },
         "dataLabelPosition": {
           "displayName": "Position",
@@ -399,28 +493,35 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0067"
               },
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0068"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0069"
               },
               {
                 "value": "inside",
-                "displayName": "Inside"
+                "displayName": "Inside",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0070"
               },
               {
                 "value": "outside",
-                "displayName": "Outside"
+                "displayName": "Outside",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0071"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0066"
         }
-      }
+      },
+      "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0046"
     },
     "titleFormatting": {
       "displayName": "Chart Title",
@@ -429,19 +530,22 @@
           "displayName": "Show Title",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0073"
         },
         "titleText": {
           "displayName": "Title Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0074"
         },
         "titleFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0075"
         },
         "titleFontColor": {
           "displayName": "Font Color",
@@ -451,7 +555,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0076"
         },
         "titleAlignment": {
           "displayName": "Alignment",
@@ -459,18 +564,22 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0078"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0079"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0080"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0077"
         },
         "titleFontFamily": {
           "displayName": "Font",
@@ -478,66 +587,81 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0082"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0083"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0084"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0085"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0086"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0087"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0088"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0089"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0090"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0091"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0092"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0093"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0081"
         },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0094"
         },
         "subtitleFontSize": {
           "displayName": "Subtitle Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0095"
         },
         "subtitleFontColor": {
           "displayName": "Subtitle Color",
@@ -547,7 +671,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0096"
         },
         "titleFontWeight": {
           "displayName": "Font Weight",
@@ -555,14 +680,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0098"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0099"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0097"
         },
         "subtitleFontFamily": {
           "displayName": "Subtitle Font",
@@ -570,54 +698,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0101"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0102"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0103"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0104"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0105"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0106"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0107"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0108"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0109"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0110"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0111"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0112"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0100"
         },
         "subtitleFontWeight": {
           "displayName": "Subtitle Font Weight",
@@ -625,16 +766,20 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0114"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0115"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0113"
         }
-      }
+      },
+      "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0072"
     },
     "axisFormatting": {
       "displayName": "Axis Formatting",
@@ -647,13 +792,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0117"
         },
         "axisLabelSize": {
           "displayName": "Label Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0118"
         },
         "axisLineColor": {
           "displayName": "Axis Line Color",
@@ -663,19 +810,22 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0119"
         },
         "axisLineWidth": {
           "displayName": "Axis Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0120"
         },
         "showGridLines": {
           "displayName": "Show Grid Lines",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0121"
         },
         "gridLineColor": {
           "displayName": "Grid Line Color",
@@ -685,7 +835,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0122"
         },
         "gridLineStyle": {
           "displayName": "Grid Line Style",
@@ -693,38 +844,45 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0124"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0125"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0123"
         },
         "showXAxis": {
           "displayName": "Show X-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0126"
         },
         "showYAxis": {
           "displayName": "Show Y-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0127"
         },
         "xAxisTitle": {
           "displayName": "X-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0128"
         },
         "yAxisTitle": {
           "displayName": "Y-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0129"
         },
         "axisLabelFontFamily": {
           "displayName": "Label Font",
@@ -732,84 +890,102 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0131"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0132"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0133"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0134"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0135"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0136"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0137"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0138"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0139"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0140"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0141"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0142"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0130"
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (\u00b0)",
+          "displayName": "X-Label Rotation (°)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0143"
         },
         "yAxisMin": {
           "displayName": "Y-Axis Min",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0144"
         },
         "yAxisMax": {
           "displayName": "Y-Axis Max",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0145"
         },
         "gridLineWidth": {
           "displayName": "Grid Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0146"
         },
         "gridLineOpacity": {
           "displayName": "Grid Line Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0147"
         },
         "axisLabelFontWeight": {
           "displayName": "Label Font Weight",
@@ -817,16 +993,27 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0149"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0150"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0148"
+        },
+        "integerTicks": {
+          "displayName": "Integer Ticks Only",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0151"
         }
-      }
+      },
+      "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0116"
     },
     "cardSettings": {
       "displayName": "Card Style",
@@ -839,19 +1026,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0153"
         },
         "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0154"
         },
         "borderRadius": {
           "displayName": "Border Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0155"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0156"
         },
         "cardStyleMode": {
           "displayName": "Card Style",
@@ -859,30 +1056,47 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0004"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0005"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0006"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0007"
+              },
+              {
+                "value": "outlined",
+                "displayName": "Border Only",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0008"
+              },
+              {
+                "value": "floating",
+                "displayName": "Floating Shadow",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0009"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0157"
         },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "(Deprecated) Enable Glass"
+          "displayName": "(Deprecated) Enable Glass",
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0162"
         }
-      }
+      },
+      "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0152"
     },
     "referenceLineFormatting": {
       "displayName": "Reference Line",
@@ -891,7 +1105,8 @@
           "displayName": "Show Reference Line",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0164"
         },
         "referenceLineType": {
           "displayName": "Type",
@@ -899,36 +1114,44 @@
             "enumeration": [
               {
                 "value": "custom",
-                "displayName": "Custom Value"
+                "displayName": "Custom Value",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0166"
               },
               {
                 "value": "mean",
-                "displayName": "Mean"
+                "displayName": "Mean",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0167"
               },
               {
                 "value": "median",
-                "displayName": "Median"
+                "displayName": "Median",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0168"
               },
               {
                 "value": "percentile",
-                "displayName": "Percentile"
+                "displayName": "Percentile",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0169"
               },
               {
                 "value": "min",
-                "displayName": "Min"
+                "displayName": "Min",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0170"
               },
               {
                 "value": "max",
-                "displayName": "Max"
+                "displayName": "Max",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0171"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0165"
         },
         "referenceLineValue": {
           "displayName": "Value",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0172"
         },
         "referenceLineColor": {
           "displayName": "Line Color",
@@ -938,13 +1161,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0173"
         },
         "referenceLineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0174"
         },
         "referenceLineStyle": {
           "displayName": "Line Style",
@@ -952,48 +1177,57 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0176"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0177"
               },
               {
                 "value": "dotted",
-                "displayName": "Dotted"
+                "displayName": "Dotted",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0178"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0175"
         },
         "showReferenceLabel": {
           "displayName": "Show Label",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0179"
         },
         "referenceLabelText": {
           "displayName": "Label Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0180"
         },
         "showReferenceBand": {
           "displayName": "Show Band",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0181"
         },
         "referenceBandOpacity": {
           "displayName": "Band Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0182"
         },
         "referenceBandWidth": {
           "displayName": "Band Width (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0183"
         },
         "referenceLineAxis": {
           "displayName": "Target Axis",
@@ -1001,16 +1235,20 @@
             "enumeration": [
               {
                 "value": "primary",
-                "displayName": "Primary"
+                "displayName": "Primary",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0185"
               },
               {
                 "value": "secondary",
-                "displayName": "Secondary"
+                "displayName": "Secondary",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0186"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0184"
         }
-      }
+      },
+      "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0163"
     },
     "trendLineFormatting": {
       "displayName": "Trend Line",
@@ -1019,7 +1257,8 @@
           "displayName": "Show Trend Line",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0188"
         },
         "trendLineType": {
           "displayName": "Type",
@@ -1027,32 +1266,39 @@
             "enumeration": [
               {
                 "value": "linear",
-                "displayName": "Linear"
+                "displayName": "Linear",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0190"
               },
               {
                 "value": "polynomial",
-                "displayName": "Polynomial"
+                "displayName": "Polynomial",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0191"
               },
               {
                 "value": "exponential",
-                "displayName": "Exponential"
+                "displayName": "Exponential",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0192"
               },
               {
                 "value": "logarithmic",
-                "displayName": "Logarithmic"
+                "displayName": "Logarithmic",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0193"
               },
               {
                 "value": "power",
-                "displayName": "Power"
+                "displayName": "Power",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0194"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0189"
         },
         "polynomialOrder": {
           "displayName": "Polynomial Order",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0195"
         },
         "trendLineColor": {
           "displayName": "Line Color",
@@ -1062,25 +1308,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0196"
         },
         "trendLineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0197"
         },
         "showEquation": {
           "displayName": "Show Equation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0198"
         },
         "showR2": {
-          "displayName": "Show R\u00b2",
+          "displayName": "Show R²",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0199"
         },
         "trendLineAxis": {
           "displayName": "Target Axis",
@@ -1088,16 +1338,20 @@
             "enumeration": [
               {
                 "value": "primary",
-                "displayName": "Primary"
+                "displayName": "Primary",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0201"
               },
               {
                 "value": "secondary",
-                "displayName": "Secondary"
+                "displayName": "Secondary",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0202"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0200"
         }
-      }
+      },
+      "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0187"
     },
     "conditionalFormatting": {
       "displayName": "Conditional Formatting",
@@ -1106,7 +1360,8 @@
           "displayName": "Enable Conditional Formatting",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0204"
         },
         "conditionalDirection": {
           "displayName": "Direction",
@@ -1114,26 +1369,31 @@
             "enumeration": [
               {
                 "value": "ascending",
-                "displayName": "Ascending (Low = Bad)"
+                "displayName": "Ascending (Low = Bad)",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0206"
               },
               {
                 "value": "descending",
-                "displayName": "Descending (Low = Good)"
+                "displayName": "Descending (Low = Good)",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0207"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0205"
         },
         "threshold1": {
           "displayName": "Threshold 1",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0208"
         },
         "threshold2": {
           "displayName": "Threshold 2",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0209"
         },
         "conditionalColor1": {
           "displayName": "Color 1 (Bad)",
@@ -1143,7 +1403,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0210"
         },
         "conditionalColor2": {
           "displayName": "Color 2 (Warning)",
@@ -1153,7 +1414,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0211"
         },
         "conditionalColor3": {
           "displayName": "Color 3 (Good)",
@@ -1163,9 +1425,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0212"
         }
-      }
+      },
+      "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0203"
     },
     "annotationFormatting": {
       "displayName": "Annotations",
@@ -1174,118 +1438,141 @@
           "displayName": "Show Annotations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0214"
         },
         "annotation1Category": {
-          "displayName": "Annotation 1 \u2014 Category",
+          "displayName": "Annotation 1 — Category",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0215"
         },
         "annotation1Text": {
-          "displayName": "Annotation 1 \u2014 Text",
+          "displayName": "Annotation 1 — Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0216"
         },
         "annotation1Position": {
-          "displayName": "Annotation 1 \u2014 Position",
+          "displayName": "Annotation 1 — Position",
           "type": {
             "enumeration": [
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0218"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0219"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0220"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0221"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0217"
         },
         "annotation2Category": {
-          "displayName": "Annotation 2 \u2014 Category",
+          "displayName": "Annotation 2 — Category",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0222"
         },
         "annotation2Text": {
-          "displayName": "Annotation 2 \u2014 Text",
+          "displayName": "Annotation 2 — Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0223"
         },
         "annotation2Position": {
-          "displayName": "Annotation 2 \u2014 Position",
+          "displayName": "Annotation 2 — Position",
           "type": {
             "enumeration": [
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0225"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0226"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0227"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0228"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0224"
         },
         "annotation3Category": {
-          "displayName": "Annotation 3 \u2014 Category",
+          "displayName": "Annotation 3 — Category",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0229"
         },
         "annotation3Text": {
-          "displayName": "Annotation 3 \u2014 Text",
+          "displayName": "Annotation 3 — Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0230"
         },
         "annotation3Position": {
-          "displayName": "Annotation 3 \u2014 Position",
+          "displayName": "Annotation 3 — Position",
           "type": {
             "enumeration": [
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0232"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0233"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0234"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0235"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0231"
         },
         "annotationFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0236"
         },
         "annotationFontColor": {
           "displayName": "Font Color",
@@ -1295,7 +1582,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0237"
         },
         "annotationConnectorColor": {
           "displayName": "Connector Color",
@@ -1305,9 +1593,146 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0238"
+        },
+        "annotationFontFamily": {
+          "displayName": "Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0240"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0241"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0242"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0243"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0244"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0245"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0246"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0247"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0248"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0249"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0250"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0251"
+              }
+            ]
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0239"
+        },
+        "annotationFontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0253"
+              },
+              {
+                "value": "500",
+                "displayName": "Medium",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0254"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0255"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0256"
+              }
+            ]
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0252"
+        },
+        "annotationOffset": {
+          "displayName": "Callout Offset",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0257"
+        },
+        "annotationPadding": {
+          "displayName": "Badge Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0258"
+        },
+        "annotationBackgroundColor": {
+          "displayName": "Badge Background",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0259"
+        },
+        "annotationBackgroundOpacity": {
+          "displayName": "Badge Opacity (%)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0260"
+        },
+        "annotationCornerRadius": {
+          "displayName": "Badge Corner Radius",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0261"
         }
-      }
+      },
+      "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0213"
     },
     "accessibilityFormatting": {
       "displayName": "Accessibility",
@@ -1316,9 +1741,50 @@
           "displayName": "Enable Keyboard Navigation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0263"
         }
-      }
+      },
+      "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0262"
+    },
+    "sortFormatting": {
+      "displayName": "Sort Order",
+      "properties": {
+        "sortBy": {
+          "displayName": "Sort By",
+          "type": {
+            "enumeration": [
+              {
+                "value": "dataOrder",
+                "displayName": "Data Order",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0266"
+              },
+              {
+                "value": "valueAsc",
+                "displayName": "Value (Ascending)",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0267"
+              },
+              {
+                "value": "valueDesc",
+                "displayName": "Value (Descending)",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0268"
+              },
+              {
+                "value": "nameAsc",
+                "displayName": "Name (A-Z)",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0269"
+              },
+              {
+                "value": "nameDesc",
+                "displayName": "Name (Z-A)",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0270"
+              }
+            ]
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0265"
+        }
+      },
+      "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0264"
     },
     "progressMilestone": {
       "displayName": "Milestones",
@@ -1327,13 +1793,15 @@
           "displayName": "Show Milestones",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0272"
         },
         "milestones": {
-          "displayName": "Milestone Positions (CSV %)",
+          "displayName": "Milestone Positions (%)",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0273"
         },
         "milestoneColor": {
           "displayName": "Milestone Color",
@@ -1343,9 +1811,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0274"
         }
-      }
+      },
+      "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0271"
     },
     "colorThemeFormatting": {
       "properties": {
@@ -1355,37 +1825,46 @@
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0277"
               },
               {
                 "value": "ocean",
-                "displayName": "Ocean"
+                "displayName": "Ocean",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0278"
               },
               {
                 "value": "sunset",
-                "displayName": "Sunset"
+                "displayName": "Sunset",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0279"
               },
               {
                 "value": "forest",
-                "displayName": "Forest"
+                "displayName": "Forest",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0280"
               },
               {
                 "value": "berry",
-                "displayName": "Berry"
+                "displayName": "Berry",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0281"
               },
               {
                 "value": "monochrome",
-                "displayName": "Monochrome"
+                "displayName": "Monochrome",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0282"
               },
               {
                 "value": "earth",
-                "displayName": "Earth"
+                "displayName": "Earth",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0283"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0276"
         }
       },
-      "displayName": "Color Theme"
+      "displayName": "Color Theme",
+      "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0275"
     },
     "numberFormatting": {
       "displayName": "Number Format",
@@ -1396,46 +1875,56 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0286"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0287"
               },
               {
                 "value": "thousands",
-                "displayName": "Thousands (K)"
+                "displayName": "Thousands (K)",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0288"
               },
               {
                 "value": "millions",
-                "displayName": "Millions (M)"
+                "displayName": "Millions (M)",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0289"
               },
               {
                 "value": "billions",
-                "displayName": "Billions (B)"
+                "displayName": "Billions (B)",
+                "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0290"
               }
             ]
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0285"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0291"
         },
         "valuePrefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0292"
         },
         "valueSuffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0293"
         }
-      }
+      },
+      "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0284"
     },
     "dateFilterFormatting": {
       "displayName": "Date Filter",
@@ -1444,32 +1933,46 @@
           "displayName": "Enable Date Filter",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0295"
         },
         "startDate": {
           "displayName": "Start Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0296"
         },
         "endAtCurrentDate": {
           "displayName": "End at Current Date",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0297"
         },
         "endDate": {
           "displayName": "End Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0298"
         }
-      }
+      },
+      "displayNameKey": "ProgressBarStackCapabilities_DisplayName_0294"
     }
   },
   "supportsKeyboardFocus": true,
   "supportsHighlight": true,
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
   "supportsMultiVisualSelection": true,
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
   "privileges": [],
   "suppressDefaultTitle": true
 }

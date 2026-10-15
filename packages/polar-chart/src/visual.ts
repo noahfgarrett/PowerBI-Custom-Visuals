@@ -31,13 +31,28 @@ import {
   buildConditionalConfig,
   resolveConditionalColor,
   resolveSeriesFormatting,
-  populateSeriesFormattingGroups,
+  SeriesFormattingGroup,
+  lineStyleToDashArray,
   applyChartAria,
+  applyDataPointAria,
   attachKeyboardNav,
   ensureFocusRingStyles,
   getDateFilterIndices,
   isDateColumn,
   type DateFilterConfig,
+  syncLegendFormattingVisibility,
+  syncTitleFormattingVisibility,
+  attachEmptySpaceContextMenu,
+  getLocalizedString,
+  getVisualEmptyStateMode,
+  syncCardStyleVisibility,
+  allowInteractions,
+  getHostHighContrastColors,
+  applyBasicHighContrastStyles,
+  notifyRenderingStarted,
+  notifyRenderingFinished,
+  notifyRenderingFailed,
+  truncateText,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -64,6 +79,7 @@ interface PetalDatum {
   selectionId: ISelectionId;
   /** Whether this data point is cross-highlighted from another visual. */
   highlighted: boolean;
+  formattingObjects?: powerbi.DataViewObjects;
 }
 
 interface PolarChartData {
@@ -82,23 +98,47 @@ export class PolarChartVisual implements IVisual {
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
   private currentData: PolarChartData | null = null;
+  private emptyStateMode: 'unconfigured' | 'noData' = 'unconfigured';
+  private interactionsEnabled = true;
+  private keyboardNavCleanup: (() => void) | null = null;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
     this.selectionManager = options.host.createSelectionManager();
     this.container = options.element;
     this.settings = new PolarChartSettings();
-    this.formattingSettingsService = new FormattingSettingsService();
+    this.formattingSettingsService = new FormattingSettingsService(options.host.createLocalizationManager());
     this.container.classList.add('polar-container');
+    attachEmptySpaceContextMenu(this.container, this.selectionManager, () =>
+      this.host.createSelectionIdBuilder().createSelectionId(),
+      () => this.interactionsEnabled,
+    );
   }
 
   public update(options: VisualUpdateOptions): void {
+    notifyRenderingStarted(this.host, options);
+    try {
+      this.updateVisual(options);
+      notifyRenderingFinished(this.host, options);
+    } catch (error) {
+      notifyRenderingFailed(
+        this.host,
+        options,
+        error instanceof Error ? error.message : String(error),
+      );
+      throw error;
+    }
+  }
+
+  private updateVisual(options: VisualUpdateOptions): void {
     // Cancel any running animations from previous render
     this.cancelAnimations.forEach((cancel) => cancel());
     this.cancelAnimations = [];
+    this.interactionsEnabled = allowInteractions(this.host);
 
     // Parse settings from dataView
     const dataView = options.dataViews?.[0];
+    this.emptyStateMode = getVisualEmptyStateMode(dataView);
     if (dataView) {
       this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
         PolarChartSettings,
@@ -110,10 +150,13 @@ export class PolarChartVisual implements IVisual {
     const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
     if (legacyCardObj) {
       const legacyGlass = legacyCardObj['enableGlass'];
-      if (legacyGlass === false) {
+      if (legacyGlass === false && legacyCardObj['cardStyleMode'] == null) {
         this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
       }
     }
+
+    syncTitleFormattingVisibility(this.settings.titleFormattingCard);
+    syncLegendFormattingVisibility(this.settings.legendFormattingCard);
 
     // Hide inapplicable shared axis properties — polar-chart doesn't use titles/rotation/min/max
 
@@ -121,27 +164,60 @@ export class PolarChartVisual implements IVisual {
     this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
     this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
     this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
-    // Card Style — hide sub-settings when mode is 'none'
-    const cardStyleMode = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
-    this.settings.cardSettings.backgroundOpacity.visible = cardStyleMode !== 'none';
-    this.settings.cardSettings.backgroundColor.visible = cardStyleMode !== 'none';
+    const categoryColumn = dataView?.categorical?.categories?.find((column) => column.source.roles?.['category']);
+    this.settings.dateFilterFormattingCard.visible = Boolean(categoryColumn && isDateColumn(categoryColumn.source));
+    syncCardStyleVisibility(this.settings.cardSettings);
 
     this.settings.axisFormattingCard.showXAxis.visible = false;
     this.settings.axisFormattingCard.showYAxis.visible = false;
     this.settings.axisFormattingCard.xAxisTitle.visible = false;
     this.settings.axisFormattingCard.yAxisTitle.visible = false;
     this.settings.axisFormattingCard.axisLabelFontFamily.visible = false;
+    this.settings.axisFormattingCard.axisLabelColor.visible = false;
+    this.settings.axisFormattingCard.axisLabelSize.visible = false;
     this.settings.axisFormattingCard.axisLabelRotation.visible = false;
     this.settings.axisFormattingCard.yAxisMin.visible = false;
     this.settings.axisFormattingCard.yAxisMax.visible = false;
-    this.settings.axisFormattingCard.gridLineWidth.visible = false;
-    this.settings.axisFormattingCard.gridLineOpacity.visible = false;
     this.settings.axisFormattingCard.axisLabelFontWeight.visible = false;
+    this.settings.axisFormattingCard.integerTicks.visible = false;
 
-    // Hide shared showDataLabels — local labelSettings.showLabels handles label visibility
-    this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
     // Hide data label position — position is determined by chart geometry
     this.settings.dataLabelFormattingCard.dataLabelPosition.visible = false;
+    // Shared inline legend labels are not rendered in this visual.
+    this.settings.legendFormattingCard.showInlineLabels.visible = false;
+    this.settings.legendFormattingCard.inlineLabelFontSize.visible = false;
+    this.settings.legendFormattingCard.inlineLabelOffset.visible = false;
+    const showLabels = this.settings.labelSettings.showLabels.value;
+    this.settings.labelSettings.showRadialLabels.visible = showLabels;
+    this.settings.labelSettings.showInnerLabels.visible = showLabels;
+    const categoryLabelStylesVisible = showLabels
+      && (this.settings.labelSettings.showRadialLabels.value || this.settings.labelSettings.showInnerLabels.value);
+    this.settings.labelSettings.labelColor.visible = categoryLabelStylesVisible;
+    this.settings.labelSettings.fontSize.visible = categoryLabelStylesVisible;
+    this.settings.labelSettings.fontFamily.visible = categoryLabelStylesVisible;
+    this.settings.labelSettings.fontWeight.visible = categoryLabelStylesVisible;
+
+    const showValueLabels = this.settings.dataLabelFormattingCard.showDataLabels.value;
+    this.settings.dataLabelFormattingCard.dataLabelFontSize.visible = showValueLabels;
+    this.settings.dataLabelFormattingCard.dataLabelFontColor.visible = showValueLabels;
+    this.settings.dataLabelFormattingCard.dataLabelFontWeight.visible = showValueLabels;
+    this.settings.dataLabelFormattingCard.dataLabelFontFamily.visible = showValueLabels;
+
+    const showGridLines = this.settings.axisFormattingCard.showGridLines.value;
+    this.settings.axisFormattingCard.gridLineColor.visible = showGridLines;
+    this.settings.axisFormattingCard.gridLineStyle.visible = showGridLines;
+    this.settings.axisFormattingCard.gridLineWidth.visible = showGridLines;
+    this.settings.axisFormattingCard.gridLineOpacity.visible = showGridLines;
+
+    this.settings.animationSettings.duration.visible = this.settings.animationSettings.enabled.value;
+
+    const conditionalEnabled = this.settings.conditionalFormattingCard.enableConditional.value;
+    this.settings.conditionalFormattingCard.conditionalDirection.visible = conditionalEnabled;
+    this.settings.conditionalFormattingCard.threshold1.visible = conditionalEnabled;
+    this.settings.conditionalFormattingCard.threshold2.visible = conditionalEnabled;
+    this.settings.conditionalFormattingCard.conditionalColor1.visible = conditionalEnabled;
+    this.settings.conditionalFormattingCard.conditionalColor2.visible = conditionalEnabled;
+    this.settings.conditionalFormattingCard.conditionalColor3.visible = conditionalEnabled;
 
     // Extract data and apply user-configured sort order
     const extracted = this.extractData(dataView);
@@ -153,17 +229,35 @@ export class PolarChartVisual implements IVisual {
     // Store data for cross-highlight usage
     this.currentData = { petals: data, hasHighlights: extracted.hasHighlights };
 
-    // Populate per-series formatting groups from data
-    const defaultColors = new Map<string, string>();
-    data.forEach((d) => defaultColors.set(d.label, d.color));
-    populateSeriesFormattingGroups(
-      this.settings.seriesFormattingCard,
-      dataView,
-      ['measure'],
-      defaultColors,
-    );
+    this.populatePetalFormattingGroups(data);
 
     this.render(data, options.viewport);
+  }
+
+  private populatePetalFormattingGroups(data: PetalDatum[]): void {
+    const card = this.settings.seriesFormattingCard;
+    card.groups = [];
+    for (let i = 0; i < data.length; i++) {
+      const group = new SeriesFormattingGroup({
+        name: `series_${i}`,
+        displayName: data[i].label,
+      });
+      group.seriesColor.value = { value: data[i].color };
+      group.lineStyle.visible = false;
+      group.lineWidth.visible = false;
+      const selector = data[i].selectionId.getSelector();
+      for (const slice of group.slices) {
+        (slice as { selector?: unknown }).selector = selector;
+      }
+      const objects = data[i].formattingObjects?.['seriesFormatting'];
+      if (objects) {
+        const color = objects['seriesColor'] as { solid?: { color?: string } } | undefined;
+        if (color?.solid?.color) group.seriesColor.value = { value: color.solid.color };
+        if (typeof objects['seriesOpacity'] === 'number') group.seriesOpacity.value = objects['seriesOpacity'];
+        if (typeof objects['showDataLabels'] === 'boolean') group.showDataLabels.value = objects['showDataLabels'];
+      }
+      card.groups.push(group);
+    }
   }
 
   private extractData(dataView: DataView | undefined): PolarChartData {
@@ -226,6 +320,7 @@ export class PolarChartVisual implements IVisual {
           .withCategory(categoryColumn, i)
           .createSelectionId(),
         highlighted: isHighlighted,
+        formattingObjects: categoryColumn.objects?.[i],
       });
     }
 
@@ -233,6 +328,8 @@ export class PolarChartVisual implements IVisual {
   }
 
   private render(data: PetalDatum[], viewport: powerbi.IViewport): void {
+    this.keyboardNavCleanup?.();
+    this.keyboardNavCleanup = null;
     this.hideTooltip();
 
     // Clear container (no innerHTML)
@@ -252,39 +349,64 @@ export class PolarChartVisual implements IVisual {
       backgroundColor: s.cardSettings.backgroundColor.value?.value || undefined,
       borderRadius: s.cardSettings.borderRadius.value,
     });
-    if (cardMode === 'none') {
-      this.container.style.borderRadius = `${s.cardSettings.borderRadius.value}px`;
-    }
+    const contentPadding = Math.max(0, s.cardSettings.contentPadding.value);
+    this.container.style.padding = `${contentPadding}px`;
 
     // Empty state: no data
     if (data.length === 0) {
       const emptyEl = document.createElement('div');
       emptyEl.className = 'polar-empty';
-      emptyEl.textContent = 'Add a category and measure';
+      emptyEl.textContent = this.emptyStateMode === 'noData'
+        ? getLocalizedString(this.host, 'PolarChart_NoDataState', 'No data for the current selection.')
+        : getLocalizedString(this.host, 'PolarChart_EmptyState', 'Add a category and measure');
       this.container.appendChild(emptyEl);
+      this.applyHighContrast();
       return;
     }
 
     // ── Dimensions ──────────────────────────────────────────────
-    const width = viewport.width;
-    const height = viewport.height;
+    const width = Math.max(0, viewport.width - (contentPadding * 2));
+    const height = Math.max(0, viewport.height - (contentPadding * 2));
+    if (width <= 0 || height <= 0) return;
     const size = Math.min(width, height);
     const cx = width / 2;
     const cy = height / 2;
-    const padding = 24;
-    const maxOuterRadius = (size / 2) - padding;
+    const showLabels = s.labelSettings.showLabels.value;
+    const showRadialLabels = showLabels && s.labelSettings.showRadialLabels.value;
+    const showInnerLabels = showLabels && s.labelSettings.showInnerLabels.value;
+    const categoryLabelFontSize = Math.max(1, s.labelSettings.fontSize.value);
+    const valueLabelFontSize = Math.max(1, s.dataLabelFormattingCard.dataLabelFontSize.value);
+    const estimatedCategoryWidth = Math.max(
+      0,
+      ...data.map((datum) => datum.label.length * categoryLabelFontSize * 0.55),
+    );
+    const estimatedValueWidth = Math.max(
+      0,
+      ...data.map((datum) =>
+        formatWithSettings(datum.value, s.numberFormattingCard).length * valueLabelFontSize * 0.55
+      ),
+    );
+    const radialLabelReserve = showRadialLabels
+      ? Math.min(estimatedCategoryWidth + 20, Math.max(16, size * 0.28))
+      : 0;
+    const valueLabelReserve = s.dataLabelFormattingCard.showDataLabels.value
+      ? Math.min(14 + (estimatedValueWidth / 2), Math.max(12, size * 0.2))
+      : 0;
+    const outsideLabelReserve = Math.max(radialLabelReserve, valueLabelReserve);
+    const maxOuterRadius = Math.max(1, (size / 2) - outsideLabelReserve);
     const innerRadius = Math.max(0, Math.min(s.segmentSettings.innerRadius.value, maxOuterRadius * 0.6));
 
     // ── Value calculations ──────────────────────────────────────
     const totalValue = data.reduce((sum, d) => sum + d.value, 0);
-    const maxValue = d3.max(data, (d) => d.value) ?? 1;
+    const maxValue = Math.max(1, d3.max(data, (d) => d.value) ?? 0);
     const petalCount = data.length;
     const segmentPaddingDeg = Math.max(0, s.segmentSettings.segmentPadding.value);
-    const endAngleRad = (Math.max(1, Math.min(360, s.segmentSettings.endAngle.value)) / 360) * 2 * Math.PI;
-    const angleStep = endAngleRad / petalCount;
-    const startAngleOffset = s.segmentSettings.startAngle.value * DEG_TO_RAD;
-    const showRadialLabels = s.labelSettings.showRadialLabels.value;
-    const showInnerLabels = s.labelSettings.showInnerLabels.value;
+    const startAngleDegrees = s.segmentSettings.startAngle.value;
+    const configuredSpan = s.segmentSettings.endAngle.value - startAngleDegrees;
+    const normalizedSpan = ((configuredSpan % 360) + 360) % 360;
+    const angularSpanDegrees = normalizedSpan === 0 ? 360 : normalizedSpan;
+    const angleStep = angularSpanDegrees * DEG_TO_RAD / petalCount;
+    const startAngleOffset = startAngleDegrees * DEG_TO_RAD;
 
     // ── SVG Setup ───────────────────────────────────────────────
     const svg = d3.select(this.container)
@@ -347,7 +469,6 @@ export class PolarChartVisual implements IVisual {
     const arcGen = d3.arc<{ startAngle: number; endAngle: number; innerRadius: number; outerRadius: number }>()
       .innerRadius((d) => d.innerRadius)
       .outerRadius((d) => d.outerRadius)
-      .padAngle(segmentPaddingDeg * DEG_TO_RAD)
       .cornerRadius(3);
 
     // ── Grid circles (concentric) ─────────────────────────────
@@ -357,7 +478,9 @@ export class PolarChartVisual implements IVisual {
       const gridStyle = typeof gridStyleValue === 'string'
         ? gridStyleValue
         : (gridStyleValue as { value?: string } | undefined)?.value ?? 'dashed';
-      const gridDash = gridStyle === 'dashed' ? '4 3' : 'none';
+      const gridDash = lineStyleToDashArray(gridStyle);
+      const gridWidth = Math.max(0, s.axisFormattingCard.gridLineWidth.value);
+      const gridOpacity = Math.max(0, Math.min(100, s.axisFormattingCard.gridLineOpacity.value)) / 100;
       const gridGroup = g.append('g').attr('class', 'polar-grid');
       const gridCount = 4;
       for (let gi = 1; gi <= gridCount; gi++) {
@@ -368,8 +491,9 @@ export class PolarChartVisual implements IVisual {
           .attr('r', r)
           .attr('fill', 'none')
           .attr('stroke', gridColor)
+          .attr('stroke-width', gridWidth)
           .attr('stroke-dasharray', gridDash)
-          .attr('stroke-opacity', 0.6);
+          .attr('stroke-opacity', gridOpacity);
       }
     }
 
@@ -401,8 +525,11 @@ export class PolarChartVisual implements IVisual {
     const animDuration = s.animationSettings.duration.value;
 
     data.forEach((datum, i) => {
-      const petalStartAngle = startAngleOffset + i * angleStep;
-      const petalEndAngle = startAngleOffset + (i + 1) * angleStep;
+      const rawPetalStartAngle = startAngleOffset + i * angleStep;
+      const rawPetalEndAngle = startAngleOffset + (i + 1) * angleStep;
+      const padAngle = Math.min(segmentPaddingDeg * DEG_TO_RAD, Math.max(0, angleStep - 0.02));
+      const petalStartAngle = rawPetalStartAngle + (padAngle / 2);
+      const petalEndAngle = rawPetalEndAngle - (padAngle / 2);
       const targetOuterRadius = innerRadius + ((datum.value / maxValue) * (maxOuterRadius - innerRadius));
 
       const petalGroup = g.append('g').attr('class', 'polar-petal-group');
@@ -419,10 +546,14 @@ export class PolarChartVisual implements IVisual {
         .attr('stroke-width', s.segmentSettings.segmentStrokeWidth.value)
         .style('cursor', 'pointer')
         .on('click', (event: MouseEvent) => {
+          if (!this.interactionsEnabled) return;
           event.stopPropagation();
-          void this.selectionManager.select(datum.selectionId, event.ctrlKey || event.metaKey);
+          void this.selectionManager
+            .select(datum.selectionId, event.ctrlKey || event.metaKey)
+            .then(() => this.applyCrossHighlight());
         })
         .on('contextmenu', (event: MouseEvent) => {
+          if (!this.interactionsEnabled) return;
           event.preventDefault();
           event.stopPropagation();
           void this.selectionManager.showContextMenu(datum.selectionId, {
@@ -430,6 +561,16 @@ export class PolarChartVisual implements IVisual {
             y: event.clientY,
           });
         });
+      const accessiblePetalNode = petalPath.node();
+      if (accessiblePetalNode && s.accessibilityFormattingCard.enableKeyboardNav.value) {
+        applyDataPointAria(
+          accessiblePetalNode,
+          datum.label,
+          formatWithSettings(datum.value, this.settings.numberFormattingCard),
+          i,
+          data.length,
+        );
+      }
 
       if (animEnabled) {
         // Initial state: arc at innerRadius (no visible petal)
@@ -512,7 +653,7 @@ export class PolarChartVisual implements IVisual {
       }
 
       // ── Inner Labels (inside petals) ────────────────────────────
-      if (showInnerLabels || s.labelSettings.showLabels.value) {
+      if (showInnerLabels && fmt.showLabels) {
         const midAngle = (petalStartAngle + petalEndAngle) / 2;
         const labelRadius = innerRadius + (targetOuterRadius - innerRadius) * 0.65;
         const labelX = labelRadius * Math.sin(midAngle);
@@ -528,7 +669,7 @@ export class PolarChartVisual implements IVisual {
             .attr('x', labelX)
             .attr('y', labelY)
             .attr('dy', '0.35em')
-            .attr('fill', s.dataLabelFormattingCard.dataLabelFontColor.value?.value || s.labelSettings.labelColor.value?.value || '#FFFFFF')
+            .attr('fill', s.labelSettings.labelColor.value?.value || '#FFFFFF')
             .attr('font-size', `${polarLabelFontSize}px`)
             .text(datum.label);
           if (polarLabelFontFamily) labelEl.attr('font-family', polarLabelFontFamily);
@@ -555,7 +696,7 @@ export class PolarChartVisual implements IVisual {
       }
 
       // ── Radial Labels (outside petals at outer edge) ─────────
-      if (showRadialLabels) {
+      if (showRadialLabels && fmt.showLabels) {
         const midAngle = (petalStartAngle + petalEndAngle) / 2;
         const radialLabelRadius = targetOuterRadius + 16;
         const rlX = radialLabelRadius * Math.sin(midAngle);
@@ -566,6 +707,17 @@ export class PolarChartVisual implements IVisual {
         let textAnchor = 'middle';
         if (angleDeg > 30 && angleDeg < 150) textAnchor = 'start';
         else if (angleDeg > 210 && angleDeg < 330) textAnchor = 'end';
+        const absoluteX = cx + rlX;
+        const availableWidth = textAnchor === 'start'
+          ? width - absoluteX - 4
+          : textAnchor === 'end'
+            ? absoluteX - 4
+            : Math.min(absoluteX - 4, width - absoluteX - 4) * 2;
+        const visibleLabel = truncateText(
+          datum.label,
+          Math.max(12, availableWidth),
+          categoryLabelFontSize,
+        );
 
         const radialLabel = petalGroup.append('text')
           .attr('class', 'polar-radial-label')
@@ -573,9 +725,16 @@ export class PolarChartVisual implements IVisual {
           .attr('y', rlY)
           .attr('dy', '0.35em')
           .attr('text-anchor', textAnchor)
-          .attr('font-size', `${s.axisFormattingCard.axisLabelSize.value}px`)
-          .attr('fill', s.dataLabelFormattingCard.dataLabelFontColor.value?.value || s.labelSettings.labelColor.value?.value || '#475569')
-          .text(datum.label);
+          .attr('font-size', `${categoryLabelFontSize}px`)
+          .attr('fill', s.labelSettings.labelColor.value?.value || '#475569')
+          .text(visibleLabel);
+        if (visibleLabel !== datum.label) {
+          radialLabel.append('title').text(datum.label);
+        }
+        const radialFontFamily = resolveDropdown(s.labelSettings.fontFamily);
+        const radialFontWeight = resolveDropdown(s.labelSettings.fontWeight);
+        if (radialFontFamily) radialLabel.attr('font-family', radialFontFamily);
+        if (radialFontWeight) radialLabel.attr('font-weight', radialFontWeight);
 
         if (animEnabled) {
           radialLabel.attr('opacity', 0);
@@ -599,10 +758,12 @@ export class PolarChartVisual implements IVisual {
 
     // ── Value labels outside petals ────────────────────────────
     if (s.dataLabelFormattingCard.showDataLabels.value) {
-      const axisColor = s.axisFormattingCard.axisLabelColor.value?.value || '#475569';
-      const axisLabelSize = s.axisFormattingCard.axisLabelSize.value;
+      const valueLabelColor = s.dataLabelFormattingCard.dataLabelFontColor.value?.value || '#475569';
+      const valueLabelSize = s.dataLabelFormattingCard.dataLabelFontSize.value;
 
       data.forEach((datum, i) => {
+        const fmt = resolveSeriesFormatting(this.settings.seriesFormattingCard, i, datum.color);
+        if (!fmt.showLabels) return;
         const petalStartAngle = startAngleOffset + i * angleStep;
         const petalEndAngle = startAngleOffset + (i + 1) * angleStep;
         const targetOuterRadius = innerRadius + ((datum.value / maxValue) * (maxOuterRadius - innerRadius));
@@ -619,9 +780,9 @@ export class PolarChartVisual implements IVisual {
             .attr('y', tooltipY)
             .attr('dy', '0.35em')
             .attr('text-anchor', 'middle')
-            .attr('font-size', `${axisLabelSize}px`)
+            .attr('font-size', `${valueLabelSize}px`)
             .attr('font-weight', '600')
-            .attr('fill', axisColor)
+            .attr('fill', valueLabelColor)
             .text(formatWithSettings(datum.value, this.settings.numberFormattingCard));
 
           if (animEnabled) {
@@ -674,6 +835,7 @@ export class PolarChartVisual implements IVisual {
 
     this.applyAccessibility(data.length);
     this.applyCrossHighlight();
+    this.applyHighContrast();
     this.container.addEventListener('click', this.handleBackgroundClick);
   }
 
@@ -703,6 +865,7 @@ export class PolarChartVisual implements IVisual {
       fontSize: legendFontSize,
       fontColor: legendFontColor,
       fontFamily: rawLegendFontFamily,
+      fontWeight: resolveDropdown(legendFmtCard.legendFontWeight) || 'normal',
       aliases: legendFmtCard.legendAliases.value,
     });
   }
@@ -752,8 +915,8 @@ export class PolarChartVisual implements IVisual {
   }
 
   private handleBackgroundClick = (): void => {
-    void this.selectionManager.clear();
-    this.applyCrossHighlight();
+    if (!this.interactionsEnabled) return;
+    void this.selectionManager.clear().then(() => this.applyCrossHighlight());
   };
 
   private showPetalTooltip(datum: PetalDatum, totalValue: number, event: MouseEvent): void {
@@ -832,16 +995,31 @@ export class PolarChartVisual implements IVisual {
       title: this.settings.titleFormattingCard?.titleText?.value || undefined,
       dataPointCount,
     });
-    const cleanup = attachKeyboardNav({
+    this.keyboardNavCleanup = attachKeyboardNav({
       container: this.container,
       itemSelector: '.polar-petal',
-      onActivate: (el) => (el as HTMLElement).click?.(),
+      onActivate: (el) => {
+        el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      },
     });
-    this.cancelAnimations.push(cleanup);
+  }
+
+  private applyHighContrast(): void {
+    const colors = getHostHighContrastColors(this.host);
+    applyBasicHighContrastStyles(this.container, colors, {
+      textSelectors: ['svg text', '.chart-title', '.chart-subtitle', '.pbi-shared-legend span', '.polar-empty'],
+      fillSelectors: ['.polar-petal'],
+      strokeSelectors: ['.polar-grid circle', '.polar-axis-lines line'],
+    });
+    if (!colors.enabled) return;
+    this.container.style.background = colors.background;
+    this.container.style.boxShadow = 'none';
   }
 
   public destroy(): void {
     this.container.removeEventListener('click', this.handleBackgroundClick);
+    this.keyboardNavCleanup?.();
+    this.keyboardNavCleanup = null;
     this.hideTooltip();
     this.cancelAnimations.forEach((cancel) => cancel());
     this.cancelAnimations = [];

@@ -1,0 +1,745 @@
+{
+  "dataRoles": [
+    {
+      "name": "project",
+      "displayName": "Project",
+      "description": "Project identity shared by registry rows.",
+      "displayNameKey": "Ssm_role_project",
+      "descriptionKey": "Ssm_role_project_description",
+      "kind": "Grouping"
+    },
+    {
+      "name": "equipmentId",
+      "displayName": "Equipment ID",
+      "description": "Stable equipment tag within its project.",
+      "displayNameKey": "Ssm_role_equipmentId",
+      "descriptionKey": "Ssm_role_equipmentId_description",
+      "kind": "Grouping"
+    },
+    {
+      "name": "equipmentLabel",
+      "displayName": "Equipment label",
+      "description": "Description or display label.",
+      "displayNameKey": "Ssm_role_equipmentLabel",
+      "descriptionKey": "Ssm_role_equipmentLabel_description",
+      "kind": "Grouping"
+    },
+    {
+      "name": "nodeType",
+      "displayName": "Record type",
+      "description": "Equipment or Header. Blank defaults to Equipment.",
+      "displayNameKey": "Ssm_role_nodeType",
+      "descriptionKey": "Ssm_role_nodeType_description",
+      "kind": "Grouping"
+    },
+    {
+      "name": "discipline",
+      "displayName": "Discipline",
+      "description": "Equipment discipline.",
+      "displayNameKey": "Ssm_role_discipline",
+      "descriptionKey": "Ssm_role_discipline_description",
+      "kind": "Grouping"
+    },
+    {
+      "name": "parentMilestone",
+      "displayName": "Parent milestone",
+      "description": "L1 identity or code.",
+      "displayNameKey": "Ssm_role_parentMilestone",
+      "descriptionKey": "Ssm_role_parentMilestone_description",
+      "kind": "Grouping"
+    },
+    {
+      "name": "milestone",
+      "displayName": "Milestone",
+      "description": "L2 identity or code.",
+      "displayNameKey": "Ssm_role_milestone",
+      "descriptionKey": "Ssm_role_milestone_description",
+      "kind": "Grouping"
+    },
+    {
+      "name": "closestParent",
+      "displayName": "Closest parent",
+      "description": "Equipment tag or system root.",
+      "displayNameKey": "Ssm_role_closestParent",
+      "descriptionKey": "Ssm_role_closestParent_description",
+      "kind": "Grouping"
+    },
+    {
+      "name": "closestParentProject",
+      "displayName": "Closest parent project",
+      "description": "Optional target project. Blank uses the row project.",
+      "displayNameKey": "Ssm_role_closestParentProject",
+      "descriptionKey": "Ssm_role_closestParentProject_description",
+      "kind": "Grouping"
+    },
+    {
+      "name": "dependencies",
+      "displayName": "Dependencies",
+      "description": "Tags separated by semicolons or newlines, or a JSON array.",
+      "displayNameKey": "Ssm_role_dependencies",
+      "descriptionKey": "Ssm_role_dependencies_description",
+      "kind": "Grouping"
+    },
+    {
+      "name": "dependencyProject",
+      "displayName": "Dependency project",
+      "description": "Optional target project, or aligned project list.",
+      "displayNameKey": "Ssm_role_dependencyProject",
+      "descriptionKey": "Ssm_role_dependencyProject_description",
+      "kind": "Grouping"
+    },
+    {
+      "name": "systemName",
+      "displayName": "System name",
+      "description": "Distinguishes system roots from unresolved equipment.",
+      "displayNameKey": "Ssm_role_systemName",
+      "descriptionKey": "Ssm_role_systemName_description",
+      "kind": "Grouping"
+    },
+    {
+      "name": "status",
+      "displayName": "Status",
+      "description": "Optional equipment status: Not Started, In Progress, or Completed. Unknown and conflicting values remain explicit.",
+      "displayNameKey": "Ssm_role_status",
+      "descriptionKey": "Ssm_role_status_description",
+      "kind": "Grouping"
+    },
+    {
+      "name": "nodeDetail",
+      "displayName": "Equipment details",
+      "description": "Optional fields for equipment and header panels.",
+      "displayNameKey": "Ssm_role_nodeDetail",
+      "descriptionKey": "Ssm_role_nodeDetail_description",
+      "kind": "Grouping"
+    },
+    {
+      "name": "milestoneDetail",
+      "displayName": "Milestone details",
+      "description": "Optional fields describing L2 milestones.",
+      "displayNameKey": "Ssm_role_milestoneDetail",
+      "descriptionKey": "Ssm_role_milestoneDetail_description",
+      "kind": "Grouping"
+    },
+    {
+      "name": "parentMilestoneDetail",
+      "displayName": "Parent milestone details",
+      "description": "Optional fields describing L1 milestones.",
+      "displayNameKey": "Ssm_role_parentMilestoneDetail",
+      "descriptionKey": "Ssm_role_parentMilestoneDetail_description",
+      "kind": "Grouping"
+    }
+  ],
+  "dataViewMappings": [
+    {
+      "conditions": [
+        {
+          "project": {
+            "max": 1
+          },
+          "equipmentId": {
+            "max": 1
+          },
+          "equipmentLabel": {
+            "max": 1
+          },
+          "nodeType": {
+            "max": 1
+          },
+          "discipline": {
+            "max": 1
+          },
+          "parentMilestone": {
+            "max": 1
+          },
+          "milestone": {
+            "max": 1
+          },
+          "closestParent": {
+            "max": 1
+          },
+          "closestParentProject": {
+            "max": 1
+          },
+          "dependencies": {
+            "max": 1
+          },
+          "dependencyProject": {
+            "max": 1
+          },
+          "systemName": {
+            "max": 1
+          },
+          "status": {
+            "max": 1
+          },
+          "nodeDetail": {
+            "max": 32
+          },
+          "milestoneDetail": {
+            "max": 32
+          },
+          "parentMilestoneDetail": {
+            "max": 32
+          }
+        }
+      ],
+      "table": {
+        "rows": {
+          "select": [
+            {
+              "for": {
+                "in": "project"
+              }
+            },
+            {
+              "for": {
+                "in": "equipmentId"
+              }
+            },
+            {
+              "for": {
+                "in": "equipmentLabel"
+              }
+            },
+            {
+              "for": {
+                "in": "nodeType"
+              }
+            },
+            {
+              "for": {
+                "in": "discipline"
+              }
+            },
+            {
+              "for": {
+                "in": "parentMilestone"
+              }
+            },
+            {
+              "for": {
+                "in": "milestone"
+              }
+            },
+            {
+              "for": {
+                "in": "closestParent"
+              }
+            },
+            {
+              "for": {
+                "in": "closestParentProject"
+              }
+            },
+            {
+              "for": {
+                "in": "dependencies"
+              }
+            },
+            {
+              "for": {
+                "in": "dependencyProject"
+              }
+            },
+            {
+              "for": {
+                "in": "systemName"
+              }
+            },
+            {
+              "for": {
+                "in": "status"
+              }
+            },
+            {
+              "for": {
+                "in": "nodeDetail"
+              }
+            },
+            {
+              "for": {
+                "in": "milestoneDetail"
+              }
+            },
+            {
+              "for": {
+                "in": "parentMilestoneDetail"
+              }
+            }
+          ],
+          "dataReductionAlgorithm": {
+            "window": {
+              "count": 2000
+            }
+          }
+        }
+      }
+    }
+  ],
+  "objects": {
+    "highlighting": {
+      "displayName": "Highlighting",
+      "displayNameKey": "Ssm_highlighting",
+      "properties": {
+        "highlightField": {
+          "displayName": "Highlight column",
+          "displayNameKey": "Ssm_highlightField",
+          "description": "Viewers choose values from this column. Hidden equipment fields remain available.",
+          "descriptionKey": "Ssm_highlightField_description",
+          "type": {
+            "enumeration": []
+          }
+        }
+      }
+    },
+    "appearance": {
+      "displayName": "Appearance",
+      "properties": {
+        "theme": {
+          "displayName": "Theme",
+          "displayNameKey": "Ssm_theme",
+          "type": {
+            "enumeration": [
+              {
+                "value": "auto",
+                "displayName": "Automatic",
+                "displayNameKey": "Ssm_theme_auto"
+              },
+              {
+                "value": "light",
+                "displayName": "Light",
+                "displayNameKey": "Ssm_enum_light"
+              },
+              {
+                "value": "dark",
+                "displayName": "Dark",
+                "displayNameKey": "Ssm_enum_dark"
+              }
+            ]
+          }
+        },
+        "accent": {
+          "displayName": "Milestones and selection",
+          "displayNameKey": "Ssm_accent",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "parentColor": {
+          "displayName": "Closest parent links",
+          "displayNameKey": "Ssm_parentColor",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "dependencyColor": {
+          "displayName": "Dependency links",
+          "displayNameKey": "Ssm_dependencyColor",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "fontSize": {
+          "displayName": "Text size",
+          "displayNameKey": "Ssm_fontSize",
+          "type": {
+            "numeric": true
+          }
+        },
+        "nodeWidth": {
+          "displayName": "Node width",
+          "displayNameKey": "Ssm_nodeWidth",
+          "type": {
+            "numeric": true
+          }
+        }
+      },
+      "displayNameKey": "Ssm_appearance"
+    },
+    "navigation": {
+      "displayName": "Canvas",
+      "properties": {
+        "showLegend": {
+          "displayName": "Relationship legend",
+          "displayNameKey": "Ssm_showLegend",
+          "type": {
+            "bool": true
+          }
+        },
+        "showMinimap": {
+          "displayName": "Overview map",
+          "displayNameKey": "Ssm_showMinimap",
+          "type": {
+            "bool": true
+          }
+        },
+        "animate": {
+          "displayName": "Transitions",
+          "displayNameKey": "Ssm_animate",
+          "type": {
+            "bool": true
+          }
+        },
+        "initialExpanded": {
+          "displayName": "Expand hierarchy on first load",
+          "displayNameKey": "Ssm_initialExpanded",
+          "type": {
+            "bool": true
+          }
+        },
+        "maxVisibleNodes": {
+          "displayName": "Visible node limit",
+          "displayNameKey": "Ssm_maxVisibleNodes",
+          "type": {
+            "numeric": true
+          }
+        },
+        "autoLoad": {
+          "displayName": "Load additional batches automatically",
+          "displayNameKey": "Ssm_autoLoad",
+          "type": {
+            "bool": true
+          }
+        }
+      },
+      "displayNameKey": "Ssm_navigation"
+    },
+    "drawer": {
+      "displayName": "Node panel",
+      "properties": {
+        "drawerWidth": {
+          "displayName": "Panel width",
+          "displayNameKey": "Ssm_drawerWidth",
+          "type": {
+            "numeric": true
+          }
+        },
+        "showEmptyDetails": {
+          "displayName": "Show empty fields",
+          "displayNameKey": "Ssm_showEmptyDetails",
+          "type": {
+            "bool": true
+          }
+        },
+        "showIdentity": {
+          "displayName": "Node identity",
+          "displayNameKey": "Ssm_showIdentity",
+          "type": {
+            "bool": true
+          }
+        },
+        "showProject": {
+          "displayName": "Project",
+          "displayNameKey": "Ssm_showProject",
+          "type": {
+            "bool": true
+          }
+        },
+        "showDiscipline": {
+          "displayName": "Discipline",
+          "displayNameKey": "Ssm_showDiscipline",
+          "type": {
+            "bool": true
+          }
+        },
+        "showMilestones": {
+          "displayName": "Milestone assignments",
+          "displayNameKey": "Ssm_showMilestones",
+          "type": {
+            "bool": true
+          }
+        },
+        "showRelations": {
+          "displayName": "Connections",
+          "displayNameKey": "Ssm_showRelations",
+          "type": {
+            "bool": true
+          }
+        }
+      },
+      "displayNameKey": "Ssm_drawer"
+    },
+    "detailEquipment": {
+      "displayName": "Equipment fields",
+      "properties": {
+        "visible": {
+          "displayName": "Show field",
+          "displayNameKey": "Ssm_visible",
+          "type": {
+            "bool": true
+          }
+        },
+        "label": {
+          "displayName": "Display label",
+          "displayNameKey": "Ssm_label",
+          "type": {
+            "text": true
+          }
+        },
+        "order": {
+          "displayName": "Order",
+          "displayNameKey": "Ssm_order",
+          "type": {
+            "numeric": true
+          }
+        },
+        "format": {
+          "displayName": "Display format",
+          "displayNameKey": "Ssm_format",
+          "type": {
+            "enumeration": [
+              {
+                "value": "auto",
+                "displayName": "Model format",
+                "displayNameKey": "Ssm_enum_auto"
+              },
+              {
+                "value": "text",
+                "displayName": "Text",
+                "displayNameKey": "Ssm_enum_text"
+              },
+              {
+                "value": "integer",
+                "displayName": "Whole number",
+                "displayNameKey": "Ssm_enum_integer"
+              },
+              {
+                "value": "decimal",
+                "displayName": "Decimal",
+                "displayNameKey": "Ssm_enum_decimal"
+              },
+              {
+                "value": "date",
+                "displayName": "Date",
+                "displayNameKey": "Ssm_enum_date"
+              }
+            ]
+          }
+        }
+      },
+      "displayNameKey": "Ssm_detailEquipment"
+    },
+    "detailL1": {
+      "displayName": "Parent milestone fields",
+      "properties": {
+        "visible": {
+          "displayName": "Show field",
+          "displayNameKey": "Ssm_visible",
+          "type": {
+            "bool": true
+          }
+        },
+        "label": {
+          "displayName": "Display label",
+          "displayNameKey": "Ssm_label",
+          "type": {
+            "text": true
+          }
+        },
+        "order": {
+          "displayName": "Order",
+          "displayNameKey": "Ssm_order",
+          "type": {
+            "numeric": true
+          }
+        },
+        "format": {
+          "displayName": "Display format",
+          "displayNameKey": "Ssm_format",
+          "type": {
+            "enumeration": [
+              {
+                "value": "auto",
+                "displayName": "Model format",
+                "displayNameKey": "Ssm_enum_auto"
+              },
+              {
+                "value": "text",
+                "displayName": "Text",
+                "displayNameKey": "Ssm_enum_text"
+              },
+              {
+                "value": "integer",
+                "displayName": "Whole number",
+                "displayNameKey": "Ssm_enum_integer"
+              },
+              {
+                "value": "decimal",
+                "displayName": "Decimal",
+                "displayNameKey": "Ssm_enum_decimal"
+              },
+              {
+                "value": "date",
+                "displayName": "Date",
+                "displayNameKey": "Ssm_enum_date"
+              }
+            ]
+          }
+        }
+      },
+      "displayNameKey": "Ssm_detailL1"
+    },
+    "detailL2": {
+      "displayName": "Milestone fields",
+      "properties": {
+        "visible": {
+          "displayName": "Show field",
+          "displayNameKey": "Ssm_visible",
+          "type": {
+            "bool": true
+          }
+        },
+        "label": {
+          "displayName": "Display label",
+          "displayNameKey": "Ssm_label",
+          "type": {
+            "text": true
+          }
+        },
+        "order": {
+          "displayName": "Order",
+          "displayNameKey": "Ssm_order",
+          "type": {
+            "numeric": true
+          }
+        },
+        "format": {
+          "displayName": "Display format",
+          "displayNameKey": "Ssm_format",
+          "type": {
+            "enumeration": [
+              {
+                "value": "auto",
+                "displayName": "Model format",
+                "displayNameKey": "Ssm_enum_auto"
+              },
+              {
+                "value": "text",
+                "displayName": "Text",
+                "displayNameKey": "Ssm_enum_text"
+              },
+              {
+                "value": "integer",
+                "displayName": "Whole number",
+                "displayNameKey": "Ssm_enum_integer"
+              },
+              {
+                "value": "decimal",
+                "displayName": "Decimal",
+                "displayNameKey": "Ssm_enum_decimal"
+              },
+              {
+                "value": "date",
+                "displayName": "Date",
+                "displayNameKey": "Ssm_enum_date"
+              }
+            ]
+          }
+        }
+      },
+      "displayNameKey": "Ssm_detailL2"
+    },
+    "detailHeader": {
+      "displayName": "Header fields",
+      "properties": {
+        "visible": {
+          "displayName": "Show field",
+          "displayNameKey": "Ssm_visible",
+          "type": {
+            "bool": true
+          }
+        },
+        "label": {
+          "displayName": "Display label",
+          "displayNameKey": "Ssm_label",
+          "type": {
+            "text": true
+          }
+        },
+        "order": {
+          "displayName": "Order",
+          "displayNameKey": "Ssm_order",
+          "type": {
+            "numeric": true
+          }
+        },
+        "format": {
+          "displayName": "Display format",
+          "displayNameKey": "Ssm_format",
+          "type": {
+            "enumeration": [
+              {
+                "value": "auto",
+                "displayName": "Model format",
+                "displayNameKey": "Ssm_enum_auto"
+              },
+              {
+                "value": "text",
+                "displayName": "Text",
+                "displayNameKey": "Ssm_enum_text"
+              },
+              {
+                "value": "integer",
+                "displayName": "Whole number",
+                "displayNameKey": "Ssm_enum_integer"
+              },
+              {
+                "value": "decimal",
+                "displayName": "Decimal",
+                "displayNameKey": "Ssm_enum_decimal"
+              },
+              {
+                "value": "date",
+                "displayName": "Date",
+                "displayNameKey": "Ssm_enum_date"
+              }
+            ]
+          }
+        }
+      },
+      "displayNameKey": "Ssm_detailHeader"
+    },
+    "viewState": {
+      "displayName": "View state",
+      "properties": {
+        "snapshot": {
+          "displayName": "Saved view",
+          "type": {
+            "text": true
+          },
+          "filterState": true,
+          "suppressFormatPainterCopy": true,
+          "displayNameKey": "Ssm_viewSnapshot"
+        }
+      },
+      "displayNameKey": "Ssm_viewState"
+    }
+  },
+  "privileges": [
+    { "name": "ExportContent", "essential": false }
+  ],
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
+  "supportsKeyboardFocus": true,
+  "tooltips": {
+    "supportedTypes": {
+      "default": true
+    },
+    "supportEnhancedTooltips": true
+  },
+  "sorting": {
+    "default": {}
+  }
+}

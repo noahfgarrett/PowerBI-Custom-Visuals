@@ -4,25 +4,33 @@
       "displayName": "Category",
       "name": "category",
       "kind": "Grouping",
-      "description": "Step labels (e.g., Revenue, +Sales, -Costs, =Profit)"
+      "description": "Step labels (e.g., Revenue, +Sales, -Costs, =Profit)",
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0001",
+      "descriptionKey": "AnimatedWaterfallCapabilities_Description_0001"
     },
     {
       "displayName": "Sub-Category",
       "name": "subCategory",
       "kind": "Grouping",
-      "description": "Drill-down sub-category for category breakdown (optional)"
+      "description": "Drill-down sub-category for category breakdown (optional)",
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0002",
+      "descriptionKey": "AnimatedWaterfallCapabilities_Description_0002"
     },
     {
       "displayName": "Measure",
       "name": "measure",
       "kind": "Measure",
-      "description": "Step values (positive = increase, negative = decrease)"
+      "description": "Step values (positive = increase, negative = decrease)",
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0003",
+      "descriptionKey": "AnimatedWaterfallCapabilities_Description_0003"
     },
     {
       "displayName": "Is Total",
       "name": "isTotal",
       "kind": "Measure",
-      "description": "Optional flag (1 = total bar, 0 = incremental). If not provided, last bar auto-detected as total."
+      "description": "Optional flag (1 = total bar, 0 = incremental). If not provided, last bar auto-detected as total.",
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0004",
+      "descriptionKey": "AnimatedWaterfallCapabilities_Description_0004"
     }
   ],
   "dataViewMappings": [
@@ -88,19 +96,29 @@
           "displayName": "Show Connectors",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0006"
         },
         "barWidth": {
           "displayName": "Bar Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0007"
+        },
+        "outerPadding": {
+          "displayName": "Outer Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0008"
         },
         "barCornerRadius": {
           "displayName": "Bar Corner Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0009"
         },
         "barBorderColor": {
           "displayName": "Bar Border Color",
@@ -110,15 +128,18 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0010"
         },
         "barBorderWidth": {
           "displayName": "Bar Border Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0011"
         }
-      }
+      },
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0005"
     },
     "colorSettings": {
       "displayName": "Colors",
@@ -131,7 +152,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0013"
         },
         "negativeColor": {
           "displayName": "Negative Color",
@@ -141,19 +163,11 @@
                 "color": true
               }
             }
-          }
-        },
-        "totalColor": {
-          "displayName": "Total Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0014"
         }
-      }
+      },
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0012"
     },
     "valueSettings": {
       "displayName": "Value Labels",
@@ -162,13 +176,15 @@
           "displayName": "Show Values",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0017"
         },
         "fontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0018"
         },
         "fontColor": {
           "displayName": "Font Color",
@@ -178,7 +194,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0019"
         },
         "fontFamily": {
           "displayName": "Font Family",
@@ -186,34 +203,42 @@
             "enumeration": [
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0021"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0022"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0023"
               },
               {
                 "value": "Helvetica",
-                "displayName": "Helvetica"
+                "displayName": "Helvetica",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0024"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0025"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0026"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0027"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0020"
         },
         "fontWeight": {
           "displayName": "Font Weight",
@@ -221,37 +246,25 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0029"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0030"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0031"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0028"
         }
-      }
-    },
-    "axisSettings": {
-      "displayName": "Axes",
-      "properties": {
-        "showXAxis": {
-          "displayName": "Show X-Axis",
-          "type": {
-            "bool": true
-          }
-        },
-        "showYAxis": {
-          "displayName": "Show Y-Axis",
-          "type": {
-            "bool": true
-          }
-        }
-      }
+      },
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0016"
     },
     "animationSettings": {
       "displayName": "Animation",
@@ -260,21 +273,25 @@
           "displayName": "Enable Animations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0036"
         },
         "duration": {
           "displayName": "Duration (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0037"
         },
         "staggerDelay": {
           "displayName": "Stagger Delay (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0038"
         }
-      }
+      },
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0035"
     },
     "axisFormatting": {
       "displayName": "Axis Formatting",
@@ -287,13 +304,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0040"
         },
         "axisLabelSize": {
           "displayName": "Label Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0041"
         },
         "axisLineColor": {
           "displayName": "Axis Line Color",
@@ -303,19 +322,22 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0042"
         },
         "axisLineWidth": {
           "displayName": "Axis Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0043"
         },
         "showGridLines": {
           "displayName": "Show Grid Lines",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0044"
         },
         "gridLineColor": {
           "displayName": "Grid Line Color",
@@ -325,7 +347,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0045"
         },
         "gridLineStyle": {
           "displayName": "Grid Line Style",
@@ -333,38 +356,45 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0047"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0048"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0046"
         },
         "showXAxis": {
           "displayName": "Show X-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0049"
         },
         "showYAxis": {
           "displayName": "Show Y-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0050"
         },
         "xAxisTitle": {
           "displayName": "X-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0051"
         },
         "yAxisTitle": {
           "displayName": "Y-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0052"
         },
         "axisLabelFontFamily": {
           "displayName": "Label Font",
@@ -372,84 +402,102 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0054"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0055"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0056"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0057"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0058"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0059"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0060"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0061"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0062"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0063"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0064"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0065"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0053"
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (\u00b0)",
+          "displayName": "X-Label Rotation (°)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0066"
         },
         "yAxisMin": {
           "displayName": "Y-Axis Min",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0067"
         },
         "yAxisMax": {
           "displayName": "Y-Axis Max",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0068"
         },
         "gridLineWidth": {
           "displayName": "Grid Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0069"
         },
         "gridLineOpacity": {
           "displayName": "Grid Line Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0070"
         },
         "axisLabelFontWeight": {
           "displayName": "Label Font Weight",
@@ -457,16 +505,27 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0072"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0073"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0071"
+        },
+        "integerTicks": {
+          "displayName": "Integer Ticks Only",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0074"
         }
-      }
+      },
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0039"
     },
     "dataLabelFormatting": {
       "displayName": "Data Labels",
@@ -475,13 +534,15 @@
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0076"
         },
         "dataLabelFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0077"
         },
         "dataLabelFontColor": {
           "displayName": "Font Color",
@@ -491,7 +552,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0078"
         },
         "dataLabelFontWeight": {
           "displayName": "Font Weight",
@@ -499,14 +561,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0080"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0081"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0079"
         },
         "dataLabelFontFamily": {
           "displayName": "Font",
@@ -514,54 +579,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0083"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0084"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0085"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0086"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0087"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0088"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0089"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0090"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0091"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0092"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0093"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0094"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0082"
         },
         "dataLabelPosition": {
           "displayName": "Position",
@@ -569,28 +647,35 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0096"
               },
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0097"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0098"
               },
               {
                 "value": "inside",
-                "displayName": "Inside"
+                "displayName": "Inside",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0099"
               },
               {
                 "value": "outside",
-                "displayName": "Outside"
+                "displayName": "Outside",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0100"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0095"
         }
-      }
+      },
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0075"
     },
     "titleFormatting": {
       "displayName": "Chart Title",
@@ -599,19 +684,22 @@
           "displayName": "Show Title",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0102"
         },
         "titleText": {
           "displayName": "Title Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0103"
         },
         "titleFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0104"
         },
         "titleFontColor": {
           "displayName": "Font Color",
@@ -621,7 +709,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0105"
         },
         "titleAlignment": {
           "displayName": "Alignment",
@@ -629,18 +718,22 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0107"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0108"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0109"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0106"
         },
         "titleFontFamily": {
           "displayName": "Font",
@@ -648,66 +741,81 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0111"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0112"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0113"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0114"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0115"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0116"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0117"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0118"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0119"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0120"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0121"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0122"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0110"
         },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0123"
         },
         "subtitleFontSize": {
           "displayName": "Subtitle Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0124"
         },
         "subtitleFontColor": {
           "displayName": "Subtitle Color",
@@ -717,7 +825,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0125"
         },
         "titleFontWeight": {
           "displayName": "Font Weight",
@@ -725,14 +834,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0127"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0128"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0126"
         },
         "subtitleFontFamily": {
           "displayName": "Subtitle Font",
@@ -740,54 +852,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0130"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0131"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0132"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0133"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0134"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0135"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0136"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0137"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0138"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0139"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0140"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0141"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0129"
         },
         "subtitleFontWeight": {
           "displayName": "Subtitle Font Weight",
@@ -795,16 +920,20 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0143"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0144"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0142"
         }
-      }
+      },
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0101"
     },
     "subtotalSettings": {
       "displayName": "Subtotals",
@@ -813,7 +942,8 @@
           "displayName": "Enable Subtotals",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0146"
         },
         "subtotalColor": {
           "displayName": "Subtotal Color",
@@ -823,21 +953,25 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0147"
         },
         "subtotalLabel": {
           "displayName": "Subtotal Label",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0148"
         },
         "indices": {
           "displayName": "Subtotal After Positions",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0149"
         }
-      }
+      },
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0145"
     },
     "connectorFormatting": {
       "displayName": "Connectors",
@@ -850,13 +984,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0151"
         },
         "connectorWidth": {
           "displayName": "Connector Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0152"
         },
         "connectorStyle": {
           "displayName": "Connector Style",
@@ -864,16 +1000,20 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0154"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0155"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0153"
         }
-      }
+      },
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0150"
     },
     "drillDownSettings": {
       "displayName": "Drill-Down",
@@ -882,19 +1022,22 @@
           "displayName": "Enable Drill-Down",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0157"
         },
         "showBreadcrumb": {
           "displayName": "Show Breadcrumb",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0158"
         },
         "breadcrumbFontSize": {
           "displayName": "Breadcrumb Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0159"
         },
         "breadcrumbColor": {
           "displayName": "Breadcrumb Color",
@@ -904,9 +1047,89 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0160"
+        },
+        "breadcrumbFontFamily": {
+          "displayName": "Breadcrumb Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0162"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0163"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0164"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0165"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0166"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0167"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0168"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0169"
+              }
+            ]
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0161"
+        },
+        "breadcrumbFontWeight": {
+          "displayName": "Breadcrumb Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0171"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0172"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0173"
+              }
+            ]
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0170"
+        },
+        "breadcrumbPadding": {
+          "displayName": "Breadcrumb Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0174"
         }
-      }
+      },
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0156"
     },
     "cardSettings": {
       "displayName": "Card Style",
@@ -919,19 +1142,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0176"
         },
         "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0177"
         },
         "borderRadius": {
           "displayName": "Border Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0178"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0001"
         },
         "cardStyleMode": {
           "displayName": "Card Style",
@@ -939,30 +1172,47 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0002"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0003"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0004"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0005"
+              },
+              {
+                "value": "outlined",
+                "displayName": "Border Only",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0006"
+              },
+              {
+                "value": "floating",
+                "displayName": "Floating Shadow",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0007"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0179"
         },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "(Deprecated) Enable Glass"
+          "displayName": "(Deprecated) Enable Glass",
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0184"
         }
-      }
+      },
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0175"
     },
     "scrollFormatting": {
       "displayName": "Scroll",
@@ -971,15 +1221,18 @@
           "displayName": "Enable Scroll",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0186"
         },
         "minCategoryWidth": {
           "displayName": "Min Category Width (px)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0187"
         }
-      }
+      },
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0185"
     },
     "numberFormatting": {
       "displayName": "Number Format",
@@ -990,46 +1243,56 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0190"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0191"
               },
               {
                 "value": "thousands",
-                "displayName": "Thousands (K)"
+                "displayName": "Thousands (K)",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0192"
               },
               {
                 "value": "millions",
-                "displayName": "Millions (M)"
+                "displayName": "Millions (M)",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0193"
               },
               {
                 "value": "billions",
-                "displayName": "Billions (B)"
+                "displayName": "Billions (B)",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0194"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0189"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0195"
         },
         "valuePrefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0196"
         },
         "valueSuffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0197"
         }
-      }
+      },
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0188"
     },
     "referenceLineFormatting": {
       "displayName": "Reference Line",
@@ -1038,7 +1301,8 @@
           "displayName": "Show Reference Line",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0199"
         },
         "referenceLineType": {
           "displayName": "Type",
@@ -1046,36 +1310,44 @@
             "enumeration": [
               {
                 "value": "custom",
-                "displayName": "Custom Value"
+                "displayName": "Custom Value",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0201"
               },
               {
                 "value": "mean",
-                "displayName": "Mean"
+                "displayName": "Mean",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0202"
               },
               {
                 "value": "median",
-                "displayName": "Median"
+                "displayName": "Median",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0203"
               },
               {
                 "value": "percentile",
-                "displayName": "Percentile"
+                "displayName": "Percentile",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0204"
               },
               {
                 "value": "min",
-                "displayName": "Min"
+                "displayName": "Min",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0205"
               },
               {
                 "value": "max",
-                "displayName": "Max"
+                "displayName": "Max",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0206"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0200"
         },
         "referenceLineValue": {
           "displayName": "Value",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0207"
         },
         "referenceLineColor": {
           "displayName": "Line Color",
@@ -1085,13 +1357,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0208"
         },
         "referenceLineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0209"
         },
         "referenceLineStyle": {
           "displayName": "Line Style",
@@ -1099,48 +1373,57 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0211"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0212"
               },
               {
                 "value": "dotted",
-                "displayName": "Dotted"
+                "displayName": "Dotted",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0213"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0210"
         },
         "showReferenceLabel": {
           "displayName": "Show Label",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0214"
         },
         "referenceLabelText": {
           "displayName": "Label Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0215"
         },
         "showReferenceBand": {
           "displayName": "Show Band",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0216"
         },
         "referenceBandOpacity": {
           "displayName": "Band Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0217"
         },
         "referenceBandWidth": {
           "displayName": "Band Width (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0218"
         },
         "referenceLineAxis": {
           "displayName": "Target Axis",
@@ -1148,16 +1431,20 @@
             "enumeration": [
               {
                 "value": "primary",
-                "displayName": "Primary"
+                "displayName": "Primary",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0220"
               },
               {
                 "value": "secondary",
-                "displayName": "Secondary"
+                "displayName": "Secondary",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0221"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0219"
         }
-      }
+      },
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0198"
     },
     "trendLineFormatting": {
       "displayName": "Trend Line",
@@ -1166,7 +1453,8 @@
           "displayName": "Show Trend Line",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0223"
         },
         "trendLineType": {
           "displayName": "Type",
@@ -1174,32 +1462,39 @@
             "enumeration": [
               {
                 "value": "linear",
-                "displayName": "Linear"
+                "displayName": "Linear",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0225"
               },
               {
                 "value": "polynomial",
-                "displayName": "Polynomial"
+                "displayName": "Polynomial",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0226"
               },
               {
                 "value": "exponential",
-                "displayName": "Exponential"
+                "displayName": "Exponential",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0227"
               },
               {
                 "value": "logarithmic",
-                "displayName": "Logarithmic"
+                "displayName": "Logarithmic",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0228"
               },
               {
                 "value": "power",
-                "displayName": "Power"
+                "displayName": "Power",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0229"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0224"
         },
         "polynomialOrder": {
           "displayName": "Polynomial Order",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0230"
         },
         "trendLineColor": {
           "displayName": "Line Color",
@@ -1209,25 +1504,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0231"
         },
         "trendLineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0232"
         },
         "showEquation": {
           "displayName": "Show Equation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0233"
         },
         "showR2": {
-          "displayName": "Show R\u00b2",
+          "displayName": "Show R²",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0234"
         },
         "trendLineAxis": {
           "displayName": "Target Axis",
@@ -1235,16 +1534,20 @@
             "enumeration": [
               {
                 "value": "primary",
-                "displayName": "Primary"
+                "displayName": "Primary",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0236"
               },
               {
                 "value": "secondary",
-                "displayName": "Secondary"
+                "displayName": "Secondary",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0237"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0235"
         }
-      }
+      },
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0222"
     },
     "conditionalFormatting": {
       "displayName": "Conditional Formatting",
@@ -1253,7 +1556,8 @@
           "displayName": "Enable Conditional Formatting",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0239"
         },
         "conditionalDirection": {
           "displayName": "Direction",
@@ -1261,26 +1565,31 @@
             "enumeration": [
               {
                 "value": "ascending",
-                "displayName": "Ascending (Low = Bad)"
+                "displayName": "Ascending (Low = Bad)",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0241"
               },
               {
                 "value": "descending",
-                "displayName": "Descending (Low = Good)"
+                "displayName": "Descending (Low = Good)",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0242"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0240"
         },
         "threshold1": {
           "displayName": "Threshold 1",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0243"
         },
         "threshold2": {
           "displayName": "Threshold 2",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0244"
         },
         "conditionalColor1": {
           "displayName": "Color 1 (Bad)",
@@ -1290,7 +1599,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0245"
         },
         "conditionalColor2": {
           "displayName": "Color 2 (Warning)",
@@ -1300,7 +1610,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0246"
         },
         "conditionalColor3": {
           "displayName": "Color 3 (Good)",
@@ -1310,9 +1621,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0247"
         }
-      }
+      },
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0238"
     },
     "annotationFormatting": {
       "displayName": "Annotations",
@@ -1321,118 +1634,141 @@
           "displayName": "Show Annotations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0249"
         },
         "annotation1Category": {
-          "displayName": "Annotation 1 \u2014 Category",
+          "displayName": "Annotation 1 — Category",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0250"
         },
         "annotation1Text": {
-          "displayName": "Annotation 1 \u2014 Text",
+          "displayName": "Annotation 1 — Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0251"
         },
         "annotation1Position": {
-          "displayName": "Annotation 1 \u2014 Position",
+          "displayName": "Annotation 1 — Position",
           "type": {
             "enumeration": [
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0253"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0254"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0255"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0256"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0252"
         },
         "annotation2Category": {
-          "displayName": "Annotation 2 \u2014 Category",
+          "displayName": "Annotation 2 — Category",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0257"
         },
         "annotation2Text": {
-          "displayName": "Annotation 2 \u2014 Text",
+          "displayName": "Annotation 2 — Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0258"
         },
         "annotation2Position": {
-          "displayName": "Annotation 2 \u2014 Position",
+          "displayName": "Annotation 2 — Position",
           "type": {
             "enumeration": [
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0260"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0261"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0262"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0263"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0259"
         },
         "annotation3Category": {
-          "displayName": "Annotation 3 \u2014 Category",
+          "displayName": "Annotation 3 — Category",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0264"
         },
         "annotation3Text": {
-          "displayName": "Annotation 3 \u2014 Text",
+          "displayName": "Annotation 3 — Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0265"
         },
         "annotation3Position": {
-          "displayName": "Annotation 3 \u2014 Position",
+          "displayName": "Annotation 3 — Position",
           "type": {
             "enumeration": [
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0267"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0268"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0269"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0270"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0266"
         },
         "annotationFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0271"
         },
         "annotationFontColor": {
           "displayName": "Font Color",
@@ -1442,7 +1778,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0272"
         },
         "annotationConnectorColor": {
           "displayName": "Connector Color",
@@ -1452,9 +1789,146 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0273"
+        },
+        "annotationFontFamily": {
+          "displayName": "Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0275"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0276"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0277"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0278"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0279"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0280"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0281"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0282"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0283"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0284"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0285"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0286"
+              }
+            ]
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0274"
+        },
+        "annotationFontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0288"
+              },
+              {
+                "value": "500",
+                "displayName": "Medium",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0289"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0290"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0291"
+              }
+            ]
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0287"
+        },
+        "annotationOffset": {
+          "displayName": "Callout Offset",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0292"
+        },
+        "annotationPadding": {
+          "displayName": "Badge Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0293"
+        },
+        "annotationBackgroundColor": {
+          "displayName": "Badge Background",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0294"
+        },
+        "annotationBackgroundOpacity": {
+          "displayName": "Badge Opacity (%)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0295"
+        },
+        "annotationCornerRadius": {
+          "displayName": "Badge Corner Radius",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0296"
         }
-      }
+      },
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0248"
     },
     "accessibilityFormatting": {
       "displayName": "Accessibility",
@@ -1463,9 +1937,11 @@
           "displayName": "Enable Keyboard Navigation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0298"
         }
-      }
+      },
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0297"
     },
     "waterfallTotalBar": {
       "displayName": "Total Bar",
@@ -1474,13 +1950,15 @@
           "displayName": "Show Total Bar",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0300"
         },
         "label": {
           "displayName": "Total Label",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0301"
         },
         "color": {
           "displayName": "Total Bar Color",
@@ -1490,9 +1968,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0302"
         }
-      }
+      },
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0299"
     },
     "waterfallSummary": {
       "displayName": "Summary Metrics",
@@ -1501,15 +1981,130 @@
           "displayName": "Show Summary Banner",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0304"
         },
         "fontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0305"
+        },
+        "fontColor": {
+          "displayName": "Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0306"
+        },
+        "fontFamily": {
+          "displayName": "Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0308"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0309"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0310"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0311"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0312"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0313"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0314"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0315"
+              }
+            ]
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0307"
+        },
+        "fontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0317"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0318"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0319"
+              }
+            ]
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0316"
+        },
+        "alignment": {
+          "displayName": "Alignment",
+          "type": {
+            "enumeration": [
+              {
+                "value": "left",
+                "displayName": "Left",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0321"
+              },
+              {
+                "value": "center",
+                "displayName": "Center",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0322"
+              },
+              {
+                "value": "right",
+                "displayName": "Right",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0323"
+              }
+            ]
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0320"
+        },
+        "paddingTop": {
+          "displayName": "Top Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0324"
         }
-      }
+      },
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0303"
     },
     "waterfallSort": {
       "displayName": "Sort",
@@ -1518,9 +2113,11 @@
           "displayName": "Sort by Contribution",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0326"
         }
-      }
+      },
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0325"
     },
     "legendFormatting": {
       "displayName": "Legend",
@@ -1529,7 +2126,8 @@
           "displayName": "Show Legend",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0328"
         },
         "legendPosition": {
           "displayName": "Position",
@@ -1537,28 +2135,34 @@
             "enumeration": [
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0330"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0331"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0332"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0333"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0329"
         },
         "legendFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0334"
         },
         "legendFontColor": {
           "displayName": "Font Color",
@@ -1568,7 +2172,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0335"
         },
         "legendFontFamily": {
           "displayName": "Font",
@@ -1576,54 +2181,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0337"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0338"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0339"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0340"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0341"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0342"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0343"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0344"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0345"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0346"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0347"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0348"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0336"
         },
         "legendFontWeight": {
           "displayName": "Font Weight",
@@ -1631,22 +2249,27 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0350"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0351"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0349"
         },
         "legendAliases": {
           "displayName": "Rename Labels",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0352"
         }
-      }
+      },
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0327"
     },
     "dateFilterFormatting": {
       "displayName": "Date Filter",
@@ -1655,27 +2278,32 @@
           "displayName": "Enable Date Filter",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0354"
         },
         "startDate": {
           "displayName": "Start Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0355"
         },
         "endAtCurrentDate": {
           "displayName": "End at Current Date",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0356"
         },
         "endDate": {
           "displayName": "End Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0357"
         }
-      }
+      },
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0353"
     },
     "colorThemeFormatting": {
       "properties": {
@@ -1685,42 +2313,60 @@
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0360"
               },
               {
                 "value": "ocean",
-                "displayName": "Ocean"
+                "displayName": "Ocean",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0361"
               },
               {
                 "value": "sunset",
-                "displayName": "Sunset"
+                "displayName": "Sunset",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0362"
               },
               {
                 "value": "forest",
-                "displayName": "Forest"
+                "displayName": "Forest",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0363"
               },
               {
                 "value": "berry",
-                "displayName": "Berry"
+                "displayName": "Berry",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0364"
               },
               {
                 "value": "monochrome",
-                "displayName": "Monochrome"
+                "displayName": "Monochrome",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0365"
               },
               {
                 "value": "earth",
-                "displayName": "Earth"
+                "displayName": "Earth",
+                "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0366"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0359"
         }
       },
-      "displayName": "Color Theme"
+      "displayName": "Color Theme",
+      "displayNameKey": "AnimatedWaterfallCapabilities_DisplayName_0358"
     }
   },
   "supportsKeyboardFocus": true,
   "supportsHighlight": true,
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
   "supportsMultiVisualSelection": true,
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
   "privileges": [],
   "suppressDefaultTitle": true
 }

@@ -40,3 +40,12 @@
   color: #94A3B8;
   font-style: italic;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .waterfall-container *,
+  .waterfall-container *::before,
+  .waterfall-container *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

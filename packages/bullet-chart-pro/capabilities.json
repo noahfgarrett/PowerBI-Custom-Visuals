@@ -4,37 +4,49 @@
       "displayName": "Category",
       "name": "category",
       "kind": "Grouping",
-      "description": "Bullet chart labels (e.g., KPI names)"
+      "description": "Bullet chart labels (e.g., KPI names)",
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0001",
+      "descriptionKey": "BulletChartProCapabilities_Description_0001"
     },
     {
       "displayName": "Value",
       "name": "measure",
       "kind": "Measure",
-      "description": "Actual value \u2014 the main bar"
+      "description": "Actual value — the main bar",
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0002",
+      "descriptionKey": "BulletChartProCapabilities_Description_0002"
     },
     {
       "displayName": "Target",
       "name": "target",
       "kind": "Measure",
-      "description": "Target marker value"
+      "description": "Target marker value",
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0003",
+      "descriptionKey": "BulletChartProCapabilities_Description_0003"
     },
     {
       "displayName": "Poor Range",
       "name": "poor",
       "kind": "Measure",
-      "description": "Upper bound of the poor range"
+      "description": "Upper bound of the poor range",
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0004",
+      "descriptionKey": "BulletChartProCapabilities_Description_0004"
     },
     {
       "displayName": "Satisfactory Range",
       "name": "satisfactory",
       "kind": "Measure",
-      "description": "Upper bound of the satisfactory range"
+      "description": "Upper bound of the satisfactory range",
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0005",
+      "descriptionKey": "BulletChartProCapabilities_Description_0005"
     },
     {
       "displayName": "Good Range",
       "name": "good",
       "kind": "Measure",
-      "description": "Upper bound of the good range (also serves as max)"
+      "description": "Upper bound of the good range (also serves as max)",
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0006",
+      "descriptionKey": "BulletChartProCapabilities_Description_0006"
     }
   ],
   "dataViewMappings": [
@@ -113,34 +125,46 @@
       "displayName": "Bullet Settings",
       "properties": {
         "barHeight": {
-          "displayName": "Bar Height",
+          "displayName": "Bar Thickness",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0008"
         },
         "showTarget": {
           "displayName": "Show Target",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0009"
         },
         "showLabels": {
-          "displayName": "Show Labels",
+          "displayName": "Show Category and Value Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0010"
+        },
+        "labelPadding": {
+          "displayName": "Category Label Spacing",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0011"
         },
         "barCornerRadius": {
           "displayName": "Bar Corner Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0012"
         },
         "rangeOpacity": {
           "displayName": "Range Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0013"
         },
         "orientation": {
           "displayName": "Orientation",
@@ -148,16 +172,47 @@
             "enumeration": [
               {
                 "value": "horizontal",
-                "displayName": "Horizontal"
+                "displayName": "Horizontal",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0015"
               },
               {
                 "value": "vertical",
-                "displayName": "Vertical"
+                "displayName": "Vertical",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0016"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0014"
         }
-      }
+      },
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0007"
+    },
+    "layoutSettings": {
+      "displayName": "Layout",
+      "properties": {
+        "containerPadding": {
+          "displayName": "Container Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0018"
+        },
+        "rowGap": {
+          "displayName": "Row Gap",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0019"
+        },
+        "valueLabelPadding": {
+          "displayName": "Value Label Spacing",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0314"
+        }
+      },
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0017"
     },
     "rangeSettings": {
       "displayName": "Range Colors",
@@ -170,7 +225,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0021"
         },
         "satisfactoryColor": {
           "displayName": "Satisfactory Color",
@@ -180,7 +236,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0022"
         },
         "goodColor": {
           "displayName": "Good Color",
@@ -190,7 +247,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0023"
         },
         "barColor": {
           "displayName": "Bar Color",
@@ -200,9 +258,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0024"
         }
-      }
+      },
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0020"
     },
     "animationSettings": {
       "displayName": "Animation",
@@ -211,15 +271,18 @@
           "displayName": "Enable Animations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0026"
         },
         "duration": {
           "displayName": "Duration (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0027"
         }
-      }
+      },
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0025"
     },
     "axisFormatting": {
       "displayName": "Axis Formatting",
@@ -232,37 +295,43 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0029"
         },
         "axisLabelSize": {
           "displayName": "Label Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0030"
         },
         "showXAxis": {
           "displayName": "Show X-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0031"
         },
         "showYAxis": {
           "displayName": "Show Y-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0032"
         },
         "xAxisTitle": {
           "displayName": "X-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0033"
         },
         "yAxisTitle": {
           "displayName": "Y-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0034"
         },
         "axisLabelFontFamily": {
           "displayName": "Label Font",
@@ -270,72 +339,88 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0036"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0037"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0038"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0039"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0040"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0041"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0042"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0043"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0044"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0045"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0046"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0047"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0035"
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (\u00b0)",
+          "displayName": "X-Label Rotation (°)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0048"
         },
         "yAxisMin": {
           "displayName": "Y-Axis Min",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0049"
         },
         "yAxisMax": {
           "displayName": "Y-Axis Max",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0050"
         },
         "axisLineColor": {
           "displayName": "Axis Line Color",
@@ -345,19 +430,22 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0051"
         },
         "axisLineWidth": {
           "displayName": "Axis Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0052"
         },
         "showGridLines": {
           "displayName": "Show Grid Lines",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0053"
         },
         "gridLineColor": {
           "displayName": "Grid Line Color",
@@ -367,7 +455,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0054"
         },
         "gridLineStyle": {
           "displayName": "Grid Line Style",
@@ -375,26 +464,31 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0056"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0057"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0055"
         },
         "gridLineWidth": {
           "displayName": "Grid Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0058"
         },
         "gridLineOpacity": {
           "displayName": "Grid Line Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0059"
         },
         "axisLabelFontWeight": {
           "displayName": "Label Font Weight",
@@ -402,16 +496,27 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0061"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0062"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0060"
+        },
+        "integerTicks": {
+          "displayName": "Integer Ticks Only",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0063"
         }
-      }
+      },
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0028"
     },
     "dataLabelFormatting": {
       "displayName": "Data Labels",
@@ -420,7 +525,8 @@
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0065"
         },
         "dataLabelFontColor": {
           "displayName": "Font Color",
@@ -430,7 +536,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0066"
         },
         "dataLabelFontWeight": {
           "displayName": "Font Weight",
@@ -438,20 +545,24 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0068"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0069"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0067"
         },
         "showDataLabels": {
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0070"
         },
         "dataLabelFontFamily": {
           "displayName": "Font",
@@ -459,54 +570,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0072"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0073"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0074"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0075"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0076"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0077"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0078"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0079"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0080"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0081"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0082"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0083"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0071"
         },
         "dataLabelPosition": {
           "displayName": "Position",
@@ -514,28 +638,35 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0085"
               },
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0086"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0087"
               },
               {
                 "value": "inside",
-                "displayName": "Inside"
+                "displayName": "Inside",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0088"
               },
               {
                 "value": "outside",
-                "displayName": "Outside"
+                "displayName": "Outside",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0089"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0084"
         }
-      }
+      },
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0064"
     },
     "titleFormatting": {
       "displayName": "Chart Title",
@@ -544,19 +675,22 @@
           "displayName": "Show Title",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0091"
         },
         "titleText": {
           "displayName": "Title Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0092"
         },
         "titleFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0093"
         },
         "titleFontColor": {
           "displayName": "Font Color",
@@ -566,7 +700,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0094"
         },
         "titleAlignment": {
           "displayName": "Alignment",
@@ -574,18 +709,22 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0096"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0097"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0098"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0095"
         },
         "titleFontFamily": {
           "displayName": "Font",
@@ -593,66 +732,81 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0100"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0101"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0102"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0103"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0104"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0105"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0106"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0107"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0108"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0109"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0110"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0111"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0099"
         },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0112"
         },
         "subtitleFontSize": {
           "displayName": "Subtitle Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0113"
         },
         "subtitleFontColor": {
           "displayName": "Subtitle Color",
@@ -662,7 +816,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0114"
         },
         "titleFontWeight": {
           "displayName": "Font Weight",
@@ -670,14 +825,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0116"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0117"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0115"
         },
         "subtitleFontFamily": {
           "displayName": "Subtitle Font",
@@ -685,54 +843,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0119"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0120"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0121"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0122"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0123"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0124"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0125"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0126"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0127"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0128"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0129"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0130"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0118"
         },
         "subtitleFontWeight": {
           "displayName": "Subtitle Font Weight",
@@ -740,16 +911,20 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0132"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0133"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0131"
         }
-      }
+      },
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0090"
     },
     "cardSettings": {
       "displayName": "Card Style",
@@ -762,19 +937,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0135"
         },
         "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0136"
         },
         "borderRadius": {
           "displayName": "Border Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0137"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0001"
         },
         "cardStyleMode": {
           "displayName": "Card Style",
@@ -782,30 +967,47 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0002"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0003"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0004"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0005"
+              },
+              {
+                "value": "outlined",
+                "displayName": "Border Only",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0006"
+              },
+              {
+                "value": "floating",
+                "displayName": "Floating Shadow",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0007"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0138"
         },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "(Deprecated) Enable Glass"
+          "displayName": "(Deprecated) Enable Glass",
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0143"
         }
-      }
+      },
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0134"
     },
     "scrollFormatting": {
       "displayName": "Scroll",
@@ -814,15 +1016,18 @@
           "displayName": "Enable Scroll",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0145"
         },
         "minCategoryWidth": {
           "displayName": "Min Category Width (px)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0146"
         }
-      }
+      },
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0144"
     },
     "referenceLineFormatting": {
       "displayName": "Reference Line",
@@ -831,7 +1036,8 @@
           "displayName": "Show Reference Line",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0148"
         },
         "referenceLineType": {
           "displayName": "Type",
@@ -839,36 +1045,44 @@
             "enumeration": [
               {
                 "value": "custom",
-                "displayName": "Custom Value"
+                "displayName": "Custom Value",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0150"
               },
               {
                 "value": "mean",
-                "displayName": "Mean"
+                "displayName": "Mean",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0151"
               },
               {
                 "value": "median",
-                "displayName": "Median"
+                "displayName": "Median",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0152"
               },
               {
                 "value": "percentile",
-                "displayName": "Percentile"
+                "displayName": "Percentile",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0153"
               },
               {
                 "value": "min",
-                "displayName": "Min"
+                "displayName": "Min",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0154"
               },
               {
                 "value": "max",
-                "displayName": "Max"
+                "displayName": "Max",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0155"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0149"
         },
         "referenceLineValue": {
           "displayName": "Value",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0156"
         },
         "referenceLineColor": {
           "displayName": "Line Color",
@@ -878,13 +1092,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0157"
         },
         "referenceLineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0158"
         },
         "referenceLineStyle": {
           "displayName": "Line Style",
@@ -892,48 +1108,57 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0160"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0161"
               },
               {
                 "value": "dotted",
-                "displayName": "Dotted"
+                "displayName": "Dotted",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0162"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0159"
         },
         "showReferenceLabel": {
           "displayName": "Show Label",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0163"
         },
         "referenceLabelText": {
           "displayName": "Label Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0164"
         },
         "showReferenceBand": {
           "displayName": "Show Band",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0165"
         },
         "referenceBandOpacity": {
           "displayName": "Band Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0166"
         },
         "referenceBandWidth": {
           "displayName": "Band Width (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0167"
         },
         "referenceLineAxis": {
           "displayName": "Target Axis",
@@ -941,16 +1166,20 @@
             "enumeration": [
               {
                 "value": "primary",
-                "displayName": "Primary"
+                "displayName": "Primary",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0169"
               },
               {
                 "value": "secondary",
-                "displayName": "Secondary"
+                "displayName": "Secondary",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0170"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0168"
         }
-      }
+      },
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0147"
     },
     "trendLineFormatting": {
       "displayName": "Trend Line",
@@ -959,7 +1188,8 @@
           "displayName": "Show Trend Line",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0172"
         },
         "trendLineType": {
           "displayName": "Type",
@@ -967,32 +1197,39 @@
             "enumeration": [
               {
                 "value": "linear",
-                "displayName": "Linear"
+                "displayName": "Linear",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0174"
               },
               {
                 "value": "polynomial",
-                "displayName": "Polynomial"
+                "displayName": "Polynomial",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0175"
               },
               {
                 "value": "exponential",
-                "displayName": "Exponential"
+                "displayName": "Exponential",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0176"
               },
               {
                 "value": "logarithmic",
-                "displayName": "Logarithmic"
+                "displayName": "Logarithmic",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0177"
               },
               {
                 "value": "power",
-                "displayName": "Power"
+                "displayName": "Power",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0178"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0173"
         },
         "polynomialOrder": {
           "displayName": "Polynomial Order",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0179"
         },
         "trendLineColor": {
           "displayName": "Line Color",
@@ -1002,25 +1239,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0180"
         },
         "trendLineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0181"
         },
         "showEquation": {
           "displayName": "Show Equation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0182"
         },
         "showR2": {
-          "displayName": "Show R\u00b2",
+          "displayName": "Show R²",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0183"
         },
         "trendLineAxis": {
           "displayName": "Target Axis",
@@ -1028,16 +1269,20 @@
             "enumeration": [
               {
                 "value": "primary",
-                "displayName": "Primary"
+                "displayName": "Primary",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0185"
               },
               {
                 "value": "secondary",
-                "displayName": "Secondary"
+                "displayName": "Secondary",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0186"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0184"
         }
-      }
+      },
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0171"
     },
     "conditionalFormatting": {
       "displayName": "Conditional Formatting",
@@ -1046,7 +1291,8 @@
           "displayName": "Enable Conditional Formatting",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0188"
         },
         "conditionalDirection": {
           "displayName": "Direction",
@@ -1054,26 +1300,31 @@
             "enumeration": [
               {
                 "value": "ascending",
-                "displayName": "Ascending (Low = Bad)"
+                "displayName": "Ascending (Low = Bad)",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0190"
               },
               {
                 "value": "descending",
-                "displayName": "Descending (Low = Good)"
+                "displayName": "Descending (Low = Good)",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0191"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0189"
         },
         "threshold1": {
           "displayName": "Threshold 1",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0192"
         },
         "threshold2": {
           "displayName": "Threshold 2",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0193"
         },
         "conditionalColor1": {
           "displayName": "Color 1 (Bad)",
@@ -1083,7 +1334,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0194"
         },
         "conditionalColor2": {
           "displayName": "Color 2 (Warning)",
@@ -1093,7 +1345,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0195"
         },
         "conditionalColor3": {
           "displayName": "Color 3 (Good)",
@@ -1103,9 +1356,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0196"
         }
-      }
+      },
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0187"
     },
     "annotationFormatting": {
       "displayName": "Annotations",
@@ -1114,118 +1369,141 @@
           "displayName": "Show Annotations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0198"
         },
         "annotation1Category": {
-          "displayName": "Annotation 1 \u2014 Category",
+          "displayName": "Annotation 1 — Category",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0199"
         },
         "annotation1Text": {
-          "displayName": "Annotation 1 \u2014 Text",
+          "displayName": "Annotation 1 — Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0200"
         },
         "annotation1Position": {
-          "displayName": "Annotation 1 \u2014 Position",
+          "displayName": "Annotation 1 — Position",
           "type": {
             "enumeration": [
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0202"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0203"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0204"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0205"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0201"
         },
         "annotation2Category": {
-          "displayName": "Annotation 2 \u2014 Category",
+          "displayName": "Annotation 2 — Category",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0206"
         },
         "annotation2Text": {
-          "displayName": "Annotation 2 \u2014 Text",
+          "displayName": "Annotation 2 — Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0207"
         },
         "annotation2Position": {
-          "displayName": "Annotation 2 \u2014 Position",
+          "displayName": "Annotation 2 — Position",
           "type": {
             "enumeration": [
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0209"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0210"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0211"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0212"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0208"
         },
         "annotation3Category": {
-          "displayName": "Annotation 3 \u2014 Category",
+          "displayName": "Annotation 3 — Category",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0213"
         },
         "annotation3Text": {
-          "displayName": "Annotation 3 \u2014 Text",
+          "displayName": "Annotation 3 — Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0214"
         },
         "annotation3Position": {
-          "displayName": "Annotation 3 \u2014 Position",
+          "displayName": "Annotation 3 — Position",
           "type": {
             "enumeration": [
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0216"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0217"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0218"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0219"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0215"
         },
         "annotationFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0220"
         },
         "annotationFontColor": {
           "displayName": "Font Color",
@@ -1235,7 +1513,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0221"
         },
         "annotationConnectorColor": {
           "displayName": "Connector Color",
@@ -1245,9 +1524,146 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0222"
+        },
+        "annotationFontFamily": {
+          "displayName": "Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0224"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0225"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0226"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0227"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0228"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0229"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0230"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0231"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0232"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0233"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0234"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0235"
+              }
+            ]
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0223"
+        },
+        "annotationFontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0237"
+              },
+              {
+                "value": "500",
+                "displayName": "Medium",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0238"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0239"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0240"
+              }
+            ]
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0236"
+        },
+        "annotationOffset": {
+          "displayName": "Callout Offset",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0241"
+        },
+        "annotationPadding": {
+          "displayName": "Badge Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0242"
+        },
+        "annotationBackgroundColor": {
+          "displayName": "Badge Background",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0243"
+        },
+        "annotationBackgroundOpacity": {
+          "displayName": "Badge Opacity (%)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0244"
+        },
+        "annotationCornerRadius": {
+          "displayName": "Badge Corner Radius",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0245"
         }
-      }
+      },
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0197"
     },
     "accessibilityFormatting": {
       "displayName": "Accessibility",
@@ -1256,9 +1672,50 @@
           "displayName": "Enable Keyboard Navigation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0247"
         }
-      }
+      },
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0246"
+    },
+    "sortFormatting": {
+      "displayName": "Sort Order",
+      "properties": {
+        "sortBy": {
+          "displayName": "Sort By",
+          "type": {
+            "enumeration": [
+              {
+                "value": "dataOrder",
+                "displayName": "Data Order",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0250"
+              },
+              {
+                "value": "valueAsc",
+                "displayName": "Value (Ascending)",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0251"
+              },
+              {
+                "value": "valueDesc",
+                "displayName": "Value (Descending)",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0252"
+              },
+              {
+                "value": "nameAsc",
+                "displayName": "Name (A-Z)",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0253"
+              },
+              {
+                "value": "nameDesc",
+                "displayName": "Name (Z-A)",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0254"
+              }
+            ]
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0249"
+        }
+      },
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0248"
     },
     "bulletMarkers": {
       "displayName": "Markers & Overlays",
@@ -1267,35 +1724,22 @@
           "displayName": "Show Forecast",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0256"
         },
         "forecastValue": {
           "displayName": "Forecast Value",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0257"
         },
         "bandWidth": {
           "displayName": "Band Width",
           "type": {
             "numeric": true
-          }
-        },
-        "showComparative": {
-          "displayName": "Show Comparative",
-          "type": {
-            "bool": true
-          }
-        },
-        "comparativeColor": {
-          "displayName": "Comparative Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0258"
         },
         "forecastColor": {
           "displayName": "Forecast Color",
@@ -1305,21 +1749,18 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0261"
         },
         "targetMarkerWidth": {
           "displayName": "Target Marker Width",
           "type": {
             "numeric": true
-          }
-        },
-        "comparativeMarkerWidth": {
-          "displayName": "Comparative Marker Width",
-          "type": {
-            "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0262"
         }
-      }
+      },
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0255"
     },
     "numberFormatting": {
       "displayName": "Number Format",
@@ -1330,46 +1771,56 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0266"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0267"
               },
               {
                 "value": "thousands",
-                "displayName": "Thousands (K)"
+                "displayName": "Thousands (K)",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0268"
               },
               {
                 "value": "millions",
-                "displayName": "Millions (M)"
+                "displayName": "Millions (M)",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0269"
               },
               {
                 "value": "billions",
-                "displayName": "Billions (B)"
+                "displayName": "Billions (B)",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0270"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0265"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0271"
         },
         "valuePrefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0272"
         },
         "valueSuffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0273"
         }
-      }
+      },
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0264"
     },
     "legendFormatting": {
       "displayName": "Legend",
@@ -1378,7 +1829,8 @@
           "displayName": "Show Legend",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0275"
         },
         "legendPosition": {
           "displayName": "Position",
@@ -1386,28 +1838,34 @@
             "enumeration": [
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0277"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0278"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0279"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0280"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0276"
         },
         "legendFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0281"
         },
         "legendFontColor": {
           "displayName": "Font Color",
@@ -1417,7 +1875,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0282"
         },
         "legendFontFamily": {
           "displayName": "Font",
@@ -1425,54 +1884,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0284"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0285"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0286"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0287"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0288"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0289"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0290"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0291"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0292"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0293"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0294"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0295"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0283"
         },
         "legendFontWeight": {
           "displayName": "Font Weight",
@@ -1480,22 +1952,27 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0297"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0298"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0296"
         },
         "legendAliases": {
           "displayName": "Rename Labels",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0299"
         }
-      }
+      },
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0274"
     },
     "dateFilterFormatting": {
       "displayName": "Date Filter",
@@ -1504,27 +1981,32 @@
           "displayName": "Enable Date Filter",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0301"
         },
         "startDate": {
           "displayName": "Start Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0302"
         },
         "endAtCurrentDate": {
           "displayName": "End at Current Date",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0303"
         },
         "endDate": {
           "displayName": "End Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0304"
         }
-      }
+      },
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0300"
     },
     "colorThemeFormatting": {
       "properties": {
@@ -1534,42 +2016,60 @@
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0307"
               },
               {
                 "value": "ocean",
-                "displayName": "Ocean"
+                "displayName": "Ocean",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0308"
               },
               {
                 "value": "sunset",
-                "displayName": "Sunset"
+                "displayName": "Sunset",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0309"
               },
               {
                 "value": "forest",
-                "displayName": "Forest"
+                "displayName": "Forest",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0310"
               },
               {
                 "value": "berry",
-                "displayName": "Berry"
+                "displayName": "Berry",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0311"
               },
               {
                 "value": "monochrome",
-                "displayName": "Monochrome"
+                "displayName": "Monochrome",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0312"
               },
               {
                 "value": "earth",
-                "displayName": "Earth"
+                "displayName": "Earth",
+                "displayNameKey": "BulletChartProCapabilities_DisplayName_0313"
               }
             ]
-          }
+          },
+          "displayNameKey": "BulletChartProCapabilities_DisplayName_0306"
         }
       },
-      "displayName": "Color Theme"
+      "displayName": "Color Theme",
+      "displayNameKey": "BulletChartProCapabilities_DisplayName_0305"
     }
   },
   "supportsKeyboardFocus": true,
   "supportsHighlight": true,
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
   "supportsMultiVisualSelection": true,
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
   "privileges": [],
   "suppressDefaultTitle": true
 }

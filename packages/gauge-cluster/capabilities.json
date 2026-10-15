@@ -4,24 +4,30 @@
       "displayName": "Gauge Label",
       "name": "category",
       "kind": "Grouping",
-      "description": "Category field that names each gauge"
+      "description": "Optional category field that names each gauge. If omitted, each Value measure becomes its own gauge.",
+      "displayNameKey": "GaugeClusterCapabilities_DisplayName_0210",
+      "descriptionKey": "GaugeClusterCapabilities_Description_0001"
     },
     {
       "displayName": "Value",
       "name": "measure",
       "kind": "Measure",
-      "description": "Current value for each gauge",
+      "description": "Current value for each gauge. Multiple measures are supported; without a Category, each measure becomes its own gauge.",
       "requiredTypes": [
         {
           "numeric": true
         }
-      ]
+      ],
+      "displayNameKey": "GaugeClusterCapabilities_DisplayName_0211",
+      "descriptionKey": "GaugeClusterCapabilities_Description_0002"
     },
     {
       "displayName": "Target",
       "name": "target",
       "kind": "Measure",
-      "description": "Optional target value for each gauge"
+      "description": "Optional target value for each gauge. Without a Category, bind one shared Target or one Target per Value measure.",
+      "displayNameKey": "GaugeClusterCapabilities_DisplayName_0212",
+      "descriptionKey": "GaugeClusterCapabilities_Description_0003"
     }
   ],
   "dataViewMappings": [
@@ -36,6 +42,14 @@
           },
           "target": {
             "max": 1
+          }
+        },
+        {
+          "measure": {
+            "max": 8
+          },
+          "target": {
+            "max": 8
           }
         }
       ],
@@ -79,36 +93,42 @@
           "displayName": "Gauges Per Row",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0214"
         },
         "sortByValue": {
           "displayName": "Sort by Value",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0215"
         }
-      }
+      },
+      "displayNameKey": "GaugeClusterCapabilities_DisplayName_0213"
     },
     "arcAppearanceSettings": {
       "displayName": "Arc Appearance",
       "properties": {
         "arcRange": {
-          "displayName": "Arc Range (\u00b0)",
+          "displayName": "Arc Range (°)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0217"
         },
         "roundedCaps": {
           "displayName": "Rounded Caps",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0218"
         },
         "trackOpacity": {
           "displayName": "Track Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0219"
         },
         "trackColor": {
           "displayName": "Track Color",
@@ -118,21 +138,25 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0220"
         },
         "showNeedle": {
           "displayName": "Show Needle/Pointer",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0221"
         },
         "arcThickness": {
           "displayName": "Arc Thickness (% of radius)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0222"
         }
-      }
+      },
+      "displayNameKey": "GaugeClusterCapabilities_DisplayName_0216"
     },
     "valueRangeSettings": {
       "displayName": "Value Range",
@@ -141,15 +165,18 @@
           "displayName": "Min Value",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0224"
         },
         "maxValue": {
           "displayName": "Max Value",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0225"
         }
-      }
+      },
+      "displayNameKey": "GaugeClusterCapabilities_DisplayName_0223"
     },
     "labelsSettings": {
       "displayName": "Labels",
@@ -158,19 +185,22 @@
           "displayName": "Show Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0227"
         },
         "showValues": {
           "displayName": "Show Values",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0228"
         },
         "labelFontSize": {
           "displayName": "Label Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0229"
         },
         "labelFontColor": {
           "displayName": "Label Font Color",
@@ -180,7 +210,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0230"
         },
         "labelFontFamily": {
           "displayName": "Label Font Family",
@@ -188,34 +219,42 @@
             "enumeration": [
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0023"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0024"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0025"
               },
               {
                 "value": "Helvetica",
-                "displayName": "Helvetica"
+                "displayName": "Helvetica",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0026"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0027"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0028"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0029"
               }
             ]
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0231"
         },
         "labelFontWeight": {
           "displayName": "Label Font Weight",
@@ -223,38 +262,172 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0031"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0032"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0033"
               }
             ]
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0232"
+        },
+        "labelPaddingTop": {
+          "displayName": "Label Padding Top",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0233"
+        },
+        "labelPosition": {
+          "displayName": "Label Position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "belowArc",
+                "displayName": "Below Arc",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0002"
+              },
+              {
+                "value": "aboveArc",
+                "displayName": "Above Arc",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0003"
+              },
+              {
+                "value": "insideGauge",
+                "displayName": "Inside Gauge",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0004"
+              }
+            ]
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0001"
         },
         "showSubtitle": {
           "displayName": "Show Subtitle",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0234"
         },
         "subtitleField": {
-          "displayName": "Subtitle Field",
+          "displayName": "Subtitle Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0235"
+        },
+        "subtitleFontSize": {
+          "displayName": "Subtitle Font Size",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0236"
+        },
+        "subtitleFontColor": {
+          "displayName": "Subtitle Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0237"
+        },
+        "subtitleFontFamily": {
+          "displayName": "Subtitle Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0239"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0240"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0042"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0043"
+              },
+              {
+                "value": "Helvetica",
+                "displayName": "Helvetica",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0044"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0045"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0046"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0047"
+              }
+            ]
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0238"
+        },
+        "subtitleFontWeight": {
+          "displayName": "Subtitle Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0049"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0050"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0051"
+              }
+            ]
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0048"
+        },
+        "subtitlePaddingTop": {
+          "displayName": "Subtitle Padding Top",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0052"
         },
         "showSparklines": {
           "displayName": "Show Mini Sparklines",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0053"
         }
-      }
+      },
+      "displayNameKey": "GaugeClusterCapabilities_DisplayName_0226"
     },
     "zoneSettings": {
       "displayName": "Color Zones",
@@ -267,7 +440,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0055"
         },
         "midColor": {
           "displayName": "Mid Color",
@@ -277,7 +451,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0056"
         },
         "highColor": {
           "displayName": "High Color",
@@ -287,21 +462,25 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0057"
         },
         "lowThreshold": {
           "displayName": "Low Threshold (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0058"
         },
         "highThreshold": {
           "displayName": "High Threshold (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0059"
         }
-      }
+      },
+      "displayNameKey": "GaugeClusterCapabilities_DisplayName_0054"
     },
     "targetSettings": {
       "displayName": "Target",
@@ -310,7 +489,8 @@
           "displayName": "Show Target",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0061"
         },
         "color": {
           "displayName": "Target Color",
@@ -320,15 +500,208 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0062"
         },
         "lineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0063"
         }
-      }
+      },
+      "displayNameKey": "GaugeClusterCapabilities_DisplayName_0060"
+    },
+    "summarySettings": {
+      "displayName": "Summary",
+      "properties": {
+        "show": {
+          "displayName": "Show Summary",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0006"
+        },
+        "displayMode": {
+          "displayName": "Display Mode",
+          "type": {
+            "enumeration": [
+              {
+                "value": "selectedOrAverage",
+                "displayName": "Selected Gauge or Average",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0008"
+              },
+              {
+                "value": "average",
+                "displayName": "Average",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0009"
+              },
+              {
+                "value": "total",
+                "displayName": "Total",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0010"
+              },
+              {
+                "value": "count",
+                "displayName": "Count",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0011"
+              },
+              {
+                "value": "custom",
+                "displayName": "Custom Text",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0012"
+              }
+            ]
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0007"
+        },
+        "customText": {
+          "displayName": "Custom Text",
+          "type": {
+            "text": true
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0013"
+        },
+        "captionMode": {
+          "displayName": "Caption",
+          "type": {
+            "enumeration": [
+              {
+                "value": "auto",
+                "displayName": "Auto",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0015"
+              },
+              {
+                "value": "none",
+                "displayName": "None",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0016"
+              },
+              {
+                "value": "custom",
+                "displayName": "Custom",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0017"
+              }
+            ]
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0014"
+        },
+        "customCaption": {
+          "displayName": "Custom Caption",
+          "type": {
+            "text": true
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0018"
+        },
+        "fontSize": {
+          "displayName": "Summary Font Size",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0019"
+        },
+        "fontColor": {
+          "displayName": "Summary Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0020"
+        },
+        "fontFamily": {
+          "displayName": "Summary Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0022"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0023"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0024"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0025"
+              },
+              {
+                "value": "Helvetica",
+                "displayName": "Helvetica",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0026"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0027"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0028"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0029"
+              }
+            ]
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0021"
+        },
+        "fontWeight": {
+          "displayName": "Summary Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0031"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0032"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0033"
+              }
+            ]
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0030"
+        },
+        "captionFontSize": {
+          "displayName": "Caption Font Size",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0034"
+        },
+        "captionFontColor": {
+          "displayName": "Caption Font Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0035"
+        }
+      },
+      "displayNameKey": "GaugeClusterCapabilities_DisplayName_0005"
     },
     "animationSettings": {
       "displayName": "Animation",
@@ -337,15 +710,18 @@
           "displayName": "Enable Animations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0065"
         },
         "duration": {
           "displayName": "Duration (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0066"
         }
-      }
+      },
+      "displayNameKey": "GaugeClusterCapabilities_DisplayName_0064"
     },
     "dataLabelFormatting": {
       "displayName": "Data Labels",
@@ -354,13 +730,15 @@
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0068"
         },
         "dataLabelFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0069"
         },
         "dataLabelFontColor": {
           "displayName": "Font Color",
@@ -370,7 +748,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0070"
         },
         "dataLabelFontWeight": {
           "displayName": "Font Weight",
@@ -378,14 +757,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0072"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0073"
               }
             ]
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0071"
         },
         "dataLabelFontFamily": {
           "displayName": "Font",
@@ -393,54 +775,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0075"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0076"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0077"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0078"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0079"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0080"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0081"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0082"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0083"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0084"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0085"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0086"
               }
             ]
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0074"
         },
         "dataLabelPosition": {
           "displayName": "Position",
@@ -448,28 +843,35 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0088"
               },
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0089"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0090"
               },
               {
                 "value": "inside",
-                "displayName": "Inside"
+                "displayName": "Inside",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0091"
               },
               {
                 "value": "outside",
-                "displayName": "Outside"
+                "displayName": "Outside",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0092"
               }
             ]
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0087"
         }
-      }
+      },
+      "displayNameKey": "GaugeClusterCapabilities_DisplayName_0067"
     },
     "titleFormatting": {
       "displayName": "Chart Title",
@@ -478,19 +880,22 @@
           "displayName": "Show Title",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0094"
         },
         "titleText": {
           "displayName": "Title Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0095"
         },
         "titleFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0096"
         },
         "titleFontColor": {
           "displayName": "Font Color",
@@ -500,7 +905,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0097"
         },
         "titleAlignment": {
           "displayName": "Alignment",
@@ -508,18 +914,22 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0099"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0100"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0101"
               }
             ]
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0098"
         },
         "titleFontFamily": {
           "displayName": "Font",
@@ -527,66 +937,81 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0103"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0104"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0105"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0106"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0107"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0108"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0109"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0110"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0111"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0112"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0113"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0114"
               }
             ]
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0102"
         },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0115"
         },
         "subtitleFontSize": {
           "displayName": "Subtitle Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0116"
         },
         "subtitleFontColor": {
           "displayName": "Subtitle Color",
@@ -596,7 +1021,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0117"
         },
         "titleFontWeight": {
           "displayName": "Font Weight",
@@ -604,14 +1030,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0119"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0120"
               }
             ]
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0118"
         },
         "subtitleFontFamily": {
           "displayName": "Subtitle Font",
@@ -619,54 +1048,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0122"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0123"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0124"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0125"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0126"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0127"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0128"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0129"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0130"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0131"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0132"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0133"
               }
             ]
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0121"
         },
         "subtitleFontWeight": {
           "displayName": "Subtitle Font Weight",
@@ -674,16 +1116,20 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0135"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0136"
               }
             ]
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0134"
         }
-      }
+      },
+      "displayNameKey": "GaugeClusterCapabilities_DisplayName_0093"
     },
     "cardSettings": {
       "displayName": "Card Style",
@@ -696,19 +1142,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0138"
         },
         "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0139"
         },
         "borderRadius": {
           "displayName": "Border Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0140"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0141"
         },
         "cardStyleMode": {
           "displayName": "Card Style",
@@ -716,30 +1172,47 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0036"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0037"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0038"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0039"
+              },
+              {
+                "value": "outlined",
+                "displayName": "Border Only",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0040"
+              },
+              {
+                "value": "floating",
+                "displayName": "Floating Shadow",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0041"
               }
             ]
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0142"
         },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "(Deprecated) Enable Glass"
+          "displayName": "(Deprecated) Enable Glass",
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0147"
         }
-      }
+      },
+      "displayNameKey": "GaugeClusterCapabilities_DisplayName_0137"
     },
     "numberFormatting": {
       "displayName": "Number Format",
@@ -750,46 +1223,56 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0150"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0151"
               },
               {
                 "value": "thousands",
-                "displayName": "Thousands (K)"
+                "displayName": "Thousands (K)",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0152"
               },
               {
                 "value": "millions",
-                "displayName": "Millions (M)"
+                "displayName": "Millions (M)",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0153"
               },
               {
                 "value": "billions",
-                "displayName": "Billions (B)"
+                "displayName": "Billions (B)",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0154"
               }
             ]
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0149"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0155"
         },
         "valuePrefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0156"
         },
         "valueSuffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0157"
         }
-      }
+      },
+      "displayNameKey": "GaugeClusterCapabilities_DisplayName_0148"
     },
     "conditionalFormatting": {
       "displayName": "Conditional Formatting",
@@ -798,7 +1281,8 @@
           "displayName": "Enable Conditional Formatting",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0159"
         },
         "conditionalDirection": {
           "displayName": "Direction",
@@ -806,26 +1290,31 @@
             "enumeration": [
               {
                 "value": "ascending",
-                "displayName": "Ascending (Low = Bad)"
+                "displayName": "Ascending (Low = Bad)",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0161"
               },
               {
                 "value": "descending",
-                "displayName": "Descending (Low = Good)"
+                "displayName": "Descending (Low = Good)",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0162"
               }
             ]
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0160"
         },
         "threshold1": {
           "displayName": "Threshold 1",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0163"
         },
         "threshold2": {
           "displayName": "Threshold 2",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0164"
         },
         "conditionalColor1": {
           "displayName": "Color 1 (Bad)",
@@ -835,7 +1324,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0165"
         },
         "conditionalColor2": {
           "displayName": "Color 2 (Warning)",
@@ -845,7 +1335,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0166"
         },
         "conditionalColor3": {
           "displayName": "Color 3 (Good)",
@@ -855,9 +1346,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0167"
         }
-      }
+      },
+      "displayNameKey": "GaugeClusterCapabilities_DisplayName_0158"
     },
     "accessibilityFormatting": {
       "displayName": "Accessibility",
@@ -866,9 +1359,11 @@
           "displayName": "Enable Keyboard Navigation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0169"
         }
-      }
+      },
+      "displayNameKey": "GaugeClusterCapabilities_DisplayName_0168"
     },
     "legendFormatting": {
       "displayName": "Legend",
@@ -877,7 +1372,8 @@
           "displayName": "Show Legend",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0171"
         },
         "legendPosition": {
           "displayName": "Position",
@@ -885,28 +1381,34 @@
             "enumeration": [
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0173"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0174"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0175"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0176"
               }
             ]
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0172"
         },
         "legendFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0177"
         },
         "legendFontColor": {
           "displayName": "Font Color",
@@ -916,7 +1418,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0178"
         },
         "legendFontFamily": {
           "displayName": "Font",
@@ -924,54 +1427,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0180"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0181"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0182"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0183"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0184"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0185"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0186"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0187"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0188"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0189"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0190"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0191"
               }
             ]
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0179"
         },
         "legendFontWeight": {
           "displayName": "Font Weight",
@@ -979,22 +1495,27 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0193"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0194"
               }
             ]
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0192"
         },
         "legendAliases": {
           "displayName": "Rename Labels",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0195"
         }
-      }
+      },
+      "displayNameKey": "GaugeClusterCapabilities_DisplayName_0170"
     },
     "dateFilterFormatting": {
       "displayName": "Date Filter",
@@ -1003,27 +1524,32 @@
           "displayName": "Enable Date Filter",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0197"
         },
         "startDate": {
           "displayName": "Start Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0198"
         },
         "endAtCurrentDate": {
           "displayName": "End at Current Date",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0199"
         },
         "endDate": {
           "displayName": "End Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0200"
         }
-      }
+      },
+      "displayNameKey": "GaugeClusterCapabilities_DisplayName_0196"
     },
     "colorThemeFormatting": {
       "properties": {
@@ -1033,42 +1559,60 @@
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0203"
               },
               {
                 "value": "ocean",
-                "displayName": "Ocean"
+                "displayName": "Ocean",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0204"
               },
               {
                 "value": "sunset",
-                "displayName": "Sunset"
+                "displayName": "Sunset",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0205"
               },
               {
                 "value": "forest",
-                "displayName": "Forest"
+                "displayName": "Forest",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0206"
               },
               {
                 "value": "berry",
-                "displayName": "Berry"
+                "displayName": "Berry",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0207"
               },
               {
                 "value": "monochrome",
-                "displayName": "Monochrome"
+                "displayName": "Monochrome",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0208"
               },
               {
                 "value": "earth",
-                "displayName": "Earth"
+                "displayName": "Earth",
+                "displayNameKey": "GaugeClusterCapabilities_DisplayName_0209"
               }
             ]
-          }
+          },
+          "displayNameKey": "GaugeClusterCapabilities_DisplayName_0202"
         }
       },
-      "displayName": "Color Theme"
+      "displayName": "Color Theme",
+      "displayNameKey": "GaugeClusterCapabilities_DisplayName_0201"
     }
   },
   "supportsKeyboardFocus": true,
   "supportsHighlight": true,
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
   "supportsMultiVisualSelection": true,
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
   "privileges": [],
   "suppressDefaultTitle": true
 }

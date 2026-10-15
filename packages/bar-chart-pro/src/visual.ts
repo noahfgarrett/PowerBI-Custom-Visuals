@@ -7,8 +7,11 @@
 import powerbi from 'powerbi-visuals-api';
 import * as d3 from 'd3';
 import { FormattingSettingsService } from 'powerbi-visuals-utils-formattingmodel';
-import { BarChartProSettings } from './settings';
+import { BarChartProSettings, CategoryColorGroup } from './settings';
 import {
+  allowInteractions,
+  attachEmptySpaceContextMenu,
+  applyBasicHighContrastStyles,
   formatWithSettings,
   drawPath,
   DURATION,
@@ -49,9 +52,20 @@ import {
   getDateFilterIndices,
   isDateColumn,
   type DateFilterConfig,
-  createHoverDim,
   renderInlineLabels,
   type InlineLabelItem,
+  syncLegendFormattingVisibility,
+  syncTitleFormattingVisibility,
+  syncCardStyleVisibility,
+  syncDateFilterFormattingVisibility,
+  getHostHighContrastColors,
+  notifyRenderingStarted,
+  notifyRenderingFinished,
+  notifyRenderingFailed,
+  renderLandingPage,
+  renderNoDataState,
+  getVisualEmptyStateMode,
+  getLocalizedString,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -59,6 +73,7 @@ import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import IVisual = powerbi.extensibility.visual.IVisual;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import DataView = powerbi.DataView;
+import DataViewCategoryColumn = powerbi.DataViewCategoryColumn;
 import ISelectionId = powerbi.visuals.ISelectionId;
 import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 
@@ -70,6 +85,8 @@ type ChartMode = 'grouped' | 'stacked' | 'stacked100' | 'combo' | 'horizontal' |
 type DataLabelMode = 'none' | 'above' | 'inside';
 type LegendPosition = 'bottom' | 'top' | 'left' | 'right';
 type LineStyle = 'solid' | 'dashed';
+type BarColorBinding = 'series' | 'category';
+type SortControlMode = 'noSort' | 'highToLow' | 'lowToHigh' | 'percentHighToLow' | 'percentLowToHigh';
 
 interface BarSeries {
   name: string;
@@ -88,6 +105,8 @@ interface LineSeries {
 interface ChartData {
   categories: string[];
   categoryLabelsByKey: Record<string, string>;
+  categoryColorsByKey: Record<string, string>;
+  categoryTooltipItemsByKey: Record<string, VisualTooltipDataItem[]>;
   categorySelectionIds: ISelectionId[];
   barSeries: BarSeries[];
   lineSeries: LineSeries[];
@@ -113,12 +132,20 @@ interface Margin {
 
 // ── Constants ───────────────────────────────────────────────────────
 
-const MARGIN_DEFAULT: Margin = { top: 8, right: 12, bottom: 20, left: 44 };
-const MARGIN_SECONDARY_Y: Margin = { top: 8, right: 44, bottom: 20, left: 44 };
+const MARGIN_DEFAULT: Margin = { top: 20, right: 12, bottom: 20, left: 44 };
+const MARGIN_SECONDARY_Y: Margin = { top: 20, right: 44, bottom: 20, left: 44 };
+const SECONDARY_Y_AXIS_TITLE_OFFSET = 56;
+const SECONDARY_Y_AXIS_TITLE_MARGIN = 32;
+const SCROLLBAR_LABEL_GUTTER = 10;
+const SORT_CONTROL_RIGHT_INSET = 8;
+const SORT_CONTROL_SCROLLBAR_SAFE_INSET = 56;
+const SORT_CONTROL_RESERVED_SPACE = 56;
 const LEGEND_HEIGHT_MIN = 28;
 const MIN_BAR_WIDTH = 2;
 
 // ── Visual ──────────────────────────────────────────────────────────
+
+let barChartProVisualInstanceCounter = 0;
 
 export class BarChartProVisual implements IVisual {
   private host: IVisualHost;
@@ -128,6 +155,7 @@ export class BarChartProVisual implements IVisual {
   private formattingSettingsService: FormattingSettingsService;
   private cancelAnimations: Array<() => void> = [];
   private gradientIdCounter = 0;
+  private readonly svgIdPrefix = `bar-chart-pro-${++barChartProVisualInstanceCounter}`;
   /** Cached resolved per-series formats for the current render cycle */
   private cachedSeriesFormats: SeriesFormatting[] = [];
 
@@ -142,40 +170,56 @@ export class BarChartProVisual implements IVisual {
   private drillPath: string[] = [];
   /** Full extracted data, kept for drill-down without re-parsing */
   private currentData: ChartData | null = null;
+  /** User-selected on-chart sort mode for the current visual session */
+  private activeSortMode: SortControlMode | null = null;
+  /** Whether the on-chart sort menu is currently tucked away by the user */
+  private sortControlsCollapsed = true;
   /** Last known viewport for re-renders on drill navigation */
   private currentViewport: powerbi.IViewport = { width: 300, height: 300 };
+  private detachEmptySpaceContextMenu: (() => void) | null = null;
+  private emptyStateMode: 'unconfigured' | 'noData' = 'unconfigured';
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
     this.selectionManager = options.host.createSelectionManager();
     this.container = options.element;
     this.settings = new BarChartProSettings();
-    this.formattingSettingsService = new FormattingSettingsService();
+    this.formattingSettingsService = new FormattingSettingsService(options.host.createLocalizationManager());
     this.container.classList.add('bar-chart-container');
+    this.detachEmptySpaceContextMenu = attachEmptySpaceContextMenu(
+      this.container,
+      this.selectionManager,
+      () => this.host.createSelectionIdBuilder().createSelectionId(),
+      () => allowInteractions(this.host),
+    );
   }
 
   public update(options: VisualUpdateOptions): void {
-    // Cancel running animations before re-render
-    this.cancelAnimations.forEach((cancel) => cancel());
-    this.cancelAnimations = [];
+    notifyRenderingStarted(this.host, options);
+    try {
+      // Cancel running animations before re-render
+      this.cancelAnimations.forEach((cancel) => cancel());
+      this.cancelAnimations = [];
 
-    // Parse settings from dataView
-    const dataView = options.dataViews?.[0];
-    if (dataView) {
-      this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
-        BarChartProSettings,
-        dataView,
-      );
-    }
-
-    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
-    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
-    if (legacyCardObj) {
-      const legacyGlass = legacyCardObj['enableGlass'];
-      if (legacyGlass === false) {
-        this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+      // Parse settings from dataView
+      const dataView = options.dataViews?.[0];
+      this.emptyStateMode = getVisualEmptyStateMode(dataView);
+      if (dataView) {
+        this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
+          BarChartProSettings,
+          dataView,
+        );
       }
-    }
+
+      // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+      const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+      if (legacyCardObj) {
+        const legacyGlass = legacyCardObj['enableGlass'];
+        const modernCardStyle = legacyCardObj['cardStyleMode'];
+        if (modernCardStyle === undefined && legacyGlass === false) {
+          this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+        }
+      }
 
     // Extract data
     const rawData = this.extractData(dataView);
@@ -183,8 +227,9 @@ export class BarChartProVisual implements IVisual {
     this.currentData = data;
     this.currentViewport = options.viewport;
 
-    // Populate per-series formatting groups and cache resolved formats
+    // Populate per-series/category formatting groups and cache resolved formats
     this.populateSeriesFormattingGroups(dataView, data);
+    this.populateCategoryColorGroups(this.resolveDrillData(data));
     this.cachedSeriesFormats = [
       ...data.barSeries.map((s, i) => resolveSeriesFormatting(this.settings.seriesFormattingCard, i, s.color)),
       ...data.lineSeries.map((s, i) => resolveSeriesFormatting(this.settings.seriesFormattingCard, data.barSeries.length + i, s.color)),
@@ -194,35 +239,49 @@ export class BarChartProVisual implements IVisual {
     const rawMode = resolveDropdown(this.settings.chartMode.mode) ?? 'grouped';
     const isCombo = rawMode === 'combo' || (rawMode === 'grouped' && data.lineSeries.length > 0);
 
-    // Date filter: hide start/end when disabled
-    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
+    syncDateFilterFormattingVisibility(this.settings.dateFilterFormattingCard);
     this.settings.referenceLineFormattingCard.referenceLineAxis.visible = isCombo;
     this.settings.trendLineFormattingCard.trendLineAxis.visible = isCombo;
 
-    // Hide secondary axis card when not in combo mode
-    this.settings.secondaryAxisSettings.showSecondaryYAxis.visible = isCombo;
+    const hasLineSeries = data.lineSeries.length > 0;
+    const lineControlsVisible = isCombo && hasLineSeries;
+    this.settings.lineSettings.visible = lineControlsVisible;
+    this.settings.secondaryAxisSettings.visible = lineControlsVisible;
+    this.settings.secondaryAxisSettings.showSecondaryYAxis.visible = lineControlsVisible;
+    this.settings.lineNumberFormattingCard.visible = lineControlsVisible;
 
     // Hide shared card's showDataLabels toggle — bar-chart-pro uses barSettings.showDataLabels dropdown instead
     this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
     // Hide shared card's dataLabelPosition — bar-chart-pro uses barSettings.showDataLabels (none/above/inside) for positioning
     this.settings.dataLabelFormattingCard.dataLabelPosition.visible = false;
+    this.settings.dataLabelFormattingCard.visible = this.getDataLabelMode() !== 'none';
+
+    syncTitleFormattingVisibility(this.settings.titleFormattingCard);
+    syncLegendFormattingVisibility(this.settings.legendFormattingCard);
 
     // ── Conditional visibility for mode-specific and toggle-dependent settings ──
     const s = this.settings;
 
     // Line Settings — hide when not in combo mode
-    s.lineSettings.showDots.visible = isCombo;
-    s.lineSettings.showLineDataLabels.visible = isCombo;
-    s.lineSettings.lineDataLabelFontSize.visible = isCombo && s.lineSettings.showLineDataLabels.value;
-    s.lineSettings.lineDataLabelFontColor.visible = isCombo && s.lineSettings.showLineDataLabels.value;
-    s.lineSettings.lineGradientFill.visible = isCombo;
-    s.lineSettings.lineGradientOpacity.visible = isCombo && s.lineSettings.lineGradientFill.value;
-    s.lineSettings.lineDotRadius.visible = isCombo && s.lineSettings.showDots.value;
+    s.lineSettings.showDots.visible = lineControlsVisible;
+    s.lineSettings.showLineDataLabels.visible = lineControlsVisible;
+    s.lineSettings.lineDataLabelFontSize.visible = lineControlsVisible && s.lineSettings.showLineDataLabels.value;
+    s.lineSettings.lineDataLabelFontColor.visible = lineControlsVisible && s.lineSettings.showLineDataLabels.value;
+    s.lineSettings.lineDataLabelFontFamily.visible = lineControlsVisible && s.lineSettings.showLineDataLabels.value;
+    s.lineSettings.lineDataLabelFontWeight.visible = lineControlsVisible && s.lineSettings.showLineDataLabels.value;
+    s.lineSettings.lineDataLabelOffset.visible = lineControlsVisible && s.lineSettings.showLineDataLabels.value;
+    s.lineSettings.lineGradientFill.visible = lineControlsVisible;
+    s.lineSettings.lineGradientOpacity.visible = lineControlsVisible && s.lineSettings.lineGradientFill.value;
+    s.lineSettings.lineDotRadius.visible = lineControlsVisible && s.lineSettings.showDots.value;
 
     // Secondary Axis — hide title when showSecondaryYAxis is off or not combo
     s.secondaryAxisSettings.secondaryYAxisTitle.visible = s.secondaryAxisSettings.showSecondaryYAxis.value && isCombo;
+
+    const categoryColorMode = this.getBarColorBinding() === 'category';
+    const canUseCategoryColors = this.canUseCategoryColors(this.resolveDrillData(data));
+    s.dataRolesSettings.visible = canUseCategoryColors;
+    s.categoryColorsCard.visible = categoryColorMode && canUseCategoryColors;
+    s.seriesFormattingCard.visible = !(categoryColorMode && canUseCategoryColors && data.lineSeries.length === 0);
 
     // Pattern Fill (merged into Bar Settings) — hide sub-settings when disabled
     s.barSettings.pattern.visible = s.barSettings.patternEnabled.value;
@@ -237,6 +296,20 @@ export class BarChartProVisual implements IVisual {
     s.varianceSettings.positiveColor.visible = varianceOn;
     s.varianceSettings.negativeColor.visible = varianceOn;
     s.varianceSettings.varianceFontSize.visible = varianceOn;
+
+    const sortControlsOn = s.sortControlsSettings.enabled.value;
+    const percentSortControlsOn = sortControlsOn && s.sortControlsSettings.showPercentOptions.value;
+    const percentComparisonOn = s.percentComparisonSettings.show.value;
+    const hasRatioSeries = data.barSeries.length >= 2;
+    s.percentComparisonSettings.show.visible = hasRatioSeries;
+    const percentRatioConfigOn = hasRatioSeries && (percentComparisonOn || percentSortControlsOn);
+    s.percentComparisonSettings.numeratorSeriesIndex.visible = percentRatioConfigOn;
+    s.percentComparisonSettings.denominatorSeriesIndex.visible = percentRatioConfigOn;
+    s.percentComparisonSettings.decimalPlaces.visible = percentComparisonOn;
+    s.percentComparisonSettings.fontSize.visible = percentComparisonOn;
+    s.percentComparisonSettings.fontColor.visible = percentComparisonOn;
+    s.percentComparisonSettings.fontWeight.visible = percentComparisonOn;
+    s.percentComparisonSettings.labelSpace.visible = percentComparisonOn;
 
     // Benchmark Band — hide sub-settings when show is off
     s.benchmarkBandSettings.lowerBound.visible = s.benchmarkBandSettings.show.value;
@@ -259,6 +332,7 @@ export class BarChartProVisual implements IVisual {
 
     // Waterfall — only show when mode is waterfall
     const isWaterfall = mode === 'waterfall';
+    s.waterfallSettings.visible = isWaterfall;
     s.waterfallSettings.positiveColor.visible = isWaterfall;
     s.waterfallSettings.negativeColor.visible = isWaterfall;
     s.waterfallSettings.totalColor.visible = isWaterfall;
@@ -271,10 +345,20 @@ export class BarChartProVisual implements IVisual {
     s.topNSettings.othersColor.visible = s.topNSettings.enabled.value;
     s.topNSettings.sortBy.visible = s.topNSettings.enabled.value;
 
+    // On-chart sort controls
+    s.sortControlsSettings.defaultSort.visible = sortControlsOn;
+    s.sortControlsSettings.showPercentOptions.visible = sortControlsOn && hasRatioSeries;
+    s.sortControlsSettings.position.visible = sortControlsOn;
+    s.sortControlsSettings.fontSize.visible = sortControlsOn;
+    s.sortControlsSettings.activeColor.visible = sortControlsOn;
+    s.sortControlsSettings.inactiveColor.visible = sortControlsOn;
+    s.sortControlsSettings.backgroundColor.visible = sortControlsOn;
+
     // Drill-Down — hide sub-settings when disabled
+    s.drillDownSettings.visible = data.hasSubCategory;
     s.drillDownSettings.showBreadcrumb.visible = s.drillDownSettings.enabled.value;
-    s.drillDownSettings.breadcrumbFontSize.visible = s.drillDownSettings.enabled.value;
-    s.drillDownSettings.breadcrumbColor.visible = s.drillDownSettings.enabled.value;
+    s.drillDownSettings.breadcrumbFontSize.visible = s.drillDownSettings.enabled.value && s.drillDownSettings.showBreadcrumb.value;
+    s.drillDownSettings.breadcrumbColor.visible = s.drillDownSettings.enabled.value && s.drillDownSettings.showBreadcrumb.value;
 
     // Animation — hide sub-settings when disabled
     s.animationSettings.duration.visible = s.animationSettings.enabled.value;
@@ -282,22 +366,39 @@ export class BarChartProVisual implements IVisual {
 
     // Small Multiples — hide sub-settings when disabled
     const smEnabled = s.smallMultiplesSettings.enabled.value;
+    s.smallMultiplesSettings.visible = data.hasSubCategory;
     s.smallMultiplesSettings.columns.visible = smEnabled;
     s.smallMultiplesSettings.syncYAxis.visible = smEnabled;
     s.smallMultiplesSettings.cellTitleFontSize.visible = smEnabled;
     s.smallMultiplesSettings.cellTitleFontColor.visible = smEnabled;
+    const smallMultiplesActive = smEnabled && data.hasSubCategory && data.subCategoryMap.size > 0;
+    const supportsTrend = mode === 'grouped' || mode === 'stacked' || mode === 'combo' || mode === 'diverging';
+    const supportsAnnotations = mode !== 'horizontal';
+    const supportsBenchmark = mode !== 'waterfall';
+    const supportsVariance = mode !== 'stacked100' && mode !== 'waterfall';
+    const supportsRatioLabels = mode !== 'diverging' && mode !== 'waterfall';
+    s.referenceLineFormattingCard.visible = !smallMultiplesActive;
+    s.trendLineFormattingCard.visible = !smallMultiplesActive && supportsTrend;
+    s.annotationFormattingCard.visible = !smallMultiplesActive && supportsAnnotations;
+    s.benchmarkBandSettings.visible = !smallMultiplesActive && supportsBenchmark;
+    s.varianceSettings.visible = !smallMultiplesActive && supportsVariance;
+    s.percentComparisonSettings.visible = !smallMultiplesActive && supportsRatioLabels;
+    s.paretoSettings.visible = !smallMultiplesActive && (mode === 'grouped' || mode === 'stacked');
+    s.conditionalFormattingCard.visible = !smallMultiplesActive;
 
-    // Card Style — hide sub-settings when mode is 'none'
+    // Card Style
+    syncCardStyleVisibility(s.cardSettings);
     const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
-    s.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
-    s.cardSettings.backgroundColor.visible = cardMode !== 'none';
+    s.cardSettings.borderRadius.visible = cardMode !== 'none';
 
     // Target line sub-settings
     const showTarget = s.targetLine.show.value;
-    s.targetLine.label.visible = showTarget;
-    s.targetLine.style.visible = showTarget;
-    s.targetLine.color.visible = showTarget;
-    s.targetLine.lineWidth.visible = showTarget;
+    const hasTarget = data.targetValue !== null;
+    s.targetLine.visible = hasTarget && !smallMultiplesActive;
+    s.targetLine.label.visible = hasTarget && !smallMultiplesActive && showTarget;
+    s.targetLine.style.visible = hasTarget && !smallMultiplesActive && showTarget;
+    s.targetLine.color.visible = hasTarget && !smallMultiplesActive && showTarget;
+    s.targetLine.lineWidth.visible = hasTarget && !smallMultiplesActive && showTarget;
 
     // Reference line sub-settings
     const showRef = s.referenceLineFormattingCard.showReferenceLine.value;
@@ -343,10 +444,18 @@ export class BarChartProVisual implements IVisual {
     s.annotationFormattingCard.annotation3Position.visible = showAnnot;
     s.annotationFormattingCard.annotationFontSize.visible = showAnnot;
     s.annotationFormattingCard.annotationFontColor.visible = showAnnot;
+    s.annotationFormattingCard.annotationFontFamily.visible = showAnnot;
+    s.annotationFormattingCard.annotationFontWeight.visible = showAnnot;
     s.annotationFormattingCard.annotationConnectorColor.visible = showAnnot;
+    s.annotationFormattingCard.annotationOffset.visible = showAnnot;
+    s.annotationFormattingCard.annotationPadding.visible = showAnnot;
+    s.annotationFormattingCard.annotationBackgroundColor.visible = showAnnot;
+    s.annotationFormattingCard.annotationBackgroundOpacity.visible = showAnnot;
+    s.annotationFormattingCard.annotationCornerRadius.visible = showAnnot;
 
     // Legend sub-settings
     const showLegend = s.legendFormattingCard.showLegend.value;
+    s.legendFormattingCard.visible = data.barSeries.length > 1 || data.lineSeries.length > 0;
     s.legendFormattingCard.legendPosition.visible = showLegend;
     s.legendFormattingCard.legendFontSize.visible = showLegend;
     s.legendFormattingCard.legendFontColor.visible = showLegend;
@@ -358,33 +467,47 @@ export class BarChartProVisual implements IVisual {
 
     // Crosshair — hide sub-settings when crosshair is off
     const showCH = s.crosshairFormattingCard.showCrosshair.value;
+    s.crosshairFormattingCard.visible = !smallMultiplesActive && mode !== 'horizontal' && mode !== 'waterfall';
     s.crosshairFormattingCard.crosshairLineColor.visible = showCH;
     s.crosshairFormattingCard.crosshairLineWidth.visible = showCH;
     s.crosshairFormattingCard.crosshairLineStyle.visible = showCH;
     s.crosshairFormattingCard.crosshairOpacity.visible = showCH;
     s.crosshairFormattingCard.showCrosshairValues.visible = showCH;
 
-    // Reset drill if data changed structurally
-    if (data.isEmpty || !data.hasSubCategory) {
-      this.drillPath = [];
+      // Reset drill if data changed structurally
+      if (data.isEmpty || !data.hasSubCategory) {
+        this.drillPath = [];
+      }
+
+      // Resolve drill path to get the effective data
+      const effectiveData = this.applyInteractiveSort(this.focusDataToHighlights(this.resolveDrillData(data)));
+
+      // Render
+      if (effectiveData.isEmpty) {
+        this.renderEmpty();
+      } else {
+        this.render(effectiveData, options.viewport);
+      }
+
+      // Apply glass effect AFTER render — render clears the container,
+      // which would destroy the glass backdrop div if applied before.
+      this.applyCardStyling();
+
+      // Apply selection and cross-highlight dimming
+      this.applySelectionHighlight();
+      const highContrastColors = getHostHighContrastColors(this.host);
+      if (highContrastColors.enabled) {
+        applyBasicHighContrastStyles(this.container, highContrastColors, {
+          textSelectors: ['.bar-chart-empty', '.bar-chart-label', '.bar-chart-axis text', '.bar-chart-target-label', '.bar-chart-line-label', '.bar-chart-copy-button', '.bar-chart-breadcrumb'],
+          fillSelectors: ['.bar-chart-bar', '.bar-chart-line-dot', '.bar-chart-target', '.bar-chart-benchmark-band', '.bar-chart-pareto-line'],
+          strokeSelectors: ['.bar-chart-axis line', '.bar-chart-grid line', '.bar-chart-line', '.bar-chart-target', '.bar-chart-benchmark-band', '.bar-chart-pareto-line'],
+        });
+      }
+      notifyRenderingFinished(this.host, options);
+    } catch (error) {
+      notifyRenderingFailed(this.host, options, error instanceof Error ? error.message : String(error));
+      throw error;
     }
-
-    // Resolve drill path to get the effective data
-    const effectiveData = this.resolveDrillData(data);
-
-    // Render
-    if (effectiveData.isEmpty) {
-      this.renderEmpty();
-    } else {
-      this.render(effectiveData, options.viewport);
-    }
-
-    // Apply glass effect AFTER render — render clears the container,
-    // which would destroy the glass backdrop div if applied before.
-    this.applyCardStyling();
-
-    // Apply selection and cross-highlight dimming
-    this.applySelectionHighlight();
   }
 
   // ── Per-Series Formatting ─────────────────────────────────────────
@@ -408,6 +531,84 @@ export class BarChartProVisual implements IVisual {
     );
   }
 
+  private populateCategoryColorGroups(data: ChartData): void {
+    this.settings.categoryColorsCard.groups = data.categories.map((key, index) => {
+      const group = new CategoryColorGroup({
+        name: `category_${index}`,
+        displayName: data.categoryLabelsByKey[key] ?? `Category ${index + 1}`,
+      });
+
+      group.categoryColor.value = {
+        value: data.categoryColorsByKey[key] ?? getHostChartColor(this.host.colorPalette, index, resolveColorTheme(this.settings.colorThemeFormattingCard)),
+      };
+
+      const selectionId = data.categorySelectionIds[index];
+      const selector = selectionId?.getSelector?.();
+      group.categoryColor.selector = selector;
+      group.categoryColor.altConstantSelector = selector;
+      if (powerbi.VisualEnumerationInstanceKinds?.ConstantOrRule !== undefined) {
+        group.categoryColor.instanceKind = powerbi.VisualEnumerationInstanceKinds.ConstantOrRule;
+      }
+
+      return group;
+    });
+  }
+
+  private getBarColorBinding(): BarColorBinding {
+    const value = this.settings.dataRolesSettings.colorBy.value?.value;
+    return value === 'category' ? 'category' : 'series';
+  }
+
+  private canUseCategoryColors(data: ChartData): boolean {
+    return data.barSeries.length === 1 && data.categories.length > 0;
+  }
+
+  private readCategoryColor(objects: powerbi.DataViewObjects | undefined): string | undefined {
+    const categoryObjects = objects?.['categoryColors'] as Record<string, unknown> | undefined;
+    const colorObj = categoryObjects?.['categoryColor'] as { solid?: { color?: string } } | undefined;
+    return colorObj?.solid?.color;
+  }
+
+  private buildCategoryTooltipItems(
+    tooltipColumns: DataViewCategoryColumn[],
+    rowIndices: number[],
+  ): VisualTooltipDataItem[] {
+    const items: VisualTooltipDataItem[] = [];
+    for (const column of tooltipColumns) {
+      const values = new Set<string>();
+      for (const rowIndex of rowIndices) {
+        const raw = column.values[rowIndex];
+        if (raw !== null && raw !== undefined && String(raw).trim() !== '') {
+          values.add(String(raw));
+        }
+      }
+      if (values.size > 0) {
+        items.push({
+          displayName: column.source.displayName || 'Tooltip',
+          value: Array.from(values).join(', '),
+        });
+      }
+    }
+    return items;
+  }
+
+  private mergeCategoryTooltipItems(groups: VisualTooltipDataItem[][]): VisualTooltipDataItem[] {
+    const valuesByName = new Map<string, Set<string>>();
+    for (const group of groups) {
+      for (const item of group) {
+        if (!valuesByName.has(item.displayName)) {
+          valuesByName.set(item.displayName, new Set<string>());
+        }
+        valuesByName.get(item.displayName)?.add(item.value);
+      }
+    }
+
+    return Array.from(valuesByName.entries()).map(([displayName, values]) => ({
+      displayName,
+      value: Array.from(values).join(', '),
+    }));
+  }
+
   // ── Data Extraction ─────────────────────────────────────────────
 
   private extractData(dataView: DataView | undefined): ChartData {
@@ -415,6 +616,8 @@ export class BarChartProVisual implements IVisual {
     const empty: ChartData = {
       categories: [],
       categoryLabelsByKey: {},
+      categoryColorsByKey: {},
+      categoryTooltipItemsByKey: {},
       categorySelectionIds: [],
       barSeries: [],
       lineSeries: [],
@@ -428,10 +631,10 @@ export class BarChartProVisual implements IVisual {
     if (!dataView?.categorical) return empty;
 
     const categorical = dataView.categorical;
-    const categoryColumn = categorical.categories?.[0];
-    const subCategoryColumn = categorical.categories && categorical.categories.length > 1
-      ? categorical.categories[1]
-      : null;
+    const categoryColumns = categorical.categories ?? [];
+    const categoryColumn = categoryColumns.find((column) => column.source.roles?.['category']) ?? categoryColumns[0];
+    const subCategoryColumn = categoryColumns.find((column) => column.source.roles?.['subCategory']) ?? null;
+    const hoverTooltipColumns = categoryColumns.filter((column) => column.source.roles?.['hoverTooltip']);
     const valuesColumns = categorical.values;
 
     if (!categoryColumn || !valuesColumns || valuesColumns.length === 0) return empty;
@@ -452,8 +655,13 @@ export class BarChartProVisual implements IVisual {
     );
     const categories = categoryLabels.map((label, idx) => `${idx}::${label}`);
     const categoryLabelsByKey: Record<string, string> = {};
+    const categoryColorsByKey: Record<string, string> = {};
+    const categoryTooltipItemsByKey: Record<string, VisualTooltipDataItem[]> = {};
     categories.forEach((key, idx) => {
       categoryLabelsByKey[key] = categoryLabels[idx];
+      categoryColorsByKey[key] = this.readCategoryColor(categoryColumn.objects?.[idx])
+        ?? getHostChartColor(this.host.colorPalette, idx, themeName);
+      categoryTooltipItemsByKey[key] = this.buildCategoryTooltipItems(hoverTooltipColumns, [idx]);
     });
 
     const categorySelectionIds = categories.map((_, idx) =>
@@ -535,7 +743,9 @@ export class BarChartProVisual implements IVisual {
         const subLabels: string[] = [];
         const subKeys: string[] = [];
         const subSelectionIds: ISelectionId[] = [];
-        const subLabelsByKey: Record<string, string> = {};
+          const subLabelsByKey: Record<string, string> = {};
+          const subColorsByKey: Record<string, string> = {};
+          const subTooltipItemsByKey: Record<string, VisualTooltipDataItem[]> = {};
 
         for (let si = 0; si < rowIndices.length; si++) {
           const ri = rowIndices[si];
@@ -545,6 +755,9 @@ export class BarChartProVisual implements IVisual {
           subLabels.push(subLabel);
           subKeys.push(subKey);
           subLabelsByKey[subKey] = subLabel;
+          subColorsByKey[subKey] = categoryColorsByKey[categories[ri]]
+            ?? getHostChartColor(this.host.colorPalette, si, themeName);
+          subTooltipItemsByKey[subKey] = this.buildCategoryTooltipItems(hoverTooltipColumns, [ri]);
           subSelectionIds.push(
             this.host.createSelectionIdBuilder()
               .withCategory(categoryColumn, ri)
@@ -581,6 +794,8 @@ export class BarChartProVisual implements IVisual {
         subCategoryMap.set(catLabel, {
           categories: subKeys,
           categoryLabelsByKey: subLabelsByKey,
+          categoryColorsByKey: subColorsByKey,
+          categoryTooltipItemsByKey: subTooltipItemsByKey,
           categorySelectionIds: subSelectionIds,
           barSeries: subBarSeries,
           lineSeries: subLineSeries,
@@ -597,6 +812,8 @@ export class BarChartProVisual implements IVisual {
       const uniqueCatLabels: string[] = [];
       const uniqueCatKeys: string[] = [];
       const uniqueCatLabelsByKey: Record<string, string> = {};
+      const uniqueCatColorsByKey: Record<string, string> = {};
+      const uniqueCatTooltipItemsByKey: Record<string, VisualTooltipDataItem[]> = {};
       const uniqueCatSelectionIds: ISelectionId[] = [];
       const seenCats = new Set<string>();
 
@@ -608,6 +825,9 @@ export class BarChartProVisual implements IVisual {
           uniqueCatLabels.push(catLabel);
           uniqueCatKeys.push(key);
           uniqueCatLabelsByKey[key] = catLabel;
+          uniqueCatColorsByKey[key] = categoryColorsByKey[categories[i]]
+            ?? getHostChartColor(this.host.colorPalette, uniqueCatLabels.length - 1, themeName);
+          uniqueCatTooltipItemsByKey[key] = this.buildCategoryTooltipItems(hoverTooltipColumns, catGroups.get(catLabel) ?? [i]);
           uniqueCatSelectionIds.push(
             this.host.createSelectionIdBuilder()
               .withCategory(categoryColumn, i)
@@ -671,6 +891,8 @@ export class BarChartProVisual implements IVisual {
       return {
         categories: uniqueCatKeys,
         categoryLabelsByKey: uniqueCatLabelsByKey,
+        categoryColorsByKey: uniqueCatColorsByKey,
+        categoryTooltipItemsByKey: uniqueCatTooltipItemsByKey,
         categorySelectionIds: uniqueCatSelectionIds,
         barSeries: aggregatedBarSeries,
         lineSeries: aggregatedLineSeries,
@@ -688,6 +910,8 @@ export class BarChartProVisual implements IVisual {
     return {
       categories,
       categoryLabelsByKey,
+      categoryColorsByKey,
+      categoryTooltipItemsByKey,
       categorySelectionIds,
       barSeries,
       lineSeries,
@@ -749,10 +973,15 @@ export class BarChartProVisual implements IVisual {
 
     // Build new categoryLabelsByKey
     const newCategoryLabelsByKey: Record<string, string> = {};
+    const newCategoryTooltipItemsByKey: Record<string, VisualTooltipDataItem[]> = {};
     for (const key of newCategories) {
       newCategoryLabelsByKey[key] = data.categoryLabelsByKey[key] ?? key;
+      newCategoryTooltipItemsByKey[key] = data.categoryTooltipItemsByKey[key] ?? [];
     }
     newCategoryLabelsByKey[othersKey] = othersLabel;
+    newCategoryTooltipItemsByKey[othersKey] = this.mergeCategoryTooltipItems(
+      remainingIndices.map((i) => data.categoryTooltipItemsByKey[data.categories[i]] ?? []),
+    );
 
     // Build new categorySelectionIds — use the first remaining category's ID as a
     // placeholder for "Others"; PBI requires an ISelectionId. We use the first
@@ -813,6 +1042,13 @@ export class BarChartProVisual implements IVisual {
     return {
       categories: newCategories,
       categoryLabelsByKey: newCategoryLabelsByKey,
+      categoryColorsByKey: newCategories.reduce<Record<string, string>>((acc, key, index) => {
+        acc[key] = key === othersKey
+          ? othersColor
+          : (data.categoryColorsByKey[key] ?? getHostChartColor(this.host.colorPalette, index, resolveColorTheme(this.settings.colorThemeFormattingCard)));
+        return acc;
+      }, {}),
+      categoryTooltipItemsByKey: newCategoryTooltipItemsByKey,
       categorySelectionIds: newSelectionIds,
       barSeries: newBarSeries,
       lineSeries: newLineSeries,
@@ -823,6 +1059,171 @@ export class BarChartProVisual implements IVisual {
       subCategoryMap: data.subCategoryMap,
       hasHighlights: topNHasHighlights,
     };
+  }
+
+  // ── Interactive Sort Controls ────────────────────────────────────
+
+  private applyInteractiveSort(data: ChartData): ChartData {
+    if (!this.settings.sortControlsSettings.enabled.value || data.isEmpty || data.categories.length <= 1) {
+      return data;
+    }
+
+    const mode = this.getActiveSortMode();
+    if (mode === 'noSort') {
+      return data;
+    }
+
+    const percentValues = this.getPercentComparisonValues(data);
+    const indices = data.categories.map((_, index) => index);
+    indices.sort((a, b) => this.compareSortIndices(data, percentValues, a, b, mode));
+
+    const pick = <T>(values: T[]): T[] => indices.map((index) => values[index]);
+    const categories = pick(data.categories);
+    const categorySelectionIds = pick(data.categorySelectionIds);
+    const categoryLabelsByKey: Record<string, string> = {};
+    const categoryColorsByKey: Record<string, string> = {};
+    const categoryTooltipItemsByKey: Record<string, VisualTooltipDataItem[]> = {};
+    for (const key of categories) {
+      categoryLabelsByKey[key] = data.categoryLabelsByKey[key] ?? key;
+      categoryColorsByKey[key] = data.categoryColorsByKey[key]
+        ?? getHostChartColor(this.host.colorPalette, categories.indexOf(key), resolveColorTheme(this.settings.colorThemeFormattingCard));
+      categoryTooltipItemsByKey[key] = data.categoryTooltipItemsByKey[key] ?? [];
+    }
+
+    return {
+      ...data,
+      categories,
+      categoryLabelsByKey,
+      categoryColorsByKey,
+      categoryTooltipItemsByKey,
+      categorySelectionIds,
+      barSeries: data.barSeries.map((series) => ({
+        ...series,
+        values: pick(series.values),
+        highlights: pick(series.highlights),
+      })),
+      lineSeries: data.lineSeries.map((series) => ({
+        ...series,
+        values: pick(series.values),
+        highlights: pick(series.highlights),
+      })),
+    };
+  }
+
+  private compareSortIndices(
+    data: ChartData,
+    percentValues: Array<number | null>,
+    a: number,
+    b: number,
+    mode: SortControlMode,
+  ): number {
+    const usePercent = mode === 'percentHighToLow' || mode === 'percentLowToHigh';
+    const valueA = usePercent ? percentValues[a] : this.getCategorySortTotal(data, a);
+    const valueB = usePercent ? percentValues[b] : this.getCategorySortTotal(data, b);
+    const fallback = a - b;
+    if (valueA === null && valueB === null) return fallback;
+    if (valueA === null) return 1;
+    if (valueB === null) return -1;
+
+    const diff = valueA - valueB;
+    if (diff === 0) return fallback;
+    return mode === 'lowToHigh' || mode === 'percentLowToHigh' ? diff : -diff;
+  }
+
+  private getCategorySortTotal(data: ChartData, categoryIndex: number): number {
+    return data.barSeries.reduce((sum, series) => {
+      const value = series.values[categoryIndex];
+      return value === null ? sum : sum + Math.abs(value);
+    }, 0);
+  }
+
+  private getActiveSortMode(): SortControlMode {
+    const configured = resolveDropdown(this.settings.sortControlsSettings.defaultSort) as SortControlMode | undefined;
+    const mode = this.activeSortMode ?? configured ?? 'noSort';
+    return ['noSort', 'highToLow', 'lowToHigh', 'percentHighToLow', 'percentLowToHigh'].includes(mode) ? mode : 'noSort';
+  }
+
+  private getSortControlOptions(data: ChartData): Array<{ mode: SortControlMode; label: string }> {
+    const options: Array<{ mode: SortControlMode; label: string }> = [
+      { mode: 'noSort', label: 'No Sort' },
+      { mode: 'highToLow', label: 'High to Low' },
+      { mode: 'lowToHigh', label: 'Low to High' },
+    ];
+    if (this.settings.sortControlsSettings.showPercentOptions.value && data.barSeries.length >= 2) {
+      options.push(
+        { mode: 'percentHighToLow', label: '% High to Low' },
+        { mode: 'percentLowToHigh', label: '% Low to High' },
+      );
+    }
+    return options;
+  }
+
+  private renderSortControls(data: ChartData, avoidVerticalScrollbar = false): void {
+    this.container.querySelector('.bar-chart-sort-controls')?.remove();
+    this.container.querySelector('.bar-chart-sort-toggle')?.remove();
+    if (!this.settings.sortControlsSettings.enabled.value || data.isEmpty) return;
+
+    const settings = this.settings.sortControlsSettings;
+    const position = resolveDropdown(settings.position) ?? 'right';
+    const rightInset = avoidVerticalScrollbar ? SORT_CONTROL_SCROLLBAR_SAFE_INSET : SORT_CONTROL_RIGHT_INSET;
+    const isCollapsed = this.sortControlsCollapsed;
+
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = `bar-chart-sort-toggle bar-chart-sort-toggle-${position}`;
+    toggle.style.right = `${rightInset}px`;
+    toggle.style.background = settings.backgroundColor.value?.value || '#FFFFFF';
+    toggle.style.color = settings.activeColor.value?.value || '#0F172A';
+    toggle.setAttribute('aria-label', isCollapsed ? 'Show sort controls' : 'Hide sort controls');
+    toggle.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+    toggle.setAttribute('title', isCollapsed ? 'Show sort controls' : 'Hide sort controls');
+    const icon = document.createElement('span');
+    icon.className = 'bar-chart-sort-toggle-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    const label = document.createElement('span');
+    label.className = 'bar-chart-sort-toggle-label';
+    label.textContent = isCollapsed ? 'Sort' : 'Hide';
+    toggle.appendChild(icon);
+    toggle.appendChild(label);
+    toggle.addEventListener('click', (event) => {
+      event.stopPropagation();
+      this.sortControlsCollapsed = !this.sortControlsCollapsed;
+      this.renderSortControls(data, avoidVerticalScrollbar);
+    });
+    this.container.appendChild(toggle);
+
+    if (isCollapsed) return;
+
+    const controls = document.createElement('div');
+    controls.className = `bar-chart-sort-controls bar-chart-sort-controls-${position}`;
+    controls.style.right = `${rightInset}px`;
+    controls.dataset.scrollbarSafe = avoidVerticalScrollbar ? 'true' : 'false';
+    controls.style.background = settings.backgroundColor.value?.value || '#FFFFFF';
+    controls.style.fontSize = `${Math.max(8, settings.fontSize.value)}px`;
+    controls.setAttribute('role', 'group');
+    controls.setAttribute('aria-label', 'Chart sort options');
+
+    const activeMode = this.getActiveSortMode();
+    for (const option of this.getSortControlOptions(data)) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'bar-chart-sort-option';
+      button.dataset.sortMode = option.mode;
+      button.textContent = option.label;
+      button.setAttribute('aria-pressed', option.mode === activeMode ? 'true' : 'false');
+      button.style.color = option.mode === activeMode
+        ? (settings.activeColor.value?.value || '#0F172A')
+        : (settings.inactiveColor.value?.value || '#64748B');
+      button.addEventListener('click', (event) => {
+        event.stopPropagation();
+        if (option.mode === this.getActiveSortMode()) return;
+        this.activeSortMode = option.mode;
+        this.reRenderWithDrill();
+      });
+      controls.appendChild(button);
+    }
+
+    this.container.appendChild(controls);
   }
 
   // ── Drill-Down Resolution ───────────────────────────────────────
@@ -847,6 +1248,62 @@ export class BarChartProVisual implements IVisual {
     return current;
   }
 
+  private focusDataToHighlights(data: ChartData): ChartData {
+    if (!data.hasHighlights) return data;
+
+    const highlightedIndices = new Set<number>();
+    for (const series of data.barSeries) {
+      series.highlights.forEach((value, index) => {
+        if (value !== null && value !== undefined) highlightedIndices.add(index);
+      });
+    }
+    for (const series of data.lineSeries) {
+      series.highlights.forEach((value, index) => {
+        if (value !== null && value !== undefined) highlightedIndices.add(index);
+      });
+    }
+
+    if (highlightedIndices.size === 0) return data;
+
+    const indices = Array.from(highlightedIndices).sort((a, b) => a - b);
+    const pick = <T>(values: T[]): T[] => indices
+      .map((index) => values[index])
+      .filter((value): value is T => value !== undefined);
+
+    const categorySelectionIds = pick(data.categorySelectionIds);
+    const categories = pick(data.categories);
+    const categoryLabelsByKey: Record<string, string> = {};
+    const categoryColorsByKey: Record<string, string> = {};
+    const categoryTooltipItemsByKey: Record<string, VisualTooltipDataItem[]> = {};
+    categorySelectionIds.forEach((_selectionId, index) => {
+      const key = categories[index];
+      categoryLabelsByKey[key] = data.categoryLabelsByKey[key] ?? categories[index] ?? '';
+      categoryColorsByKey[key] = data.categoryColorsByKey[key]
+        ?? getHostChartColor(this.host.colorPalette, index, resolveColorTheme(this.settings.colorThemeFormattingCard));
+      categoryTooltipItemsByKey[key] = data.categoryTooltipItemsByKey[key] ?? [];
+    });
+
+    return {
+      ...data,
+      categories,
+      categoryLabelsByKey,
+      categoryColorsByKey,
+      categoryTooltipItemsByKey,
+      categorySelectionIds,
+      barSeries: data.barSeries.map((series) => ({
+        ...series,
+        values: pick(series.values),
+        highlights: pick(series.highlights),
+      })),
+      lineSeries: data.lineSeries.map((series) => ({
+        ...series,
+        values: pick(series.values),
+        highlights: pick(series.highlights),
+      })),
+      isEmpty: categories.length === 0,
+    };
+  }
+
   // ── Breadcrumb ────────────────────────────────────────────────────
 
   private renderBreadcrumb(): void {
@@ -868,7 +1325,7 @@ export class BarChartProVisual implements IVisual {
 
     // "All" root segment
     const allSpan = document.createElement('span');
-    allSpan.textContent = 'All';
+    allSpan.textContent = getLocalizedString(this.host, 'Common_BreadcrumbAll', 'All');
     allSpan.style.cursor = 'pointer';
     allSpan.style.textDecoration = 'underline';
     allSpan.style.color = color;
@@ -917,12 +1374,14 @@ export class BarChartProVisual implements IVisual {
     if (!this.currentData) return;
     this.cancelAnimations.forEach((cancel) => cancel());
     this.cancelAnimations = [];
-    const effectiveData = this.resolveDrillData(this.currentData);
+    const effectiveData = this.applyInteractiveSort(this.focusDataToHighlights(this.resolveDrillData(this.currentData)));
     if (effectiveData.isEmpty) {
       this.renderEmpty();
     } else {
       this.render(effectiveData, this.currentViewport);
     }
+    this.applyCardStyling();
+    this.applySelectionHighlight();
   }
 
   // ── Card Style ──────────────────────────────────────────────────
@@ -939,9 +1398,6 @@ export class BarChartProVisual implements IVisual {
         borderRadius: s.borderRadius.value,
       },
     );
-    if (mode === 'none') {
-      this.container.style.borderRadius = `${s.borderRadius.value}px`;
-    }
   }
 
   // ── Empty State ─────────────────────────────────────────────────
@@ -950,10 +1406,23 @@ export class BarChartProVisual implements IVisual {
     while (this.container.firstChild) {
       this.container.removeChild(this.container.firstChild);
     }
-    const emptyEl = document.createElement('div');
-    emptyEl.className = 'bar-chart-empty';
-    emptyEl.textContent = 'Add a Category and at least one Value to get started.';
-    this.container.appendChild(emptyEl);
+    if (this.emptyStateMode === 'noData') {
+      renderNoDataState(
+        this.container,
+        getLocalizedString(this.host, 'BarChartPro_NoDataState', 'No data for the current selection.'),
+        getHostHighContrastColors(this.host),
+      );
+      return;
+    }
+    renderLandingPage(this.container, {
+      title: getLocalizedString(this.host, 'BarChartPro_LandingTitle', 'Add data to build a bar chart'),
+      description: getLocalizedString(this.host, 'BarChartPro_LandingDescription', 'Bar Chart Pro needs a category and at least one value to render.'),
+      steps: [
+        getLocalizedString(this.host, 'BarChartPro_LandingStepCategory', 'Put a field on the category axis.'),
+        getLocalizedString(this.host, 'BarChartPro_LandingStepMeasure', 'Add a numeric measure.'),
+        getLocalizedString(this.host, 'BarChartPro_LandingStepOptional', 'Optional line, target, or drill-down fields unlock richer behavior.'),
+      ],
+    }, getHostHighContrastColors(this.host));
   }
 
   // ── Main Render ─────────────────────────────────────────────────
@@ -976,6 +1445,10 @@ export class BarChartProVisual implements IVisual {
     // Auto-switch to combo when line data is present and mode is grouped (default)
     const mode: ChartMode = rawMode === 'grouped' && data.lineSeries.length > 0 ? 'combo' : rawMode;
     const s = this.settings;
+    const contentPadding = Math.max(0, s.cardSettings.contentPadding.value);
+    this.container.style.padding = `${contentPadding}px`;
+    this.lastXScale = null;
+    this.lastChartHeight = 0;
 
     // Small multiples — render a grid of mini-charts instead of the normal chart
     if (s.smallMultiplesSettings.enabled.value && data.hasSubCategory && data.subCategoryMap.size > 0) {
@@ -1026,13 +1499,35 @@ export class BarChartProVisual implements IVisual {
     // Expand margins when axis titles are set to prevent clipping
     if (s.axisFormattingCard.xAxisTitle.value && s.axisFormattingCard.showXAxis.value) margin.bottom += 20;
     if (s.axisFormattingCard.yAxisTitle.value && s.axisFormattingCard.showYAxis.value) margin.left += 18;
-    if (hasSecondaryY && s.secondaryAxisSettings.secondaryYAxisTitle.value) margin.right += 18;
+    if (hasSecondaryY && s.secondaryAxisSettings.secondaryYAxisTitle.value) {
+      margin.right += SECONDARY_Y_AXIS_TITLE_MARGIN;
+    }
+    if (this.canRenderPercentComparison(data)) {
+      if (mode === 'horizontal') {
+        margin.right += this.getPercentComparisonLabelSpace();
+      } else {
+        margin.top += Math.max(0, s.percentComparisonSettings.fontSize.value + 4);
+      }
+    }
+    if (s.sortControlsSettings.enabled.value) {
+      margin.right += SORT_CONTROL_RESERVED_SPACE;
+    }
+    const estimatedScrollableChartWidth = viewport.width - contentPadding * 2 - margin.left - margin.right;
+    const estimatedRequiredChartWidth = data.categories.length * s.scrollFormattingCard.minCategoryWidth.value;
+    if (
+      mode !== 'horizontal' &&
+      s.scrollFormattingCard.enableScroll.value &&
+      s.axisFormattingCard.showXAxis.value &&
+      estimatedRequiredChartWidth > estimatedScrollableChartWidth
+    ) {
+      margin.bottom += SCROLLBAR_LABEL_GUTTER;
+    }
     if (legendPos === 'top') margin.top += legendReserve;
     if (legendPos === 'left') margin.left += 80;
     if (legendPos === 'right') margin.right += 80;
 
     // Compute chart dimensions
-    const padding = 12; // CSS padding on container
+    const padding = contentPadding; // CSS padding on container
     const baseSvgWidth = viewport.width - padding * 2;
     const baseSvgHeight = viewport.height - padding * 2 - (legendPos === 'bottom' || legendPos === 'top' ? legendReserve : 0);
     const baseChartWidth = Math.max(0, baseSvgWidth - margin.left - margin.right);
@@ -1045,20 +1540,27 @@ export class BarChartProVisual implements IVisual {
 
     // Scroll support
     const scrollDir = mode === 'horizontal' ? 'vertical' as const : 'horizontal' as const;
-    const scroll = createScrollableChart({
-      container: this.container,
-      viewportWidth: baseSvgWidth,
-      viewportHeight: baseSvgHeight,
-      categoryCount: data.categories.length,
-      scrollSettings: s.scrollFormattingCard,
-      availableChartWidth: baseChartWidth,
-      availableChartHeight: baseChartHeight,
-      direction: scrollDir,
-    });
-    const svgWidth = scroll.svgWidth;
-    const svgHeight = scroll.svgHeight;
-    const chartWidth = scroll.chartWidth;
-    const chartHeight = scroll.chartHeight;
+    const useFixedValueAxisScroll = scrollDir === 'horizontal' &&
+      s.scrollFormattingCard.enableScroll.value &&
+      data.categories.length > 0 &&
+      estimatedRequiredChartWidth > baseChartWidth;
+    const normalScroll = useFixedValueAxisScroll
+      ? null
+      : createScrollableChart({
+          container: this.container,
+          viewportWidth: baseSvgWidth,
+          viewportHeight: baseSvgHeight,
+          categoryCount: data.categories.length,
+          scrollSettings: s.scrollFormattingCard,
+          availableChartWidth: baseChartWidth,
+          availableChartHeight: baseChartHeight,
+          direction: scrollDir,
+        });
+    const svgWidth = useFixedValueAxisScroll ? baseSvgWidth : normalScroll!.svgWidth;
+    const svgHeight = useFixedValueAxisScroll ? baseSvgHeight : normalScroll!.svgHeight;
+    const chartWidth = useFixedValueAxisScroll ? estimatedRequiredChartWidth : normalScroll!.chartWidth;
+    const chartHeight = useFixedValueAxisScroll ? baseChartHeight : normalScroll!.chartHeight;
+    const isScrolling = useFixedValueAxisScroll ? true : normalScroll!.isScrolling;
 
     // Legend (top) — uses full data so hidden series still appear (dimmed)
     if (showLegend && legendPos === 'top') {
@@ -1075,19 +1577,29 @@ export class BarChartProVisual implements IVisual {
       : data;
 
     // SVG
-    const svg = d3.select(scroll.svgParent)
-      .append('svg')
-      .attr('class', 'bar-chart-svg')
-      .attr('width', svgWidth)
-      .attr('height', svgHeight);
+    let fixedValueAxisGroup: d3.Selection<SVGGElement, unknown, null, undefined> | null = null;
+    const fixedValueAxisSurface = useFixedValueAxisScroll
+      ? this.createFixedValueAxisScrollSurface(baseSvgWidth, baseSvgHeight, margin, baseChartWidth, chartWidth)
+      : null;
+    const svg = fixedValueAxisSurface
+      ? fixedValueAxisSurface.plotSvg
+      : d3.select(normalScroll!.svgParent)
+        .append('svg')
+        .attr('class', 'bar-chart-svg')
+        .attr('width', svgWidth)
+        .attr('height', svgHeight);
+    fixedValueAxisGroup = fixedValueAxisSurface?.fixedGroup ?? null;
+    const plotSvgNode = svg.node();
 
     // Gradient defs (created once per render, shared by all bars)
     this.gradientIdCounter = 0;
     const useGradient = s.barSettings.useGradient.value;
     const defs = useGradient ? svg.append('defs') : null;
 
-    const chartGroup = svg.append('g')
-      .attr('transform', `translate(${margin.left},${margin.top})`);
+    const chartGroup = fixedValueAxisSurface
+      ? fixedValueAxisSurface.plotGroup
+      : svg.append('g')
+        .attr('transform', `translate(${margin.left},${margin.top})`);
 
     // Dispatch to mode-specific renderer (uses filtered data)
     switch (mode) {
@@ -1115,53 +1627,65 @@ export class BarChartProVisual implements IVisual {
         break;
     }
 
+    if (fixedValueAxisGroup) {
+      this.moveValueAxesToFixedLayer(chartGroup, fixedValueAxisGroup, baseChartWidth, chartHeight);
+    }
+
     // Legend (bottom, left, or right) — uses full data
     if (showLegend && legendPos !== 'top') {
       this.renderLegend(data);
     }
 
   // Apply axis and grid formatting from settings
-  const svgEl = this.container.querySelector('svg');
-  if (svgEl) {
-    svgEl.querySelectorAll('[class*="bar-chart-axis"]').forEach((el) => {
-      applyAxisFormatting(el as SVGGElement, this.settings.axisFormattingCard);
-    });
-    svgEl.querySelectorAll('[class*="bar-chart-grid"]').forEach((el) => {
-      applyGridFormatting(el as SVGGElement, this.settings.axisFormattingCard);
-    });
+  const svgEls = Array.from(this.container.querySelectorAll<SVGSVGElement>('svg'));
+  if (svgEls.length > 0) {
+    svgEls.forEach((svgEl) => {
+      svgEl.querySelectorAll('[class*="bar-chart-axis"]').forEach((el) => {
+        applyAxisFormatting(el as SVGGElement, this.settings.axisFormattingCard);
+      });
+      svgEl.querySelectorAll('[class*="bar-chart-grid"]').forEach((el) => {
+        applyGridFormatting(el as SVGGElement, this.settings.axisFormattingCard);
+      });
 
-    // Pattern fill defs
-    this.applyPatternFillDefs(d3.select(svgEl as SVGSVGElement));
+      // Pattern fill defs
+      this.applyPatternFillDefs(d3.select(svgEl as SVGSVGElement));
+    });
 
     // Apply data label formatting (must run after labels are rendered)
     applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.bar-chart-label');
+    this.raiseBarDataLabelsAboveOverlays();
   }
 
   // Crosshair overlay for vertical modes
   if (this.lastXScale && chartData.categories.length > 0 && mode !== 'horizontal') {
-    const svgEl2 = this.container.querySelector('svg');
+    const svgEl2 = plotSvgNode ?? this.container.querySelector('svg');
     if (svgEl2) {
       const gSel = d3.select(svgEl2 as SVGSVGElement).select<SVGGElement>('g');
       this.renderCrosshair(gSel, chartData, this.lastXScale, this.lastChartHeight);
     }
   }
 
-  // Remove overlapping data labels
-  requestAnimationFrame(() => this.removeOverlappingLabels());
+  // Remove overlapping labels, then make sure bar labels paint above overlay labels.
+  requestAnimationFrame(() => {
+    this.removeOverlappingLabels();
+    this.raiseBarDataLabelsAboveOverlays();
+  });
 
   // Accessibility
   this.applyAccessibility(data);
 
+  this.renderSortControls(data, isScrolling && scrollDir === 'vertical');
+
   // Hover dim — dim non-hovered bars
   const barEls = this.container.querySelectorAll('.bar-chart-bar');
   if (barEls.length > 0) {
-    const hoverCleanup = createHoverDim({ elements: barEls, dimOpacity: 0.25 });
+    const hoverCleanup = this.attachBarHoverDim(barEls);
     this.cancelAnimations.push(hoverCleanup);
   }
 
   // Zoom & Pan
   if (this.settings.zoomSettings.enabled.value) {
-    const zoomSvgEl = this.container.querySelector<SVGSVGElement>('svg');
+    const zoomSvgEl = plotSvgNode ?? this.container.querySelector<SVGSVGElement>('svg');
     if (zoomSvgEl) {
       const svgSel = d3.select(zoomSvgEl);
       const gSel = svgSel.select<SVGGElement>('g');
@@ -1195,7 +1719,136 @@ export class BarChartProVisual implements IVisual {
   }
 }
 
+  private createFixedValueAxisScrollSurface(
+    svgWidth: number,
+    svgHeight: number,
+    margin: Margin,
+    viewportChartWidth: number,
+    expandedChartWidth: number,
+  ): {
+    fixedGroup: d3.Selection<SVGGElement, unknown, null, undefined>;
+    plotSvg: d3.Selection<SVGSVGElement, unknown, null, undefined>;
+    plotGroup: d3.Selection<SVGGElement, unknown, null, undefined>;
+  } {
+    const surface = document.createElement('div');
+    surface.className = 'bar-chart-fixed-scroll-surface';
+    surface.style.position = 'relative';
+    surface.style.width = '100%';
+    surface.style.height = `${svgHeight}px`;
+    surface.style.minHeight = '0';
+    surface.style.flex = '0 0 auto';
+    surface.style.overflow = 'hidden';
+    this.container.appendChild(surface);
+
+    const fixedSvg = d3.select(surface)
+      .append('svg')
+      .attr('class', 'bar-chart-svg bar-chart-fixed-axis-svg')
+      .attr('width', svgWidth)
+      .attr('height', svgHeight)
+      .style('position', 'absolute')
+      .style('inset', '0')
+      .style('z-index', '2')
+      .style('pointer-events', 'none');
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'bar-chart-plot-scroll-wrapper';
+    wrapper.style.position = 'absolute';
+    wrapper.style.left = `${margin.left}px`;
+    wrapper.style.top = '0';
+    wrapper.style.width = `${viewportChartWidth}px`;
+    wrapper.style.height = `${svgHeight}px`;
+    wrapper.style.overflowX = 'auto';
+    wrapper.style.overflowY = 'hidden';
+    wrapper.style.zIndex = '1';
+    surface.appendChild(wrapper);
+
+    const plotSvg = d3.select(wrapper)
+      .append('svg')
+      .attr('class', 'bar-chart-svg bar-chart-scroll-plot-svg')
+      .attr('width', expandedChartWidth)
+      .attr('height', svgHeight);
+
+    return {
+      fixedGroup: fixedSvg.append('g')
+        .attr('transform', `translate(${margin.left},${margin.top})`),
+      plotSvg,
+      plotGroup: plotSvg.append('g')
+        .attr('transform', `translate(0,${margin.top})`),
+    };
+  }
+
+  private moveValueAxesToFixedLayer(
+    plotGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
+    fixedGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
+    viewportWidth: number,
+    height: number,
+  ): void {
+    const fixedNode = fixedGroup.node();
+    if (!fixedNode) return;
+
+    plotGroup
+      .selectAll<SVGElement, unknown>('.bar-chart-axis-y, .bar-chart-axis-y-secondary, .bar-chart-axis-title-y')
+      .each(function () {
+        const element = this;
+        if (element.classList.contains('bar-chart-axis-y-secondary')) {
+          element.setAttribute('transform', `translate(${viewportWidth},0)`);
+        } else if (element.classList.contains('bar-chart-axis-title-y-secondary')) {
+          element.setAttribute(
+            'transform',
+            `translate(${viewportWidth + SECONDARY_Y_AXIS_TITLE_OFFSET}, ${height / 2}) rotate(90)`,
+          );
+        }
+        fixedNode.appendChild(element);
+      });
+  }
+
   // ── Grouped Mode ────────────────────────────────────────────────
+
+  private getAxisAlignedBandCenter(scale: d3.ScaleBand<string>, key: string): number {
+    const bandStart = scale(key) ?? 0;
+    const bandWidth = scale.bandwidth();
+    return bandStart + (bandWidth < 1 ? 0.5 : bandWidth / 2);
+  }
+
+  private fitGroupedScalesToMinimumBars(
+    categoryScale: d3.ScaleBand<string>,
+    seriesScale: d3.ScaleBand<string>,
+    chartWidth: number,
+    seriesCount: number,
+  ): void {
+    if (seriesCount <= 0 || seriesScale.bandwidth() >= MIN_BAR_WIDTH) return;
+
+    const minimumBarWidth = Math.min(MIN_BAR_WIDTH, chartWidth / seriesCount);
+    const edgeInset = minimumBarWidth * seriesCount / 2;
+    categoryScale.range([edgeInset, Math.max(edgeInset, chartWidth - edgeInset)]);
+    seriesScale.range([0, categoryScale.bandwidth()]);
+  }
+
+  private getGroupedBarGeometry(
+    categoryScale: d3.ScaleBand<string>,
+    seriesScale: d3.ScaleBand<string>,
+    categoryKey: string,
+    seriesIndex: number,
+    seriesCount: number,
+    chartWidth: number,
+  ): { x: number; width: number } {
+    const categoryCenter = this.getAxisAlignedBandCenter(categoryScale, categoryKey);
+    const slotWidth = seriesScale.bandwidth();
+
+    if (slotWidth >= MIN_BAR_WIDTH || seriesCount <= 0) {
+      const groupX = categoryCenter - categoryScale.bandwidth() / 2;
+      const slotX = groupX + (seriesScale(String(seriesIndex)) ?? 0);
+      const barWidth = Math.max(MIN_BAR_WIDTH, slotWidth);
+      return { x: slotX + (slotWidth - barWidth) / 2, width: barWidth };
+    }
+
+    const barWidth = Math.min(MIN_BAR_WIDTH, chartWidth / seriesCount);
+    const clusterWidth = barWidth * seriesCount;
+    return {
+      x: categoryCenter - clusterWidth / 2 + seriesIndex * barWidth,
+      width: barWidth,
+    };
+  }
 
   private renderGrouped(
     g: d3.Selection<SVGGElement, unknown, null, undefined>,
@@ -1213,13 +1866,14 @@ export class BarChartProVisual implements IVisual {
       .domain(data.categories)
       .range([0, width])
       .paddingInner(Math.max(0, Math.min(0.9, 0.1 + spacing * 0.02)))
-      .paddingOuter(0.05);
+      .paddingOuter(0.5);
 
     const seriesKeys = data.barSeries.map((_, i) => String(i));
     const x1 = d3.scaleBand()
       .domain(seriesKeys)
       .range([0, x0.bandwidth()])
       .padding(0.05);
+    this.fitGroupedScalesToMinimumBars(x0, x1, width, seriesKeys.length);
 
     const allValues = data.barSeries.flatMap((ser) => ser.values.filter((v): v is number => v !== null));
     const yMin = d3.min(allValues) ?? 0;
@@ -1236,7 +1890,7 @@ export class BarChartProVisual implements IVisual {
 
     // Grid + axes
     this.renderGrid(g, y, width, height);
-    this.renderAxes(g, x0, y, width, height, null, data.categoryLabelsByKey);
+    this.renderAxes(g, x0, y, width, height, null, data.categoryLabelsByKey, data);
 
     // Pre-compute per-series formatting
     const barSeriesFormats = data.barSeries.map((s2, i) => resolveSeriesFormatting(this.settings.seriesFormattingCard, i, s2.color));
@@ -1249,14 +1903,16 @@ export class BarChartProVisual implements IVisual {
         if (val === null || val === undefined) return;
 
         const sf = barSeriesFormats[serIdx];
-        const barX = (x0(cat) ?? 0) + (x1(String(serIdx)) ?? 0);
-        const barW = Math.max(MIN_BAR_WIDTH, x1.bandwidth());
+        const geometry = this.getGroupedBarGeometry(x0, x1, cat, serIdx, seriesKeys.length, width);
+        const barW = geometry.width;
+        const barX = geometry.x;
         const zeroY = y(0);
         const barY = Math.min(y(val), zeroY);
         const barH = Math.max(0, Math.abs(y(val) - zeroY));
 
+        const baseBarColor = this.getResolvedBarColor(data, catIdx, sf.color);
         const conditionalFill = this.getConditionalBarColor(val);
-        const fillColor = conditionalFill ?? this.getBarFill(defs, sf.color, 'vertical', this.getOthersColor(data, catIdx));
+        const fillColor = conditionalFill ?? this.getBarFill(defs, baseBarColor, 'vertical', this.getOthersColor(data, catIdx));
         const barOpacity = (this.settings.barSettings.barOpacity.value / 100) * (sf.opacity / 100);
 
         if (lollipop) {
@@ -1283,7 +1939,13 @@ export class BarChartProVisual implements IVisual {
             .attr('opacity', barOpacity);
 
           this.attachSelection(dot, data.categorySelectionIds[catIdx], this.getCategoryLabel(cat, data));
-          this.attachDotTooltip(dot, this.getCategoryLabel(cat, data), series.name, val);
+          this.attachDotTooltip(
+            dot,
+            this.getCategoryLabel(cat, data),
+            series.name,
+            val,
+            data.categorySelectionIds[catIdx],
+          );
         } else {
           const rect = g.append('rect')
             .attr('class', 'bar-chart-bar')
@@ -1299,12 +1961,17 @@ export class BarChartProVisual implements IVisual {
             .attr('opacity', barOpacity);
 
           this.attachSelection(rect, data.categorySelectionIds[catIdx], this.getCategoryLabel(cat, data));
-          this.attachBarTooltip(rect, this.getCategoryLabel(cat, data), series.name, val, this.getCategoryTotal(data, catIdx));
+          this.attachBarTooltip(
+            rect,
+            this.getCategoryLabel(cat, data),
+            series.name,
+            val,
+            this.getCategoryTotal(data, catIdx),
+            data.categorySelectionIds[catIdx],
+          );
           this.animateBar(rect, barH, catIdx, 'vertical');
         }
-        // Use the global data label dropdown as the primary control;
-        // per-series showLabels is a secondary override
-        if (this.getDataLabelMode() !== 'none' || sf.showLabels) {
+        if (this.getDataLabelMode() !== 'none' && sf.showLabels) {
           this.renderDataLabel(g, barX + barW / 2, barY, barH, val, height);
         }
       });
@@ -1330,6 +1997,7 @@ export class BarChartProVisual implements IVisual {
 
     // Pareto overlay
     this.renderParetoOverlay(g, data, x0, height);
+    this.renderVerticalPercentComparisonLabels(g, data, x0, y, height, 'grouped');
   }
 
   // ── Stacked Mode ────────────────────────────────────────────────
@@ -1378,7 +2046,7 @@ export class BarChartProVisual implements IVisual {
     this.lastChartHeight = height;
 
     this.renderGrid(g, y, width, height);
-    this.renderAxes(g, x, y, width, height, null, data.categoryLabelsByKey);
+    this.renderAxes(g, x, y, width, height, null, data.categoryLabelsByKey, data);
 
     // Pre-compute per-series formatting
     const barSeriesFormats = data.barSeries.map((s2, i) => resolveSeriesFormatting(this.settings.seriesFormattingCard, i, s2.color));
@@ -1412,6 +2080,7 @@ export class BarChartProVisual implements IVisual {
         const ry = isOuterSegment ? Math.min(cornerRadius, barW / 2) : 0;
 
         const sf = barSeriesFormats[serIdx];
+        const baseBarColor = this.getResolvedBarColor(data, catIdx, sf.color);
         const conditionalFill = this.getConditionalBarColor(val);
         const rect = g.append('rect')
           .attr('class', 'bar-chart-bar')
@@ -1421,17 +2090,24 @@ export class BarChartProVisual implements IVisual {
           .attr('height', Math.max(0, barH))
           .attr('rx', rx)
           .attr('ry', ry)
-          .attr('fill', conditionalFill ?? this.getBarFill(defs, sf.color, 'vertical', this.getOthersColor(data, catIdx)))
+          .attr('fill', conditionalFill ?? this.getBarFill(defs, baseBarColor, 'vertical', this.getOthersColor(data, catIdx)))
           .attr('stroke', this.settings.barSettings.barBorderColor.value?.value || 'none')
           .attr('stroke-width', this.settings.barSettings.barBorderWidth.value)
           .attr('opacity', (this.settings.barSettings.barOpacity.value / 100) * (sf.opacity / 100));
 
         this.attachSelection(rect, data.categorySelectionIds[catIdx], this.getCategoryLabel(cat, data));
-        this.attachBarTooltip(rect, this.getCategoryLabel(cat, data), series.name, val, this.getCategoryTotal(data, catIdx));
+        this.attachBarTooltip(
+          rect,
+          this.getCategoryLabel(cat, data),
+          series.name,
+          val,
+          this.getCategoryTotal(data, catIdx),
+          data.categorySelectionIds[catIdx],
+        );
         this.animateBar(rect, barH, catIdx, 'vertical');
 
         // Per-segment label inside the stack
-        if (this.getDataLabelMode() === 'inside' && barH > 16) {
+        if (this.getDataLabelMode() === 'inside' && sf.showLabels && barH > 16) {
           const segLabel = g.append('text')
             .attr('class', 'bar-chart-label bar-chart-label-inside')
             .attr('x', barX + barW / 2)
@@ -1445,7 +2121,7 @@ export class BarChartProVisual implements IVisual {
           if (userLabelColor && userLabelColor.length > 0) {
             segLabel.attr('fill', userLabelColor);
           } else {
-            const segFillColor = conditionalFill ?? sf.color;
+            const segFillColor = conditionalFill ?? baseBarColor;
             const parsed = d3.color(segFillColor);
             if (parsed) {
               const rgb = parsed.rgb();
@@ -1497,6 +2173,7 @@ export class BarChartProVisual implements IVisual {
 
     // Pareto overlay
     this.renderParetoOverlay(g, data, x, height);
+    this.renderVerticalPercentComparisonLabels(g, data, x, y, height, 'stacked');
   }
 
   // ── 100% Stacked Mode ───────────────────────────────────────────
@@ -1540,7 +2217,7 @@ export class BarChartProVisual implements IVisual {
     this.lastChartHeight = height;
 
     this.renderGrid(g, y, width, height);
-    this.renderStacked100Axes(g, x, y, width, height, data.categoryLabelsByKey);
+    this.renderStacked100Axes(g, x, y, width, height, data.categoryLabelsByKey, data);
 
     // Pre-compute per-series formatting
     const barSeriesFormats = data.barSeries.map((s2, i) => resolveSeriesFormatting(this.settings.seriesFormattingCard, i, s2.color));
@@ -1571,6 +2248,7 @@ export class BarChartProVisual implements IVisual {
         const ry = isTopSegment ? Math.min(cornerRadius, barW / 2) : 0;
 
         const sf = barSeriesFormats[serIdx];
+        const baseBarColor = this.getResolvedBarColor(data, catIdx, sf.color);
         const conditionalFill = this.getConditionalBarColor(rawVal);
         const rect = g.append('rect')
           .attr('class', 'bar-chart-bar')
@@ -1580,17 +2258,24 @@ export class BarChartProVisual implements IVisual {
           .attr('height', Math.max(0, barH))
           .attr('rx', rx)
           .attr('ry', ry)
-          .attr('fill', conditionalFill ?? this.getBarFill(defs, sf.color, 'vertical', this.getOthersColor(data, catIdx)))
+          .attr('fill', conditionalFill ?? this.getBarFill(defs, baseBarColor, 'vertical', this.getOthersColor(data, catIdx)))
           .attr('stroke', this.settings.barSettings.barBorderColor.value?.value || 'none')
           .attr('stroke-width', this.settings.barSettings.barBorderWidth.value)
           .attr('opacity', (this.settings.barSettings.barOpacity.value / 100) * (sf.opacity / 100));
 
         this.attachSelection(rect, data.categorySelectionIds[catIdx], this.getCategoryLabel(cat, data));
-        this.attachStacked100Tooltip(rect, this.getCategoryLabel(cat, data), series.name, rawVal, pct);
+        this.attachStacked100Tooltip(
+          rect,
+          this.getCategoryLabel(cat, data),
+          series.name,
+          rawVal,
+          pct,
+          data.categorySelectionIds[catIdx],
+        );
         this.animateBar(rect, barH, catIdx, 'vertical');
 
         // Per-segment label inside the stack (showing percentage)
-        if (this.getDataLabelMode() === 'inside' && barH > 16) {
+        if (this.getDataLabelMode() === 'inside' && sf.showLabels && barH > 16) {
           const segLabel = g.append('text')
             .attr('class', 'bar-chart-label bar-chart-label-inside')
             .attr('x', barX + barW / 2)
@@ -1604,7 +2289,7 @@ export class BarChartProVisual implements IVisual {
           if (userLabelColor && userLabelColor.length > 0) {
             segLabel.attr('fill', userLabelColor);
           } else {
-            const segFillColor = conditionalFill ?? sf.color;
+            const segFillColor = conditionalFill ?? baseBarColor;
             const parsed = d3.color(segFillColor);
             if (parsed) {
               const rgb = parsed.rgb();
@@ -1623,15 +2308,12 @@ export class BarChartProVisual implements IVisual {
       }
     });
 
-    // Trend line on stacked totals (raw values, not percentages)
-    const rawTotals = data.categories.map((_, catIdx) => categoryTotals[catIdx]);
-    const percentY = d3.scaleLinear().domain([0, (d3.max(rawTotals) ?? 0) * 1.1]).nice().range([height, 0]);
-    this.renderTrendLineOverlay(g, rawTotals, (i) => (x(data.categories[i]) ?? 0) + x.bandwidth() / 2, percentY);
-
-    // Target line, reference line, and benchmark band use raw values which are
-    // meaningless on the 0-100% scale. Skip them in stacked100 mode.
-    // TODO: Scale raw values to percentages if these overlays are needed here.
-    this.renderAnnotationOverlay(g, data, x, y);
+    // In stacked100 mode, overlays should align to the normalized 0-100% scale.
+    this.renderPercentTargetLine(g, data.targetValue, y, width);
+    this.renderPercentReferenceLine(g, y, width);
+    this.renderPercentBenchmarkBand(g, y, width);
+    this.renderStacked100AnnotationOverlay(g, data, x, y);
+    this.renderVerticalPercentComparisonLabels(g, data, x, y, height, 'stacked100');
   }
 
   /**
@@ -1645,6 +2327,7 @@ export class BarChartProVisual implements IVisual {
     width: number,
     height: number,
     categoryLabelsByKey: Record<string, string>,
+    data?: ChartData,
   ): void {
     const s = this.settings;
 
@@ -1668,11 +2351,12 @@ export class BarChartProVisual implements IVisual {
       }
 
       xAxis.select('.domain').remove();
+      if (data) this.attachCategoryAxisTooltips(xAxis, data);
     }
 
     if (s.axisFormattingCard.showYAxis.value) {
       g.append('g')
-        .attr('class', 'bar-chart-axis')
+        .attr('class', 'bar-chart-axis bar-chart-axis-y')
         .call(
           d3.axisLeft(yScale)
             .ticks(6)
@@ -1719,6 +2403,7 @@ export class BarChartProVisual implements IVisual {
     seriesName: string,
     rawValue: number,
     pct: number,
+    selectionId: ISelectionId,
   ): void {
     const host = this.host;
     const numberSettings = this.settings.numberFormattingCard;
@@ -1732,7 +2417,7 @@ export class BarChartProVisual implements IVisual {
 
       host.tooltipService.show({
         dataItems: tooltipData,
-        identities: [],
+        identities: [selectionId],
         coordinates: [event.clientX, event.clientY],
         isTouchEvent: false,
       });
@@ -1741,7 +2426,7 @@ export class BarChartProVisual implements IVisual {
     rect.on('mousemove', (event: MouseEvent) => {
       host.tooltipService.move({
         dataItems: [],
-        identities: [],
+        identities: [selectionId],
         coordinates: [event.clientX, event.clientY],
         isTouchEvent: false,
       });
@@ -1799,31 +2484,42 @@ export class BarChartProVisual implements IVisual {
       .domain(data.categories)
       .range([0, width])
       .paddingInner(Math.max(0, Math.min(0.9, 0.15 + spacing * 0.02)))
-      .paddingOuter(0.05);
+      .paddingOuter(0.5);
 
-    // Y scale (bars)
+    // Y scale (bars). When there's no secondary axis the line series shares
+    // the bar scale, so its values MUST be included in the domain — otherwise
+    // a filter that pushes a line point above the bar max (or below the min)
+    // renders it off-chart entirely.
     const barValues = data.barSeries.flatMap((ser) => ser.values.filter((v): v is number => v !== null));
-    const yBarMin = d3.min(barValues) ?? 0;
-    const yBarMax = d3.max(barValues) ?? 0;
+    const lineValues = data.lineSeries.flatMap((ser) => ser.values.filter((v): v is number => v !== null));
+    const sharedValues = hasSecondaryY ? barValues : [...barValues, ...lineValues];
+    const yBarMin = d3.min(sharedValues) ?? 0;
+    const yBarMax = d3.max(sharedValues) ?? 0;
     const yPadFactor = this.getDataLabelMode() !== 'none' ? 1.18 : 1.1;
     const yBar = d3.scaleLinear()
       .domain(this.applyYAxisOverrides([Math.min(0, yBarMin * yPadFactor), yBarMax * yPadFactor]))
       .nice()
+      .clamp(true)
       .range([height, 0]);
 
     // Y scale (lines — uses secondary axis if enabled)
-    const lineValues = data.lineSeries.flatMap((ser) => ser.values.filter((v): v is number => v !== null));
+    const yLineMin = d3.min(lineValues) ?? 0;
     const yLineMax = d3.max(lineValues) ?? yBarMax;
     const yLine = hasSecondaryY
-      ? d3.scaleLinear().domain(this.applyYAxisOverrides([0, yLineMax * 1.1])).nice().range([height, 0])
+      ? d3.scaleLinear()
+        .domain(this.applyYAxisOverrides([Math.min(0, yLineMin * yPadFactor), Math.max(0, yLineMax) * yPadFactor]))
+        .nice()
+        .clamp(true)
+        .range([height, 0])
       : yBar;
+    const clampChartY = (value: number): number => Math.max(0, Math.min(height, value));
 
     // Store scale for crosshair
     this.lastXScale = x;
     this.lastChartHeight = height;
 
     this.renderGrid(g, yBar, width, height);
-    this.renderAxes(g, x, yBar, width, height, hasSecondaryY ? yLine : null, data.categoryLabelsByKey);
+    this.renderAxes(g, x, yBar, width, height, hasSecondaryY ? yLine : null, data.categoryLabelsByKey, data);
 
     // Bars (grouped within combo)
     const seriesKeys = data.barSeries.map((_, i) => String(i));
@@ -1831,6 +2527,7 @@ export class BarChartProVisual implements IVisual {
       .domain(seriesKeys)
       .range([0, x.bandwidth()])
       .padding(0.05);
+    this.fitGroupedScalesToMinimumBars(x, x1, width, seriesKeys.length);
 
     // Pre-compute per-series formatting
     const barSeriesFormats = data.barSeries.map((s, i) => resolveSeriesFormatting(this.settings.seriesFormattingCard, i, s.color));
@@ -1841,12 +2538,14 @@ export class BarChartProVisual implements IVisual {
         if (val === null) return;
 
         const sf = barSeriesFormats[serIdx];
-        const barX = (x(cat) ?? 0) + (x1(String(serIdx)) ?? 0);
-        const barW = Math.max(MIN_BAR_WIDTH, x1.bandwidth());
+        const geometry = this.getGroupedBarGeometry(x, x1, cat, serIdx, seriesKeys.length, width);
+        const barW = geometry.width;
+        const barX = geometry.x;
         const comboZeroY = yBar(0);
         const barY = Math.min(yBar(val), comboZeroY);
         const barH = Math.max(0, Math.abs(yBar(val) - comboZeroY));
 
+        const baseBarColor = this.getResolvedBarColor(data, catIdx, sf.color);
         const conditionalFill = this.getConditionalBarColor(val);
         const rect = g.append('rect')
           .attr('class', 'bar-chart-bar')
@@ -1856,17 +2555,22 @@ export class BarChartProVisual implements IVisual {
           .attr('height', barH)
           .attr('rx', Math.min(cornerRadius, barW / 2))
           .attr('ry', Math.min(cornerRadius, barW / 2))
-          .attr('fill', conditionalFill ?? this.getBarFill(defs, sf.color, 'vertical', this.getOthersColor(data, catIdx)))
+          .attr('fill', conditionalFill ?? this.getBarFill(defs, baseBarColor, 'vertical', this.getOthersColor(data, catIdx)))
           .attr('stroke', this.settings.barSettings.barBorderColor.value?.value || 'none')
           .attr('stroke-width', this.settings.barSettings.barBorderWidth.value)
           .attr('opacity', (this.settings.barSettings.barOpacity.value / 100) * (sf.opacity / 100));
 
         this.attachSelection(rect, data.categorySelectionIds[catIdx], this.getCategoryLabel(cat, data));
-        this.attachBarTooltip(rect, this.getCategoryLabel(cat, data), series.name, val, this.getCategoryTotal(data, catIdx));
+        this.attachBarTooltip(
+          rect,
+          this.getCategoryLabel(cat, data),
+          series.name,
+          val,
+          this.getCategoryTotal(data, catIdx),
+          data.categorySelectionIds[catIdx],
+        );
         this.animateBar(rect, barH, catIdx, 'vertical');
-        // Use the global data label dropdown as the primary control;
-        // per-series showLabels is a secondary override
-        if (this.getDataLabelMode() !== 'none' || sf.showLabels) {
+        if (this.getDataLabelMode() !== 'none' && sf.showLabels) {
           this.renderDataLabel(g, barX + barW / 2, barY, barH, val, height);
         }
       });
@@ -1886,6 +2590,20 @@ export class BarChartProVisual implements IVisual {
     const lineGradientDefs = lineGradientFill && svgNode
       ? (defs ?? d3.select(svgNode).append('defs'))
       : null;
+    const clipDefs = defs ?? (svgNode ? d3.select(svgNode).append('defs') : null);
+    const comboClipId = clipDefs ? this.nextScopedSvgId('combo-clip') : null;
+    if (clipDefs && comboClipId) {
+      clipDefs.append('clipPath')
+        .attr('id', comboClipId)
+        .append('rect')
+        .attr('x', 0)
+        .attr('y', 0)
+        .attr('width', width)
+        .attr('height', height);
+    }
+    const lineLayer = comboClipId
+      ? g.append('g').attr('clip-path', `url(#${comboClipId})`)
+      : g.append('g');
 
     data.lineSeries.forEach((series, lineIdx) => {
       const sf = lineSeriesFormats[lineIdx];
@@ -1896,7 +2614,7 @@ export class BarChartProVisual implements IVisual {
         if (val !== null) {
           lineData.push({
             x: (x(cat) ?? 0) + x.bandwidth() / 2,
-            y: yLine(val),
+            y: clampChartY(yLine(val)),
             val,
               cat: this.getCategoryLabel(cat, data),
               catIdx: i,
@@ -1915,7 +2633,7 @@ export class BarChartProVisual implements IVisual {
 
       // Gradient fill area under the line
       if (lineGradientFill && lineGradientDefs) {
-        const gradId = `line-grad-${this.gradientIdCounter++}`;
+        const gradId = this.nextScopedSvgId('line-grad');
         const gradient = lineGradientDefs.append('linearGradient')
           .attr('id', gradId)
           .attr('x1', '0')
@@ -1937,7 +2655,7 @@ export class BarChartProVisual implements IVisual {
           .y1((d) => d.y)
           .curve(d3.curveMonotoneX);
 
-        g.append('path')
+        lineLayer.append('path')
           .datum(lineData)
           .attr('class', 'bar-chart-line-gradient-area')
           .attr('d', areaFn)
@@ -1946,7 +2664,7 @@ export class BarChartProVisual implements IVisual {
           .attr('pointer-events', 'none');
       }
 
-      const pathEl = g.append('path')
+      const pathEl = lineLayer.append('path')
         .datum(lineData)
         .attr('class', 'bar-chart-line')
         .attr('d', lineFn)
@@ -1965,34 +2683,41 @@ export class BarChartProVisual implements IVisual {
 
       if (showDots) {
         lineData.forEach((d) => {
-          const dot = g.append('circle')
+          const dot = lineLayer.append('circle')
             .attr('class', 'bar-chart-line-dot')
             .attr('cx', d.x)
-            .attr('cy', d.y)
+            .attr('cy', clampChartY(d.y))
             .attr('r', s.lineSettings.lineDotRadius.value)
             .attr('fill', sf.color)
             .attr('opacity', sf.opacity / 100);
 
           this.attachSelection(dot, data.categorySelectionIds[d.catIdx], d.cat);
-          this.attachDotTooltip(dot, d.cat, series.name, d.val);
+          this.attachDotTooltip(dot, d.cat, series.name, d.val, data.categorySelectionIds[d.catIdx]);
         });
       }
 
       // Line data labels
-      if (s.lineSettings.showLineDataLabels.value) {
+      if (s.lineSettings.showLineDataLabels.value && sf.showLabels) {
         const ldlFontSize = s.lineSettings.lineDataLabelFontSize.value;
         const ldlFontColor = s.lineSettings.lineDataLabelFontColor.value?.value;
+        const ldlFontFamily = resolveDropdown(s.lineSettings.lineDataLabelFontFamily) || undefined;
+        const ldlFontWeight = resolveDropdown(s.lineSettings.lineDataLabelFontWeight) || '600';
+        const ldlOffset = s.lineSettings.lineDataLabelOffset.value;
         lineData.forEach((d) => {
           const label = g.append('text')
             .attr('class', 'bar-chart-line-label')
             .attr('x', d.x)
-            .attr('y', d.y - 10)
+            .attr('y', Math.max(ldlFontSize, Math.min(height - 2, d.y - ldlOffset)))
             .attr('text-anchor', 'middle')
             .attr('font-size', `${ldlFontSize}px`)
             .text(formatWithSettings(d.val, this.settings.lineNumberFormattingCard));
           if (ldlFontColor && ldlFontColor.length > 0) {
             label.attr('fill', ldlFontColor);
           }
+          if (ldlFontFamily) {
+            label.attr('font-family', ldlFontFamily);
+          }
+          label.attr('font-weight', ldlFontWeight);
         });
       }
     });
@@ -2011,7 +2736,7 @@ export class BarChartProVisual implements IVisual {
               inlineItems.push({
                 label: series.name,
                 x: xPos + x.bandwidth(),
-                y: yPos,
+                y: clampChartY(yPos),
                 color: series.color,
               });
             }
@@ -2047,6 +2772,7 @@ export class BarChartProVisual implements IVisual {
       const comboXPositions = pairs.map(p => p.x);
       this.renderVarianceIndicators(g, firstVals, data.targetValue, comboXPositions, yBar);
     }
+    this.renderVerticalPercentComparisonLabels(g, data, x, yBar, height, 'combo');
   }
 
   // ── Horizontal Mode ─────────────────────────────────────────────
@@ -2085,14 +2811,15 @@ export class BarChartProVisual implements IVisual {
 
     // Axes
     if (s.axisFormattingCard.showYAxis.value) {
-      g.append('g')
+      const yAxis = g.append('g')
         .attr('class', 'bar-chart-axis')
         .call(
           d3.axisLeft(y)
             .tickSize(0)
             .tickFormat((d) => this.getCategoryLabel(String(d), data)),
-        )
-        .select('.domain').remove();
+        );
+      yAxis.select('.domain').remove();
+      this.attachCategoryAxisTooltips(yAxis, data);
     }
 
     if (s.axisFormattingCard.showXAxis.value) {
@@ -2159,8 +2886,9 @@ export class BarChartProVisual implements IVisual {
         const barWidth = Math.abs(x(val) - zeroX);
 
         const sf = barSeriesFormats[serIdx];
+        const baseBarColor = this.getResolvedBarColor(data, catIdx, sf.color);
         const conditionalFill = this.getConditionalBarColor(val);
-        const fillColor = conditionalFill ?? this.getBarFill(defs, sf.color, 'horizontal', this.getOthersColor(data, catIdx));
+        const fillColor = conditionalFill ?? this.getBarFill(defs, baseBarColor, 'horizontal', this.getOthersColor(data, catIdx));
         const barOpacity = (this.settings.barSettings.barOpacity.value / 100) * (sf.opacity / 100);
 
         if (lollipop) {
@@ -2187,7 +2915,13 @@ export class BarChartProVisual implements IVisual {
             .attr('opacity', barOpacity);
 
           this.attachSelection(dot, data.categorySelectionIds[catIdx], this.getCategoryLabel(cat, data));
-          this.attachDotTooltip(dot, this.getCategoryLabel(cat, data), series.name, val);
+          this.attachDotTooltip(
+            dot,
+            this.getCategoryLabel(cat, data),
+            series.name,
+            val,
+            data.categorySelectionIds[catIdx],
+          );
         } else {
           const rect = g.append('rect')
             .attr('class', 'bar-chart-bar')
@@ -2203,10 +2937,17 @@ export class BarChartProVisual implements IVisual {
             .attr('opacity', barOpacity);
 
           this.attachSelection(rect, data.categorySelectionIds[catIdx], this.getCategoryLabel(cat, data));
-          this.attachBarTooltip(rect, this.getCategoryLabel(cat, data), series.name, val, this.getCategoryTotal(data, catIdx));
+          this.attachBarTooltip(
+            rect,
+            this.getCategoryLabel(cat, data),
+            series.name,
+            val,
+            this.getCategoryTotal(data, catIdx),
+            data.categorySelectionIds[catIdx],
+          );
           this.animateBar(rect, barWidth, catIdx, 'horizontal');
         }
-        if (this.getDataLabelMode() !== 'none' || sf.showLabels) {
+        if (this.getDataLabelMode() !== 'none' && sf.showLabels) {
           const barEdgeX = val >= 0 ? (barStartX + barWidth) : barStartX;
           this.renderHorizontalDataLabel(g, barEdgeX, barY + barH / 2, val, width);
         }
@@ -2257,6 +2998,7 @@ export class BarChartProVisual implements IVisual {
       const yPositions = pairs.map(p => p.y);
       this.renderVarianceIndicatorsHorizontal(g, firstVals, data.targetValue, yPositions, x);
     }
+    this.renderHorizontalPercentComparisonLabels(g, data, y, width);
   }
 
   // ── Diverging Mode ──────────────────────────────────────────────
@@ -2365,7 +3107,11 @@ export class BarChartProVisual implements IVisual {
       const isPositive = val >= 0;
       const barY = isPositive ? y(val) : zeroY;
       const barH = Math.abs(y(val) - zeroY);
-      const defaultColor = isPositive ? theme.semantic.positive : theme.semantic.negative;
+      const defaultColor = this.getResolvedBarColor(
+        data,
+        catIdx,
+        isPositive ? theme.semantic.positive : theme.semantic.negative,
+      );
       const conditionalFill = this.getConditionalBarColor(val);
 
       const rect = g.append('rect')
@@ -2382,11 +3128,18 @@ export class BarChartProVisual implements IVisual {
         .attr('opacity', (this.settings.barSettings.barOpacity.value / 100) * (sf.opacity / 100));
 
       this.attachSelection(rect, data.categorySelectionIds[catIdx], this.getCategoryLabel(cat, data));
-      this.attachBarTooltip(rect, this.getCategoryLabel(cat, data), series.name, val, this.getCategoryTotal(data, catIdx));
+      this.attachBarTooltip(
+        rect,
+        this.getCategoryLabel(cat, data),
+        series.name,
+        val,
+        this.getCategoryTotal(data, catIdx),
+        data.categorySelectionIds[catIdx],
+      );
       this.animateBar(rect, barH, catIdx, 'vertical');
 
       // Data label — position above positive bars and below negative bars
-      if (this.getDataLabelMode() !== 'none' || sf.showLabels) {
+      if (this.getDataLabelMode() !== 'none' && sf.showLabels) {
         this.renderDataLabel(g, barX + barW / 2, isPositive ? barY : barY + barH, barH, val, height);
       }
     });
@@ -2452,7 +3205,7 @@ export class BarChartProVisual implements IVisual {
       .range([height, 0]);
 
     this.renderGrid(g, y, width, height);
-    this.renderAxes(g, x, y, width, height, null, data.categoryLabelsByKey);
+    this.renderAxes(g, x, y, width, height, null, data.categoryLabelsByKey, data);
 
     const theme = getTheme('light');
     const sf = resolveSeriesFormatting(this.settings.seriesFormattingCard, 0, series.color);
@@ -2473,7 +3226,7 @@ export class BarChartProVisual implements IVisual {
         const totalVal = cumulative[catIdx];
         barY = totalVal >= 0 ? y(totalVal) : y(0);
         barH = Math.abs(y(totalVal) - y(0));
-        fillColor = s.waterfallSettings.totalColor.value?.value || '#64748B';
+        fillColor = this.getResolvedBarColor(data, catIdx, s.waterfallSettings.totalColor.value?.value || '#64748B');
       } else {
         const startVal = prevCumulative;
         const endVal = cumulative[catIdx];
@@ -2481,7 +3234,7 @@ export class BarChartProVisual implements IVisual {
         barH = Math.abs(y(startVal) - y(endVal));
         const positiveColor = s.waterfallSettings.positiveColor.value?.value || theme.semantic.positive;
         const negativeColor = s.waterfallSettings.negativeColor.value?.value || theme.semantic.negative;
-        fillColor = val >= 0 ? positiveColor : negativeColor;
+        fillColor = this.getResolvedBarColor(data, catIdx, val >= 0 ? positiveColor : negativeColor);
       }
 
       const conditionalFill = val !== null ? this.getConditionalBarColor(val) : undefined;
@@ -2499,7 +3252,14 @@ export class BarChartProVisual implements IVisual {
         .attr('opacity', (s.barSettings.barOpacity.value / 100) * (sf.opacity / 100));
 
       this.attachSelection(rect, data.categorySelectionIds[catIdx], this.getCategoryLabel(cat, data));
-      this.attachBarTooltip(rect, this.getCategoryLabel(cat, data), series.name, val ?? cumulative[catIdx], this.getCategoryTotal(data, catIdx));
+      this.attachBarTooltip(
+        rect,
+        this.getCategoryLabel(cat, data),
+        series.name,
+        val ?? cumulative[catIdx],
+        this.getCategoryTotal(data, catIdx),
+        data.categorySelectionIds[catIdx],
+      );
       this.animateBar(rect, barH, catIdx, 'vertical');
 
       if (this.getDataLabelMode() !== 'none') {
@@ -2608,11 +3368,17 @@ export class BarChartProVisual implements IVisual {
             const zeroY = yMini(0);
             const barY = Math.min(yMini(val), zeroY);
             const barH = Math.abs(yMini(val) - zeroY);
-            smG.append('rect').attr('class', 'bar-chart-bar')
+            const smRect = smG.append('rect').attr('class', 'bar-chart-bar')
               .attr('x', barX).attr('y', barY).attr('width', barW).attr('height', Math.max(0, barH))
               .attr('rx', 2).attr('ry', 2)
               .attr('fill', getHostChartColor(this.host.colorPalette, serIdx, themeName))
               .attr('opacity', 0.85);
+            // Without this, small-multiples bars get cursor:pointer from the
+            // .bar-chart-bar CSS class but no click handler — cursor lies.
+            const smSelectionId = subData.categorySelectionIds[catIdx];
+            if (smSelectionId) {
+              this.attachSelection(smRect, smSelectionId, this.getCategoryLabel(cat, subData));
+            }
           });
         });
       }
@@ -2715,6 +3481,7 @@ export class BarChartProVisual implements IVisual {
     height: number,
     secondaryYScale: d3.ScaleLinear<number, number> | null,
     categoryLabelsByKey: Record<string, string>,
+    data?: ChartData,
   ): void {
     const s = this.settings;
 
@@ -2738,6 +3505,7 @@ export class BarChartProVisual implements IVisual {
       }
 
       xAxis.select('.domain').remove();
+      if (data) this.attachCategoryAxisTooltips(xAxis, data);
     }
 
     if (s.axisFormattingCard.showYAxis.value) {
@@ -2759,7 +3527,7 @@ export class BarChartProVisual implements IVisual {
       }
 
       g.append('g')
-        .attr('class', 'bar-chart-axis')
+        .attr('class', 'bar-chart-axis bar-chart-axis-y')
         .call(yAxisGen)
         .select('.domain').remove();
     }
@@ -2783,7 +3551,7 @@ export class BarChartProVisual implements IVisual {
       }
 
       g.append('g')
-        .attr('class', 'bar-chart-axis')
+        .attr('class', 'bar-chart-axis bar-chart-axis-y-secondary')
         .attr('transform', `translate(${width},0)`)
         .call(secYAxisGen)
         .select('.domain').remove();
@@ -2820,8 +3588,8 @@ export class BarChartProVisual implements IVisual {
     const secYTitle = s.secondaryAxisSettings.secondaryYAxisTitle.value;
     if (secYTitle && secondaryYScale && s.secondaryAxisSettings.showSecondaryYAxis.value) {
       g.append('text')
-        .attr('class', 'bar-chart-axis-title bar-chart-axis-title-y')
-        .attr('transform', `translate(${width + 40}, ${height / 2}) rotate(90)`)
+        .attr('class', 'bar-chart-axis-title bar-chart-axis-title-y bar-chart-axis-title-y-secondary')
+        .attr('transform', `translate(${width + SECONDARY_Y_AXIS_TITLE_OFFSET}, ${height / 2}) rotate(90)`)
         .attr('x', 0)
         .attr('y', 0)
         .attr('text-anchor', 'middle')
@@ -3067,8 +3835,174 @@ export class BarChartProVisual implements IVisual {
         const val = data.barSeries[0]?.values[catIdx] ?? 0;
         return { x: x + xScale.bandwidth() / 2, y: yScale(val ?? 0) };
       },
+      {
+        fontFamily: resolveDropdown(ann.annotationFontFamily) || undefined,
+        fontWeight: resolveDropdown(ann.annotationFontWeight) || '500',
+        offset: ann.annotationOffset.value,
+        padding: ann.annotationPadding.value,
+        backgroundColor: ann.annotationBackgroundColor.value?.value || '#FFFFFF',
+        backgroundOpacity: ann.annotationBackgroundOpacity.value / 100,
+        cornerRadius: ann.annotationCornerRadius.value,
+      },
     );
     if (config) renderAnnotations(g, config);
+  }
+
+  private renderStacked100AnnotationOverlay(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    data: ChartData,
+    xScale: d3.ScaleBand<string>,
+    yScale: d3.ScaleLinear<number, number>,
+  ): void {
+    const ann = this.settings.annotationFormattingCard;
+    if (!ann.showAnnotations.value) return;
+
+    const slots = [
+      { category: ann.annotation1Category.value, text: ann.annotation1Text.value, position: resolveDropdown(ann.annotation1Position) ?? 'above' },
+      { category: ann.annotation2Category.value, text: ann.annotation2Text.value, position: resolveDropdown(ann.annotation2Position) ?? 'above' },
+      { category: ann.annotation3Category.value, text: ann.annotation3Text.value, position: resolveDropdown(ann.annotation3Position) ?? 'above' },
+    ];
+
+    const labelToKey: Record<string, string> = {};
+    for (const key of data.categories) {
+      const label = data.categoryLabelsByKey[key] ?? key;
+      if (!labelToKey[label]) labelToKey[label] = key;
+    }
+
+    const config = buildAnnotationConfig(
+      true,
+      slots,
+      ann.annotationFontSize.value,
+      ann.annotationFontColor.value?.value || '#475569',
+      ann.annotationConnectorColor.value?.value || '#94A3B8',
+      (category) => {
+        const key = labelToKey[category] ?? category;
+        const x = xScale(key);
+        if (x == null) return null;
+        return { x: x + xScale.bandwidth() / 2, y: yScale(100) };
+      },
+      {
+        fontFamily: resolveDropdown(ann.annotationFontFamily) || undefined,
+        fontWeight: resolveDropdown(ann.annotationFontWeight) || '500',
+        offset: ann.annotationOffset.value,
+        padding: ann.annotationPadding.value,
+        backgroundColor: ann.annotationBackgroundColor.value?.value || '#FFFFFF',
+        backgroundOpacity: ann.annotationBackgroundOpacity.value / 100,
+        cornerRadius: ann.annotationCornerRadius.value,
+      },
+    );
+
+    if (config) renderAnnotations(g, config);
+  }
+
+  private renderPercentTargetLine(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    targetValue: number | null,
+    yScale: d3.ScaleLinear<number, number>,
+    width: number,
+  ): void {
+    const s = this.settings;
+    if (targetValue === null || !s.targetLine.show.value || targetValue < 0 || targetValue > 100) return;
+
+    const targetColor = s.targetLine.color.value?.value ?? '#F87171';
+    const tStyle = this.getTargetStyle();
+    const ty = yScale(targetValue);
+
+    g.append('line')
+      .attr('class', 'bar-chart-target')
+      .attr('x1', 0)
+      .attr('x2', width)
+      .attr('y1', ty)
+      .attr('y2', ty)
+      .attr('stroke', targetColor)
+      .attr('stroke-width', s.targetLine.lineWidth.value)
+      .attr('stroke-dasharray', lineStyleToDashArray(tStyle));
+
+    const labelText = s.targetLine.label.value || `${formatWithSettings(targetValue, this.settings.numberFormattingCard)}%`;
+    g.append('text')
+      .attr('class', 'bar-chart-target-label')
+      .attr('x', width - 4)
+      .attr('y', ty - 6)
+      .attr('text-anchor', 'end')
+      .attr('fill', targetColor)
+      .text(labelText);
+  }
+
+  private renderPercentReferenceLine(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    yScale: d3.ScaleLinear<number, number>,
+    width: number,
+  ): void {
+    const ref = this.settings.referenceLineFormattingCard;
+    if (!ref.showReferenceLine.value) return;
+
+    const refType = resolveDropdown(ref.referenceLineType) ?? 'custom';
+    if (refType !== 'custom') return;
+
+    const refValue = ref.referenceLineValue.value;
+    if (!Number.isFinite(refValue) || refValue < 0 || refValue > 100) return;
+
+    const refColor = ref.referenceLineColor.value?.value ?? '#EF4444';
+    const refStyle = resolveDropdown(ref.referenceLineStyle) ?? 'dashed';
+    const labelText = ref.referenceLabelText.value.length > 0
+      ? ref.referenceLabelText.value
+      : `${formatWithSettings(refValue, this.settings.numberFormattingCard)}%`;
+
+    renderHorizontalReferenceLine(g, {
+      value: refValue,
+      yScale,
+      chartWidth: width,
+      lineColor: refColor,
+      lineWidth: ref.referenceLineWidth.value,
+      lineStyle: refStyle as LineStyleType,
+      showLabel: ref.showReferenceLabel.value,
+      labelText,
+      showBand: ref.showReferenceBand.value,
+      bandUpperValue: Math.min(100, refValue * (1 + ref.referenceBandWidth.value / 100)),
+      bandLowerValue: Math.max(0, refValue * (1 - ref.referenceBandWidth.value / 100)),
+      bandOpacity: ref.referenceBandOpacity.value / 100,
+    });
+  }
+
+  private renderPercentBenchmarkBand(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    yScale: d3.ScaleLinear<number, number>,
+    width: number,
+  ): void {
+    const bb = this.settings.benchmarkBandSettings;
+    if (!bb.show.value) return;
+
+    const lower = Math.max(0, Math.min(100, bb.lowerBound.value));
+    const upper = Math.max(0, Math.min(100, bb.upperBound.value));
+    if (lower === upper) return;
+
+    const y1 = yScale(upper);
+    const y2 = yScale(lower);
+    const yTop = Math.min(y1, y2);
+    const h = Math.abs(y2 - y1);
+    const color = bb.bandColor.value?.value ?? '#3B82F6';
+    const opacity = Math.max(0, Math.min(100, bb.bandOpacity.value)) / 100;
+
+    g.append('rect')
+      .attr('class', 'benchmark-band')
+      .attr('x', 0)
+      .attr('y', yTop)
+      .attr('width', width)
+      .attr('height', h)
+      .attr('fill', color)
+      .attr('opacity', opacity)
+      .style('pointer-events', 'none');
+
+    if (bb.label.value) {
+      g.append('text')
+        .attr('class', 'benchmark-label')
+        .attr('x', 4)
+        .attr('y', yTop + 12)
+        .attr('font-size', '9px')
+        .attr('fill', color)
+        .attr('opacity', Math.min(1, opacity * 5))
+        .text(bb.label.value);
+    }
   }
 
   /**
@@ -3236,6 +4170,9 @@ export class BarChartProVisual implements IVisual {
 
     const patternType = resolveDropdown(bs.pattern) ?? 'diagonal';
     const opacity = Math.max(0, Math.min(100, bs.patternOpacity.value)) / 100;
+    const patternIdForColor = (color: string): string =>
+      this.createScopedSvgId(`bar-pattern-${color.replace(/[^a-zA-Z0-9]/g, '')}`);
+    const overlayId = this.createScopedSvgId('bar-pattern-overlay');
 
     let defs = svg.select<SVGDefsElement>('defs');
     if (defs.empty()) {
@@ -3254,7 +4191,7 @@ export class BarChartProVisual implements IVisual {
 
     // Create pattern defs for each unique bar color
     for (const color of colorSet) {
-      const patternId = `bar-pattern-${color.replace(/[^a-zA-Z0-9]/g, '')}`;
+      const patternId = patternIdForColor(color);
       defs.select(`#${patternId}`).remove();
 
       const pattern = defs.append('pattern')
@@ -3313,7 +4250,7 @@ export class BarChartProVisual implements IVisual {
     bars.each(function () {
       const fill = this.getAttribute('fill');
       if (fill && !fill.startsWith('url(')) {
-        const patternId = `bar-pattern-${fill.replace(/[^a-zA-Z0-9]/g, '')}`;
+        const patternId = patternIdForColor(fill);
         this.setAttribute('fill', `url(#${patternId})`);
       }
     });
@@ -3324,8 +4261,7 @@ export class BarChartProVisual implements IVisual {
       if (fill && fill.startsWith('url(') && !fill.includes('bar-pattern-')) {
         const clone = this.cloneNode(false) as SVGRectElement;
         // Use a generic dark pattern overlay on top of gradient
-        const genericId = 'bar-pattern-overlay';
-        clone.setAttribute('fill', `url(#${genericId})`);
+        clone.setAttribute('fill', `url(#${overlayId})`);
         clone.setAttribute('class', 'bar-chart-bar-pattern-overlay');
         clone.style.pointerEvents = 'none';
         this.parentNode?.insertBefore(clone, this.nextSibling);
@@ -3333,7 +4269,6 @@ export class BarChartProVisual implements IVisual {
     });
 
     // Create generic overlay pattern for gradient bars
-    const overlayId = 'bar-pattern-overlay';
     defs.select(`#${overlayId}`).remove();
     const overlayPattern = defs.append('pattern')
       .attr('id', overlayId)
@@ -3384,7 +4319,11 @@ export class BarChartProVisual implements IVisual {
    */
   private applyAccessibility(data: ChartData): void {
     const acc = this.settings.accessibilityFormattingCard;
-    if (!acc.enableKeyboardNav.value) return;
+    if (!acc.enableKeyboardNav.value) {
+      this.container.removeAttribute('role');
+      this.container.removeAttribute('aria-label');
+      return;
+    }
 
     ensureFocusRingStyles();
 
@@ -3394,15 +4333,64 @@ export class BarChartProVisual implements IVisual {
       dataPointCount: data.categories.length,
     });
 
+    const bars = Array.from(this.container.querySelectorAll<SVGRectElement>('.bar-chart-bar'));
+    data.categories.forEach((categoryKey, categoryIndex) => {
+      const selectionKey = data.categorySelectionIds[categoryIndex]?.getKey();
+      if (!selectionKey) return;
+      const mark = bars.find((bar) => bar.getAttribute('data-selection-key') === selectionKey);
+      if (!mark) return;
+
+      const values = [
+        ...data.barSeries.map((series) => ({ name: series.name, value: series.values[categoryIndex] })),
+        ...data.lineSeries.map((series) => ({ name: series.name, value: series.values[categoryIndex] })),
+      ]
+        .filter((entry): entry is { name: string; value: number } => entry.value !== null)
+        .map((entry) => `${entry.name}: ${formatWithSettings(entry.value, this.settings.numberFormattingCard)}`)
+        .join(', ');
+      const categoryLabel = this.getCategoryLabel(categoryKey, data);
+
+      mark.setAttribute('role', 'listitem');
+      mark.setAttribute('tabindex', '0');
+      mark.setAttribute(
+        'aria-label',
+        `${categoryLabel}${values ? `. ${values}` : ''}. Item ${categoryIndex + 1} of ${data.categories.length}.`,
+      );
+    });
+
     const cleanup = attachKeyboardNav({
       container: this.container,
-      itemSelector: '.bar-chart-bar',
+      itemSelector: '.bar-chart-bar[tabindex="0"]',
       onActivate: (el) => {
-        // Trigger selection via click
-        (el as HTMLElement).click?.();
+        if (!allowInteractions(this.host)) return;
+        el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
       },
     });
     this.cancelAnimations.push(cleanup);
+  }
+
+  private attachBarHoverDim(elements: NodeListOf<Element>): () => void {
+    const cleanups: Array<() => void> = [];
+
+    elements.forEach((element) => {
+      const onEnter = (): void => {
+        if (this.selectionManager.hasSelection() || this.currentData?.hasHighlights) return;
+        elements.forEach((other) => {
+          (other as SVGElement).style.opacity = other === element ? '' : '0.25';
+        });
+      };
+      const onLeave = (): void => {
+        this.applySelectionHighlight();
+      };
+
+      element.addEventListener('mouseenter', onEnter);
+      element.addEventListener('mouseleave', onLeave);
+      cleanups.push(() => {
+        element.removeEventListener('mouseenter', onEnter);
+        element.removeEventListener('mouseleave', onLeave);
+      });
+    });
+
+    return () => cleanups.forEach((cleanup) => cleanup());
   }
 
   // ── Crosshair Overlay ──────────────────────────────────────────
@@ -3488,7 +4476,9 @@ export class BarChartProVisual implements IVisual {
 
         this.host.tooltipService.show({
           dataItems: tooltipData,
-          identities: [],
+          identities: data.categorySelectionIds[catIdx]
+            ? [data.categorySelectionIds[catIdx]]
+            : [],
           coordinates: [event.clientX, event.clientY],
           isTouchEvent: false,
         });
@@ -3512,13 +4502,55 @@ export class BarChartProVisual implements IVisual {
     // Get bounding boxes (requires elements to be in DOM)
     const entries = labels.map((el) => {
       const bbox = el.getBBox();
-      return { el, bbox, value: parseFloat(el.textContent ?? '0') || 0 };
+      const isLineLabel = el.classList.contains('bar-chart-line-label');
+      return {
+        el,
+        bbox,
+        value: parseFloat(el.textContent ?? '0') || 0,
+        kind: isLineLabel ? 'line' : 'bar',
+      };
     });
+    const removed = new Set<SVGTextElement>();
+    const intersects = (a: SVGRect, b: SVGRect): boolean =>
+      a.x + a.width > b.x &&
+      a.x < b.x + b.width &&
+      a.y + a.height > b.y &&
+      a.y < b.y + b.height;
+    const tryMoveLineLabel = (lineEntry: typeof entries[number]): boolean => {
+      const originalY = Number(lineEntry.el.getAttribute('y') ?? 0);
+      const lineHeight = Math.max(lineEntry.bbox.height, parseFloat(lineEntry.el.getAttribute('font-size') ?? '12') || 12);
+      const step = lineHeight + 4;
+      const candidateYs = [
+        originalY - step,
+        originalY + step,
+        originalY - step * 2,
+        originalY + step * 2,
+        originalY - step * 3,
+        originalY + step * 3,
+      ];
+
+      for (const y of candidateYs) {
+        lineEntry.el.setAttribute('y', `${Math.max(lineHeight / 2, y)}`);
+        const nextBbox = lineEntry.el.getBBox();
+        const stillOverlaps = entries.some((entry) =>
+          entry !== lineEntry &&
+          !removed.has(entry.el) &&
+          intersects(nextBbox, entry.bbox)
+        );
+        if (!stillOverlaps) {
+          lineEntry.bbox = nextBbox;
+          return true;
+        }
+      }
+
+      lineEntry.el.setAttribute('y', `${originalY}`);
+      lineEntry.bbox = lineEntry.el.getBBox();
+      return false;
+    };
 
     // Sort by x position for horizontal overlap check
     entries.sort((a, b) => a.bbox.x - b.bbox.x);
 
-    const removed = new Set<SVGTextElement>();
     for (let i = 0; i < entries.length - 1; i++) {
       if (removed.has(entries[i].el)) continue;
       const a = entries[i];
@@ -3526,18 +4558,29 @@ export class BarChartProVisual implements IVisual {
         if (removed.has(entries[j].el)) continue;
         const b = entries[j];
         // Check overlap (bounding box intersection)
-        if (
-          a.bbox.x + a.bbox.width > b.bbox.x &&
-          a.bbox.y + a.bbox.height > b.bbox.y &&
-          a.bbox.y < b.bbox.y + b.bbox.height
-        ) {
-          // Remove the one with smaller absolute value
-          const removeEntry = Math.abs(a.value) < Math.abs(b.value) ? a : b;
+        if (intersects(a.bbox, b.bbox)) {
+          if (a.kind !== b.kind) {
+            const lineEntry = a.kind === 'line' ? a : b;
+            if (tryMoveLineLabel(lineEntry)) continue;
+          }
+
+          // Same-type labels still declutter by value. If a mixed collision
+          // cannot be nudged apart, remove the line label rather than hiding
+          // the bar's primary data label.
+          const removeEntry = a.kind === b.kind
+            ? (Math.abs(a.value) < Math.abs(b.value) ? a : b)
+            : (a.kind === 'line' ? a : b);
           removeEntry.el.remove();
           removed.add(removeEntry.el);
         }
       }
     }
+  }
+
+  private raiseBarDataLabelsAboveOverlays(): void {
+    this.container.querySelectorAll<SVGTextElement>('.bar-chart-label').forEach((label) => {
+      d3.select(label).raise();
+    });
   }
 
   // ── Pareto Line Overlay ──────────────────────────────────────
@@ -3671,6 +4714,111 @@ export class BarChartProVisual implements IVisual {
       .text(labelText);
   }
 
+  private canRenderPercentComparison(data: ChartData): boolean {
+    return this.settings.percentComparisonSettings.show.value && data.barSeries.length >= 2;
+  }
+
+  private getPercentComparisonLabelSpace(): number {
+    return Math.max(40, Math.min(160, this.settings.percentComparisonSettings.labelSpace.value));
+  }
+
+  private getPercentComparisonValues(data: ChartData): Array<number | null> {
+    const settings = this.settings.percentComparisonSettings;
+    const numeratorIndex = Math.max(0, Math.round(settings.numeratorSeriesIndex.value) - 1);
+    const denominatorIndex = Math.max(0, Math.round(settings.denominatorSeriesIndex.value) - 1);
+    const numerator = data.barSeries[numeratorIndex];
+    const denominator = data.barSeries[denominatorIndex];
+    if (!numerator || !denominator) return data.categories.map(() => null);
+
+    return data.categories.map((_, index) => {
+      const num = numerator.values[index];
+      const den = denominator.values[index];
+      if (num === null || den === null || den === 0) return null;
+      return (num / den) * 100;
+    });
+  }
+
+  private formatPercentComparisonValue(value: number): string {
+    const decimals = Math.max(0, Math.min(4, Math.round(this.settings.percentComparisonSettings.decimalPlaces.value)));
+    return `${value.toFixed(decimals)}%`;
+  }
+
+  private appendPercentComparisonLabel(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    x: number,
+    y: number,
+    value: number,
+    textAnchor: 'start' | 'middle' | 'end',
+  ): void {
+    const settings = this.settings.percentComparisonSettings;
+    const fontSize = Math.max(8, settings.fontSize.value);
+    const fontColor = settings.fontColor.value?.value || '#0F172A';
+    const fontWeight = resolveDropdown(settings.fontWeight) || '600';
+
+    g.append('text')
+      .attr('class', 'bar-chart-percent-comparison-label')
+      .attr('x', x)
+      .attr('y', y)
+      .attr('text-anchor', textAnchor)
+      .attr('dominant-baseline', 'central')
+      .attr('fill', fontColor)
+      .attr('font-size', `${fontSize}px`)
+      .attr('font-weight', fontWeight)
+      .attr('paint-order', 'stroke')
+      .attr('stroke', '#FFFFFF')
+      .attr('stroke-width', 3)
+      .attr('stroke-linejoin', 'round')
+      .text(this.formatPercentComparisonValue(value));
+  }
+
+  private renderHorizontalPercentComparisonLabels(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    data: ChartData,
+    yScale: d3.ScaleBand<string>,
+    plotWidth: number,
+  ): void {
+    if (!this.canRenderPercentComparison(data)) return;
+
+    const values = this.getPercentComparisonValues(data);
+    const x = plotWidth + this.getPercentComparisonLabelSpace() - 10;
+    data.categories.forEach((category, index) => {
+      const value = values[index];
+      if (value === null) return;
+      const y = (yScale(category) ?? 0) + yScale.bandwidth() / 2;
+      this.appendPercentComparisonLabel(g, x, y, value, 'end');
+    });
+  }
+
+  private renderVerticalPercentComparisonLabels(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    data: ChartData,
+    xScale: d3.ScaleBand<string>,
+    yScale: d3.ScaleLinear<number, number>,
+    chartHeight: number,
+    mode: 'grouped' | 'stacked' | 'stacked100' | 'combo',
+  ): void {
+    if (!this.canRenderPercentComparison(data)) return;
+
+    const values = this.getPercentComparisonValues(data);
+    const fontSize = Math.max(8, this.settings.percentComparisonSettings.fontSize.value);
+    data.categories.forEach((category, index) => {
+      const value = values[index];
+      if (value === null) return;
+      const barValues = data.barSeries
+        .map((series) => series.values[index])
+        .filter((seriesValue): seriesValue is number => seriesValue !== null && seriesValue !== undefined);
+
+      const topValue = mode === 'stacked100'
+        ? 100
+        : mode === 'stacked'
+          ? Math.max(0, barValues.filter((seriesValue) => seriesValue > 0).reduce((sum, seriesValue) => sum + seriesValue, 0))
+          : Math.max(0, ...barValues);
+      const x = (xScale(category) ?? 0) + xScale.bandwidth() / 2;
+      const y = Math.max(fontSize / 2, Math.min(chartHeight - fontSize / 2, yScale(topValue) - fontSize * 0.85));
+      this.appendPercentComparisonLabel(g, x, y, value, 'middle');
+    });
+  }
+
   private renderDataLabel(
     g: d3.Selection<SVGGElement, unknown, null, undefined>,
     cx: number,
@@ -3683,10 +4831,16 @@ export class BarChartProVisual implements IVisual {
     if (labelMode === 'none') return;
 
     const text = formatWithSettings(value, this.settings.numberFormattingCard);
-    const isInside = labelMode === 'inside';
-    const yPos = isInside ? barY + Math.min(barH / 2 + 4, barH - 2) : barY - 6;
+    let isInside = labelMode === 'inside';
+    let yPos = isInside ? barY + Math.min(barH / 2 + 4, barH - 2) : barY - 6;
 
-    // Skip if the label would be outside the chart
+    // If an "above" label would clip off the top of the chart (tallest bar),
+    // flip it to an inside position so every bar gets a label.
+    if (!isInside && yPos < 0) {
+      isInside = true;
+      yPos = barY + Math.min(barH / 2 + 4, Math.max(barH - 2, 0));
+    }
+
     if (yPos < 0 || yPos > chartHeight) return;
 
     g.append('text')
@@ -3708,7 +4862,7 @@ export class BarChartProVisual implements IVisual {
 
     const text = formatWithSettings(value, this.settings.numberFormattingCard);
     const isNegative = value < 0;
-    const isInside = labelMode === 'inside';
+    let isInside = labelMode === 'inside';
 
     let xPos: number;
     let anchor: string;
@@ -3721,7 +4875,14 @@ export class BarChartProVisual implements IVisual {
       anchor = isNegative ? 'end' : 'start';
     }
 
-    // Skip if the label would be outside the chart
+    // If an "above"/outside label would clip off the chart edge (longest bar),
+    // flip it to an inside position so every bar gets a label.
+    if (!isInside && (xPos < 0 || xPos > chartWidth)) {
+      isInside = true;
+      xPos = isNegative ? barEdgeX + 4 : Math.max(4, barEdgeX - 4);
+      anchor = isNegative ? 'start' : 'end';
+    }
+
     if (xPos < 0 || xPos > chartWidth) return;
 
     g.append('text')
@@ -3729,6 +4890,7 @@ export class BarChartProVisual implements IVisual {
       .attr('x', xPos)
       .attr('y', cy)
       .attr('text-anchor', anchor)
+      .style('text-anchor', anchor)
       .attr('dominant-baseline', 'central')
       .text(text);
   }
@@ -3798,12 +4960,62 @@ export class BarChartProVisual implements IVisual {
 
   // ── Tooltips ────────────────────────────────────────────────────
 
+  private attachCategoryAxisTooltips(
+    axis: d3.Selection<SVGGElement, unknown, null, undefined>,
+    data: ChartData,
+  ): void {
+    axis.selectAll<SVGTextElement, string>('text')
+      .classed('bar-chart-category-tooltip-label', (categoryKey) => this.getCategoryTooltipData(String(categoryKey), data).length > 1)
+      .style('cursor', (categoryKey) => this.getCategoryTooltipData(String(categoryKey), data).length > 1 ? 'help' : null)
+      .on('mouseover.categoryTooltip', (event: MouseEvent, categoryKey) => {
+        const normalizedKey = String(categoryKey);
+        const tooltipData = this.getCategoryTooltipData(normalizedKey, data);
+        if (tooltipData.length <= 1) return;
+        const categoryIndex = data.categories.indexOf(normalizedKey);
+        const selectionId = categoryIndex >= 0 ? data.categorySelectionIds[categoryIndex] : undefined;
+
+        this.host.tooltipService.show({
+          dataItems: tooltipData,
+          identities: selectionId ? [selectionId] : [],
+          coordinates: [event.clientX, event.clientY],
+          isTouchEvent: false,
+        });
+      })
+      .on('mousemove.categoryTooltip', (event: MouseEvent, categoryKey) => {
+        const normalizedKey = String(categoryKey);
+        const tooltipData = this.getCategoryTooltipData(normalizedKey, data);
+        if (tooltipData.length <= 1) return;
+        const categoryIndex = data.categories.indexOf(normalizedKey);
+        const selectionId = categoryIndex >= 0 ? data.categorySelectionIds[categoryIndex] : undefined;
+
+        this.host.tooltipService.move({
+          dataItems: tooltipData,
+          identities: selectionId ? [selectionId] : [],
+          coordinates: [event.clientX, event.clientY],
+          isTouchEvent: false,
+        });
+      })
+      .on('mouseout.categoryTooltip', (_event: MouseEvent, categoryKey) => {
+        if (this.getCategoryTooltipData(String(categoryKey), data).length <= 1) return;
+        this.host.tooltipService.hide({ immediately: true, isTouchEvent: false });
+      });
+  }
+
+  private getCategoryTooltipData(categoryKey: string, data: ChartData): VisualTooltipDataItem[] {
+    const detailItems = data.categoryTooltipItemsByKey[categoryKey] ?? [];
+    return [
+      { displayName: 'Category', value: this.getCategoryLabel(categoryKey, data) },
+      ...detailItems,
+    ];
+  }
+
   private attachBarTooltip(
     rect: d3.Selection<SVGRectElement, unknown, null, undefined>,
     category: string,
     seriesName: string,
     value: number,
     totalForCategory?: number,
+    selectionId?: ISelectionId,
   ): void {
     const host = this.host;
     const numberSettings = this.settings.numberFormattingCard;
@@ -3820,7 +5032,7 @@ export class BarChartProVisual implements IVisual {
 
       host.tooltipService.show({
         dataItems: tooltipData,
-        identities: [],
+        identities: selectionId ? [selectionId] : [],
         coordinates: [event.clientX, event.clientY],
         isTouchEvent: false,
       });
@@ -3829,7 +5041,7 @@ export class BarChartProVisual implements IVisual {
     rect.on('mousemove', (event: MouseEvent) => {
       host.tooltipService.move({
         dataItems: [],
-        identities: [],
+        identities: selectionId ? [selectionId] : [],
         coordinates: [event.clientX, event.clientY],
         isTouchEvent: false,
       });
@@ -3845,6 +5057,7 @@ export class BarChartProVisual implements IVisual {
     category: string,
     seriesName: string,
     value: number,
+    selectionId?: ISelectionId,
   ): void {
     const host = this.host;
     const numberSettings = this.settings.lineNumberFormattingCard;
@@ -3857,7 +5070,7 @@ export class BarChartProVisual implements IVisual {
 
       host.tooltipService.show({
         dataItems: tooltipData,
-        identities: [],
+        identities: selectionId ? [selectionId] : [],
         coordinates: [event.clientX, event.clientY],
         isTouchEvent: false,
       });
@@ -3866,7 +5079,7 @@ export class BarChartProVisual implements IVisual {
     circle.on('mousemove', (event: MouseEvent) => {
       host.tooltipService.move({
         dataItems: [],
-        identities: [],
+        identities: selectionId ? [selectionId] : [],
         coordinates: [event.clientX, event.clientY],
         isTouchEvent: false,
       });
@@ -3895,8 +5108,9 @@ export class BarChartProVisual implements IVisual {
     drillCategoryLabel?: string,
   ): void {
     node.attr('data-selection-key', selectionId.getKey());
-    node.style('cursor', 'pointer');
+    node.style('cursor', allowInteractions(this.host) ? 'pointer' : 'default');
     node.on('click.selection', (event: MouseEvent) => {
+      if (!allowInteractions(this.host)) return;
       event.stopPropagation();
 
       // Drill-down: if enabled and this category has sub-categories, drill into it
@@ -3916,10 +5130,12 @@ export class BarChartProVisual implements IVisual {
         }
       }
 
-      void this.selectionManager.select(selectionId, event.ctrlKey || event.metaKey);
+      const selectionPromise = this.selectionManager.select(selectionId, event.ctrlKey || event.metaKey);
       this.applySelectionHighlight();
+      void selectionPromise.then(() => this.applySelectionHighlight());
     });
     node.on('contextmenu.selection', (event: MouseEvent) => {
+      if (!allowInteractions(this.host)) return;
       event.preventDefault();
       event.stopPropagation();
       void this.selectionManager.showContextMenu(selectionId, {
@@ -3930,8 +5146,10 @@ export class BarChartProVisual implements IVisual {
   }
 
   private handleBackgroundClick = (): void => {
-    void this.selectionManager.clear();
+    if (!allowInteractions(this.host)) return;
+    const clearPromise = this.selectionManager.clear();
     this.applySelectionHighlight();
+    void clearPromise.then(() => this.applySelectionHighlight());
   };
 
   // ── Selection & Cross-Highlight ─────────────────────────────────
@@ -3993,7 +5211,7 @@ export class BarChartProVisual implements IVisual {
     color: string,
     direction: 'vertical' | 'horizontal',
   ): string {
-    const id = `bar-grad-${this.gradientIdCounter++}`;
+    const id = this.nextScopedSvgId('bar-grad');
 
     // Lighten the color by blending with white
     const parsed = d3.color(color);
@@ -4015,10 +5233,25 @@ export class BarChartProVisual implements IVisual {
     return `url(#${id})`;
   }
 
+  private nextScopedSvgId(name: string): string {
+    return this.createScopedSvgId(`${name}-${this.gradientIdCounter++}`);
+  }
+
+  private createScopedSvgId(name: string): string {
+    return `${this.svgIdPrefix}-${name.replace(/[^a-zA-Z0-9_-]/g, '')}`;
+  }
+
   /**
    * Returns the fill value for a bar: either a gradient URL or the flat color.
    * If this is the "Others" category from Top N, uses the othersColor override.
    */
+  private getResolvedBarColor(data: ChartData, catIdx: number, fallbackColor: string): string {
+    if (this.getBarColorBinding() === 'category' && this.canUseCategoryColors(data)) {
+      return data.categoryColorsByKey[data.categories[catIdx]] ?? fallbackColor;
+    }
+    return fallbackColor;
+  }
+
   private getBarFill(
     defs: d3.Selection<SVGDefsElement, unknown, null, undefined> | null,
     color: string,
@@ -4100,6 +5333,7 @@ export class BarChartProVisual implements IVisual {
 
   public destroy(): void {
     this.container.removeEventListener('click', this.handleBackgroundClick);
+    this.detachEmptySpaceContextMenu?.();
     this.cancelAnimations.forEach((cancel) => cancel());
     this.cancelAnimations = [];
     while (this.container.firstChild) {

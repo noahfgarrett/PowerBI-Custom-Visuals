@@ -4,7 +4,7 @@
     "displayName": "Box Plot",
     "guid": "boxPlot_6F7A8B9C1D2E",
     "visualClassName": "BoxPlotVisual",
-    "version": "1.0.1.0",
+    "version": "1.0.14.0",
     "description": "Statistical box-and-whisker plot showing min, Q1, median, Q3, max per category with optional outlier dots. Glassmorphic styling and entrance animations.",
     "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
     "gitHubUrl": "https://github.com/noahgarrett/PowerBI"
@@ -18,5 +18,8 @@
     "icon": "assets/icon.png"
   },
   "style": "style/visual.less",
-  "capabilities": "capabilities.json"
+  "capabilities": "capabilities.json",
+  "stringResources": [
+    "stringResources/en-US/resources.resjson"
+  ]
 }

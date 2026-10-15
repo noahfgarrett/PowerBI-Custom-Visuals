@@ -53,4 +53,13 @@
   height: 100%;
   text-align: center;
   padding: 16px;
+  box-sizing: border-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sankey-node rect,
+  .sankey-link,
+  .sankey-node-label {
+    transition: none;
+  }
 }

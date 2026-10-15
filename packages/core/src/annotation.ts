@@ -23,6 +23,20 @@ export interface AnnotationConfig {
   fontColor: string;
   /** Connector line color. */
   connectorColor: string;
+  /** Font family for annotation text. */
+  fontFamily?: string;
+  /** Font weight for annotation text. */
+  fontWeight?: string;
+  /** Offset from the target point to the callout. */
+  offset?: number;
+  /** Padding inside the callout badge. */
+  padding?: number;
+  /** Background color for the badge. */
+  backgroundColor?: string;
+  /** Background opacity for the badge fill. */
+  backgroundOpacity?: number;
+  /** Corner radius for the badge. */
+  cornerRadius?: number;
   /** Resolves a category name to an (x, y) coordinate on the chart. */
   resolvePosition: (category: string) => { x: number; y: number } | null;
 }
@@ -32,6 +46,26 @@ const CALLOUT_OFFSET = 24;
 /** Padding inside the callout box. */
 const CALLOUT_PADDING = 4;
 
+function withOpacity(color: string, opacity: number): string {
+  const clamped = Math.max(0, Math.min(1, opacity));
+  if (color.startsWith('#')) {
+    const hex = color.slice(1);
+    const normalized = hex.length === 3
+      ? hex.split('').map((c) => c + c).join('')
+      : hex;
+    if (normalized.length === 6) {
+      const r = parseInt(normalized.slice(0, 2), 16);
+      const g = parseInt(normalized.slice(2, 4), 16);
+      const b = parseInt(normalized.slice(4, 6), 16);
+      return `rgba(${r}, ${g}, ${b}, ${clamped})`;
+    }
+  }
+  if (color.startsWith('rgb(')) {
+    return color.replace(/^rgb\((.+)\)$/u, `rgba($1, ${clamped})`);
+  }
+  return color;
+}
+
 /**
  * Renders annotation callouts on a chart SVG group.
  * Each annotation shows a text label with a connector line to its target data point.
@@ -40,7 +74,20 @@ export function renderAnnotations(
   g: d3.Selection<SVGGElement, unknown, null, undefined>,
   config: AnnotationConfig,
 ): void {
-  const { annotations, fontSize, fontColor, connectorColor, resolvePosition } = config;
+  const {
+    annotations,
+    fontSize,
+    fontColor,
+    connectorColor,
+    fontFamily,
+    fontWeight,
+    offset = CALLOUT_OFFSET,
+    padding = CALLOUT_PADDING,
+    backgroundColor = '#FFFFFF',
+    backgroundOpacity = 0.85,
+    cornerRadius = 3,
+    resolvePosition,
+  } = config;
 
   if (annotations.length === 0) return;
 
@@ -59,19 +106,19 @@ export function renderAnnotations(
     let textY = pos.y;
     let anchor: string = 'middle';
 
-    switch (ann.position) {
+      switch (ann.position) {
       case 'above':
-        textY = pos.y - CALLOUT_OFFSET;
+        textY = pos.y - offset;
         break;
       case 'below':
-        textY = pos.y + CALLOUT_OFFSET + fontSize;
+        textY = pos.y + offset + fontSize;
         break;
       case 'left':
-        textX = pos.x - CALLOUT_OFFSET;
+        textX = pos.x - offset;
         anchor = 'end';
         break;
       case 'right':
-        textX = pos.x + CALLOUT_OFFSET;
+        textX = pos.x + offset;
         anchor = 'start';
         break;
     }
@@ -106,20 +153,23 @@ export function renderAnnotations(
       .attr('text-anchor', anchor)
       .attr('font-size', `${fontSize}px`)
       .attr('fill', fontColor)
-      .attr('font-weight', '500')
+      .attr('font-weight', fontWeight || '500')
       .text(ann.text);
+    if (fontFamily) {
+      textEl.attr('font-family', fontFamily);
+    }
 
     // Insert background rect behind text
     const bbox = (textEl.node() as SVGTextElement)?.getBBox?.();
     if (bbox) {
       annGroup
         .insert('rect', '.annotation-text')
-        .attr('x', bbox.x - CALLOUT_PADDING)
-        .attr('y', bbox.y - CALLOUT_PADDING / 2)
-        .attr('width', bbox.width + CALLOUT_PADDING * 2)
-        .attr('height', bbox.height + CALLOUT_PADDING)
-        .attr('fill', 'rgba(255, 255, 255, 0.85)')
-        .attr('rx', 3);
+        .attr('x', bbox.x - padding)
+        .attr('y', bbox.y - padding / 2)
+        .attr('width', bbox.width + padding * 2)
+        .attr('height', bbox.height + padding)
+        .attr('fill', withOpacity(backgroundColor, backgroundOpacity))
+        .attr('rx', cornerRadius);
     }
   }
 }
@@ -135,6 +185,15 @@ export function buildAnnotationConfig(
   fontColor: string,
   connectorColor: string,
   resolvePosition: (category: string) => { x: number; y: number } | null,
+  style?: {
+    fontFamily?: string;
+    fontWeight?: string;
+    offset?: number;
+    padding?: number;
+    backgroundColor?: string;
+    backgroundOpacity?: number;
+    cornerRadius?: number;
+  },
 ): AnnotationConfig | null {
   if (!show) return null;
 
@@ -153,6 +212,13 @@ export function buildAnnotationConfig(
     fontSize: fontSize || 11,
     fontColor: fontColor || '#475569',
     connectorColor: connectorColor || '#94A3B8',
+    fontFamily: style?.fontFamily,
+    fontWeight: style?.fontWeight,
+    offset: style?.offset,
+    padding: style?.padding,
+    backgroundColor: style?.backgroundColor,
+    backgroundOpacity: style?.backgroundOpacity,
+    cornerRadius: style?.cornerRadius,
     resolvePosition,
   };
 }

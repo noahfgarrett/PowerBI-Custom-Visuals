@@ -33,6 +33,20 @@ import {
   getDateFilterIndices,
   isDateColumn,
   type DateFilterConfig,
+  hideInlineLegendFormatting,
+  syncCardStyleVisibility,
+  syncDateFilterFormattingVisibility,
+  syncLegendFormattingVisibility,
+  syncTitleFormattingVisibility,
+  getLocalizedString,
+  getVisualEmptyStateMode,
+  allowInteractions,
+  getHostHighContrastColors,
+  applyBasicHighContrastStyles,
+  notifyRenderingStarted,
+  notifyRenderingFinished,
+  notifyRenderingFailed,
+  prefersReducedMotion,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -60,18 +74,25 @@ interface DonutData {
   hasHighlights: boolean;
 }
 
-/** Segment for the nested inner ring */
-interface InnerRingSegment {
-  label: string;
-  value: number;
-  color: string;
-  parentLabel: string;
+type CenterDisplayMode = 'selectedOrTotal' | 'total' | 'selectedOnly' | 'firstSlice' | 'customText';
+type CenterCaptionMode = 'none' | 'auto' | 'custom';
+
+interface CenterContent {
+  primaryText: string;
+  captionText: string;
+  numericValue: number | null;
 }
 
 interface SegmentArc {
   startAngle: number;
   endAngle: number;
   segment: DonutSegment;
+}
+
+interface NestedAggregate {
+  value: number;
+  firstIndex: number;
+  highlighted: boolean;
 }
 
 // ── Constants ───────────────────────────────────────────────────────
@@ -100,22 +121,39 @@ export class AnimatedDonutProVisual implements IVisual {
 
   /** Cached data for cross-highlight support. */
   private currentData: DonutData | null = null;
+  private currentNestedSegments: DonutSegment[] = [];
+  private emptyStateMode: 'unconfigured' | 'noData' = 'unconfigured';
+  private centerValueElement: SVGTextElement | null = null;
+  private centerCaptionElement: SVGTextElement | null = null;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
     this.selectionManager = options.host.createSelectionManager();
     this.container = options.element;
     this.settings = new AnimatedDonutProSettings();
-    this.formattingSettingsService = new FormattingSettingsService();
+    this.formattingSettingsService = new FormattingSettingsService(options.host.createLocalizationManager());
     this.container.classList.add('donut-container');
   }
 
   public update(options: VisualUpdateOptions): void {
+    notifyRenderingStarted(this.host, options);
+    try {
+      this.updateVisual(options);
+      this.applyHighContrast();
+      notifyRenderingFinished(this.host, options);
+    } catch (error) {
+      notifyRenderingFailed(this.host, options, error instanceof Error ? error.message : String(error));
+      throw error;
+    }
+  }
+
+  private updateVisual(options: VisualUpdateOptions): void {
     // Cancel running animations before re-render
     this.cancelAllAnimations();
 
     // Parse settings from dataView
     const dataView = options.dataViews?.[0];
+    this.emptyStateMode = getVisualEmptyStateMode(dataView);
     if (dataView) {
       this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
         AnimatedDonutProSettings,
@@ -127,7 +165,7 @@ export class AnimatedDonutProVisual implements IVisual {
     const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
     if (legacyCardObj) {
       const legacyGlass = legacyCardObj['enableGlass'];
-      if (legacyGlass === false) {
+      if (legacyGlass === false && legacyCardObj['cardStyleMode'] == null) {
         this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
       }
     }
@@ -135,15 +173,32 @@ export class AnimatedDonutProVisual implements IVisual {
     // ── Conditional visibility ──────────────────────────────────────
     const s = this.settings;
 
+    syncTitleFormattingVisibility(s.titleFormattingCard);
+    syncLegendFormattingVisibility(s.legendFormattingCard);
+
     // Center value sub-settings: hide when showCenter is off
     const showCenter = s.donutSettings.showCenter.value;
+    const centerDisplayMode = (resolveDropdown(s.valueSettings.displayMode) ?? 'selectedOrTotal') as CenterDisplayMode;
+    const centerCaptionMode = (resolveDropdown(s.valueSettings.captionMode) ?? 'none') as CenterCaptionMode;
+    const centerUsesNumericValue = centerDisplayMode !== 'customText';
     s.valueSettings.fontSize.visible = showCenter;
     s.valueSettings.fontColor.visible = showCenter;
     s.valueSettings.fontFamily.visible = showCenter;
     s.valueSettings.fontWeight.visible = showCenter;
-    s.valueSettings.prefix.visible = showCenter;
-    s.valueSettings.suffix.visible = showCenter;
-    s.valueSettings.decimalPlaces.visible = showCenter;
+    s.valueSettings.verticalOffset.visible = showCenter;
+    s.valueSettings.displayMode.visible = showCenter;
+    s.valueSettings.prefix.visible = showCenter && centerUsesNumericValue;
+    s.valueSettings.suffix.visible = showCenter && centerUsesNumericValue;
+    s.valueSettings.decimalPlaces.visible = showCenter && centerUsesNumericValue;
+    s.valueSettings.customText.visible = showCenter && centerDisplayMode === 'customText';
+    s.valueSettings.noSelectionText.visible = showCenter && centerDisplayMode === 'selectedOnly';
+    s.valueSettings.captionMode.visible = showCenter;
+    s.valueSettings.customCaption.visible = showCenter && centerCaptionMode === 'custom';
+    s.valueSettings.captionFontSize.visible = showCenter && centerCaptionMode !== 'none';
+    s.valueSettings.captionColor.visible = showCenter && centerCaptionMode !== 'none';
+    s.valueSettings.captionFontFamily.visible = showCenter && centerCaptionMode !== 'none';
+    s.valueSettings.captionFontWeight.visible = showCenter && centerCaptionMode !== 'none';
+    s.valueSettings.captionSpacing.visible = showCenter && centerCaptionMode !== 'none';
 
     // Top N sub-settings: hide when Top N is disabled
     const topNEnabled = s.topNSettings.enabled.value;
@@ -155,28 +210,41 @@ export class AnimatedDonutProVisual implements IVisual {
     // Explode distance: hide when explode is off
     s.donutExplodeSettings.distance.visible = s.donutExplodeSettings.enabled.value;
 
+    s.animationSettings.duration.visible = s.animationSettings.enabled.value;
+
     // Hide shared showDataLabels — local donutSettings.showLabels is the functional toggle
     s.dataLabelFormattingCard.showDataLabels.visible = false;
-    // Remove local labelFontSize and labelColor — let the shared DataLabelFormattingCard handle all label styling
-    s.donutSettings.labelFontSize.visible = false;
-    s.donutSettings.labelColor.visible = false;
+    // Shared inline legend labels are not rendered in this visual.
+    hideInlineLegendFormatting(s.legendFormattingCard);
 
     // Label format & connector settings: hide when showLabels is off
     const showLabels = s.donutSettings.showLabels.value;
     s.donutLabelSettings.format.visible = showLabels;
     s.donutLabelSettings.connectorLines.visible = showLabels;
-    s.donutLabelSettings.fontFamily.visible = showLabels;
-    s.donutLabelSettings.fontWeight.visible = showLabels;
+    s.donutLabelSettings.labelOffset.visible = showLabels;
 
-    // Nested ring sub-settings: hide when nested rings are off
-    s.donutNestedSettings.innerRingField.visible = s.donutNestedSettings.enabled.value;
+    s.dataLabelFormattingCard.dataLabelFontSize.visible = showLabels;
+    s.dataLabelFormattingCard.dataLabelFontColor.visible = showLabels;
+    s.dataLabelFormattingCard.dataLabelFontWeight.visible = showLabels;
+    s.dataLabelFormattingCard.dataLabelFontFamily.visible = showLabels;
+    s.dataLabelFormattingCard.dataLabelPosition.visible = false;
+
+    const hasInnerRingData = dataView?.categorical?.categories?.some(
+      (column) => column.source.roles?.['detail'] === true,
+    ) ?? false;
+    s.donutNestedSettings.enabled.visible = hasInnerRingData;
+
+    const conditionalOn = s.conditionalFormattingCard.enableConditional.value;
+    s.conditionalFormattingCard.conditionalDirection.visible = conditionalOn;
+    s.conditionalFormattingCard.threshold1.visible = conditionalOn;
+    s.conditionalFormattingCard.threshold2.visible = conditionalOn;
+    s.conditionalFormattingCard.conditionalColor1.visible = conditionalOn;
+    s.conditionalFormattingCard.conditionalColor2.visible = conditionalOn;
+    s.conditionalFormattingCard.conditionalColor3.visible = conditionalOn;
 
     // Extract data
 
-    // Date filter: hide start/end when disabled
-    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
+    syncDateFilterFormattingVisibility(this.settings.dateFilterFormattingCard);
     const rawData = this.extractData(dataView);
     const topNSegments = this.applyTopN(rawData.segments);
     const data: DonutData = {
@@ -186,9 +254,7 @@ export class AnimatedDonutProVisual implements IVisual {
     this.currentData = data;
 
     // Card style conditional visibility
-    const cardMode = (resolveDropdown(s.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
-    s.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
-    s.cardSettings.backgroundColor.visible = cardMode !== 'none';
+    syncCardStyleVisibility(s.cardSettings);
 
     // Render
     if (data.segments.length === 0) {
@@ -198,7 +264,7 @@ export class AnimatedDonutProVisual implements IVisual {
     }
 
     // Apply cross-highlight dimming after render
-    this.applySelectionHighlight();
+    this.applySelectionHighlight(false);
 
     // Apply card styling AFTER render — render clears the container, which would destroy the glass backdrop div.
     this.applyCardStyling();
@@ -212,20 +278,52 @@ export class AnimatedDonutProVisual implements IVisual {
     if (!dataView?.categorical) return emptyData;
 
     const categorical = dataView.categorical;
-    const categoryColumn = categorical.categories?.[0];
-    const valuesColumn = categorical.values?.[0];
+    const categoryColumn = categorical.categories?.find((column) => column.source.roles?.['category'])
+      ?? categorical.categories?.[0];
+    const valueColumns = categorical.values;
 
-    if (!categoryColumn || !valuesColumn) return emptyData;
+    if (!valueColumns || valueColumns.length === 0) return emptyData;
 
+    // Measures-only mode: no Category bound → one slice per measure,
+    // each slice labeled by the measure's display name.
+    if (!categoryColumn) {
+      const segments: DonutSegment[] = [];
+      for (let m = 0; m < valueColumns.length; m++) {
+        const col = valueColumns[m];
+        const rawVal = col.values?.[0];
+        const value = typeof rawVal === 'number' && !Number.isNaN(rawVal) ? rawVal : 0;
+        if (value <= 0) continue;
+
+        const hlRaw = (col as unknown as { highlights?: unknown[] }).highlights;
+        const highlighted = Array.isArray(hlRaw) && hlRaw[0] !== null && hlRaw[0] !== undefined;
+
+        const queryName = col.source.queryName;
+        const builder = this.host.createSelectionIdBuilder();
+        const selectionId = queryName
+          ? builder.withMeasure(queryName).createSelectionId()
+          : builder.createSelectionId();
+
+        segments.push({
+          label: col.source.displayName ?? `Measure ${m + 1}`,
+          value,
+          color: getHostChartColor(this.host.colorPalette, m, themeName),
+          selectionId,
+          highlighted,
+        });
+      }
+      return { segments, hasHighlights: segments.some((s) => s.highlighted) };
+    }
+
+    // Category mode: one slice per category, driven by the FIRST measure.
+    // When multiple measures are bound alongside a category, the donut uses
+    // the first; users wanting per-measure slices should remove the category.
+    const valuesColumn = valueColumns[0];
     const categories = categoryColumn.values;
     const values = valuesColumn.values;
 
     if (!categories || !values || categories.length === 0) return emptyData;
 
     const hlRaw = (valuesColumn as unknown as { highlights?: unknown[] }).highlights as unknown[] | undefined;
-
-    const segments: DonutSegment[] = [];
-
 
     const dateConfig: DateFilterConfig = {
       enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
@@ -234,6 +332,12 @@ export class AnimatedDonutProVisual implements IVisual {
       endDate: this.settings.dateFilterFormattingCard.endDate.value,
     };
     const dateIndices = isDateColumn(categoryColumn.source) ? getDateFilterIndices(categoryColumn.values, dateConfig) : null;
+
+    const aggregates = new Map<string, {
+      value: number;
+      firstIndex: number;
+      highlighted: boolean;
+    }>();
 
     for (let i = 0; i < categories.length; i++) {
       if (dateIndices && !dateIndices.has(i)) continue;
@@ -249,16 +353,24 @@ export class AnimatedDonutProVisual implements IVisual {
 
       const highlighted = hlRaw ? hlRaw[i] !== null && hlRaw[i] !== undefined : false;
 
-      segments.push({
-        label,
-        value,
-        color: getHostChartColor(this.host.colorPalette, i, themeName),
-        selectionId: this.host.createSelectionIdBuilder()
-          .withCategory(categoryColumn, i)
-          .createSelectionId(),
-        highlighted,
-      });
+      const existing = aggregates.get(label);
+      if (existing) {
+        existing.value += value;
+        existing.highlighted ||= highlighted;
+      } else {
+        aggregates.set(label, { value, firstIndex: i, highlighted });
+      }
     }
+
+    const segments = Array.from(aggregates, ([label, aggregate], colorIndex): DonutSegment => ({
+      label,
+      value: aggregate.value,
+      color: getHostChartColor(this.host.colorPalette, colorIndex, themeName),
+      selectionId: this.host.createSelectionIdBuilder()
+        .withCategory(categoryColumn, aggregate.firstIndex)
+        .createSelectionId(),
+      highlighted: aggregate.highlighted,
+    }));
 
     const hasHighlights = segments.some((s) => s.highlighted);
     return { segments, hasHighlights };
@@ -314,18 +426,21 @@ export class AnimatedDonutProVisual implements IVisual {
       backgroundColor: s.backgroundColor?.value?.value,
       borderRadius: s.borderRadius.value,
     });
-    if (cardMode === 'none') {
-      this.container.style.borderRadius = `${s.borderRadius.value}px`;
-    }
   }
 
   // ── Empty State ───────────────────────────────────────────────
 
   private renderEmpty(): void {
     this.clearContainer();
+    this.container.removeAttribute('role');
+    this.container.removeAttribute('aria-label');
     const emptyEl = document.createElement('div');
     emptyEl.className = 'donut-empty';
-    emptyEl.textContent = 'Add a Category and a Value to get started.';
+    emptyEl.setAttribute('role', 'status');
+    emptyEl.setAttribute('aria-live', 'polite');
+    emptyEl.textContent = this.emptyStateMode === 'noData'
+      ? getLocalizedString(this.host, 'AnimatedDonutPro_NoDataState', 'No data for the current selection.')
+      : getLocalizedString(this.host, 'AnimatedDonutPro_EmptyState', 'Add a Value measure to get started. Bind a Category for per-category slices, or add multiple Values for one slice per measure.');
     this.container.appendChild(emptyEl);
   }
 
@@ -336,9 +451,11 @@ export class AnimatedDonutProVisual implements IVisual {
     renderChartTitle(this.container, this.settings.titleFormattingCard);
     this.container.removeEventListener('click', this.handleBackgroundClick);
     this.segmentPaths = [];
+    this.currentNestedSegments = [];
 
     const s = this.settings;
-    const padding = 8; // CSS padding on container
+    const interactionsAllowed = allowInteractions(this.host);
+    const padding = Math.max(0, s.donutSettings.outerPadding.value + s.cardSettings.contentPadding.value);
 
     // Legend config
     const showLegend = s.legendFormattingCard.showLegend.value;
@@ -371,7 +488,17 @@ export class AnimatedDonutProVisual implements IVisual {
 
     const cx = svgWidth / 2;
     const cy = svgHeight / 2;
-    const maxRadius = Math.min(cx, cy) - 4; // 4px margin for hover overshoot
+    const showOutsideLabels = s.donutSettings.showLabels.value
+      && s.donutLabelSettings.connectorLines.value;
+    const labelReserve = showOutsideLabels
+      ? 20
+        + Math.max(0, s.donutLabelSettings.labelOffset.value)
+        + Math.max(8, s.dataLabelFormattingCard.dataLabelFontSize.value)
+      : 0;
+    const explodeReserve = s.donutExplodeSettings.enabled.value
+      ? Math.max(0, s.donutExplodeSettings.distance.value) + 4
+      : 0;
+    const maxRadius = Math.min(cx, cy) - 4 - Math.max(labelReserve, explodeReserve);
 
     if (maxRadius <= 0) {
       this.renderEmpty();
@@ -447,7 +574,7 @@ export class AnimatedDonutProVisual implements IVisual {
       .attr('transform', `translate(${cx},${cy + cyOffset})`);
 
     // Animation config
-    const animEnabled = s.animationSettings.enabled.value;
+    const animEnabled = s.animationSettings.enabled.value && !prefersReducedMotion();
     const animDuration = animEnabled ? s.animationSettings.duration.value : 0;
 
     // Explode settings
@@ -535,9 +662,10 @@ export class AnimatedDonutProVisual implements IVisual {
       if (arc.segment.selectionId) {
         const selId = arc.segment.selectionId;
         path
-          .style('cursor', 'pointer')
+          .style('cursor', interactionsAllowed ? 'pointer' : 'default')
           .on('click', (event: MouseEvent) => {
             event.stopPropagation();
+            if (!interactionsAllowed) return;
             void this.selectionManager.select(selId, event.ctrlKey || event.metaKey).then(() => {
               this.applySelectionHighlight();
             });
@@ -545,6 +673,7 @@ export class AnimatedDonutProVisual implements IVisual {
           .on('contextmenu', (event: MouseEvent) => {
             event.preventDefault();
             event.stopPropagation();
+            if (!interactionsAllowed) return;
             void this.selectionManager.showContextMenu(selId, {
               x: event.clientX,
               y: event.clientY,
@@ -563,19 +692,16 @@ export class AnimatedDonutProVisual implements IVisual {
 
     // Center value
     if (s.donutSettings.showCenter.value) {
-      this.renderCenterValue(g, total, animEnabled, animDuration);
+      this.renderCenterValue(g, animEnabled, animDuration);
     }
 
     // Nested inner ring
     if (s.donutNestedSettings.enabled.value) {
-      const innerRingFieldName = s.donutNestedSettings.innerRingField.value.trim();
-      if (innerRingFieldName.length > 0) {
-        this.renderNestedRing(
-          g, segments, innerRadius, total,
-          layoutStartAngle, layoutEndAngle,
-          innerRingFieldName, dataView, animEnabled, animDuration,
-        );
-      }
+      this.renderNestedRing(
+        g, segments, innerRadius,
+        layoutStartAngle, layoutEndAngle,
+        dataView, animEnabled, animDuration,
+      );
     }
 
     // Render legend at bottom or right position
@@ -585,6 +711,7 @@ export class AnimatedDonutProVisual implements IVisual {
 
     this.applyAccessibility(arcs.length);
     this.container.addEventListener('click', this.handleBackgroundClick);
+    this.container.addEventListener('contextmenu', this.handleBackgroundContextMenu);
   }
 
   // ── Conditional Formatting ───────────────────────────────────
@@ -608,17 +735,40 @@ export class AnimatedDonutProVisual implements IVisual {
 
   private applyAccessibility(dataPointCount: number): void {
     const acc = this.settings.accessibilityFormattingCard;
-    if (!acc.enableKeyboardNav.value) return;
+    if (!acc.enableKeyboardNav.value) {
+      this.container.removeAttribute('role');
+      this.container.removeAttribute('aria-label');
+      return;
+    }
     ensureFocusRingStyles();
     applyChartAria(this.container, {
       chartType: 'donut chart',
       title: this.settings.titleFormattingCard?.titleText?.value || undefined,
       dataPointCount,
     });
+    const accessibleSegments = [
+      ...(this.currentData?.segments ?? []),
+      ...this.currentNestedSegments,
+    ];
+    this.container.querySelectorAll<SVGPathElement>(
+      '.donut-segment, .donut-inner-segment',
+    ).forEach((path, index) => {
+      const segment = accessibleSegments[index];
+      path.setAttribute('role', 'listitem');
+      path.setAttribute('tabindex', '0');
+      path.setAttribute(
+        'aria-label',
+        segment
+          ? `${segment.label}, ${formatWithSettings(segment.value, this.settings.numberFormattingCard)}`
+          : `Donut segment ${index + 1}`,
+      );
+    });
     const cleanup = attachKeyboardNav({
       container: this.container,
-      itemSelector: '.donut-segment',
-      onActivate: (el) => (el as HTMLElement).click?.(),
+      itemSelector: '.donut-segment[tabindex="0"], .donut-inner-segment[tabindex="0"]',
+      onActivate: (el) => {
+        if (allowInteractions(this.host)) (el as HTMLElement).click?.();
+      },
     });
     this.cancelAnimations.push(cleanup);
   }
@@ -665,13 +815,14 @@ export class AnimatedDonutProVisual implements IVisual {
   ): void {
     const showConnectors = this.settings.donutLabelSettings.connectorLines.value;
     const labelFormatRaw = resolveDropdown(this.settings.donutLabelSettings.format) ?? 'category';
-    const sliceFontFamily = resolveDropdown(this.settings.donutLabelSettings.fontFamily);
-    const sliceFontWeight = resolveDropdown(this.settings.donutLabelSettings.fontWeight);
+    const labelOffset = Math.max(0, this.settings.donutLabelSettings.labelOffset.value);
+    const sharedLabelColor = this.settings.dataLabelFormattingCard.dataLabelFontColor.value?.value || '#475569';
+    const sharedLabelSize = this.settings.dataLabelFormattingCard.dataLabelFontSize.value;
 
     // When connector lines are on, place labels outside the donut
     const labelRadius = showConnectors
-      ? outerRadius + 20
-      : (innerRadius + outerRadius) / 2;
+      ? outerRadius + 20 + labelOffset
+      : (innerRadius + outerRadius) / 2 + labelOffset;
 
     arcs.forEach((arc, index) => {
       const midAngle = (arc.startAngle + arc.endAngle) / 2;
@@ -710,7 +861,7 @@ export class AnimatedDonutProVisual implements IVisual {
           .attr('class', 'donut-connector')
           .attr('points', `${cx},${cy} ${ex},${ey} ${lx},${ly}`)
           .attr('fill', 'none')
-          .attr('stroke', this.settings.donutSettings.labelColor.value?.value || '#94A3B8')
+          .attr('stroke', sharedLabelColor)
           .attr('stroke-width', 1);
       }
 
@@ -718,11 +869,9 @@ export class AnimatedDonutProVisual implements IVisual {
         .attr('class', 'donut-label')
         .attr('x', lx)
         .attr('y', ly)
-        .attr('fill', this.settings.donutSettings.labelColor.value?.value || '#475569')
-        .attr('font-size', `${this.settings.donutSettings.labelFontSize.value}px`)
+        .attr('fill', sharedLabelColor)
+        .attr('font-size', `${sharedLabelSize}px`)
         .text(labelText);
-      if (sliceFontFamily) text.style('font-family', sliceFontFamily);
-      text.style('font-weight', sliceFontWeight || 'normal');
 
       // When labels are outside with connectors, align text based on side
       if (showConnectors) {
@@ -747,10 +896,8 @@ export class AnimatedDonutProVisual implements IVisual {
     g: d3.Selection<SVGGElement, unknown, null, undefined>,
     outerSegments: DonutSegment[],
     innerRadius: number,
-    total: number,
     layoutStartAngle: number,
     layoutEndAngle: number,
-    fieldName: string,
     dataView: DataView | undefined,
     animEnabled: boolean,
     animDuration: number,
@@ -759,60 +906,70 @@ export class AnimatedDonutProVisual implements IVisual {
 
     const categorical = dataView.categorical;
     const categories = categorical.categories;
-    if (!categories || categories.length < 2) return;
-
-    // Find the column whose displayName matches the innerRingField setting
-    let innerColumn: powerbi.DataViewCategoryColumn | undefined;
-    for (let ci = 1; ci < categories.length; ci++) {
-      const colName = categories[ci].source.displayName ?? '';
-      if (colName.toLowerCase() === fieldName.toLowerCase()) {
-        innerColumn = categories[ci];
-        break;
-      }
-    }
-    if (!innerColumn) return;
+    const outerCategory = categories?.find((column) => column.source.roles?.['category'])
+      ?? categories?.[0];
+    const innerColumn = categories?.find((column) => column.source.roles?.['detail']);
+    if (!outerCategory || !innerColumn) return;
 
     const valuesColumn = categorical.values?.[0];
     if (!valuesColumn) return;
 
-    // Build inner ring segments grouped by outer category
-    const innerSegments: InnerRingSegment[] = [];
-    const outerCategory = categories[0];
+    const visibleParents = new Set(
+      outerSegments.filter((segment) => segment.selectionId !== null).map((segment) => segment.label),
+    );
+    const othersSegment = outerSegments.find((segment) => segment.selectionId === null);
+    const groupedSegments = new Map<string, Map<string, NestedAggregate>>();
+    const dateConfig: DateFilterConfig = {
+      enabled: this.settings.dateFilterFormattingCard.enableDateFilter.value,
+      startDate: this.settings.dateFilterFormattingCard.startDate.value,
+      endAtCurrentDate: this.settings.dateFilterFormattingCard.endAtCurrentDate.value,
+      endDate: this.settings.dateFilterFormattingCard.endDate.value,
+    };
+    const dateIndices = isDateColumn(outerCategory.source)
+      ? getDateFilterIndices(outerCategory.values, dateConfig)
+      : null;
+    const highlights = (valuesColumn as unknown as { highlights?: unknown[] }).highlights;
+    const interactionsAllowed = allowInteractions(this.host);
 
     for (let i = 0; i < innerColumn.values.length; i++) {
-      const parentLabel = outerCategory.values[i] != null ? String(outerCategory.values[i]) : '';
+      if (dateIndices && !dateIndices.has(i)) continue;
+      const rawParentLabel = outerCategory.values[i] != null ? String(outerCategory.values[i]) : '';
+      const parentLabel = visibleParents.has(rawParentLabel)
+        ? rawParentLabel
+        : othersSegment?.label;
+      if (!parentLabel) continue;
       const label = innerColumn.values[i] != null ? String(innerColumn.values[i]) : '';
       const rawVal = valuesColumn.values[i];
       const value = typeof rawVal === 'number' && !Number.isNaN(rawVal) ? rawVal : 0;
       if (value <= 0) continue;
 
-      innerSegments.push({ label, value, color: '', parentLabel });
+      let childMap = groupedSegments.get(parentLabel);
+      if (!childMap) {
+        childMap = new Map<string, NestedAggregate>();
+        groupedSegments.set(parentLabel, childMap);
+      }
+      const highlighted = Array.isArray(highlights)
+        && highlights[i] !== null
+        && highlights[i] !== undefined;
+      const aggregate = childMap.get(label);
+      if (aggregate) {
+        aggregate.value += value;
+        aggregate.highlighted ||= highlighted;
+      } else {
+        childMap.set(label, { value, firstIndex: i, highlighted });
+      }
     }
 
-    if (innerSegments.length === 0) return;
-
-    // Assign colors: derive from parent's color with slight lightening
-    const parentColorMap = new Map<string, string>();
-    for (const seg of outerSegments) {
-      parentColorMap.set(seg.label, seg.color);
-    }
-
-    let colorIndex = 0;
-    for (const seg of innerSegments) {
-      const parentColor = parentColorMap.get(seg.parentLabel) ?? '#94A3B8';
-      seg.color = withOpacity(parentColor, 0.6 + (colorIndex % 3) * 0.15);
-      colorIndex++;
-    }
+    if (groupedSegments.size === 0) return;
 
     // Inner ring radii: from 60% of innerRadius to innerRadius - 2px gap
     const nestedOuterR = Math.max(0, innerRadius - 2);
     const nestedInnerR = nestedOuterR * 0.5;
     if (nestedOuterR <= nestedInnerR || nestedOuterR <= 0) return;
 
-    const innerTotal = innerSegments.reduce((sum, s) => sum + s.value, 0);
-    if (innerTotal <= 0) return;
-
     const totalArcSpan = layoutEndAngle - layoutStartAngle;
+    const outerTotal = outerSegments.reduce((sum, segment) => sum + segment.value, 0);
+    if (outerTotal <= 0) return;
     let currentAngle = layoutStartAngle;
 
     const arcGen = d3.arc<{ startAngle: number; endAngle: number }>()
@@ -821,36 +978,91 @@ export class AnimatedDonutProVisual implements IVisual {
       .startAngle((d) => d.startAngle)
       .endAngle((d) => d.endAngle);
 
-    for (const seg of innerSegments) {
-      const fraction = seg.value / innerTotal;
-      const arcAngle = fraction * totalArcSpan;
-      const endAngle = currentAngle + arcAngle;
+    for (const outerSegment of outerSegments) {
+      const outerEndAngle = currentAngle + (outerSegment.value / outerTotal) * totalArcSpan;
+      const childMap = groupedSegments.get(outerSegment.label);
+      const children = childMap
+        ? Array.from(childMap, ([label, aggregate]) => ({ label, ...aggregate }))
+        : [];
+      const childTotal = children.reduce((sum, child) => sum + child.value, 0);
+      let childStartAngle = currentAngle;
 
-      const arcData = { startAngle: currentAngle, endAngle };
+      children.forEach((child, childIndex) => {
+        const childEndAngle = childTotal > 0
+          ? childStartAngle + (child.value / childTotal) * (outerEndAngle - currentAngle)
+          : childStartAngle;
+        const color = withOpacity(outerSegment.color, 0.6 + (childIndex % 3) * 0.15);
+        const selectionId = outerSegment.selectionId
+          ? this.host.createSelectionIdBuilder()
+            .withCategory(outerCategory, child.firstIndex)
+            .withCategory(innerColumn, child.firstIndex)
+            .createSelectionId()
+          : null;
+        const childSegment: DonutSegment = {
+          label: child.label,
+          value: child.value,
+          color,
+          selectionId,
+          highlighted: child.highlighted,
+        };
+        this.currentNestedSegments.push(childSegment);
+        const path = g.append('path')
+          .attr('class', 'donut-inner-segment')
+          .attr('data-parent', outerSegment.label)
+          .attr('data-label', child.label)
+          .attr('fill', color)
+          .attr('stroke', '#FFFFFF')
+          .attr('stroke-width', 0.5);
 
-      const path = g.append('path')
-        .attr('class', 'donut-inner-segment')
-        .attr('fill', seg.color)
-        .attr('stroke', '#FFFFFF')
-        .attr('stroke-width', 0.5);
+        if (selectionId) path.attr('data-selection-key', selectionId.getKey());
+        if (child.highlighted) path.attr('data-highlighted', 'true');
 
-      if (animEnabled && animDuration > 0) {
-        path.attr('d', arcGen({ startAngle: currentAngle, endAngle: currentAngle }));
-        const delay = animDuration * 0.3;
-        const startA = currentAngle;
-        const endA = endAngle;
-        const tid = setTimeout(() => {
-          const cancel = sweepArc(startA, endA, animDuration, (cur) => {
-            path.attr('d', arcGen({ startAngle: startA, endAngle: cur }));
-          });
-          this.cancelAnimations.push(cancel);
-        }, delay);
-        this.cancelAnimations.push(() => clearTimeout(tid));
-      } else {
-        path.attr('d', arcGen(arcData));
-      }
+        if (animEnabled && animDuration > 0) {
+          path.attr('d', arcGen({ startAngle: childStartAngle, endAngle: childStartAngle }));
+          const delay = animDuration * 0.3;
+          const startA = childStartAngle;
+          const endA = childEndAngle;
+          const tid = setTimeout(() => {
+            const cancel = sweepArc(startA, endA, animDuration, (cur) => {
+              path.attr('d', arcGen({ startAngle: startA, endAngle: cur }));
+            });
+            this.cancelAnimations.push(cancel);
+          }, delay);
+          this.cancelAnimations.push(() => clearTimeout(tid));
+        } else {
+          path.attr('d', arcGen({ startAngle: childStartAngle, endAngle: childEndAngle }));
+        }
 
-      currentAngle = endAngle;
+        this.attachSegmentTooltip(path, childSegment, childTotal);
+        const pathNode = path.node();
+        if (pathNode) this.attachHoverEffect(pathNode, childIndex);
+
+        if (selectionId) {
+          path
+            .style('cursor', interactionsAllowed ? 'pointer' : 'default')
+            .on('click', (event: MouseEvent) => {
+              event.stopPropagation();
+              if (!interactionsAllowed) return;
+              void this.selectionManager.select(
+                selectionId,
+                event.ctrlKey || event.metaKey,
+              ).then(() => this.applySelectionHighlight());
+            })
+            .on('contextmenu', (event: MouseEvent) => {
+              event.preventDefault();
+              event.stopPropagation();
+              if (!interactionsAllowed) return;
+              void this.selectionManager.showContextMenu(selectionId, {
+                x: event.clientX,
+                y: event.clientY,
+              });
+            });
+        }
+
+        childStartAngle = childEndAngle;
+      });
+
+      currentAngle = outerEndAngle;
     }
   }
 
@@ -858,32 +1070,85 @@ export class AnimatedDonutProVisual implements IVisual {
 
   private renderCenterValue(
     g: d3.Selection<SVGGElement, unknown, null, undefined>,
-    total: number,
     animEnabled: boolean,
     animDuration: number,
   ): void {
     const vs = this.settings.valueSettings;
     const fontSize = vs.fontSize.value;
     const fontColor = vs.fontColor.value?.value || '#333333';
-    const prefix = vs.prefix.value || '';
-    const suffix = vs.suffix.value || '';
-    const decimals = vs.decimalPlaces.value;
+    const verticalOffset = vs.verticalOffset.value;
 
     const valueFontFamily = resolveDropdown(vs.fontFamily);
     const valueFontWeight = resolveDropdown(vs.fontWeight);
     const centerText = g.append('text')
       .attr('class', 'donut-center-value')
       .attr('x', 0)
-      .attr('y', 0)
       .attr('font-size', `${fontSize}px`)
       .attr('fill', fontColor);
     if (valueFontFamily) centerText.style('font-family', valueFontFamily);
     centerText.style('font-weight', valueFontWeight || 'normal');
+    this.centerValueElement = centerText.node();
 
-    if (animEnabled && animDuration > 0) {
-      // Count-up animation
-      centerText.text(`${prefix}0${suffix}`);
+    const captionText = g.append('text')
+      .attr('class', 'donut-center-caption')
+      .attr('x', 0);
+    this.centerCaptionElement = captionText.node();
 
+    this.updateCenterDisplay(animEnabled, animDuration);
+  }
+
+  private updateCenterDisplay(
+    animEnabled = false,
+    animDuration = 0,
+  ): void {
+    if (!this.centerValueElement || !this.centerCaptionElement) return;
+
+    const vs = this.settings.valueSettings;
+    const fontSize = vs.fontSize.value;
+    const fontColor = vs.fontColor.value?.value || '#333333';
+    const verticalOffset = vs.verticalOffset.value;
+    const valueFontFamily = resolveDropdown(vs.fontFamily);
+    const valueFontWeight = resolveDropdown(vs.fontWeight);
+
+    const centerContent = this.resolveCenterContent();
+    const captionFontSize = Math.max(8, vs.captionFontSize.value);
+    const captionColor = vs.captionColor.value?.value || '#64748B';
+    const captionFontFamily = resolveDropdown(vs.captionFontFamily) || valueFontFamily;
+    const captionFontWeight = resolveDropdown(vs.captionFontWeight) || 'normal';
+    const captionSpacing = Math.max(0, vs.captionSpacing.value);
+    const hasCaption = centerContent.captionText.trim().length > 0;
+    const valueY = verticalOffset + (hasCaption ? -(captionFontSize * 0.55) : 0);
+    const captionY = verticalOffset + Math.max(fontSize * 0.45, 12) + captionSpacing;
+
+    this.centerValueElement.setAttribute('y', `${valueY}`);
+    this.centerValueElement.setAttribute('font-size', `${fontSize}px`);
+    this.centerValueElement.setAttribute('fill', fontColor);
+    if (valueFontFamily) {
+      this.centerValueElement.style.fontFamily = valueFontFamily;
+    } else {
+      this.centerValueElement.style.removeProperty('font-family');
+    }
+    this.centerValueElement.style.fontWeight = valueFontWeight || 'normal';
+
+    this.centerCaptionElement.setAttribute('y', `${captionY}`);
+    this.centerCaptionElement.setAttribute('font-size', `${captionFontSize}px`);
+    this.centerCaptionElement.setAttribute('fill', captionColor);
+    if (captionFontFamily) {
+      this.centerCaptionElement.style.fontFamily = captionFontFamily;
+    } else {
+      this.centerCaptionElement.style.removeProperty('font-family');
+    }
+    this.centerCaptionElement.style.fontWeight = captionFontWeight;
+
+    if (hasCaption) {
+      this.centerCaptionElement.textContent = centerContent.captionText;
+      this.centerCaptionElement.style.display = '';
+    } else {
+      this.centerCaptionElement.textContent = '';
+      this.centerCaptionElement.style.display = 'none';
+    }
+
+    if (centerContent.numericValue !== null && animEnabled && animDuration > 0) {
       const totalDelay = Math.min(
         this.segmentPaths.length * SEGMENT_STAGGER_MS,
         animDuration * 0.5,
@@ -891,23 +1156,10 @@ export class AnimatedDonutProVisual implements IVisual {
       let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
       timeoutId = setTimeout(() => {
-        const cancel = countUp(0, total, animDuration, (currentValue) => {
-          const formatted = formatNumber(currentValue, {
-            decimals,
-            prefix,
-            suffix,
-            abbreviate: false,
-          });
-          centerText.text(formatted);
+        const cancel = countUp(0, centerContent.numericValue ?? 0, animDuration, (currentValue) => {
+          this.centerValueElement!.textContent = this.formatCenterNumber(currentValue);
         }, () => {
-          // Final value — ensure precision
-          const formatted = formatNumber(total, {
-            decimals,
-            prefix,
-            suffix,
-            abbreviate: false,
-          });
-          centerText.text(formatted);
+          this.centerValueElement!.textContent = centerContent.primaryText;
         });
         this.cancelAnimations.push(cancel);
       }, totalDelay);
@@ -915,16 +1167,107 @@ export class AnimatedDonutProVisual implements IVisual {
       this.cancelAnimations.push(() => {
         if (timeoutId !== null) clearTimeout(timeoutId);
       });
-    } else {
-      // No animation — show final value immediately
-      const formatted = formatNumber(total, {
-        decimals,
-        prefix,
-        suffix,
-        abbreviate: false,
-      });
-      centerText.text(formatted);
+      this.centerValueElement.textContent = this.formatCenterNumber(0);
+      return;
     }
+
+    this.centerValueElement.textContent = centerContent.primaryText;
+  }
+
+  private resolveCenterContent(): CenterContent {
+    const vs = this.settings.valueSettings;
+    const displayMode = (resolveDropdown(vs.displayMode) ?? 'selectedOrTotal') as CenterDisplayMode;
+    const captionMode = (resolveDropdown(vs.captionMode) ?? 'none') as CenterCaptionMode;
+    const segments = this.currentData?.segments ?? [];
+    const selectedSegments = this.getSelectedSegments();
+    const totalValue = segments.reduce((sum, seg) => sum + seg.value, 0);
+
+    let numericValue: number | null = null;
+    let primaryText = '';
+    let autoCaption = '';
+
+    switch (displayMode) {
+      case 'total':
+        numericValue = totalValue;
+        primaryText = this.formatCenterNumber(totalValue);
+        autoCaption = 'Total';
+        break;
+      case 'selectedOnly':
+        if (selectedSegments.length > 0) {
+          const selectedValue = selectedSegments.reduce((sum, seg) => sum + seg.value, 0);
+          numericValue = selectedValue;
+          primaryText = this.formatCenterNumber(selectedValue);
+          autoCaption = selectedSegments.length === 1
+            ? selectedSegments[0].label
+            : `${selectedSegments.length} selected`;
+        } else {
+          primaryText = vs.noSelectionText.value?.trim() || 'Select a slice';
+        }
+        break;
+      case 'firstSlice': {
+        const firstSegment = segments[0];
+        if (firstSegment) {
+          numericValue = firstSegment.value;
+          primaryText = this.formatCenterNumber(firstSegment.value);
+          autoCaption = firstSegment.label;
+        } else {
+          primaryText = this.formatCenterNumber(0);
+        }
+        break;
+      }
+      case 'customText':
+        primaryText = vs.customText.value?.trim() || '';
+        break;
+      case 'selectedOrTotal':
+      default:
+        if (selectedSegments.length > 0) {
+          const selectedValue = selectedSegments.reduce((sum, seg) => sum + seg.value, 0);
+          numericValue = selectedValue;
+          primaryText = this.formatCenterNumber(selectedValue);
+          autoCaption = selectedSegments.length === 1
+            ? selectedSegments[0].label
+            : `${selectedSegments.length} selected`;
+        } else {
+          numericValue = totalValue;
+          primaryText = this.formatCenterNumber(totalValue);
+          autoCaption = 'Total';
+        }
+        break;
+    }
+
+    let captionText = '';
+    if (captionMode === 'auto') {
+      captionText = autoCaption;
+    } else if (captionMode === 'custom') {
+      captionText = vs.customCaption.value?.trim() || '';
+    }
+
+    return {
+      primaryText,
+      captionText,
+      numericValue,
+    };
+  }
+
+  private formatCenterNumber(value: number): string {
+    const vs = this.settings.valueSettings;
+    return formatNumber(value, {
+      decimals: vs.decimalPlaces.value,
+      prefix: vs.prefix.value || '',
+      suffix: vs.suffix.value || '',
+      abbreviate: false,
+    });
+  }
+
+  private getSelectedSegments(): DonutSegment[] {
+    const data = this.currentData;
+    if (!data || !this.selectionManager.hasSelection()) return [];
+
+    const selectedIds = this.selectionManager.getSelectionIds() as ISelectionId[];
+    const selectedKeys = new Set(selectedIds.map((id) => id.getKey()));
+    return [...data.segments, ...this.currentNestedSegments].filter((segment) => (
+      segment.selectionId !== null && selectedKeys.has(segment.selectionId.getKey())
+    ));
   }
 
   // ── Legend ──────────────────────────────────────────────────
@@ -946,7 +1289,7 @@ export class AnimatedDonutProVisual implements IVisual {
 
     const items: LegendItem[] = segments.map((seg) => ({
       label: seg.label,
-      color: seg.color,
+      color: this.getConditionalColor(seg.value) ?? seg.color,
     }));
 
     const rawLegendFontFamily = resolveDropdown(legendFmtCard.legendFontFamily) || undefined;
@@ -960,7 +1303,7 @@ export class AnimatedDonutProVisual implements IVisual {
       aliases: legendFmtCard.legendAliases.value,
     });
 
-    const animEnabled = this.settings.animationSettings.enabled.value;
+    const animEnabled = this.settings.animationSettings.enabled.value && !prefersReducedMotion();
     const animDuration = animEnabled ? this.settings.animationSettings.duration.value : 0;
 
     if (animEnabled && animDuration > 0) {
@@ -1019,7 +1362,7 @@ export class AnimatedDonutProVisual implements IVisual {
 
       host.tooltipService.show({
         dataItems: tooltipData,
-        identities: [],
+        identities: segment.selectionId ? [segment.selectionId] : [],
         coordinates: [event.clientX, event.clientY],
         isTouchEvent: false,
       });
@@ -1042,6 +1385,7 @@ export class AnimatedDonutProVisual implements IVisual {
   // ── Formatting Model ──────────────────────────────────────────
 
   public getFormattingModel(): powerbi.visuals.FormattingModel {
+    syncCardStyleVisibility(this.settings.cardSettings);
     return this.formattingSettingsService.buildFormattingModel(this.settings);
   }
 
@@ -1049,19 +1393,34 @@ export class AnimatedDonutProVisual implements IVisual {
 
   private clearContainer(): void {
     this.container.removeEventListener('click', this.handleBackgroundClick);
+    this.container.removeEventListener('contextmenu', this.handleBackgroundContextMenu);
+    this.centerValueElement = null;
+    this.centerCaptionElement = null;
+    this.currentNestedSegments = [];
     while (this.container.firstChild) {
       this.container.removeChild(this.container.firstChild);
     }
   }
 
+  private handleBackgroundContextMenu = (event: MouseEvent): void => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!allowInteractions(this.host)) return;
+    void this.selectionManager.showContextMenu({} as powerbi.visuals.ISelectionId, {
+      x: event.clientX,
+      y: event.clientY,
+    });
+  };
+
   private handleBackgroundClick = (): void => {
+    if (!allowInteractions(this.host)) return;
     void this.selectionManager.clear();
     this.applySelectionHighlight();
   };
 
   // ── Selection & Cross-Highlight ─────────────────────────────────
 
-  private applySelectionHighlight(): void {
+  private applySelectionHighlight(refreshCenter = true): void {
     const hasSelection = this.selectionManager.hasSelection();
     const selectedIds = this.selectionManager.getSelectionIds() as ISelectionId[];
     const selectedKeys = new Set(selectedIds.map((id) => id.getKey()));
@@ -1070,14 +1429,16 @@ export class AnimatedDonutProVisual implements IVisual {
     const hasHighlights = data?.hasHighlights ?? false;
     const highlightedKeys = new Set<string>();
     if (hasHighlights && data) {
-      for (const seg of data.segments) {
+      for (const seg of [...data.segments, ...this.currentNestedSegments]) {
         if (seg.highlighted && seg.selectionId) {
           highlightedKeys.add(seg.selectionId.getKey());
         }
       }
     }
 
-    const paths = this.container.querySelectorAll<SVGPathElement>('.donut-segment');
+    const paths = this.container.querySelectorAll<SVGPathElement>(
+      '.donut-segment, .donut-inner-segment',
+    );
     const shouldDim = hasSelection || hasHighlights;
 
     for (const el of paths) {
@@ -1093,6 +1454,10 @@ export class AnimatedDonutProVisual implements IVisual {
         el.style.opacity = '';
       }
     }
+
+    if (refreshCenter) {
+      this.updateCenterDisplay();
+    }
   }
 
   private cancelAllAnimations(): void {
@@ -1101,6 +1466,21 @@ export class AnimatedDonutProVisual implements IVisual {
     }
     this.cancelAnimations = [];
     this.segmentPaths = [];
+  }
+
+  private applyHighContrast(): void {
+    applyBasicHighContrastStyles(this.container, getHostHighContrastColors(this.host), {
+      textSelectors: [
+        'svg text',
+        '.chart-title',
+        '.chart-subtitle',
+        '.pbi-shared-legend span',
+        '.donut-empty',
+      ],
+      lineSelectors: [],
+      fillSelectors: [],
+      strokeSelectors: [],
+    });
   }
 
   // ── Cleanup ───────────────────────────────────────────────────

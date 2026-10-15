@@ -1,22 +1,37 @@
 {
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
   "dataRoles": [
     {
       "displayName": "Category",
       "name": "category",
       "kind": "Grouping",
-      "description": "Items being ranked (e.g., company names)"
+      "description": "Items being ranked (e.g., company names)",
+      "displayNameKey": "BarRaceCapabilities_DisplayName_0001",
+      "descriptionKey": "BarRaceCapabilities_Description_0001"
     },
     {
       "displayName": "Time Axis",
       "name": "timeAxis",
       "kind": "Grouping",
-      "description": "Time dimension (e.g., year, month)"
+      "description": "Time dimension (e.g., year, month)",
+      "displayNameKey": "BarRaceCapabilities_DisplayName_0002",
+      "descriptionKey": "BarRaceCapabilities_Description_0002"
     },
     {
       "displayName": "Measure",
       "name": "measure",
       "kind": "Measure",
-      "description": "Value for bar length"
+      "description": "Value for bar length",
+      "displayNameKey": "BarRaceCapabilities_DisplayName_0003",
+      "descriptionKey": "BarRaceCapabilities_Description_0003"
     }
   ],
   "dataViewMappings": [
@@ -74,33 +89,39 @@
           "displayName": "Top N Items",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0005"
         },
         "playSpeed": {
           "displayName": "Play Speed (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0006"
         },
         "barHeight": {
           "displayName": "Bar Height",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0007"
         },
         "barCornerRadius": {
           "displayName": "Bar Corner Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0008"
         },
         "barOpacity": {
           "displayName": "Bar Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0009"
         }
-      }
+      },
+      "displayNameKey": "BarRaceCapabilities_DisplayName_0004"
     },
     "colorSettings": {
       "displayName": "Colors",
@@ -109,9 +130,11 @@
           "displayName": "Use Chart Palette",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0012"
         }
-      }
+      },
+      "displayNameKey": "BarRaceCapabilities_DisplayName_0011"
     },
     "valueSettings": {
       "displayName": "Values",
@@ -120,13 +143,15 @@
           "displayName": "Show Values",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0014"
         },
         "fontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0015"
         },
         "fontColor": {
           "displayName": "Font Color",
@@ -136,7 +161,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0016"
         },
         "fontFamily": {
           "displayName": "Font Family",
@@ -144,34 +170,42 @@
             "enumeration": [
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0018"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0019"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0020"
               },
               {
                 "value": "Helvetica",
-                "displayName": "Helvetica"
+                "displayName": "Helvetica",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0021"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0022"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0023"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0024"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0017"
         },
         "fontWeight": {
           "displayName": "Font Weight",
@@ -179,20 +213,25 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0026"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0027"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0028"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0025"
         }
-      }
+      },
+      "displayNameKey": "BarRaceCapabilities_DisplayName_0013"
     },
     "animationSettings": {
       "displayName": "Animation",
@@ -201,15 +240,18 @@
           "displayName": "Enable Animations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0030"
         },
         "duration": {
           "displayName": "Duration (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0031"
         }
-      }
+      },
+      "displayNameKey": "BarRaceCapabilities_DisplayName_0029"
     },
     "timestampSettings": {
       "displayName": "Timestamp Display",
@@ -218,13 +260,15 @@
           "displayName": "Show Timestamp",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0033"
         },
         "fontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0034"
         },
         "fontColor": {
           "displayName": "Font Color",
@@ -234,13 +278,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0035"
         },
         "opacity": {
           "displayName": "Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0036"
         },
         "position": {
           "displayName": "Position",
@@ -248,20 +294,25 @@
             "enumeration": [
               {
                 "value": "bottomRight",
-                "displayName": "Bottom Right"
+                "displayName": "Bottom Right",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0038"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0039"
               },
               {
                 "value": "topRight",
-                "displayName": "Top Right"
+                "displayName": "Top Right",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0040"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0037"
         }
-      }
+      },
+      "displayNameKey": "BarRaceCapabilities_DisplayName_0032"
     },
     "dataLabelFormatting": {
       "displayName": "Data Labels",
@@ -270,7 +321,8 @@
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0042"
         },
         "dataLabelFontColor": {
           "displayName": "Font Color",
@@ -280,7 +332,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0043"
         },
         "dataLabelFontWeight": {
           "displayName": "Font Weight",
@@ -288,20 +341,24 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0045"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0046"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0044"
         },
         "showDataLabels": {
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0047"
         },
         "dataLabelFontFamily": {
           "displayName": "Font",
@@ -309,54 +366,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0049"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0050"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0051"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0052"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0053"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0054"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0055"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0056"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0057"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0058"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0059"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0060"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0048"
         },
         "dataLabelPosition": {
           "displayName": "Position",
@@ -364,28 +434,35 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0062"
               },
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0063"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0064"
               },
               {
                 "value": "inside",
-                "displayName": "Inside"
+                "displayName": "Inside",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0065"
               },
               {
                 "value": "outside",
-                "displayName": "Outside"
+                "displayName": "Outside",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0066"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0061"
         }
-      }
+      },
+      "displayNameKey": "BarRaceCapabilities_DisplayName_0041"
     },
     "titleFormatting": {
       "displayName": "Chart Title",
@@ -394,19 +471,22 @@
           "displayName": "Show Title",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0068"
         },
         "titleText": {
           "displayName": "Title Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0069"
         },
         "titleFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0070"
         },
         "titleFontColor": {
           "displayName": "Font Color",
@@ -416,7 +496,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0071"
         },
         "titleAlignment": {
           "displayName": "Alignment",
@@ -424,18 +505,22 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0073"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0074"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0075"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0072"
         },
         "titleFontFamily": {
           "displayName": "Font",
@@ -443,66 +528,81 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0077"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0078"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0079"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0080"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0081"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0082"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0083"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0084"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0085"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0086"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0087"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0088"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0076"
         },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0089"
         },
         "subtitleFontSize": {
           "displayName": "Subtitle Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0090"
         },
         "subtitleFontColor": {
           "displayName": "Subtitle Color",
@@ -512,7 +612,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0091"
         },
         "titleFontWeight": {
           "displayName": "Font Weight",
@@ -520,14 +621,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0093"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0094"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0092"
         },
         "subtitleFontFamily": {
           "displayName": "Subtitle Font",
@@ -535,54 +639,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0096"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0097"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0098"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0099"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0100"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0101"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0102"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0103"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0104"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0105"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0106"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0107"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0095"
         },
         "subtitleFontWeight": {
           "displayName": "Subtitle Font Weight",
@@ -590,16 +707,20 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0109"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0110"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0108"
         }
-      }
+      },
+      "displayNameKey": "BarRaceCapabilities_DisplayName_0067"
     },
     "axisFormatting": {
       "displayName": "Axis Formatting",
@@ -612,37 +733,43 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0112"
         },
         "axisLabelSize": {
           "displayName": "Label Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0113"
         },
         "showXAxis": {
           "displayName": "Show X-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0114"
         },
         "showYAxis": {
           "displayName": "Show Y-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0115"
         },
         "xAxisTitle": {
           "displayName": "X-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0116"
         },
         "yAxisTitle": {
           "displayName": "Y-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0117"
         },
         "axisLabelFontFamily": {
           "displayName": "Label Font",
@@ -650,72 +777,88 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0119"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0120"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0121"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0122"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0123"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0124"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0125"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0126"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0127"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0128"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0129"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0130"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0118"
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (\u00b0)",
+          "displayName": "X-Label Rotation (°)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0131"
         },
         "yAxisMin": {
           "displayName": "Y-Axis Min",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0132"
         },
         "yAxisMax": {
           "displayName": "Y-Axis Max",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0133"
         },
         "axisLineColor": {
           "displayName": "Axis Line Color",
@@ -725,19 +868,22 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0134"
         },
         "axisLineWidth": {
           "displayName": "Axis Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0135"
         },
         "showGridLines": {
           "displayName": "Show Grid Lines",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0136"
         },
         "gridLineColor": {
           "displayName": "Grid Line Color",
@@ -747,7 +893,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0137"
         },
         "gridLineStyle": {
           "displayName": "Grid Line Style",
@@ -755,26 +902,31 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0139"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0140"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0138"
         },
         "gridLineWidth": {
           "displayName": "Grid Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0141"
         },
         "gridLineOpacity": {
           "displayName": "Grid Line Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0142"
         },
         "axisLabelFontWeight": {
           "displayName": "Label Font Weight",
@@ -782,16 +934,27 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0144"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0145"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0143"
+        },
+        "integerTicks": {
+          "displayName": "Integer Ticks Only",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0146"
         }
-      }
+      },
+      "displayNameKey": "BarRaceCapabilities_DisplayName_0111"
     },
     "playbackSettings": {
       "displayName": "Playback",
@@ -800,13 +963,15 @@
           "displayName": "Auto-Play on Load",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0148"
         },
         "showControls": {
           "displayName": "Show Controls",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0149"
         },
         "speed": {
           "displayName": "Playback Speed",
@@ -814,32 +979,39 @@
             "enumeration": [
               {
                 "value": "0.5x",
-                "displayName": "0.5x"
+                "displayName": "0.5x",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0151"
               },
               {
                 "value": "1x",
-                "displayName": "1x"
+                "displayName": "1x",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0152"
               },
               {
                 "value": "1.5x",
-                "displayName": "1.5x"
+                "displayName": "1.5x",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0153"
               },
               {
                 "value": "2x",
-                "displayName": "2x"
+                "displayName": "2x",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0154"
               },
               {
                 "value": "3x",
-                "displayName": "3x"
+                "displayName": "3x",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0155"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0150"
         },
         "loop": {
           "displayName": "Loop Animation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0156"
         },
         "controlPosition": {
           "displayName": "Control Position",
@@ -847,22 +1019,27 @@
             "enumeration": [
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0158"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0159"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0157"
         },
         "pauseDuration": {
           "displayName": "Pause Duration (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0160"
         }
-      }
+      },
+      "displayNameKey": "BarRaceCapabilities_DisplayName_0147"
     },
     "cardSettings": {
       "displayName": "Card Style",
@@ -875,19 +1052,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0162"
         },
         "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0163"
         },
         "borderRadius": {
           "displayName": "Border Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0164"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0165"
         },
         "cardStyleMode": {
           "displayName": "Card Style",
@@ -895,30 +1082,47 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0001"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0002"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0003"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0004"
+              },
+              {
+                "value": "outlined",
+                "displayName": "Border Only",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0005"
+              },
+              {
+                "value": "floating",
+                "displayName": "Floating Shadow",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0006"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0166"
         },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "(Deprecated) Enable Glass"
+          "displayName": "(Deprecated) Enable Glass",
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0171"
         }
-      }
+      },
+      "displayNameKey": "BarRaceCapabilities_DisplayName_0161"
     },
     "referenceLineFormatting": {
       "displayName": "Reference Line",
@@ -927,7 +1131,8 @@
           "displayName": "Show Reference Line",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0173"
         },
         "referenceLineType": {
           "displayName": "Type",
@@ -935,36 +1140,44 @@
             "enumeration": [
               {
                 "value": "custom",
-                "displayName": "Custom Value"
+                "displayName": "Custom Value",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0175"
               },
               {
                 "value": "mean",
-                "displayName": "Mean"
+                "displayName": "Mean",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0176"
               },
               {
                 "value": "median",
-                "displayName": "Median"
+                "displayName": "Median",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0177"
               },
               {
                 "value": "percentile",
-                "displayName": "Percentile"
+                "displayName": "Percentile",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0178"
               },
               {
                 "value": "min",
-                "displayName": "Min"
+                "displayName": "Min",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0179"
               },
               {
                 "value": "max",
-                "displayName": "Max"
+                "displayName": "Max",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0180"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0174"
         },
         "referenceLineValue": {
           "displayName": "Value",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0181"
         },
         "referenceLineColor": {
           "displayName": "Line Color",
@@ -974,13 +1187,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0182"
         },
         "referenceLineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0183"
         },
         "referenceLineStyle": {
           "displayName": "Line Style",
@@ -988,48 +1203,57 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0185"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0186"
               },
               {
                 "value": "dotted",
-                "displayName": "Dotted"
+                "displayName": "Dotted",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0187"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0184"
         },
         "showReferenceLabel": {
           "displayName": "Show Label",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0188"
         },
         "referenceLabelText": {
           "displayName": "Label Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0189"
         },
         "showReferenceBand": {
           "displayName": "Show Band",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0190"
         },
         "referenceBandOpacity": {
           "displayName": "Band Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0191"
         },
         "referenceBandWidth": {
           "displayName": "Band Width (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0192"
         },
         "referenceLineAxis": {
           "displayName": "Target Axis",
@@ -1037,16 +1261,20 @@
             "enumeration": [
               {
                 "value": "primary",
-                "displayName": "Primary"
+                "displayName": "Primary",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0194"
               },
               {
                 "value": "secondary",
-                "displayName": "Secondary"
+                "displayName": "Secondary",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0195"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0193"
         }
-      }
+      },
+      "displayNameKey": "BarRaceCapabilities_DisplayName_0172"
     },
     "trendLineFormatting": {
       "displayName": "Trend Line",
@@ -1055,7 +1283,8 @@
           "displayName": "Show Trend Line",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0197"
         },
         "trendLineType": {
           "displayName": "Type",
@@ -1063,32 +1292,39 @@
             "enumeration": [
               {
                 "value": "linear",
-                "displayName": "Linear"
+                "displayName": "Linear",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0199"
               },
               {
                 "value": "polynomial",
-                "displayName": "Polynomial"
+                "displayName": "Polynomial",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0200"
               },
               {
                 "value": "exponential",
-                "displayName": "Exponential"
+                "displayName": "Exponential",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0201"
               },
               {
                 "value": "logarithmic",
-                "displayName": "Logarithmic"
+                "displayName": "Logarithmic",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0202"
               },
               {
                 "value": "power",
-                "displayName": "Power"
+                "displayName": "Power",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0203"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0198"
         },
         "polynomialOrder": {
           "displayName": "Polynomial Order",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0204"
         },
         "trendLineColor": {
           "displayName": "Line Color",
@@ -1098,25 +1334,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0205"
         },
         "trendLineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0206"
         },
         "showEquation": {
           "displayName": "Show Equation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0207"
         },
         "showR2": {
-          "displayName": "Show R\u00b2",
+          "displayName": "Show R²",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0208"
         },
         "trendLineAxis": {
           "displayName": "Target Axis",
@@ -1124,16 +1364,20 @@
             "enumeration": [
               {
                 "value": "primary",
-                "displayName": "Primary"
+                "displayName": "Primary",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0210"
               },
               {
                 "value": "secondary",
-                "displayName": "Secondary"
+                "displayName": "Secondary",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0211"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0209"
         }
-      }
+      },
+      "displayNameKey": "BarRaceCapabilities_DisplayName_0196"
     },
     "conditionalFormatting": {
       "displayName": "Conditional Formatting",
@@ -1142,7 +1386,8 @@
           "displayName": "Enable Conditional Formatting",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0213"
         },
         "conditionalDirection": {
           "displayName": "Direction",
@@ -1150,26 +1395,31 @@
             "enumeration": [
               {
                 "value": "ascending",
-                "displayName": "Ascending (Low = Bad)"
+                "displayName": "Ascending (Low = Bad)",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0215"
               },
               {
                 "value": "descending",
-                "displayName": "Descending (Low = Good)"
+                "displayName": "Descending (Low = Good)",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0216"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0214"
         },
         "threshold1": {
           "displayName": "Threshold 1",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0217"
         },
         "threshold2": {
           "displayName": "Threshold 2",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0218"
         },
         "conditionalColor1": {
           "displayName": "Color 1 (Bad)",
@@ -1179,7 +1429,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0219"
         },
         "conditionalColor2": {
           "displayName": "Color 2 (Warning)",
@@ -1189,7 +1440,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0220"
         },
         "conditionalColor3": {
           "displayName": "Color 3 (Good)",
@@ -1199,9 +1451,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0221"
         }
-      }
+      },
+      "displayNameKey": "BarRaceCapabilities_DisplayName_0212"
     },
     "annotationFormatting": {
       "displayName": "Annotations",
@@ -1210,118 +1464,141 @@
           "displayName": "Show Annotations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0223"
         },
         "annotation1Category": {
-          "displayName": "Annotation 1 \u2014 Category",
+          "displayName": "Annotation 1 — Category",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0224"
         },
         "annotation1Text": {
-          "displayName": "Annotation 1 \u2014 Text",
+          "displayName": "Annotation 1 — Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0225"
         },
         "annotation1Position": {
-          "displayName": "Annotation 1 \u2014 Position",
+          "displayName": "Annotation 1 — Position",
           "type": {
             "enumeration": [
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0227"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0228"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0229"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0230"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0226"
         },
         "annotation2Category": {
-          "displayName": "Annotation 2 \u2014 Category",
+          "displayName": "Annotation 2 — Category",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0231"
         },
         "annotation2Text": {
-          "displayName": "Annotation 2 \u2014 Text",
+          "displayName": "Annotation 2 — Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0232"
         },
         "annotation2Position": {
-          "displayName": "Annotation 2 \u2014 Position",
+          "displayName": "Annotation 2 — Position",
           "type": {
             "enumeration": [
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0234"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0235"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0236"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0237"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0233"
         },
         "annotation3Category": {
-          "displayName": "Annotation 3 \u2014 Category",
+          "displayName": "Annotation 3 — Category",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0238"
         },
         "annotation3Text": {
-          "displayName": "Annotation 3 \u2014 Text",
+          "displayName": "Annotation 3 — Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0239"
         },
         "annotation3Position": {
-          "displayName": "Annotation 3 \u2014 Position",
+          "displayName": "Annotation 3 — Position",
           "type": {
             "enumeration": [
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0241"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0242"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0243"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0244"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0240"
         },
         "annotationFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0245"
         },
         "annotationFontColor": {
           "displayName": "Font Color",
@@ -1331,7 +1608,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0246"
         },
         "annotationConnectorColor": {
           "displayName": "Connector Color",
@@ -1341,9 +1619,146 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0247"
+        },
+        "annotationFontFamily": {
+          "displayName": "Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0249"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0250"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0251"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0252"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0253"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0254"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0255"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0256"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0257"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0258"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0259"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0260"
+              }
+            ]
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0248"
+        },
+        "annotationFontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0262"
+              },
+              {
+                "value": "500",
+                "displayName": "Medium",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0263"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0264"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0265"
+              }
+            ]
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0261"
+        },
+        "annotationOffset": {
+          "displayName": "Callout Offset",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0266"
+        },
+        "annotationPadding": {
+          "displayName": "Badge Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0267"
+        },
+        "annotationBackgroundColor": {
+          "displayName": "Badge Background",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0268"
+        },
+        "annotationBackgroundOpacity": {
+          "displayName": "Badge Opacity (%)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0269"
+        },
+        "annotationCornerRadius": {
+          "displayName": "Badge Corner Radius",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0270"
         }
-      }
+      },
+      "displayNameKey": "BarRaceCapabilities_DisplayName_0222"
     },
     "accessibilityFormatting": {
       "displayName": "Accessibility",
@@ -1352,40 +1767,39 @@
           "displayName": "Enable Keyboard Navigation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0272"
         }
-      }
+      },
+      "displayNameKey": "BarRaceCapabilities_DisplayName_0271"
     },
     "raceDisplay": {
-      "displayName": "Race Display",
+      "displayName": "Category Labels",
       "properties": {
         "showRankNumbers": {
           "displayName": "Show Rank Numbers",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0274"
         },
-        "showPeriodLabel": {
-          "displayName": "Show Period Label",
-          "type": {
-            "bool": true
-          }
-        },
-        "periodLabelSize": {
-          "displayName": "Period Label Size",
+        "fontSize": {
+          "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0007"
         },
         "labelColor": {
-          "displayName": "Label Color",
+          "displayName": "Font Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0277"
         },
         "fontFamily": {
           "displayName": "Font Family",
@@ -1393,34 +1807,42 @@
             "enumeration": [
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0279"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0280"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0281"
               },
               {
                 "value": "Helvetica",
-                "displayName": "Helvetica"
+                "displayName": "Helvetica",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0282"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0283"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0284"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0285"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0278"
         },
         "fontWeight": {
           "displayName": "Font Weight",
@@ -1428,20 +1850,25 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0287"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0288"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0289"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0286"
         }
-      }
+      },
+      "displayNameKey": "BarRaceCapabilities_DisplayName_0273"
     },
     "colorThemeFormatting": {
       "properties": {
@@ -1451,37 +1878,46 @@
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0292"
               },
               {
                 "value": "ocean",
-                "displayName": "Ocean"
+                "displayName": "Ocean",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0293"
               },
               {
                 "value": "sunset",
-                "displayName": "Sunset"
+                "displayName": "Sunset",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0294"
               },
               {
                 "value": "forest",
-                "displayName": "Forest"
+                "displayName": "Forest",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0295"
               },
               {
                 "value": "berry",
-                "displayName": "Berry"
+                "displayName": "Berry",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0296"
               },
               {
                 "value": "monochrome",
-                "displayName": "Monochrome"
+                "displayName": "Monochrome",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0297"
               },
               {
                 "value": "earth",
-                "displayName": "Earth"
+                "displayName": "Earth",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0298"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0291"
         }
       },
-      "displayName": "Color Theme"
+      "displayName": "Color Theme",
+      "displayNameKey": "BarRaceCapabilities_DisplayName_0290"
     },
     "numberFormatting": {
       "displayName": "Number Format",
@@ -1492,46 +1928,56 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0301"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0302"
               },
               {
                 "value": "thousands",
-                "displayName": "Thousands (K)"
+                "displayName": "Thousands (K)",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0303"
               },
               {
                 "value": "millions",
-                "displayName": "Millions (M)"
+                "displayName": "Millions (M)",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0304"
               },
               {
                 "value": "billions",
-                "displayName": "Billions (B)"
+                "displayName": "Billions (B)",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0305"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0300"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0306"
         },
         "valuePrefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0307"
         },
         "valueSuffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0308"
         }
-      }
+      },
+      "displayNameKey": "BarRaceCapabilities_DisplayName_0299"
     },
     "legendFormatting": {
       "displayName": "Legend",
@@ -1540,7 +1986,8 @@
           "displayName": "Show Legend",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0310"
         },
         "legendPosition": {
           "displayName": "Position",
@@ -1548,28 +1995,34 @@
             "enumeration": [
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0312"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0313"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0314"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0315"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0311"
         },
         "legendFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0316"
         },
         "legendFontColor": {
           "displayName": "Font Color",
@@ -1579,7 +2032,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0317"
         },
         "legendFontFamily": {
           "displayName": "Font",
@@ -1587,54 +2041,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0319"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0320"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0321"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0322"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0323"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0324"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0325"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0326"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0327"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0328"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0329"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0330"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0318"
         },
         "legendFontWeight": {
           "displayName": "Font Weight",
@@ -1642,22 +2109,27 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0332"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "BarRaceCapabilities_DisplayName_0333"
               }
             ]
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0331"
         },
         "legendAliases": {
           "displayName": "Rename Labels",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0334"
         }
-      }
+      },
+      "displayNameKey": "BarRaceCapabilities_DisplayName_0309"
     },
     "dateFilterFormatting": {
       "displayName": "Date Filter",
@@ -1666,27 +2138,32 @@
           "displayName": "Enable Date Filter",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0336"
         },
         "startDate": {
           "displayName": "Start Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0337"
         },
         "endAtCurrentDate": {
           "displayName": "End at Current Date",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0338"
         },
         "endDate": {
           "displayName": "End Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BarRaceCapabilities_DisplayName_0339"
         }
-      }
+      },
+      "displayNameKey": "BarRaceCapabilities_DisplayName_0335"
     }
   },
   "supportsKeyboardFocus": true,

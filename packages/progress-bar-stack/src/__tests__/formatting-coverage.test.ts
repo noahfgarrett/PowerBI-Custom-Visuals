@@ -44,6 +44,7 @@ vi.mock('powerbi-visuals-utils-formattingmodel', () => {
 
 import { ProgressBarStackVisual } from '../visual';
 import { ProgressBarStackSettings } from '../settings';
+import capabilities from '../../capabilities.json';
 import {
   createConstructorOptions,
   DataViewBuilder,
@@ -57,6 +58,7 @@ const testDV = new DataViewBuilder().withCategory('Item', ['A','B'], 'category')
 function createVisual() {
   const opts = createConstructorOptions();
   const settings = new ProgressBarStackSettings();
+  settings.animationSettings.enabled.value = false;
   settingsRef.current = settings;
   const visual = new ProgressBarStackVisual(opts as never);
   return {
@@ -90,6 +92,7 @@ function makeDeps(): Record<string, Record<string, unknown>> {
   for (const s of ['conditionalDirection','threshold1','threshold2','conditionalColor1','conditionalColor2','conditionalColor3']) {
     deps[`conditionalFormatting.${s}`] = { 'conditionalFormatting.enableConditional': true };
   }
+  deps['cardSettings.contentPadding'] = { 'cardSettings.enableGlass': true };
   deps['annotationFormatting.showAnnotations'] = { 'annotationFormatting.annotation1Category': 'A', 'annotationFormatting.annotation1Text': 'Note' };
   for (const s of ['annotation1Category','annotation1Text','annotation1Position','annotationFontSize','annotationFontColor','annotationConnectorColor']) {
     deps[`annotationFormatting.${s}`] = { 'annotationFormatting.showAnnotations': true, 'annotationFormatting.annotation1Category': 'A', 'annotationFormatting.annotation1Text': 'Note' };
@@ -121,6 +124,7 @@ const harnessConfig: HarnessConfig = {
     'cardSettings.backgroundOpacity',
     'cardSettings.backgroundColor',
     'cardSettings.enableGlass',
+    'cardSettings.contentPadding',
     'accessibilityFormatting.enableKeyboardNav',
     'animationSettings.staggerDelay',
     'animationSettings.duration',
@@ -131,8 +135,6 @@ const harnessConfig: HarnessConfig = {
     'axisFormatting.showYAxis',
     'axisFormatting.xAxisTitle',
     'axisFormatting.yAxisTitle',
-    'axisFormatting.axisLabelFontFamily',
-    'axisFormatting.axisLabelFontWeight',
     'axisFormatting.axisLabelRotation',
     'axisFormatting.axisLineColor',
     'axisFormatting.axisLineWidth',
@@ -148,6 +150,23 @@ const harnessConfig: HarnessConfig = {
     'annotationFormatting.annotation3Category',
     'annotationFormatting.annotation3Text',
     'annotationFormatting.annotation3Position',
+    'barAppearance.gradientStartColor',
+    'barAppearance.gradientEndColor',
+    'annotationFormatting.annotationFontFamily',
+    'annotationFormatting.annotationFontWeight',
+    'annotationFormatting.annotationOffset',
+    'annotationFormatting.annotationPadding',
+    'annotationFormatting.annotationBackgroundColor',
+    'annotationFormatting.annotationBackgroundOpacity',
+    'annotationFormatting.annotationCornerRadius',
+    'axisFormatting.axisLabelSize',
+    'axisFormatting.axisLabelFontFamily',
+    'axisFormatting.axisLabelFontWeight',
+    'axisFormatting.integerTicks',
+    'dateFilterFormatting.enableDateFilter',
+    'dateFilterFormatting.startDate',
+    'dateFilterFormatting.endAtCurrentDate',
+    'dateFilterFormatting.endDate',
     'progressMilestone.milestones',
     'progressMilestone.milestoneColor',
     'progressGradient.startColor',
@@ -156,6 +175,22 @@ const harnessConfig: HarnessConfig = {
 };
 
 describe('progress-bar-stack formatting coverage', () => {
+  it('keeps appearance properties only on the active card', () => {
+    const objects = capabilities.objects as Record<string, { properties: Record<string, unknown> }>;
+    expect(objects.barSettings.properties).not.toHaveProperty('trackColor');
+    expect(objects.barSettings.properties).not.toHaveProperty('labelColor');
+    expect(objects.barAppearance.properties).toHaveProperty('trackColor');
+    expect(objects.barAppearance.properties).toHaveProperty('labelColor');
+    expect(objects.cardSettings.properties).toHaveProperty('enableGlass');
+  });
+
+  it('declares every formatting slice in capabilities', () => {
+    const paths = getSettingPaths(new ProgressBarStackSettings() as unknown as { cards: Array<Record<string, unknown>> }, []);
+    const objects = capabilities.objects as Record<string, { properties?: Record<string, unknown> }>;
+    const localCards = new Set(['barSettings', 'barAppearance', 'targetSettings', 'progressMilestone', 'cardSettings', 'animationSettings']);
+    expect(paths.filter(({ cardName, sliceName }) => localCards.has(cardName) && !objects[cardName]?.properties?.[sliceName])).toEqual([]);
+  });
+
   it('detects settings from the model', () => {
     const settings = new ProgressBarStackSettings();
     const paths = getSettingPaths(

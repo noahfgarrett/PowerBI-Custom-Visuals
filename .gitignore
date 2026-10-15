@@ -3,3 +3,6 @@ dist/
 .tmp/
 *.statistics.prod.html
 .DS_Store
+.playwright-mcp/
+.superpowers/
+releases/

@@ -25,3 +25,12 @@
   text-align: center;
   padding: 16px;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .stream-container *,
+  .stream-container *::before,
+  .stream-container *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

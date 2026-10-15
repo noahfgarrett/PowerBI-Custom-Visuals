@@ -78,6 +78,12 @@ function makeDeps(): Record<string, Record<string, unknown>> {
   for (const s of ['legendPosition','legendFontSize','legendFontColor','legendFontWeight']) {
     deps[`legendFormatting.${s}`] = { 'legendFormatting.showLegend': true };
   }
+  deps['valueSettings.customText'] = { 'valueSettings.displayMode': { value: 'customText', displayName: 'Custom Text' } };
+  deps['valueSettings.noSelectionText'] = { 'valueSettings.displayMode': { value: 'selectedOnly', displayName: 'Selected Slice Only' } };
+  deps['valueSettings.customCaption'] = { 'valueSettings.captionMode': { value: 'custom', displayName: 'Custom' } };
+  for (const s of ['captionFontSize', 'captionColor', 'captionFontFamily', 'captionFontWeight', 'captionSpacing']) {
+    deps[`valueSettings.${s}`] = { 'valueSettings.captionMode': { value: 'auto', displayName: 'Auto' } };
+  }
   for (const s of ['dataLabelFontSize','dataLabelFontColor','dataLabelFontWeight','dataLabelFontFamily','dataLabelPosition']) {
     deps[`dataLabelFormatting.${s}`] = { 'dataLabelFormatting.showDataLabels': true };
   }
@@ -106,15 +112,19 @@ const harnessConfig: HarnessConfig = {
     'animationSettings.staggerDelay',
     'animationSettings.duration',
     'valueSettings.decimalPlaces',
+    'valueSettings.displayMode',
+    'valueSettings.noSelectionText',
     'topNSettings.enabled',
     'topNSettings.topN',
     'topNSettings.othersLabel',
     'topNSettings.othersColor',
     'topNSettings.sortBy',
     'donutNestedSettings.enabled',
-    'donutNestedSettings.innerRingField',
     'donutExplodeSettings.distance',
     'legendFormatting.legendFontWeight',
+    'legendFormatting.showInlineLabels',
+    'legendFormatting.inlineLabelFontSize',
+    'legendFormatting.inlineLabelOffset',
     'dataLabelFormatting.showDataLabels',
     'conditionalFormatting.threshold2',
     'conditionalFormatting.conditionalColor3',

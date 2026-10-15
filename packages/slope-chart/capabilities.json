@@ -4,19 +4,25 @@
       "displayName": "Category",
       "name": "category",
       "kind": "Grouping",
-      "description": "Item labels (e.g., product names)"
+      "description": "Item labels (e.g., product names)",
+      "displayNameKey": "SlopeChartCapabilities_DisplayName_0001",
+      "descriptionKey": "SlopeChartCapabilities_Description_0001"
     },
     {
       "displayName": "Start Value",
       "name": "startMeasure",
       "kind": "Measure",
-      "description": "Start/left column value"
+      "description": "Start/left column value",
+      "displayNameKey": "SlopeChartCapabilities_DisplayName_0002",
+      "descriptionKey": "SlopeChartCapabilities_Description_0002"
     },
     {
       "displayName": "End Value",
       "name": "endMeasure",
       "kind": "Measure",
-      "description": "End/right column value"
+      "description": "End/right column value",
+      "displayNameKey": "SlopeChartCapabilities_DisplayName_0003",
+      "descriptionKey": "SlopeChartCapabilities_Description_0003"
     }
   ],
   "dataViewMappings": [
@@ -64,19 +70,14 @@
   ],
   "objects": {
     "slopeSettings": {
-      "displayName": "Slope Lines",
+      "displayName": "Slope Appearance",
       "properties": {
-        "lineWidth": {
-          "displayName": "Line Width",
-          "type": {
-            "numeric": true
-          }
-        },
         "dotRadius": {
           "displayName": "Dot Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0006"
         },
         "dotStrokeColor": {
           "displayName": "Dot Stroke Color",
@@ -86,27 +87,32 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0007"
         },
         "showArea": {
           "displayName": "Show Area Fill",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0008"
         },
         "fillOpacity": {
           "displayName": "Fill Opacity",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0009"
         },
         "showDots": {
           "displayName": "Show Dots",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0010"
         }
-      }
+      },
+      "displayNameKey": "SlopeChartCapabilities_DisplayName_0004"
     },
     "directionColorSettings": {
       "displayName": "Direction Colors",
@@ -115,7 +121,8 @@
           "displayName": "Color by Direction",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0013"
         },
         "positiveColor": {
           "displayName": "Positive Color",
@@ -125,7 +132,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0014"
         },
         "negativeColor": {
           "displayName": "Negative Color",
@@ -135,19 +143,22 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0015"
         },
         "neutralColor": {
-          "displayName": "Neutral Color",
+          "displayName": "Neutral / Default Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0016"
         }
-      }
+      },
+      "displayNameKey": "SlopeChartCapabilities_DisplayName_0012"
     },
     "changeLabelSettings": {
       "displayName": "Labels & Change",
@@ -156,35 +167,40 @@
           "displayName": "Left Label",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0018"
         },
         "rightLabel": {
           "displayName": "Right Label",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0019"
         },
         "labelColor": {
-          "displayName": "Label Color",
+          "displayName": "Category Label Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0020"
         },
         "show": {
           "displayName": "Show Change Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0021"
         },
         "fontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0022"
         },
         "fontColor": {
           "displayName": "Font Color",
@@ -194,7 +210,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0023"
         },
         "fontFamily": {
           "displayName": "Font",
@@ -202,38 +219,47 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0025"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0026"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0027"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0028"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0029"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0030"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0031"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0032"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0024"
         },
         "fontWeight": {
           "displayName": "Font Weight",
@@ -241,18 +267,22 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0034"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0035"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0036"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0033"
         },
         "format": {
           "displayName": "Format",
@@ -260,18 +290,22 @@
             "enumeration": [
               {
                 "value": "percent",
-                "displayName": "Percent"
+                "displayName": "Percent",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0038"
               },
               {
                 "value": "absolute",
-                "displayName": "Absolute"
+                "displayName": "Absolute",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0039"
               },
               {
                 "value": "both",
-                "displayName": "Both"
+                "displayName": "Both",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0040"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0037"
         },
         "position": {
           "displayName": "Position",
@@ -279,26 +313,39 @@
             "enumeration": [
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0042"
               },
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0043"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0044"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0041"
+        },
+        "labelOffset": {
+          "displayName": "Label Offset",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0045"
         },
         "showPercentChange": {
-          "displayName": "Show Percentage Change Labels",
+          "displayName": "Show End Percentage Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0046"
         }
-      }
+      },
+      "displayNameKey": "SlopeChartCapabilities_DisplayName_0017"
     },
     "animationSettings": {
       "displayName": "Animation",
@@ -307,15 +354,18 @@
           "displayName": "Enable Animations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0048"
         },
         "duration": {
           "displayName": "Duration (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0049"
         }
-      }
+      },
+      "displayNameKey": "SlopeChartCapabilities_DisplayName_0047"
     },
     "dataLabelFormatting": {
       "displayName": "Data Labels",
@@ -324,13 +374,15 @@
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0051"
         },
         "dataLabelFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0052"
         },
         "dataLabelFontColor": {
           "displayName": "Font Color",
@@ -340,7 +392,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0053"
         },
         "dataLabelFontWeight": {
           "displayName": "Font Weight",
@@ -348,14 +401,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0055"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0056"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0054"
         },
         "dataLabelFontFamily": {
           "displayName": "Font",
@@ -363,54 +419,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0058"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0059"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0060"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0061"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0062"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0063"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0064"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0065"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0066"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0067"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0068"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0069"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0057"
         },
         "dataLabelPosition": {
           "displayName": "Position",
@@ -418,28 +487,35 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0071"
               },
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0072"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0073"
               },
               {
                 "value": "inside",
-                "displayName": "Inside"
+                "displayName": "Inside",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0074"
               },
               {
                 "value": "outside",
-                "displayName": "Outside"
+                "displayName": "Outside",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0075"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0070"
         }
-      }
+      },
+      "displayNameKey": "SlopeChartCapabilities_DisplayName_0050"
     },
     "titleFormatting": {
       "displayName": "Chart Title",
@@ -448,19 +524,22 @@
           "displayName": "Show Title",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0077"
         },
         "titleText": {
           "displayName": "Title Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0078"
         },
         "titleFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0079"
         },
         "titleFontColor": {
           "displayName": "Font Color",
@@ -470,7 +549,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0080"
         },
         "titleAlignment": {
           "displayName": "Alignment",
@@ -478,18 +558,22 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0082"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0083"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0084"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0081"
         },
         "titleFontFamily": {
           "displayName": "Font",
@@ -497,66 +581,81 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0086"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0087"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0088"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0089"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0090"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0091"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0092"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0093"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0094"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0095"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0096"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0097"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0085"
         },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0098"
         },
         "subtitleFontSize": {
           "displayName": "Subtitle Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0099"
         },
         "subtitleFontColor": {
           "displayName": "Subtitle Color",
@@ -566,7 +665,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0100"
         },
         "titleFontWeight": {
           "displayName": "Font Weight",
@@ -574,14 +674,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0102"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0103"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0101"
         },
         "subtitleFontFamily": {
           "displayName": "Subtitle Font",
@@ -589,54 +692,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0105"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0106"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0107"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0108"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0109"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0110"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0111"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0112"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0113"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0114"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0115"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0116"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0104"
         },
         "subtitleFontWeight": {
           "displayName": "Subtitle Font Weight",
@@ -644,16 +760,20 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0118"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0119"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0117"
         }
-      }
+      },
+      "displayNameKey": "SlopeChartCapabilities_DisplayName_0076"
     },
     "lineStrokeFormatting": {
       "displayName": "Line Stroke",
@@ -664,108 +784,135 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0122"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0123"
               },
               {
                 "value": "dotted",
-                "displayName": "Dotted"
+                "displayName": "Dotted",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0124"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0121"
         },
         "lineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0125"
         }
-      }
+      },
+      "displayNameKey": "SlopeChartCapabilities_DisplayName_0120"
     },
     "axisFormatting": {
+      "displayName": "Axis Formatting",
       "properties": {
         "axisLabelColor": {
+          "displayName": "Label Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0341"
         },
         "axisLabelSize": {
+          "displayName": "Label Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0342"
         },
         "axisLineColor": {
+          "displayName": "Axis Line Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0343"
         },
         "axisLineWidth": {
+          "displayName": "Axis Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0344"
         },
         "showGridLines": {
+          "displayName": "Show Grid Lines",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0345"
         },
         "gridLineColor": {
+          "displayName": "Grid Line Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0346"
         },
         "gridLineStyle": {
+          "displayName": "Grid Line Style",
           "type": {
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0126"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0127"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0347"
         },
         "showXAxis": {
           "displayName": "Show X-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0128"
         },
         "showYAxis": {
           "displayName": "Show Y-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0129"
         },
         "xAxisTitle": {
           "displayName": "X-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0130"
         },
         "yAxisTitle": {
           "displayName": "Y-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0131"
         },
         "axisLabelFontFamily": {
           "displayName": "Label Font",
@@ -773,84 +920,102 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0133"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0134"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0135"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0136"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0137"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0138"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0139"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0140"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0141"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0142"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0143"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0144"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0132"
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (\u00b0)",
+          "displayName": "X-Label Rotation (°)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0145"
         },
         "yAxisMin": {
           "displayName": "Y-Axis Min",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0146"
         },
         "yAxisMax": {
           "displayName": "Y-Axis Max",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0147"
         },
         "gridLineWidth": {
           "displayName": "Grid Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0148"
         },
         "gridLineOpacity": {
           "displayName": "Grid Line Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0149"
         },
         "axisLabelFontWeight": {
           "displayName": "Label Font Weight",
@@ -858,16 +1023,27 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0151"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0152"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0150"
+        },
+        "integerTicks": {
+          "displayName": "Integer Ticks Only",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0153"
         }
-      }
+      },
+      "displayNameKey": "SlopeChartCapabilities_DisplayName_0001"
     },
     "cardSettings": {
       "displayName": "Card Style",
@@ -880,19 +1056,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0155"
         },
         "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0156"
         },
         "borderRadius": {
           "displayName": "Border Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0157"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0158"
         },
         "cardStyleMode": {
           "displayName": "Card Style",
@@ -900,30 +1086,47 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0002"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0003"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0004"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0005"
+              },
+              {
+                "value": "outlined",
+                "displayName": "Border Only",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0006"
+              },
+              {
+                "value": "floating",
+                "displayName": "Floating Shadow",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0007"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0159"
         },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "(Deprecated) Enable Glass"
+          "displayName": "(Deprecated) Enable Glass",
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0164"
         }
-      }
+      },
+      "displayNameKey": "SlopeChartCapabilities_DisplayName_0154"
     },
     "referenceLineFormatting": {
       "displayName": "Reference Line",
@@ -932,7 +1135,8 @@
           "displayName": "Show Reference Line",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0166"
         },
         "referenceLineType": {
           "displayName": "Type",
@@ -940,36 +1144,44 @@
             "enumeration": [
               {
                 "value": "custom",
-                "displayName": "Custom Value"
+                "displayName": "Custom Value",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0168"
               },
               {
                 "value": "mean",
-                "displayName": "Mean"
+                "displayName": "Mean",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0169"
               },
               {
                 "value": "median",
-                "displayName": "Median"
+                "displayName": "Median",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0170"
               },
               {
                 "value": "percentile",
-                "displayName": "Percentile"
+                "displayName": "Percentile",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0171"
               },
               {
                 "value": "min",
-                "displayName": "Min"
+                "displayName": "Min",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0172"
               },
               {
                 "value": "max",
-                "displayName": "Max"
+                "displayName": "Max",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0173"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0167"
         },
         "referenceLineValue": {
           "displayName": "Value",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0174"
         },
         "referenceLineColor": {
           "displayName": "Line Color",
@@ -979,13 +1191,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0175"
         },
         "referenceLineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0176"
         },
         "referenceLineStyle": {
           "displayName": "Line Style",
@@ -993,48 +1207,57 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0178"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0179"
               },
               {
                 "value": "dotted",
-                "displayName": "Dotted"
+                "displayName": "Dotted",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0180"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0177"
         },
         "showReferenceLabel": {
           "displayName": "Show Label",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0181"
         },
         "referenceLabelText": {
           "displayName": "Label Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0182"
         },
         "showReferenceBand": {
           "displayName": "Show Band",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0183"
         },
         "referenceBandOpacity": {
           "displayName": "Band Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0184"
         },
         "referenceBandWidth": {
           "displayName": "Band Width (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0185"
         },
         "referenceLineAxis": {
           "displayName": "Target Axis",
@@ -1042,16 +1265,20 @@
             "enumeration": [
               {
                 "value": "primary",
-                "displayName": "Primary"
+                "displayName": "Primary",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0187"
               },
               {
                 "value": "secondary",
-                "displayName": "Secondary"
+                "displayName": "Secondary",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0188"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0186"
         }
-      }
+      },
+      "displayNameKey": "SlopeChartCapabilities_DisplayName_0165"
     },
     "trendLineFormatting": {
       "displayName": "Trend Line",
@@ -1060,7 +1287,8 @@
           "displayName": "Show Trend Line",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0190"
         },
         "trendLineType": {
           "displayName": "Type",
@@ -1068,32 +1296,39 @@
             "enumeration": [
               {
                 "value": "linear",
-                "displayName": "Linear"
+                "displayName": "Linear",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0192"
               },
               {
                 "value": "polynomial",
-                "displayName": "Polynomial"
+                "displayName": "Polynomial",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0193"
               },
               {
                 "value": "exponential",
-                "displayName": "Exponential"
+                "displayName": "Exponential",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0194"
               },
               {
                 "value": "logarithmic",
-                "displayName": "Logarithmic"
+                "displayName": "Logarithmic",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0195"
               },
               {
                 "value": "power",
-                "displayName": "Power"
+                "displayName": "Power",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0196"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0191"
         },
         "polynomialOrder": {
           "displayName": "Polynomial Order",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0197"
         },
         "trendLineColor": {
           "displayName": "Line Color",
@@ -1103,25 +1338,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0198"
         },
         "trendLineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0199"
         },
         "showEquation": {
           "displayName": "Show Equation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0200"
         },
         "showR2": {
-          "displayName": "Show R\u00b2",
+          "displayName": "Show R²",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0201"
         },
         "trendLineAxis": {
           "displayName": "Target Axis",
@@ -1129,16 +1368,20 @@
             "enumeration": [
               {
                 "value": "primary",
-                "displayName": "Primary"
+                "displayName": "Primary",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0203"
               },
               {
                 "value": "secondary",
-                "displayName": "Secondary"
+                "displayName": "Secondary",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0204"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0202"
         }
-      }
+      },
+      "displayNameKey": "SlopeChartCapabilities_DisplayName_0189"
     },
     "conditionalFormatting": {
       "displayName": "Conditional Formatting",
@@ -1147,7 +1390,8 @@
           "displayName": "Enable",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0206"
         },
         "conditionalDirection": {
           "displayName": "Direction",
@@ -1155,26 +1399,31 @@
             "enumeration": [
               {
                 "value": "ascending",
-                "displayName": "Ascending (Low = Bad)"
+                "displayName": "Ascending (Low = Bad)",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0208"
               },
               {
                 "value": "descending",
-                "displayName": "Descending (Low = Good)"
+                "displayName": "Descending (Low = Good)",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0209"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0207"
         },
         "threshold1": {
           "displayName": "Threshold 1",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0210"
         },
         "threshold2": {
           "displayName": "Threshold 2",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0211"
         },
         "conditionalColor1": {
           "displayName": "Color 1 (Bad)",
@@ -1184,7 +1433,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0212"
         },
         "conditionalColor2": {
           "displayName": "Color 2 (Warning)",
@@ -1194,7 +1444,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0213"
         },
         "conditionalColor3": {
           "displayName": "Color 3 (Good)",
@@ -1204,9 +1455,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0214"
         }
-      }
+      },
+      "displayNameKey": "SlopeChartCapabilities_DisplayName_0205"
     },
     "crosshairFormatting": {
       "displayName": "Crosshair",
@@ -1215,7 +1468,8 @@
           "displayName": "Show Crosshair",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0216"
         },
         "crosshairLineColor": {
           "displayName": "Line Color",
@@ -1225,13 +1479,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0217"
         },
         "crosshairLineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0218"
         },
         "crosshairLineStyle": {
           "displayName": "Line Style",
@@ -1239,26 +1495,39 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0220"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0221"
               },
               {
                 "value": "dotted",
-                "displayName": "Dotted"
+                "displayName": "Dotted",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0222"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0219"
         },
         "showCrosshairValues": {
           "displayName": "Show Values",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0223"
+        },
+        "crosshairOpacity": {
+          "displayName": "Opacity (%)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0224"
         }
-      }
+      },
+      "displayNameKey": "SlopeChartCapabilities_DisplayName_0215"
     },
     "annotationFormatting": {
       "displayName": "Annotations",
@@ -1267,118 +1536,141 @@
           "displayName": "Show Annotations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0226"
         },
         "annotation1Category": {
-          "displayName": "Annotation 1 \u2014 Category",
+          "displayName": "Annotation 1 — Category",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0227"
         },
         "annotation1Text": {
-          "displayName": "Annotation 1 \u2014 Text",
+          "displayName": "Annotation 1 — Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0228"
         },
         "annotation1Position": {
-          "displayName": "Annotation 1 \u2014 Position",
+          "displayName": "Annotation 1 — Position",
           "type": {
             "enumeration": [
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0230"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0231"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0232"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0233"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0229"
         },
         "annotation2Category": {
-          "displayName": "Annotation 2 \u2014 Category",
+          "displayName": "Annotation 2 — Category",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0234"
         },
         "annotation2Text": {
-          "displayName": "Annotation 2 \u2014 Text",
+          "displayName": "Annotation 2 — Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0235"
         },
         "annotation2Position": {
-          "displayName": "Annotation 2 \u2014 Position",
+          "displayName": "Annotation 2 — Position",
           "type": {
             "enumeration": [
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0237"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0238"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0239"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0240"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0236"
         },
         "annotation3Category": {
-          "displayName": "Annotation 3 \u2014 Category",
+          "displayName": "Annotation 3 — Category",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0241"
         },
         "annotation3Text": {
-          "displayName": "Annotation 3 \u2014 Text",
+          "displayName": "Annotation 3 — Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0242"
         },
         "annotation3Position": {
-          "displayName": "Annotation 3 \u2014 Position",
+          "displayName": "Annotation 3 — Position",
           "type": {
             "enumeration": [
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0244"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0245"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0246"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0247"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0243"
         },
         "annotationFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0248"
         },
         "annotationFontColor": {
           "displayName": "Font Color",
@@ -1388,7 +1680,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0249"
         },
         "annotationConnectorColor": {
           "displayName": "Connector Color",
@@ -1398,9 +1691,146 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0250"
+        },
+        "annotationFontFamily": {
+          "displayName": "Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0252"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0253"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0254"
+              },
+              {
+                "value": "Cambria",
+                "displayName": "Cambria",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0255"
+              },
+              {
+                "value": "Courier New",
+                "displayName": "Courier New",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0256"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0257"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0258"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0259"
+              },
+              {
+                "value": "Tahoma",
+                "displayName": "Tahoma",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0260"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0261"
+              },
+              {
+                "value": "Trebuchet MS",
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0262"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0263"
+              }
+            ]
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0251"
+        },
+        "annotationFontWeight": {
+          "displayName": "Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0265"
+              },
+              {
+                "value": "500",
+                "displayName": "Medium",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0266"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0267"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0268"
+              }
+            ]
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0264"
+        },
+        "annotationOffset": {
+          "displayName": "Callout Offset",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0269"
+        },
+        "annotationPadding": {
+          "displayName": "Badge Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0270"
+        },
+        "annotationBackgroundColor": {
+          "displayName": "Badge Background",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0271"
+        },
+        "annotationBackgroundOpacity": {
+          "displayName": "Badge Opacity (%)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0272"
+        },
+        "annotationCornerRadius": {
+          "displayName": "Badge Corner Radius",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0273"
         }
-      }
+      },
+      "displayNameKey": "SlopeChartCapabilities_DisplayName_0225"
     },
     "accessibilityFormatting": {
       "displayName": "Accessibility",
@@ -1409,9 +1839,11 @@
           "displayName": "Enable Keyboard Navigation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0275"
         }
-      }
+      },
+      "displayNameKey": "SlopeChartCapabilities_DisplayName_0274"
     },
     "slopeDisplaySettings": {
       "displayName": "Slope Behavior",
@@ -1420,15 +1852,18 @@
           "displayName": "Sort by Change Magnitude",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0277"
         },
         "showConfidenceInterval": {
           "displayName": "Show Confidence Intervals",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0278"
         }
-      }
+      },
+      "displayNameKey": "SlopeChartCapabilities_DisplayName_0276"
     },
     "slopeThresholdSettings": {
       "displayName": "Threshold Highlight",
@@ -1437,13 +1872,15 @@
           "displayName": "Show Threshold Highlight",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0280"
         },
         "threshold": {
           "displayName": "Threshold Value",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0281"
         },
         "glowColor": {
           "displayName": "Glow Color",
@@ -1453,31 +1890,39 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0282"
         }
-      }
+      },
+      "displayNameKey": "SlopeChartCapabilities_DisplayName_0339"
     },
     "seriesFormatting": {
+      "displayName": "Category Styles",
       "properties": {
         "seriesColor": {
+          "displayName": "Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0348"
         },
         "seriesOpacity": {
+          "displayName": "Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0349"
         },
         "showDataLabels": {
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0283"
         },
         "lineStyle": {
           "displayName": "Line Style",
@@ -1485,26 +1930,32 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0285"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0286"
               },
               {
                 "value": "dotted",
-                "displayName": "Dotted"
+                "displayName": "Dotted",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0287"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0284"
         },
         "lineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0288"
         }
-      }
+      },
+      "displayNameKey": "SlopeChartCapabilities_DisplayName_0340"
     },
     "numberFormatting": {
       "displayName": "Number Format",
@@ -1515,46 +1966,56 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0291"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0292"
               },
               {
                 "value": "thousands",
-                "displayName": "Thousands (K)"
+                "displayName": "Thousands (K)",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0293"
               },
               {
                 "value": "millions",
-                "displayName": "Millions (M)"
+                "displayName": "Millions (M)",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0294"
               },
               {
                 "value": "billions",
-                "displayName": "Billions (B)"
+                "displayName": "Billions (B)",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0295"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0290"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0296"
         },
         "valuePrefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0297"
         },
         "valueSuffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0298"
         }
-      }
+      },
+      "displayNameKey": "SlopeChartCapabilities_DisplayName_0289"
     },
     "legendFormatting": {
       "displayName": "Legend",
@@ -1563,7 +2024,8 @@
           "displayName": "Show Legend",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0300"
         },
         "legendPosition": {
           "displayName": "Position",
@@ -1571,28 +2033,34 @@
             "enumeration": [
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0302"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0303"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0304"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0305"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0301"
         },
         "legendFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0306"
         },
         "legendFontColor": {
           "displayName": "Font Color",
@@ -1602,7 +2070,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0307"
         },
         "legendFontFamily": {
           "displayName": "Font",
@@ -1610,54 +2079,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0309"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0310"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0311"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0312"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0313"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0314"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0315"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0316"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0317"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0318"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0319"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0320"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0308"
         },
         "legendFontWeight": {
           "displayName": "Font Weight",
@@ -1665,22 +2147,27 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0322"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0323"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0321"
         },
         "legendAliases": {
           "displayName": "Rename Labels",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0324"
         }
-      }
+      },
+      "displayNameKey": "SlopeChartCapabilities_DisplayName_0299"
     },
     "dateFilterFormatting": {
       "displayName": "Date Filter",
@@ -1689,27 +2176,32 @@
           "displayName": "Enable Date Filter",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0326"
         },
         "startDate": {
           "displayName": "Start Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0327"
         },
         "endAtCurrentDate": {
           "displayName": "End at Current Date",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0328"
         },
         "endDate": {
           "displayName": "End Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0329"
         }
-      }
+      },
+      "displayNameKey": "SlopeChartCapabilities_DisplayName_0325"
     },
     "colorThemeFormatting": {
       "properties": {
@@ -1719,39 +2211,57 @@
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0332"
               },
               {
                 "value": "ocean",
-                "displayName": "Ocean"
+                "displayName": "Ocean",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0333"
               },
               {
                 "value": "sunset",
-                "displayName": "Sunset"
+                "displayName": "Sunset",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0334"
               },
               {
                 "value": "forest",
-                "displayName": "Forest"
+                "displayName": "Forest",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0335"
               },
               {
                 "value": "berry",
-                "displayName": "Berry"
+                "displayName": "Berry",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0336"
               },
               {
                 "value": "monochrome",
-                "displayName": "Monochrome"
+                "displayName": "Monochrome",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0337"
               },
               {
                 "value": "earth",
-                "displayName": "Earth"
+                "displayName": "Earth",
+                "displayNameKey": "SlopeChartCapabilities_DisplayName_0338"
               }
             ]
-          }
+          },
+          "displayNameKey": "SlopeChartCapabilities_DisplayName_0331"
         }
       },
-      "displayName": "Color Theme"
+      "displayName": "Color Theme",
+      "displayNameKey": "SlopeChartCapabilities_DisplayName_0330"
     }
   },
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
   "supportsKeyboardFocus": true,
   "supportsHighlight": true,
   "supportsMultiVisualSelection": true,

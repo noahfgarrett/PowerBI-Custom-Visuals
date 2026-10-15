@@ -4,13 +4,17 @@
       "displayName": "Date",
       "name": "date",
       "kind": "Grouping",
-      "description": "Date values for calendar placement"
+      "description": "Date values for calendar placement",
+      "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0001",
+      "descriptionKey": "HeatmapCalendarCapabilities_Description_0001"
     },
     {
       "displayName": "Measure",
       "name": "measure",
       "kind": "Measure",
-      "description": "Intensity value for each date"
+      "description": "Intensity value for each date",
+      "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0002",
+      "descriptionKey": "HeatmapCalendarCapabilities_Description_0002"
     }
   ],
   "dataViewMappings": [
@@ -56,13 +60,22 @@
           "displayName": "Cell Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0004"
         },
         "cellGap": {
           "displayName": "Cell Gap",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0005"
+        },
+        "chartPadding": {
+          "displayName": "Chart Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0006"
         },
         "granularity": {
           "displayName": "Granularity",
@@ -70,18 +83,22 @@
             "enumeration": [
               {
                 "value": "day",
-                "displayName": "Day"
+                "displayName": "Day",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0008"
               },
               {
                 "value": "week",
-                "displayName": "Week"
+                "displayName": "Week",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0009"
               },
               {
                 "value": "month",
-                "displayName": "Month"
+                "displayName": "Month",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0010"
               }
             ]
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0007"
         },
         "weekStart": {
           "displayName": "Week Start Day",
@@ -89,32 +106,38 @@
             "enumeration": [
               {
                 "value": "sunday",
-                "displayName": "Sunday"
+                "displayName": "Sunday",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0012"
               },
               {
                 "value": "monday",
-                "displayName": "Monday"
+                "displayName": "Monday",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0013"
               }
             ]
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0011"
         },
         "showMonthLabels": {
           "displayName": "Show Month Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0014"
         },
         "showDayLabels": {
           "displayName": "Show Day Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0015"
         },
         "enableScrolling": {
           "displayName": "Enable Scrolling",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0016"
         },
         "labelFontFamily": {
           "displayName": "Label Font Family",
@@ -122,34 +145,42 @@
             "enumeration": [
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0018"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0019"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0020"
               },
               {
                 "value": "Helvetica",
-                "displayName": "Helvetica"
+                "displayName": "Helvetica",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0021"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0022"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0023"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0024"
               }
             ]
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0017"
         },
         "labelFontWeight": {
           "displayName": "Label Font Weight",
@@ -157,20 +188,25 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0026"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0027"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0028"
               }
             ]
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0025"
         }
-      }
+      },
+      "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0003"
     },
     "cellStyleSettings": {
       "displayName": "Cell Style",
@@ -179,7 +215,8 @@
           "displayName": "Cell Corner Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0030"
         },
         "cellStrokeColor": {
           "displayName": "Cell Stroke Color",
@@ -189,15 +226,18 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0031"
         },
         "cellStrokeWidth": {
           "displayName": "Cell Stroke Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0032"
         }
-      }
+      },
+      "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0029"
     },
     "colorScaleSettings": {
       "displayName": "Color Scale",
@@ -210,7 +250,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0034"
         },
         "highColor": {
           "displayName": "High Color",
@@ -220,13 +261,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0035"
         },
         "showMidColor": {
           "displayName": "Use 3-Stop Gradient",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0036"
         },
         "midColor": {
           "displayName": "Mid Color",
@@ -236,13 +279,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0037"
         },
         "midPoint": {
           "displayName": "Mid Point (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0038"
         },
         "colorMode": {
           "displayName": "Color Mode",
@@ -250,20 +295,24 @@
             "enumeration": [
               {
                 "value": "continuous",
-                "displayName": "Continuous"
+                "displayName": "Continuous",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0040"
               },
               {
                 "value": "discrete",
-                "displayName": "Discrete"
+                "displayName": "Discrete",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0041"
               }
             ]
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0039"
         },
         "bins": {
           "displayName": "Discrete Bins",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0042"
         },
         "emptyColor": {
           "displayName": "Empty Cell Color",
@@ -273,9 +322,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0043"
         }
-      }
+      },
+      "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0033"
     },
     "legendSettings": {
       "displayName": "Legend",
@@ -284,7 +335,8 @@
           "displayName": "Show Color Legend",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0045"
         },
         "legendPosition": {
           "displayName": "Legend Position",
@@ -292,20 +344,142 @@
             "enumeration": [
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0047"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0048"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0049"
               }
             ]
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0046"
+        },
+        "barThickness": {
+          "displayName": "Bar Thickness",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0050"
+        },
+        "legendLength": {
+          "displayName": "Legend Length",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0001"
+        },
+        "legendPadding": {
+          "displayName": "Legend Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0051"
+        },
+        "labelGap": {
+          "displayName": "Label Gap",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0052"
+        },
+        "legendLabelColor": {
+          "displayName": "Label Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0002"
+        },
+        "legendLabelFontSize": {
+          "displayName": "Label Font Size",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0003"
+        },
+        "legendLabelFontFamily": {
+          "displayName": "Label Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0005"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0006"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0007"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0008"
+              },
+              {
+                "value": "Helvetica",
+                "displayName": "Helvetica",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0009"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0010"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0011"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0012"
+              }
+            ]
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0004"
+        },
+        "legendLabelFontWeight": {
+          "displayName": "Label Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0014"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0015"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0016"
+              }
+            ]
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0013"
         }
-      }
+      },
+      "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0044"
     },
     "calendarSettings": {
       "displayName": "Calendar (Legacy)",
@@ -318,9 +492,36 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0054"
+        },
+        "cellStrokeColor": {
+          "displayName": "Cell Stroke Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0055"
+        },
+        "cellStrokeWidth": {
+          "displayName": "Cell Stroke Width",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0056"
+        },
+        "cellCornerRadius": {
+          "displayName": "Cell Corner Radius",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0057"
         }
-      }
+      },
+      "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0053"
     },
     "animationSettings": {
       "displayName": "Animation",
@@ -329,15 +530,18 @@
           "displayName": "Enable Animations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0059"
         },
         "duration": {
           "displayName": "Duration (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0060"
         }
-      }
+      },
+      "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0058"
     },
     "dataLabelFormatting": {
       "displayName": "Data Labels",
@@ -346,13 +550,15 @@
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0062"
         },
         "dataLabelFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0063"
         },
         "dataLabelFontColor": {
           "displayName": "Font Color",
@@ -362,7 +568,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0064"
         },
         "dataLabelFontWeight": {
           "displayName": "Font Weight",
@@ -370,14 +577,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0066"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0067"
               }
             ]
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0065"
         },
         "dataLabelFontFamily": {
           "displayName": "Font",
@@ -385,54 +595,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0069"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0070"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0071"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0072"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0073"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0074"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0075"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0076"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0077"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0078"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0079"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0080"
               }
             ]
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0068"
         },
         "dataLabelPosition": {
           "displayName": "Position",
@@ -440,28 +663,35 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0082"
               },
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0083"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0084"
               },
               {
                 "value": "inside",
-                "displayName": "Inside"
+                "displayName": "Inside",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0085"
               },
               {
                 "value": "outside",
-                "displayName": "Outside"
+                "displayName": "Outside",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0086"
               }
             ]
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0081"
         }
-      }
+      },
+      "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0061"
     },
     "titleFormatting": {
       "displayName": "Chart Title",
@@ -470,19 +700,22 @@
           "displayName": "Show Title",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0088"
         },
         "titleText": {
           "displayName": "Title Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0089"
         },
         "titleFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0090"
         },
         "titleFontColor": {
           "displayName": "Font Color",
@@ -492,7 +725,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0091"
         },
         "titleAlignment": {
           "displayName": "Alignment",
@@ -500,18 +734,22 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0093"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0094"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0095"
               }
             ]
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0092"
         },
         "titleFontFamily": {
           "displayName": "Font",
@@ -519,66 +757,81 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0097"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0098"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0099"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0100"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0101"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0102"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0103"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0104"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0105"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0106"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0107"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0108"
               }
             ]
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0096"
         },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0109"
         },
         "subtitleFontSize": {
           "displayName": "Subtitle Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0110"
         },
         "subtitleFontColor": {
           "displayName": "Subtitle Color",
@@ -588,7 +841,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0111"
         },
         "titleFontWeight": {
           "displayName": "Font Weight",
@@ -596,14 +850,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0113"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0114"
               }
             ]
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0112"
         },
         "subtitleFontFamily": {
           "displayName": "Subtitle Font",
@@ -611,54 +868,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0116"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0117"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0118"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0119"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0120"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0121"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0122"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0123"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0124"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0125"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0126"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0127"
               }
             ]
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0115"
         },
         "subtitleFontWeight": {
           "displayName": "Subtitle Font Weight",
@@ -666,16 +936,20 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0129"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0130"
               }
             ]
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0128"
         }
-      }
+      },
+      "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0087"
     },
     "axisFormatting": {
       "displayName": "Axis Formatting",
@@ -688,37 +962,43 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0132"
         },
         "axisLabelSize": {
           "displayName": "Label Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0133"
         },
         "showXAxis": {
           "displayName": "Show X-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0134"
         },
         "showYAxis": {
           "displayName": "Show Y-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0135"
         },
         "xAxisTitle": {
           "displayName": "X-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0136"
         },
         "yAxisTitle": {
           "displayName": "Y-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0137"
         },
         "axisLabelFontFamily": {
           "displayName": "Label Font",
@@ -726,72 +1006,88 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0139"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0140"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0141"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0142"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0143"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0144"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0145"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0146"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0147"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0148"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0149"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0150"
               }
             ]
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0138"
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (\u00b0)",
+          "displayName": "X-Label Rotation (°)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0151"
         },
         "yAxisMin": {
           "displayName": "Y-Axis Min",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0152"
         },
         "yAxisMax": {
           "displayName": "Y-Axis Max",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0153"
         },
         "axisLineColor": {
           "displayName": "Axis Line Color",
@@ -801,19 +1097,22 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0154"
         },
         "axisLineWidth": {
           "displayName": "Axis Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0155"
         },
         "showGridLines": {
           "displayName": "Show Grid Lines",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0156"
         },
         "gridLineColor": {
           "displayName": "Grid Line Color",
@@ -823,7 +1122,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0157"
         },
         "gridLineStyle": {
           "displayName": "Grid Line Style",
@@ -831,26 +1131,31 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0159"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0160"
               }
             ]
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0158"
         },
         "gridLineWidth": {
           "displayName": "Grid Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0161"
         },
         "gridLineOpacity": {
           "displayName": "Grid Line Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0162"
         },
         "axisLabelFontWeight": {
           "displayName": "Label Font Weight",
@@ -858,16 +1163,27 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0164"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0165"
               }
             ]
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0163"
+        },
+        "integerTicks": {
+          "displayName": "Integer Ticks Only",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0166"
         }
-      }
+      },
+      "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0131"
     },
     "cardSettings": {
       "displayName": "Card Style",
@@ -880,19 +1196,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0168"
         },
         "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0169"
         },
         "borderRadius": {
           "displayName": "Border Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0170"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0017"
         },
         "cardStyleMode": {
           "displayName": "Card Style",
@@ -900,30 +1226,47 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0018"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0019"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0020"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0021"
+              },
+              {
+                "value": "outlined",
+                "displayName": "Border Only",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0022"
+              },
+              {
+                "value": "floating",
+                "displayName": "Floating Shadow",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0023"
               }
             ]
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0171"
         },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "(Deprecated) Enable Glass"
+          "displayName": "(Deprecated) Enable Glass",
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0176"
         }
-      }
+      },
+      "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0167"
     },
     "calendarStreakSettings": {
       "displayName": "Streak Highlighting",
@@ -932,13 +1275,15 @@
           "displayName": "Show Streaks",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0178"
         },
         "threshold": {
           "displayName": "Streak Threshold",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0179"
         },
         "streakOutlineColor": {
           "displayName": "Streak Outline Color",
@@ -948,9 +1293,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0180"
         }
-      }
+      },
+      "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0177"
     },
     "conditionalFormatting": {
       "displayName": "Conditional Formatting",
@@ -959,7 +1306,8 @@
           "displayName": "Enable Conditional Formatting",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0182"
         },
         "conditionalDirection": {
           "displayName": "Direction",
@@ -967,26 +1315,31 @@
             "enumeration": [
               {
                 "value": "ascending",
-                "displayName": "Ascending (Low = Bad)"
+                "displayName": "Ascending (Low = Bad)",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0184"
               },
               {
                 "value": "descending",
-                "displayName": "Descending (Low = Good)"
+                "displayName": "Descending (Low = Good)",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0185"
               }
             ]
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0183"
         },
         "threshold1": {
           "displayName": "Threshold 1",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0186"
         },
         "threshold2": {
           "displayName": "Threshold 2",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0187"
         },
         "conditionalColor1": {
           "displayName": "Color 1 (Bad)",
@@ -996,7 +1349,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0188"
         },
         "conditionalColor2": {
           "displayName": "Color 2 (Warning)",
@@ -1006,7 +1360,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0189"
         },
         "conditionalColor3": {
           "displayName": "Color 3 (Good)",
@@ -1016,9 +1371,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0190"
         }
-      }
+      },
+      "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0181"
     },
     "accessibilityFormatting": {
       "displayName": "Accessibility",
@@ -1027,9 +1384,11 @@
           "displayName": "Enable Keyboard Navigation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0192"
         }
-      }
+      },
+      "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0191"
     },
     "numberFormatting": {
       "displayName": "Number Format",
@@ -1040,46 +1399,56 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0195"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0196"
               },
               {
                 "value": "thousands",
-                "displayName": "Thousands (K)"
+                "displayName": "Thousands (K)",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0197"
               },
               {
                 "value": "millions",
-                "displayName": "Millions (M)"
+                "displayName": "Millions (M)",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0198"
               },
               {
                 "value": "billions",
-                "displayName": "Billions (B)"
+                "displayName": "Billions (B)",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0199"
               }
             ]
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0194"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0200"
         },
         "valuePrefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0201"
         },
         "valueSuffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0202"
         }
-      }
+      },
+      "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0193"
     },
     "dateFilterFormatting": {
       "displayName": "Date Filter",
@@ -1088,27 +1457,32 @@
           "displayName": "Enable Date Filter",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0204"
         },
         "startDate": {
           "displayName": "Start Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0205"
         },
         "endAtCurrentDate": {
           "displayName": "End at Current Date",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0206"
         },
         "endDate": {
           "displayName": "End Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0207"
         }
-      }
+      },
+      "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0203"
     },
     "colorThemeFormatting": {
       "properties": {
@@ -1118,42 +1492,60 @@
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0210"
               },
               {
                 "value": "ocean",
-                "displayName": "Ocean"
+                "displayName": "Ocean",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0211"
               },
               {
                 "value": "sunset",
-                "displayName": "Sunset"
+                "displayName": "Sunset",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0212"
               },
               {
                 "value": "forest",
-                "displayName": "Forest"
+                "displayName": "Forest",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0213"
               },
               {
                 "value": "berry",
-                "displayName": "Berry"
+                "displayName": "Berry",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0214"
               },
               {
                 "value": "monochrome",
-                "displayName": "Monochrome"
+                "displayName": "Monochrome",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0215"
               },
               {
                 "value": "earth",
-                "displayName": "Earth"
+                "displayName": "Earth",
+                "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0216"
               }
             ]
-          }
+          },
+          "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0209"
         }
       },
-      "displayName": "Color Theme"
+      "displayName": "Color Theme",
+      "displayNameKey": "HeatmapCalendarCapabilities_DisplayName_0208"
     }
   },
   "supportsKeyboardFocus": true,
   "supportsHighlight": true,
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
   "supportsMultiVisualSelection": true,
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
   "privileges": [],
   "suppressDefaultTitle": true
 }

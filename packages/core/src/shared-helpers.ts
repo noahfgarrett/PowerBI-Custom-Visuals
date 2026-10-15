@@ -4,16 +4,17 @@
  */
 
 import powerbi from 'powerbi-visuals-api';
-import type { AxisFormattingCard, DataLabelFormattingCard, NumberFormattingCard, ScrollFormattingCard, SortFormattingCard, TitleFormattingCard, ColorThemeFormattingCard, LegendFormattingCard } from './shared-settings';
+import type { AxisFormattingCard, DataLabelFormattingCard, NumberFormattingCard, ScrollFormattingCard, SortFormattingCard, TitleFormattingCard, ColorThemeFormattingCard, LegendFormattingCard, DateFilterFormattingCard } from './shared-settings';
 import { formatNumber } from './format';
 import type { DisplayUnits } from './format';
 import { COLOR_THEMES, type ColorThemeName } from './colors';
+import { prefersReducedMotion } from './animation';
 
-import DataView = powerbi.DataView;
-import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
 import ISelectionId = powerbi.visuals.ISelectionId;
 import ISelectionManager = powerbi.extensibility.ISelectionManager;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
+import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
+import DataView = powerbi.DataView;
 
 // ── Default colors (used when user hasn't picked a color) ────────────
 
@@ -65,27 +66,67 @@ export function attachEmptySpaceContextMenu(
   return () => element.removeEventListener('contextmenu', handler);
 }
 
-export function getLocalizedString(
-  hostOrManager: IVisualHost | ILocalizationManager | undefined,
-  key: string,
-  fallback: string,
-): string {
-  const manager = resolveLocalizationManager(hostOrManager);
-  const localized = manager?.getDisplayName(key);
-  return localized && localized !== key ? localized : fallback;
+export interface HostHighContrastColors {
+  enabled: boolean;
+  foreground: string;
+  background: string;
+  foregroundSelected: string;
+  hyperlink: string;
 }
 
-function resolveLocalizationManager(
-  hostOrManager: IVisualHost | ILocalizationManager | undefined,
-): ILocalizationManager | undefined {
-  if (!hostOrManager) return undefined;
-  if ('getDisplayName' in hostOrManager && typeof hostOrManager.getDisplayName === 'function') {
-    return hostOrManager;
-  }
-  if ('createLocalizationManager' in hostOrManager && typeof hostOrManager.createLocalizationManager === 'function') {
-    return hostOrManager.createLocalizationManager();
-  }
-  return undefined;
+export function allowInteractions(host: IVisualHost): boolean {
+  const hostWithCapabilities = host as unknown as {
+    hostCapabilities?: { allowInteractions?: boolean };
+  };
+  return hostWithCapabilities.hostCapabilities?.allowInteractions !== false;
+}
+
+export function getHostHighContrastColors(host: IVisualHost): HostHighContrastColors {
+  const palette = (host as unknown as {
+    colorPalette?: {
+      isHighContrast?: boolean;
+      foreground?: unknown;
+      background?: unknown;
+      foregroundSelected?: unknown;
+      hyperlink?: unknown;
+    };
+  }).colorPalette;
+
+  const colorValue = (value: unknown, fallback: string): string => {
+    if (typeof value === 'string' && value.length > 0) return value;
+    if (typeof value === 'object' && value !== null && 'value' in value) {
+      const nested = (value as { value?: unknown }).value;
+      if (typeof nested === 'string' && nested.length > 0) return nested;
+    }
+    return fallback;
+  };
+
+  return {
+    enabled: Boolean(palette?.isHighContrast),
+    foreground: colorValue(palette?.foreground, '#000000'),
+    background: colorValue(palette?.background, '#FFFFFF'),
+    foregroundSelected: colorValue(palette?.foregroundSelected, '#000000'),
+    hyperlink: colorValue(palette?.hyperlink, '#0000FF'),
+  };
+}
+
+export function notifyRenderingStarted(host: IVisualHost, options: VisualUpdateOptions): void {
+  host.eventService?.renderingStarted?.(options);
+}
+
+export function notifyRenderingFinished(host: IVisualHost, options: VisualUpdateOptions): void {
+  host.eventService?.renderingFinished?.(options);
+}
+
+export function notifyRenderingFailed(host: IVisualHost, options: VisualUpdateOptions, reason?: string): void {
+  host.eventService?.renderingFailed?.(options, reason);
+}
+
+export interface LandingPageConfig {
+  title: string;
+  description: string;
+  steps?: string[];
+  hint?: string;
 }
 
 export type EmptyVisualStateMode = 'unconfigured' | 'noData';
@@ -95,6 +136,246 @@ export function getVisualEmptyStateMode(dataView: DataView | undefined): EmptyVi
     Object.values(column.roles ?? {}).some(Boolean),
   );
   return hasBoundRoles ? 'noData' : 'unconfigured';
+}
+
+export function renderLandingPage(
+  container: HTMLElement,
+  config: LandingPageConfig,
+  highContrast?: HostHighContrastColors,
+): HTMLElement {
+  const shell = document.createElement('div');
+  shell.className = 'pbi-landing-page';
+  shell.setAttribute('role', 'region');
+  shell.setAttribute('aria-label', config.title);
+  shell.style.display = 'flex';
+  shell.style.flexDirection = 'column';
+  shell.style.alignItems = 'flex-start';
+  shell.style.justifyContent = 'center';
+  shell.style.gap = '12px';
+  shell.style.width = 'calc(100% - 24px)';
+  shell.style.maxWidth = '440px';
+  shell.style.maxHeight = 'calc(100% - 24px)';
+  shell.style.margin = '0 auto';
+  shell.style.padding = '24px 28px';
+  shell.style.boxSizing = 'border-box';
+  shell.style.overflowY = 'auto';
+  shell.style.overflowWrap = 'anywhere';
+  shell.style.borderRadius = '8px';
+  shell.style.border = `1px solid ${highContrast?.enabled ? highContrast.foreground : 'rgba(148, 163, 184, 0.28)'}`;
+  shell.style.background = highContrast?.enabled
+    ? highContrast.background
+    : 'linear-gradient(180deg, rgba(255,255,255,0.78), rgba(248,250,252,0.94))';
+  shell.style.boxShadow = highContrast?.enabled ? 'none' : '0 18px 40px rgba(15, 23, 42, 0.08)';
+  shell.style.color = highContrast?.enabled ? highContrast.foreground : '#0F172A';
+
+  const title = document.createElement('h2');
+  title.className = 'pbi-landing-page-title';
+  title.textContent = config.title;
+  title.style.margin = '0';
+  title.style.fontSize = '22px';
+  title.style.fontWeight = '700';
+  title.style.letterSpacing = '0';
+  shell.appendChild(title);
+
+  const description = document.createElement('div');
+  description.className = 'pbi-landing-page-description';
+  description.textContent = config.description;
+  description.style.lineHeight = '1.5';
+  description.style.color = highContrast?.enabled ? highContrast.foreground : '#334155';
+  shell.appendChild(description);
+
+  if (config.steps && config.steps.length > 0) {
+    const steps = document.createElement('ul');
+    steps.className = 'pbi-landing-page-steps';
+    steps.style.margin = '0';
+    steps.style.paddingLeft = '18px';
+    steps.style.lineHeight = '1.6';
+    for (const step of config.steps) {
+      const item = document.createElement('li');
+      item.textContent = step;
+      steps.appendChild(item);
+    }
+    shell.appendChild(steps);
+  }
+
+  if (config.hint) {
+    const hint = document.createElement('div');
+    hint.className = 'pbi-landing-page-hint';
+    hint.textContent = config.hint;
+    hint.style.fontSize = '13px';
+    hint.style.lineHeight = '1.5';
+    hint.style.color = highContrast?.enabled ? highContrast.foreground : '#475569';
+    shell.appendChild(hint);
+  }
+
+  container.appendChild(shell);
+  return shell;
+}
+
+export function renderNoDataState(
+  container: HTMLElement,
+  message = 'No data for the current selection.',
+  highContrast?: HostHighContrastColors,
+): HTMLElement {
+  const shell = document.createElement('div');
+  shell.className = 'pbi-no-data-state';
+  shell.setAttribute('role', 'status');
+  shell.setAttribute('aria-live', 'polite');
+  shell.style.display = 'flex';
+  shell.style.alignItems = 'center';
+  shell.style.justifyContent = 'center';
+  shell.style.width = 'calc(100% - 24px)';
+  shell.style.maxWidth = '440px';
+  shell.style.minHeight = '120px';
+  shell.style.maxHeight = 'calc(100% - 24px)';
+  shell.style.margin = '0 auto';
+  shell.style.padding = '24px';
+  shell.style.boxSizing = 'border-box';
+  shell.style.overflow = 'auto';
+  shell.style.overflowWrap = 'anywhere';
+  shell.style.borderRadius = '8px';
+  shell.style.border = `1px dashed ${highContrast?.enabled ? highContrast.foreground : 'rgba(148, 163, 184, 0.38)'}`;
+  shell.style.background = highContrast?.enabled
+    ? highContrast.background
+    : 'linear-gradient(180deg, rgba(248,250,252,0.88), rgba(241,245,249,0.96))';
+  shell.style.color = highContrast?.enabled ? highContrast.foreground : '#475569';
+  shell.style.fontSize = '14px';
+  shell.style.fontWeight = '600';
+  shell.style.textAlign = 'center';
+  shell.textContent = message;
+
+  container.appendChild(shell);
+  return shell;
+}
+
+export interface HighContrastStyleConfig {
+  textSelectors?: string[];
+  lineSelectors?: string[];
+  fillSelectors?: string[];
+  strokeSelectors?: string[];
+}
+
+interface HighContrastOriginalState {
+  attributes?: Record<string, string | null>;
+  styles?: Record<string, string>;
+}
+
+const HIGH_CONTRAST_STATE_ATTRIBUTE = 'data-pbi-high-contrast-original';
+
+function rememberHighContrastState(
+  element: HTMLElement | SVGElement,
+  attributeNames: string[] = [],
+  styleNames: string[] = [],
+): void {
+  const rawState = element.getAttribute(HIGH_CONTRAST_STATE_ATTRIBUTE);
+  const state: HighContrastOriginalState = rawState
+    ? JSON.parse(rawState) as HighContrastOriginalState
+    : {};
+
+  state.attributes ??= {};
+  state.styles ??= {};
+
+  for (const name of attributeNames) {
+    if (!(name in state.attributes)) {
+      state.attributes[name] = element.getAttribute(name);
+    }
+  }
+  for (const name of styleNames) {
+    if (!(name in state.styles)) {
+      state.styles[name] = element.style.getPropertyValue(name);
+    }
+  }
+
+  element.setAttribute(HIGH_CONTRAST_STATE_ATTRIBUTE, JSON.stringify(state));
+}
+
+function restoreHighContrastState(container: HTMLElement): void {
+  const elements: Array<HTMLElement | SVGElement> = [container];
+  container.querySelectorAll<HTMLElement | SVGElement>(`[${HIGH_CONTRAST_STATE_ATTRIBUTE}]`)
+    .forEach((element) => elements.push(element));
+
+  for (const element of elements) {
+    const rawState = element.getAttribute(HIGH_CONTRAST_STATE_ATTRIBUTE);
+    if (!rawState) continue;
+
+    const state = JSON.parse(rawState) as HighContrastOriginalState;
+    for (const [name, value] of Object.entries(state.attributes ?? {})) {
+      if (value === null) element.removeAttribute(name);
+      else element.setAttribute(name, value);
+    }
+    for (const [name, value] of Object.entries(state.styles ?? {})) {
+      element.style.setProperty(name, value);
+    }
+    element.removeAttribute(HIGH_CONTRAST_STATE_ATTRIBUTE);
+  }
+}
+
+export function applyBasicHighContrastStyles(
+  container: HTMLElement,
+  colors: HostHighContrastColors,
+  config: HighContrastStyleConfig = {},
+): void {
+  if (!colors.enabled) {
+    restoreHighContrastState(container);
+    return;
+  }
+
+  rememberHighContrastState(container, [], ['background-color', 'color']);
+  container.style.backgroundColor = colors.background;
+  container.style.color = colors.foreground;
+
+  const textSelectors = config.textSelectors ?? ['svg text', '.chart-title', '.chart-subtitle', '.pbi-shared-legend span'];
+  const lineSelectors = config.lineSelectors ?? ['svg line', 'svg .domain'];
+  const fillSelectors = config.fillSelectors ?? [];
+  const strokeSelectors = config.strokeSelectors ?? [];
+
+  const applyTextColor = (element: Element): void => {
+    if (element instanceof SVGElement) {
+      rememberHighContrastState(element, ['fill']);
+      element.setAttribute('fill', colors.foreground);
+    } else if (element instanceof HTMLElement) {
+      rememberHighContrastState(element, [], ['color']);
+      element.style.color = colors.foreground;
+    }
+  };
+
+  const applyStrokeColor = (element: Element): void => {
+    if (element instanceof SVGElement) {
+      rememberHighContrastState(element, ['stroke']);
+      element.setAttribute('stroke', colors.foreground);
+    } else if (element instanceof HTMLElement) {
+      rememberHighContrastState(element, [], ['border-color', 'color']);
+      element.style.borderColor = colors.foreground;
+      element.style.color = colors.foreground;
+    }
+  };
+
+  const applyFillColor = (element: Element): void => {
+    if (element instanceof SVGElement) {
+      rememberHighContrastState(element, ['fill', 'stroke', 'stroke-width']);
+      element.setAttribute('fill', colors.background);
+      element.setAttribute('stroke', colors.foreground);
+      element.setAttribute('stroke-width', element.getAttribute('stroke-width') || '2');
+    } else if (element instanceof HTMLElement) {
+      rememberHighContrastState(element, [], ['background-color', 'border-color', 'color']);
+      element.style.backgroundColor = colors.background;
+      element.style.borderColor = colors.foreground;
+      element.style.color = colors.foreground;
+    }
+  };
+
+  for (const selector of textSelectors) {
+    container.querySelectorAll(selector).forEach(applyTextColor);
+  }
+  for (const selector of lineSelectors) {
+    container.querySelectorAll(selector).forEach(applyStrokeColor);
+  }
+  for (const selector of fillSelectors) {
+    container.querySelectorAll(selector).forEach(applyFillColor);
+  }
+  for (const selector of strokeSelectors) {
+    container.querySelectorAll(selector).forEach(applyStrokeColor);
+  }
 }
 
 /**
@@ -119,6 +400,13 @@ function toDashArray(style: string | undefined): string {
 }
 
 // ── Chart Title ──────────────────────────────────────────────────────
+
+export interface TitleLayoutConfig {
+  /** Space below the title block in pixels. */
+  titlePaddingBottom?: number;
+  /** Space below the subtitle in pixels. */
+  subtitlePaddingBottom?: number;
+}
 
 /**
  * Synchronizes title/subtitle formatting pane visibility with the title toggle.
@@ -159,40 +447,92 @@ export function syncLegendFormattingVisibility(settings: LegendFormattingCard): 
 }
 
 /**
+ * Hides inline legend label controls for visuals that do not render them.
+ * Call after syncLegendFormattingVisibility when the visual only supports
+ * standard legend entries.
+ */
+export function hideInlineLegendFormatting(settings: LegendFormattingCard): void {
+  settings.showInlineLabels.visible = false;
+  settings.inlineLabelFontSize.visible = false;
+  settings.inlineLabelOffset.visible = false;
+}
+
+/**
+ * Synchronizes date-filter sub-setting visibility with the master toggle.
+ * End Date is only shown when the filter is enabled and "End at Current Date"
+ * is turned off.
+ */
+export function syncDateFilterFormattingVisibility(settings: DateFilterFormattingCard): void {
+  const enabled = Boolean(settings.enableDateFilter.value);
+  const endAtCurrentDate = Boolean(settings.endAtCurrentDate.value);
+
+  settings.startDate.visible = enabled;
+  settings.endAtCurrentDate.visible = enabled;
+  settings.endDate.visible = enabled && !endAtCurrentDate;
+}
+
+type CardStyleVisibilitySettings = {
+  cardStyleMode: { value?: unknown };
+  backgroundOpacity: { visible?: boolean };
+  backgroundColor: { visible?: boolean };
+  borderRadius?: { visible?: boolean };
+};
+
+/**
+ * Synchronizes shared card-style sub-setting visibility with the chosen card mode.
+ * Appearance-only controls are hidden when the card style is disabled.
+ */
+export function syncCardStyleVisibility(settings: CardStyleVisibilitySettings): void {
+  const cardMode = resolveDropdown(settings.cardStyleMode) ?? 'glass';
+  const visible = cardMode !== 'none';
+  settings.backgroundOpacity.visible = visible;
+  settings.backgroundColor.visible = visible;
+  if (settings.borderRadius) settings.borderRadius.visible = visible;
+}
+
+/**
  * Renders an optional chart title as the first child of the container.
  * Call at the top of update() after clearing.
  */
 export function renderChartTitle(
   container: HTMLElement,
   settings: TitleFormattingCard,
+  layout?: TitleLayoutConfig,
 ): void {
-  if (!settings.showTitle.value) return;
   const text = settings.titleText.value;
-  if (!text) return;
+  const subtitleText = settings.subtitleText.value;
+  if (!settings.showTitle.value && !subtitleText) return;
 
   const fontFamily = resolveDropdown(settings.titleFontFamily) || "'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif";
   const textAlign = resolveDropdown(settings.titleAlignment) ?? 'center';
   const titleWeight = resolveDropdown(settings.titleFontWeight) ?? 'bold';
+  const titlePaddingBottom = layout?.titlePaddingBottom ?? 4;
+  const subtitlePaddingBottom = layout?.subtitlePaddingBottom ?? 4;
 
-  const el = document.createElement('div');
-  el.className = 'chart-title';
-  el.textContent = text;
-  el.style.fontSize = `${settings.titleFontSize.value}px`;
-  el.style.color = resolveColor(settings.titleFontColor, DEFAULT_TITLE_COLOR);
-  el.style.textAlign = textAlign;
-  el.style.fontWeight = titleWeight === 'bold' ? '600' : '400';
-  el.style.marginBottom = '4px';
-  el.style.lineHeight = '1.3';
-  el.style.fontFamily = fontFamily;
-  el.style.position = 'relative';
-  el.style.zIndex = '1';
-  el.style.width = '100%';
-  el.style.boxSizing = 'border-box';
-
-  container.insertBefore(el, container.firstChild);
+  let titleEl: HTMLDivElement | null = null;
+  if (settings.showTitle.value && text) {
+    titleEl = document.createElement('div');
+    titleEl.className = 'chart-title';
+    titleEl.textContent = text;
+    titleEl.style.fontSize = `${settings.titleFontSize.value}px`;
+    titleEl.style.color = resolveColor(settings.titleFontColor, DEFAULT_TITLE_COLOR);
+    titleEl.style.textAlign = textAlign;
+    titleEl.style.fontWeight = titleWeight === 'bold' ? '600' : '400';
+    titleEl.style.marginBottom = `${titlePaddingBottom}px`;
+    titleEl.style.lineHeight = '1.3';
+    titleEl.style.fontFamily = fontFamily;
+    titleEl.style.position = 'relative';
+    titleEl.style.zIndex = '1';
+    titleEl.style.width = '100%';
+    titleEl.style.minWidth = '0';
+    titleEl.style.boxSizing = 'border-box';
+    titleEl.style.overflowWrap = 'anywhere';
+    titleEl.setAttribute('role', 'heading');
+    titleEl.setAttribute('aria-level', '2');
+    container.insertBefore(titleEl, container.firstChild);
+  }
 
   // Render subtitle after the title if provided
-  const subtitleText = settings.subtitleText.value;
   if (subtitleText) {
     const subtitleFontFamily = resolveDropdown(settings.subtitleFontFamily) || fontFamily;
     const subtitleWeight = resolveDropdown(settings.subtitleFontWeight) ?? 'normal';
@@ -205,18 +545,20 @@ export function renderChartTitle(
     sub.style.fontFamily = subtitleFontFamily;
     sub.style.textAlign = textAlign;
     sub.style.fontWeight = subtitleWeight === 'bold' ? '600' : '400';
-    sub.style.marginBottom = '4px';
+    sub.style.marginBottom = `${subtitlePaddingBottom}px`;
     sub.style.lineHeight = '1.3';
     sub.style.position = 'relative';
     sub.style.zIndex = '1';
     sub.style.width = '100%';
+    sub.style.minWidth = '0';
     sub.style.boxSizing = 'border-box';
+    sub.style.overflowWrap = 'anywhere';
 
-    // Insert subtitle right after the title element
-    if (el.nextSibling) {
-      container.insertBefore(sub, el.nextSibling);
+    // Insert subtitle right after the title element when present.
+    if (titleEl) {
+      container.insertBefore(sub, titleEl.nextSibling);
     } else {
-      container.appendChild(sub);
+      container.insertBefore(sub, container.firstChild);
     }
   }
 }
@@ -482,6 +824,18 @@ export interface LegendConfig {
   fontFamily?: string;
   /** Optional font weight override. Falls back to 'normal'. */
   fontWeight?: string;
+  /** Legend container padding on the horizontal axis. */
+  paddingX?: number;
+  /** Legend container padding on the vertical axis. */
+  paddingY?: number;
+  /** Gap between legend entries. */
+  itemGap?: number;
+  /** Gap between the swatch and label within a legend item. */
+  entryGap?: number;
+  /** Swatch size in pixels. */
+  swatchSize?: number;
+  /** Maximum legend-label width before truncation. Default: 180px. */
+  maxLabelWidth?: number;
   /** Comma-separated label overrides. Position-matched: alias[0] → item[0], etc. */
   aliases?: string;
 }
@@ -500,20 +854,34 @@ export function renderLegend(
 
   const legend = document.createElement('div');
   legend.className = 'pbi-shared-legend';
+  legend.setAttribute('role', config.onItemClick ? 'group' : 'list');
+  legend.setAttribute('aria-label', 'Legend');
 
   const isVertical = config.position === 'left' || config.position === 'right';
+  const paddingX = config.paddingX ?? 8;
+  const paddingY = config.paddingY ?? 4;
+  const itemGap = config.itemGap ?? (isVertical ? 4 : 12);
+  const entryGap = config.entryGap ?? 4;
+  const swatchSize = config.swatchSize ?? 10;
+  const maxLabelWidth = config.maxLabelWidth ?? 180;
 
   legend.style.display = 'flex';
   legend.style.flexDirection = isVertical ? 'column' : 'row';
   legend.style.flexWrap = 'wrap';
-  legend.style.gap = isVertical ? '4px' : '12px';
+  legend.style.gap = `${itemGap}px`;
   legend.style.justifyContent = isVertical ? 'flex-start' : 'center';
   legend.style.alignItems = isVertical ? 'flex-start' : 'center';
-  legend.style.padding = '4px 8px';
+  legend.style.padding = `${paddingY}px ${paddingX}px`;
   legend.style.fontSize = `${config.fontSize}px`;
   legend.style.fontFamily = config.fontFamily || "'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif";
   legend.style.fontWeight = config.fontWeight || 'normal';
   legend.style.userSelect = 'none';
+  legend.style.maxWidth = '100%';
+  legend.style.maxHeight = '100%';
+  legend.style.minWidth = '0';
+  legend.style.boxSizing = 'border-box';
+  legend.style.overflowX = isVertical ? 'hidden' : 'auto';
+  legend.style.overflowY = isVertical ? 'auto' : 'hidden';
 
   // Parse comma-separated aliases for label overrides
   const aliasList = config.aliases
@@ -522,28 +890,43 @@ export function renderLegend(
 
   for (let i = 0; i < config.items.length; i++) {
     const item = config.items[i];
+    const alias = aliasList[i];
+    const displayLabel = (alias && alias.length > 0) ? alias : item.label;
     const entry = document.createElement('div');
     entry.className = 'pbi-legend-item';
     entry.style.display = 'flex';
     entry.style.alignItems = 'center';
-    entry.style.gap = '4px';
+    entry.style.gap = `${entryGap}px`;
     entry.style.cursor = config.onItemClick ? 'pointer' : 'default';
     entry.style.opacity = item.filtered ? '0.35' : '1';
-    entry.style.transition = 'opacity 0.2s ease';
+    entry.style.transition = prefersReducedMotion() ? 'none' : 'opacity 0.2s ease';
+    entry.setAttribute('aria-label', displayLabel);
+
+    if (config.onItemClick) {
+      entry.setAttribute('role', 'button');
+      entry.setAttribute('aria-pressed', String(!item.filtered));
+      entry.tabIndex = 0;
+    } else {
+      entry.setAttribute('role', 'listitem');
+    }
 
     const swatch = document.createElement('span');
-    swatch.style.width = '10px';
-    swatch.style.height = '10px';
+    swatch.style.width = `${swatchSize}px`;
+    swatch.style.height = `${swatchSize}px`;
     swatch.style.borderRadius = '2px';
     swatch.style.backgroundColor = item.color;
     swatch.style.flexShrink = '0';
+    swatch.setAttribute('aria-hidden', 'true');
 
     const label = document.createElement('span');
     label.style.color = config.fontColor || '#64748B';
     label.style.fontWeight = config.fontWeight || 'normal';
     label.style.whiteSpace = 'nowrap';
-    const alias = aliasList[i];
-    label.textContent = (alias && alias.length > 0) ? alias : item.label;
+    label.style.maxWidth = `${maxLabelWidth}px`;
+    label.style.overflow = 'hidden';
+    label.style.textOverflow = 'ellipsis';
+    label.textContent = displayLabel;
+    label.title = label.textContent;
 
     entry.appendChild(swatch);
     entry.appendChild(label);
@@ -551,11 +934,18 @@ export function renderLegend(
     if (config.onItemClick) {
       const idx = i;
       entry.addEventListener('click', () => config.onItemClick!(item, idx));
+      entry.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        config.onItemClick!(item, idx);
+      });
     }
     if (config.onItemHover) {
       const idx = i;
       entry.addEventListener('mouseenter', () => config.onItemHover!(item, idx));
       entry.addEventListener('mouseleave', () => config.onItemHover!(null, -1));
+      entry.addEventListener('focus', () => config.onItemHover!(item, idx));
+      entry.addEventListener('blur', () => config.onItemHover!(null, -1));
     }
 
     legend.appendChild(entry);
@@ -602,6 +992,7 @@ export interface HoverDimConfig {
  */
 export function createHoverDim(config: HoverDimConfig): () => void {
   const { elements, dimOpacity = 0.2, activeOpacity = 1, transition = '0.2s' } = config;
+  const resolvedTransition = prefersReducedMotion() ? '0s' : transition;
 
   const cleanups: Array<() => void> = [];
 
@@ -611,7 +1002,7 @@ export function createHoverDim(config: HoverDimConfig): () => void {
     const onEnter = (): void => {
       for (let j = 0; j < elements.length; j++) {
         const other = elements[j] as HTMLElement | SVGElement;
-        other.style.transition = `opacity ${transition} ease`;
+        other.style.transition = `opacity ${resolvedTransition} ease`;
         other.style.opacity = j === i ? String(activeOpacity) : String(dimOpacity);
       }
     };

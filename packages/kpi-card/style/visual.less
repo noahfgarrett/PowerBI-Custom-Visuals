@@ -3,7 +3,7 @@
 .kpi-card-container {
   width: 100%;
   height: 100%;
-  overflow: hidden;
+  overflow: auto;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -15,7 +15,8 @@
 
 .kpi-label {
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
 }
 
 .kpi-value-row {
@@ -30,8 +31,14 @@
 }
 
 .kpi-value {
-  letter-spacing: -0.02em;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  letter-spacing: 0;
   font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .kpi-trend {
@@ -56,12 +63,38 @@
   overflow: visible;
 }
 
+.kpi-goal-block {
+  box-sizing: border-box;
+}
+
+.kpi-goal-bar-container {
+  box-sizing: border-box;
+}
+
+.kpi-goal-range-segment {
+  box-sizing: border-box;
+}
+
+.kpi-goal-marker {
+  pointer-events: none;
+}
+
+.kpi-goal-text,
+.kpi-goal-legend {
+  box-sizing: border-box;
+}
+
 /* Multi-KPI grid layout */
 .kpi-grid {
   width: 100%;
   height: 100%;
   position: relative;
   z-index: 1;
+}
+
+.kpi-cell {
+  min-width: 0;
+  min-height: 0;
 }
 
 .kpi-slot-empty {
@@ -79,4 +112,11 @@
   font-style: italic;
   position: relative;
   z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kpi-value-row,
+  .kpi-goal-marker {
+    transition: none !important;
+  }
 }

@@ -1,6 +1,7 @@
 /* Progress Bar Stack — styles injected via pbiviz build */
 
 .progress-bar-container {
+  position: relative;
   width: 100%;
   height: 100%;
   overflow-y: auto;
@@ -14,11 +15,27 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+  border-radius: 4px;
+}
+
+.progress-row--label-above {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.progress-row--label-above > .progress-label {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
 }
 
 .progress-label {
-  min-width: 80px;
+  min-width: 0;
   max-width: 120px;
+  flex: 0 1 120px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -26,6 +43,7 @@
 
 .progress-track {
   flex: 1;
+  min-width: 40px;
   position: relative;
   overflow: hidden;
 }
@@ -42,4 +60,10 @@
   font-variant-numeric: tabular-nums;
   min-width: 50px;
   text-align: right;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-fill {
+    transition: none !important;
+  }
 }

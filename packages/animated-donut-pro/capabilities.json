@@ -1,16 +1,37 @@
 {
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
   "dataRoles": [
     {
       "displayName": "Category",
       "name": "category",
       "kind": "Grouping",
-      "description": "Segment labels for each donut slice"
+      "description": "Optional — segment labels for each donut slice. If omitted, each Value measure becomes its own slice.",
+      "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0001",
+      "descriptionKey": "AnimatedDonutProCapabilities_Description_0001"
+    },
+    {
+      "displayName": "Inner Ring",
+      "name": "detail",
+      "kind": "Grouping",
+      "description": "Optional detail category used to split each segment into an inner ring.",
+      "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0001",
+      "descriptionKey": "AnimatedDonutProCapabilities_Description_0001"
     },
     {
       "displayName": "Value",
       "name": "measure",
       "kind": "Measure",
-      "description": "Numeric value for each donut segment"
+      "description": "Numeric value for each donut segment. Multiple measures are supported; without a Category, each measure becomes its own slice.",
+      "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0002",
+      "descriptionKey": "AnimatedDonutProCapabilities_Description_0002"
     }
   ],
   "dataViewMappings": [
@@ -20,8 +41,16 @@
           "category": {
             "max": 1
           },
+          "detail": {
+            "max": 1
+          },
           "measure": {
             "max": 1
+          }
+        },
+        {
+          "measure": {
+            "max": 30
           }
         }
       ],
@@ -31,6 +60,11 @@
             {
               "for": {
                 "in": "category"
+              }
+            },
+            {
+              "for": {
+                "in": "detail"
               }
             }
           ],
@@ -54,13 +88,14 @@
   ],
   "objects": {
     "donutSettings": {
-      "displayName": "Donut Settings",
+      "displayName": "Donut",
       "properties": {
         "innerRadius": {
           "displayName": "Inner Radius (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0004"
         },
         "arcShape": {
           "displayName": "Arc Shape",
@@ -68,30 +103,36 @@
             "enumeration": [
               {
                 "value": "full",
-                "displayName": "Full Circle (360\u00b0)"
+                "displayName": "Full Circle (360°)",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0006"
               },
               {
                 "value": "semi",
-                "displayName": "Semi Circle (180\u00b0)"
+                "displayName": "Semi Circle (180°)",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0007"
               },
               {
                 "value": "threeQuarter",
-                "displayName": "Three Quarter (270\u00b0)"
+                "displayName": "Three Quarter (270°)",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0008"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0005"
         },
         "showCenter": {
           "displayName": "Show Center Value",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0009"
         },
         "showLabels": {
           "displayName": "Show Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0010"
         },
         "segmentStrokeColor": {
           "displayName": "Segment Stroke Color",
@@ -101,40 +142,68 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0011"
         },
         "segmentStrokeWidth": {
           "displayName": "Segment Stroke Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0012"
         },
-        "labelColor": {
-          "displayName": "Label Color",
-          "type": {
-            "fill": {
-              "solid": {
-                "color": true
-              }
-            }
-          }
-        },
-        "labelFontSize": {
-          "displayName": "Label Font Size",
+        "outerPadding": {
+          "displayName": "Outer Padding",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0015"
         }
-      }
+      },
+      "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0003"
     },
     "valueSettings": {
       "displayName": "Center Value",
       "properties": {
+        "displayMode": {
+          "displayName": "Display Mode",
+          "type": {
+            "enumeration": [
+              {
+                "value": "selectedOrTotal",
+                "displayName": "Selected Slice or Total",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0003"
+              },
+              {
+                "value": "total",
+                "displayName": "Total",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0004"
+              },
+              {
+                "value": "selectedOnly",
+                "displayName": "Selected Slice Only",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0005"
+              },
+              {
+                "value": "firstSlice",
+                "displayName": "First Slice",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0006"
+              },
+              {
+                "value": "customText",
+                "displayName": "Custom Text",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0007"
+              }
+            ]
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0002"
+        },
         "fontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0017"
         },
         "fontColor": {
           "displayName": "Font Color",
@@ -144,25 +213,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0018"
         },
         "prefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0019"
         },
         "suffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0020"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0021"
         },
         "fontFamily": {
           "displayName": "Font Family",
@@ -170,34 +243,42 @@
             "enumeration": [
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0023"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0024"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0025"
               },
               {
                 "value": "Helvetica",
-                "displayName": "Helvetica"
+                "displayName": "Helvetica",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0026"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0027"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0028"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0029"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0022"
         },
         "fontWeight": {
           "displayName": "Font Weight",
@@ -205,20 +286,167 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0031"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0032"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0033"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0030"
+        },
+        "verticalOffset": {
+          "displayName": "Vertical Offset",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0034"
+        },
+        "customText": {
+          "displayName": "Custom Text",
+          "type": {
+            "text": true
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0008"
+        },
+        "noSelectionText": {
+          "displayName": "No Selection Text",
+          "type": {
+            "text": true
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0009"
+        },
+        "captionMode": {
+          "displayName": "Caption",
+          "type": {
+            "enumeration": [
+              {
+                "value": "none",
+                "displayName": "None",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0011"
+              },
+              {
+                "value": "auto",
+                "displayName": "Auto",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0012"
+              },
+              {
+                "value": "custom",
+                "displayName": "Custom",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0013"
+              }
+            ]
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0010"
+        },
+        "customCaption": {
+          "displayName": "Custom Caption",
+          "type": {
+            "text": true
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0014"
+        },
+        "captionFontSize": {
+          "displayName": "Caption Font Size",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0015"
+        },
+        "captionColor": {
+          "displayName": "Caption Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0016"
+        },
+        "captionFontFamily": {
+          "displayName": "Caption Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0018"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0019"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0020"
+              },
+              {
+                "value": "Helvetica",
+                "displayName": "Helvetica",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0021"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0022"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0023"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0024"
+              }
+            ]
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0017"
+        },
+        "captionFontWeight": {
+          "displayName": "Caption Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0026"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0027"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0028"
+              }
+            ]
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0025"
+        },
+        "captionSpacing": {
+          "displayName": "Caption Spacing",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0029"
         }
-      }
+      },
+      "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0016"
     },
     "animationSettings": {
       "displayName": "Animation",
@@ -227,15 +455,18 @@
           "displayName": "Enable Animations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0036"
         },
         "duration": {
           "displayName": "Duration (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0037"
         }
-      }
+      },
+      "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0035"
     },
     "legendFormatting": {
       "displayName": "Legend",
@@ -244,7 +475,8 @@
           "displayName": "Show Legend",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0039"
         },
         "legendPosition": {
           "displayName": "Position",
@@ -252,28 +484,34 @@
             "enumeration": [
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0041"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0042"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0043"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0044"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0040"
         },
         "legendFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0045"
         },
         "legendFontColor": {
           "displayName": "Font Color",
@@ -283,7 +521,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0046"
         },
         "legendFontFamily": {
           "displayName": "Font",
@@ -291,54 +530,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0048"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0049"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0050"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0051"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0052"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0053"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0054"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0055"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0056"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0057"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0058"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0059"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0047"
         },
         "legendFontWeight": {
           "displayName": "Font Weight",
@@ -346,22 +598,48 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0061"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0062"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0060"
         },
         "legendAliases": {
           "displayName": "Rename Labels",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0063"
+        },
+        "showInlineLabels": {
+          "displayName": "Inline End Labels",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0064"
+        },
+        "inlineLabelFontSize": {
+          "displayName": "Inline Label Font Size",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0065"
+        },
+        "inlineLabelOffset": {
+          "displayName": "Inline Label Offset (px)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0066"
         }
-      }
+      },
+      "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0038"
     },
     "dataLabelFormatting": {
       "displayName": "Data Labels",
@@ -370,7 +648,8 @@
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0068"
         },
         "dataLabelFontColor": {
           "displayName": "Font Color",
@@ -380,7 +659,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0069"
         },
         "dataLabelFontWeight": {
           "displayName": "Font Weight",
@@ -388,20 +668,24 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0071"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0072"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0070"
         },
         "showDataLabels": {
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0073"
         },
         "dataLabelFontFamily": {
           "displayName": "Font",
@@ -409,54 +693,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0075"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0076"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0077"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0078"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0079"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0080"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0081"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0082"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0083"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0084"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0085"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0086"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0074"
         },
         "dataLabelPosition": {
           "displayName": "Position",
@@ -464,28 +761,35 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0088"
               },
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0089"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0090"
               },
               {
                 "value": "inside",
-                "displayName": "Inside"
+                "displayName": "Inside",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0091"
               },
               {
                 "value": "outside",
-                "displayName": "Outside"
+                "displayName": "Outside",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0092"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0087"
         }
-      }
+      },
+      "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0067"
     },
     "titleFormatting": {
       "displayName": "Chart Title",
@@ -494,19 +798,22 @@
           "displayName": "Show Title",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0094"
         },
         "titleText": {
           "displayName": "Title Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0095"
         },
         "titleFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0096"
         },
         "titleFontColor": {
           "displayName": "Font Color",
@@ -516,7 +823,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0097"
         },
         "titleAlignment": {
           "displayName": "Alignment",
@@ -524,18 +832,22 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0099"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0100"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0101"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0098"
         },
         "titleFontFamily": {
           "displayName": "Font",
@@ -543,66 +855,81 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0103"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0104"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0105"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0106"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0107"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0108"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0109"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0110"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0111"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0112"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0113"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0114"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0102"
         },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0115"
         },
         "subtitleFontSize": {
           "displayName": "Subtitle Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0116"
         },
         "subtitleFontColor": {
           "displayName": "Subtitle Color",
@@ -612,7 +939,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0117"
         },
         "titleFontWeight": {
           "displayName": "Font Weight",
@@ -620,14 +948,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0119"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0120"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0118"
         },
         "subtitleFontFamily": {
           "displayName": "Subtitle Font",
@@ -635,54 +966,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0122"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0123"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0124"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0125"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0126"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0127"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0128"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0129"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0130"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0131"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0132"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0133"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0121"
         },
         "subtitleFontWeight": {
           "displayName": "Subtitle Font Weight",
@@ -690,37 +1034,44 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0135"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0136"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0134"
         }
-      }
+      },
+      "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0093"
     },
     "topNSettings": {
-      "displayName": "Top N / Others",
+      "displayName": "Top N and Others",
       "properties": {
         "enabled": {
           "displayName": "Enable Top N",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0138"
         },
         "topN": {
           "displayName": "Top N",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0139"
         },
         "othersLabel": {
           "displayName": "Others Label",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0140"
         },
         "othersColor": {
           "displayName": "Others Color",
@@ -730,7 +1081,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0141"
         },
         "sortBy": {
           "displayName": "Sort By",
@@ -738,16 +1090,20 @@
             "enumeration": [
               {
                 "value": "value",
-                "displayName": "Value"
+                "displayName": "Value (Highest First)",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0143"
               },
               {
                 "value": "name",
-                "displayName": "Name"
+                "displayName": "Name (A-Z)",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0144"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0142"
         }
-      }
+      },
+      "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0137"
     },
     "cardSettings": {
       "displayName": "Card Style",
@@ -760,19 +1116,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0146"
         },
         "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0147"
         },
         "borderRadius": {
           "displayName": "Border Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0148"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0030"
         },
         "cardStyleMode": {
           "displayName": "Card Style",
@@ -780,67 +1146,83 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0031"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0032"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0033"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0034"
+              },
+              {
+                "value": "outlined",
+                "displayName": "Border Only",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0035"
+              },
+              {
+                "value": "floating",
+                "displayName": "Floating Shadow",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0036"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0149"
         },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "(Deprecated) Enable Glass"
+          "displayName": "(Deprecated) Enable Glass",
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0154"
         }
-      }
+      },
+      "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0145"
     },
     "donutNestedSettings": {
-      "displayName": "Nested Rings",
+      "displayName": "Inner Ring",
       "properties": {
         "enabled": {
-          "displayName": "Enable Nested Rings",
+          "displayName": "Show Inner Ring",
           "type": {
             "bool": true
-          }
-        },
-        "innerRingField": {
-          "displayName": "Inner Ring Field",
-          "type": {
-            "text": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0156"
         }
-      }
+      },
+      "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0155"
     },
     "donutExplodeSettings": {
       "displayName": "Exploded Segments",
       "properties": {
         "enabled": {
-          "displayName": "Enable Exploded Segments",
+          "displayName": "Explode Segments",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0159"
         },
         "distance": {
           "displayName": "Explode Distance (px)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0160"
         }
-      }
+      },
+      "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0158"
     },
     "donutLabelSettings": {
-      "displayName": "Label Format",
+      "displayName": "Slice Labels",
       "properties": {
         "format": {
           "displayName": "Label Format",
@@ -848,84 +1230,44 @@
             "enumeration": [
               {
                 "value": "category",
-                "displayName": "Category"
+                "displayName": "Category",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0163"
               },
               {
                 "value": "value",
-                "displayName": "Value"
+                "displayName": "Value",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0164"
               },
               {
                 "value": "percent",
-                "displayName": "Percentage"
+                "displayName": "Percentage",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0165"
               },
               {
                 "value": "both",
-                "displayName": "Category + Value"
+                "displayName": "Category + Value",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0166"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0162"
         },
         "connectorLines": {
           "displayName": "Connector Lines",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0167"
         },
-        "fontFamily": {
-          "displayName": "Font Family",
+        "labelOffset": {
+          "displayName": "Label Offset",
           "type": {
-            "enumeration": [
-              {
-                "value": "Segoe UI",
-                "displayName": "Segoe UI"
-              },
-              {
-                "value": "Arial",
-                "displayName": "Arial"
-              },
-              {
-                "value": "Calibri",
-                "displayName": "Calibri"
-              },
-              {
-                "value": "Helvetica",
-                "displayName": "Helvetica"
-              },
-              {
-                "value": "Times New Roman",
-                "displayName": "Times New Roman"
-              },
-              {
-                "value": "Verdana",
-                "displayName": "Verdana"
-              },
-              {
-                "value": "Georgia",
-                "displayName": "Georgia"
-              }
-            ]
-          }
-        },
-        "fontWeight": {
-          "displayName": "Font Weight",
-          "type": {
-            "enumeration": [
-              {
-                "value": "normal",
-                "displayName": "Normal"
-              },
-              {
-                "value": "bold",
-                "displayName": "Bold"
-              },
-              {
-                "value": "600",
-                "displayName": "Semi-Bold"
-              }
-            ]
-          }
+            "numeric": true
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0180"
         }
-      }
+      },
+      "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0161"
     },
     "conditionalFormatting": {
       "displayName": "Conditional Formatting",
@@ -934,7 +1276,8 @@
           "displayName": "Enable Conditional Formatting",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0182"
         },
         "conditionalDirection": {
           "displayName": "Direction",
@@ -942,26 +1285,31 @@
             "enumeration": [
               {
                 "value": "ascending",
-                "displayName": "Ascending (Low = Bad)"
+                "displayName": "Ascending (Low = Bad)",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0184"
               },
               {
                 "value": "descending",
-                "displayName": "Descending (Low = Good)"
+                "displayName": "Descending (Low = Good)",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0185"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0183"
         },
         "threshold1": {
           "displayName": "Threshold 1",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0186"
         },
         "threshold2": {
           "displayName": "Threshold 2",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0187"
         },
         "conditionalColor1": {
           "displayName": "Color 1 (Bad)",
@@ -971,7 +1319,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0188"
         },
         "conditionalColor2": {
           "displayName": "Color 2 (Warning)",
@@ -981,7 +1330,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0189"
         },
         "conditionalColor3": {
           "displayName": "Color 3 (Good)",
@@ -991,9 +1341,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0190"
         }
-      }
+      },
+      "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0181"
     },
     "accessibilityFormatting": {
       "displayName": "Accessibility",
@@ -1002,9 +1354,11 @@
           "displayName": "Enable Keyboard Navigation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0192"
         }
-      }
+      },
+      "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0191"
     },
     "colorThemeFormatting": {
       "properties": {
@@ -1014,37 +1368,46 @@
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0195"
               },
               {
                 "value": "ocean",
-                "displayName": "Ocean"
+                "displayName": "Ocean",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0196"
               },
               {
                 "value": "sunset",
-                "displayName": "Sunset"
+                "displayName": "Sunset",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0197"
               },
               {
                 "value": "forest",
-                "displayName": "Forest"
+                "displayName": "Forest",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0198"
               },
               {
                 "value": "berry",
-                "displayName": "Berry"
+                "displayName": "Berry",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0199"
               },
               {
                 "value": "monochrome",
-                "displayName": "Monochrome"
+                "displayName": "Monochrome",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0200"
               },
               {
                 "value": "earth",
-                "displayName": "Earth"
+                "displayName": "Earth",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0201"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0194"
         }
       },
-      "displayName": "Color Theme"
+      "displayName": "Color Theme",
+      "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0193"
     },
     "numberFormatting": {
       "displayName": "Number Format",
@@ -1055,46 +1418,56 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0204"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0205"
               },
               {
                 "value": "thousands",
-                "displayName": "Thousands (K)"
+                "displayName": "Thousands (K)",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0206"
               },
               {
                 "value": "millions",
-                "displayName": "Millions (M)"
+                "displayName": "Millions (M)",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0207"
               },
               {
                 "value": "billions",
-                "displayName": "Billions (B)"
+                "displayName": "Billions (B)",
+                "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0208"
               }
             ]
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0203"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0209"
         },
         "valuePrefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0210"
         },
         "valueSuffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0211"
         }
-      }
+      },
+      "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0202"
     },
     "dateFilterFormatting": {
       "displayName": "Date Filter",
@@ -1103,27 +1476,32 @@
           "displayName": "Enable Date Filter",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0213"
         },
         "startDate": {
           "displayName": "Start Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0214"
         },
         "endAtCurrentDate": {
           "displayName": "End at Current Date",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0215"
         },
         "endDate": {
           "displayName": "End Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0216"
         }
-      }
+      },
+      "displayNameKey": "AnimatedDonutProCapabilities_DisplayName_0212"
     }
   },
   "supportsKeyboardFocus": true,

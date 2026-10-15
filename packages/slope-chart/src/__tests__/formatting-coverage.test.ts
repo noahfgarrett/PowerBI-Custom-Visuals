@@ -44,6 +44,7 @@ vi.mock('powerbi-visuals-utils-formattingmodel', () => {
 
 import { SlopeChartVisual } from '../visual';
 import { SlopeChartSettings } from '../settings';
+import capabilities from '../../capabilities.json';
 import {
   createConstructorOptions,
   DataViewBuilder,
@@ -52,7 +53,7 @@ import {
   type HarnessConfig,
 } from '../../../core/src/__test-utils__';
 
-const testDV = new DataViewBuilder().withCategory('Item', ['A','B','C'], 'category').withValues('Start', [10,20,30], 'startMeasure').withValues('End', [15,18,35], 'endMeasure').build();
+const testDV = new DataViewBuilder().withCategory('Item', ['A','B','C'], 'category').withValues('Start', [10,20,30], 'startMeasure').withValues('End', [15,20,35], 'endMeasure').build();
 
 function createVisual() {
   const opts = createConstructorOptions();
@@ -97,6 +98,16 @@ function makeDeps(): Record<string, Record<string, unknown>> {
   for (const s of ['annotation1Category','annotation1Text','annotation1Position','annotationFontSize','annotationFontColor','annotationConnectorColor']) {
     deps[`annotationFormatting.${s}`] = { 'annotationFormatting.showAnnotations': true, 'annotationFormatting.annotation1Category': 'A', 'annotationFormatting.annotation1Text': 'Note' };
   }
+  for (const s of ['annotation2Category','annotation2Text','annotation2Position']) {
+    deps[`annotationFormatting.${s}`] = { 'annotationFormatting.showAnnotations': true, 'annotationFormatting.annotation2Category': 'B', 'annotationFormatting.annotation2Text': 'Note 2' };
+  }
+  for (const s of ['annotation3Category','annotation3Text','annotation3Position']) {
+    deps[`annotationFormatting.${s}`] = { 'annotationFormatting.showAnnotations': true, 'annotationFormatting.annotation3Category': 'C', 'annotationFormatting.annotation3Text': 'Note 3' };
+  }
+  for (const s of ['annotationFontFamily','annotationFontWeight','annotationOffset','annotationPadding','annotationBackgroundColor','annotationBackgroundOpacity','annotationCornerRadius']) {
+    deps[`annotationFormatting.${s}`] = { 'annotationFormatting.showAnnotations': true, 'annotationFormatting.annotation1Category': 'A', 'annotationFormatting.annotation1Text': 'Note' };
+  }
+  deps['changeLabelSettings.labelOffset'] = { 'changeLabelSettings.position': { value: 'above', displayName: 'Above' } };
   for (const s of ['xAxisTitle','yAxisTitle','axisFontSize','axisFontColor','axisFontFamily','axisLabelFontWeight','yAxisMin','yAxisMax','showGridLines','gridLineColor','gridLineOpacity','gridLineStyle']) {
     deps[`axisFormatting.${s}`] = { 'axisFormatting.showXAxis': true, 'axisFormatting.showYAxis': true };
   }
@@ -128,7 +139,6 @@ const harnessConfig: HarnessConfig = {
     'accessibilityFormatting.enableKeyboardNav',
     'animationSettings.staggerDelay',
     'animationSettings.duration',
-    'slopeSettings.lineWidth',
     'slopeSettings.neutralColor',
     'slopeSettings.fillOpacity',
     'slopeThresholdSettings.threshold',
@@ -163,6 +173,45 @@ const harnessConfig: HarnessConfig = {
 };
 
 describe('slope-chart formatting coverage', () => {
+  it('declares landing, empty-data, enhanced-tooltip, and labeled formatting contracts', () => {
+    expect(capabilities.supportsLandingPage).toBe(true);
+    expect(capabilities.supportsEmptyDataView).toBe(true);
+    expect(capabilities.tooltips.supportEnhancedTooltips).toBe(true);
+    expect(capabilities.objects.seriesFormatting.properties.seriesColor.displayName).toBe('Color');
+    expect(capabilities.objects.seriesFormatting.properties.seriesOpacity.displayName).toBe('Opacity (%)');
+    const axisProperties = capabilities.objects.axisFormatting.properties as Record<string, { displayName?: string }>;
+    for (const propertyName of [
+      'axisLabelColor',
+      'axisLabelSize',
+      'axisLineColor',
+      'axisLineWidth',
+      'showGridLines',
+      'gridLineColor',
+      'gridLineStyle',
+    ]) {
+      expect(axisProperties[propertyName].displayName).toBeTruthy();
+    }
+  });
+
+  it('hides card chrome settings but keeps content padding for no card style', () => {
+    const { visual, settings } = createVisual();
+    const card = (settings as any).cardSettings;
+    card.cardStyleMode.value = { value: 'none', displayName: 'None' };
+    visual.update({ dataViews: [testDV], viewport: { width: 640, height: 400 } } as never);
+    expect(card.backgroundColor.visible).toBe(false);
+    expect(card.backgroundOpacity.visible).toBe(false);
+    expect(card.borderRadius.visible).toBe(false);
+    expect(card.contentPadding.visible).not.toBe(false);
+    visual.destroy();
+  });
+
+  it('keeps label color and line width on their active cards', () => {
+    expect(capabilities.objects.slopeSettings.properties).not.toHaveProperty('labelColor');
+    expect(capabilities.objects.slopeSettings.properties).not.toHaveProperty('lineWidth');
+    expect(capabilities.objects.changeLabelSettings.properties).toHaveProperty('labelColor');
+    expect(capabilities.objects.lineStrokeFormatting.properties).toHaveProperty('lineWidth');
+  });
+
   it('detects settings from the model', () => {
     const settings = new SlopeChartSettings();
     const paths = getSettingPaths(

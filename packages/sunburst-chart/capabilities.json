@@ -4,19 +4,25 @@
       "displayName": "Level 1",
       "name": "level1",
       "kind": "Grouping",
-      "description": "Top-level hierarchy grouping"
+      "description": "Top-level hierarchy grouping",
+      "displayNameKey": "SunburstChartCapabilities_DisplayName_0001",
+      "descriptionKey": "SunburstChartCapabilities_Description_0001"
     },
     {
       "displayName": "Level 2",
       "name": "level2",
       "kind": "Grouping",
-      "description": "Second-level hierarchy grouping"
+      "description": "Second-level hierarchy grouping",
+      "displayNameKey": "SunburstChartCapabilities_DisplayName_0002",
+      "descriptionKey": "SunburstChartCapabilities_Description_0002"
     },
     {
       "displayName": "Level 3",
       "name": "level3",
       "kind": "Grouping",
-      "description": "Third-level hierarchy grouping"
+      "description": "Third-level hierarchy grouping",
+      "displayNameKey": "SunburstChartCapabilities_DisplayName_0003",
+      "descriptionKey": "SunburstChartCapabilities_Description_0003"
     },
     {
       "displayName": "Measure",
@@ -27,7 +33,9 @@
         {
           "numeric": true
         }
-      ]
+      ],
+      "displayNameKey": "SunburstChartCapabilities_DisplayName_0004",
+      "descriptionKey": "SunburstChartCapabilities_Description_0004"
     }
   ],
   "dataViewMappings": [
@@ -97,27 +105,32 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0006"
         },
         "segmentStrokeWidth": {
           "displayName": "Segment Stroke Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0007"
         },
         "useChartPalette": {
           "displayName": "Use Chart Palette",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0008"
         },
         "segmentOpacity": {
           "displayName": "Segment Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0009"
         }
-      }
+      },
+      "displayNameKey": "SunburstChartCapabilities_DisplayName_0005"
     },
     "centerContentSettings": {
       "displayName": "Center Content",
@@ -126,7 +139,8 @@
           "displayName": "Show Center Content",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0012"
         },
         "displayMode": {
           "displayName": "Display Mode",
@@ -134,34 +148,41 @@
             "enumeration": [
               {
                 "value": "total",
-                "displayName": "Total"
+                "displayName": "Total",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0014"
               },
               {
                 "value": "count",
-                "displayName": "Count"
+                "displayName": "Count",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0015"
               },
               {
                 "value": "average",
-                "displayName": "Average"
+                "displayName": "Average",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0016"
               },
               {
                 "value": "custom",
-                "displayName": "Custom"
+                "displayName": "Custom",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0017"
               }
             ]
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0013"
         },
         "customText": {
           "displayName": "Custom Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0018"
         },
         "fontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0019"
         },
         "fontColor": {
           "displayName": "Font Color",
@@ -171,19 +192,22 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0020"
         },
         "showLabel": {
           "displayName": "Show Label",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0021"
         },
         "labelFontSize": {
           "displayName": "Label Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0022"
         },
         "fontFamily": {
           "displayName": "Font Family",
@@ -191,34 +215,42 @@
             "enumeration": [
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0024"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0025"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0026"
               },
               {
                 "value": "Helvetica",
-                "displayName": "Helvetica"
+                "displayName": "Helvetica",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0027"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0028"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0029"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0030"
               }
             ]
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0023"
         },
         "fontWeight": {
           "displayName": "Font Weight",
@@ -226,20 +258,25 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0032"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0033"
               },
               {
                 "value": "600",
-                "displayName": "Semi-Bold"
+                "displayName": "Semi-Bold",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0034"
               }
             ]
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0031"
         }
-      }
+      },
+      "displayNameKey": "SunburstChartCapabilities_DisplayName_0011"
     },
     "animationSettings": {
       "displayName": "Animation",
@@ -248,15 +285,18 @@
           "displayName": "Enable Animations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0036"
         },
         "duration": {
           "displayName": "Duration (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0037"
         }
-      }
+      },
+      "displayNameKey": "SunburstChartCapabilities_DisplayName_0035"
     },
     "legendFormatting": {
       "displayName": "Legend",
@@ -265,7 +305,8 @@
           "displayName": "Show Legend",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0039"
         },
         "legendPosition": {
           "displayName": "Position",
@@ -273,28 +314,34 @@
             "enumeration": [
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0041"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0042"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0043"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0044"
               }
             ]
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0040"
         },
         "legendFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0045"
         },
         "legendFontColor": {
           "displayName": "Font Color",
@@ -304,7 +351,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0046"
         },
         "legendFontFamily": {
           "displayName": "Font",
@@ -312,54 +360,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0048"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0049"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0050"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0051"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0052"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0053"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0054"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0055"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0056"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0057"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0058"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0059"
               }
             ]
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0047"
         },
         "legendFontWeight": {
           "displayName": "Font Weight",
@@ -367,22 +428,48 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0061"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0062"
               }
             ]
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0060"
         },
         "legendAliases": {
           "displayName": "Rename Labels",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0063"
+        },
+        "showInlineLabels": {
+          "displayName": "Inline End Labels",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0064"
+        },
+        "inlineLabelFontSize": {
+          "displayName": "Inline Label Font Size",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0065"
+        },
+        "inlineLabelOffset": {
+          "displayName": "Inline Label Offset (px)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0066"
         }
-      }
+      },
+      "displayNameKey": "SunburstChartCapabilities_DisplayName_0038"
     },
     "dataLabelFormatting": {
       "displayName": "Data Labels",
@@ -391,13 +478,15 @@
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0068"
         },
         "dataLabelFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0069"
         },
         "dataLabelFontColor": {
           "displayName": "Font Color",
@@ -407,7 +496,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0070"
         },
         "dataLabelFontWeight": {
           "displayName": "Font Weight",
@@ -415,14 +505,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0072"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0073"
               }
             ]
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0071"
         },
         "dataLabelFontFamily": {
           "displayName": "Font",
@@ -430,54 +523,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0075"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0076"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0077"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0078"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0079"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0080"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0081"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0082"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0083"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0084"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0085"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0086"
               }
             ]
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0074"
         },
         "dataLabelPosition": {
           "displayName": "Position",
@@ -485,28 +591,35 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0088"
               },
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0089"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0090"
               },
               {
                 "value": "inside",
-                "displayName": "Inside"
+                "displayName": "Inside",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0091"
               },
               {
                 "value": "outside",
-                "displayName": "Outside"
+                "displayName": "Outside",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0092"
               }
             ]
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0087"
         }
-      }
+      },
+      "displayNameKey": "SunburstChartCapabilities_DisplayName_0067"
     },
     "titleFormatting": {
       "displayName": "Chart Title",
@@ -515,19 +628,22 @@
           "displayName": "Show Title",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0094"
         },
         "titleText": {
           "displayName": "Title Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0095"
         },
         "titleFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0096"
         },
         "titleFontColor": {
           "displayName": "Font Color",
@@ -537,7 +653,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0097"
         },
         "titleAlignment": {
           "displayName": "Alignment",
@@ -545,18 +662,22 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0099"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0100"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0101"
               }
             ]
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0098"
         },
         "titleFontFamily": {
           "displayName": "Font",
@@ -564,66 +685,81 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0103"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0104"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0105"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0106"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0107"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0108"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0109"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0110"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0111"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0112"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0113"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0114"
               }
             ]
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0102"
         },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0115"
         },
         "subtitleFontSize": {
           "displayName": "Subtitle Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0116"
         },
         "subtitleFontColor": {
           "displayName": "Subtitle Color",
@@ -633,7 +769,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0117"
         },
         "titleFontWeight": {
           "displayName": "Font Weight",
@@ -641,14 +778,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0119"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0120"
               }
             ]
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0118"
         },
         "subtitleFontFamily": {
           "displayName": "Subtitle Font",
@@ -656,54 +796,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0122"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0123"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0124"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0125"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0126"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0127"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0128"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0129"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0130"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0131"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0132"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0133"
               }
             ]
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0121"
         },
         "subtitleFontWeight": {
           "displayName": "Subtitle Font Weight",
@@ -711,16 +864,20 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0135"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0136"
               }
             ]
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0134"
         }
-      }
+      },
+      "displayNameKey": "SunburstChartCapabilities_DisplayName_0093"
     },
     "drillDownSettings": {
       "displayName": "Drill-Down",
@@ -729,19 +886,22 @@
           "displayName": "Enable Drill-Down",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0138"
         },
         "showBreadcrumb": {
           "displayName": "Show Breadcrumb",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0139"
         },
         "breadcrumbFontSize": {
           "displayName": "Breadcrumb Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0140"
         },
         "breadcrumbColor": {
           "displayName": "Breadcrumb Color",
@@ -751,9 +911,113 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0141"
+        },
+        "breadcrumbFontFamily": {
+          "displayName": "Breadcrumb Font Family",
+          "type": {
+            "enumeration": [
+              {
+                "value": "",
+                "displayName": "Default",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0143"
+              },
+              {
+                "value": "Segoe UI",
+                "displayName": "Segoe UI",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0144"
+              },
+              {
+                "value": "Arial",
+                "displayName": "Arial",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0145"
+              },
+              {
+                "value": "Calibri",
+                "displayName": "Calibri",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0146"
+              },
+              {
+                "value": "Helvetica Neue",
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0147"
+              },
+              {
+                "value": "Times New Roman",
+                "displayName": "Times New Roman",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0148"
+              },
+              {
+                "value": "Verdana",
+                "displayName": "Verdana",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0149"
+              },
+              {
+                "value": "Georgia",
+                "displayName": "Georgia",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0150"
+              }
+            ]
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0142"
+        },
+        "breadcrumbFontWeight": {
+          "displayName": "Breadcrumb Font Weight",
+          "type": {
+            "enumeration": [
+              {
+                "value": "normal",
+                "displayName": "Normal",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0152"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0153"
+              },
+              {
+                "value": "600",
+                "displayName": "Semi-Bold",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0154"
+              }
+            ]
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0151"
+        },
+        "breadcrumbPadding": {
+          "displayName": "Breadcrumb Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0155"
         }
-      }
+      },
+      "displayNameKey": "SunburstChartCapabilities_DisplayName_0137"
+    },
+    "interactionSettings": {
+      "displayName": "Interaction",
+      "properties": {
+        "crossHighlightMode": {
+          "displayName": "Cross-Highlight Behavior",
+          "type": {
+            "enumeration": [
+              {
+                "value": "focus",
+                "displayName": "Show Highlighted Data Only",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0003"
+              },
+              {
+                "value": "dim",
+                "displayName": "Dim Unhighlighted Data",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0004"
+              }
+            ]
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0002"
+        }
+      },
+      "displayNameKey": "SunburstChartCapabilities_DisplayName_0001"
     },
     "cardSettings": {
       "displayName": "Card Style",
@@ -766,19 +1030,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0157"
         },
         "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0158"
         },
         "borderRadius": {
           "displayName": "Border Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0159"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0005"
         },
         "cardStyleMode": {
           "displayName": "Card Style",
@@ -786,30 +1060,47 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0006"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0007"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0008"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0009"
+              },
+              {
+                "value": "outlined",
+                "displayName": "Border Only",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0010"
+              },
+              {
+                "value": "floating",
+                "displayName": "Floating Shadow",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0011"
               }
             ]
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0160"
         },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "(Deprecated) Enable Glass"
+          "displayName": "(Deprecated) Enable Glass",
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0165"
         }
-      }
+      },
+      "displayNameKey": "SunburstChartCapabilities_DisplayName_0156"
     },
     "sunburstDisplaySettings": {
       "displayName": "Geometry",
@@ -818,13 +1109,15 @@
           "displayName": "Inner Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0167"
         },
         "startAngle": {
           "displayName": "Start Angle",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0168"
         },
         "sortOrder": {
           "displayName": "Sort Order",
@@ -832,20 +1125,32 @@
             "enumeration": [
               {
                 "value": "descending",
-                "displayName": "Descending (largest first)"
+                "displayName": "Descending (largest first)",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0170"
               },
               {
                 "value": "ascending",
-                "displayName": "Ascending (smallest first)"
+                "displayName": "Ascending (smallest first)",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0171"
               },
               {
                 "value": "none",
-                "displayName": "Data Order"
+                "displayName": "Data Order",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0172"
               }
             ]
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0169"
+        },
+        "chartPadding": {
+          "displayName": "Chart Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0173"
         }
-      }
+      },
+      "displayNameKey": "SunburstChartCapabilities_DisplayName_0166"
     },
     "labelsAndPercentagesSettings": {
       "displayName": "Labels & Percentages",
@@ -854,36 +1159,43 @@
           "displayName": "Show Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0175"
         },
         "labelMinAngle": {
-          "displayName": "Label Min Angle",
+          "displayName": "Minimum Label Angle (degrees)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0176"
         },
         "showPercentages": {
           "displayName": "Show Percentages",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0177"
         },
         "percentOf": {
-          "displayName": "Percent Of",
+          "displayName": "Percentage Basis",
           "type": {
             "enumeration": [
               {
                 "value": "parent",
-                "displayName": "Parent"
+                "displayName": "Parent",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0179"
               },
               {
                 "value": "total",
-                "displayName": "Total"
+                "displayName": "Total",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0180"
               }
             ]
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0178"
         }
-      }
+      },
+      "displayNameKey": "SunburstChartCapabilities_DisplayName_0174"
     },
     "conditionalFormatting": {
       "displayName": "Conditional Formatting",
@@ -892,7 +1204,8 @@
           "displayName": "Enable Conditional Formatting",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0182"
         },
         "conditionalDirection": {
           "displayName": "Direction",
@@ -900,26 +1213,31 @@
             "enumeration": [
               {
                 "value": "ascending",
-                "displayName": "Ascending (Low = Bad)"
+                "displayName": "Ascending (Low = Bad)",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0184"
               },
               {
                 "value": "descending",
-                "displayName": "Descending (Low = Good)"
+                "displayName": "Descending (Low = Good)",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0185"
               }
             ]
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0183"
         },
         "threshold1": {
           "displayName": "Threshold 1",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0186"
         },
         "threshold2": {
           "displayName": "Threshold 2",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0187"
         },
         "conditionalColor1": {
           "displayName": "Color 1 (Bad)",
@@ -929,7 +1247,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0188"
         },
         "conditionalColor2": {
           "displayName": "Color 2 (Warning)",
@@ -939,7 +1258,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0189"
         },
         "conditionalColor3": {
           "displayName": "Color 3 (Good)",
@@ -949,9 +1269,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0190"
         }
-      }
+      },
+      "displayNameKey": "SunburstChartCapabilities_DisplayName_0181"
     },
     "accessibilityFormatting": {
       "displayName": "Accessibility",
@@ -960,9 +1282,11 @@
           "displayName": "Enable Keyboard Navigation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0192"
         }
-      }
+      },
+      "displayNameKey": "SunburstChartCapabilities_DisplayName_0191"
     },
     "numberFormatting": {
       "displayName": "Number Format",
@@ -973,46 +1297,56 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0195"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0196"
               },
               {
                 "value": "thousands",
-                "displayName": "Thousands (K)"
+                "displayName": "Thousands (K)",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0197"
               },
               {
                 "value": "millions",
-                "displayName": "Millions (M)"
+                "displayName": "Millions (M)",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0198"
               },
               {
                 "value": "billions",
-                "displayName": "Billions (B)"
+                "displayName": "Billions (B)",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0199"
               }
             ]
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0194"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0200"
         },
         "valuePrefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0201"
         },
         "valueSuffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0202"
         }
-      }
+      },
+      "displayNameKey": "SunburstChartCapabilities_DisplayName_0193"
     },
     "colorThemeFormatting": {
       "properties": {
@@ -1022,37 +1356,46 @@
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0205"
               },
               {
                 "value": "ocean",
-                "displayName": "Ocean"
+                "displayName": "Ocean",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0206"
               },
               {
                 "value": "sunset",
-                "displayName": "Sunset"
+                "displayName": "Sunset",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0207"
               },
               {
                 "value": "forest",
-                "displayName": "Forest"
+                "displayName": "Forest",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0208"
               },
               {
                 "value": "berry",
-                "displayName": "Berry"
+                "displayName": "Berry",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0209"
               },
               {
                 "value": "monochrome",
-                "displayName": "Monochrome"
+                "displayName": "Monochrome",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0210"
               },
               {
                 "value": "earth",
-                "displayName": "Earth"
+                "displayName": "Earth",
+                "displayNameKey": "SunburstChartCapabilities_DisplayName_0211"
               }
             ]
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0204"
         }
       },
-      "displayName": "Color Theme"
+      "displayName": "Color Theme",
+      "displayNameKey": "SunburstChartCapabilities_DisplayName_0203"
     },
     "dateFilterFormatting": {
       "displayName": "Date Filter",
@@ -1061,32 +1404,46 @@
           "displayName": "Enable Date Filter",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0213"
         },
         "startDate": {
           "displayName": "Start Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0214"
         },
         "endAtCurrentDate": {
           "displayName": "End at Current Date",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0215"
         },
         "endDate": {
           "displayName": "End Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "SunburstChartCapabilities_DisplayName_0216"
         }
-      }
+      },
+      "displayNameKey": "SunburstChartCapabilities_DisplayName_0212"
     }
   },
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
   "supportsKeyboardFocus": true,
   "supportsHighlight": true,
   "supportsMultiVisualSelection": true,
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
   "privileges": [],
   "suppressDefaultTitle": true
 }

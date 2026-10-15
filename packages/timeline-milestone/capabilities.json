@@ -4,19 +4,25 @@
       "displayName": "Date",
       "name": "date",
       "kind": "Grouping",
-      "description": "Milestone date"
+      "description": "Milestone date",
+      "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0001",
+      "descriptionKey": "TimelineMilestoneCapabilities_Description_0001"
     },
     {
       "displayName": "Label",
       "name": "label",
       "kind": "Grouping",
-      "description": "Milestone label"
+      "description": "Milestone label",
+      "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0002",
+      "descriptionKey": "TimelineMilestoneCapabilities_Description_0002"
     },
     {
       "displayName": "Category",
       "name": "category",
       "kind": "Grouping",
-      "description": "Optional grouping for color"
+      "description": "Optional grouping for color",
+      "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0003",
+      "descriptionKey": "TimelineMilestoneCapabilities_Description_0003"
     }
   ],
   "dataViewMappings": [
@@ -72,14 +78,17 @@
             "enumeration": [
               {
                 "value": "horizontal",
-                "displayName": "Horizontal"
+                "displayName": "Horizontal",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0006"
               },
               {
                 "value": "vertical",
-                "displayName": "Vertical"
+                "displayName": "Vertical",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0007"
               }
             ]
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0005"
         },
         "layout": {
           "displayName": "Layout",
@@ -87,28 +96,34 @@
             "enumeration": [
               {
                 "value": "alternating",
-                "displayName": "Alternating"
+                "displayName": "Alternating",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0009"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Above / Left",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0010"
               },
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Below / Right",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0011"
               },
               {
                 "value": "staggered",
-                "displayName": "Staggered"
+                "displayName": "Staggered",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0012"
               }
             ]
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0008"
         },
         "showDates": {
           "displayName": "Show Dates",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0013"
         },
         "dateFormat": {
           "displayName": "Date Format",
@@ -116,20 +131,116 @@
             "enumeration": [
               {
                 "value": "short",
-                "displayName": "Short (MM/DD)"
+                "displayName": "Short (MM/DD)",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0015"
               },
               {
                 "value": "medium",
-                "displayName": "Medium (Mon DD)"
+                "displayName": "Medium (Mon DD)",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0016"
               },
               {
                 "value": "long",
-                "displayName": "Long (Month DD, YYYY)"
+                "displayName": "Long (Month DD, YYYY)",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0017"
               }
             ]
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0014"
+        },
+        "chartPadding": {
+          "displayName": "Chart Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_ChartPadding"
+        },
+        "labelSpacing": {
+          "displayName": "Label Spacing",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_LabelSpacing"
+        },
+        "lineColor": {
+          "displayName": "Line Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0018"
+        },
+        "lineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0019"
+        },
+        "markerStrokeColor": {
+          "displayName": "Marker Stroke Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0020"
+        },
+        "labelColor": {
+          "displayName": "Swimlane Label Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0021"
+        },
+        "maxVisible": {
+          "displayName": "Maximum Visible (0 = All)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0001"
+        },
+        "windowOffset": {
+          "displayName": "Window Start Index",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0002"
+        },
+        "labelDensity": {
+          "displayName": "Label Density",
+          "type": {
+            "enumeration": [
+              {
+                "value": "full",
+                "displayName": "Show All",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0004"
+              },
+              {
+                "value": "compact",
+                "displayName": "Reduce Labels",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0005"
+              },
+              {
+                "value": "minimal",
+                "displayName": "First and Last",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0006"
+              }
+            ]
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0003"
         }
-      }
+      },
+      "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0004"
     },
     "markerSettings": {
       "displayName": "Markers",
@@ -140,30 +251,36 @@
             "enumeration": [
               {
                 "value": "circle",
-                "displayName": "Circle"
+                "displayName": "Circle",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0024"
               },
               {
                 "value": "diamond",
-                "displayName": "Diamond"
+                "displayName": "Diamond",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0025"
               },
               {
                 "value": "square",
-                "displayName": "Square"
+                "displayName": "Square",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0026"
               }
             ]
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0023"
         },
         "size": {
           "displayName": "Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0027"
         },
         "colorByCategory": {
           "displayName": "Color by Category",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0028"
         },
         "markerStrokeColor": {
           "displayName": "Marker Stroke Color",
@@ -173,18 +290,21 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0029"
         },
         "markerStrokeWidth": {
           "displayName": "Marker Stroke Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0030"
         }
-      }
+      },
+      "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0022"
     },
     "spineAndConnectorsSettings": {
-      "displayName": "Spine & Connectors",
+      "displayName": "Spine, Connectors & Intervals",
       "properties": {
         "lineColor": {
           "displayName": "Line Color",
@@ -194,43 +314,50 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0032"
         },
         "lineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0033"
         },
         "showConnectors": {
           "displayName": "Show Connectors",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0034"
         },
         "showDurationBars": {
-          "displayName": "Show Duration Bars",
+          "displayName": "Show Interval Bars",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0035"
         },
         "durationBarOpacity": {
-          "displayName": "Duration Bar Opacity (%)",
+          "displayName": "Interval Bar Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0036"
         },
         "durationBarHeight": {
-          "displayName": "Duration Bar Height (px)",
+          "displayName": "Interval Bar Thickness",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0037"
         },
         "showSwimlanes": {
           "displayName": "Show Swimlanes",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0038"
         },
         "labelColor": {
           "displayName": "Label Color",
@@ -240,9 +367,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0039"
         }
-      }
+      },
+      "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0031"
     },
     "animationSettings": {
       "displayName": "Animation",
@@ -251,15 +380,18 @@
           "displayName": "Enable Animations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0041"
         },
         "duration": {
           "displayName": "Duration (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0042"
         }
-      }
+      },
+      "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0040"
     },
     "dataLabelFormatting": {
       "displayName": "Data Labels",
@@ -268,13 +400,15 @@
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0044"
         },
         "dataLabelFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0045"
         },
         "dataLabelFontColor": {
           "displayName": "Font Color",
@@ -284,7 +418,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0046"
         },
         "dataLabelFontWeight": {
           "displayName": "Font Weight",
@@ -292,14 +427,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0048"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0049"
               }
             ]
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0047"
         },
         "dataLabelFontFamily": {
           "displayName": "Font",
@@ -307,54 +445,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0051"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0052"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0053"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0054"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0055"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0056"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0057"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0058"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0059"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0060"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0061"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0062"
               }
             ]
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0050"
         },
         "dataLabelPosition": {
           "displayName": "Position",
@@ -362,28 +513,35 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0064"
               },
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0065"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0066"
               },
               {
                 "value": "inside",
-                "displayName": "Inside"
+                "displayName": "Inside",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0067"
               },
               {
                 "value": "outside",
-                "displayName": "Outside"
+                "displayName": "Outside",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0068"
               }
             ]
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0063"
         }
-      }
+      },
+      "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0043"
     },
     "titleFormatting": {
       "displayName": "Chart Title",
@@ -392,19 +550,22 @@
           "displayName": "Show Title",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0070"
         },
         "titleText": {
           "displayName": "Title Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0071"
         },
         "titleFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0072"
         },
         "titleFontColor": {
           "displayName": "Font Color",
@@ -414,7 +575,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0073"
         },
         "titleAlignment": {
           "displayName": "Alignment",
@@ -422,18 +584,22 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0075"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0076"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0077"
               }
             ]
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0074"
         },
         "titleFontFamily": {
           "displayName": "Font",
@@ -441,66 +607,81 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0079"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0080"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0081"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0082"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0083"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0084"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0085"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0086"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0087"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0088"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0089"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0090"
               }
             ]
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0078"
         },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0091"
         },
         "subtitleFontSize": {
           "displayName": "Subtitle Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0092"
         },
         "subtitleFontColor": {
           "displayName": "Subtitle Color",
@@ -510,7 +691,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0093"
         },
         "titleFontWeight": {
           "displayName": "Font Weight",
@@ -518,14 +700,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0095"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0096"
               }
             ]
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0094"
         },
         "subtitleFontFamily": {
           "displayName": "Subtitle Font",
@@ -533,54 +718,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0098"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0099"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0100"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0101"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0102"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0103"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0104"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0105"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0106"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0107"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0108"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0109"
               }
             ]
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0097"
         },
         "subtitleFontWeight": {
           "displayName": "Subtitle Font Weight",
@@ -588,98 +786,124 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0111"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0112"
               }
             ]
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0110"
         }
-      }
+      },
+      "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0069"
     },
     "axisFormatting": {
+      "displayName": "Swimlanes & Grid",
+      "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_SwimlanesGrid",
       "properties": {
         "axisLabelColor": {
+          "displayName": "Axis Label Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0001"
         },
         "axisLabelSize": {
+          "displayName": "Axis Label Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0002"
         },
         "axisLineColor": {
+          "displayName": "Axis Line Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0003"
         },
         "axisLineWidth": {
+          "displayName": "Axis Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0004"
         },
         "showGridLines": {
+          "displayName": "Show Gridlines",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0005"
         },
         "gridLineColor": {
+          "displayName": "Gridline Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0006"
         },
         "gridLineStyle": {
+          "displayName": "Gridline Style",
           "type": {
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0113"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0114"
               }
             ]
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0007"
         },
         "showXAxis": {
           "displayName": "Show X-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0115"
         },
         "showYAxis": {
           "displayName": "Show Y-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0116"
         },
         "xAxisTitle": {
           "displayName": "X-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0117"
         },
         "yAxisTitle": {
           "displayName": "Y-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0118"
         },
         "axisLabelFontFamily": {
           "displayName": "Label Font",
@@ -687,84 +911,102 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0120"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0121"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0122"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0123"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0124"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0125"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0126"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0127"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0128"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0129"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0130"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0131"
               }
             ]
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0119"
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (\u00b0)",
+          "displayName": "X-Label Rotation (°)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0132"
         },
         "yAxisMin": {
           "displayName": "Y-Axis Min",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0133"
         },
         "yAxisMax": {
           "displayName": "Y-Axis Max",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0134"
         },
         "gridLineWidth": {
           "displayName": "Grid Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0135"
         },
         "gridLineOpacity": {
           "displayName": "Grid Line Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0136"
         },
         "axisLabelFontWeight": {
           "displayName": "Label Font Weight",
@@ -772,14 +1014,24 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0138"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0139"
               }
             ]
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0137"
+        },
+        "integerTicks": {
+          "displayName": "Integer Ticks Only",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0140"
         }
       }
     },
@@ -794,19 +1046,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0142"
         },
         "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0143"
         },
         "borderRadius": {
           "displayName": "Border Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0144"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0007"
         },
         "cardStyleMode": {
           "displayName": "Card Style",
@@ -814,30 +1076,47 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0008"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0009"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0010"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0011"
+              },
+              {
+                "value": "outlined",
+                "displayName": "Border Only",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0012"
+              },
+              {
+                "value": "floating",
+                "displayName": "Floating Shadow",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0013"
               }
             ]
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0145"
         },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "(Deprecated) Enable Glass"
+          "displayName": "(Deprecated) Enable Glass",
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0150"
         }
-      }
+      },
+      "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0141"
     },
     "timelineMarkerSettings": {
       "displayName": "Today Line & Clustering",
@@ -846,7 +1125,8 @@
           "displayName": "Show Today Line",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0152"
         },
         "todayLineColor": {
           "displayName": "Today Line Color",
@@ -856,33 +1136,39 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0153"
         },
         "todayLineWidth": {
           "displayName": "Today Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0154"
         },
         "todayLineOpacity": {
           "displayName": "Today Line Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0155"
         },
         "clusterNearby": {
           "displayName": "Cluster Nearby",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0156"
         },
         "clusterThresholdDays": {
           "displayName": "Cluster Threshold (days)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0157"
         }
-      }
+      },
+      "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0151"
     },
     "conditionalFormatting": {
       "displayName": "Conditional Formatting",
@@ -891,7 +1177,8 @@
           "displayName": "Enable Conditional Formatting",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0159"
         },
         "conditionalDirection": {
           "displayName": "Direction",
@@ -899,26 +1186,31 @@
             "enumeration": [
               {
                 "value": "ascending",
-                "displayName": "Ascending (Low = Bad)"
+                "displayName": "Ascending (Low = Bad)",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0161"
               },
               {
                 "value": "descending",
-                "displayName": "Descending (Low = Good)"
+                "displayName": "Descending (Low = Good)",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0162"
               }
             ]
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0160"
         },
         "threshold1": {
           "displayName": "Threshold 1",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0163"
         },
         "threshold2": {
           "displayName": "Threshold 2",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0164"
         },
         "conditionalColor1": {
           "displayName": "Color 1 (Bad)",
@@ -928,7 +1220,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0165"
         },
         "conditionalColor2": {
           "displayName": "Color 2 (Warning)",
@@ -938,7 +1231,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0166"
         },
         "conditionalColor3": {
           "displayName": "Color 3 (Good)",
@@ -948,9 +1242,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0167"
         }
-      }
+      },
+      "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0158"
     },
     "accessibilityFormatting": {
       "displayName": "Accessibility",
@@ -959,9 +1255,11 @@
           "displayName": "Enable Keyboard Navigation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0169"
         }
-      }
+      },
+      "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0168"
     },
     "colorThemeFormatting": {
       "properties": {
@@ -971,37 +1269,46 @@
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0172"
               },
               {
                 "value": "ocean",
-                "displayName": "Ocean"
+                "displayName": "Ocean",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0173"
               },
               {
                 "value": "sunset",
-                "displayName": "Sunset"
+                "displayName": "Sunset",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0174"
               },
               {
                 "value": "forest",
-                "displayName": "Forest"
+                "displayName": "Forest",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0175"
               },
               {
                 "value": "berry",
-                "displayName": "Berry"
+                "displayName": "Berry",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0176"
               },
               {
                 "value": "monochrome",
-                "displayName": "Monochrome"
+                "displayName": "Monochrome",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0177"
               },
               {
                 "value": "earth",
-                "displayName": "Earth"
+                "displayName": "Earth",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0178"
               }
             ]
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0171"
         }
       },
-      "displayName": "Color Theme"
+      "displayName": "Color Theme",
+      "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0170"
     },
     "legendFormatting": {
       "displayName": "Legend",
@@ -1010,7 +1317,8 @@
           "displayName": "Show Legend",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0180"
         },
         "legendPosition": {
           "displayName": "Position",
@@ -1018,28 +1326,34 @@
             "enumeration": [
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0182"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0183"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0184"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0185"
               }
             ]
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0181"
         },
         "legendFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0186"
         },
         "legendFontColor": {
           "displayName": "Font Color",
@@ -1049,7 +1363,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0187"
         },
         "legendFontFamily": {
           "displayName": "Font",
@@ -1057,54 +1372,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0189"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0190"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0191"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0192"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0193"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0194"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0195"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0196"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0197"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0198"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0199"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0200"
               }
             ]
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0188"
         },
         "legendFontWeight": {
           "displayName": "Font Weight",
@@ -1112,72 +1440,27 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0202"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0203"
               }
             ]
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0201"
         },
         "legendAliases": {
           "displayName": "Rename Labels",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0204"
         }
-      }
-    },
-    "numberFormatting": {
-      "displayName": "Number Format",
-      "properties": {
-        "displayUnits": {
-          "displayName": "Display Units",
-          "type": {
-            "enumeration": [
-              {
-                "value": "auto",
-                "displayName": "Auto"
-              },
-              {
-                "value": "none",
-                "displayName": "None"
-              },
-              {
-                "value": "thousands",
-                "displayName": "Thousands (K)"
-              },
-              {
-                "value": "millions",
-                "displayName": "Millions (M)"
-              },
-              {
-                "value": "billions",
-                "displayName": "Billions (B)"
-              }
-            ]
-          }
-        },
-        "decimalPlaces": {
-          "displayName": "Decimal Places",
-          "type": {
-            "numeric": true
-          }
-        },
-        "valuePrefix": {
-          "displayName": "Prefix",
-          "type": {
-            "text": true
-          }
-        },
-        "valueSuffix": {
-          "displayName": "Suffix",
-          "type": {
-            "text": true
-          }
-        }
-      }
+      },
+      "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0179"
     },
     "dateFilterFormatting": {
       "displayName": "Date Filter",
@@ -1186,32 +1469,46 @@
           "displayName": "Enable Date Filter",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0216"
         },
         "startDate": {
           "displayName": "Start Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0217"
         },
         "endAtCurrentDate": {
           "displayName": "End at Current Date",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0218"
         },
         "endDate": {
           "displayName": "End Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0219"
         }
-      }
+      },
+      "displayNameKey": "TimelineMilestoneCapabilities_DisplayName_0215"
     }
   },
   "supportsKeyboardFocus": true,
   "supportsHighlight": true,
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
   "supportsMultiVisualSelection": true,
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
   "privileges": [],
   "suppressDefaultTitle": true
 }

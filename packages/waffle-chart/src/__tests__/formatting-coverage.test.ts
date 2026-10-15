@@ -8,6 +8,9 @@ const settingsRef: { current: unknown } = { current: undefined };
 
 vi.mock('../../style/visual.less', () => ({}));
 
+vi.stubGlobal('requestAnimationFrame', () => 0);
+vi.stubGlobal('cancelAnimationFrame', () => {});
+
 vi.mock('powerbi-visuals-utils-formattingmodel', () => {
   class SliceBase {
     constructor(init?: Record<string, unknown>) { if (init) Object.assign(this, init); }
@@ -44,6 +47,7 @@ vi.mock('powerbi-visuals-utils-formattingmodel', () => {
 
 import { WaffleChartVisual } from '../visual';
 import { WaffleChartSettings } from '../settings';
+import capabilities from '../../capabilities.json';
 import {
   createConstructorOptions,
   DataViewBuilder,
@@ -58,6 +62,7 @@ function createVisual() {
   const opts = createConstructorOptions();
   const settings = new WaffleChartSettings();
   settingsRef.current = settings;
+  settings.animationSettings.enabled.value = false;
   const visual = new WaffleChartVisual(opts as never);
   return {
     visual,
@@ -116,13 +121,51 @@ const harnessConfig: HarnessConfig = {
     'pictogramSettings.outlineOpacity',
     'waffleIconSettings.iconSet',
     'dataLabelFormatting.showDataLabels',
+    'dataLabelFormatting.dataLabelFontSize',
+    'dataLabelFormatting.dataLabelFontColor',
+    'dataLabelFormatting.dataLabelFontWeight',
+    'dataLabelFormatting.dataLabelFontFamily',
+    'dataLabelFormatting.dataLabelPosition',
     'legendFormatting.legendFontWeight',
     'numberFormatting.valuePrefix',
     'numberFormatting.valueSuffix',
+    'valueSettings.fontWeight',
+    'pictogramSettings.iconSet',
+    'legendFormatting.showInlineLabels',
+    'legendFormatting.inlineLabelFontSize',
+    'legendFormatting.inlineLabelOffset',
+    'dateFilterFormatting.enableDateFilter',
+    'dateFilterFormatting.startDate',
+    'dateFilterFormatting.endAtCurrentDate',
+    'dateFilterFormatting.endDate',
   ],
 };
 
 describe('waffle-chart formatting coverage', () => {
+  it('declares its rendered landing, empty, and keyboard states', () => {
+    expect(capabilities.supportsLandingPage).toBe(true);
+    expect(capabilities.supportsEmptyDataView).toBe(true);
+    expect(capabilities.supportsKeyboardFocus).toBe(true);
+    expect(capabilities.tooltips.supportEnhancedTooltips).toBe(true);
+  });
+
+  it('keeps color properties only on the active card', () => {
+    const objects = capabilities.objects as Record<string, { properties: Record<string, unknown> }>;
+    expect(objects.gridSettings.properties).not.toHaveProperty('cellStrokeColor');
+    expect(objects.gridSettings.properties).not.toHaveProperty('emptyColor');
+    expect(objects.colorSettings.properties).toHaveProperty('cellStrokeColor');
+    expect(objects.colorSettings.properties).toHaveProperty('emptyColor');
+    expect(objects.valueSettings.properties).toHaveProperty('valueSpacing');
+    expect(objects.cardSettings.properties).toHaveProperty('enableGlass');
+  });
+
+  it('declares every formatting slice in capabilities', () => {
+    const paths = getSettingPaths(new WaffleChartSettings() as unknown as { cards: Array<Record<string, unknown>> }, []);
+    const objects = capabilities.objects as Record<string, { properties?: Record<string, unknown> }>;
+    const localCards = new Set(['gridSettings', 'colorSettings', 'valueSettings', 'pictogramSettings', 'cardSettings', 'animationSettings']);
+    expect(paths.filter(({ cardName, sliceName }) => localCards.has(cardName) && !objects[cardName]?.properties?.[sliceName])).toEqual([]);
+  });
+
   it('detects settings from the model', () => {
     const settings = new WaffleChartSettings();
     const paths = getSettingPaths(

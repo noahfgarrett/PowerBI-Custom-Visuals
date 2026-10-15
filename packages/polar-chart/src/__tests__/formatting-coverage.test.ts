@@ -44,6 +44,7 @@ vi.mock('powerbi-visuals-utils-formattingmodel', () => {
 
 import { PolarChartVisual } from '../visual';
 import { PolarChartSettings } from '../settings';
+import capabilities from '../../capabilities.json';
 import {
   createConstructorOptions,
   DataViewBuilder,
@@ -78,6 +79,7 @@ function makeDeps(): Record<string, Record<string, unknown>> {
   for (const s of ['legendPosition','legendFontSize','legendFontColor','legendFontWeight']) {
     deps[`legendFormatting.${s}`] = { 'legendFormatting.showLegend': true };
   }
+  deps['labelSettings.showInnerLabels'] = { 'labelSettings.showLabels': true, 'labelSettings.showRadialLabels': true };
   for (const s of ['dataLabelFontSize','dataLabelFontColor','dataLabelFontWeight','dataLabelFontFamily','dataLabelPosition']) {
     deps[`dataLabelFormatting.${s}`] = { 'dataLabelFormatting.showDataLabels': true };
   }
@@ -124,6 +126,10 @@ const harnessConfig: HarnessConfig = {
     'axisFormatting.axisLabelRotation',
     'axisFormatting.gridLineWidth',
     'axisFormatting.gridLineOpacity',
+    'axisFormatting.integerTicks',
+    'legendFormatting.showInlineLabels',
+    'legendFormatting.inlineLabelFontSize',
+    'legendFormatting.inlineLabelOffset',
     'legendFormatting.legendFontWeight',
     'conditionalFormatting.threshold2',
     'conditionalFormatting.conditionalColor3',
@@ -131,9 +137,41 @@ const harnessConfig: HarnessConfig = {
     'numberFormatting.valuePrefix',
     'numberFormatting.valueSuffix',
   ],
+  altValues: {
+    'segmentSettings.endAngle': 270,
+    'segmentSettings.segmentPadding': 20,
+  },
 };
 
 describe('polar-chart formatting coverage', () => {
+  it('declares every formatting slice in capabilities', () => {
+    const paths = getSettingPaths(
+      new PolarChartSettings() as unknown as { cards: Array<Record<string, unknown>> },
+      [],
+    );
+    const objects = capabilities.objects as Record<string, { properties?: Record<string, unknown> }>;
+    expect(paths.filter(({ cardName, sliceName }) => {
+      return !objects[cardName]?.properties?.[sliceName];
+    })).toEqual([]);
+    expect(capabilities.objects.axisFormatting.displayName).toBe('Axis Formatting');
+    expect(capabilities.objects.seriesFormatting.displayName).toBe('Series Formatting');
+    expect(Object.entries(capabilities.objects).filter(([, object]) =>
+      !object.displayName && !object.displayNameKey
+    )).toEqual([]);
+    expect(Object.entries(capabilities.objects).flatMap(([objectName, object]) =>
+      Object.entries(object.properties ?? {})
+        .filter(([, property]) => !property.displayName && !property.displayNameKey)
+        .map(([propertyName]) => `${objectName}.${propertyName}`)
+    )).toEqual([]);
+    expect(new PolarChartSettings().cards.map((card) => card.name)).not.toContain('polarSettings');
+    expect(capabilities).toMatchObject({
+      supportsLandingPage: true,
+      supportsEmptyDataView: true,
+      supportsKeyboardFocus: true,
+      tooltips: { supportEnhancedTooltips: true },
+    });
+  });
+
   it('detects settings from the model', () => {
     const settings = new PolarChartSettings();
     const paths = getSettingPaths(

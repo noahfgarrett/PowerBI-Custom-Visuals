@@ -22,62 +22,58 @@ import {
   ColorThemeFormattingCard,
   SeriesFormattingCard,
   DateFilterFormattingCard,
+  CARD_STYLE_MODE_ITEMS
 } from '../../core/src';
 
 // ── Bump Lines ──────────────────────────────────────────────────
 
 class BumpSettings extends formattingSettings.SimpleCard {
-  lineWidth = new formattingSettings.NumUpDown({
-    name: 'lineWidth',
-    displayName: 'Line Width',
-    value: 3,
-  });
-
   dotRadius = new formattingSettings.NumUpDown({
     name: 'dotRadius',
-    displayName: 'Dot Radius',
+    displayName: 'Dot Radius', displayNameKey: 'BumpChartSettings_DisplayName_0007',
     value: 6,
   });
 
   showRankNumbers = new formattingSettings.ToggleSwitch({
     name: 'showRankNumbers',
-    displayName: 'Show Rank Numbers',
+    displayName: 'Show Rank Numbers', displayNameKey: 'BumpChartSettings_DisplayName_0008',
     value: true,
   });
 
   dotStrokeColor = new formattingSettings.ColorPicker({
     name: 'dotStrokeColor',
-    displayName: 'Dot Stroke Color',
+    displayName: 'Dot Stroke Color', displayNameKey: 'BumpChartSettings_DisplayName_0009',
     value: { value: '' },
   });
 
   showArea = new formattingSettings.ToggleSwitch({
     name: 'showArea',
-    displayName: 'Show Area Fill',
+    displayName: 'Show Area Fill', displayNameKey: 'BumpChartSettings_DisplayName_0010',
     value: false,
   });
 
   areaOpacity = new formattingSettings.NumUpDown({
     name: 'areaOpacity',
-    displayName: 'Area Opacity (%)',
+    displayName: 'Area Opacity (%)', displayNameKey: 'BumpChartSettings_DisplayName_0011',
     value: 20,
   });
 
   showXAxis = new formattingSettings.ToggleSwitch({
     name: 'showXAxis',
-    displayName: 'Show X-Axis',
+    displayName: 'Show X-Axis', displayNameKey: 'BumpChartSettings_DisplayName_0012',
     value: true,
   });
 
   useChartPalette = new formattingSettings.ToggleSwitch({
     name: 'useChartPalette',
-    displayName: 'Use Chart Palette',
+    displayName: 'Use Chart Palette', displayNameKey: 'BumpChartSettings_DisplayName_0013',
     value: true,
   });
 
   name = 'bumpSettings';
   displayName = 'Bump Lines';
-  slices = [this.lineWidth, this.dotRadius, this.showRankNumbers, this.dotStrokeColor, this.showArea, this.areaOpacity, this.showXAxis, this.useChartPalette];
+  displayNameKey = 'BumpChartSettings_DisplayName_0001';
+  slices = [this.dotRadius, this.showRankNumbers, this.dotStrokeColor, this.showArea, this.areaOpacity, this.showXAxis, this.useChartPalette];
 }
 
 // ── Highlight & Analysis ────────────────────────────────────────────
@@ -85,24 +81,25 @@ class BumpSettings extends formattingSettings.SimpleCard {
 class BumpHighlightSettingsCard extends formattingSettings.SimpleCard {
   enabled = new formattingSettings.ToggleSwitch({
     name: 'enabled',
-    displayName: 'Highlight Top/Bottom N',
+    displayName: 'Enable Top N Highlighting', displayNameKey: 'BumpChartSettings_DisplayName_0014',
     value: false,
   });
 
   topN = new formattingSettings.NumUpDown({
     name: 'topN',
-    displayName: 'Top N',
+    displayName: 'Top N', displayNameKey: 'BumpChartSettings_DisplayName_0015',
     value: 3,
   });
 
   showOthers = new formattingSettings.ToggleSwitch({
     name: 'showOthers',
-    displayName: 'Show Others (Dimmed)',
+    displayName: 'Show Others (Dimmed)', displayNameKey: 'BumpChartSettings_DisplayName_0016',
     value: true,
   });
 
   name = 'bumpHighlightSettings';
-  displayName = 'Highlight Top/Bottom N';
+  displayName = 'Top N Highlighting';
+  displayNameKey = 'BumpChartSettings_DisplayName_0002';
   slices = [this.enabled, this.topN, this.showOthers];
 }
 
@@ -111,70 +108,77 @@ class BumpHighlightSettingsCard extends formattingSettings.SimpleCard {
 class BumpRankChangeSettingsCard extends formattingSettings.SimpleCard {
   show = new formattingSettings.ToggleSwitch({
     name: 'show',
-    displayName: 'Show Rank Change Indicators',
+    displayName: 'Show Rank Change Indicators', displayNameKey: 'BumpChartSettings_DisplayName_0017',
     value: false,
   });
 
   fontSize = new formattingSettings.NumUpDown({
     name: 'fontSize',
-    displayName: 'Font Size',
+    displayName: 'Font Size', displayNameKey: 'BumpChartSettings_DisplayName_0018',
     value: 9,
   });
 
   fontColor = new formattingSettings.ColorPicker({
     name: 'fontColor',
-    displayName: 'Font Color',
+    displayName: 'Font Color', displayNameKey: 'BumpChartSettings_DisplayName_0019',
     value: { value: '' },
   });
 
   fontFamily = new formattingSettings.ItemDropdown({
     name: 'fontFamily',
-    displayName: 'Font',
+    displayName: 'Font', displayNameKey: 'BumpChartSettings_DisplayName_0020',
     items: [
-      { value: '', displayName: 'Default' },
-      { value: 'Segoe UI', displayName: 'Segoe UI' },
-      { value: 'Arial', displayName: 'Arial' },
-      { value: 'Calibri', displayName: 'Calibri' },
-      { value: 'Helvetica Neue', displayName: 'Helvetica Neue' },
-      { value: 'Times New Roman', displayName: 'Times New Roman' },
-      { value: 'Verdana', displayName: 'Verdana' },
-      { value: 'Georgia', displayName: 'Georgia' },
+      { value: '', displayName: 'Default', displayNameKey: 'BumpChartSettings_DisplayName_0021' },
+      { value: 'Segoe UI', displayName: 'Segoe UI', displayNameKey: 'BumpChartSettings_DisplayName_0022' },
+      { value: 'Arial', displayName: 'Arial', displayNameKey: 'BumpChartSettings_DisplayName_0023' },
+      { value: 'Calibri', displayName: 'Calibri', displayNameKey: 'BumpChartSettings_DisplayName_0024' },
+      { value: 'Helvetica Neue', displayName: 'Helvetica Neue', displayNameKey: 'BumpChartSettings_DisplayName_0025' },
+      { value: 'Times New Roman', displayName: 'Times New Roman', displayNameKey: 'BumpChartSettings_DisplayName_0026' },
+      { value: 'Verdana', displayName: 'Verdana', displayNameKey: 'BumpChartSettings_DisplayName_0027' },
+      { value: 'Georgia', displayName: 'Georgia', displayNameKey: 'BumpChartSettings_DisplayName_0028' },
     ],
-    value: { value: '', displayName: 'Default' },
+    value: { value: '', displayName: 'Default', displayNameKey: 'BumpChartSettings_DisplayName_0029' },
   });
 
   fontWeight = new formattingSettings.ItemDropdown({
     name: 'fontWeight',
-    displayName: 'Font Weight',
+    displayName: 'Font Weight', displayNameKey: 'BumpChartSettings_DisplayName_0030',
     items: [
-      { value: 'normal', displayName: 'Normal' },
-      { value: 'bold', displayName: 'Bold' },
-      { value: '600', displayName: 'Semi-Bold' },
+      { value: 'normal', displayName: 'Normal', displayNameKey: 'BumpChartSettings_DisplayName_0031' },
+      { value: 'bold', displayName: 'Bold', displayNameKey: 'BumpChartSettings_DisplayName_0032' },
+      { value: '600', displayName: 'Semi-Bold', displayNameKey: 'BumpChartSettings_DisplayName_0033' },
     ],
-    value: { value: 'bold', displayName: 'Bold' },
+    value: { value: 'bold', displayName: 'Bold', displayNameKey: 'BumpChartSettings_DisplayName_0034' },
+  });
+
+  offset = new formattingSettings.NumUpDown({
+    name: 'offset',
+    displayName: 'Label Offset', displayNameKey: 'BumpChartSettings_DisplayName_0035',
+    value: 4,
   });
 
   positiveColor = new formattingSettings.ColorPicker({
     name: 'positiveColor',
-    displayName: 'Positive Color',
+    displayName: 'Positive Color', displayNameKey: 'BumpChartSettings_DisplayName_0036',
     value: { value: '#22C55E' },
   });
 
   negativeColor = new formattingSettings.ColorPicker({
     name: 'negativeColor',
-    displayName: 'Negative Color',
+    displayName: 'Negative Color', displayNameKey: 'BumpChartSettings_DisplayName_0037',
     value: { value: '#EF4444' },
   });
 
   showComparison = new formattingSettings.ToggleSwitch({
     name: 'showComparison',
-    displayName: 'Show Period Comparison',
+    displayName: 'Show Period Comparison', displayNameKey: 'BumpChartSettings_DisplayName_0038',
     value: false,
   });
 
   name = 'bumpRankChangeSettings';
   displayName = 'Rank Change Indicators';
-  slices = [this.show, this.fontSize, this.fontColor, this.positiveColor, this.negativeColor, this.fontFamily, this.fontWeight, this.showComparison];
+  displayNameKey = 'BumpChartSettings_DisplayName_0003';
+  slices = [this.show, this.fontSize, this.fontColor, this.positiveColor, this.negativeColor, this.fontFamily, this.fontWeight, this.offset, this.showComparison];
 }
 
 // ── Card Style ──────────────────────────────────────────────────────
@@ -182,37 +186,39 @@ class BumpRankChangeSettingsCard extends formattingSettings.SimpleCard {
 class CardStyleSettings extends formattingSettings.SimpleCard {
   cardStyleMode = new formattingSettings.ItemDropdown({
     name: 'cardStyleMode',
-    displayName: 'Card Style',
-    items: [
-      { value: 'none', displayName: 'None' },
-      { value: 'glass', displayName: 'Glass' },
-      { value: 'elevated', displayName: 'Elevated' },
-      { value: 'neumorphic', displayName: 'Neumorphic' },
-    ],
-    value: { value: 'glass', displayName: 'Glass' },
+    displayName: 'Card Style', displayNameKey: 'BumpChartSettings_DisplayName_0039',
+    items: CARD_STYLE_MODE_ITEMS,
+    value: { value: 'glass', displayName: 'Frosted Glass', displayNameKey: 'BumpChartSettings_DisplayName_0044' },
   });
 
   backgroundColor = new formattingSettings.ColorPicker({
     name: 'backgroundColor',
-    displayName: 'Background Color',
+    displayName: 'Background Color', displayNameKey: 'BumpChartSettings_DisplayName_0045',
     value: { value: '' },
   });
 
   backgroundOpacity = new formattingSettings.NumUpDown({
     name: 'backgroundOpacity',
-    displayName: 'Background Opacity (%)',
+    displayName: 'Background Opacity (%)', displayNameKey: 'BumpChartSettings_DisplayName_0046',
     value: 35,
   });
 
   borderRadius = new formattingSettings.NumUpDown({
     name: 'borderRadius',
-    displayName: 'Border Radius',
+    displayName: 'Border Radius', displayNameKey: 'BumpChartSettings_DisplayName_0047',
+    value: 12,
+  });
+
+  contentPadding = new formattingSettings.NumUpDown({
+    name: 'contentPadding',
+    displayName: 'Content Padding', displayNameKey: 'BumpChartSettings_DisplayName_0048',
     value: 12,
   });
 
   name = 'cardSettings';
   displayName = 'Card Style';
-  slices = [this.cardStyleMode, this.backgroundColor, this.backgroundOpacity, this.borderRadius];
+  displayNameKey = 'BumpChartSettings_DisplayName_0004';
+  slices = [this.cardStyleMode, this.backgroundColor, this.backgroundOpacity, this.borderRadius, this.contentPadding];
 }
 
 // ── Animation Settings ──────────────────────────────────────────────
@@ -220,18 +226,19 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
 class AnimationSettings extends formattingSettings.SimpleCard {
   enabled = new formattingSettings.ToggleSwitch({
     name: 'enabled',
-    displayName: 'Enable Animations',
+    displayName: 'Enable Animations', displayNameKey: 'BumpChartSettings_DisplayName_0049',
     value: true,
   });
 
   duration = new formattingSettings.NumUpDown({
     name: 'duration',
-    displayName: 'Duration (ms)',
+    displayName: 'Duration (ms)', displayNameKey: 'BumpChartSettings_DisplayName_0050',
     value: 600,
   });
 
   name = 'animationSettings';
   displayName = 'Animation';
+  displayNameKey = 'BumpChartSettings_DisplayName_0005';
   slices = [this.enabled, this.duration];
 }
 

@@ -8,7 +8,6 @@ import * as d3 from 'd3';
 import { FormattingSettingsService } from 'powerbi-visuals-utils-formattingmodel';
 import { RadialGaugeSettings } from './settings';
 import {
-  formatNumber,
   formatWithSettings,
   countUp,
   sweepArc,
@@ -17,11 +16,12 @@ import {
   type CardStyleMode,
   withOpacity,
   renderChartTitle,
-  applyDataLabelFormatting,
   resolveConditionalColor,
   buildConditionalConfig,
   resolveDropdown,
   applyChartAria,
+  applyDataPointAria,
+  attachKeyboardNav,
   ensureFocusRingStyles,
   renderLegend,
   type LegendItem,
@@ -30,6 +30,22 @@ import {
   type DateFilterConfig,
   resolveColorTheme,
   getHostChartColor,
+  syncCardStyleVisibility,
+  syncDateFilterFormattingVisibility,
+  syncLegendFormattingVisibility,
+  syncTitleFormattingVisibility,
+  hideInlineLegendFormatting,
+  attachEmptySpaceContextMenu,
+  allowInteractions,
+  notifyRenderingStarted,
+  notifyRenderingFinished,
+  notifyRenderingFailed,
+  getVisualEmptyStateMode,
+  getLocalizedString,
+  renderLandingPage,
+  renderNoDataState,
+  getHostHighContrastColors,
+  applyBasicHighContrastStyles,
 } from '../../core/src';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -80,77 +96,137 @@ export class RadialGaugeVisual implements IVisual {
   private previousValue: number | null = null;
   private cancelAnimations: Array<() => void> = [];
   private currentData: RadialGaugeData | null = null;
+  private emptyStateMode: 'unconfigured' | 'noData' = 'unconfigured';
   private handleBackgroundClick: () => void;
+  private previousCenterMetric: number | null = null;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
     this.selectionManager = options.host.createSelectionManager();
     this.container = options.element;
     this.settings = new RadialGaugeSettings();
-    this.formattingSettingsService = new FormattingSettingsService();
+    this.formattingSettingsService = new FormattingSettingsService(options.host.createLocalizationManager());
     this.container.classList.add('radial-gauge-container');
+    attachEmptySpaceContextMenu(this.container, this.selectionManager, () =>
+      this.host.createSelectionIdBuilder().createSelectionId(),
+      () => allowInteractions(this.host),
+    );
 
     this.handleBackgroundClick = (): void => {
-      void this.selectionManager.clear();
+      if (!allowInteractions(this.host)) return;
+      void this.selectionManager.clear().then(() => {
+        this.applySelectionHighlight();
+      });
     };
     this.container.addEventListener('click', this.handleBackgroundClick);
   }
 
   public update(options: VisualUpdateOptions): void {
-    // Cancel any running animations from previous render
-    this.cancelAnimations.forEach((cancel) => cancel());
-    this.cancelAnimations = [];
+    notifyRenderingStarted(this.host, options);
+    try {
+      // Cancel any running animations from previous render
+      this.cancelAnimations.forEach((cancel) => cancel());
+      this.cancelAnimations = [];
 
-    // Parse settings from dataView
-    const dataView = options.dataViews?.[0];
-    if (dataView) {
-      this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
-        RadialGaugeSettings,
-        dataView
-      );
-    }
+      // Parse settings from dataView
+      const dataView = options.dataViews?.[0];
+      const hasValueRole = dataView?.metadata?.columns?.some((column) => column.roles?.['value']) ?? false;
+      this.emptyStateMode = hasValueRole ? getVisualEmptyStateMode(dataView) : 'unconfigured';
+      if (dataView) {
+        this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
+          RadialGaugeSettings,
+          dataView
+        );
+      }
+      syncTitleFormattingVisibility(this.settings.titleFormattingCard);
+      syncLegendFormattingVisibility(this.settings.legendFormattingCard);
+      hideInlineLegendFormatting(this.settings.legendFormattingCard);
 
-    // Migrate legacy enableGlass -> cardStyleMode (backward compat)
-    const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
-    if (legacyCardObj) {
-      const legacyGlass = legacyCardObj['enableGlass'];
-      if (legacyGlass === false) {
+      // Migrate legacy enableGlass -> cardStyleMode (backward compat)
+      const legacyCardObj = dataView?.metadata?.objects?.['cardSettings'];
+      if (legacyCardObj?.['cardStyleMode'] === undefined && legacyCardObj?.['enableGlass'] === false) {
         this.settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
       }
+
+      const categoryColumn = dataView?.categorical?.categories?.[0];
+      const hasTrendAxis = Boolean(categoryColumn);
+      const hasDateAxis = Boolean(categoryColumn && isDateColumn(categoryColumn.source));
+      const hasTargetRole = dataView?.metadata?.columns?.some((column) => column.roles?.['target']) ?? false;
+      this.settings.dateFilterFormattingCard.visible = hasDateAxis;
+      syncDateFilterFormattingVisibility(this.settings.dateFilterFormattingCard);
+      if (!hasDateAxis) {
+        this.settings.dateFilterFormattingCard.startDate.visible = false;
+        this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = false;
+        this.settings.dateFilterFormattingCard.endDate.visible = false;
+      }
+
+      // Conditional visibility: hide needle sub-settings when showNeedle is off
+      this.settings.needleSettings.color.visible = this.settings.needleSettings.show.value;
+      this.settings.needleSettings.width.visible = this.settings.needleSettings.show.value;
+      this.settings.needleSettings.showHub.visible = this.settings.needleSettings.show.value;
+      this.settings.needleSettings.hubRadius.visible = this.settings.needleSettings.show.value
+        && this.settings.needleSettings.showHub.value;
+
+      // Conditional visibility: hide segment count when LED segments is off
+      this.settings.arcSettings.segmentCount.visible = this.settings.arcSettings.segmented.value;
+      this.settings.arcSettings.arcRange.visible = (resolveDropdown(this.settings.arcSettings.startAngle) ?? 'custom') === 'custom';
+      this.settings.valueSettings.customText.visible = (resolveDropdown(this.settings.valueSettings.displayMode) ?? 'value') === 'custom';
+      this.settings.valueSettings.customCaption.visible = (resolveDropdown(this.settings.valueSettings.captionMode) ?? 'auto') === 'custom';
+      this.settings.valueSettings.captionFontSize.visible = (resolveDropdown(this.settings.valueSettings.captionMode) ?? 'auto') !== 'none';
+      this.settings.valueSettings.captionFontColor.visible = (resolveDropdown(this.settings.valueSettings.captionMode) ?? 'auto') !== 'none';
+
+      syncCardStyleVisibility(this.settings.cardSettings);
+
+      this.settings.targetSettings.visible = hasTargetRole;
+      this.settings.targetSettings.color.visible = this.settings.targetSettings.show.value;
+      this.settings.targetSettings.lineWidth.visible = this.settings.targetSettings.show.value;
+      this.settings.gaugeScaleSettings.majorTicks.visible = this.settings.gaugeScaleSettings.showTicks.value
+        || this.settings.gaugeScaleSettings.showLabels.value;
+      this.settings.gaugeScaleSettings.minorTicks.visible = this.settings.gaugeScaleSettings.showTicks.value;
+      this.settings.gaugeScaleSettings.majorTickColor.visible = this.settings.gaugeScaleSettings.showTicks.value;
+      this.settings.gaugeScaleSettings.minorTickColor.visible = this.settings.gaugeScaleSettings.showTicks.value;
+      this.settings.gaugeScaleSettings.labelFontSize.visible = this.settings.gaugeScaleSettings.showLabels.value;
+      this.settings.gaugeScaleSettings.labelFontColor.visible = this.settings.gaugeScaleSettings.showLabels.value;
+      this.settings.gaugeScaleSettings.labelFontFamily.visible = this.settings.gaugeScaleSettings.showLabels.value;
+      this.settings.gaugeScaleSettings.labelFontWeight.visible = this.settings.gaugeScaleSettings.showLabels.value;
+      this.settings.gaugeScaleSettings.labelOffset.visible = this.settings.gaugeScaleSettings.showLabels.value;
+      this.settings.gaugeComparisonSettings.visible = hasTargetRole || hasTrendAxis;
+      this.settings.gaugeComparisonSettings.showDelta.visible = hasTargetRole;
+      this.settings.gaugeComparisonSettings.showSparkline.visible = hasTrendAxis;
+      this.settings.gaugeComparisonSettings.deltaPositiveColor.visible = hasTargetRole
+        && this.settings.gaugeComparisonSettings.showDelta.value;
+      this.settings.gaugeComparisonSettings.deltaNegativeColor.visible = hasTargetRole
+        && this.settings.gaugeComparisonSettings.showDelta.value;
+      this.settings.animationSettings.duration.visible = this.settings.animationSettings.enabled.value;
+      const conditionalEnabled = this.settings.conditionalFormattingCard.enableConditional.value;
+      this.settings.conditionalFormattingCard.conditionalDirection.visible = conditionalEnabled;
+      this.settings.conditionalFormattingCard.threshold1.visible = conditionalEnabled;
+      this.settings.conditionalFormattingCard.threshold2.visible = conditionalEnabled;
+      this.settings.conditionalFormattingCard.conditionalColor1.visible = conditionalEnabled;
+      this.settings.conditionalFormattingCard.conditionalColor2.visible = conditionalEnabled;
+      this.settings.conditionalFormattingCard.conditionalColor3.visible = conditionalEnabled;
+
+      // Extract data
+      const data = this.extractData(dataView);
+      this.currentData = data;
+
+      const highContrast = getHostHighContrastColors(this.host);
+      this.render(data, options.viewport, highContrast);
+      applyBasicHighContrastStyles(this.container, highContrast, {
+        textSelectors: ['svg text', '.radial-gauge-empty', '.pbi-landing-page-title', '.pbi-landing-page-description', '.pbi-landing-page-hint', '.pbi-landing-page li'],
+        fillSelectors: ['.radial-gauge-track', '.pbi-landing-page'],
+        strokeSelectors: ['.radial-gauge-target-tick', '.radial-gauge-needle'],
+      });
+      if (highContrast.enabled) {
+        this.container.querySelectorAll<SVGPathElement>('.radial-gauge-zone, .radial-gauge-segment').forEach((element) => {
+          element.setAttribute('fill', highContrast.foregroundSelected);
+        });
+      }
+      notifyRenderingFinished(this.host, options);
+    } catch (error) {
+      notifyRenderingFailed(this.host, options, error instanceof Error ? error.message : String(error));
+      throw error;
     }
-
-    // Date filter: hide start/end when disabled
-    this.settings.dateFilterFormattingCard.startDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endAtCurrentDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value;
-    this.settings.dateFilterFormattingCard.endDate.visible = this.settings.dateFilterFormattingCard.enableDateFilter.value && !this.settings.dateFilterFormattingCard.endAtCurrentDate.value;
-
-    this.settings.dataLabelFormattingCard.showDataLabels.visible = false;
-    this.settings.dataLabelFormattingCard.dataLabelPosition.visible = false;
-
-    // Conditional visibility: hide needle sub-settings when showNeedle is off
-    this.settings.needleSettings.color.visible = this.settings.needleSettings.show.value;
-    this.settings.needleSettings.width.visible = this.settings.needleSettings.show.value;
-    this.settings.needleSettings.showHub.visible = this.settings.needleSettings.show.value;
-    this.settings.needleSettings.hubRadius.visible = this.settings.needleSettings.show.value;
-
-    // Conditional visibility: hide segment count when LED segments is off
-    this.settings.arcSettings.segmentCount.visible = this.settings.arcSettings.segmented.value;
-
-    // Card Style — hide sub-settings when mode is 'none'
-    const cardMode = (resolveDropdown(this.settings.cardSettings.cardStyleMode) ?? 'glass') as CardStyleMode;
-    this.settings.cardSettings.backgroundOpacity.visible = cardMode !== 'none';
-    this.settings.cardSettings.backgroundColor.visible = cardMode !== 'none';
-
-    // Conditional visibility: hide delta/sparkline are independent toggles (no sub-settings to hide)
-    // But we can hide target color when showTarget is off
-    this.settings.targetSettings.color.visible = this.settings.targetSettings.show.value;
-    this.settings.targetSettings.lineWidth.visible = this.settings.targetSettings.show.value;
-
-    // Extract data
-    const data = this.extractData(dataView);
-    this.currentData = data;
-
-    this.render(data, options.viewport);
   }
 
   private extractData(dataView: DataView | undefined): RadialGaugeData {
@@ -179,48 +255,72 @@ export class RadialGaugeVisual implements IVisual {
     const values = dataView.categorical.values;
     if (!values) return result;
 
+    const findLastIncludedNumber = (columnValues: ReadonlyArray<unknown>): { value: number; index: number } | null => {
+      for (let i = columnValues.length - 1; i >= 0; i--) {
+        if (dateIndices && !dateIndices.has(i)) continue;
+        const value = columnValues[i];
+        if (typeof value === 'number' && Number.isFinite(value)) {
+          return { value, index: i };
+        }
+      }
+      return null;
+    };
+
+    let valueQueryName = '';
+    let currentValueIndex: number | null = null;
+
     for (const col of values) {
       const role = col.source.roles;
       if (!role) continue;
 
       if (role['value'] && col.values.length > 0) {
-        const lastVal = col.values[col.values.length - 1];
-        result.value = typeof lastVal === 'number' ? lastVal : null;
+        const current = findLastIncludedNumber(col.values);
+        result.value = current?.value ?? null;
+        currentValueIndex = current?.index ?? null;
+        valueQueryName = col.source.queryName ?? '';
         // Collect all value rows for trend sparkline
         result.trend = col.values
-          .filter((v, i): v is number => typeof v === 'number' && (!dateIndices || dateIndices.has(i)));
-
-        // Build a selectionId from the measure column
-        result.selectionId = this.host.createSelectionIdBuilder()
-          .withMeasure(col.source.queryName ?? '')
-          .createSelectionId();
+          .filter((v, i): v is number => typeof v === 'number'
+            && Number.isFinite(v)
+            && (!dateIndices || dateIndices.has(i)));
 
         // Cross-highlight: check if the value measure has highlight data
         const hlRaw = (col as unknown as { highlights?: unknown }).highlights as unknown[] | undefined;
         if (hlRaw) {
-          const hasAnyHighlight = hlRaw.some(h => h !== null && h !== undefined);
+          const hasAnyHighlight = hlRaw.some((h, i) =>
+            (!dateIndices || dateIndices.has(i)) && h !== null && h !== undefined,
+          );
           if (hasAnyHighlight) {
             result.hasHighlights = true;
-            const lastHl = hlRaw[hlRaw.length - 1];
-            result.highlighted = lastHl !== null && lastHl !== undefined;
+            const currentHighlight = current ? hlRaw[current.index] : undefined;
+            result.highlighted = currentHighlight !== null && currentHighlight !== undefined;
           }
         }
       }
 
       if (role['target'] && col.values.length > 0) {
-        const lastVal = col.values[col.values.length - 1];
-        result.target = typeof lastVal === 'number' ? lastVal : null;
+        result.target = findLastIncludedNumber(col.values)?.value ?? null;
       }
 
       if (role['minValue'] && col.values.length > 0) {
-        const lastVal = col.values[col.values.length - 1];
-        if (typeof lastVal === 'number') result.min = lastVal;
+        const current = findLastIncludedNumber(col.values);
+        if (current) result.min = current.value;
       }
 
       if (role['maxValue'] && col.values.length > 0) {
-        const lastVal = col.values[col.values.length - 1];
-        if (typeof lastVal === 'number') result.max = lastVal;
+        const current = findLastIncludedNumber(col.values);
+        if (current) result.max = current.value;
       }
+    }
+
+    if (categoryColumn && currentValueIndex !== null) {
+      result.selectionId = this.host.createSelectionIdBuilder()
+        .withCategory(categoryColumn, currentValueIndex)
+        .createSelectionId();
+    } else if (valueQueryName) {
+      result.selectionId = this.host.createSelectionIdBuilder()
+        .withMeasure(valueQueryName)
+        .createSelectionId();
     }
 
     // Ensure min < max
@@ -232,7 +332,11 @@ export class RadialGaugeVisual implements IVisual {
     return result;
   }
 
-  private render(data: RadialGaugeData, viewport: powerbi.IViewport): void {
+  private render(
+    data: RadialGaugeData,
+    viewport: powerbi.IViewport,
+    highContrast: ReturnType<typeof getHostHighContrastColors>,
+  ): void {
     this.hideTooltip();
 
     while (this.container.firstChild) {
@@ -253,20 +357,37 @@ export class RadialGaugeVisual implements IVisual {
         borderRadius: s.cardSettings.borderRadius.value,
       },
     );
+    const contentPadding = Math.max(0, s.cardSettings.contentPadding.value);
+    this.container.style.padding = `${contentPadding}px`;
+    this.container.style.boxSizing = 'border-box';
 
     // Empty state: no value provided
     if (data.value === null) {
-      const emptyEl = document.createElement('div');
-      emptyEl.className = 'radial-gauge-empty';
-      emptyEl.textContent = '--';
-      this.container.appendChild(emptyEl);
+      if (this.emptyStateMode === 'noData') {
+        renderNoDataState(
+          this.container,
+          getLocalizedString(this.host, 'RadialGauge_NoDataState', 'No data for the current selection.'),
+          highContrast,
+        );
+      } else {
+        renderLandingPage(this.container, {
+          title: getLocalizedString(this.host, 'RadialGauge_LandingTitle', 'Add a value to build a radial gauge'),
+          description: getLocalizedString(this.host, 'RadialGauge_LandingDescription', 'Bind a value measure, then optionally add a target, range, or trend axis.'),
+          steps: [
+            getLocalizedString(this.host, 'RadialGauge_LandingStepValue', 'Value'),
+            getLocalizedString(this.host, 'RadialGauge_LandingStepTarget', 'Optional target'),
+            getLocalizedString(this.host, 'RadialGauge_LandingStepTrend', 'Optional trend axis'),
+          ],
+        }, highContrast);
+      }
       this.previousValue = null;
+      this.previousCenterMetric = null;
       return;
     }
 
     // ── Dimensions ──────────────────────────────────────────────
-    const width = viewport.width;
-    const height = viewport.height;
+    const width = Math.max(0, viewport.width - (contentPadding * 2));
+    const height = Math.max(0, viewport.height - (contentPadding * 2));
     const size = Math.min(width, height);
     const cx = width / 2;
     const cy = height / 2;
@@ -277,14 +398,12 @@ export class RadialGaugeVisual implements IVisual {
     const arcWidth = outerRadius * thicknessFraction;
     const innerRadius = outerRadius - arcWidth;
 
-    // Arc range: preset dropdown sets a quick base (half=180, full=360).
-    // If the user has manually changed arcRange from its default (270), that
-    // takes precedence as a fine-tuning override.
-    const arcPreset = resolveDropdown(s.arcSettings.startAngle);
-    const arcRangeDefault = 270;
-    const presetRange = arcPreset === 'full' ? 360 : 180;
-    const rawArcRange = s.arcSettings.arcRange.value;
-    const effectiveRange = rawArcRange !== arcRangeDefault ? rawArcRange : presetRange;
+    const arcPreset = resolveDropdown(s.arcSettings.startAngle) ?? 'custom';
+    const effectiveRange = arcPreset === 'half'
+      ? 180
+      : arcPreset === 'full'
+        ? 360
+        : s.arcSettings.arcRange.value;
     const customArcRange = Math.max(30, Math.min(360, effectiveRange));
     const halfSweep = customArcRange / 2;
     const startAngleRad = -halfSweep * DEG_TO_RAD;
@@ -326,8 +445,10 @@ export class RadialGaugeVisual implements IVisual {
     const clampedValue = Math.max(min, Math.min(max, data.value));
     const normalizedValue = (clampedValue - min) / totalRange; // 0..1
 
-    const zone1Pct = Math.max(0, Math.min(100, s.zoneSettings.zone1Threshold.value)) / 100;
-    const zone2Pct = Math.max(0, Math.min(100, s.zoneSettings.zone2Threshold.value)) / 100;
+    const firstZonePct = Math.max(0, Math.min(100, s.zoneSettings.zone1Threshold.value)) / 100;
+    const secondZonePct = Math.max(0, Math.min(100, s.zoneSettings.zone2Threshold.value)) / 100;
+    const zone1Pct = Math.min(firstZonePct, secondZonePct);
+    const zone2Pct = Math.max(firstZonePct, secondZonePct);
 
     const themeName = resolveColorTheme(s.colorThemeFormattingCard);
     const zone1Color = themeName !== 'default'
@@ -395,38 +516,10 @@ export class RadialGaugeVisual implements IVisual {
       // Continuous value arc
       const valueArcPath = g.append('path')
         .attr('class', 'radial-gauge-zone')
+        .attr('data-selection-key', data.selectionId?.getKey() ?? '')
         .attr('fill', valueColor)
         .attr('stroke', 'none');
-      // Hover: brightness boost + inner glow
-      valueArcPath
-        .style('transition', 'filter 0.2s ease')
-        .style('cursor', 'pointer')
-        .on('mouseenter', (event: MouseEvent) => {
-          valueArcPath.style('filter', `brightness(1.18) drop-shadow(0 0 4px ${valueColor})`);
-          this.showGaugeTooltip(data, event);
-        })
-        .on('mousemove', (event: MouseEvent) => {
-          this.moveTooltip(event);
-        })
-        .on('mouseleave', () => {
-          valueArcPath.style('filter', 'none');
-          this.hideTooltip();
-        })
-        .on('click', (event: MouseEvent) => {
-          event.stopPropagation();
-          if (data.selectionId) {
-            void this.selectionManager.select(data.selectionId, event.ctrlKey || event.metaKey);
-          }
-        })
-        .on('contextmenu', (event: MouseEvent) => {
-          event.preventDefault();
-          if (data.selectionId) {
-            void this.selectionManager.showContextMenu(data.selectionId, {
-              x: event.clientX,
-              y: event.clientY,
-            });
-          }
-        });
+      valueArcPath.style('transition', 'filter 0.2s ease');
 
       if (s.animationSettings.enabled.value) {
         // Start from no sweep, animate to target angle
@@ -454,6 +547,43 @@ export class RadialGaugeVisual implements IVisual {
         }));
       }
     }
+
+    // A full-arc hit target keeps segmented gauges and zero values interactive.
+    const hitArea = g.append('path')
+      .attr('class', 'radial-gauge-hit-area')
+      .attr('d', arcGen({ startAngle: startAngleRad, endAngle: endAngleRad }))
+      .attr('fill', 'transparent')
+      .attr('data-selection-key', data.selectionId?.getKey() ?? '')
+      .style('pointer-events', 'all')
+      .style('cursor', allowInteractions(this.host) ? 'pointer' : 'default');
+
+    hitArea
+      .on('mouseenter', (event: MouseEvent) => {
+        g.selectAll<SVGPathElement, unknown>('.radial-gauge-zone, .radial-gauge-segment')
+          .style('filter', `brightness(1.18) drop-shadow(0 0 4px ${valueColor})`);
+        this.showGaugeTooltip(data, event);
+      })
+      .on('mousemove', (event: MouseEvent) => this.moveTooltip(event))
+      .on('mouseleave', () => {
+        this.hideTooltip();
+        this.applySelectionHighlight();
+      })
+      .on('click', (event: MouseEvent) => {
+        if (!allowInteractions(this.host) || !data.selectionId) return;
+        event.stopPropagation();
+        void this.selectionManager.select(data.selectionId, event.ctrlKey || event.metaKey).then(() => {
+          this.applySelectionHighlight();
+        });
+      })
+      .on('contextmenu', (event: MouseEvent) => {
+        if (!allowInteractions(this.host) || !data.selectionId) return;
+        event.preventDefault();
+        event.stopPropagation();
+        void this.selectionManager.showContextMenu(data.selectionId, {
+          x: event.clientX,
+          y: event.clientY,
+        });
+      });
 
     // ── Zone boundary ticks (subtle marks at zone thresholds) ───
     const drawZoneBoundary = (pct: number, color: string): void => {
@@ -550,15 +680,15 @@ export class RadialGaugeVisual implements IVisual {
     }
 
     // ── Center Value Text ───────────────────────────────────────
-    const fmt = (v: number | null | undefined): string => {
-      return formatWithSettings(v as number, this.settings.numberFormattingCard);
-    };
+    const fmt = (v: number | null | undefined): string => formatWithSettings(v as number, this.settings.numberFormattingCard);
+    const centerContent = this.resolveCenterContent(data);
 
     const fontSize = s.valueSettings.fontSize.value;
     const fontColor = s.valueSettings.fontColor.value?.value || '#333333';
 
     // Offset the text upward for half-circle mode so it sits inside the arc
-    const textOffsetY = rangeKey === 'half' ? -outerRadius * 0.15 : outerRadius * 0.05;
+    const hasCaption = centerContent.captionText.length > 0;
+    const textOffsetY = (rangeKey === 'half' ? -outerRadius * 0.15 : outerRadius * 0.05) - (hasCaption ? 6 : 0);
 
     const valueFontFamily = resolveDropdown(s.valueSettings.fontFamily);
     const valueFontWeight = resolveDropdown(s.valueSettings.fontWeight);
@@ -573,66 +703,90 @@ export class RadialGaugeVisual implements IVisual {
     if (valueFontFamily) valueText.attr('font-family', valueFontFamily);
     if (valueFontWeight) valueText.attr('font-weight', valueFontWeight);
 
-    if (s.animationSettings.enabled.value) {
-      const from = this.previousValue ?? min;
+    if (centerContent.isNumeric && s.animationSettings.enabled.value) {
+      const from = this.previousCenterMetric ?? centerContent.numericValue;
       valueText.text(fmt(from));
 
       const cancelCount = countUp(
         from,
-        data.value,
+        centerContent.numericValue,
         s.animationSettings.duration.value,
         (v) => { valueText.text(fmt(v)); }
       );
       this.cancelAnimations.push(cancelCount);
-      this.previousValue = data.value;
     } else {
-      valueText.text(fmt(data.value));
-      this.previousValue = data.value;
+      valueText.text(centerContent.primaryText);
+    }
+    this.previousValue = data.value;
+    this.previousCenterMetric = centerContent.isNumeric ? centerContent.numericValue : null;
+
+    if (hasCaption) {
+      g.append('text')
+        .attr('class', 'radial-gauge-value-caption')
+        .attr('x', 0)
+        .attr('y', textOffsetY + fontSize * 0.72)
+        .attr('text-anchor', 'middle')
+        .attr('dominant-baseline', 'central')
+        .attr('font-size', `${Math.max(9, s.valueSettings.captionFontSize.value)}px`)
+        .attr('fill', s.valueSettings.captionFontColor.value?.value || '#64748B')
+        .text(centerContent.captionText);
     }
 
     // ── Scale Ticks ──────────────────────────────────────────────
-    if (s.gaugeScaleSettings.showTicks.value) {
+    const showScaleTicks = s.gaugeScaleSettings.showTicks.value;
+    const showScaleLabels = s.gaugeScaleSettings.showLabels.value;
+    if (showScaleTicks || showScaleLabels) {
       const majorCount = Math.max(2, s.gaugeScaleSettings.majorTicks.value);
       const minorPerMajor = Math.max(0, s.gaugeScaleSettings.minorTicks.value);
+      const scaleLabelFontFamily = resolveDropdown(s.gaugeScaleSettings.labelFontFamily);
+      const scaleLabelFontWeight = resolveDropdown(s.gaugeScaleSettings.labelFontWeight) ?? 'normal';
+      const scaleLabelOffset = Math.max(10, s.gaugeScaleSettings.labelOffset.value);
 
-      for (let i = 0; i <= majorCount; i++) {
-        const pct = i / majorCount;
+      for (let i = 0; i < majorCount; i++) {
+        const pct = i / (majorCount - 1);
         const angle = startAngleRad + totalSweep * pct;
         const cosA = Math.cos(angle - Math.PI / 2);
         const sinA = Math.sin(angle - Math.PI / 2);
 
         // Major tick
-        g.append('line')
-          .attr('x1', (outerRadius + 3) * cosA)
-          .attr('y1', (outerRadius + 3) * sinA)
-          .attr('x2', (outerRadius + 8) * cosA)
-          .attr('y2', (outerRadius + 8) * sinA)
-          .attr('stroke', s.gaugeScaleSettings.majorTickColor.value?.value ?? '#64748B')
-          .attr('stroke-width', 1.5);
+        if (showScaleTicks) {
+          g.append('line')
+            .attr('class', 'radial-gauge-major-tick')
+            .attr('x1', (outerRadius + 3) * cosA)
+            .attr('y1', (outerRadius + 3) * sinA)
+            .attr('x2', (outerRadius + 8) * cosA)
+            .attr('y2', (outerRadius + 8) * sinA)
+            .attr('stroke', s.gaugeScaleSettings.majorTickColor.value?.value ?? '#64748B')
+            .attr('stroke-width', 1.5);
+        }
 
         // Scale label
-        if (s.gaugeScaleSettings.showLabels.value) {
+        if (showScaleLabels) {
           const labelVal = min + totalRange * pct;
-          g.append('text')
-            .attr('x', (outerRadius + 14) * cosA)
-            .attr('y', (outerRadius + 14) * sinA)
+          const scaleLabel = g.append('text')
+            .attr('class', 'radial-gauge-scale-label')
+            .attr('x', (outerRadius + scaleLabelOffset) * cosA)
+            .attr('y', (outerRadius + scaleLabelOffset) * sinA)
             .attr('text-anchor', 'middle')
             .attr('dominant-baseline', 'central')
-            .attr('font-size', `${s.dataLabelFormattingCard.dataLabelFontSize.value}px`)
-            .attr('fill', s.dataLabelFormattingCard.dataLabelFontColor.value?.value || '#64748B')
+            .attr('font-size', `${Math.max(8, s.gaugeScaleSettings.labelFontSize.value)}px`)
+            .attr('fill', s.gaugeScaleSettings.labelFontColor.value?.value || '#64748B')
             .text(formatWithSettings(labelVal, this.settings.numberFormattingCard));
+          if (scaleLabelFontFamily) scaleLabel.attr('font-family', scaleLabelFontFamily);
+          scaleLabel.attr('font-weight', scaleLabelFontWeight);
         }
 
         // Minor ticks between major ticks
-        if (i < majorCount && minorPerMajor > 0) {
+        if (showScaleTicks && i < majorCount - 1 && minorPerMajor > 0) {
           for (let j = 1; j <= minorPerMajor; j++) {
-            const minorPct = pct + (j / (majorCount * (minorPerMajor + 1)));
+            const minorPct = pct + (j / ((majorCount - 1) * (minorPerMajor + 1)));
             if (minorPct > 1) break;
             const minorAngle = startAngleRad + totalSweep * minorPct;
             const minorCos = Math.cos(minorAngle - Math.PI / 2);
             const minorSin = Math.sin(minorAngle - Math.PI / 2);
 
             g.append('line')
+              .attr('class', 'radial-gauge-minor-tick')
               .attr('x1', (outerRadius + 3) * minorCos)
               .attr('y1', (outerRadius + 3) * minorSin)
               .attr('x2', (outerRadius + 5) * minorCos)
@@ -714,19 +868,44 @@ export class RadialGaugeVisual implements IVisual {
           ? `Value: ${formatWithSettings(data.value, this.settings.numberFormattingCard)}, Range: ${min} to ${max}`
           : undefined,
       });
+      const hitNode = hitArea.node();
+      if (hitNode) {
+        applyDataPointAria(
+          hitNode,
+          'Gauge',
+          formatWithSettings(data.value, this.settings.numberFormattingCard),
+          0,
+          1,
+        );
+        hitNode.setAttribute('tabindex', '0');
+        hitNode.setAttribute('aria-keyshortcuts', 'Enter Space');
+        hitNode.setAttribute('aria-disabled', allowInteractions(this.host) ? 'false' : 'true');
+        const cleanup = attachKeyboardNav({
+          container: this.container,
+          itemSelector: '.radial-gauge-hit-area',
+          onActivate: (element) => {
+            if (allowInteractions(this.host)) {
+              (element as SVGPathElement).dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            }
+          },
+        });
+        this.cancelAnimations.push(cleanup);
+      }
     }
 
     // ── Entrance Animation ──────────────────────────────────────
     if (s.animationSettings.enabled.value) {
       const svgNode = svg.node();
-      if (svgNode instanceof HTMLElement) {
-        const cancelFade = fadeSlideIn(svgNode, 'up', s.animationSettings.duration.value, 50);
+      if (svgNode) {
+        const cancelFade = fadeSlideIn(
+          svgNode as unknown as HTMLElement,
+          'up',
+          s.animationSettings.duration.value,
+          50,
+        );
         this.cancelAnimations.push(cancelFade);
       }
     }
-
-    // Apply shared formatting settings
-    applyDataLabelFormatting(this.container, this.settings.dataLabelFormattingCard, '.radial-gauge-value-text');
 
     // Legend — zone colors
     const legendCard = this.settings.legendFormattingCard;
@@ -749,21 +928,30 @@ export class RadialGaugeVisual implements IVisual {
       });
     }
 
-    // Apply cross-highlight dimming
-    this.applyCrossHighlight();
+    // Apply selection/cross-highlight dimming
+    this.applySelectionHighlight();
   }
 
   // ── Cross-Highlight ──────────────────────────────────────────────
 
-  private applyCrossHighlight(): void {
+  private applySelectionHighlight(): void {
     const data = this.currentData;
-    if (!data || !data.hasHighlights) return;
+    if (!data) return;
 
-    // Dim the value arc and segments if the gauge is not highlighted
-    const dimOpacity = data.highlighted ? '' : '0.3';
+    const selectedKeys = new Set(
+      (this.selectionManager.getSelectionIds() as ISelectionId[]).map((id) => id.getKey()),
+    );
+    const isSelected = data.selectionId !== null && selectedKeys.has(data.selectionId.getKey());
+    const shouldDim = selectedKeys.size > 0 || data.hasHighlights;
+    const dimOpacity = shouldDim && !isSelected && !data.highlighted ? '0.3' : '';
     const arcs = this.container.querySelectorAll<SVGPathElement>('.radial-gauge-zone, .radial-gauge-segment');
     for (const el of Array.from(arcs)) {
       el.style.opacity = dimOpacity;
+    }
+
+    const valueArc = this.container.querySelector<SVGPathElement>('.radial-gauge-zone[data-selection-key]');
+    if (valueArc) {
+      valueArc.style.filter = isSelected ? 'drop-shadow(0 0 6px rgba(15, 23, 42, 0.28))' : '';
     }
   }
 
@@ -772,7 +960,6 @@ export class RadialGaugeVisual implements IVisual {
   }
 
   private showGaugeTooltip(data: RadialGaugeData, event: MouseEvent): void {
-    const locale = this.getHostLocale();
     const numberSettings = this.settings.numberFormattingCard;
     const tooltipData: VisualTooltipDataItem[] = [
       { displayName: 'Value', value: formatWithSettings(data.value as number, numberSettings) },
@@ -783,7 +970,7 @@ export class RadialGaugeVisual implements IVisual {
 
     this.host.tooltipService.show({
       dataItems: tooltipData,
-      identities: [],
+      identities: data.selectionId ? [data.selectionId] : [],
       coordinates: [event.clientX, event.clientY],
       isTouchEvent: false,
     });
@@ -802,13 +989,58 @@ export class RadialGaugeVisual implements IVisual {
     this.host.tooltipService.hide({ immediately: true, isTouchEvent: false });
   }
 
-  private getHostLocale(): string | undefined {
-    const locale = (this.host as unknown as { locale?: unknown }).locale;
-    return typeof locale === 'string' && locale.length > 0 ? locale : undefined;
-  }
+  private resolveCenterContent(data: RadialGaugeData): { primaryText: string; captionText: string; isNumeric: boolean; numericValue: number } {
+    const mode = resolveDropdown(this.settings.valueSettings.displayMode) ?? 'value';
+    const captionMode = resolveDropdown(this.settings.valueSettings.captionMode) ?? 'auto';
+    let primaryText = '';
+    let captionText = '';
+    let numericValue = data.value ?? 0;
+    let isNumeric = true;
 
-  // Render lifecycle notifications removed — Power BI's eventService.renderingStarted()
-  // requires VisualUpdateOptions with updateId, and calling without args crashes the visual.
+    switch (mode) {
+      case 'target':
+        if (data.target === null) {
+          primaryText = '\u2014';
+          numericValue = 0;
+          isNumeric = false;
+        } else {
+          numericValue = data.target;
+          primaryText = formatWithSettings(numericValue, this.settings.numberFormattingCard);
+        }
+        captionText = 'Target';
+        break;
+      case 'delta':
+        if (data.target === null) {
+          primaryText = '\u2014';
+          numericValue = 0;
+          isNumeric = false;
+        } else {
+          numericValue = (data.value ?? 0) - data.target;
+          primaryText = formatWithSettings(numericValue, this.settings.numberFormattingCard);
+        }
+        captionText = 'Delta vs Target';
+        break;
+      case 'custom':
+        primaryText = this.settings.valueSettings.customText.value || 'Summary';
+        numericValue = 0;
+        isNumeric = false;
+        break;
+      case 'value':
+      default:
+        numericValue = data.value ?? 0;
+        primaryText = formatWithSettings(numericValue, this.settings.numberFormattingCard);
+        captionText = 'Value';
+        break;
+    }
+
+    if (captionMode === 'none') {
+      captionText = '';
+    } else if (captionMode === 'custom') {
+      captionText = this.settings.valueSettings.customCaption.value || captionText;
+    }
+
+    return { primaryText, captionText, isNumeric, numericValue };
+  }
 
   public destroy(): void {
     this.hideTooltip();

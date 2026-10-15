@@ -4,7 +4,7 @@
     "displayName": "Waffle Chart",
     "guid": "waffleChart_2B4C6D8E1F3A",
     "visualClassName": "WaffleChartVisual",
-    "version": "1.0.1.0",
+    "version": "1.0.14.0",
     "description": "Percentage waffle grid with ripple-fill wave animation, count-up display, and glassmorphic styling.",
     "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
     "gitHubUrl": "https://github.com/noahgarrett/PowerBI"
@@ -18,5 +18,8 @@
     "icon": "assets/icon.png"
   },
   "style": "style/visual.less",
-  "capabilities": "capabilities.json"
+  "capabilities": "capabilities.json",
+  "stringResources": [
+    "stringResources/en-US/resources.resjson"
+  ]
 }

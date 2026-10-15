@@ -3,9 +3,10 @@
   flex-direction: column;
   width: 100%;
   height: 100%;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  padding: 8px;
+  padding: 0;
   box-sizing: border-box;
 }
 
@@ -33,14 +34,14 @@
 .heatmap-cell {
   border-radius: 2px;
   transition: filter 0.15s ease, outline-color 0.15s ease, box-shadow 0.15s ease;
-  cursor: pointer;
+  cursor: default;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   position: relative;
 
-  &:hover {
+  &[data-date-key]:hover {
     filter: brightness(1.2);
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
     z-index: 2;
@@ -52,4 +53,10 @@
   line-height: 1;
   pointer-events: none;
   white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heatmap-cell {
+    transition: none;
+  }
 }

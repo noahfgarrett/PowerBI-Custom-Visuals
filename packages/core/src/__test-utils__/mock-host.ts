@@ -2,6 +2,10 @@
  * Mock IVisualHost factory for Power BI visual tests.
  */
 
+import { readdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 const PALETTE_COLORS = [
   '#4E79A7', '#F28E2B', '#E15759', '#76B7B2',
   '#59A14F', '#EDC948', '#B07AA1', '#FF9DA7',
@@ -9,6 +13,8 @@ const PALETTE_COLORS = [
 
 let colorIndex = 0;
 let selectionIdIndex = 0;
+
+const LOCALIZATION_VALUES = loadLocalizationValues();
 
 function nextColor(): string {
   return PALETTE_COLORS[colorIndex++ % PALETTE_COLORS.length];
@@ -41,7 +47,7 @@ function createMockSelectionIdBuilder(): Record<string, unknown> {
 
 function createMockSelectionManager(): Record<string, unknown> {
   let selection: unknown[] = [];
-  return {
+  const manager: Record<string, unknown> = {
     select: (id: unknown) => {
       selection = Array.isArray(id) ? id : [id];
       return Promise.resolve(selection);
@@ -57,6 +63,8 @@ function createMockSelectionManager(): Record<string, unknown> {
     containsSelection: () => false,
     applySelectionFilter: () => {},
   };
+  manager.__selectionState = () => selection;
+  return manager;
 }
 
 function createMockTooltipService(): Record<string, unknown> {
@@ -93,9 +101,32 @@ function createMockColorPalette(): Record<string, unknown> {
 
 function createMockLocale(): Record<string, unknown> {
   return {
-    get: (key: string) => key,
-    getDisplayName: (key: string) => key,
+    get: (key: string) => LOCALIZATION_VALUES[key] ?? key,
+    getDisplayName: (key: string) => LOCALIZATION_VALUES[key] ?? key,
   };
+}
+
+function loadLocalizationValues(): Record<string, string> {
+  try {
+    const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../');
+    const packagesRoot = path.join(repoRoot, 'packages');
+    const result: Record<string, string> = {};
+    for (const entry of readdirSync(packagesRoot, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const resourceFile = path.join(packagesRoot, entry.name, 'stringResources', 'en-US', 'resources.resjson');
+      try {
+        const json = JSON.parse(readFileSync(resourceFile, 'utf8')) as {
+          values?: Record<string, string>;
+        };
+        Object.assign(result, json.values ?? {});
+      } catch {
+        // Skip packages that don't have generated string resources yet.
+      }
+    }
+    return result;
+  } catch {
+    return {};
+  }
 }
 
 /**
@@ -104,9 +135,18 @@ function createMockLocale(): Record<string, unknown> {
 export function createMockHost(): Record<string, unknown> {
   colorIndex = 0;
   selectionIdIndex = 0;
+  const selectionManager = createMockSelectionManager();
+  const jsonFilters: Array<{
+    filter: unknown;
+    objectName: string;
+    propertyName: string;
+    action: unknown;
+  }> = [];
   return {
     createSelectionIdBuilder: () => createMockSelectionIdBuilder(),
-    createSelectionManager: () => createMockSelectionManager(),
+    createSelectionManager: () => selectionManager,
+    __selectionManager: selectionManager,
+    __jsonFilters: jsonFilters,
     colorPalette: createMockColorPalette(),
     tooltipService: createMockTooltipService(),
     eventService: createMockEventService(),
@@ -118,7 +158,9 @@ export function createMockHost(): Record<string, unknown> {
       set: () => Promise.resolve(),
     },
     persistProperties: () => {},
-    applyJsonFilter: () => {},
+    applyJsonFilter: (filter: unknown, objectName: string, propertyName: string, action: unknown) => {
+      jsonFilters.push({ filter, objectName, propertyName, action });
+    },
     launchUrl: () => {},
     createLocalizationManager: () => createMockLocale(),
     fetchMoreData: () => false,

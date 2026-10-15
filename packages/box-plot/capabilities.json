@@ -4,13 +4,17 @@
       "displayName": "Category",
       "name": "category",
       "kind": "Grouping",
-      "description": "Category labels for each box plot group"
+      "description": "Category labels for each box plot group",
+      "displayNameKey": "BoxPlotCapabilities_DisplayName_0001",
+      "descriptionKey": "BoxPlotCapabilities_Description_0001"
     },
     {
       "displayName": "Values",
       "name": "values",
       "kind": "Measure",
-      "description": "Raw values \u2014 the visual computes min/Q1/median/Q3/max internally"
+      "description": "Raw values — the visual computes min/Q1/median/Q3/max internally",
+      "displayNameKey": "BoxPlotCapabilities_DisplayName_0002",
+      "descriptionKey": "BoxPlotCapabilities_Description_0002"
     }
   ],
   "dataViewMappings": [
@@ -54,25 +58,28 @@
   ],
   "objects": {
     "boxSettings": {
-      "displayName": "Box Settings",
+      "displayName": "Box and Whiskers",
       "properties": {
         "boxWidth": {
-          "displayName": "Box Width",
+          "displayName": "Box Width (px)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0004"
         },
         "showOutliers": {
           "displayName": "Show Outliers",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0005"
         },
         "showMedianLine": {
           "displayName": "Show Median Line",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0006"
         },
         "medianColor": {
           "displayName": "Median Color",
@@ -82,43 +89,84 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0007"
         },
         "medianLineWidth": {
           "displayName": "Median Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0008"
         },
         "boxStrokeColor": {
-          "displayName": "Box Stroke Color",
+          "displayName": "Box Border Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0009"
         },
         "boxStrokeWidth": {
-          "displayName": "Box Stroke Width",
+          "displayName": "Box Border Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0010"
         },
         "whiskerWidth": {
-          "displayName": "Whisker Width",
+          "displayName": "Whisker Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0011"
         },
         "outlierRadius": {
-          "displayName": "Outlier Radius",
+          "displayName": "Outlier Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0012"
         }
-      }
+      },
+      "displayNameKey": "BoxPlotCapabilities_DisplayName_0003"
+    },
+    "layoutSettings": {
+      "displayName": "Layout",
+      "properties": {
+        "containerPadding": {
+          "displayName": "Container Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0014"
+        },
+        "labelPadding": {
+          "displayName": "Data Label Offset",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0291"
+        },
+        "categoryPaddingInner": {
+          "displayName": "Category Padding (Inner)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0015"
+        },
+        "categoryPaddingOuter": {
+          "displayName": "Category Padding (Outer)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0016"
+        }
+      },
+      "displayNameKey": "BoxPlotCapabilities_DisplayName_0013"
     },
     "colorSettings": {
       "displayName": "Colors",
@@ -131,7 +179,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0018"
         },
         "whiskerColor": {
           "displayName": "Whisker Color",
@@ -141,15 +190,18 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0019"
         },
         "perCategoryColors": {
           "displayName": "Per-Category Colors",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0020"
         }
-      }
+      },
+      "displayNameKey": "BoxPlotCapabilities_DisplayName_0017"
     },
     "axisSettings": {
       "displayName": "Axes",
@@ -158,21 +210,25 @@
           "displayName": "Show X-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0022"
         },
         "showYAxis": {
           "displayName": "Show Y-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0023"
         },
         "gridLines": {
           "displayName": "Grid Lines",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0024"
         }
-      }
+      },
+      "displayNameKey": "BoxPlotCapabilities_DisplayName_0021"
     },
     "animationSettings": {
       "displayName": "Animation",
@@ -181,21 +237,25 @@
           "displayName": "Enable Animations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0026"
         },
         "duration": {
           "displayName": "Duration (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0027"
         },
         "staggerDelay": {
           "displayName": "Stagger Delay (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0028"
         }
-      }
+      },
+      "displayNameKey": "BoxPlotCapabilities_DisplayName_0025"
     },
     "meanMarkerSettings": {
       "displayName": "Mean Marker",
@@ -204,7 +264,8 @@
           "displayName": "Show Mean Marker",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0030"
         },
         "shape": {
           "displayName": "Shape",
@@ -212,18 +273,22 @@
             "enumeration": [
               {
                 "value": "diamond",
-                "displayName": "Diamond"
+                "displayName": "Diamond",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0032"
               },
               {
                 "value": "cross",
-                "displayName": "Cross"
+                "displayName": "Cross",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0033"
               },
               {
                 "value": "circle",
-                "displayName": "Circle"
+                "displayName": "Circle",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0034"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0031"
         },
         "color": {
           "displayName": "Color",
@@ -233,21 +298,25 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0035"
         },
         "size": {
           "displayName": "Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0036"
         },
         "strokeWidth": {
           "displayName": "Stroke Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0037"
         }
-      }
+      },
+      "displayNameKey": "BoxPlotCapabilities_DisplayName_0029"
     },
     "jitterSettings": {
       "displayName": "Data Points",
@@ -256,19 +325,22 @@
           "displayName": "Show Data Points",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0039"
         },
         "opacity": {
           "displayName": "Point Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0040"
         },
         "radius": {
           "displayName": "Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0041"
         },
         "color": {
           "displayName": "Point Color",
@@ -278,9 +350,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0042"
         }
-      }
+      },
+      "displayNameKey": "BoxPlotCapabilities_DisplayName_0038"
     },
     "axisFormatting": {
       "displayName": "Axis Formatting",
@@ -293,13 +367,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0044"
         },
         "axisLabelSize": {
           "displayName": "Label Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0045"
         },
         "axisLineColor": {
           "displayName": "Axis Line Color",
@@ -309,19 +385,22 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0046"
         },
         "axisLineWidth": {
           "displayName": "Axis Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0047"
         },
         "showGridLines": {
           "displayName": "Show Grid Lines",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0048"
         },
         "gridLineColor": {
           "displayName": "Grid Line Color",
@@ -331,7 +410,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0049"
         },
         "gridLineStyle": {
           "displayName": "Grid Line Style",
@@ -339,38 +419,45 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0051"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0052"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0050"
         },
         "showXAxis": {
           "displayName": "Show X-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0053"
         },
         "showYAxis": {
           "displayName": "Show Y-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0054"
         },
         "xAxisTitle": {
           "displayName": "X-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0055"
         },
         "yAxisTitle": {
           "displayName": "Y-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0056"
         },
         "axisLabelFontFamily": {
           "displayName": "Label Font",
@@ -378,84 +465,102 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0058"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0059"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0060"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0061"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0062"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0063"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0064"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0065"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0066"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0067"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0068"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0069"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0057"
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (\u00b0)",
+          "displayName": "X-Label Rotation (°)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0070"
         },
         "yAxisMin": {
           "displayName": "Y-Axis Min",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0071"
         },
         "yAxisMax": {
           "displayName": "Y-Axis Max",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0072"
         },
         "gridLineWidth": {
           "displayName": "Grid Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0073"
         },
         "gridLineOpacity": {
           "displayName": "Grid Line Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0074"
         },
         "axisLabelFontWeight": {
           "displayName": "Label Font Weight",
@@ -463,16 +568,27 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0076"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0077"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0075"
+        },
+        "integerTicks": {
+          "displayName": "Integer Ticks Only",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0078"
         }
-      }
+      },
+      "displayNameKey": "BoxPlotCapabilities_DisplayName_0043"
     },
     "legendFormatting": {
       "displayName": "Legend",
@@ -481,7 +597,8 @@
           "displayName": "Show Legend",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0080"
         },
         "legendPosition": {
           "displayName": "Position",
@@ -489,28 +606,34 @@
             "enumeration": [
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0082"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0083"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0084"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0085"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0081"
         },
         "legendFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0086"
         },
         "legendFontColor": {
           "displayName": "Font Color",
@@ -520,7 +643,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0087"
         },
         "legendFontFamily": {
           "displayName": "Font",
@@ -528,54 +652,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0089"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0090"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0091"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0092"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0093"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0094"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0095"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0096"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0097"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0098"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0099"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0100"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0088"
         },
         "legendFontWeight": {
           "displayName": "Font Weight",
@@ -583,22 +720,48 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0102"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0103"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0101"
         },
         "legendAliases": {
           "displayName": "Rename Labels",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0104"
+        },
+        "showInlineLabels": {
+          "displayName": "Inline End Labels",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0105"
+        },
+        "inlineLabelFontSize": {
+          "displayName": "Inline Label Font Size",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0106"
+        },
+        "inlineLabelOffset": {
+          "displayName": "Inline Label Offset (px)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0107"
         }
-      }
+      },
+      "displayNameKey": "BoxPlotCapabilities_DisplayName_0079"
     },
     "dataLabelFormatting": {
       "displayName": "Data Labels",
@@ -607,13 +770,15 @@
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0109"
         },
         "dataLabelFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0110"
         },
         "dataLabelFontColor": {
           "displayName": "Font Color",
@@ -623,7 +788,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0111"
         },
         "dataLabelFontWeight": {
           "displayName": "Font Weight",
@@ -631,14 +797,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0113"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0114"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0112"
         },
         "dataLabelFontFamily": {
           "displayName": "Font",
@@ -646,54 +815,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0116"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0117"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0118"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0119"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0120"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0121"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0122"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0123"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0124"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0125"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0126"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0127"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0115"
         },
         "dataLabelPosition": {
           "displayName": "Position",
@@ -701,28 +883,35 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0129"
               },
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0130"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0131"
               },
               {
                 "value": "inside",
-                "displayName": "Inside"
+                "displayName": "Inside",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0132"
               },
               {
                 "value": "outside",
-                "displayName": "Outside"
+                "displayName": "Outside",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0133"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0128"
         }
-      }
+      },
+      "displayNameKey": "BoxPlotCapabilities_DisplayName_0108"
     },
     "titleFormatting": {
       "displayName": "Chart Title",
@@ -731,19 +920,22 @@
           "displayName": "Show Title",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0135"
         },
         "titleText": {
           "displayName": "Title Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0136"
         },
         "titleFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0137"
         },
         "titleFontColor": {
           "displayName": "Font Color",
@@ -753,7 +945,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0138"
         },
         "titleAlignment": {
           "displayName": "Alignment",
@@ -761,18 +954,22 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0140"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0141"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0142"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0139"
         },
         "titleFontFamily": {
           "displayName": "Font",
@@ -780,66 +977,81 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0144"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0145"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0146"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0147"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0148"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0149"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0150"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0151"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0152"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0153"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0154"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0155"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0143"
         },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0156"
         },
         "subtitleFontSize": {
           "displayName": "Subtitle Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0157"
         },
         "subtitleFontColor": {
           "displayName": "Subtitle Color",
@@ -849,7 +1061,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0158"
         },
         "titleFontWeight": {
           "displayName": "Font Weight",
@@ -857,14 +1070,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0160"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0161"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0159"
         },
         "subtitleFontFamily": {
           "displayName": "Subtitle Font",
@@ -872,54 +1088,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0163"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0164"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0165"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0166"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0167"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0168"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0169"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0170"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0171"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0172"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0173"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0174"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0162"
         },
         "subtitleFontWeight": {
           "displayName": "Subtitle Font Weight",
@@ -927,16 +1156,20 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0176"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0177"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0175"
         }
-      }
+      },
+      "displayNameKey": "BoxPlotCapabilities_DisplayName_0134"
     },
     "referenceLineFormatting": {
       "displayName": "Reference Line",
@@ -945,7 +1178,8 @@
           "displayName": "Show Reference Line",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0179"
         },
         "referenceLineType": {
           "displayName": "Type",
@@ -953,36 +1187,44 @@
             "enumeration": [
               {
                 "value": "custom",
-                "displayName": "Custom Value"
+                "displayName": "Custom Value",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0181"
               },
               {
                 "value": "mean",
-                "displayName": "Mean"
+                "displayName": "Mean",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0182"
               },
               {
                 "value": "median",
-                "displayName": "Median"
+                "displayName": "Median",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0183"
               },
               {
                 "value": "percentile",
-                "displayName": "Percentile"
+                "displayName": "Percentile",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0184"
               },
               {
                 "value": "min",
-                "displayName": "Min"
+                "displayName": "Min",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0185"
               },
               {
                 "value": "max",
-                "displayName": "Max"
+                "displayName": "Max",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0186"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0180"
         },
         "referenceLineValue": {
           "displayName": "Value",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0187"
         },
         "referenceLineColor": {
           "displayName": "Line Color",
@@ -992,13 +1234,15 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0188"
         },
         "referenceLineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0189"
         },
         "referenceLineStyle": {
           "displayName": "Line Style",
@@ -1006,48 +1250,57 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0191"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0192"
               },
               {
                 "value": "dotted",
-                "displayName": "Dotted"
+                "displayName": "Dotted",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0193"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0190"
         },
         "showReferenceLabel": {
           "displayName": "Show Label",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0194"
         },
         "referenceLabelText": {
           "displayName": "Label Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0195"
         },
         "showReferenceBand": {
           "displayName": "Show Band",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0196"
         },
         "referenceBandOpacity": {
           "displayName": "Band Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0197"
         },
         "referenceBandWidth": {
           "displayName": "Band Width (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0198"
         },
         "referenceLineAxis": {
           "displayName": "Target Axis",
@@ -1055,16 +1308,20 @@
             "enumeration": [
               {
                 "value": "primary",
-                "displayName": "Primary"
+                "displayName": "Primary",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0200"
               },
               {
                 "value": "secondary",
-                "displayName": "Secondary"
+                "displayName": "Secondary",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0201"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0199"
         }
-      }
+      },
+      "displayNameKey": "BoxPlotCapabilities_DisplayName_0178"
     },
     "trendLineFormatting": {
       "displayName": "Trend Line",
@@ -1073,7 +1330,8 @@
           "displayName": "Show Trend Line",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0203"
         },
         "trendLineType": {
           "displayName": "Type",
@@ -1081,32 +1339,39 @@
             "enumeration": [
               {
                 "value": "linear",
-                "displayName": "Linear"
+                "displayName": "Linear",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0205"
               },
               {
                 "value": "polynomial",
-                "displayName": "Polynomial"
+                "displayName": "Polynomial",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0206"
               },
               {
                 "value": "exponential",
-                "displayName": "Exponential"
+                "displayName": "Exponential",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0207"
               },
               {
                 "value": "logarithmic",
-                "displayName": "Logarithmic"
+                "displayName": "Logarithmic",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0208"
               },
               {
                 "value": "power",
-                "displayName": "Power"
+                "displayName": "Power",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0209"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0204"
         },
         "polynomialOrder": {
           "displayName": "Polynomial Order",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0210"
         },
         "trendLineColor": {
           "displayName": "Line Color",
@@ -1116,25 +1381,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0211"
         },
         "trendLineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0212"
         },
         "showEquation": {
           "displayName": "Show Equation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0213"
         },
         "showR2": {
-          "displayName": "Show R\u00b2",
+          "displayName": "Show R²",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0214"
         },
         "trendLineAxis": {
           "displayName": "Target Axis",
@@ -1142,16 +1411,20 @@
             "enumeration": [
               {
                 "value": "primary",
-                "displayName": "Primary"
+                "displayName": "Primary",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0216"
               },
               {
                 "value": "secondary",
-                "displayName": "Secondary"
+                "displayName": "Secondary",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0217"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0215"
         }
-      }
+      },
+      "displayNameKey": "BoxPlotCapabilities_DisplayName_0202"
     },
     "conditionalFormatting": {
       "displayName": "Conditional Formatting",
@@ -1160,7 +1433,8 @@
           "displayName": "Enable Conditional Formatting",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0219"
         },
         "conditionalDirection": {
           "displayName": "Direction",
@@ -1168,26 +1442,31 @@
             "enumeration": [
               {
                 "value": "ascending",
-                "displayName": "Ascending (Low = Bad)"
+                "displayName": "Ascending (Low = Bad)",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0221"
               },
               {
                 "value": "descending",
-                "displayName": "Descending (Low = Good)"
+                "displayName": "Descending (Low = Good)",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0222"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0220"
         },
         "threshold1": {
           "displayName": "Threshold 1",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0223"
         },
         "threshold2": {
           "displayName": "Threshold 2",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0224"
         },
         "conditionalColor1": {
           "displayName": "Color 1 (Bad)",
@@ -1197,7 +1476,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0225"
         },
         "conditionalColor2": {
           "displayName": "Color 2 (Warning)",
@@ -1207,7 +1487,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0226"
         },
         "conditionalColor3": {
           "displayName": "Color 3 (Good)",
@@ -1217,9 +1498,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0227"
         }
-      }
+      },
+      "displayNameKey": "BoxPlotCapabilities_DisplayName_0218"
     },
     "accessibilityFormatting": {
       "displayName": "Accessibility",
@@ -1228,24 +1511,28 @@
           "displayName": "Enable Keyboard Navigation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0229"
         }
-      }
+      },
+      "displayNameKey": "BoxPlotCapabilities_DisplayName_0228"
     },
     "boxPlotDisplaySettings": {
-      "displayName": "Box Plot Display",
+      "displayName": "Plot Options",
       "properties": {
         "showViolin": {
-          "displayName": "Violin Overlay",
+          "displayName": "Show Violin Overlay",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0231"
         },
         "showNotches": {
           "displayName": "Show Notches (95% CI)",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0232"
         },
         "orientation": {
           "displayName": "Orientation",
@@ -1253,14 +1540,17 @@
             "enumeration": [
               {
                 "value": "vertical",
-                "displayName": "Vertical"
+                "displayName": "Vertical",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0234"
               },
               {
                 "value": "horizontal",
-                "displayName": "Horizontal"
+                "displayName": "Horizontal",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0235"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0233"
         },
         "whiskerCalc": {
           "displayName": "Whisker Calculation",
@@ -1268,24 +1558,30 @@
             "enumeration": [
               {
                 "value": "iqr",
-                "displayName": "1.5x IQR"
+                "displayName": "1.5x IQR",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0237"
               },
               {
                 "value": "minmax",
-                "displayName": "Min/Max"
+                "displayName": "Min/Max",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0238"
               },
               {
                 "value": "percentile",
-                "displayName": "Percentile (5/95)"
+                "displayName": "5th-95th Percentile",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0239"
               },
               {
                 "value": "stddev",
-                "displayName": "Std Dev"
+                "displayName": "Standard Deviation",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0240"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0236"
         }
-      }
+      },
+      "displayNameKey": "BoxPlotCapabilities_DisplayName_0230"
     },
     "cardSettings": {
       "displayName": "Card Style",
@@ -1298,19 +1594,29 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0242"
         },
         "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0243"
         },
         "borderRadius": {
           "displayName": "Border Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0244"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0001"
         },
         "cardStyleMode": {
           "displayName": "Card Style",
@@ -1318,30 +1624,47 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0002"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0003"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0004"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0005"
+              },
+              {
+                "value": "outlined",
+                "displayName": "Border Only",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0006"
+              },
+              {
+                "value": "floating",
+                "displayName": "Floating Shadow",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0007"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0245"
         },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "(Deprecated) Enable Glass"
+          "displayName": "(Deprecated) Enable Glass",
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0250"
         }
-      }
+      },
+      "displayNameKey": "BoxPlotCapabilities_DisplayName_0241"
     },
     "scrollFormatting": {
       "displayName": "Scroll",
@@ -1350,15 +1673,57 @@
           "displayName": "Enable Scroll",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0252"
         },
         "minCategoryWidth": {
           "displayName": "Min Category Width (px)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0253"
         }
-      }
+      },
+      "displayNameKey": "BoxPlotCapabilities_DisplayName_0251"
+    },
+    "sortFormatting": {
+      "displayName": "Sort Order",
+      "properties": {
+        "sortBy": {
+          "displayName": "Sort By",
+          "type": {
+            "enumeration": [
+              {
+                "value": "dataOrder",
+                "displayName": "Data Order",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0256"
+              },
+              {
+                "value": "valueAsc",
+                "displayName": "Value (Ascending)",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0257"
+              },
+              {
+                "value": "valueDesc",
+                "displayName": "Value (Descending)",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0258"
+              },
+              {
+                "value": "nameAsc",
+                "displayName": "Name (A-Z)",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0259"
+              },
+              {
+                "value": "nameDesc",
+                "displayName": "Name (Z-A)",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0260"
+              }
+            ]
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0255"
+        }
+      },
+      "displayNameKey": "BoxPlotCapabilities_DisplayName_0254"
     },
     "numberFormatting": {
       "displayName": "Number Format",
@@ -1369,46 +1734,56 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0263"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0264"
               },
               {
                 "value": "thousands",
-                "displayName": "Thousands (K)"
+                "displayName": "Thousands (K)",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0265"
               },
               {
                 "value": "millions",
-                "displayName": "Millions (M)"
+                "displayName": "Millions (M)",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0266"
               },
               {
                 "value": "billions",
-                "displayName": "Billions (B)"
+                "displayName": "Billions (B)",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0267"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0262"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0268"
         },
         "valuePrefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0269"
         },
         "valueSuffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0270"
         }
-      }
+      },
+      "displayNameKey": "BoxPlotCapabilities_DisplayName_0261"
     },
     "colorThemeFormatting": {
       "properties": {
@@ -1418,59 +1793,74 @@
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0273"
               },
               {
                 "value": "ocean",
-                "displayName": "Ocean"
+                "displayName": "Ocean",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0274"
               },
               {
                 "value": "sunset",
-                "displayName": "Sunset"
+                "displayName": "Sunset",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0275"
               },
               {
                 "value": "forest",
-                "displayName": "Forest"
+                "displayName": "Forest",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0276"
               },
               {
                 "value": "berry",
-                "displayName": "Berry"
+                "displayName": "Berry",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0277"
               },
               {
                 "value": "monochrome",
-                "displayName": "Monochrome"
+                "displayName": "Monochrome",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0278"
               },
               {
                 "value": "earth",
-                "displayName": "Earth"
+                "displayName": "Earth",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0279"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0272"
         }
       },
-      "displayName": "Color Theme"
+      "displayName": "Color Theme",
+      "displayNameKey": "BoxPlotCapabilities_DisplayName_0271"
     },
     "seriesFormatting": {
+      "displayName": "Series Formatting",
       "properties": {
         "seriesColor": {
+          "displayName": "Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0293"
         },
         "seriesOpacity": {
+          "displayName": "Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0294"
         },
         "showDataLabels": {
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0280"
         },
         "lineStyle": {
           "displayName": "Line Style",
@@ -1478,26 +1868,32 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0282"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0283"
               },
               {
                 "value": "dotted",
-                "displayName": "Dotted"
+                "displayName": "Dotted",
+                "displayNameKey": "BoxPlotCapabilities_DisplayName_0284"
               }
             ]
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0281"
         },
         "lineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0285"
         }
-      }
+      },
+      "displayNameKey": "BoxPlotCapabilities_DisplayName_0292"
     },
     "dateFilterFormatting": {
       "displayName": "Date Filter",
@@ -1506,29 +1902,43 @@
           "displayName": "Enable Date Filter",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0287"
         },
         "startDate": {
           "displayName": "Start Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0288"
         },
         "endAtCurrentDate": {
           "displayName": "End at Current Date",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0289"
         },
         "endDate": {
           "displayName": "End Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "BoxPlotCapabilities_DisplayName_0290"
         }
-      }
+      },
+      "displayNameKey": "BoxPlotCapabilities_DisplayName_0286"
     }
   },
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
   "supportsKeyboardFocus": true,
   "supportsHighlight": true,
   "supportsMultiVisualSelection": true,

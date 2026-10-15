@@ -1,6 +1,6 @@
 {
   "name": "@pbi/network-graph",
-  "version": "1.0.31",
+  "version": "1.0.37",
   "private": true,
   "scripts": {
     "build": "pbiviz package",

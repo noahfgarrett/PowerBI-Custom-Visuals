@@ -44,6 +44,7 @@ vi.mock('powerbi-visuals-utils-formattingmodel', () => {
 
 import { ScatterBubbleVisual } from '../visual';
 import { ScatterBubbleSettings } from '../settings';
+import capabilities from '../../capabilities.json';
 import {
   createConstructorOptions,
   DataViewBuilder,
@@ -155,6 +156,24 @@ const harnessConfig: HarnessConfig = {
 };
 
 describe('scatter-bubble formatting coverage', () => {
+  it('labels the visible dynamic series card and keeps the legacy trend alias out of settings', () => {
+    expect(capabilities.objects.seriesFormatting.displayName).toBe('Series Formatting');
+    expect(capabilities.objects.seriesFormatting.properties.seriesColor.displayName).toBe('Color');
+    expect(capabilities.objects.seriesFormatting.properties.seriesOpacity.displayName).toBe('Opacity (%)');
+    expect(new ScatterBubbleSettings().cards.some((card) => card.name === 'trendLineFormatting')).toBe(false);
+  });
+
+  it('declares every formatting slice in capabilities', () => {
+    const paths = getSettingPaths(
+      new ScatterBubbleSettings() as unknown as { cards: Array<Record<string, unknown>> },
+      [],
+    );
+    const objects = capabilities.objects as Record<string, { properties?: Record<string, unknown> }>;
+    expect(paths.filter(({ cardName, sliceName }) => {
+      return !objects[cardName]?.properties?.[sliceName];
+    })).toEqual([]);
+  });
+
   it('detects settings from the model', () => {
     const settings = new ScatterBubbleSettings();
     const paths = getSettingPaths(

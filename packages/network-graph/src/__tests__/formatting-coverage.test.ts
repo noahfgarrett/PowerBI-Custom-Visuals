@@ -22,6 +22,7 @@ vi.mock('powerbi-visuals-utils-formattingmodel', () => {
       NumUpDown: SliceBase,
       ColorPicker: SliceBase,
       TextInput: SliceBase,
+      ImageUpload: SliceBase,
       ItemDropdown: SliceBase,
       FontPicker: SliceBase,
       Slider: SliceBase,
@@ -44,8 +45,10 @@ vi.mock('powerbi-visuals-utils-formattingmodel', () => {
 
 import { NetworkGraphVisual } from '../visual';
 import { NetworkGraphSettings } from '../settings';
+import capabilities from '../../capabilities.json';
 import {
   createConstructorOptions,
+  createUpdateOptions,
   DataViewBuilder,
   runFormattingCoverage,
   getSettingPaths,
@@ -78,6 +81,16 @@ function makeDeps(): Record<string, Record<string, unknown>> {
   for (const s of ['dataLabelFontSize','dataLabelFontColor','dataLabelFontWeight','dataLabelFontFamily','dataLabelPosition']) {
     deps[`dataLabelFormatting.${s}`] = { 'dataLabelFormatting.showDataLabels': true };
   }
+  deps['linkSettings.minWidth'] = { 'linkSettings.widthByWeight': true };
+  deps['linkSettings.maxWidth'] = { 'linkSettings.widthByWeight': true };
+  deps['nodeSettings.minRadius'] = { 'nodeSettings.sizeByDegree': true };
+  deps['nodeSettings.maxRadius'] = { 'nodeSettings.sizeByDegree': true };
+  deps['nodeSettings.sourceLabelFontSize'] = { 'nodeSettings.useRoleLabelFontSizes': true };
+  deps['nodeSettings.targetLabelFontSize'] = { 'nodeSettings.useRoleLabelFontSizes': true };
+  deps['colorThemeFormatting.colorTheme'] = {
+    'colorSettings.colorByNodeRole': false,
+    'colorSettings.useChartPalette': false,
+  };
   deps['conditionalFormatting.enableConditional'] = {};
   for (const s of ['conditionalDirection','threshold1','threshold2','conditionalColor1','conditionalColor2','conditionalColor3']) {
     deps[`conditionalFormatting.${s}`] = { 'conditionalFormatting.enableConditional': true };
@@ -92,10 +105,14 @@ const harnessConfig: HarnessConfig = {
   skipCards: [],
   expectedPhantoms: [
     'dataLabelFormatting.showDataLabels',
+    'dataLabelFormatting.dataLabelFontSize',
+    'nodeSettings.useRoleLabelFontSizes',
     'numberFormatting.valueSuffix',
     'numberFormatting.valuePrefix',
     'conditionalFormatting.conditionalColor3',
     'conditionalFormatting.threshold2',
+    'zoomSettings.highlightNeighbors',
+    'forceSettings.enableCollision',
     'networkLinkSettings.maxWidth',
     'networkLinkSettings.minWidth',
     'networkInteractionSettings.highlightNeighbors',
@@ -107,10 +124,24 @@ const harnessConfig: HarnessConfig = {
     'forceSettings.chargeStrength',
     'forceSettings.linkDistance',
     'forceSettings.strength',
+    'nodeSettings.adaptiveZoomThreshold',
+    'nodeSettings.maxLabelCharacters',
+    'zoomSettings.pinDraggedNodes',
+    'zoomSettings.zoomWheelSensitivity',
+    'forceSettings.roleSpread',
+    'forceSettings.autoCenter',
+    'forceSettings.fitOnLoad',
+    'forceSettings.fitPadding',
+    'nodeInspectorSettings.position',
+    'nodeInspectorSettings.showCoreMetrics',
+    'nodeInspectorSettings.showDetailMeasures',
+    'nodeInspectorSettings.maxDetailValues',
+    'nodeInspectorSettings.focusZoomScale',
     'scrollFormatting.minCategoryWidth',
     'scrollFormatting.enableScroll',
     'numberFormatting.decimalPlaces',
     'numberFormatting.displayUnits',
+    'zoomSettings.crossHighlightMode',
     'cardSettings.borderRadius',
     'cardSettings.backgroundOpacity',
     'cardSettings.backgroundColor',
@@ -133,6 +164,63 @@ const harnessConfig: HarnessConfig = {
 };
 
 describe('network-graph formatting coverage', () => {
+  it('keeps capabilities aligned with the formatting model', () => {
+    const settings = new NetworkGraphSettings();
+    const settingPaths = new Set(getSettingPaths(
+      settings as unknown as { cards: Array<Record<string, unknown>> },
+    ).map(({ cardName, sliceName }) => `${cardName}.${sliceName}`));
+    const capabilityPaths = Object.entries(capabilities.objects).flatMap(([cardName, card]) =>
+      Object.keys(card.properties).map((sliceName) => `${cardName}.${sliceName}`)
+    );
+
+    expect(capabilityPaths.filter((path) => !settingPaths.has(path))).toEqual(['cardSettings.enableGlass']);
+    expect([...settingPaths].filter((path) => !capabilityPaths.includes(path))).toEqual([]);
+    expect(capabilities).toMatchObject({
+      supportsLandingPage: true,
+      supportsEmptyDataView: true,
+      supportsKeyboardFocus: true,
+      tooltips: { supportEnhancedTooltips: true },
+    });
+  });
+
+  it('keeps dependent controls hidden until their behavior is available', () => {
+    const { visual, settings } = createVisual();
+    const typedSettings = settings as unknown as NetworkGraphSettings;
+    typedSettings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+    typedSettings.nodeSettings.targetSizeMode.value = { value: 'count', displayName: 'Connection Count' };
+    typedSettings.colorsAndThemeSettings.colorByNodeRole.value = true;
+    typedSettings.legendFormattingCard.showLegend.value = false;
+    typedSettings.interactionSettings.enableZoom.value = false;
+
+    visual.update(createUpdateOptions([testDV]) as never);
+
+    expect(typedSettings.cardSettings.backgroundColor.visible).toBe(false);
+    expect(typedSettings.cardSettings.backgroundOpacity.visible).toBe(false);
+    expect(typedSettings.cardSettings.borderRadius.visible).toBe(false);
+    expect(typedSettings.cardSettings.contentPadding.visible).not.toBe(false);
+    expect(typedSettings.nodeSettings.sizeByDegree.visible).toBe(false);
+    expect(typedSettings.colorsAndThemeSettings.enableClustering.visible).toBe(false);
+    expect(typedSettings.legendFormattingCard.legendPosition.visible).toBe(false);
+    expect(typedSettings.legendFormattingCard.slices.map((slice) => slice.name)).not.toContain('showInlineLabels');
+    expect(typedSettings.nodeInspectorSettings.focusZoomScale.visible).toBe(false);
+    visual.destroy();
+  });
+
+  it('keeps the legacy map enable switch as the single map-canvas entry point', () => {
+    const { visual, settings } = createVisual();
+    const typedSettings = settings as unknown as NetworkGraphSettings;
+    typedSettings.mapCanvasSettings.enabled.value = true;
+
+    visual.update(createUpdateOptions([testDV]) as never);
+
+    expect(typedSettings.mapCanvasSettings.imageSource.visible).toBe(true);
+    expect(typedSettings.physicsAndLayoutSettings.layoutMode.items.map((item) => item.value)).toEqual([
+      'sourceTarget',
+      'force',
+    ]);
+    visual.destroy();
+  });
+
   it('detects settings from the model', () => {
     const settings = new NetworkGraphSettings();
     const paths = getSettingPaths(

@@ -4,7 +4,7 @@
     "displayName": "Animated Donut Pro",
     "guid": "animDonutPro_8E2F4A7B3C1D",
     "visualClassName": "AnimatedDonutProVisual",
-    "version": "1.0.1.0",
+    "version": "1.0.14.0",
     "description": "Animated donut chart with sweeping arc entrance, center value count-up, and spring-explode hover. Glassmorphic styling.",
     "supportUrl": "https://github.com/noahfgarrett/PowerBI/issues",
     "gitHubUrl": "https://github.com/noahfgarrett/PowerBI"
@@ -18,5 +18,8 @@
     "icon": "assets/icon.png"
   },
   "style": "style/visual.less",
-  "capabilities": "capabilities.json"
+  "capabilities": "capabilities.json",
+  "stringResources": [
+    "stringResources/en-US/resources.resjson"
+  ]
 }

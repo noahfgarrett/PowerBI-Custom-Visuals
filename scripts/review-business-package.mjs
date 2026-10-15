@@ -9,6 +9,7 @@ const __dirname = path.dirname(__filename);
 const workspaceRoot = path.resolve(__dirname, '..');
 const packagesRoot = path.join(workspaceRoot, 'packages');
 const reportPath = path.join(workspaceRoot, 'Business_Package', 'review-report.json');
+const lotusReportPath = path.join(workspaceRoot, 'LotusWorks_Package', 'review-report.json');
 
 const placeholderSupportUrls = new Set([
   '',
@@ -64,16 +65,52 @@ function hasObjectProperty(capabilities, objectName, propertyName) {
   return Boolean(objectDef.properties?.[propertyName]);
 }
 
+function hasPattern(source, pattern) {
+  return pattern.test(source);
+}
+
+function collectMissingLocalizationKeys(value, objectPath = [], missing = []) {
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => {
+      collectMissingLocalizationKeys(item, [...objectPath, String(index)], missing);
+    });
+    return missing;
+  }
+  if (!value || typeof value !== 'object') return missing;
+
+  for (const [propertyName, keyName] of [
+    ['displayName', 'displayNameKey'],
+    ['description', 'descriptionKey'],
+    ['placeHolderText', 'placeHolderTextKey'],
+  ]) {
+    if (
+      typeof value[propertyName] === 'string'
+      && value[propertyName].trim().length > 0
+      && typeof value[keyName] !== 'string'
+    ) {
+      missing.push(`${objectPath.join('.') || '<root>'}.${propertyName}`);
+    }
+  }
+
+  for (const [key, child] of Object.entries(value)) {
+    collectMissingLocalizationKeys(child, [...objectPath, key], missing);
+  }
+  return missing;
+}
+
 async function reviewPackage(packageDir) {
   const packageName = path.basename(packageDir);
+  const packageJsonPath = path.join(packageDir, 'package.json');
   const pbivizPath = path.join(packageDir, 'pbiviz.json');
   const capabilitiesPath = path.join(packageDir, 'capabilities.json');
   const visualTsPath = path.join(packageDir, 'src', 'visual.ts');
   const settingsTsPath = path.join(packageDir, 'src', 'settings.ts');
+  const visualTestPath = path.join(packageDir, 'src', '__tests__', 'visual.test.ts');
 
   const issues = [];
 
-  const [pbiviz, capabilities, visualTs, settingsTs] = await Promise.all([
+  const [packageJson, pbiviz, capabilities, visualTs, settingsTs] = await Promise.all([
+    readJson(packageJsonPath),
     readJson(pbivizPath),
     readJson(capabilitiesPath),
     readText(visualTsPath),
@@ -81,9 +118,46 @@ async function reviewPackage(packageDir) {
   ]);
   const hasGroupingRole = Array.isArray(capabilities?.dataRoles)
     && capabilities.dataRoles.some((role) => role?.kind === 'Grouping');
+  const hasMeasureRole = Array.isArray(capabilities?.dataRoles)
+    && capabilities.dataRoles.some((role) => role?.kind === 'Measure');
+  const isFilterVisual = Boolean(capabilities?.objects?.general?.properties?.filter);
+
+  // Power BI imposes this semantic restriction beyond the capabilities JSON schema.
+  // https://learn.microsoft.com/power-bi/developer/visuals/dataview-mappings#conditions
+  for (const [mappingIndex, mapping] of (capabilities?.dataViewMappings ?? []).entries()) {
+    for (const [conditionIndex, condition] of (mapping.conditions ?? []).entries()) {
+      const requiredRoles = Object.entries(condition).filter(([, range]) => range?.min >= 1).map(([role]) => role);
+      if (requiredRoles.length > 1) pushIssue(issues, 'error', 'capabilities.mappingRequiredRoles',
+        `Mapping ${mappingIndex}, condition ${conditionIndex} requires multiple roles (${requiredRoles.join(', ')}). Power BI supports at most one role with min >= 1 per condition.`, capabilitiesPath);
+    }
+  }
 
   const supportUrl = pbiviz?.visual?.supportUrl ?? '';
   const gitHubUrl = pbiviz?.visual?.gitHubUrl ?? '';
+  const expectedVisualVersion = `${packageJson?.version}.0`;
+
+  if (pbiviz?.visual?.version !== expectedVisualVersion) {
+    pushIssue(
+      issues,
+      'error',
+      'metadata.version',
+      `package.json version ${packageJson?.version} does not match visual.version ${pbiviz?.visual?.version}.`,
+      pbivizPath
+    );
+  }
+
+  if (
+    !Array.isArray(pbiviz?.stringResources)
+    || !pbiviz.stringResources.includes('stringResources/en-US/resources.resjson')
+  ) {
+    pushIssue(
+      issues,
+      'warning',
+      'metadata.stringResources',
+      'The en-US string resource bundle is not registered in pbiviz.json.',
+      pbivizPath
+    );
+  }
 
   if (placeholderSupportUrls.has(supportUrl)) {
     pushIssue(
@@ -143,13 +217,14 @@ async function reviewPackage(packageDir) {
     );
   }
 
-  const hasCardSettingsModel = /class\s+CardStyleSettings/.test(settingsTs);
+  const hasCardSettingsModel = /class\s+CardStyleSettings/.test(settingsTs)
+    || /cardSettings\s*=\s*new\s+[A-Za-z0-9_]+Settings\s*\(/.test(settingsTs);
   if (!hasCardSettingsModel) {
     pushIssue(
       issues,
       'warning',
       'settings.cardSettingsModel',
-      'CardStyleSettings class is missing in settings.ts.',
+      'A cardSettings formatting model is missing in settings.ts.',
       settingsTsPath
     );
   }
@@ -176,6 +251,143 @@ async function reviewPackage(packageDir) {
     );
   }
 
+  if (
+    hasGroupingRole
+    && hasSelectionManager
+    && !hasPattern(visualTs, /allowInteractions/)
+  ) {
+    pushIssue(
+      issues,
+      'warning',
+      'interaction.allowInteractions',
+      'Selection behavior does not appear to honor the host allowInteractions gate.',
+      visualTsPath
+    );
+  }
+
+  if (
+    hasGroupingRole
+    && hasSelectionManager
+    && !isFilterVisual
+    && !hasPattern(visualTs, /showContextMenu/)
+  ) {
+    pushIssue(
+      issues,
+      'warning',
+      'interaction.contextMenu',
+      'No host context-menu behavior detected for selectable data marks.',
+      visualTsPath
+    );
+  }
+
+  if (
+    hasGroupingRole
+    && hasSelectionManager
+    && !hasPattern(visualTs, /keydown|onkeydown|tabIndex|tabindex|attachKeyboardNav/)
+  ) {
+    pushIssue(
+      issues,
+      'warning',
+      'accessibility.keyboard',
+      'Selectable data marks do not appear to expose keyboard interaction.',
+      visualTsPath
+    );
+  }
+
+  if (
+    !hasPattern(
+      visualTs,
+      /aria-label|ariaLabel|setAttribute\(\s*['"]role['"]|applyDataPointAria|attachKeyboardNav/
+    )
+  ) {
+    pushIssue(
+      issues,
+      'warning',
+      'accessibility.semantics',
+      'No ARIA label or semantic role detected in the rendered visual.',
+      visualTsPath
+    );
+  }
+
+  if (
+    !hasPattern(
+      visualTs,
+      /getHostHighContrastColors|applyBasicHighContrastStyles|isHighContrast|foregroundSelected/
+    )
+  ) {
+    pushIssue(
+      issues,
+      'warning',
+      'accessibility.highContrast',
+      'No host high-contrast handling detected.',
+      visualTsPath
+    );
+  }
+
+  if (!hasPattern(visualTs, /notifyRenderingStarted/)) {
+    pushIssue(
+      issues,
+      'warning',
+      'lifecycle.renderingStarted',
+      'The visual does not notify the host when rendering starts.',
+      visualTsPath
+    );
+  }
+
+  if (!hasPattern(visualTs, /notifyRenderingFinished/)) {
+    pushIssue(
+      issues,
+      'warning',
+      'lifecycle.renderingFinished',
+      'The visual does not notify the host when rendering finishes.',
+      visualTsPath
+    );
+  }
+
+  if (!hasPattern(visualTs, /notifyRenderingFailed/)) {
+    pushIssue(
+      issues,
+      'warning',
+      'lifecycle.renderingFailed',
+      'The visual does not report render failures to the host.',
+      visualTsPath
+    );
+  }
+
+  const noDataStatePattern =
+    /renderNoDataState|renderEmptyState|pbi-no-data-state|filter-pane-setup-state|No data for the current selection|No data available/;
+  if (!hasPattern(visualTs, noDataStatePattern)) {
+    pushIssue(
+      issues,
+      'warning',
+      'ux.noDataState',
+      'No dedicated empty-selection state detected.',
+      visualTsPath
+    );
+  }
+
+  const rendersLandingPage = hasPattern(visualTs, /renderLandingPage|pbi-landing-page/);
+  if (rendersLandingPage && capabilities?.supportsLandingPage !== true) {
+    pushIssue(
+      issues,
+      'warning',
+      'capabilities.supportsLandingPage',
+      'A landing page is rendered, but supportsLandingPage is not enabled.',
+      capabilitiesPath
+    );
+  }
+
+  const rendersNoDataState = hasPattern(visualTs, noDataStatePattern);
+  if (rendersNoDataState && capabilities?.supportsEmptyDataView !== true) {
+    pushIssue(
+      issues,
+      'warning',
+      'capabilities.supportsEmptyDataView',
+      'A no-data view is rendered, but supportsEmptyDataView is not enabled.',
+      capabilitiesPath
+    );
+  }
+
   const hasTooltipPattern = /tooltipService|className\s*=\s*['"][^'"]*tooltip|title\s*=|append\(\s*['"]title['"]\s*\)|createElementNS?\([^)]*['"]title['"]/.test(visualTs);
   if (!hasTooltipPattern) {
     pushIssue(
@@ -187,6 +399,19 @@ async function reviewPackage(packageDir) {
     );
   }
 
+  if (
+    hasPattern(visualTs, /tooltipService/)
+    && capabilities?.tooltips?.supportEnhancedTooltips !== true
+  ) {
+    pushIssue(
+      issues,
+      'warning',
+      'capabilities.enhancedTooltips',
+      'The host tooltip service is used, but enhanced tooltips are not enabled.',
+      capabilitiesPath
+    );
+  }
+
   const hasDataReduction = JSON.stringify(capabilities).includes('"dataReductionAlgorithm"');
   if (hasGroupingRole && !hasDataReduction) {
     pushIssue(
@@ -195,6 +420,88 @@ async function reviewPackage(packageDir) {
       'capabilities.dataReduction',
       'No dataReductionAlgorithm detected; large datasets may degrade performance.',
       capabilitiesPath
+    );
+  }
+
+  if (hasMeasureRole && !isFilterVisual && capabilities?.supportsHighlight !== true) {
+    pushIssue(
+      issues,
+      'warning',
+      'capabilities.supportsHighlight',
+      'supportsHighlight is not enabled for a visual with measure roles.',
+      capabilitiesPath
+    );
+  }
+
+  const hasAccessibilityFormatting = Object.keys(capabilities?.objects ?? {})
+    .some((objectName) => objectName.toLowerCase().includes('accessibility'));
+  if (!hasAccessibilityFormatting) {
+    pushIssue(
+      issues,
+      'warning',
+      'capabilities.accessibilityFormatting',
+      'No accessibility formatting card is exposed.',
+      capabilitiesPath
+    );
+  }
+
+  const unnamedObjects = Object.entries(capabilities?.objects ?? {})
+    .filter(([, object]) => !object?.displayName && !object?.displayNameKey)
+    .map(([objectName]) => objectName);
+  if (unnamedObjects.length > 0) {
+    pushIssue(
+      issues,
+      'warning',
+      'capabilities.objectLabels',
+      `Formatting objects have no user-facing name: ${unnamedObjects.join(', ')}.`,
+      capabilitiesPath
+    );
+  }
+
+  const unnamedProperties = Object.entries(capabilities?.objects ?? {})
+    .flatMap(([objectName, object]) =>
+      Object.entries(object?.properties ?? {})
+        .filter(([propertyName, property]) =>
+          !(objectName === 'general' && propertyName === 'filter')
+          && !property?.displayName
+          && !property?.displayNameKey
+        )
+        .map(([propertyName]) => `${objectName}.${propertyName}`)
+    );
+  if (unnamedProperties.length > 0) {
+    pushIssue(
+      issues,
+      'warning',
+      'capabilities.propertyLabels',
+      `Formatting properties have no user-facing name: ${unnamedProperties.join(', ')}.`,
+      capabilitiesPath
+    );
+  }
+
+  const missingLocalizationKeys = collectMissingLocalizationKeys(capabilities);
+  if (missingLocalizationKeys.length > 0) {
+    const preview = missingLocalizationKeys.slice(0, 12).join(', ');
+    const suffix = missingLocalizationKeys.length > 12
+      ? `, and ${missingLocalizationKeys.length - 12} more`
+      : '';
+    pushIssue(
+      issues,
+      'warning',
+      'capabilities.localization',
+      `User-facing capability labels are missing localization keys: ${preview}${suffix}.`,
+      capabilitiesPath
+    );
+  }
+
+  try {
+    await fs.access(visualTestPath);
+  } catch {
+    pushIssue(
+      issues,
+      'warning',
+      'tests.visual',
+      'No focused visual.test.ts regression suite was found.',
+      packageDir
     );
   }
 
@@ -215,6 +522,7 @@ async function reviewPackage(packageDir) {
   return {
     package: packageName,
     files: {
+      package: path.relative(workspaceRoot, packageJsonPath),
       pbiviz: path.relative(workspaceRoot, pbivizPath),
       capabilities: path.relative(workspaceRoot, capabilitiesPath),
       visual: path.relative(workspaceRoot, visualTsPath),
@@ -256,11 +564,17 @@ async function main() {
   };
 
   await fs.mkdir(path.dirname(reportPath), { recursive: true });
-  await fs.writeFile(reportPath, JSON.stringify(report, null, 2) + '\n', 'utf8');
+  await fs.mkdir(path.dirname(lotusReportPath), { recursive: true });
+  const reportJson = JSON.stringify(report, null, 2) + '\n';
+  await Promise.all([
+    fs.writeFile(reportPath, reportJson, 'utf8'),
+    fs.writeFile(lotusReportPath, reportJson, 'utf8'),
+  ]);
 
   console.log(`[review] Checked ${results.length} visual packages.`);
   console.log(`[review] warnings=${warningCount}, errors=${errorCount}`);
   console.log(`[review] Wrote ${path.relative(workspaceRoot, reportPath)}`);
+  console.log(`[review] Wrote ${path.relative(workspaceRoot, lotusReportPath)}`);
 
   const topFindings = results
     .filter((result) => result.issueCount > 0)

@@ -46,6 +46,7 @@ import { BarRaceVisual } from '../visual';
 import { BarRaceSettings } from '../settings';
 import {
   createConstructorOptions,
+  createUpdateOptions,
   DataViewBuilder,
   runFormattingCoverage,
   getSettingPaths,
@@ -157,11 +158,43 @@ const harnessConfig: HarnessConfig = {
     'annotationFormatting.annotation3Category',
     'annotationFormatting.annotation3Text',
     'annotationFormatting.annotation3Position',
-    'racePlayback.pauseDuration',
+    'annotationFormatting.annotationFontFamily',
+    'annotationFormatting.annotationFontWeight',
+    'annotationFormatting.annotationOffset',
+    'annotationFormatting.annotationPadding',
+    'annotationFormatting.annotationBackgroundColor',
+    'annotationFormatting.annotationBackgroundOpacity',
+    'annotationFormatting.annotationCornerRadius',
+    'playbackSettings.pauseDuration',
+    'cardSettings.contentPadding',
   ],
 };
 
 describe('bar-race formatting coverage', () => {
+  it('keeps playback timing available and hides only inapplicable card-style controls', () => {
+    const opts = createConstructorOptions();
+    const settings = new BarRaceSettings();
+    settings.playbackSettings.showControls.value = false;
+    settings.cardSettings.cardStyleMode.value = { value: 'none', displayName: 'None' };
+    settingsRef.current = settings;
+    const visual = new BarRaceVisual(opts as never);
+
+    visual.update(createUpdateOptions([testDV]) as never);
+    visual.getFormattingModel();
+
+    expect(settings.playbackSettings.speed.visible).toBe(true);
+    expect(settings.playbackSettings.loop.visible).toBe(true);
+    expect(settings.playbackSettings.pauseDuration.visible).toBe(true);
+    expect(settings.playbackSettings.controlPosition.visible).toBe(false);
+    expect(settings.cardSettings.backgroundColor.visible).toBe(false);
+    expect(settings.cardSettings.backgroundOpacity.visible).toBe(false);
+    expect(settings.cardSettings.borderRadius.visible).toBe(false);
+    expect(settings.cardSettings.contentPadding.visible).not.toBe(false);
+
+    visual.destroy();
+    opts.element.remove();
+  });
+
   it('detects settings from the model', () => {
     const settings = new BarRaceSettings();
     const paths = getSettingPaths(

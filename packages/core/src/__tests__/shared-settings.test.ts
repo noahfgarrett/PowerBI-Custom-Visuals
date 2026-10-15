@@ -3,6 +3,7 @@ import {
   lineStyleToDashArray,
   resolveSeriesFormatting,
   populateSeriesFormattingGroups,
+  CARD_STYLE_MODE_ITEMS,
   SeriesFormattingCard,
   SeriesFormattingGroup,
 } from '../shared-settings';
@@ -12,6 +13,19 @@ import {
   getChartColor,
   type ColorThemeName,
 } from '../colors';
+
+describe('card style labels', () => {
+  it('describes the visible result in plain language', () => {
+    expect(CARD_STYLE_MODE_ITEMS.map(({ value, displayName }) => ({ value, displayName }))).toEqual([
+      { value: 'none', displayName: 'None' },
+      { value: 'glass', displayName: 'Frosted Glass' },
+      { value: 'elevated', displayName: 'Raised Panel' },
+      { value: 'neumorphic', displayName: 'Soft Inset' },
+      { value: 'outlined', displayName: 'Border Only' },
+      { value: 'floating', displayName: 'Floating Shadow' },
+    ]);
+  });
+});
 
 // ── lineStyleToDashArray ─────────────────────────────────────────────
 

@@ -40,6 +40,11 @@ function clampFinite(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+function hasAnimationFrame(): boolean {
+  return typeof globalThis.requestAnimationFrame === 'function'
+    && typeof globalThis.cancelAnimationFrame === 'function';
+}
+
 /**
  * Whether the user has requested reduced motion in OS/browser settings.
  * This is checked per call to support runtime preference changes.
@@ -73,7 +78,7 @@ export function animate(
   onComplete?: () => void
 ): CancelFn {
   const resolvedDuration = resolveDuration(duration);
-  if (prefersReducedMotion() || resolvedDuration === 0) {
+  if (prefersReducedMotion() || resolvedDuration === 0 || !hasAnimationFrame()) {
     onFrame(1);
     onComplete?.();
     return () => { /* no-op */ };
@@ -428,7 +433,7 @@ export function pulseGlow(
   color: string,
   duration: number = 1500
 ): CancelFn {
-  if (prefersReducedMotion()) {
+  if (prefersReducedMotion() || !hasAnimationFrame()) {
     element.style.boxShadow = `0 0 8px rgba(${hexToRgbComponents(color)}, 0.35)`;
     return () => {
       element.style.boxShadow = '';

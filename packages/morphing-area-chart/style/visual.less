@@ -76,3 +76,12 @@
   height: 100%;
   font-style: italic;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .area-chart-container *,
+  .area-chart-container *::before,
+  .area-chart-container *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

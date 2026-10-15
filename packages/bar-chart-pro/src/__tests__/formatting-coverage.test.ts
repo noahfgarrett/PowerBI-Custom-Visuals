@@ -59,9 +59,10 @@ import {
 
 const barDV = new DataViewBuilder()
   .withCategory('Month', ['Jan', 'Feb', 'Mar', 'Apr'], 'category')
-  .withValues('Revenue', [100, 200, 150, 300], 'values')
-  .withValues('Trend', [90, 210, 160, 280], 'lineValues')
-  .withValues('Target', [180, 180, 180, 180], 'target')
+  .withValues('Revenue', [1.23, 2.47, 1.82, 3.68], 'values')
+  .withValues('Signed', [0.62, 1.48, 0.91, 2.76], 'values')
+  .withValues('Trend', [1.11, 2.19, 1.67, 3.04], 'lineValues')
+  .withValues('Target', [1.8, 1.8, 1.8, 1.8], 'target')
   .build();
 
 // ── Factory ─────────────────────────────────────────────────────────
@@ -81,6 +82,8 @@ function createVisual() {
 // ── Dependency map ──────────────────────────────────────────────────
 
 const COMBO = { 'chartMode.mode': { value: 'combo', displayName: 'Combo (Bar + Line)' } };
+const LINE_LABELS_ON = { ...COMBO, 'lineSettings.showLineDataLabels': true };
+const INLINE_LABELS_ON = { ...COMBO, 'legendFormatting.showInlineLabels': true };
 const LABELS_ON = { 'barSettings.showDataLabels': { value: 'above', displayName: 'Above' } };
 const TITLE_ON = { 'titleFormatting.showTitle': true, 'titleFormatting.titleText': 'Test Title' };
 const SUBTITLE_ON = { ...TITLE_ON, 'titleFormatting.subtitleText': 'Test Sub' };
@@ -102,6 +105,9 @@ function makeDeps(): Record<string, Record<string, unknown>> {
   for (const s of ['showDots', 'showLineDataLabels', 'lineGradientFill', 'lineDotRadius']) {
     deps[`lineSettings.${s}`] = COMBO;
   }
+  for (const s of ['lineDataLabelFontFamily', 'lineDataLabelFontWeight', 'lineDataLabelOffset']) {
+    deps[`lineSettings.${s}`] = LINE_LABELS_ON;
+  }
   deps['lineSettings.lineGradientOpacity'] = { ...COMBO, 'lineSettings.lineGradientFill': true };
 
   // Secondary axis needs combo mode
@@ -117,6 +123,16 @@ function makeDeps(): Record<string, Record<string, unknown>> {
   for (const s of ['showDelta', 'showArrow', 'positiveColor', 'negativeColor']) {
     deps[`varianceSettings.${s}`] = { 'varianceSettings.show': true };
   }
+
+  // Percent comparison labels need two bar series
+  deps['percentComparisonSettings.show'] = {};
+  for (const s of ['numeratorSeriesIndex', 'denominatorSeriesIndex', 'decimalPlaces', 'fontSize', 'fontColor', 'fontWeight', 'labelSpace']) {
+    deps[`percentComparisonSettings.${s}`] = { 'percentComparisonSettings.show': true };
+  }
+  deps['percentComparisonSettings.labelSpace'] = {
+    'percentComparisonSettings.show': true,
+    'chartMode.mode': { value: 'horizontal', displayName: 'Horizontal' },
+  };
 
   // Benchmark band children
   for (const s of ['lowerBound', 'upperBound', 'bandColor', 'bandOpacity', 'label']) {
@@ -180,6 +196,17 @@ function makeDeps(): Record<string, Record<string, unknown>> {
     deps[`numberFormatting.${s}`] = LABELS_ON;
   }
 
+  // Line number format — needs combo line labels visible to see the effect
+  for (const s of ['displayUnits', 'decimalPlaces', 'valuePrefix', 'valueSuffix']) {
+    deps[`lineNumberFormatting.${s}`] = LINE_LABELS_ON;
+  }
+
+  // Inline line labels — only render in combo mode with line series present
+  deps['legendFormatting.showInlineLabels'] = COMBO;
+  for (const s of ['inlineLabelFontSize', 'inlineLabelOffset']) {
+    deps[`legendFormatting.${s}`] = INLINE_LABELS_ON;
+  }
+
   // Reference line
   deps['referenceLineFormatting.showReferenceLine'] = {};
   deps['referenceLineFormatting.referenceLineType'] = REF_ON;
@@ -237,6 +264,10 @@ const harnessConfig: HarnessConfig = {
   createVisual,
   dataView: barDV,
   deps: makeDeps(),
+  altValues: {
+    'lineNumberFormatting.displayUnits': { value: 'thousands', displayName: 'Thousands (K)' },
+    'lineNumberFormatting.decimalPlaces': 0,
+  },
   skipCards: [
     'seriesFormatting', // dynamically populated
   ],
@@ -261,6 +292,8 @@ const harnessConfig: HarnessConfig = {
     // (it uses barSettings.showDataLabels dropdown instead)
     'dataLabelFormatting.showDataLabels',
     'dataLabelFormatting.dataLabelPosition',
+    // Category coloring only applies to single-bar-series charts; this fixture has two bar series.
+    'dataRolesSettings.colorBy',
     // Scroll: needs more categories than viewport can show to see scrollbar
     'scrollFormatting.enableScroll',
     'scrollFormatting.minCategoryWidth',
@@ -290,12 +323,36 @@ const harnessConfig: HarnessConfig = {
     'conditionalFormatting.threshold1',
     'conditionalFormatting.conditionalColor1',
     'conditionalFormatting.conditionalColor2',
+    // Crosshair settings are interaction-only and don't alter static DOM snapshots
+    'crosshairFormatting.crosshairOpacity',
+    'crosshairFormatting.showCrosshairValues',
+    // Integer ticks are range-dependent; this fixture still lands on integer tick output
+    'axisFormatting.integerTicks',
+    'benchmarkBandSettings.upperBound',
+    // Sort menu styling only affects DOM after the published-safe trigger is expanded
+    'sortControlsSettings.fontSize',
+    'sortControlsSettings.inactiveColor',
+    // Remaining conditional settings are still data-range dependent in this fixture
+    'conditionalFormatting.threshold2',
+    'conditionalFormatting.conditionalColor3',
   ],
 };
 
 // ── Tests ────────────────────────────────────────────────────────────
 
 describe('BarChartPro formatting coverage', () => {
+  it('hides card chrome settings but keeps content padding for no card style', () => {
+    const { visual, settings } = createVisual();
+    const card = (settings as any).cardSettings;
+    card.cardStyleMode.value = { value: 'none', displayName: 'None' };
+    visual.update({ dataViews: [barDV], viewport: { width: 640, height: 400 } } as never);
+    expect(card.backgroundColor.visible).toBe(false);
+    expect(card.backgroundOpacity.visible).toBe(false);
+    expect(card.borderRadius.visible).toBe(false);
+    expect(card.contentPadding.visible).not.toBe(false);
+    visual.destroy();
+  });
+
   it('detects all settings from the model', () => {
     const settings = new BarChartProSettings();
     const paths = getSettingPaths(

@@ -4,13 +4,17 @@
       "displayName": "Category",
       "name": "category",
       "kind": "Grouping",
-      "description": "Axis labels (e.g., skills, metrics)"
+      "description": "Axis labels (e.g., skills, metrics)",
+      "displayNameKey": "RadarChartCapabilities_DisplayName_0001",
+      "descriptionKey": "RadarChartCapabilities_Description_0001"
     },
     {
       "displayName": "Measure",
       "name": "measure",
       "kind": "Measure",
-      "description": "Values for each polygon series (max 5)"
+      "description": "Values for each polygon series (max 5)",
+      "displayNameKey": "RadarChartCapabilities_DisplayName_0002",
+      "descriptionKey": "RadarChartCapabilities_Description_0002"
     }
   ],
   "dataViewMappings": [
@@ -50,19 +54,21 @@
   ],
   "objects": {
     "radarSettings": {
-      "displayName": "Grid & Web",
+      "displayName": "Grid and Axes",
       "properties": {
         "showGrid": {
           "displayName": "Show Grid",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0004"
         },
         "gridLevels": {
           "displayName": "Grid Levels",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0005"
         },
         "gridShape": {
           "displayName": "Grid Shape",
@@ -70,95 +76,148 @@
             "enumeration": [
               {
                 "value": "polygon",
-                "displayName": "Polygon"
+                "displayName": "Polygon",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0007"
               },
               {
                 "value": "circle",
-                "displayName": "Circle"
+                "displayName": "Circle",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0008"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0006"
         },
         "webStrokeColor": {
-          "displayName": "Web Stroke Color",
+          "displayName": "Grid Fill Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0009"
         },
         "webStrokeWidth": {
-          "displayName": "Web Stroke Width",
+          "displayName": "Grid Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0010"
         },
         "webFillOpacity": {
-          "displayName": "Web Fill Opacity (%)",
+          "displayName": "Grid Fill Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0011"
         },
         "showAxisLabels": {
           "displayName": "Show Axis Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0012"
         },
         "showAxisValues": {
           "displayName": "Show Axis Values",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0013"
         },
         "startAngle": {
           "displayName": "Start Angle (degrees)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0014"
         },
         "independentScales": {
           "displayName": "Independent Axis Scales",
           "type": {
             "bool": true
-          }
-        }
-      }
-    },
-    "radarAppearance": {
-      "displayName": "Series Appearance",
-      "properties": {
-        "fillOpacity": {
-          "displayName": "Fill Opacity (%)",
-          "type": {
-            "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0015"
         },
-        "areaOpacity": {
-          "displayName": "Area Opacity (%)",
+        "axisLabelCollisionHandling": {
+          "displayName": "Label Collision Handling",
           "type": {
-            "numeric": true
-          }
-        },
-        "lineWidth": {
-          "displayName": "Line Width",
-          "type": {
-            "numeric": true
-          }
-        },
-        "showDots": {
-          "displayName": "Show Dots",
-          "type": {
-            "bool": true
-          }
+            "enumeration": [
+              {
+                "value": "auto",
+                "displayName": "Auto",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0221"
+              },
+              {
+                "value": "hide",
+                "displayName": "Hide Overlaps",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0222"
+              },
+              {
+                "value": "none",
+                "displayName": "Off",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0223"
+              }
+            ]
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0220"
         },
         "dotRadius": {
           "displayName": "Dot Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0016"
+        },
+        "areaOpacity": {
+          "displayName": "Area Opacity (%)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0017"
+        }
+      },
+      "displayNameKey": "RadarChartCapabilities_DisplayName_0003"
+    },
+    "radarAppearance": {
+      "displayName": "Series",
+      "properties": {
+        "fillOpacity": {
+          "displayName": "Fill Opacity (%)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0019"
+        },
+        "areaOpacity": {
+          "displayName": "Series Opacity (%)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0020"
+        },
+        "lineWidth": {
+          "displayName": "Line Width",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0021"
+        },
+        "showDots": {
+          "displayName": "Show Dots",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0022"
+        },
+        "dotRadius": {
+          "displayName": "Dot Radius",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0023"
         },
         "dotBorderColor": {
           "displayName": "Dot Border Color",
@@ -168,21 +227,25 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0024"
         },
         "dotBorderWidth": {
           "displayName": "Dot Border Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0025"
         },
         "useChartPalette": {
-          "displayName": "Use Chart Palette",
+          "displayName": "Use Report Palette",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0026"
         }
-      }
+      },
+      "displayNameKey": "RadarChartCapabilities_DisplayName_0018"
     },
     "animationSettings": {
       "displayName": "Animation",
@@ -191,97 +254,122 @@
           "displayName": "Enable Animations",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0028"
         },
         "duration": {
           "displayName": "Duration (ms)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0029"
         }
-      }
+      },
+      "displayNameKey": "RadarChartCapabilities_DisplayName_0027"
     },
     "axisFormatting": {
+      "displayName": "Axes & Grid",
+      "displayNameKey": "RadarChartCapabilities_DisplayName_AxesGrid",
       "properties": {
         "axisLabelColor": {
+          "displayName": "Axis Label Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0001"
         },
         "axisLabelSize": {
+          "displayName": "Axis Label Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0002"
         },
         "axisLineColor": {
+          "displayName": "Axis Line Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0003"
         },
         "axisLineWidth": {
+          "displayName": "Axis Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0004"
         },
         "showGridLines": {
+          "displayName": "Show Gridlines",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0005"
         },
         "gridLineColor": {
+          "displayName": "Gridline Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0006"
         },
         "gridLineStyle": {
+          "displayName": "Gridline Style",
           "type": {
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0030"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0031"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0007"
         },
         "showXAxis": {
           "displayName": "Show X-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0032"
         },
         "showYAxis": {
           "displayName": "Show Y-Axis",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0033"
         },
         "xAxisTitle": {
           "displayName": "X-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0034"
         },
         "yAxisTitle": {
           "displayName": "Y-Axis Title",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0035"
         },
         "axisLabelFontFamily": {
           "displayName": "Label Font",
@@ -289,84 +377,102 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0037"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0038"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0039"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0040"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0041"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0042"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0043"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0044"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0045"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0046"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0047"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0048"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0036"
         },
         "axisLabelRotation": {
-          "displayName": "X-Label Rotation (\u00b0)",
+          "displayName": "X-Label Rotation (°)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0049"
         },
         "yAxisMin": {
           "displayName": "Y-Axis Min",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0050"
         },
         "yAxisMax": {
           "displayName": "Y-Axis Max",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0051"
         },
         "gridLineWidth": {
           "displayName": "Grid Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0052"
         },
         "gridLineOpacity": {
           "displayName": "Grid Line Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0053"
         },
         "axisLabelFontWeight": {
           "displayName": "Label Font Weight",
@@ -374,14 +480,24 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0055"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0056"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0054"
+        },
+        "integerTicks": {
+          "displayName": "Integer Ticks Only",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0057"
         }
       }
     },
@@ -392,7 +508,8 @@
           "displayName": "Show Legend",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0059"
         },
         "legendPosition": {
           "displayName": "Position",
@@ -400,28 +517,34 @@
             "enumeration": [
               {
                 "value": "bottom",
-                "displayName": "Bottom"
+                "displayName": "Bottom",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0061"
               },
               {
                 "value": "top",
-                "displayName": "Top"
+                "displayName": "Top",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0062"
               },
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0063"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0064"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0060"
         },
         "legendFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0065"
         },
         "legendFontColor": {
           "displayName": "Font Color",
@@ -431,7 +554,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0066"
         },
         "legendFontFamily": {
           "displayName": "Font",
@@ -439,54 +563,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0068"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0069"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0070"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0071"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0072"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0073"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0074"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0075"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0076"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0077"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0078"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0079"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0067"
         },
         "legendFontWeight": {
           "displayName": "Font Weight",
@@ -494,22 +631,48 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0081"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0082"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0080"
         },
         "legendAliases": {
           "displayName": "Rename Labels",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0083"
+        },
+        "showInlineLabels": {
+          "displayName": "Inline End Labels",
+          "type": {
+            "bool": true
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0084"
+        },
+        "inlineLabelFontSize": {
+          "displayName": "Inline Label Font Size",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0085"
+        },
+        "inlineLabelOffset": {
+          "displayName": "Inline Label Offset (px)",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0086"
         }
-      }
+      },
+      "displayNameKey": "RadarChartCapabilities_DisplayName_0058"
     },
     "dataLabelFormatting": {
       "displayName": "Data Labels",
@@ -518,13 +681,15 @@
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0088"
         },
         "dataLabelFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0089"
         },
         "dataLabelFontColor": {
           "displayName": "Font Color",
@@ -534,7 +699,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0090"
         },
         "dataLabelFontWeight": {
           "displayName": "Font Weight",
@@ -542,14 +708,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0092"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0093"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0091"
         },
         "dataLabelFontFamily": {
           "displayName": "Font",
@@ -557,54 +726,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0095"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0096"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0097"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0098"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0099"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0100"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0101"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0102"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0103"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0104"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0105"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0106"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0094"
         },
         "dataLabelPosition": {
           "displayName": "Position",
@@ -612,28 +794,35 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0108"
               },
               {
                 "value": "above",
-                "displayName": "Above"
+                "displayName": "Above",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0109"
               },
               {
                 "value": "below",
-                "displayName": "Below"
+                "displayName": "Below",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0110"
               },
               {
                 "value": "inside",
-                "displayName": "Inside"
+                "displayName": "Inside",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0111"
               },
               {
                 "value": "outside",
-                "displayName": "Outside"
+                "displayName": "Outside",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0112"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0107"
         }
-      }
+      },
+      "displayNameKey": "RadarChartCapabilities_DisplayName_0087"
     },
     "titleFormatting": {
       "displayName": "Chart Title",
@@ -642,19 +831,22 @@
           "displayName": "Show Title",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0114"
         },
         "titleText": {
           "displayName": "Title Text",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0115"
         },
         "titleFontSize": {
           "displayName": "Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0116"
         },
         "titleFontColor": {
           "displayName": "Font Color",
@@ -664,7 +856,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0117"
         },
         "titleAlignment": {
           "displayName": "Alignment",
@@ -672,18 +865,22 @@
             "enumeration": [
               {
                 "value": "left",
-                "displayName": "Left"
+                "displayName": "Left",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0119"
               },
               {
                 "value": "center",
-                "displayName": "Center"
+                "displayName": "Center",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0120"
               },
               {
                 "value": "right",
-                "displayName": "Right"
+                "displayName": "Right",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0121"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0118"
         },
         "titleFontFamily": {
           "displayName": "Font",
@@ -691,66 +888,81 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0123"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0124"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0125"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0126"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0127"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0128"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0129"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0130"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0131"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0132"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0133"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0134"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0122"
         },
         "subtitleText": {
           "displayName": "Subtitle",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0135"
         },
         "subtitleFontSize": {
           "displayName": "Subtitle Font Size",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0136"
         },
         "subtitleFontColor": {
           "displayName": "Subtitle Color",
@@ -760,7 +972,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0137"
         },
         "titleFontWeight": {
           "displayName": "Font Weight",
@@ -768,14 +981,17 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0139"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0140"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0138"
         },
         "subtitleFontFamily": {
           "displayName": "Subtitle Font",
@@ -783,54 +999,67 @@
             "enumeration": [
               {
                 "value": "",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0142"
               },
               {
                 "value": "Arial",
-                "displayName": "Arial"
+                "displayName": "Arial",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0143"
               },
               {
                 "value": "Calibri",
-                "displayName": "Calibri"
+                "displayName": "Calibri",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0144"
               },
               {
                 "value": "Cambria",
-                "displayName": "Cambria"
+                "displayName": "Cambria",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0145"
               },
               {
                 "value": "Courier New",
-                "displayName": "Courier New"
+                "displayName": "Courier New",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0146"
               },
               {
                 "value": "Georgia",
-                "displayName": "Georgia"
+                "displayName": "Georgia",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0147"
               },
               {
                 "value": "Helvetica Neue",
-                "displayName": "Helvetica Neue"
+                "displayName": "Helvetica Neue",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0148"
               },
               {
                 "value": "Segoe UI",
-                "displayName": "Segoe UI"
+                "displayName": "Segoe UI",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0149"
               },
               {
                 "value": "Tahoma",
-                "displayName": "Tahoma"
+                "displayName": "Tahoma",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0150"
               },
               {
                 "value": "Times New Roman",
-                "displayName": "Times New Roman"
+                "displayName": "Times New Roman",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0151"
               },
               {
                 "value": "Trebuchet MS",
-                "displayName": "Trebuchet MS"
+                "displayName": "Trebuchet MS",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0152"
               },
               {
                 "value": "Verdana",
-                "displayName": "Verdana"
+                "displayName": "Verdana",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0153"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0141"
         },
         "subtitleFontWeight": {
           "displayName": "Subtitle Font Weight",
@@ -838,16 +1067,20 @@
             "enumeration": [
               {
                 "value": "normal",
-                "displayName": "Normal"
+                "displayName": "Normal",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0155"
               },
               {
                 "value": "bold",
-                "displayName": "Bold"
+                "displayName": "Bold",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0156"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0154"
         }
-      }
+      },
+      "displayNameKey": "RadarChartCapabilities_DisplayName_0113"
     },
     "cardSettings": {
       "displayName": "Card Style",
@@ -858,22 +1091,37 @@
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0001"
               },
               {
                 "value": "glass",
-                "displayName": "Glass"
+                "displayName": "Frosted Glass",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0002"
               },
               {
                 "value": "elevated",
-                "displayName": "Elevated"
+                "displayName": "Raised Panel",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0003"
               },
               {
                 "value": "neumorphic",
-                "displayName": "Neumorphic"
+                "displayName": "Soft Inset",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0004"
+              },
+              {
+                "value": "outlined",
+                "displayName": "Border Only",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0005"
+              },
+              {
+                "value": "floating",
+                "displayName": "Floating Shadow",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0006"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0158"
         },
         "backgroundColor": {
           "displayName": "Background Color",
@@ -883,27 +1131,39 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0163"
         },
         "backgroundOpacity": {
           "displayName": "Background Opacity (%)",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0164"
         },
         "borderRadius": {
           "displayName": "Border Radius",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0165"
+        },
+        "contentPadding": {
+          "displayName": "Content Padding",
+          "type": {
+            "numeric": true
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0166"
         },
         "enableGlass": {
           "type": {
             "bool": true
           },
-          "displayName": "(Deprecated) Enable Glass"
+          "displayName": "(Deprecated) Enable Glass",
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0167"
         }
-      }
+      },
+      "displayNameKey": "RadarChartCapabilities_DisplayName_0157"
     },
     "radarBenchmarkSettings": {
       "displayName": "Benchmark",
@@ -912,7 +1172,8 @@
           "displayName": "Show Benchmark",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0169"
         },
         "dashPattern": {
           "displayName": "Dash Pattern",
@@ -920,18 +1181,22 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0171"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0172"
               },
               {
                 "value": "dotted",
-                "displayName": "Dotted"
+                "displayName": "Dotted",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0173"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0170"
         },
         "color": {
           "displayName": "Benchmark Color",
@@ -941,15 +1206,18 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0174"
         },
         "lineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0175"
         }
-      }
+      },
+      "displayNameKey": "RadarChartCapabilities_DisplayName_0168"
     },
     "radarInteractionSettings": {
       "displayName": "Interaction",
@@ -958,9 +1226,11 @@
           "displayName": "Dim on Hover",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0177"
         }
-      }
+      },
+      "displayNameKey": "RadarChartCapabilities_DisplayName_0176"
     },
     "conditionalFormatting": {
       "displayName": "Conditional Formatting",
@@ -969,7 +1239,8 @@
           "displayName": "Enable Conditional Formatting",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0179"
         },
         "conditionalDirection": {
           "displayName": "Direction",
@@ -977,26 +1248,31 @@
             "enumeration": [
               {
                 "value": "ascending",
-                "displayName": "Ascending (Low = Bad)"
+                "displayName": "Ascending (Low = Bad)",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0181"
               },
               {
                 "value": "descending",
-                "displayName": "Descending (Low = Good)"
+                "displayName": "Descending (Low = Good)",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0182"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0180"
         },
         "threshold1": {
           "displayName": "Threshold 1",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0183"
         },
         "threshold2": {
           "displayName": "Threshold 2",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0184"
         },
         "conditionalColor1": {
           "displayName": "Color 1 (Bad)",
@@ -1006,7 +1282,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0185"
         },
         "conditionalColor2": {
           "displayName": "Color 2 (Warning)",
@@ -1016,7 +1293,8 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0186"
         },
         "conditionalColor3": {
           "displayName": "Color 3 (Good)",
@@ -1026,9 +1304,11 @@
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0187"
         }
-      }
+      },
+      "displayNameKey": "RadarChartCapabilities_DisplayName_0178"
     },
     "accessibilityFormatting": {
       "displayName": "Accessibility",
@@ -1037,9 +1317,11 @@
           "displayName": "Enable Keyboard Navigation",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0189"
         }
-      }
+      },
+      "displayNameKey": "RadarChartCapabilities_DisplayName_0188"
     },
     "colorThemeFormatting": {
       "properties": {
@@ -1049,37 +1331,46 @@
             "enumeration": [
               {
                 "value": "default",
-                "displayName": "Default"
+                "displayName": "Default",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0192"
               },
               {
                 "value": "ocean",
-                "displayName": "Ocean"
+                "displayName": "Ocean",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0193"
               },
               {
                 "value": "sunset",
-                "displayName": "Sunset"
+                "displayName": "Sunset",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0194"
               },
               {
                 "value": "forest",
-                "displayName": "Forest"
+                "displayName": "Forest",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0195"
               },
               {
                 "value": "berry",
-                "displayName": "Berry"
+                "displayName": "Berry",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0196"
               },
               {
                 "value": "monochrome",
-                "displayName": "Monochrome"
+                "displayName": "Monochrome",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0197"
               },
               {
                 "value": "earth",
-                "displayName": "Earth"
+                "displayName": "Earth",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0198"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0191"
         }
       },
-      "displayName": "Color Theme"
+      "displayName": "Color Theme",
+      "displayNameKey": "RadarChartCapabilities_DisplayName_0190"
     },
     "numberFormatting": {
       "displayName": "Number Format",
@@ -1090,68 +1381,85 @@
             "enumeration": [
               {
                 "value": "auto",
-                "displayName": "Auto"
+                "displayName": "Auto",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0201"
               },
               {
                 "value": "none",
-                "displayName": "None"
+                "displayName": "None",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0202"
               },
               {
                 "value": "thousands",
-                "displayName": "Thousands (K)"
+                "displayName": "Thousands (K)",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0203"
               },
               {
                 "value": "millions",
-                "displayName": "Millions (M)"
+                "displayName": "Millions (M)",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0204"
               },
               {
                 "value": "billions",
-                "displayName": "Billions (B)"
+                "displayName": "Billions (B)",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0205"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0200"
         },
         "decimalPlaces": {
           "displayName": "Decimal Places",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0206"
         },
         "valuePrefix": {
           "displayName": "Prefix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0207"
         },
         "valueSuffix": {
           "displayName": "Suffix",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0208"
         }
-      }
+      },
+      "displayNameKey": "RadarChartCapabilities_DisplayName_0199"
     },
     "seriesFormatting": {
+      "displayName": "Series Formatting",
+      "displayNameKey": "RadarChartCapabilities_DisplayName_SeriesFormatting",
       "properties": {
         "seriesColor": {
+          "displayName": "Series Color",
           "type": {
             "fill": {
               "solid": {
                 "color": true
               }
             }
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0008"
         },
         "seriesOpacity": {
+          "displayName": "Series Opacity",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0009"
         },
         "showDataLabels": {
           "displayName": "Show Data Labels",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0209"
         },
         "lineStyle": {
           "displayName": "Line Style",
@@ -1159,24 +1467,29 @@
             "enumeration": [
               {
                 "value": "solid",
-                "displayName": "Solid"
+                "displayName": "Solid",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0211"
               },
               {
                 "value": "dashed",
-                "displayName": "Dashed"
+                "displayName": "Dashed",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0212"
               },
               {
                 "value": "dotted",
-                "displayName": "Dotted"
+                "displayName": "Dotted",
+                "displayNameKey": "RadarChartCapabilities_DisplayName_0213"
               }
             ]
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0210"
         },
         "lineWidth": {
           "displayName": "Line Width",
           "type": {
             "numeric": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0214"
         }
       }
     },
@@ -1187,32 +1500,46 @@
           "displayName": "Enable Date Filter",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0216"
         },
         "startDate": {
           "displayName": "Start Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0217"
         },
         "endAtCurrentDate": {
           "displayName": "End at Current Date",
           "type": {
             "bool": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0218"
         },
         "endDate": {
           "displayName": "End Date",
           "type": {
             "text": true
-          }
+          },
+          "displayNameKey": "RadarChartCapabilities_DisplayName_0219"
         }
-      }
+      },
+      "displayNameKey": "RadarChartCapabilities_DisplayName_0215"
     }
   },
   "supportsKeyboardFocus": true,
   "supportsHighlight": true,
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
   "supportsMultiVisualSelection": true,
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "supportEnhancedTooltips": true
+  },
   "privileges": [],
   "suppressDefaultTitle": true
 }

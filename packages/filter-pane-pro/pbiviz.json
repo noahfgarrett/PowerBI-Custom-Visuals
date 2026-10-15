@@ -1,0 +1,25 @@
+{
+  "visual": {
+    "name": "filterPanePro",
+    "displayName": "Filter Pane Pro",
+    "guid": "filterPanePro_5E9A1C7D3F2B",
+    "visualClassName": "FilterPaneProVisual",
+    "version": "1.0.8.0",
+    "description": "Reusable glass filter pane with basic and advanced filtering.",
+    "supportUrl": "https://github.com/noahfgarrett/PowerBI/issues",
+    "gitHubUrl": "https://github.com/noahfgarrett/PowerBI"
+  },
+  "apiVersion": "5.3.0",
+  "author": {
+    "name": "Visualize Build",
+    "email": "contact@visualizebuild.com"
+  },
+  "assets": {
+    "icon": "assets/icon.png"
+  },
+  "style": "style/visual.less",
+  "capabilities": "capabilities.json",
+  "stringResources": [
+    "stringResources/en-US/resources.resjson"
+  ]
+}

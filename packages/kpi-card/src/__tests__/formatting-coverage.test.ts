@@ -43,6 +43,7 @@ vi.mock('powerbi-visuals-utils-formattingmodel', () => {
 
 import { KpiCardVisual } from '../visual';
 import { KpiCardSettings } from '../settings';
+import capabilities from '../../capabilities.json';
 import {
   createConstructorOptions,
   DataViewBuilder,
@@ -53,27 +54,12 @@ import {
 
 // ── Test data ────────────────────────────────────────────────────────
 
-// KPI card uses table dataView format (not categorical)
-const kpiDV = {
-  metadata: {
-    columns: [
-      { displayName: 'Revenue', queryName: 'Revenue.Revenue', roles: { measure: true }, type: { numeric: true } },
-      { displayName: 'Target', queryName: 'Target.Target', roles: { target: true }, type: { numeric: true } },
-    ],
-  },
-  table: {
-    columns: [
-      { displayName: 'Revenue', queryName: 'Revenue.Revenue', roles: { measure: true } },
-      { displayName: 'Target', queryName: 'Target.Target', roles: { target: true } },
-    ],
-    rows: [
-      [100, 130],
-      [120, 130],
-      [110, 130],
-      [150, 130],
-    ],
-  },
-};
+const kpiDV = new DataViewBuilder()
+  .withCategory('Week', ['W1', 'W2', 'W3', 'W4'], 'trendAxis')
+  .withValues('Revenue', [100, 120, 110, 150], 'measure')
+  .withValues('Target', [130, 130, 130, 130], 'target')
+  .withValues('Week over Week', [10, 20, -10, 40], 'change')
+  .build();
 
 // ── Factory ─────────────────────────────────────────────────────────
 
@@ -117,16 +103,27 @@ function makeDeps(): Record<string, Record<string, unknown>> {
   for (const s of ['lineColor', 'fillOpacity', 'sparklineColor', 'sparklineWidth', 'dividerColor']) {
     deps[`sparklineSettings.${s}`] = SPARKLINE_ON;
   }
+  deps['sparklineSettings.showMinMax'] = SPARKLINE_ON;
+  deps['sparklineSettings.minColor'] = { ...SPARKLINE_ON, 'sparklineSettings.showMinMax': true };
+  deps['sparklineSettings.maxColor'] = { ...SPARKLINE_ON, 'sparklineSettings.showMinMax': true };
 
   // Comparison sub-settings
-  for (const s of ['showPercentChange', 'fontSize', 'fontColor']) {
+  deps['kpiComparisonSettings.compareMode'] = COMPARISON_ON;
+  for (const s of ['showPercentChange', 'fontSize', 'fontColor', 'fontFamily', 'fontWeight', 'alignment', 'paddingTop']) {
     deps[`kpiComparisonSettings.${s}`] = COMPARISON_ON;
   }
 
+  // Change indicator sub-settings
+  for (const s of ['showIcon', 'fontSize', 'fontFamily', 'fontWeight', 'alignment', 'paddingTop', 'iconSize', 'positiveColor', 'negativeColor', 'neutralColor']) {
+    deps[`kpiChangeIndicatorSettings.${s}`] = { 'kpiChangeIndicatorSettings.show': true };
+  }
+
   // Goal sub-settings
-  for (const s of ['goalValue', 'showProgressBar', 'metColor', 'unmetColor']) {
+  for (const s of ['goalWarningValue', 'showProgressBar', 'metColor', 'warningColor', 'unmetColor', 'progressBarHeight', 'showGoalLegend', 'invertLegendDirection', 'goalBlockPaddingTop', 'showGoalText', 'goalTextAlignment', 'goalTextFontSize', 'goalTextColor', 'goalTextFontFamily', 'goalTextFontWeight', 'goalTextPaddingTop']) {
     deps[`kpiGoalSettings.${s}`] = GOAL_ON;
   }
+  deps['kpiGoalSettings.goalValue'] = GOAL_ON;
+  deps['kpiGoalSettings.gradientProgress'] = { ...GOAL_ON, 'kpiGoalSettings.goalValue': 300 };
 
   // Title
   deps['titleFormatting.showTitle'] = { 'titleFormatting.titleText': 'KPI Title' };
@@ -174,11 +171,18 @@ const harnessConfig: HarnessConfig = {
     // Trend: test data has positive delta (150>110), so negative/neutral colors unused
     'trendSettings.negativeColor',
     'trendSettings.neutralColor',
-    // Goal: test data value 150 > goal 100, so unmetColor never applied
-    'kpiGoalSettings.unmetColor',
+    // Change indicator: last bound change value is positive, so negative/neutral colors unused
+    'kpiChangeIndicatorSettings.negativeColor',
+    'kpiChangeIndicatorSettings.neutralColor',
+    // Sparkline max marker is suppressed when the max point is also the endpoint marker
+    'sparklineSettings.maxColor',
+    // Date filter settings require a date-typed category column; mock builder uses text categories here
+    'dateFilterFormatting.enableDateFilter',
+    'dateFilterFormatting.startDate',
+    'dateFilterFormatting.endAtCurrentDate',
+    'dateFilterFormatting.endDate',
     // Vertical alignment affects inline justify-content on dynamically-created wrapper
     'valueSettings.verticalAlignment',
-    'labelSettings.verticalAlignment',
   ],
 };
 
@@ -192,6 +196,16 @@ describe('KpiCard formatting coverage', () => {
       harnessConfig.skipCards,
     );
     expect(paths.length).toBeGreaterThan(20);
+  });
+
+  it('keeps labels and serialized properties aligned with the formatting model', () => {
+    expect(capabilities.objects.valueSettings.properties.verticalAlignment.displayName)
+      .toBe('Content Vertical Alignment');
+    expect(capabilities.objects.labelSettings.properties).not.toHaveProperty('verticalAlignment');
+    expect(capabilities.objects.trendSettings.displayName).toBe('Target Variance');
+    expect(capabilities.objects.sparklineSettings.properties.lineColor.displayName).toBe('Area Fill Color');
+    expect(capabilities.objects.sparklineSettings.properties.sparklineColor.displayName).toBe('Series Color');
+    expect(capabilities.objects.kpiGoalSettings.displayName).toBe('Goal Progress');
   });
 
   it('every setting affects DOM output', () => {

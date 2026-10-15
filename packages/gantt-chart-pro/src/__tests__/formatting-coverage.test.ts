@@ -52,11 +52,20 @@ import {
   type HarnessConfig,
 } from '../../../core/src/__test-utils__';
 
-const testDV = new DataViewBuilder().withCategory('Task', ['Task A','Task B'], 'taskName').withValues('Start', [1,3], 'startDate').withValues('End', [3,6], 'endDate').build();
+const testDV = new DataViewBuilder()
+  .withCategory('Task', ['Task A', 'Task B', 'Task C'], 'taskName')
+  .withValues('Start', [Date.parse('2000-01-01'), Date.parse('2000-02-01'), Date.parse('2000-04-01')], 'startDate')
+  .withValues('End', [Date.parse('2100-01-01'), Date.parse('2000-03-01'), Date.parse('2000-05-01')], 'endDate')
+  .withValues('Progress', [35, 75, 15], 'progress')
+  .withValues('Category', ['Alpha', 'Alpha', 'Beta'] as unknown as (number | null)[], 'category')
+  .withValues('Parent Task', [null, 'Task A', null] as unknown as (number | null)[], 'parentTask')
+  .withValues('Dependency', [null, 'Task A', 'Task B'] as unknown as (number | null)[], 'dependency')
+  .build();
 
 function createVisual() {
   const opts = createConstructorOptions();
   const settings = new GanttChartProSettings();
+  settings.taskBarSettings.taskBorderWidth.value = 1;
   settingsRef.current = settings;
   const visual = new GanttChartProVisual(opts as never);
   return {
@@ -88,6 +97,13 @@ function makeDeps(): Record<string, Record<string, unknown>> {
   for (const s of ['xAxisTitle','yAxisTitle','axisFontSize','axisFontColor','axisFontFamily','axisLabelFontWeight','yAxisMin','yAxisMax','showGridLines','gridLineColor','gridLineOpacity','gridLineStyle']) {
     deps[`axisFormatting.${s}`] = { 'axisFormatting.showXAxis': true, 'axisFormatting.showYAxis': true };
   }
+  deps['drillDownSettings.showBreadcrumb'] = { 'drillDownSettings.enabled': true };
+  for (const s of ['breadcrumbFontSize','breadcrumbColor','breadcrumbFontFamily','breadcrumbFontWeight','breadcrumbPadding']) {
+    deps[`drillDownSettings.${s}`] = {
+      'drillDownSettings.enabled': true,
+      'drillDownSettings.showBreadcrumb': true,
+    };
+  }
   return deps;
 }
 
@@ -110,17 +126,11 @@ const harnessConfig: HarnessConfig = {
     'accessibilityFormatting.enableKeyboardNav',
     'animationSettings.staggerDelay',
     'animationSettings.duration',
-    'ganttSettings.showProgress',
-    'ganttSettings.todayLineWidth',
-    'ganttSettings.todayLineStyle',
-    'colorSettings.progressColor',
     'dependencySettings.show',
     'dependencySettings.lineColor',
     'dependencySettings.lineWidth',
     'dependencySettings.arrowSize',
     'dependencySettings.lineStyle',
-    'hierarchySettings.indentWidth',
-    'hierarchySettings.collapseByDefault',
     'ganttMilestoneSettings.shape',
     'ganttMilestoneSettings.color',
     'ganttCriticalPathSettings.show',
@@ -128,15 +138,21 @@ const harnessConfig: HarnessConfig = {
     'ganttCriticalPathSettings.lineWidth',
     'ganttBaselineSettings.color',
     'ganttBaselineSettings.opacity',
-    'ganttGroupSettings.collapsibleGroups',
-    'ganttTodaySettings.showTodayLine',
-    'ganttTodaySettings.lineColor',
+    'drillDownSettings.showBreadcrumb',
+    'drillDownSettings.breadcrumbFontSize',
+    'drillDownSettings.breadcrumbColor',
+    'drillDownSettings.breadcrumbFontFamily',
+    'drillDownSettings.breadcrumbFontWeight',
+    'drillDownSettings.breadcrumbPadding',
     'legendFormatting.showLegend',
     'legendFormatting.legendPosition',
     'legendFormatting.legendFontSize',
     'legendFormatting.legendFontColor',
     'legendFormatting.legendFontFamily',
     'legendFormatting.legendFontWeight',
+    'legendFormatting.showInlineLabels',
+    'legendFormatting.inlineLabelFontSize',
+    'legendFormatting.inlineLabelOffset',
     'axisFormatting.showXAxis',
     'axisFormatting.showYAxis',
     'axisFormatting.xAxisTitle',
@@ -146,6 +162,7 @@ const harnessConfig: HarnessConfig = {
     'axisFormatting.axisLabelRotation',
     'axisFormatting.gridLineWidth',
     'axisFormatting.gridLineOpacity',
+    'axisFormatting.integerTicks',
     'conditionalFormatting.threshold2',
     'conditionalFormatting.conditionalColor3',
     'colorThemeFormatting.colorTheme',
