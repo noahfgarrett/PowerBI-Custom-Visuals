@@ -5,7 +5,6 @@ import {
   issueContractor,
   issueDiscipline,
   issueStatusKind,
-  issueStatusLabel,
   issueSubtype,
   issueTitle,
 } from '../issues'
@@ -49,19 +48,6 @@ describe('issueStatusKind', () => {
     expect(issueStatusKind('Ready to Inspect')).toBe('open')
     expect(issueStatusKind('')).toBe('open')
     expect(issueStatusKind(null)).toBe('open')
-  })
-})
-
-describe('issueStatusLabel', () => {
-  it('keeps the trimmed status text as given', () => {
-    expect(issueStatusLabel(' Ready to inspect ')).toBe('Ready to inspect')
-    expect(issueStatusLabel('Closed')).toBe('Closed')
-  })
-
-  it('labels a blank status Open and any pending spelling Pending', () => {
-    expect(issueStatusLabel('')).toBe('Open')
-    expect(issueStatusLabel(null)).toBe('Open')
-    expect(issueStatusLabel('PENDING')).toBe('Pending')
   })
 })
 

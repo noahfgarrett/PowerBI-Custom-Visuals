@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { IssueColumns, ViewState } from '../types'
 import { defaultViewState, RECENT_WEEK_COUNT } from '../inspections'
-import { buildIssueIndex, buildIssueModel } from '../issues'
+import { buildIssueDetail, buildIssueIndex, buildIssueModel } from '../issues'
 
 const COLUMNS: IssueColumns = {
   id: 0,
@@ -75,14 +75,27 @@ describe('buildIssueModel cards', () => {
     expect(model.toDate.remaining).toEqual({ value: 3, delta: 0, tone: 'neutral' })
   })
 
-  it('is good when remaining open falls and bad when the closure rate falls', () => {
+  it('is bad when the closure rate falls', () => {
     // WW40: opened 1, closed 1 → 100%. WW41: opened 2, closed 1 → 50%.
     const dropIndex = buildIssueIndex([issue('#1', '9/29/2026', 'Closed', '9/30/2026'), issue('#2', '10/6/2026')], COLUMNS, TODAY)
-    const dropping = buildIssueModel(dropIndex, viewAt(WW41))
-    expect(dropping.toDate.closureRate.tone).toBe('bad')
+    const model = buildIssueModel(dropIndex, viewAt(WW41))
+    expect(model.toDate.closureRate.tone).toBe('bad')
+  })
+
+  it('is good when remaining open falls', () => {
     const clearIndex = buildIssueIndex([issue('#1', '9/29/2026', 'Closed', '10/6/2026')], COLUMNS, TODAY)
-    const clearing = buildIssueModel(clearIndex, viewAt(WW41))
-    expect(clearing.toDate.remaining).toEqual({ value: 0, delta: -1, tone: 'good' })
+    const model = buildIssueModel(clearIndex, viewAt(WW41))
+    expect(model.toDate.remaining).toEqual({ value: 0, delta: -1, tone: 'good' })
+  })
+
+  it('is neutral on the to-date cards when nothing changed, except Total Closed which is always good', () => {
+    // One open issue from WW40, nothing in WW41.
+    const quietIndex = buildIssueIndex([issue('#1', '9/29/2026')], COLUMNS, TODAY)
+    const model = buildIssueModel(quietIndex, viewAt(WW41))
+    expect(model.toDate.opened).toEqual({ value: 1, delta: 0, tone: 'neutral' })
+    expect(model.toDate.closed).toEqual({ value: 0, delta: 0, tone: 'good' })
+    expect(model.toDate.remaining).toEqual({ value: 1, delta: 0, tone: 'neutral' })
+    expect(model.toDate.closureRate).toEqual({ value: 0, deltaPoints: 0, tone: 'neutral' })
   })
 
   it('compares the first week against zero and has no closure rate change', () => {
@@ -129,7 +142,7 @@ describe('buildIssueModel trend and window', () => {
 
   it('limits the recent window and measures the change in remaining from before it', () => {
     const longIndex = buildIssueIndex(
-      [issue('#1', '1/6/2026'), issue('#2', '1/7/2026', 'Closed', '6/2/2026'), ...ROWS],
+      [issue('#20', '1/6/2026'), issue('#21', '1/7/2026', 'Closed', '6/2/2026'), ...ROWS],
       COLUMNS,
       TODAY,
     )
@@ -144,6 +157,15 @@ describe('buildIssueModel trend and window', () => {
     expect(model.windowTotals.closureRate).toBeCloseTo(50, 6)
   })
 
+  it('keeps the cards on the selected week when the window ends before it', () => {
+    const model = buildIssueModel(index, viewAt(WW42, 'all', WW40))
+    expect(model.trend.map((point) => point.week.key)).toEqual([WW39, WW40])
+    expect(model.windowTotals).toMatchObject({ opened: 4, closed: 1, remainingChange: 3, weeks: 2 })
+    expect(model.windowTotals.closureRate).toBeCloseTo(25, 6)
+    expect(model.selectedWeek.key).toBe(WW42)
+    expect(model.toDate.opened.value).toBe(8)
+  })
+
   it('lists the week options newest first', () => {
     const model = buildIssueModel(index, viewAt(WW42))
     expect(model.weekOptions.map((week) => week.key)).toEqual([WW42, WW41, WW40, WW39])
@@ -151,43 +173,53 @@ describe('buildIssueModel trend and window', () => {
   })
 
   it('ages issues as of today whatever week is selected', () => {
-    const model = buildIssueModel(index, viewAt(WW39))
-    expect(model.openAging).toBe(index.openAging)
-    expect(model.overallAging).toBe(index.overallAging)
-    expect(model.openIssues).toBe(index.openIssues)
+    const early = buildIssueModel(index, viewAt(WW39))
+    const late = buildIssueModel(index, viewAt(WW42))
+    expect(early.openAging).toEqual(late.openAging)
+    expect(early.overallAging).toEqual(late.overallAging)
+    expect(early.openIssues).toEqual(late.openIssues)
+    expect(early.openIssues.map((row) => row.id)).toEqual(['#2', '#4', '#5', '#7'])
   })
 })
 
-describe('buildIssueModel detail', () => {
-  it('counts issues opened and closed this week and last week', () => {
-    const { detail } = buildIssueModel(index, viewAt(WW42))
-    expect(detail.openedThisWeek).toBe(1)
-    expect(detail.closedThisWeek).toBe(1)
+describe('buildIssueDetail', () => {
+  it('counts issues opened and closed in the week before the selected week', () => {
+    const detail = buildIssueDetail(index, WW42)
     expect(detail.openedLastWeek).toBe(3)
     expect(detail.closedLastWeek).toBe(2)
   })
 
+  it('counts nothing in the week before the first week', () => {
+    const detail = buildIssueDetail(index, WW39)
+    expect(detail.openedLastWeek).toBe(0)
+    expect(detail.closedLastWeek).toBe(0)
+  })
+
+  it('falls back to the current week for an unknown selected week', () => {
+    expect(buildIssueDetail(index, 201901)).toEqual(buildIssueDetail(index, WW42))
+  })
+
   it('reports issues created or closed in either week, by ID descending', () => {
-    const { detail } = buildIssueModel(index, viewAt(WW42))
+    const detail = buildIssueDetail(index, WW42)
     expect(detail.reportRows.map((row) => row.id)).toEqual(['#10', '#7', '#6', '#5', '#4', '#3'])
     expect(detail.discussionRows.map((row) => row.id)).toEqual(['#2'])
   })
 
   it('leaves out issues created after the selected week', () => {
-    const { detail } = buildIssueModel(index, viewAt(WW41))
+    const detail = buildIssueDetail(index, WW41)
     expect(detail.reportRows.map((row) => row.id)).toEqual(['#10', '#6', '#5', '#4', '#3', '#1'])
     expect(detail.discussionRows.map((row) => row.id)).toEqual(['#2'])
   })
 
   it('has no discussion rows when every open issue is reported', () => {
-    const { detail } = buildIssueModel(index, viewAt(WW40))
+    const detail = buildIssueDetail(index, WW40)
     expect(detail.reportRows.map((row) => row.id)).toEqual(['#10', '#3', '#2', '#1'])
     expect(detail.discussionRows).toEqual([])
   })
 
   it('leaves an open issue created after a past selected week out of the discussion rows', () => {
     // #5 (Not approved) and #7 (Open) are open today but were created in WW41 and WW42.
-    const { detail } = buildIssueModel(index, viewAt(WW39))
+    const detail = buildIssueDetail(index, WW39)
     const ids = [...detail.reportRows, ...detail.discussionRows].map((row) => row.id)
     expect(ids).not.toContain('#5')
     expect(ids).not.toContain('#7')
@@ -195,7 +227,7 @@ describe('buildIssueModel detail', () => {
   })
 
   it('shows a pending issue as Open', () => {
-    const { detail } = buildIssueModel(index, viewAt(WW42))
+    const detail = buildIssueDetail(index, WW42)
     expect(detail.reportRows.find((row) => row.id === '#4')?.status).toBe('Open')
   })
 })

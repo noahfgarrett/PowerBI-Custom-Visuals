@@ -1,7 +1,8 @@
+import { MS_PER_DAY } from './workWeeks'
+
 // Date parsing ported from the HTML app (src/utils/workWeeks.ts). Every date is moved to local noon so
 // day arithmetic and ISO weeks never slip a day across daylight saving or time-of-day differences.
 
-const MS_PER_DAY = 86_400_000
 // Excel serial day 0 in the 1900 date system.
 const EXCEL_EPOCH_UTC = Date.UTC(1899, 11, 30)
 // Numbers below this are Excel serial days; larger numbers are epoch milliseconds.

@@ -56,10 +56,25 @@ function monthDayYear(date: Date): string {
   return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`
 }
 
+/** Shuffles in place with a seeded linear congruential generator, so every run gets the same order. */
+function seededShuffle<T>(items: T[], seed: number): T[] {
+  let state = seed >>> 0
+  for (let i = items.length - 1; i > 0; i -= 1) {
+    // Numerical Recipes LCG constants.
+    state = (Math.imul(state, 1_664_525) + 1_013_904_223) >>> 0
+    const j = state % (i + 1)
+    const item = items[i]
+    items[i] = items[j]
+    items[j] = item
+  }
+  return items
+}
+
 /**
  * BIM issue rows with M/D/YYYY dates from January 2021 to October 2026: [id, title, status, type, contractor,
  * discipline, created on, updated on, due date, created by]. One in eight is void and one in twenty has a
- * non-LotusWorks creator. Closed issues close up to 40 days after they open.
+ * non-LotusWorks creator. Closed issues close up to 40 days after they open. Rows come in a seeded random order
+ * so sorting by ID is measured on unsorted input.
  */
 export function syntheticIssueRows(count: number): Array<Array<string | null>> {
   const days: string[] = []
@@ -80,5 +95,5 @@ export function syntheticIssueRows(count: number): Array<Array<string | null>> {
       i % 20 === 0 ? 'Bayside' : 'Jane Doe (LotusWorks)',
     ])
   }
-  return rows
+  return seededShuffle(rows, 42)
 }

@@ -1,6 +1,6 @@
 import type { WorkWeek } from './types'
 
-const MS_PER_DAY = 86_400_000
+export const MS_PER_DAY = 86_400_000
 // Smartsheet exports vary: WW42'2026, WW 42 - 2026, Week 42 2026, two-digit years.
 const WORK_WEEK_PATTERN = /^(?:WW|WK|WEEK)?\s*(\d{1,2})\s*(?:['’/_,.\-]|\s)\s*(\d{4}|\d{2})$/i
 // Years outside this range are treated as typos.

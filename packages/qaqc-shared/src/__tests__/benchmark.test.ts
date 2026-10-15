@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { buildInspectionIndex, buildInspectionModel, defaultViewState } from '../inspections'
-import { buildIssueIndex, buildIssueModel } from '../issues'
+import { buildIssueDetail, buildIssueIndex, buildIssueModel } from '../issues'
 import { buildWeldIndex, buildWeldModel } from '../welds'
 import { syntheticInspectionRows, syntheticIssueRows, syntheticWeldRows } from './fixtures/syntheticRows'
 
@@ -76,5 +76,11 @@ describe('issues performance budgets', () => {
     const view = { ...defaultViewState(index), range: 'all' as const }
     buildIssueModel(index, view)
     expect(elapsed(() => buildIssueModel(index, view))).toBeLessThan(16)
+  })
+
+  it('builds the Issue Detail for a 200,000-row index within budget', () => {
+    const index = buildIssueIndex(syntheticIssueRows(200_000), ISSUE_COLUMNS, TODAY)
+    buildIssueDetail(index, index.currentWeek.key)
+    expect(elapsed(() => buildIssueDetail(index, index.currentWeek.key))).toBeLessThan(30)
   })
 })

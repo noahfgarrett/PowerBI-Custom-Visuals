@@ -320,12 +320,9 @@ export interface IssueDetailRow {
 export interface IssueRecord {
   id: string
   title: string
-  /** Trimmed Status text; blank reads as Open and pending as Pending. */
-  status: string
   statusKind: IncludedIssueStatusKind
   subtype: string
   contractor: string
-  discipline: string
   createdOn: Date
   /** Updated On, or null when blank or unreadable. */
   updatedOn: Date | null
@@ -371,7 +368,7 @@ export interface IssueIndex {
   currentWeek: WorkWeek
   /** Included issues created through the current week, sorted by ID descending (numeric-aware). */
   issues: IssueRecord[]
-  /** Continuous weeks from the first created week through the current week. Always holds at least one week, the current week. */
+  /** Continuous weeks from the first created or closed week through the current week. Always holds at least one week, the current week. */
   weeks: IssueWeekCounts[]
   /** Parallel to weeks: running totals through each week. */
   cumulativeOpened: number[]
@@ -454,7 +451,6 @@ export interface IssueModel {
   openAging: AgingBucket[]
   overallAging: OverallAgingBucket[]
   openIssues: OpenIssueRow[]
-  detail: IssueDetail
   windowTotals: IssueWindowTotals
   hasData: boolean
 }

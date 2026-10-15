@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { IssueColumns, ViewState } from '../types'
 import { defaultViewState } from '../inspections'
-import { buildIssueIndex, buildIssueModel } from '../issues'
+import { buildIssueDetail, buildIssueIndex, buildIssueModel } from '../issues'
 import { ISSUE_ROWS } from './fixtures/issueRows'
 
 const COLUMNS: IssueColumns = {
@@ -26,7 +26,6 @@ function viewAt(key: number): ViewState {
 
 describe('BIM Issues Log export (2026-10-14)', () => {
   it('reads 208 rows and keeps 177 included issues', () => {
-    expect(ISSUE_ROWS).toHaveLength(208)
     expect(index.totalRows).toBe(208)
     expect(index.issues).toHaveLength(177)
     expect(index.skippedRows).toBe(0)
@@ -97,20 +96,20 @@ describe('BIM Issues Log export (2026-10-14)', () => {
   })
 
   it('has only discussion rows in the WW42 Issue Detail', () => {
-    const { detail } = buildIssueModel(index, viewAt(202642))
+    const detail = buildIssueDetail(index, 202642)
     expect(detail.reportRows).toHaveLength(0)
     expect(detail.discussionRows).toHaveLength(51)
   })
 
   it('reports #1020, #1019 and #1004 in the WW32 Issue Detail', () => {
-    const { detail } = buildIssueModel(index, viewAt(202632))
+    const detail = buildIssueDetail(index, 202632)
     expect(detail.reportRows.map((row) => row.id)).toEqual(['#1020', '#1019', '#1004'])
     expect(detail.discussionRows).toHaveLength(49)
   })
 
   it('keeps the status labels as given', () => {
     const counts = new Map<string, number>()
-    for (const issue of index.issues) counts.set(issue.status, (counts.get(issue.status) ?? 0) + 1)
+    for (const { detail } of index.issues) counts.set(detail.status, (counts.get(detail.status) ?? 0) + 1)
     expect(Object.fromEntries(counts)).toEqual({
       Closed: 126,
       Open: 43,

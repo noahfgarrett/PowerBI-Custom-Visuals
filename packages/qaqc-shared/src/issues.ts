@@ -1,7 +1,6 @@
 import type {
   AgingBucket,
   ClosureRateCard,
-  IncludedIssueStatusKind,
   InspectionRows,
   IssueColumns,
   IssueCountCard,
@@ -33,6 +32,9 @@ export const DEFAULT_TITLE = 'Untitled issue'
 // ACC replaces the company name with "Removed" when these LotusWorks accounts are deactivated.
 const REMOVED_LOTUSWORKS_CREATORS: readonly string[] = ['samuel leach', 'aaron harwood']
 const TRAILING_DIGITS = /\d+$/
+const PREFIX_AND_NUMBER = /^(.*?)(\d+)$/
+// Longer digit runs could lose precision as numbers, so they are left to the collator.
+const MAX_SORT_DIGITS = 15
 
 function normalizedCreator(value: unknown): string {
   return cellText(value).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
@@ -51,12 +53,6 @@ export function issueStatusKind(value: unknown): IssueStatusKind {
   if (status === 'closed') return 'closed'
   if (status === 'pending') return 'pending'
   return 'open'
-}
-
-export function issueStatusLabel(value: unknown): string {
-  const status = cellText(value)
-  if (!status) return 'Open'
-  return issueStatusKind(status) === 'pending' ? 'Pending' : status
 }
 
 export function issueContractor(id: unknown, contractor: unknown): string {
@@ -120,29 +116,29 @@ function isIncludedCreator(value: unknown, cache: Map<string, boolean>): boolean
   return isIncluded
 }
 
-function displayStatus(status: string, kind: IncludedIssueStatusKind): string {
-  return kind === 'pending' ? 'Open' : status
+interface SortableIssue {
+  issue: IssueRecord
+  /** The ID before its trailing digits. */
+  prefix: string
+  /** The ID's trailing digits as a number, or null when it has none (or too many to hold exactly). */
+  number: number | null
 }
 
-function detailRow(record: Omit<IssueRecord, 'detail'>): IssueDetailRow {
-  let workWeekClosed = 'Open'
-  if (record.statusKind === 'closed') workWeekClosed = record.closedWeek?.label ?? ''
-  return {
-    id: record.id,
-    subtype: record.subtype,
-    status: displayStatus(record.status, record.statusKind),
-    statusKind: record.statusKind,
-    title: record.title,
-    contractor: record.contractor,
-    workWeek: record.createdWeek.label,
-    workWeekKey: record.createdWeek.key,
-    createdOn: formatDate(record.createdOn),
-    createdOnTime: record.createdOn.getTime(),
-    workWeekClosed,
-    workWeekClosedKey: record.closedWeek?.key ?? null,
-    dueDate: formatDate(record.dueDate),
-    dueDateTime: record.dueDate?.getTime() ?? null,
+function sortableIssue(issue: IssueRecord): SortableIssue {
+  const match = PREFIX_AND_NUMBER.exec(issue.id)
+  if (match === null || match[2].length > MAX_SORT_DIGITS) return { issue, prefix: issue.id, number: null }
+  return { issue, prefix: match[1], number: Number(match[2]) }
+}
+
+/**
+ * ID descending, numeric-aware. IDs that share a prefix and differ in their trailing number compare as numbers,
+ * which is what the collator would conclude; everything else goes to the collator.
+ */
+function byIdDescending(a: SortableIssue, b: SortableIssue): number {
+  if (a.number !== null && b.number !== null && a.number !== b.number && a.prefix === b.prefix) {
+    return b.number - a.number
   }
+  return NAME_COLLATOR.compare(b.issue.id, a.issue.id)
 }
 
 function buildOpenAging(issues: IssueRecord[], today: Date): AgingBucket[] {
@@ -242,30 +238,52 @@ export function buildIssueIndex(rows: InspectionRows, columns: IssueColumns, tod
 
     const updated = readDate(row[columns.updatedOn], caches)
     const closedWeek = statusKind === 'closed' && updated !== null ? updated.week : null
+    // A closed week after the current week is not counted in any week.
+    const countedClosedWeek = closedWeek !== null && closedWeek.key <= currentWeek.key ? closedWeek : null
+    if (countedClosedWeek !== null && countedClosedWeek.key < firstWeek.key) firstWeek = countedClosedWeek
 
     const id = cellText(row[columns.id])
-    const record: Omit<IssueRecord, 'detail'> = {
+    const title = issueTitle(row[columns.title])
+    const subtype = issueSubtype(row[columns.type])
+    const contractor = issueContractor(id, row[columns.contractor])
+    const dueDate = readDate(row[columns.dueDate], caches)?.date ?? null
+    const detail: IssueDetailRow = {
       id,
-      title: issueTitle(row[columns.title]),
-      status: issueStatusLabel(row[columns.status]),
+      subtype,
+      // Pending displays as Open, and so does a blank status.
+      status: statusKind === 'pending' ? 'Open' : cellText(row[columns.status]) || 'Open',
       statusKind,
-      subtype: issueSubtype(row[columns.type]),
-      contractor: issueContractor(id, row[columns.contractor]),
-      discipline: issueDiscipline(row[columns.discipline]),
+      title,
+      contractor,
+      workWeek: created.week.label,
+      workWeekKey: created.week.key,
+      createdOn: formatDate(created.date),
+      createdOnTime: created.date.getTime(),
+      workWeekClosed: statusKind === 'closed' ? (closedWeek?.label ?? '') : 'Open',
+      workWeekClosedKey: closedWeek?.key ?? null,
+      dueDate: formatDate(dueDate),
+      dueDateTime: dueDate?.getTime() ?? null,
+    }
+    issues.push({
+      id,
+      title,
+      statusKind,
+      subtype,
+      contractor,
       createdOn: created.date,
       updatedOn: updated?.date ?? null,
-      dueDate: readDate(row[columns.dueDate], caches)?.date ?? null,
+      dueDate,
       createdWeek: created.week,
       closedWeek,
-    }
-    issues.push({ ...record, detail: detailRow(record) })
+      detail,
+    })
 
     bucketFor(created.week).opened += 1
-    // A closed week after the current week is not counted in any week.
-    if (closedWeek !== null && closedWeek.key <= currentWeek.key) bucketFor(closedWeek).closed += 1
+    if (countedClosedWeek !== null) bucketFor(countedClosedWeek).closed += 1
   }
 
-  issues.sort((a, b) => NAME_COLLATOR.compare(b.id, a.id))
+  const sorted = issues.map(sortableIssue).sort(byIdDescending)
+  for (let position = 0; position < sorted.length; position += 1) issues[position] = sorted[position].issue
 
   const weeks: IssueWeekCounts[] = []
   const cumulativeOpened: number[] = []
@@ -333,7 +351,11 @@ function cumulativeAt(cumulative: number[], position: number): number {
   return position < 0 ? 0 : cumulative[position]
 }
 
-function buildDetail(index: IssueIndex, selected: IssueWeekCounts, previous: IssueWeekCounts | null): IssueDetail {
+/** The Issue Detail overlay for the selected week. Built only while the overlay is open: it walks every issue. */
+export function buildIssueDetail(index: IssueIndex, selectedKey: number): IssueDetail {
+  const selectedPosition = index.positionByKey.get(selectedKey) ?? index.weeks.length - 1
+  const selected = index.weeks[selectedPosition]
+  const previous = selectedPosition > 0 ? index.weeks[selectedPosition - 1] : null
   const weekKey = selected.week.key
   const previousKey = previousWorkWeek(selected.week).key
   const reportRows: IssueDetailRow[] = []
@@ -366,20 +388,20 @@ export function buildIssueModel(index: IssueIndex, view: ViewState): IssueModel 
   const selected = index.weeks[selectedPosition]
   const previous = selectedPosition > 0 ? index.weeks[selectedPosition - 1] : null
   const { cumulativeOpened, cumulativeClosed } = index
+  const remainingAt = (position: number): number =>
+    cumulativeAt(cumulativeOpened, position) - cumulativeAt(cumulativeClosed, position)
 
   const opened = cumulativeOpened[selectedPosition]
   const closed = cumulativeClosed[selectedPosition]
   const previousOpened = cumulativeAt(cumulativeOpened, selectedPosition - 1)
   const previousClosed = cumulativeAt(cumulativeClosed, selectedPosition - 1)
-  const remaining = opened - closed
-  const previousRemaining = previousOpened - previousClosed
+  const remaining = remainingAt(selectedPosition)
+  const previousRemaining = remainingAt(selectedPosition - 1)
   const openedInWeek = selected.opened
   const closedInWeek = selected.closed
   const openedInPreviousWeek = previous?.opened ?? 0
   const closedInPreviousWeek = previous?.closed ?? 0
 
-  const remainingAt = (position: number): number =>
-    cumulativeAt(cumulativeOpened, position) - cumulativeAt(cumulativeClosed, position)
   const windowTotals: IssueWindowTotals = {
     opened: cumulativeOpened[endPosition] - cumulativeAt(cumulativeOpened, startPosition - 1),
     closed: cumulativeClosed[endPosition] - cumulativeAt(cumulativeClosed, startPosition - 1),
@@ -411,7 +433,6 @@ export function buildIssueModel(index: IssueIndex, view: ViewState): IssueModel 
     openAging: index.openAging,
     overallAging: index.overallAging,
     openIssues: index.openIssues,
-    detail: buildDetail(index, selected, previous),
     windowTotals,
     hasData: cumulativeOpened[lastPosition] > 0,
   }

@@ -162,6 +162,16 @@ describe('buildIssueIndex', () => {
     expect(index.weeks.map((item) => item.closed)).toEqual([1, 0, 0])
   })
 
+  it('starts the weeks at a closed week before the first created week', () => {
+    const index = buildIssueIndex(
+      [issue('#1', '10/6/2026', { status: 'Closed', updatedOn: '9/29/2026' })],
+      COLUMNS,
+      TODAY,
+    )
+    expect(index.weeks[0].week.label).toBe("WW40'2026")
+    expect(index.cumulativeClosed[index.cumulativeClosed.length - 1]).toBe(1)
+  })
+
   it('keeps cumulative totals parallel to the weeks', () => {
     const index = buildIssueIndex(
       [
@@ -185,6 +195,24 @@ describe('buildIssueIndex', () => {
     expect(index.issues.map((record) => record.id)).toEqual(['#1020', '#1004', '#999', '#98'])
   })
 
+  it('sorts IDs with different prefixes or no digits like a numeric-aware collator', () => {
+    const index = buildIssueIndex(
+      [
+        issue('A-5', '10/5/2026'),
+        issue('B-3', '10/5/2026'),
+        issue('#A9', '10/5/2026'),
+        issue('#a10', '10/5/2026'),
+        issue('abc', '10/5/2026'),
+        issue('ABD', '10/5/2026'),
+        issue('#007', '10/5/2026'),
+        issue('#8', '10/5/2026'),
+      ],
+      COLUMNS,
+      TODAY,
+    )
+    expect(index.issues.map((record) => record.id)).toEqual(['B-3', 'ABD', 'abc', 'A-5', '#a10', '#A9', '#8', '#007'])
+  })
+
   it('normalizes each issue with the app defaults', () => {
     const index = buildIssueIndex(
       [
@@ -199,12 +227,12 @@ describe('buildIssueIndex', () => {
       id: '#1021',
       contractor: 'Bayside',
       subtype: 'Uncategorized',
-      discipline: 'Unassigned',
       title: 'Untitled issue',
-      status: 'Pending',
       statusKind: 'pending',
     })
-    expect(second).toMatchObject({ id: '#7', contractor: 'Unassigned', status: 'Open', statusKind: 'open' })
+    expect(first.detail.status).toBe('Open')
+    expect(second).toMatchObject({ id: '#7', contractor: 'Unassigned', statusKind: 'open' })
+    expect(second.detail.status).toBe('Open')
   })
 
   it('accepts Date objects and Excel serials as dates', () => {

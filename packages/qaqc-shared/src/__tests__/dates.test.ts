@@ -1,6 +1,16 @@
-import { describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { daysBetween, formatDate, parseDate } from '../dates'
+
+// A zone with daylight saving, so the DST test crosses a real 23-hour day whatever zone the machine is in.
+const originalTimeZone = process.env.TZ
+beforeAll(() => {
+  process.env.TZ = 'America/New_York'
+})
+afterAll(() => {
+  if (originalTimeZone === undefined) delete process.env.TZ
+  else process.env.TZ = originalTimeZone
+})
 
 function parts(date: Date | null): [number, number, number, number] | null {
   return date === null ? null : [date.getFullYear(), date.getMonth() + 1, date.getDate(), date.getHours()]
