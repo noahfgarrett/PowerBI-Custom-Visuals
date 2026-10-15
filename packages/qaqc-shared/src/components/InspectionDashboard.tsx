@@ -45,6 +45,8 @@ interface PanelConfig {
   title: string
   icon: LucideIcon
   legend: LegendItem[]
+  /** Legend for the expanded panel when it differs from the grid panel's. */
+  expandedLegend?: LegendItem[]
   emptyMessage: string | null
   className?: string
   renderChart: (size: ElementSize) => ReactNode
@@ -187,7 +189,7 @@ export function InspectionDashboard({
     )
   }
 
-  function renderPassRate(size: ElementSize, labelIssueWeeks: boolean): ReactElement {
+  function renderPassRate(size: ElementSize, isExpandedView: boolean): ReactElement {
     return (
       <LineChart
         points={model.passRateTrend}
@@ -196,7 +198,8 @@ export function InspectionDashboard({
         height={size.height}
         colors={colors}
         describe={describeCharts}
-        labelIssueWeeks={labelIssueWeeks}
+        labelIssueWeeks={isExpandedView}
+        showWeekAxis={isExpandedView}
         onHover={onHover}
       />
     )
@@ -237,6 +240,8 @@ export function InspectionDashboard({
       title: 'Inspections by Building',
       icon: Building2,
       legend: finalsSorsLegend,
+      // The expanded table has no Finals/SORs colours to explain.
+      expandedLegend: [],
       emptyMessage: model.buildings.length > 0 ? null : model.hasData ? EMPTY_RANGE_MESSAGE : NO_ROWS_MESSAGE,
       renderChart: (size) => (
         <HorizontalBarChart
@@ -379,7 +384,7 @@ export function InspectionDashboard({
           key={expanded}
           title={panels[expanded].title}
           icon={panels[expanded].icon}
-          legend={panels[expanded].legend}
+          legend={panels[expanded].expandedLegend ?? panels[expanded].legend}
           emptyMessage={panels[expanded].emptyMessage}
           animate={animate}
           getRootBox={() => (frameRef.current ? frameBox(frameRef.current) : ZERO_BOX)}

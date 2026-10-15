@@ -1,11 +1,14 @@
 import type { MouseEvent, ReactElement } from 'react'
 
-import { passRateDomain } from '../chartMath'
+import { labelIndices, passRateDomain } from '../chartMath'
 import type { ChartColors, TooltipHandler } from '../chartTypes'
 import { formatCount, formatPercent } from '../format'
 import type { PassRatePoint } from '../types'
+import { shortWeekLabel, shortWeekLabelWithYear } from '../workWeeks'
 
 const MARGIN = { top: 14, right: 42, bottom: 10, left: 40 } as const
+const AXIS_HEIGHT = 20
+const YEAR_LABEL_WIDTH = 54
 const DOT_RADIUS = 4
 const ISSUE_LABEL_OFFSET = 10
 const ISSUE_LABEL_BELOW_OFFSET = 16
@@ -20,6 +23,8 @@ export interface LineChartProps {
   describe: boolean
   /** Writes the pass rate beside the dot of NCR weeks. Skips the last point (the end label shows it) and any week closer than 34 px to the previous label. */
   labelIssueWeeks?: boolean
+  /** Draws thinned work-week labels under the plot, with the selected week in bold. */
+  showWeekAxis?: boolean
   onHover: TooltipHandler
 }
 
@@ -31,10 +36,12 @@ export function LineChart({
   colors,
   describe,
   labelIssueWeeks = false,
+  showWeekAxis = false,
   onHover,
 }: LineChartProps): ReactElement {
   const plotWidth = Math.max(0, width - MARGIN.left - MARGIN.right)
-  const plotHeight = Math.max(0, height - MARGIN.top - MARGIN.bottom)
+  const bottomMargin = MARGIN.bottom + (showWeekAxis ? AXIS_HEIGHT : 0)
+  const plotHeight = Math.max(0, height - MARGIN.top - bottomMargin)
   const domain = passRateDomain(points.map((item) => item.rate))
   const step = points.length > 1 ? plotWidth / (points.length - 1) : 0
   const x = (index: number): number => (points.length > 1 ? MARGIN.left + index * step : MARGIN.left + plotWidth / 2)
@@ -54,6 +61,10 @@ export function LineChart({
   const hitWidth = points.length > 1 ? step : plotWidth
   const lastIndex = points.reduce((found, item, index) => (item.rate !== null ? index : found), -1)
   const selectedIndex = points.findIndex((item) => item.week.key === selectedKey)
+  const spansYears = points.length > 0 && points[0].week.year !== points[points.length - 1].week.year
+  const axisLabels = showWeekAxis
+    ? labelIndices(points.length, plotWidth, selectedIndex, spansYears ? YEAR_LABEL_WIDTH : undefined)
+    : new Set<number>()
   const ticks = [domain.min, (domain.min + domain.max) / 2, domain.max]
   const lastRate = lastIndex >= 0 ? points[lastIndex].rate : null
   const summary = describe && lastRate !== null ? `NCR pass rate trend, ending at ${formatPercent(lastRate)}` : 'NCR pass rate trend'
@@ -143,6 +154,20 @@ export function LineChart({
         <text className="qaqc-value-text qaqc-end-label" x={x(lastIndex) + 6} y={y(lastRate) + 3.5} fill={colors.ink}>
           {formatPercent(lastRate)}
         </text>
+      )}
+      {points.map((item, index) =>
+        axisLabels.has(index) ? (
+          <text
+            key={`axis-${item.week.key}`}
+            className={index === selectedIndex ? 'qaqc-axis-text is-selected' : 'qaqc-axis-text'}
+            x={x(index)}
+            y={MARGIN.top + plotHeight + AXIS_HEIGHT - 4}
+            textAnchor="middle"
+            fill={index === selectedIndex ? colors.ink : colors.axisText}
+          >
+            {spansYears ? shortWeekLabelWithYear(item.week) : shortWeekLabel(item.week)}
+          </text>
+        ) : null,
       )}
       <g onMouseLeave={() => onHover(null)}>
         {points.map((item, index) => (

@@ -112,6 +112,51 @@ describe('LineChart', () => {
     expect(labels[0].textContent).toBe('99.2%')
   })
 
+  it('draws no week axis by default', () => {
+    view = render(
+      <LineChart points={[point(41, 99.1), point(42, 99.16)]} selectedKey={202642} width={300} height={160} colors={COLORS} describe onHover={vi.fn()} />,
+    )
+    const weekLabels = [...view.container.querySelectorAll('.qaqc-axis-text')].filter((node) => node.textContent?.startsWith('WW'))
+    expect(weekLabels).toHaveLength(0)
+  })
+
+  it('draws week labels with the selected week in bold when showWeekAxis is set', () => {
+    view = render(
+      <LineChart points={[point(41, 99.1), point(42, 99.16)]} selectedKey={202642} width={300} height={160} colors={COLORS} describe showWeekAxis onHover={vi.fn()} />,
+    )
+    const weekLabels = [...view.container.querySelectorAll('.qaqc-axis-text')].filter((node) => node.textContent?.startsWith('WW'))
+    expect(weekLabels.map((node) => node.textContent)).toEqual(['WW41', 'WW42'])
+    expect(weekLabels.map((node) => node.classList.contains('is-selected'))).toEqual([false, true])
+  })
+
+  it('adds the year to week labels when the window spans two years', () => {
+    view = render(
+      <LineChart
+        points={[{ ...point(52, 99.1), week: makeWorkWeek(2025, 52) }, point(1, 99.16)]}
+        selectedKey={202601}
+        width={300}
+        height={160}
+        colors={COLORS}
+        describe
+        showWeekAxis
+        onHover={vi.fn()}
+      />,
+    )
+    const weekLabels = [...view.container.querySelectorAll('.qaqc-axis-text')].filter((node) => node.textContent?.startsWith('WW'))
+    expect(weekLabels.map((node) => node.textContent)).toEqual(["WW52'25", "WW01'26"])
+  })
+
+  it('thins week labels so they do not collide', () => {
+    const many = Array.from({ length: 30 }, (_, index) => point(10 + index, 99.1))
+    view = render(
+      <LineChart points={many} selectedKey={202639} width={300} height={160} colors={COLORS} describe showWeekAxis onHover={vi.fn()} />,
+    )
+    const weekLabels = [...view.container.querySelectorAll('.qaqc-axis-text')].filter((node) => node.textContent?.startsWith('WW'))
+    expect(weekLabels.length).toBeGreaterThan(0)
+    expect(weekLabels.length).toBeLessThan(30)
+    expect(weekLabels.some((node) => node.classList.contains('is-selected'))).toBe(true)
+  })
+
   it('skips weeks without Finals instead of drawing through them', () => {
     view = render(
       <LineChart points={[point(40, null), point(41, 100), point(42, 100)]} selectedKey={202642} width={300} height={160} colors={COLORS} describe onHover={vi.fn()} />,

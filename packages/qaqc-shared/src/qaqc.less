@@ -402,6 +402,16 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* A card-coloured halo keeps value labels readable over lines and bars. */
+.qaqc-issue-rate,
+.qaqc-end-label,
+.qaqc-bar-value {
+  paint-order: stroke;
+  stroke: var(--qaqc-card-solid);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
 .qaqc-selected-band {
   opacity: 0.08;
 }
@@ -719,7 +729,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-.qaqc-table th {
+.qaqc-table thead th {
   position: sticky;
   top: 0;
   z-index: 1;
@@ -729,12 +739,12 @@
   text-align: right;
 }
 
-.qaqc-table th:first-child,
+.qaqc-table thead th:first-child,
 .qaqc-table td:first-child {
   text-align: left;
 }
 
-.qaqc-table th button {
+.qaqc-table thead th button {
   width: 100%;
   padding: 8px 10px;
   border: 0;
@@ -749,23 +759,29 @@
   text-transform: uppercase;
 }
 
-.qaqc-table th[aria-sort] button {
+.qaqc-table thead th[aria-sort] button {
   color: var(--qaqc-accent);
 }
 
-.qaqc-table th[aria-sort="ascending"] button::after {
+.qaqc-table thead th[aria-sort="ascending"] button::after {
   content: " \2191";
 }
 
-.qaqc-table th[aria-sort="descending"] button::after {
+.qaqc-table thead th[aria-sort="descending"] button::after {
   content: " \2193";
 }
 
-.qaqc-table td {
+.qaqc-table td,
+.qaqc-table tbody th {
   padding: 7px 10px;
   border-bottom: 1px solid var(--qaqc-hairline);
   color: var(--qaqc-ink);
   text-align: right;
+}
+
+.qaqc-table tbody th {
+  text-align: left;
+  font-weight: 600;
 }
 
 .qaqc-share-bar {

@@ -299,6 +299,20 @@ describe('InspectionDashboard with measured charts', () => {
     expect(view.container.querySelector('.qaqc-root.is-expanded')).not.toBeNull()
   })
 
+  it('shows no Finals/SORs legend in the expanded building table', () => {
+    stubSize()
+    view = draw()
+    expandPanel(view.container, 'Inspections by Building')
+    expect(dialog(view.container, 'Inspections by Building')?.querySelector('.qaqc-legend')).toBeNull()
+  })
+
+  it('keeps the Finals/SORs legend on the grid building panel', () => {
+    stubSize()
+    view = draw()
+    const gridPanel = [...view.container.querySelectorAll('.qaqc-panel')].find((node) => node.textContent?.includes('Inspections by Building'))
+    expect(gridPanel?.querySelector('.qaqc-legend')).not.toBeNull()
+  })
+
   it('collapses on Esc and returns focus to the expand button', () => {
     stubSize()
     view = draw()
@@ -329,6 +343,20 @@ describe('InspectionDashboard with measured charts', () => {
     const items = view.container.querySelectorAll('[role="dialog"] .qaqc-issue-list > li')
     expect(items).toHaveLength(2)
     expect(items[0].querySelector('strong')?.textContent).toBe("WW23'2026")
+  })
+
+  it('draws a week axis on the expanded pass-rate chart only', () => {
+    stubSize()
+    view = draw()
+    const axisWeeks = (root: ParentNode | null | undefined): number =>
+      [...(root?.querySelectorAll('.qaqc-axis-text') ?? [])].filter((node) => node.textContent?.startsWith('WW')).length
+    const gridPanel = [...view.container.querySelectorAll('.qaqc-panel')].find((node) => node.textContent?.includes('NCR Pass Rate Trend'))
+    const gridLabelsBefore = axisWeeks(gridPanel?.querySelector('svg[aria-label^="NCR pass rate"]'))
+    expandPanel(view.container, 'NCR Pass Rate Trend')
+    const open = dialog(view.container, 'NCR Pass Rate Trend')
+    expect(gridLabelsBefore).toBe(0)
+    expect(axisWeeks(open)).toBeGreaterThan(0)
+    expect(open?.querySelector('.qaqc-axis-text.is-selected')?.textContent).toMatch(/^WW\d{2}/)
   })
 
   it('has no expand buttons when interactions are not allowed', () => {
