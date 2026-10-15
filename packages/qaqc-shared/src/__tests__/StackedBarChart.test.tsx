@@ -145,4 +145,43 @@ describe('StackedBarChart', () => {
     view = draw({ weeks: many, selectedKey: many[119].week.key })
     expect(view.container.querySelectorAll('.qaqc-issue-badge')).toHaveLength(0)
   })
+
+  it('labels each bar with its total when showValues is on', () => {
+    view = draw({ showValues: true })
+    const values = [...view.container.querySelectorAll('.qaqc-bar-value')].map((node) => node.textContent)
+    expect(values).toEqual(['5', '9', '6'])
+  })
+
+  it('places the value label above the issue badge on issue weeks', () => {
+    view = draw({ showValues: true })
+    const badge = view.container.querySelector('.qaqc-issue-badge')
+    const value = view.container.querySelectorAll('.qaqc-bar-value')[1]
+    const badgeY = Number(badge?.getAttribute('transform')?.match(/translate\([\d.]+ ([\d.]+)\)/)?.[1])
+    expect(Number(value.getAttribute('y'))).toBe(badgeY - 8 - 3)
+  })
+
+  it('draws no value labels by default', () => {
+    view = draw()
+    expect(view.container.querySelectorAll('.qaqc-bar-value')).toHaveLength(0)
+  })
+
+  it('draws no value labels when bars are narrower than 18 px', () => {
+    const many: WeekCounts[] = Array.from({ length: 120 }, (_, index) => ({
+      week: makeWorkWeek(2024 + Math.floor(index / 52), (index % 52) + 1),
+      finals: 2,
+      sors: 1,
+      issuesFound: 0,
+    }))
+    view = draw({ weeks: many, selectedKey: many[119].week.key, showValues: true })
+    expect(view.container.querySelectorAll('.qaqc-bar-value')).toHaveLength(0)
+  })
+
+  it('skips value labels for weeks with no inspections', () => {
+    const weeks: WeekCounts[] = [
+      { week: makeWorkWeek(2026, 41), finals: 0, sors: 0, issuesFound: 0 },
+      { week: makeWorkWeek(2026, 42), finals: 3, sors: 1, issuesFound: 0 },
+    ]
+    view = draw({ weeks, showValues: true })
+    expect([...view.container.querySelectorAll('.qaqc-bar-value')].map((node) => node.textContent)).toEqual(['4'])
+  })
 })

@@ -7,6 +7,7 @@ import type { PassRatePoint } from '../types'
 
 const MARGIN = { top: 14, right: 42, bottom: 10, left: 40 } as const
 const DOT_RADIUS = 4
+const ISSUE_LABEL_OFFSET = 10
 
 export interface LineChartProps {
   points: PassRatePoint[]
@@ -15,10 +16,21 @@ export interface LineChartProps {
   height: number
   colors: ChartColors
   describe: boolean
+  /** Writes the pass rate above the dot of every NCR week. */
+  labelIssueWeeks?: boolean
   onHover: TooltipHandler
 }
 
-export function LineChart({ points, selectedKey, width, height, colors, describe, onHover }: LineChartProps): ReactElement {
+export function LineChart({
+  points,
+  selectedKey,
+  width,
+  height,
+  colors,
+  describe,
+  labelIssueWeeks = false,
+  onHover,
+}: LineChartProps): ReactElement {
   const plotWidth = Math.max(0, width - MARGIN.left - MARGIN.right)
   const plotHeight = Math.max(0, height - MARGIN.top - MARGIN.bottom)
   const domain = passRateDomain(points.map((item) => item.rate))
@@ -93,6 +105,20 @@ export function LineChart({ points, selectedKey, width, height, colors, describe
             stroke={colors.card}
             strokeWidth={2}
           />
+        ) : null,
+      )}
+      {labelIssueWeeks && points.map((item, index) =>
+        item.hadIssue && item.rate !== null ? (
+          <text
+            key={`issue-rate-${item.week.key}`}
+            className="qaqc-value-text qaqc-issue-rate"
+            x={x(index)}
+            y={Math.max(y(item.rate) - ISSUE_LABEL_OFFSET, MARGIN.top + ISSUE_LABEL_OFFSET)}
+            textAnchor="middle"
+            fill={colors.ink}
+          >
+            {formatPercent(item.rate)}
+          </text>
         ) : null,
       )}
       {lastRate !== null && (

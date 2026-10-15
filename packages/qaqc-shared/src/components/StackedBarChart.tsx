@@ -12,6 +12,9 @@ const MIN_BAR_WIDTH = 2
 const BADGE_RADIUS = 8
 const CORNER_RADIUS = 4
 const YEAR_LABEL_WIDTH = 54
+const MIN_VALUE_LABEL_BAND = 18
+const VALUE_LABEL_GAP = 4
+const BADGE_LABEL_GAP = 3
 
 export interface StackedBarChartProps {
   weeks: WeekCounts[]
@@ -22,6 +25,8 @@ export interface StackedBarChartProps {
   interactive: boolean
   animate: boolean
   describe: boolean
+  /** Writes each week's Finals + SORs total above its bar. Skipped when bars are narrower than 18 px. */
+  showValues?: boolean
   onSelectWeek: (key: number) => void
   onHover: TooltipHandler
 }
@@ -39,6 +44,7 @@ export function StackedBarChart({
   interactive,
   animate,
   describe,
+  showValues = false,
   onSelectWeek,
   onHover,
 }: StackedBarChartProps): ReactElement {
@@ -118,6 +124,7 @@ export function StackedBarChart({
     ? `Finals and SORs by work week, ${weeks[0].week.label} to ${weeks[weeks.length - 1].week.label}`
     : 'Finals and SORs by work week'
   const canShowBadges = band >= BADGE_RADIUS * 2 - 2
+  const canShowValues = showValues && band >= MIN_VALUE_LABEL_BAND
 
   return (
     <>
@@ -160,6 +167,10 @@ export function StackedBarChart({
           const finalsTop = y(item.finals)
           const totalTop = y(item.finals + item.sors)
           const isSelected = index === selectedIndex
+          const total = item.finals + item.sors
+          const hasBadge = canShowBadges && item.issuesFound > 0
+          const badgeCenterY = Math.max(BADGE_RADIUS + 1, totalTop - BADGE_RADIUS - 4)
+          const valueY = hasBadge ? badgeCenterY - BADGE_RADIUS - BADGE_LABEL_GAP : totalTop - VALUE_LABEL_GAP
           return (
             <g key={item.week.key} className={hoverIndex !== null && hoverIndex !== index ? 'qaqc-bar is-dimmed' : 'qaqc-bar'}>
               {item.sors > 0 && (
@@ -168,16 +179,24 @@ export function StackedBarChart({
               {item.finals > 0 && (item.sors > 0
                 ? <rect x={x} y={finalsTop} width={barWidth} height={y(0) - finalsTop} fill={colors.series1} />
                 : <path d={roundedTopBarPath(x, finalsTop, barWidth, y(0) - finalsTop, CORNER_RADIUS)} fill={colors.series1} />)}
-              {canShowBadges && item.issuesFound > 0 && (
-                <g
-                  className="qaqc-issue-badge"
-                  transform={`translate(${x + barWidth / 2} ${Math.max(BADGE_RADIUS + 1, totalTop - BADGE_RADIUS - 4)})`}
-                >
+              {hasBadge && (
+                <g className="qaqc-issue-badge" transform={`translate(${x + barWidth / 2} ${badgeCenterY})`}>
                   <circle r={BADGE_RADIUS} fill={colors.bad} stroke={colors.card} strokeWidth={2} />
                   <text y={3.5} textAnchor="middle" fill={colors.card}>
                     {item.issuesFound}
                   </text>
                 </g>
+              )}
+              {canShowValues && total > 0 && (
+                <text
+                  className="qaqc-value-text qaqc-bar-value"
+                  x={bandX(index) + band / 2}
+                  y={valueY}
+                  textAnchor="middle"
+                  fill={colors.ink}
+                >
+                  {formatCount(total)}
+                </text>
               )}
               {labels.has(index) && (
                 <text

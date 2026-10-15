@@ -42,6 +42,38 @@ describe('LineChart', () => {
     expect(view.container.querySelector('.qaqc-end-label')?.textContent).toBe('99.2%')
   })
 
+  it('labels NCR-week rates when labelIssueWeeks is on', () => {
+    view = render(
+      <LineChart
+        points={[point(40, 99.5), point(41, 99.1, true), point(42, 99.16)]}
+        selectedKey={202642}
+        width={300}
+        height={160}
+        colors={COLORS}
+        describe
+        labelIssueWeeks
+        onHover={vi.fn()}
+      />,
+    )
+    const labels = view.container.querySelectorAll('.qaqc-issue-rate')
+    expect(labels).toHaveLength(1)
+    expect(labels[0].textContent).toBe('99.1%')
+  })
+
+  it('does not label NCR-week rates by default', () => {
+    view = render(
+      <LineChart points={[point(40, 99.5), point(41, 99.1, true), point(42, 99.16)]} selectedKey={202642} width={300} height={160} colors={COLORS} describe onHover={vi.fn()} />,
+    )
+    expect(view.container.querySelectorAll('.qaqc-issue-rate')).toHaveLength(0)
+  })
+
+  it('keeps NCR-week labels below the top margin', () => {
+    view = render(
+      <LineChart points={[point(41, 99.1), point(42, 100, true)]} selectedKey={202642} width={300} height={160} colors={COLORS} describe labelIssueWeeks onHover={vi.fn()} />,
+    )
+    expect(Number(view.container.querySelector('.qaqc-issue-rate')?.getAttribute('y'))).toBeGreaterThanOrEqual(24)
+  })
+
   it('skips weeks without Finals instead of drawing through them', () => {
     view = render(
       <LineChart points={[point(40, null), point(41, 100), point(42, 100)]} selectedKey={202642} width={300} height={160} colors={COLORS} describe onHover={vi.fn()} />,
