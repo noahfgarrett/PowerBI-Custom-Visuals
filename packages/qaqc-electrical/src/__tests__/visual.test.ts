@@ -57,7 +57,9 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  harness?.visual.destroy()
+  act(() => {
+    harness?.visual.destroy()
+  })
   harness?.element.remove()
   harness = null
   vi.useRealTimers()
