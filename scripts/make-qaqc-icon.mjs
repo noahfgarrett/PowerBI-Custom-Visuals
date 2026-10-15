@@ -1,25 +1,48 @@
 #!/usr/bin/env node
-// Writes assets/icon.png: a 20x20 lucide Zap mark in the QAQC accent color (#2E5AAC).
+// Usage: node scripts/make-qaqc-icon.mjs <outputPng> <shape>
+// Writes a 20x20 QAQC icon (accent color #2E5AAC) for the named shape.
 
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
-import { fileURLToPath } from 'node:url';
 
 const SIZE = 20;
 const SAMPLES = 4;
 const COLOR = [0x2e, 0x5a, 0xac];
-// lucide "zap" polygon on its 24x24 grid
-const POLYGON = [[13, 2], [3, 14], [12, 14], [11, 22], [21, 10], [12, 10]];
 
-function inside(x, y) {
+function regularPolygon(cx, cy, radius, sides, rotation) {
+  return Array.from({ length: sides }, (_, i) => {
+    const angle = rotation + (i * 2 * Math.PI) / sides;
+    return [cx + radius * Math.cos(angle), cy + radius * Math.sin(angle)];
+  });
+}
+
+// Polygon lists on the 24x24 grid. A point is filled when it is inside an odd number of polygons
+// (even-odd fill), which lets a later polygon cut a hole in an earlier one.
+const SHAPES = {
+  zap: [[[13, 2], [3, 14], [12, 14], [11, 22], [21, 10], [12, 10]]],
+  'hex-nut': [regularPolygon(12, 12, 10.5, 6, Math.PI / 6), regularPolygon(12, 12, 4.2, 20, 0)],
+};
+
+const [outputArg, shapeName] = process.argv.slice(2);
+if (!outputArg || !shapeName || !Object.hasOwn(SHAPES, shapeName)) {
+  console.error(`[icon] usage: node scripts/make-qaqc-icon.mjs <outputPng> <${Object.keys(SHAPES).join('|')}>`);
+  process.exit(1);
+}
+const POLYGONS = SHAPES[shapeName];
+
+function insidePolygon(polygon, x, y) {
   let hit = false;
-  for (let i = 0, j = POLYGON.length - 1; i < POLYGON.length; j = i++) {
-    const [xi, yi] = POLYGON[i];
-    const [xj, yj] = POLYGON[j];
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const [xi, yi] = polygon[i];
+    const [xj, yj] = polygon[j];
     if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) hit = !hit;
   }
   return hit;
+}
+
+function inside(x, y) {
+  return POLYGONS.reduce((hit, polygon) => hit !== insidePolygon(polygon, x, y), false);
 }
 
 const scale = 24 / SIZE;
@@ -63,7 +86,7 @@ const png = Buffer.concat([
   chunk('IEND', Buffer.alloc(0)),
 ]);
 
-const target = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'icon.png');
+const target = path.resolve(process.cwd(), outputArg);
 fs.mkdirSync(path.dirname(target), { recursive: true });
 fs.writeFileSync(target, png);
 console.log(`[icon] wrote ${path.relative(process.cwd(), target)}`);

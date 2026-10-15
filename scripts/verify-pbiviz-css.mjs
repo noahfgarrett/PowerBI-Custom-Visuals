@@ -1,15 +1,16 @@
 import { execFileSync } from 'node:child_process'
 import { readdirSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..')
-const distDir = join(packageRoot, 'dist')
+import { join, resolve } from 'node:path'
 
 function fail(message) {
   console.error(`[verify] ${message}`)
   process.exit(1)
 }
+
+const [packageDirArg, requiredSelector] = process.argv.slice(2)
+if (!packageDirArg || !requiredSelector) fail('usage: node scripts/verify-pbiviz-css.mjs <packageDir> <requiredSelector>')
+
+const distDir = join(resolve(process.cwd(), packageDirArg), 'dist')
 
 let files = []
 try {
@@ -32,6 +33,6 @@ const css = content?.css
 const js = content?.js
 if (typeof js !== 'string' || js.length === 0) fail(`${files[0]} has no content.js`)
 if (typeof css !== 'string' || css.length === 0) fail(`${files[0]} has no content.css (visual.ts must import ../style/visual.less)`)
-if (!css.includes('.qaqc-root')) fail(`${files[0]} content.css does not contain .qaqc-root`)
+if (!css.includes(requiredSelector)) fail(`${files[0]} content.css does not contain ${requiredSelector}`)
 
 console.log(`[verify] ok css=${Buffer.byteLength(css)} js=${Buffer.byteLength(js)}`)

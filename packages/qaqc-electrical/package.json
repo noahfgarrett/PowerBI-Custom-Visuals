@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "node scripts/ensure-api.cjs && pbiviz package --all-locales && node scripts/verify-package.mjs",
+    "build": "node scripts/ensure-api.cjs && pbiviz package --all-locales && node ../../scripts/verify-pbiviz-css.mjs . .qaqc-root",
     "start": "pbiviz start",
     "dev": "vite --config dev/vite.config.ts",
-    "icon": "node scripts/make-icon.mjs"
+    "icon": "node ../../scripts/make-qaqc-icon.mjs assets/icon.png zap"
   },
   "dependencies": {
     "lucide-react": "1.24.0",
