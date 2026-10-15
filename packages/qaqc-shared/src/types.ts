@@ -34,7 +34,7 @@ export interface BuildingTally {
 
 export interface InspectionIndex {
   currentWeek: WorkWeek
-  /** Continuous weeks from the first week with data through the current week. */
+  /** Continuous weeks from the first week with data through the current week. Always holds at least one week, the current week. */
   weeks: WeekCounts[]
   /** Parallel to weeks: running totals through each week. */
   cumulativeFinals: number[]

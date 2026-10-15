@@ -108,4 +108,28 @@ describe('buildInspectionModel', () => {
     expect(model.toDate.passRate).toBeNull()
     expect(model.otherBuildings).toBeNull()
   })
+
+  it('reports no data when only other-phase rows exist', () => {
+    const index = buildInspectionIndex([["WW42'2026", 'N/A', '', 'A']], COLUMNS, TODAY)
+    expect(buildInspectionModel(index, defaultViewState(index)).hasData).toBe(false)
+  })
+
+  it('keeps the window end when a bar selects an earlier week', () => {
+    const index = syntheticIndex()
+    const model = buildInspectionModel(index, view(index, { selectedKey: 202630, windowEndKey: 202642 }))
+    expect(model.window).toHaveLength(30)
+    expect(model.window[model.window.length - 1].week.label).toBe("WW42'2026")
+    expect(model.selectedWeek.label).toBe("WW30'2026")
+    expect(model.thisWeek.finals.value).toBe(1)
+  })
+
+  it('excludes buildings that only appear before the window', () => {
+    const rows = [
+      ["WW01'2026", 'Final', '', 'Old'],
+      ["WW42'2026", 'Final', '', 'New'],
+    ]
+    const index = buildInspectionIndex(rows, COLUMNS, TODAY)
+    const model = buildInspectionModel(index, defaultViewState(index))
+    expect(model.buildings.map((bar) => bar.building)).toEqual(['New'])
+  })
 })

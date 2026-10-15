@@ -96,10 +96,10 @@ export function buildInspectionIndex(
       futureRows += 1
       continue
     }
-    if (!firstWeek || week.key < firstWeek.key) firstWeek = week
 
     const phase = readPhase(row[columns.phase], phaseCache)
     if (phase === 'other') continue
+    if (!firstWeek || week.key < firstWeek.key) firstWeek = week
 
     let bucket = buckets.get(week.key)
     if (!bucket) {
@@ -255,6 +255,6 @@ export function buildInspectionModel(index: InspectionIndex, view: ViewState): I
     }),
     buildings,
     otherBuildings,
-    hasData: index.totalRows - index.skippedRows - index.futureRows > 0,
+    hasData: index.cumulativeFinals[lastPosition] + index.cumulativeSors[lastPosition] > 0,
   }
 }

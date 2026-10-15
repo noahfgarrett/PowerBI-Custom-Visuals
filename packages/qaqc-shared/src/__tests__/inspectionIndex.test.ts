@@ -63,4 +63,13 @@ describe('buildInspectionIndex', () => {
     expect(index.weeks[0]).toMatchObject({ finals: 0, sors: 0, issuesFound: 0 })
     expect(index.cumulativeFinals).toEqual([0])
   })
+
+  it('derives the week range from Final and SOR rows only', () => {
+    const rows = [
+      ["WW01'2026", 'Pressure Test', '', 'A'],
+      ["WW42'2026", 'Final', '', 'A'],
+    ]
+    const index = buildInspectionIndex(rows, COLUMNS, TODAY)
+    expect(index.weeks.map((item) => item.week.label)).toEqual(["WW42'2026"])
+  })
 })
