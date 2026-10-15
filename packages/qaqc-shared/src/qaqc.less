@@ -593,8 +593,21 @@
   outline-offset: 2px;
 }
 
-.qaqc-root.is-expanded {
-  overflow: hidden;
+// Holds the scrolling dashboard root and, beside it, the expanded chart, which must not scroll with the root.
+.qaqc-frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+// Focus lands here only as a last resort after a collapse; no ring around the whole visual.
+.qaqc-frame:focus {
+  outline: none;
+}
+
+.qaqc-panel:focus-visible {
+  outline: 2px solid var(--qaqc-accent);
+  outline-offset: 2px;
 }
 
 // Keep the loading bar visible above the expanded chart.
@@ -623,6 +636,11 @@
   flex: 1 1 0;
   min-height: 0;
   margin-top: 6px;
+}
+
+.qaqc-expanded-fill {
+  position: absolute;
+  inset: 0;
 }
 
 // Fade out over 100 ms on collapse; fade in over 120 ms once the box arrives.

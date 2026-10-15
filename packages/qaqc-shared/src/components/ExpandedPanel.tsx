@@ -9,7 +9,7 @@ const CLOSE_MS = 220
 const FADE_OUT_MS = 100
 const EASING = 'cubic-bezier(0.2, 0.8, 0.2, 1)'
 
-/** A box in the overlay's coordinate space: relative to the scrolling root's content origin. */
+/** A box in the overlay's coordinate space: relative to the non-scrolling frame that holds the dashboard and the overlay. */
 export interface PanelBox {
   top: number
   left: number
@@ -31,7 +31,7 @@ export interface ExpandedPanelProps {
   legend: LegendItem[]
   emptyMessage: string | null
   animate: boolean
-  /** The visible area of the dashboard root (the box to expand into). */
+  /** The whole frame (the box to expand into). */
   getRootBox: () => PanelBox
   /** The grid panel's current box; null when it is not on screen. */
   getOriginBox: () => PanelBox | null
@@ -48,6 +48,20 @@ function boxFrame(box: PanelBox): Keyframe {
 function currentFrame(element: HTMLElement): Keyframe {
   const style = window.getComputedStyle(element)
   return { top: style.top, left: style.left, width: style.width, height: style.height }
+}
+
+interface MeasuredBodyProps {
+  children: (size: ElementSize) => ReactNode
+}
+
+/** Mounted only once the box has arrived, so the growing and shrinking box is never measured. */
+function MeasuredBody({ children }: MeasuredBodyProps): ReactElement {
+  const [ref, size] = useElementSize<HTMLDivElement>()
+  return (
+    <div ref={ref} className="qaqc-expanded-fill">
+      {size.width > 0 && size.height > 0 ? children(size) : null}
+    </div>
+  )
 }
 
 function canAnimate(element: HTMLElement): boolean {
@@ -74,18 +88,9 @@ export function ExpandedPanel({
   const hasClosedRef = useRef(false)
   const onClosedRef = useRef(onClosed)
   const [phase, setPhase] = useState<Phase>('opening')
-  // Only the top offset is fixed in px; width and height are 100% so the open box follows viewport changes.
-  const [rootTop, setRootTop] = useState<number>(() => getRootBox().top)
-  const [bodyRef, size] = useElementSize<HTMLDivElement>()
 
   useLayoutEffect(() => {
     onClosedRef.current = onClosed
-  })
-
-  // The root's scroll offset can change while open (for example when a resize leaves the compact layout).
-  useLayoutEffect(() => {
-    const top = getRootBox().top
-    setRootTop((current) => (current === top ? current : top))
   })
 
   useLayoutEffect(() => {
@@ -170,6 +175,7 @@ export function ExpandedPanel({
     }
   }
 
+  // The open box fills the frame (top/left 0, 100% size); px keyframes apply only while animating, so resizes are followed.
   const isRevealed = phase === 'open'
   const hasContent = phase === 'open' || phase === 'closing'
   const revealClass = animate ? ' qaqc-reveal' : ''
@@ -182,7 +188,7 @@ export function ExpandedPanel({
       aria-modal="true"
       aria-label={title}
       tabIndex={-1}
-      style={{ top: `${rootTop}px`, left: 0, width: '100%', height: '100%' }}
+      style={{ top: 0, left: 0, width: '100%', height: '100%' }}
       onKeyDown={handleKeyDown}
     >
       <header className="qaqc-panel-title">
@@ -202,10 +208,10 @@ export function ExpandedPanel({
           ))}
         </ul>
       )}
-      <div ref={bodyRef} className={`qaqc-expanded-body${revealClass}${stateClass}`}>
+      <div className={`qaqc-expanded-body${revealClass}${stateClass}`}>
         {hasContent && (emptyMessage !== null
           ? <p className="qaqc-chart-empty">{emptyMessage}</p>
-          : size.width > 0 && size.height > 0 ? children(size) : null)}
+          : <MeasuredBody>{children}</MeasuredBody>)}
       </div>
     </div>
   )

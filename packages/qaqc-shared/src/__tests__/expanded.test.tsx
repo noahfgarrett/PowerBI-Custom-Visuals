@@ -221,6 +221,19 @@ describe('ExpandedPanel with the Web Animations API', () => {
     expect(view.container.querySelector('.qaqc-expanded-body')?.classList.contains('is-revealed')).toBe(true)
   })
 
+  it('does not measure the body while the box is growing', async () => {
+    const calls = stubAnimate()
+    const measure = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+      x: 0, y: 0, top: 0, left: 0, right: 600, bottom: 300, width: 600, height: 300, toJSON: () => ({}),
+    })
+    view = render(panel())
+    expect(measure).not.toHaveBeenCalled()
+    calls[0].finish()
+    await flushPromises()
+    expect(measure).toHaveBeenCalled()
+    expect(view.container.querySelector('svg[data-size="600x300"]')).not.toBeNull()
+  })
+
   it('fades the content out, shrinks to the grid panel, then calls onClosed once', async () => {
     vi.useFakeTimers()
     stubSize()

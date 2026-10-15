@@ -185,6 +185,7 @@ function expandPanel(container: HTMLElement, title: string): void {
 function dashboardElement(
   index: InspectionDashboardProps['index'],
   viewport: InspectionDashboardProps['viewport'] = { width: 1280, height: 720 },
+  interactive = true,
 ): ReactElement {
   return (
     <InspectionDashboard
@@ -192,7 +193,7 @@ function dashboardElement(
       icon={Zap}
       index={index}
       theme={THEME}
-      interactive
+      interactive={interactive}
       animate={false}
       describeCharts
       loading={false}
@@ -343,6 +344,85 @@ describe('InspectionDashboard with measured charts', () => {
     pickWeekInDropdown(view.container, '202641')
     expect(dialog(view.container, 'Finals + SORs by Work Week')).not.toBeNull()
     expect(cardValue(view.container, 'Final Inspections')).toBe('6')
+  })
+
+  it('draws the expanded chart outside the scrolling root, inside the frame', () => {
+    stubSize()
+    view = draw()
+    expandPanel(view.container, 'NCR Pass Rate Trend')
+    const open = dialog(view.container, 'NCR Pass Rate Trend')
+    expect(open?.closest('.qaqc-root')).toBeNull()
+    expect(open?.parentElement?.classList.contains('qaqc-frame')).toBe(true)
+    expect(view.container.querySelector('.qaqc-root')?.hasAttribute('inert')).toBe(true)
+  })
+
+  it('animates from the panel box to the frame box, both relative to the frame', () => {
+    const keyframes: Keyframe[][] = []
+    const animate = vi.fn((frames: Keyframe[]) => {
+      keyframes.push(frames)
+      return { finished: new Promise<void>(() => undefined), cancel: (): void => undefined, playState: 'running' }
+    })
+    Object.defineProperty(HTMLElement.prototype, 'animate', { value: animate, configurable: true, writable: true })
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(1280)
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(720)
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element): DOMRect {
+      const box = this.classList.contains('qaqc-frame')
+        ? { top: 50, left: 100, width: 1280, height: 720 }
+        : this.matches('section.qaqc-panel')
+          ? { top: 300, left: 400, width: 380, height: 260 }
+          : { top: 0, left: 0, width: 800, height: 400 }
+      return { ...box, x: box.left, y: box.top, right: box.left + box.width, bottom: box.top + box.height, toJSON: () => ({}) }
+    })
+    try {
+      view = render(
+        <InspectionDashboard
+          title="Electrical Inspections"
+          icon={Zap}
+          index={INDEX}
+          theme={THEME}
+          interactive
+          animate
+          describeCharts
+          loading={false}
+          footnotes={[]}
+          viewport={{ width: 1280, height: 720 }}
+          onHover={vi.fn()}
+        />,
+      )
+      expandPanel(view.container, 'Inspections by Building')
+      expect(keyframes[0]).toEqual([
+        { top: '250px', left: '300px', width: '380px', height: '260px' },
+        { top: '0px', left: '0px', width: '1280px', height: '720px' },
+      ])
+    } finally {
+      view?.unmount()
+      view = null
+      Reflect.deleteProperty(HTMLElement.prototype, 'animate')
+    }
+  })
+
+  it('clears the Power BI tooltip when the expanded chart closes', () => {
+    stubSize()
+    const onHover = vi.fn()
+    view = draw({ onHover })
+    expandPanel(view.container, 'Inspections by Building')
+    const open = dialog(view.container, 'Inspections by Building')
+    act(() => {
+      open?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    })
+    expect(onHover).toHaveBeenLastCalledWith(null)
+  })
+
+  it('returns focus to the panel when its expand button is gone', () => {
+    stubSize()
+    view = draw()
+    expandPanel(view.container, 'Inspections by Building')
+    view.rerender(dashboardElement(INDEX, { width: 1280, height: 720 }, false))
+    const open = dialog(view.container, 'Inspections by Building')
+    act(() => {
+      open?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    })
+    expect(document.activeElement).toBe(view.container.querySelector('section[aria-label="Inspections by Building"]'))
   })
 
   it('hides the expanded chart on a short tile and brings it back when the tile grows', () => {

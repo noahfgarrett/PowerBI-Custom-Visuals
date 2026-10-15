@@ -34,8 +34,9 @@ export function ChartPanel({
 }: ChartPanelProps): ReactElement {
   const [bodyRef, size] = useElementSize<HTMLDivElement>()
   const isMeasured = size.width > 0 && size.height > 0
+  // tabIndex -1: focus can return to the section after a collapse when the expand button is gone.
   return (
-    <section ref={sectionRef} className={className ? `qaqc-panel ${className}` : 'qaqc-panel'} aria-label={title}>
+    <section ref={sectionRef} className={className ? `qaqc-panel ${className}` : 'qaqc-panel'} aria-label={title} tabIndex={-1}>
       <header className="qaqc-panel-title">
         <Icon size={15} aria-hidden="true" />
         <h3>{title}</h3>
