@@ -27,9 +27,10 @@ packages/
     src/workWeeks.ts          ported from the HTML app's src/utils/workWeeks.ts
     src/inspections.ts        row normalization, Final/SOR/issue rules, Electrical model
     src/theme.ts              presets + fixed status colors
-    src/qaqc.css              design tokens and component styles
+    src/qaqc.less             design tokens and component styles
     src/components/           KpiCard, WorkWeekPicker, RangeToggle, ChartPanel,
-                              StackedBarChart, LineChart, HorizontalBarChart, EmptyState
+                              StackedBarChart, LineChart, HorizontalBarChart, StatusPanel,
+                              LoadingBar, Footnotes
     src/__tests__/
   qaqc-electrical/
     capabilities.json         field slots, Format pane objects, data reduction
@@ -52,7 +53,7 @@ On every Power BI `update()`:
 1. The adapter reads the table data view and maps columns by **role**, not by column name.
 2. It validates the slots. If any required slot is missing, it renders the setup state.
 3. It normalizes rows: trims text, parses the work week, and normalizes phase case.
-4. `buildElectricalModel(rows, selectedWeek, range, today)` returns everything the UI needs. It is a pure, tested function.
+4. `buildInspectionIndex(rows, columns, today)` aggregates the rows once per data update; `buildInspectionModel(index, view)` derives everything the UI needs from the index. Both are pure, tested functions.
 5. React renders `<ElectricalDashboard>` with the model, settings, and callbacks.
 
 The selected work week and the range toggle are React state inside the visual. They are not saved into the report. On open they default to the current WW and "30 WW". When data refreshes, the selected week is kept if it still exists.
@@ -206,7 +207,7 @@ How the design meets them:
 - **Aggregate once per data update.** One pass over the rows builds a per-week index: for each work week, counts of Finals, SORs, and issues found, plus per-building counts. Raw rows are never touched again until Power BI sends new data.
 - **Interactions read only the index.** Selecting a week, toggling the range, or clicking a bar recomputes from the per-week index (at most a few hundred weeks), never from rows. To-date totals use cumulative sums over the sorted weeks.
 - **Charts draw aggregates, not rows.** SVG element counts are bounded by weeks in the window plus top-8 buildings, so the chart size is independent of row count. In "All" mode with hundreds of weeks, bar width shrinks to a 2px minimum and labels thin out.
-- **Memoization.** The index is keyed on the Power BI data view identity. The view model is memoized on index, selected week, window end, range, and settings.
+- **Rebuild per data update.** The index is rebuilt on every Power BI data update (about 25 ms at 500,000 rows), so an edited cell anywhere in the sheet is always reflected. Resizes and other non-data updates reuse it. The view model is memoized on index, selected week, window end, and range.
 - **Incremental loading.** `fetchMoreData(true)` asks Power BI to aggregate segments into one table; the index is rebuilt once, after the last segment arrives. The loading bar shows progress and the previous render stays visible meanwhile.
 - **Resize** goes through a `requestAnimationFrame`-throttled handler. Size-dependent layout is computed from the latest viewport only.
 - **No per-row React components and no per-row DOM nodes**, anywhere.
@@ -217,6 +218,7 @@ A benchmark test generates synthetic logs of 100,000 and 500,000 rows and assert
 
 These satisfy the repo's `review:business` gate, with zero warnings as the target:
 
+- **Stylesheet import:** `visual.ts` imports `../style/visual.less`, because pbiviz only bundles styles the entry file imports. The package build runs `scripts/verify-package.mjs`, which fails if the `.pbiviz` has no CSS.
 - **Selection manager** for the right-click context menu (`showContextMenu`).
 - **Host tooltip service** for chart hovers, with `supportEnhancedTooltips: true`.
 - **High-contrast** handling via `colorPalette.isHighContrast`.
