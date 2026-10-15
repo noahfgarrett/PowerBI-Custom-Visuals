@@ -8,28 +8,25 @@ import {
   ListTree,
   Percent,
   Signature,
-  type LucideIcon,
 } from 'lucide-react'
-import { useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type ReactElement } from 'react'
 
-import type { TooltipHandler } from '../chartTypes'
 import type { ElementSize } from '../hooks/useElementSize'
 import { useWeekWindow } from '../hooks/useWeekWindow'
 import { BuildingIssueTable } from './BuildingIssueTable'
-import { CARDS_ONLY_HEIGHT, ChartExpansionFrame, COMPACT_WIDTH, type ExpandablePanel } from './ChartExpansionFrame'
+import { CARDS_ONLY_HEIGHT, ChartExpansionFrame, COMPACT_WIDTH, type GridPanel } from './ChartExpansionFrame'
 import { ChartFill } from './ChartFill'
 import { ChartPanel, type LegendItem } from './ChartPanel'
+import { DashboardHeader, type DashboardChromeProps } from './DashboardHeader'
 import { Footnotes } from './Footnotes'
 import { IssueRateChart } from './IssueRateChart'
 import { KpiCard } from './KpiCard'
 import { KpiGroup } from './KpiGroup'
 import { LoadingBar } from './LoadingBar'
-import { RangeToggle } from './RangeToggle'
 import { SignoffBarChart } from './SignoffBarChart'
 import { SystemDrillChart } from './SystemDrillChart'
 import { SystemTable } from './SystemTable'
 import { WeldWindowSummary } from './WindowSummary'
-import { WorkWeekPicker } from './WorkWeekPicker'
 import {
   formatCount,
   formatDelta,
@@ -41,8 +38,7 @@ import {
   signoffStatus,
   trendOf,
 } from '../format'
-import { RECENT_WEEK_COUNT } from '../inspections'
-import { chartColorsFromTheme, type ResolvedTheme } from '../theme'
+import { chartColorsFromTheme } from '../theme'
 import type { WeldIndex } from '../types'
 import { buildWeldModel } from '../welds'
 import { shortWeekLabel } from '../workWeeks'
@@ -56,30 +52,15 @@ type PanelId = 'signoff' | 'systems' | 'buildings'
 
 const PANEL_IDS: readonly PanelId[] = ['signoff', 'systems', 'buildings'] as const
 
-interface PanelConfig extends ExpandablePanel {
-  className?: string
-  renderChart: (size: ElementSize) => ReactNode
-}
-
-export interface WeldingDashboardProps {
-  title: string
-  icon: LucideIcon
+export interface WeldingDashboardProps extends DashboardChromeProps {
   index: WeldIndex
   /** Buildings with fewer welds in the window roll into Other on the issue-rate chart. */
   minWelds: number
-  theme: ResolvedTheme
-  interactive: boolean
-  animate: boolean
-  describeCharts: boolean
-  loading: boolean
-  footnotes: string[]
-  viewport: { width: number; height: number }
-  onHover: TooltipHandler
 }
 
 export function WeldingDashboard({
   title,
-  icon: Icon,
+  icon,
   index,
   minWelds,
   theme,
@@ -142,7 +123,7 @@ export function WeldingDashboard({
     )
   }
 
-  const panels: Record<PanelId, PanelConfig> = {
+  const panels: Record<PanelId, GridPanel> = {
     signoff: {
       title: 'Signoffs by Work Week',
       icon: ChartColumnBig,
@@ -224,18 +205,16 @@ export function WeldingDashboard({
       {(expandable) => (
         <>
           <LoadingBar active={loading} />
-          <div className="qaqc-header">
-            <div className="qaqc-title">
-              <span className="qaqc-title-icon">
-                <Icon size={16} aria-hidden="true" />
-              </span>
-              <h2>{title}</h2>
-            </div>
-            <div className="qaqc-controls">
-              <RangeToggle value={range} recentCount={RECENT_WEEK_COUNT} disabled={!interactive} onChange={changeRange} />
-              <WorkWeekPicker options={model.weekOptions} valueKey={model.selectedWeek.key} disabled={!interactive} onChange={pickWeek} />
-            </div>
-          </div>
+          <DashboardHeader
+            title={title}
+            icon={icon}
+            interactive={interactive}
+            range={range}
+            onRangeChange={changeRange}
+            weekOptions={model.weekOptions}
+            selectedKey={model.selectedWeek.key}
+            onPickWeek={pickWeek}
+          />
 
           <div className="qaqc-kpi-row">
             <KpiGroup title={model.selectedWeek.label} variant="week">

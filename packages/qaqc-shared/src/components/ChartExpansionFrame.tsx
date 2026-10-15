@@ -29,6 +29,12 @@ export interface ExpandablePanel {
   renderExpanded: (size: ElementSize) => ReactNode
 }
 
+/** A chart panel in a dashboard's grid: the overlay's panel plus how the grid draws it. */
+export interface GridPanel extends ExpandablePanel {
+  className?: string
+  renderChart: (size: ElementSize) => ReactNode
+}
+
 /** Spread onto a grid ChartPanel to make it expandable, or onto a HeaderOverlayButton to open a page. */
 export interface ExpandableProps {
   sectionRef: (element: HTMLElement | null) => void

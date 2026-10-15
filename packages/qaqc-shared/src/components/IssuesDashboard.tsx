@@ -9,18 +9,17 @@ import {
   Hourglass,
   Layers,
   TableProperties,
-  type LucideIcon,
 } from 'lucide-react'
-import { useMemo, type ReactElement, type ReactNode } from 'react'
+import { useMemo, type ReactElement } from 'react'
 
-import type { TooltipHandler } from '../chartTypes'
 import type { ElementSize } from '../hooks/useElementSize'
 import { useWeekWindow } from '../hooks/useWeekWindow'
 import { AgingSplitTable } from './AgingSplitTable'
 import { AgingStripChart } from './AgingStripChart'
-import { CARDS_ONLY_HEIGHT, ChartExpansionFrame, COMPACT_WIDTH, type ExpandablePanel } from './ChartExpansionFrame'
+import { CARDS_ONLY_HEIGHT, ChartExpansionFrame, COMPACT_WIDTH, type ExpandablePanel, type GridPanel } from './ChartExpansionFrame'
 import { ChartFill } from './ChartFill'
 import { ChartPanel } from './ChartPanel'
+import { DashboardHeader, type DashboardChromeProps } from './DashboardHeader'
 import { Footnotes } from './Footnotes'
 import { HeaderOverlayButton } from './HeaderOverlayButton'
 import { IssueDetail } from './IssueDetail'
@@ -30,13 +29,10 @@ import { KpiGroup } from './KpiGroup'
 import { LoadingBar } from './LoadingBar'
 import { OpenAgingChart } from './OpenAgingChart'
 import { OpenIssuesTable } from './OpenIssuesTable'
-import { RangeToggle } from './RangeToggle'
 import { IssueWindowSummary } from './WindowSummary'
-import { WorkWeekPicker } from './WorkWeekPicker'
 import { formatCount, formatDelta, formatPercent, formatPointsDelta, formatSignedCount, pointsTrend, trendOf } from '../format'
-import { RECENT_WEEK_COUNT } from '../inspections'
 import { buildIssueModel } from '../issues'
-import { chartColorsFromTheme, type ResolvedTheme } from '../theme'
+import { chartColorsFromTheme } from '../theme'
 import type { ClosureRateCard, IssueIndex } from '../types'
 import { shortWeekLabel } from '../workWeeks'
 
@@ -48,23 +44,8 @@ type PanelId = ChartId | 'detail'
 
 const CHART_IDS: readonly ChartId[] = ['trend', 'openAging', 'overallAging'] as const
 
-interface ChartConfig extends ExpandablePanel {
-  className?: string
-  renderChart: (size: ElementSize) => ReactNode
-}
-
-export interface IssuesDashboardProps {
-  title: string
-  icon: LucideIcon
+export interface IssuesDashboardProps extends DashboardChromeProps {
   index: IssueIndex
-  theme: ResolvedTheme
-  interactive: boolean
-  animate: boolean
-  describeCharts: boolean
-  loading: boolean
-  footnotes: string[]
-  viewport: { width: number; height: number }
-  onHover: TooltipHandler
 }
 
 /** A project-to-date count's change in the selected week, in the other dashboards' "+N this WW" style. */
@@ -80,7 +61,7 @@ function closureRateDetail(card: ClosureRateCard, previousLabel: string): string
 
 export function IssuesDashboard({
   title,
-  icon: Icon,
+  icon,
   index,
   theme,
   interactive,
@@ -125,7 +106,7 @@ export function IssuesDashboard({
     return <AgingStripChart buckets={model.overallAging} colors={colors} isHighContrast={theme.isHighContrast} />
   }
 
-  const charts: Record<ChartId, ChartConfig> = {
+  const charts: Record<ChartId, GridPanel> = {
     trend: {
       title: 'Issues by Work Week',
       icon: ChartColumnBig,
@@ -201,19 +182,18 @@ export function IssuesDashboard({
       {(expandable) => (
         <>
           <LoadingBar active={loading} />
-          <div className="qaqc-header">
-            <div className="qaqc-title">
-              <span className="qaqc-title-icon">
-                <Icon size={16} aria-hidden="true" />
-              </span>
-              <h2>{title}</h2>
-            </div>
-            <div className="qaqc-controls">
-              <HeaderOverlayButton {...expandable('detail')} label="Issue Detail" ariaLabel="Open Issue Detail" icon={TableProperties} />
-              <RangeToggle value={range} recentCount={RECENT_WEEK_COUNT} disabled={!interactive} onChange={changeRange} />
-              <WorkWeekPicker options={model.weekOptions} valueKey={model.selectedWeek.key} disabled={!interactive} onChange={pickWeek} />
-            </div>
-          </div>
+          <DashboardHeader
+            title={title}
+            icon={icon}
+            interactive={interactive}
+            range={range}
+            onRangeChange={changeRange}
+            weekOptions={model.weekOptions}
+            selectedKey={model.selectedWeek.key}
+            onPickWeek={pickWeek}
+          >
+            <HeaderOverlayButton {...expandable('detail')} label="Issue Detail" ariaLabel="Open Issue Detail" icon={TableProperties} />
+          </DashboardHeader>
 
           <div className="qaqc-kpi-row">
             <KpiGroup title="This WW" subtitle={model.selectedWeek.label} variant="week">

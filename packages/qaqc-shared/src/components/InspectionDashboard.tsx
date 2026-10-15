@@ -1,13 +1,13 @@
-import { Building2, ChartColumnStacked, CircleAlert, CircleCheck, ClipboardCheck, Gauge, TrendingUp, Wrench, type LucideIcon } from 'lucide-react'
-import { useMemo, type ReactElement, type ReactNode } from 'react'
+import { Building2, ChartColumnStacked, CircleAlert, CircleCheck, ClipboardCheck, Gauge, TrendingUp, Wrench } from 'lucide-react'
+import { useMemo, type ReactElement } from 'react'
 
-import type { TooltipHandler } from '../chartTypes'
 import type { ElementSize } from '../hooks/useElementSize'
 import { useWeekWindow } from '../hooks/useWeekWindow'
 import { BuildingTable } from './BuildingTable'
-import { CARDS_ONLY_HEIGHT, ChartExpansionFrame, COMPACT_WIDTH, type ExpandablePanel } from './ChartExpansionFrame'
+import { CARDS_ONLY_HEIGHT, ChartExpansionFrame, COMPACT_WIDTH, type GridPanel } from './ChartExpansionFrame'
 import { ChartFill } from './ChartFill'
 import { ChartPanel, type LegendItem } from './ChartPanel'
+import { DashboardHeader, type DashboardChromeProps } from './DashboardHeader'
 import { Footnotes } from './Footnotes'
 import { HorizontalBarChart } from './HorizontalBarChart'
 import { IssueWeekList } from './IssueWeekList'
@@ -15,10 +15,8 @@ import { KpiCard } from './KpiCard'
 import { KpiGroup } from './KpiGroup'
 import { LineChart } from './LineChart'
 import { LoadingBar } from './LoadingBar'
-import { RangeToggle } from './RangeToggle'
 import { StackedBarChart } from './StackedBarChart'
 import { WindowSummary } from './WindowSummary'
-import { WorkWeekPicker } from './WorkWeekPicker'
 import {
   formatCount,
   formatDelta,
@@ -28,8 +26,8 @@ import {
   pointsTrend,
   trendOf,
 } from '../format'
-import { buildInspectionModel, RECENT_WEEK_COUNT } from '../inspections'
-import { chartColorsFromTheme, type ResolvedTheme } from '../theme'
+import { buildInspectionModel } from '../inspections'
+import { chartColorsFromTheme } from '../theme'
 import type { InspectionIndex } from '../types'
 import { shortWeekLabel } from '../workWeeks'
 
@@ -40,28 +38,13 @@ type PanelId = 'trend' | 'passRate' | 'buildings'
 
 const PANEL_IDS: readonly PanelId[] = ['trend', 'passRate', 'buildings'] as const
 
-interface PanelConfig extends ExpandablePanel {
-  className?: string
-  renderChart: (size: ElementSize) => ReactNode
-}
-
-export interface InspectionDashboardProps {
-  title: string
-  icon: LucideIcon
+export interface InspectionDashboardProps extends DashboardChromeProps {
   index: InspectionIndex
-  theme: ResolvedTheme
-  interactive: boolean
-  animate: boolean
-  describeCharts: boolean
-  loading: boolean
-  footnotes: string[]
-  viewport: { width: number; height: number }
-  onHover: TooltipHandler
 }
 
 export function InspectionDashboard({
   title,
-  icon: Icon,
+  icon,
   index,
   theme,
   interactive,
@@ -125,7 +108,7 @@ export function InspectionDashboard({
     )
   }
 
-  const panels: Record<PanelId, PanelConfig> = {
+  const panels: Record<PanelId, GridPanel> = {
     trend: {
       title: 'Finals + SORs by Work Week',
       icon: ChartColumnStacked,
@@ -190,18 +173,16 @@ export function InspectionDashboard({
       {(expandable) => (
         <>
           <LoadingBar active={loading} />
-          <div className="qaqc-header">
-            <div className="qaqc-title">
-              <span className="qaqc-title-icon">
-                <Icon size={16} aria-hidden="true" />
-              </span>
-              <h2>{title}</h2>
-            </div>
-            <div className="qaqc-controls">
-              <RangeToggle value={range} recentCount={RECENT_WEEK_COUNT} disabled={!interactive} onChange={changeRange} />
-              <WorkWeekPicker options={model.weekOptions} valueKey={model.selectedWeek.key} disabled={!interactive} onChange={pickWeek} />
-            </div>
-          </div>
+          <DashboardHeader
+            title={title}
+            icon={icon}
+            interactive={interactive}
+            range={range}
+            onRangeChange={changeRange}
+            weekOptions={model.weekOptions}
+            selectedKey={model.selectedWeek.key}
+            onPickWeek={pickWeek}
+          />
 
           <div className="qaqc-kpi-row">
             <KpiGroup title={model.selectedWeek.label} variant="week">
