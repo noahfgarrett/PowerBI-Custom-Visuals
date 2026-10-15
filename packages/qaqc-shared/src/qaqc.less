@@ -1015,6 +1015,152 @@
   color: var(--qaqc-ink-2);
 }
 
+// Issue charts, ported from the HTML app's RangeChart, OpenAgingChart and AgingChart.
+
+.qaqc-trend-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+/* Same card halo as the other value labels; labels inside a bar sit on the bar colour instead. */
+.qaqc-trend-label:not(.is-inside),
+.qaqc-aging-value:not(.is-inside) {
+  paint-order: stroke;
+  stroke: var(--qaqc-card-solid);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.qaqc-remaining-area {
+  pointer-events: none;
+}
+
+.qaqc-remaining-line {
+  stroke-width: 2px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.qaqc-remaining-dot {
+  stroke-width: 2px;
+  pointer-events: none;
+}
+
+.qaqc-aging-value {
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.qaqc-aging-bucket {
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.qaqc-aging {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  height: 100%;
+  min-height: 0;
+}
+
+.qaqc-aging-strip {
+  display: flex;
+  gap: 2px;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--qaqc-hairline);
+}
+
+.qaqc-aging-strip i,
+.qaqc-aging-track i {
+  display: block;
+  height: 100%;
+}
+
+.qaqc-aging-row {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.qaqc-aging-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--qaqc-ink-2);
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.qaqc-aging-swatch {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 3px;
+}
+
+.qaqc-aging-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--qaqc-hairline);
+}
+
+.qaqc-aging-track i {
+  border-radius: inherit;
+}
+
+// High contrast makes the hairline the foreground colour, which would fill the empty tracks; outline them instead.
+.qaqc-aging.is-high-contrast .qaqc-aging-strip,
+.qaqc-aging.is-high-contrast .qaqc-aging-track {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--qaqc-hairline);
+}
+
+.qaqc-aging-row strong {
+  min-width: 52px;
+  color: var(--qaqc-ink);
+  font-size: 10.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.qaqc-aging-row em {
+  margin-left: 5px;
+  color: var(--qaqc-muted);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.qaqc-table thead th.is-text,
+.qaqc-table td.is-text {
+  text-align: left;
+}
+
+.qaqc-open-issues-table thead th,
+.qaqc-open-issues-table .qaqc-issue-id,
+.qaqc-open-issues-table td:not(.is-text) {
+  white-space: nowrap;
+}
+
+.qaqc-open-issues-table .qaqc-issue-title {
+  min-width: 180px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .qaqc-host * {
     animation: none !important;

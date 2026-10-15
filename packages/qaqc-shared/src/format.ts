@@ -32,9 +32,15 @@ export function formatSignoffRate(rate: number | null): string {
   return `${(Math.floor(rate * 10 + 1e-9) / 10).toFixed(1)}%`
 }
 
+/** A count change such as +3 or −3; zero has no sign. */
+export function formatSignedCount(delta: number): string {
+  if (delta === 0) return '0'
+  return `${delta > 0 ? '+' : MINUS}${formatCount(Math.abs(delta))}`
+}
+
 export function formatDelta(delta: number, comparedTo: string): string {
   if (delta === 0) return `No change vs ${comparedTo}`
-  return `${delta > 0 ? '+' : MINUS}${formatCount(Math.abs(delta))} vs ${comparedTo}`
+  return `${formatSignedCount(delta)} vs ${comparedTo}`
 }
 
 /** Rounds to hundredths so tiny float noise reads as no change. */

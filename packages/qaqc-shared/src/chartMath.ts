@@ -62,3 +62,11 @@ export function truncateLabel(text: string, maxChars: number): string {
   if (text.length <= maxChars) return text
   return `${text.slice(0, Math.max(1, maxChars - 1)).trimEnd()}…`
 }
+
+const ORDINAL_MIN_OPACITY = 0.35
+
+/** One step of an ordinal ramp on a single series colour: 0.35 for the first step, rising evenly to 1 for the last. */
+export function ordinalOpacity(index: number, count: number): number {
+  if (count <= 1) return 1
+  return ORDINAL_MIN_OPACITY + ((1 - ORDINAL_MIN_OPACITY) * index) / (count - 1)
+}

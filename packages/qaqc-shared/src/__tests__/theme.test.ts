@@ -57,6 +57,16 @@ describe('resolveTheme', () => {
     expect(colors.bad).toBe('#D03B3B')
   })
 
+  it('carries the good green into chart colors', () => {
+    expect(chartColorsFromTheme(resolveTheme(BASE)).good).toBe(STATUS_COLORS.good)
+  })
+
+  it('flags high-contrast mode on the resolved theme', () => {
+    const host = { foreground: '#FFFF00', background: '#000000', foregroundSelected: '#00FFFF' }
+    expect(resolveTheme(BASE).isHighContrast).toBe(false)
+    expect(resolveTheme({ ...BASE, highContrast: host }).isHighContrast).toBe(true)
+  })
+
   it('carries the warn amber into chart colors', () => {
     expect(chartColorsFromTheme(resolveTheme(BASE)).warn).toBe(STATUS_COLORS.warn)
   })

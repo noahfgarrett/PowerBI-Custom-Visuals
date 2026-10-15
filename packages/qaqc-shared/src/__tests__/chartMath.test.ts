@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { labelIndices, niceScale, passRateDomain, roundedRightBarPath, roundedTopBarPath, truncateLabel } from '../chartMath'
+import { labelIndices, niceScale, ordinalOpacity, passRateDomain, roundedRightBarPath, roundedTopBarPath, truncateLabel } from '../chartMath'
 
 describe('niceScale', () => {
   it('rounds the max up to a nice step with integer ticks', () => {
@@ -58,5 +58,16 @@ describe('truncateLabel', () => {
     expect(truncateLabel('F63.2', 10)).toBe('F63.2')
     expect(truncateLabel('IWW Pump Station', 8)).toBe('IWW Pum…')
     expect(truncateLabel('Other (2 buildings)', 7)).toBe('Other…')
+  })
+})
+
+describe('ordinalOpacity', () => {
+  it('ramps evenly from 0.35 for the first step to 1 for the last', () => {
+    expect([0, 1, 2, 3, 4].map((index) => ordinalOpacity(index, 5))).toEqual([0.35, 0.5125, 0.675, 0.8375, 1])
+    expect([0, 1, 2].map((index) => ordinalOpacity(index, 3))).toEqual([0.35, 0.675, 1])
+  })
+
+  it('is fully opaque for a single step', () => {
+    expect(ordinalOpacity(0, 1)).toBe(1)
   })
 })

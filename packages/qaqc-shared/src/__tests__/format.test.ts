@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatCount, formatDelta, formatPercent, formatPointsDelta, formatSignoffRate, pluralize, signoffStatus, trendOf } from '../format'
+import {
+  formatCount,
+  formatDelta,
+  formatPercent,
+  formatPointsDelta,
+  formatSignedCount,
+  formatSignoffRate,
+  pluralize,
+  signoffStatus,
+  trendOf,
+} from '../format'
 
 describe('format', () => {
   it('formats counts with thousands separators', () => {
@@ -10,6 +20,12 @@ describe('format', () => {
   it('formats percents and n/a', () => {
     expect(formatPercent(99.1596)).toBe('99.2%')
     expect(formatPercent(null)).toBe('n/a')
+  })
+
+  it('formats a signed count with a true minus and no sign at zero', () => {
+    expect(formatSignedCount(1204)).toBe('+1,204')
+    expect(formatSignedCount(-3)).toBe('−3')
+    expect(formatSignedCount(0)).toBe('0')
   })
 
   it('formats signed deltas against a week', () => {

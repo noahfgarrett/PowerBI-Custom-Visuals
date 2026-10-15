@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react'
 
-import { formatCount, formatPercent } from '../format'
-import type { WeldWindowTotals, WindowTotals } from '../types'
+import { formatCount, formatPercent, formatSignedCount } from '../format'
+import type { IssueWindowTotals, WeldWindowTotals, WindowTotals } from '../types'
 
 interface SummaryItem {
   label: string
@@ -53,6 +53,23 @@ export function WeldWindowSummary({ totals }: WeldWindowSummaryProps): ReactElem
         { label: 'Signed', value: formatCount(totals.signed) },
         { label: 'Sign-off %', value: formatPercent(rate) },
         { label: 'Issues created', value: formatCount(totals.issues) },
+      ]}
+    />
+  )
+}
+
+export interface IssueWindowSummaryProps {
+  totals: IssueWindowTotals
+}
+
+export function IssueWindowSummary({ totals }: IssueWindowSummaryProps): ReactElement {
+  return (
+    <SummaryStrip
+      items={[
+        { label: 'Opened', value: formatCount(totals.opened) },
+        { label: 'Closed', value: formatCount(totals.closed) },
+        { label: 'Change in remaining', value: formatSignedCount(totals.remainingChange) },
+        { label: 'Closure rate', value: formatPercent(totals.closureRate) },
       ]}
     />
   )

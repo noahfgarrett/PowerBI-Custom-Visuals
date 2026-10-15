@@ -70,7 +70,7 @@ export interface SystemTableProps {
 }
 
 export function SystemTable({ rows }: SystemTableProps): ReactElement {
-  const { sort, toggleSort } = useTableSort<SortKey>({ key: 'total', direction: 'descending' }, 'name')
+  const { sort, toggleSort } = useTableSort<SortKey>({ key: 'total', direction: 'descending' }, ['name'])
   const [openSystems, setOpenSystems] = useState<ReadonlySet<string>>(() => new Set())
   const idPrefix = useId()
   // Each system keeps its input position so its spec-row ids stay stable across sorts.

@@ -43,7 +43,7 @@ export interface BuildingIssueTableProps {
 }
 
 export function BuildingIssueTable({ rows }: BuildingIssueTableProps): ReactElement {
-  const { sort, toggleSort } = useTableSort<SortKey>({ key: 'rate', direction: 'descending' }, 'building')
+  const { sort, toggleSort } = useTableSort<SortKey>({ key: 'rate', direction: 'descending' }, ['building'])
   const sorted = useMemo(() => [...rows].sort((a, b) => compareRows(a, b, sort)), [rows, sort])
 
   return (

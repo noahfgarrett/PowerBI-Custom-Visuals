@@ -19,10 +19,10 @@ export function directionSign(direction: SortDirection): number {
 }
 
 /**
- * Sort state for a table with sortable column headers. The name column starts ascending (A to Z);
+ * Sort state for a table with sortable column headers. Text columns (`ascendingKeys`) start ascending (A to Z);
  * every number column starts descending (largest first).
  */
-export function useTableSort<Key extends string>(initial: SortState<Key>, nameKey: Key): TableSort<Key> {
+export function useTableSort<Key extends string>(initial: SortState<Key>, ascendingKeys: ReadonlyArray<Key>): TableSort<Key> {
   const [sort, setSort] = useState<SortState<Key>>(initial)
 
   function toggleSort(key: Key): void {
@@ -30,7 +30,7 @@ export function useTableSort<Key extends string>(initial: SortState<Key>, nameKe
       if (current.key === key) {
         return { key, direction: current.direction === 'ascending' ? 'descending' : 'ascending' }
       }
-      return { key, direction: key === nameKey ? 'ascending' : 'descending' }
+      return { key, direction: ascendingKeys.includes(key) ? 'ascending' : 'descending' }
     })
   }
 

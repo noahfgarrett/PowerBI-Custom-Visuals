@@ -68,6 +68,8 @@ export interface ThemeOptions {
 
 export interface ResolvedTheme {
   colors: ThemeColors
+  /** True when Power BI's high-contrast colors replace the preset. */
+  isHighContrast: boolean
   cssVariables: Record<string, string>
 }
 
@@ -106,6 +108,7 @@ export function resolveTheme(options: ThemeOptions): ResolvedTheme {
 
   return {
     colors,
+    isHighContrast: highContrast !== null,
     cssVariables: {
       '--qaqc-page': fill(highContrast ? colors.page : pageBase, options.backgroundOpacity),
       '--qaqc-card': fill(colors.card, options.cardOpacity),
@@ -134,6 +137,7 @@ export function chartColorsFromTheme(theme: ResolvedTheme): ChartColors {
   return {
     series1: colors.series1,
     series2: colors.series2,
+    good: colors.good,
     bad: colors.bad,
     warn: colors.warn,
     card: colors.card,

@@ -46,7 +46,7 @@ export interface BuildingTableProps {
 }
 
 export function BuildingTable({ rows }: BuildingTableProps): ReactElement {
-  const { sort, toggleSort } = useTableSort<SortKey>({ key: 'total', direction: 'descending' }, 'building')
+  const { sort, toggleSort } = useTableSort<SortKey>({ key: 'total', direction: 'descending' }, ['building'])
   const sorted = useMemo(() => [...rows].sort((a, b) => compareRows(a, b, sort)), [rows, sort])
   const maxTotal = rows.reduce((max, row) => Math.max(max, totalOf(row)), 1)
 
