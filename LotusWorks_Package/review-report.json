@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-15T15:36:56.728Z",
+  "generatedAt": "2026-10-15T17:50:24.180Z",
   "summary": {
-    "packageCount": 36,
+    "packageCount": 37,
     "warningCount": 7,
     "errorCount": 0
   },
@@ -254,6 +254,18 @@
         "capabilities": "packages/qaqc-electrical/capabilities.json",
         "visual": "packages/qaqc-electrical/src/visual.ts",
         "settings": "packages/qaqc-electrical/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "qaqc-issues",
+      "files": {
+        "package": "packages/qaqc-issues/package.json",
+        "pbiviz": "packages/qaqc-issues/pbiviz.json",
+        "capabilities": "packages/qaqc-issues/capabilities.json",
+        "visual": "packages/qaqc-issues/src/visual.ts",
+        "settings": "packages/qaqc-issues/src/settings.ts"
       },
       "issueCount": 0,
       "issues": []
