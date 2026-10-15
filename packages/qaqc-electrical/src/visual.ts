@@ -1,7 +1,7 @@
-import { ListChecks } from 'lucide-react'
+import { ListChecks, TriangleAlert } from 'lucide-react'
 import type powerbi from 'powerbi-visuals-api'
 import { FormattingSettingsService } from 'powerbi-visuals-utils-formattingmodel'
-import { createElement } from 'react'
+import { createElement, type ReactNode } from 'react'
 import { flushSync } from 'react-dom'
 import { createRoot, type Root } from 'react-dom/client'
 
@@ -19,10 +19,22 @@ type VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions
 type VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions
 type IVisualHost = powerbi.extensibility.visual.IVisualHost
 
-// powerbi.VisualUpdateType.Data and powerbi.VisualDataChangeOperationKind.Create.
+// powerbi.VisualUpdateType.Data and powerbi.VisualDataChangeOperationKind.Append / Segment.
 // The API package has no runtime enums, so the const enum values are spelled out.
+// Create (0) is any other operation kind: it starts a fresh data load.
 const DATA_UPDATE_FLAG = 2
-const CREATE_OPERATION = 0
+const APPEND_OPERATION = 1
+const SEGMENT_OPERATION = 2
+
+/** Cheap change detector: row count, column names and roles, first and last row. */
+function fingerprintTable(table: powerbi.DataViewTable | undefined): string {
+  if (!table) return ''
+  const rows = table.rows ?? []
+  const columns = table.columns.map((column) => `${column.displayName}:${Object.keys(column.roles ?? {}).join('+')}`)
+  const first = rows.length > 0 ? JSON.stringify(rows[0]) : ''
+  const last = rows.length > 0 ? JSON.stringify(rows[rows.length - 1]) : ''
+  return [rows.length, columns.join('|'), first, last].join('#')
+}
 
 function prefersReducedMotion(): boolean {
   return typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -38,7 +50,9 @@ export class QaqcElectricalVisual implements powerbi.extensibility.visual.IVisua
   private table: TableReadResult | null = null
   private index: InspectionIndex | null = null
   private loading = false
+  private tableFingerprint = ''
   private rowLimitReached = false
+  private renderError: unknown = null
   private viewport: powerbi.IViewport = { width: 0, height: 0 }
 
   constructor(options: VisualConstructorOptions) {
@@ -49,7 +63,12 @@ export class QaqcElectricalVisual implements powerbi.extensibility.visual.IVisua
     this.element.setAttribute('aria-label', 'Electrical inspections dashboard')
     this.selectionManager = this.host.createSelectionManager()
     this.formattingSettingsService = new FormattingSettingsService(this.host.createLocalizationManager())
-    this.root = createRoot(this.element)
+    // React 19 reports render errors here instead of re-throwing from flushSync; commit() re-throws them.
+    this.root = createRoot(this.element, {
+      onUncaughtError: (error) => {
+        this.renderError = error
+      },
+    })
     this.element.addEventListener('contextmenu', this.handleContextMenu)
     this.element.addEventListener('keydown', this.handleKeyDown)
   }
@@ -62,13 +81,16 @@ export class QaqcElectricalVisual implements powerbi.extensibility.visual.IVisua
       this.settings = dataView
         ? this.formattingSettingsService.populateFormattingSettingsModel(ElectricalSettingsModel, dataView)
         : new ElectricalSettingsModel()
-      if (options.operationKind === CREATE_OPERATION) this.rowLimitReached = false
+      const isDataUpdate = (options.type & DATA_UPDATE_FLAG) !== 0
+      if (isDataUpdate && options.operationKind !== APPEND_OPERATION && options.operationKind !== SEGMENT_OPERATION) {
+        this.rowLimitReached = false
+      }
 
-      if (dataView?.metadata.segment && !this.rowLimitReached) {
+      if (isDataUpdate && dataView?.metadata.segment && !this.rowLimitReached) {
         if (this.host.fetchMoreData(true)) {
           this.loading = true
           // First segment: nothing has rendered yet, so show the rows received so far under the loading bar.
-          if (this.table === null) this.readTable(dataView)
+          if (this.table?.kind !== 'ready') this.readTable(dataView)
           this.render()
           this.notifyRenderingFinished(options)
           return
@@ -76,15 +98,15 @@ export class QaqcElectricalVisual implements powerbi.extensibility.visual.IVisua
         this.rowLimitReached = true
       }
 
-      const isDataUpdate = (options.type & DATA_UPDATE_FLAG) !== 0
       if (isDataUpdate || this.table === null) {
         this.readTable(dataView)
       }
-      this.loading = false
+      if (isDataUpdate) this.loading = false
       this.render()
       this.notifyRenderingFinished(options)
     } catch (error) {
       this.notifyRenderingFailed(options, error instanceof Error ? error.message : String(error))
+      this.renderFailureState()
     }
   }
 
@@ -98,11 +120,42 @@ export class QaqcElectricalVisual implements powerbi.extensibility.visual.IVisua
     this.root.unmount()
   }
 
+  /** Format-pane changes arrive as data updates, so an unchanged table keeps its index. */
   private readTable(dataView: powerbi.DataView | undefined): void {
-    this.table = readInspectionTable(dataView)
-    this.index = this.table.kind === 'ready'
-      ? buildInspectionIndex(this.table.rows, this.table.columns, new Date())
+    const result = readInspectionTable(dataView)
+    const fingerprint = fingerprintTable(dataView?.table)
+    if (this.table !== null && this.table.kind === result.kind && fingerprint === this.tableFingerprint) return
+    this.table = result
+    this.tableFingerprint = fingerprint
+    this.index = result.kind === 'ready'
+      ? buildInspectionIndex(result.rows, result.columns, new Date())
       : null
+  }
+
+  /** flushSync does not re-throw React 19 render errors, so surface the one captured by onUncaughtError. */
+  private commit(node: ReactNode): void {
+    flushSync(() => {
+      this.root.render(node)
+    })
+    if (this.renderError === null) return
+    const error = this.renderError
+    this.renderError = null
+    throw error instanceof Error ? error : new Error(String(error))
+  }
+
+  private renderFailureState(): void {
+    try {
+      this.commit(
+        createElement(StatusPanel, {
+          icon: TriangleAlert,
+          title: 'Could not draw the Electrical visual',
+          message: 'Check the bound columns, then refresh the report.',
+          items: [],
+        }),
+      )
+    } catch {
+      // The failure has already been reported; there is nothing left to draw.
+    }
   }
 
   private render(): void {
@@ -123,35 +176,31 @@ export class QaqcElectricalVisual implements powerbi.extensibility.visual.IVisua
 
     const index = this.index
     const footnotes = buildFootnotes(index, this.rowLimitReached)
-    flushSync(() => {
-      this.root.render(
-        createElement(ElectricalDashboard, {
-          index,
-          theme,
-          interactive: this.interactionsAllowed(),
-          animate: display.animate && !prefersReducedMotion(),
-          describeCharts: display.describeCharts,
-          loading: this.loading,
-          footnotes,
-          viewport: { width: this.viewport.width, height: this.viewport.height },
-          onHover: this.handleTooltip,
-        }),
-      )
-    })
+    this.commit(
+      createElement(ElectricalDashboard, {
+        index,
+        theme,
+        interactive: this.interactionsAllowed(),
+        animate: display.animate && !prefersReducedMotion(),
+        describeCharts: display.describeCharts,
+        loading: this.loading,
+        footnotes,
+        viewport: { width: this.viewport.width, height: this.viewport.height },
+        onHover: this.handleTooltip,
+      }),
+    )
   }
 
   /** Setup state: tells the author which Smartsheet columns still need a field slot. */
   private renderEmptyState(missing: FieldSlot[]): void {
-    flushSync(() => {
-      this.root.render(
-        createElement(StatusPanel, {
-          icon: ListChecks,
-          title: 'Add the Electrical Inspection Log columns',
-          message: 'Drag these columns from your Smartsheet table into the matching field slots.',
-          items: missing.map((slot) => `${slot.column} → ${slot.slot}`),
-        }),
-      )
-    })
+    this.commit(
+      createElement(StatusPanel, {
+        icon: ListChecks,
+        title: 'Add the Electrical Inspection Log columns',
+        message: 'Drag these columns from your Smartsheet table into the matching field slots.',
+        items: missing.map((slot) => `${slot.column} → ${slot.slot}`),
+      }),
+    )
   }
 
   private applyTheme(theme: ResolvedTheme): void {

@@ -1,11 +1,32 @@
 import type powerbi from 'powerbi-visuals-api'
-import { act } from 'react'
+import { act, createElement, type ComponentProps } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createConstructorOptions } from '../../../core/src/__test-utils__'
 import { ELECTRICAL_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/electricalRows'
+import { buildInspectionIndex } from '../../../qaqc-shared/src/inspections'
 import { QaqcElectricalVisual } from '../visual'
 import { tableDataView } from './tableDataView'
+
+const dashboardControl = vi.hoisted(() => ({ shouldThrow: false }))
+
+// Passes through to the real dashboard; throws during React render when the flag is set.
+vi.mock('../ElectricalDashboard', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../ElectricalDashboard')>()
+  return {
+    ...actual,
+    ElectricalDashboard: (props: ComponentProps<typeof actual.ElectricalDashboard>) => {
+      if (dashboardControl.shouldThrow) throw new Error('render boom')
+      return createElement(actual.ElectricalDashboard, props)
+    },
+  }
+})
+
+// Counts index builds while keeping the real implementation.
+vi.mock('../../../qaqc-shared/src/inspections', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../qaqc-shared/src/inspections')>()
+  return { ...actual, buildInspectionIndex: vi.fn(actual.buildInspectionIndex) }
+})
 
 type ConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions
 type UpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions
@@ -35,8 +56,11 @@ function createHarness(hostOverrides: Record<string, unknown> = {}): Harness {
   return { visual, element: options.element, host: options.host, events, showContextMenu, tooltip }
 }
 
-function update(dataView: powerbi.DataView | undefined, viewport = { width: 1280, height: 720 }, operationKind = 0): UpdateOptions {
-  return { viewport, dataViews: dataView ? [dataView] : [], type: 2, operationKind }
+// powerbi.VisualUpdateType.Resize; Data is 2.
+const RESIZE_UPDATE = 4
+
+function update(dataView: powerbi.DataView | undefined, viewport = { width: 1280, height: 720 }, operationKind = 0, type = 2): UpdateOptions {
+  return { viewport, dataViews: dataView ? [dataView] : [], type, operationKind }
 }
 
 function apply(target: Harness, options: UpdateOptions): void {
@@ -49,9 +73,24 @@ function cardValue(element: HTMLElement, label: string): string | null {
   return element.querySelector(`[aria-label^="${label}:"] .qaqc-kpi-value`)?.textContent ?? null
 }
 
+/**
+ * React diverts render errors to act() while an act scope is open, bypassing onUncaughtError.
+ * Power BI never runs inside act, so error-path tests update with the act environment switched off.
+ */
+function applyOutsideAct(target: Harness, options: UpdateOptions): void {
+  globalThis.IS_REACT_ACT_ENVIRONMENT = false
+  try {
+    target.visual.update(options)
+  } finally {
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true
+  }
+}
+
 let harness: Harness | null = null
 
 beforeEach(() => {
+  dashboardControl.shouldThrow = false
+  vi.mocked(buildInspectionIndex).mockClear()
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date(2026, 9, 15, 12))
 })
@@ -141,11 +180,95 @@ describe('QaqcElectricalVisual', () => {
   })
 
   it('reports a rendering failure instead of throwing', () => {
-    harness = createHarness()
+    const target = createHarness()
+    harness = target
     const broken = tableDataView(ELECTRICAL_ROWS)
     Object.defineProperty(broken.table, 'rows', { get: () => { throw new Error('boom') } })
-    expect(() => harness?.visual.update(update(broken))).not.toThrow()
-    expect(harness.events.renderingFailed).toHaveBeenCalledWith(expect.anything(), 'boom')
+    expect(() => applyOutsideAct(target, update(broken))).not.toThrow()
+    expect(target.events.renderingFailed).toHaveBeenCalledWith(expect.anything(), 'boom')
+  })
+
+  it('reports a React render error and shows a fallback instead of going blank', () => {
+    const target = createHarness()
+    harness = target
+    dashboardControl.shouldThrow = true
+    expect(() => applyOutsideAct(target, update(tableDataView(ELECTRICAL_ROWS)))).not.toThrow()
+    expect(target.events.renderingFailed).toHaveBeenCalledWith(expect.anything(), 'render boom')
+    expect(target.events.renderingFinished).not.toHaveBeenCalled()
+    expect(target.element.querySelector('.qaqc-status h2')?.textContent).toBe('Could not draw the Electrical visual')
+  })
+
+  it('recovers on the next update after a render error', () => {
+    harness = createHarness()
+    dashboardControl.shouldThrow = true
+    applyOutsideAct(harness, update(tableDataView(ELECTRICAL_ROWS)))
+    dashboardControl.shouldThrow = false
+    apply(harness, update(tableDataView(ELECTRICAL_ROWS)))
+    expect(cardValue(harness.element, 'Final Inspections')).toBe('3')
+    expect(harness.events.renderingFinished).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not rebuild the index when only formatting changes', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(ELECTRICAL_ROWS)))
+    const reformatted = tableDataView(ELECTRICAL_ROWS)
+    reformatted.metadata.objects = { animationSettings: { enabled: false } }
+    apply(harness, update(reformatted))
+    expect(vi.mocked(buildInspectionIndex)).toHaveBeenCalledTimes(1)
+  })
+
+  it('rebuilds the index when the rows change', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(ELECTRICAL_ROWS)))
+    apply(harness, update(tableDataView(ELECTRICAL_ROWS.slice(0, 100))))
+    expect(vi.mocked(buildInspectionIndex)).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps the row-limit footnote across a resize', () => {
+    harness = createHarness({ fetchMoreData: () => false })
+    apply(harness, update(tableDataView(ELECTRICAL_ROWS, { segment: true })))
+    apply(harness, update(tableDataView(ELECTRICAL_ROWS, { segment: true }), { width: 900, height: 600 }, 0, RESIZE_UPDATE))
+    expect(harness.element.querySelector('.qaqc-footnotes')?.textContent).toContain('Showing the first 288 rows')
+  })
+
+  it('loads across segments and clears the loading bar on the final append', () => {
+    const fetchMoreData = vi.fn(() => true)
+    harness = createHarness({ fetchMoreData })
+    const partial = ELECTRICAL_ROWS.slice(0, 100)
+    apply(harness, update(tableDataView(partial, { segment: true }), undefined, 0))
+    expect(harness.element.querySelector('[role="progressbar"]')).not.toBeNull()
+    expect(cardValue(harness.element, 'Final Inspections')).not.toBeNull()
+
+    apply(harness, update(tableDataView(ELECTRICAL_ROWS.slice(0, 200), { segment: true }), undefined, 1))
+    expect(harness.element.querySelector('[role="progressbar"]')).not.toBeNull()
+    expect(fetchMoreData).toHaveBeenCalledTimes(2)
+
+    apply(harness, update(tableDataView(ELECTRICAL_ROWS), undefined, 1))
+    expect(harness.element.querySelector('[role="progressbar"]')).toBeNull()
+    expect(cardValue(harness.element, 'Final Inspections')).toBe('3')
+    expect(cardValue(harness.element, 'NCR Pass Rate')).toBe('99.2%')
+    expect(harness.element.querySelector('.qaqc-footnotes')).toBeNull()
+  })
+
+  it('clears a reached row limit when a new Create update arrives', () => {
+    const fetchMoreData = vi.fn(() => false)
+    harness = createHarness({ fetchMoreData })
+    apply(harness, update(tableDataView(ELECTRICAL_ROWS, { segment: true }), undefined, 0))
+    expect(harness.element.querySelector('.qaqc-footnotes')).not.toBeNull()
+
+    fetchMoreData.mockReturnValue(true)
+    apply(harness, update(tableDataView(ELECTRICAL_ROWS, { segment: true }), undefined, 0))
+    expect(fetchMoreData).toHaveBeenCalledTimes(2)
+    expect(harness.element.querySelector('.qaqc-footnotes')).toBeNull()
+    expect(harness.element.querySelector('[role="progressbar"]')).not.toBeNull()
+  })
+
+  it('does not fetch more data on a non-data update', () => {
+    const fetchMoreData = vi.fn(() => true)
+    harness = createHarness({ fetchMoreData })
+    apply(harness, update(tableDataView(ELECTRICAL_ROWS), undefined, 0))
+    apply(harness, update(tableDataView(ELECTRICAL_ROWS, { segment: true }), { width: 900, height: 600 }, 0, RESIZE_UPDATE))
+    expect(fetchMoreData).not.toHaveBeenCalled()
   })
 
   it('opens the host context menu on right-click', () => {
