@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { IssueColumns } from '../types'
+import { NAME_COLLATOR } from '../format'
 import { buildIssueIndex } from '../issues'
 
 const COLUMNS: IssueColumns = {
@@ -211,6 +212,31 @@ describe('buildIssueIndex', () => {
       TODAY,
     )
     expect(index.issues.map((record) => record.id)).toEqual(['B-3', 'ABD', 'abc', 'A-5', '#a10', '#A9', '#8', '#007'])
+  })
+
+  it('orders any mix of IDs exactly as a numeric-aware collator would, descending', () => {
+    const handPicked = [
+      '#1020', '#999', '#98', '#007', '#7', '#07', 'A-5', 'a-10', 'B-3', 'b-03', 'abc', 'ABC', 'ABD', '#A9', '#a10',
+      'no digits', 'NO DIGITS', '12', '012', 'x9y', 'x9y10', '#123456789012345', '#123456789012346',
+      '#1234567890123456', '#1234567890123457', '#99999999999999999999', '#5',
+    ]
+    // A seeded generator, so the mix is the same on every run.
+    let seed = 20261015
+    const next = (limit: number): number => {
+      seed = (seed * 1103515245 + 12345) % 2147483648
+      return seed % limit
+    }
+    const prefixes = ['#', '#A', '#a', 'B-', 'b-', 'ISS-', '']
+    const generated = Array.from({ length: 400 }, () => {
+      const prefix = prefixes[next(prefixes.length)]
+      const zeros = '0'.repeat(next(3))
+      const digitCount = next(5) === 0 ? 16 + next(6) : 1 + next(4)
+      const digits = Array.from({ length: digitCount }, () => String(next(10))).join('')
+      return next(12) === 0 ? `${prefix}none` : `${prefix}${zeros}${digits}`
+    })
+    const ids = [...handPicked, ...generated]
+    const index = buildIssueIndex(ids.map((id) => issue(id, '10/5/2026')), COLUMNS, TODAY)
+    expect(index.issues.map((record) => record.id)).toEqual(ids.slice().sort((a, b) => NAME_COLLATOR.compare(b, a)))
   })
 
   it('normalizes each issue with the app defaults', () => {

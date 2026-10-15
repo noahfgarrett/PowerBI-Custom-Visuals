@@ -321,7 +321,7 @@ describe('SignoffBarChart', () => {
       title: "WW41'2026",
       rows: [
         { label: 'Signed', value: '67 of 84' },
-        { label: 'Sign-off %', value: '79.8%' },
+        { label: 'Sign-off %', value: '80%' },
         { label: 'Issues created', value: '2' },
       ],
       clientX: 10,
@@ -329,6 +329,21 @@ describe('SignoffBarChart', () => {
     })
     fire(hit, new MouseEvent('mouseout', { bubbles: true, relatedTarget: document.body }))
     expect(onHover).toHaveBeenLastCalledWith(null)
+  })
+
+  it('rounds the tooltip sign-off % like the rate label, so 9.96% never reads as 10%', () => {
+    const onHover = vi.fn()
+    view = draw({ weeks: [week(42, 1004, 100)], onHover })
+    fire(element(view.container, '[data-week="202642"]'), new MouseEvent('mousemove', { bubbles: true }))
+    expect(onHover.mock.lastCall?.[0]?.rows[1]).toEqual({ label: 'Sign-off %', value: '9.9%' })
+  })
+
+  it('announces the sign-off % like the rate label, so 9.96% never reads as 10%', () => {
+    view = draw({ weeks: [week(41, 84, 67), week(42, 1004, 100)] })
+    const svg = element(view.container, 'svg')
+    fire(svg, new FocusEvent('focusin', { bubbles: true }))
+    fire(svg, new KeyboardEvent('keydown', { key: 'End', bubbles: true }))
+    expect(element(view.container, '[aria-live="polite"]').textContent).toBe("WW42'2026: 100 of 1,004 welds signed (9.9%), 0 issues created")
   })
 
   it('reads n/a in the tooltip for a week with no welds', () => {
@@ -345,7 +360,7 @@ describe('SignoffBarChart', () => {
     expect(svg.getAttribute('aria-label')).toBe("Weld sign-offs by work week, WW40'2026 to WW42'2026")
     fire(svg, new FocusEvent('focusin', { bubbles: true }))
     fire(svg, new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }))
-    expect(live.textContent).toBe("WW41'2026: 67 of 84 welds signed (79.8%), 2 issues created")
+    expect(live.textContent).toBe("WW41'2026: 67 of 84 welds signed (80%), 2 issues created")
     expect(svg.getAttribute('aria-label')).toBe("Weld sign-offs by work week, WW40'2026 to WW42'2026")
   })
 

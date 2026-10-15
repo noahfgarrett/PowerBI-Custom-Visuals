@@ -95,6 +95,16 @@ describe('BIM Issues Log export (2026-10-14)', () => {
     expect(index.overallAging.map((bucket) => bucket.closed + bucket.open)).toEqual([38, 19, 120])
   })
 
+  it('counts the WW31 Issue Detail this-week cards: 2 opened, 1 closed', () => {
+    const detail = buildIssueDetail(index, 202631)
+    expect([detail.openedThisWeek, detail.closedThisWeek]).toEqual([2, 1])
+  })
+
+  it('counts the WW32 Issue Detail last-week cards from WW31', () => {
+    const detail = buildIssueDetail(index, 202632)
+    expect([detail.openedLastWeek, detail.closedLastWeek]).toEqual([2, 1])
+  })
+
   it('has only discussion rows in the WW42 Issue Detail', () => {
     const detail = buildIssueDetail(index, 202642)
     expect(detail.reportRows).toHaveLength(0)

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type KeyboardEvent, type MouseEvent, type
 
 import { labelIndices, niceScale, roundedTopBarPath } from '../chartMath'
 import type { ChartColors, TooltipHandler } from '../chartTypes'
-import { formatCount, formatPercent, formatSignoffRate, pluralize } from '../format'
+import { formatCount, formatSignoffRate, pluralize } from '../format'
 import type { WeldWeekCounts } from '../types'
 import { shortWeekLabel, shortWeekLabelWithYear } from '../workWeeks'
 
@@ -73,7 +73,7 @@ function signedOfTotal(item: WeldWeekCounts): string {
 
 function describeWeek(item: WeldWeekCounts): string {
   const issues = `${formatCount(item.issues)} ${pluralize(item.issues, 'issue', 'issues')} created`
-  return `${item.week.label}: ${signedOfTotal(item)} welds signed (${formatPercent(signoffRate(item))}), ${issues}`
+  return `${item.week.label}: ${signedOfTotal(item)} welds signed (${formatSignoffRate(signoffRate(item))}), ${issues}`
 }
 
 function round(value: number): number {
@@ -190,7 +190,7 @@ export function SignoffBarChart({
       title: item.week.label,
       rows: [
         { label: 'Signed', value: signedOfTotal(item) },
-        { label: 'Sign-off %', value: formatPercent(signoffRate(item)) },
+        { label: 'Sign-off %', value: formatSignoffRate(signoffRate(item)) },
         { label: 'Issues created', value: formatCount(item.issues) },
       ],
       clientX: event.clientX,
