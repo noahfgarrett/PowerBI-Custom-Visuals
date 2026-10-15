@@ -2,7 +2,10 @@ import type { WorkWeek } from './types'
 
 const MS_PER_DAY = 86_400_000
 // Smartsheet exports vary: WW42'2026, WW 42 - 2026, Week 42 2026, two-digit years.
-const WORK_WEEK_PATTERN = /^(?:WW|WK|WEEK)?\s*(\d{1,2})\s*(?:['’/_,.\-]|\s)\s*(\d{2,4})$/i
+const WORK_WEEK_PATTERN = /^(?:WW|WK|WEEK)?\s*(\d{1,2})\s*(?:['’/_,.\-]|\s)\s*(\d{4}|\d{2})$/i
+// Years outside this range are treated as typos.
+const MIN_YEAR = 2000
+const MAX_YEAR = 2099
 const weeksPerYear = new Map<number, number>()
 
 export function makeWorkWeek(year: number, week: number): WorkWeek {
@@ -40,6 +43,7 @@ export function parseWorkWeek(value: unknown): WorkWeek | null {
   const week = Number(match[1])
   const rawYear = Number(match[2])
   const year = rawYear < 100 ? 2000 + rawYear : rawYear
+  if (year < MIN_YEAR || year > MAX_YEAR) return null
   if (week < 1 || week > weeksInIsoYear(year)) return null
   return makeWorkWeek(year, week)
 }

@@ -14,6 +14,12 @@ describe('cellText', () => {
     expect(cellText(undefined)).toBe('')
     expect(cellText({})).toBe('')
   })
+
+  it('treats non-finite numbers as blank', () => {
+    expect(cellText(Number.NaN)).toBe('')
+    expect(cellText(Number.POSITIVE_INFINITY)).toBe('')
+    expect(normalizeBuilding(Number.NaN)).toBe('Unspecified')
+  })
 })
 
 describe('classifyPhase', () => {

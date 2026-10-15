@@ -26,10 +26,11 @@ describe('parseWorkWeek', () => {
   it('accepts week 53 only in 53-week ISO years', () => {
     expect(parseWorkWeek("WW53'2026")?.key).toBe(202653)
     expect(parseWorkWeek("WW53'2025")).toBeNull()
+    expect(parseWorkWeek("WW53'26")?.label).toBe("WW53'2026")
   })
 
   it('rejects unreadable values', () => {
-    for (const value of ['', 'UPW', 'WW102025', "WW00'2026", null, undefined, 42, {}]) {
+    for (const value of ['', 'UPW', 'WW102025', "WW00'2026", "WW42'202", "WW42'1999", null, undefined, 42, {}]) {
       expect(parseWorkWeek(value)).toBeNull()
     }
   })
@@ -44,6 +45,7 @@ describe('ISO week math', () => {
     expect(toIsoWorkWeek(new Date(2026, 9, 15)).label).toBe("WW42'2026")
     expect(toIsoWorkWeek(new Date(2027, 0, 1)).label).toBe("WW53'2026")
     expect(toIsoWorkWeek(new Date(2025, 11, 29)).label).toBe("WW01'2026")
+    expect(toIsoWorkWeek(new Date(2027, 0, 3)).label).toBe("WW53'2026")
   })
 
   it('knows which years have 53 weeks', () => {
