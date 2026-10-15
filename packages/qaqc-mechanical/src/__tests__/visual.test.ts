@@ -62,6 +62,10 @@ function apply(target: Harness, options: UpdateOptions): void {
   })
 }
 
+function totalGroupLabel(element: HTMLElement): string | null {
+  return element.querySelector('.qaqc-kpi-group.is-total em')?.textContent ?? null
+}
+
 function cardValue(element: HTMLElement, label: string): string | null {
   return element.querySelector(`[aria-label^="${label}:"] .qaqc-kpi-value`)?.textContent ?? null
 }
@@ -119,6 +123,8 @@ describe('QaqcMechanicalVisual', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(MECHANICAL_ROWS)))
     expect(cardValue(harness.element, 'Final Inspections')).toBe('0')
+    expect(cardValue(harness.element, 'Finals to Date')).toBe('44')
+    expect(totalGroupLabel(harness.element)).toContain("Through WW42'2026")
     expect(cardValue(harness.element, 'NCR Pass Rate')).toBe('97.7%')
     expect(harness.element.querySelector('.qaqc-footnotes')).toBeNull()
   })
@@ -197,6 +203,8 @@ describe('QaqcMechanicalVisual', () => {
     dashboardControl.shouldThrow = false
     apply(harness, update(tableDataView(MECHANICAL_ROWS)))
     expect(cardValue(harness.element, 'Final Inspections')).toBe('0')
+    expect(cardValue(harness.element, 'Finals to Date')).toBe('44')
+    expect(totalGroupLabel(harness.element)).toContain("Through WW42'2026")
     expect(harness.events.renderingFinished).toHaveBeenCalledTimes(1)
   })
 
@@ -234,7 +242,7 @@ describe('QaqcMechanicalVisual', () => {
     expect(harness.element.querySelector('[role="progressbar"]')).not.toBeNull()
     expect(cardValue(harness.element, 'Final Inspections')).not.toBeNull()
 
-    apply(harness, update(tableDataView(MECHANICAL_ROWS.slice(0, 200), { segment: true }), undefined, 1))
+    apply(harness, update(tableDataView(MECHANICAL_ROWS.slice(0, 120), { segment: true }), undefined, 1))
     expect(harness.element.querySelector('[role="progressbar"]')).not.toBeNull()
     expect(fetchMoreData).toHaveBeenCalledTimes(2)
 
