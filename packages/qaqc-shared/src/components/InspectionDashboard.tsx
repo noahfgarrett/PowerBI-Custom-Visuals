@@ -1,17 +1,17 @@
-import { Building2, ChartColumnStacked, CircleAlert, CircleCheck, ClipboardCheck, Gauge, TrendingUp, Wrench, Zap } from 'lucide-react'
+import { Building2, ChartColumnStacked, CircleAlert, CircleCheck, ClipboardCheck, Gauge, TrendingUp, Wrench, type LucideIcon } from 'lucide-react'
 import { useMemo, useState, type ReactElement } from 'react'
 
-import type { TooltipHandler } from '../../qaqc-shared/src/chartTypes'
-import { ChartPanel, type LegendItem } from '../../qaqc-shared/src/components/ChartPanel'
-import { Footnotes } from '../../qaqc-shared/src/components/Footnotes'
-import { HorizontalBarChart } from '../../qaqc-shared/src/components/HorizontalBarChart'
-import { KpiCard } from '../../qaqc-shared/src/components/KpiCard'
-import { KpiGroup } from '../../qaqc-shared/src/components/KpiGroup'
-import { LineChart } from '../../qaqc-shared/src/components/LineChart'
-import { LoadingBar } from '../../qaqc-shared/src/components/LoadingBar'
-import { RangeToggle } from '../../qaqc-shared/src/components/RangeToggle'
-import { StackedBarChart } from '../../qaqc-shared/src/components/StackedBarChart'
-import { WorkWeekPicker } from '../../qaqc-shared/src/components/WorkWeekPicker'
+import type { TooltipHandler } from '../chartTypes'
+import { ChartPanel, type LegendItem } from './ChartPanel'
+import { Footnotes } from './Footnotes'
+import { HorizontalBarChart } from './HorizontalBarChart'
+import { KpiCard } from './KpiCard'
+import { KpiGroup } from './KpiGroup'
+import { LineChart } from './LineChart'
+import { LoadingBar } from './LoadingBar'
+import { RangeToggle } from './RangeToggle'
+import { StackedBarChart } from './StackedBarChart'
+import { WorkWeekPicker } from './WorkWeekPicker'
 import {
   formatCount,
   formatDelta,
@@ -20,18 +20,20 @@ import {
   roundPoints,
   trendOf,
   type DeltaTone,
-} from '../../qaqc-shared/src/format'
-import { buildInspectionModel, RECENT_WEEK_COUNT } from '../../qaqc-shared/src/inspections'
-import { chartColorsFromTheme, type ResolvedTheme } from '../../qaqc-shared/src/theme'
-import type { InspectionIndex, RangeMode } from '../../qaqc-shared/src/types'
-import { shortWeekLabel } from '../../qaqc-shared/src/workWeeks'
+} from '../format'
+import { buildInspectionModel, RECENT_WEEK_COUNT } from '../inspections'
+import { chartColorsFromTheme, type ResolvedTheme } from '../theme'
+import type { InspectionIndex, RangeMode } from '../types'
+import { shortWeekLabel } from '../workWeeks'
 
 export const COMPACT_WIDTH = 900
 export const CARDS_ONLY_HEIGHT = 420
 const NO_ROWS_MESSAGE = 'No inspections match the current filters'
 const EMPTY_RANGE_MESSAGE = 'No inspections in this range'
 
-export interface ElectricalDashboardProps {
+export interface InspectionDashboardProps {
+  title: string
+  icon: LucideIcon
   index: InspectionIndex
   theme: ResolvedTheme
   interactive: boolean
@@ -51,7 +53,9 @@ function pointsTone(delta: number | null): DeltaTone {
   return 'neutral'
 }
 
-export function ElectricalDashboard({
+export function InspectionDashboard({
+  title,
+  icon: Icon,
   index,
   theme,
   interactive,
@@ -61,7 +65,7 @@ export function ElectricalDashboard({
   footnotes,
   viewport,
   onHover,
-}: ElectricalDashboardProps): ReactElement {
+}: InspectionDashboardProps): ReactElement {
   const [selectedKey, setSelectedKey] = useState(index.currentWeek.key)
   const [windowEndKey, setWindowEndKey] = useState(index.currentWeek.key)
   const [range, setRange] = useState<RangeMode>('recent')
@@ -113,9 +117,9 @@ export function ElectricalDashboard({
       <div className="qaqc-header">
         <div className="qaqc-title">
           <span className="qaqc-title-icon">
-            <Zap size={16} aria-hidden="true" />
+            <Icon size={16} aria-hidden="true" />
           </span>
-          <h2>Electrical Inspections</h2>
+          <h2>{title}</h2>
         </div>
         <div className="qaqc-controls">
           <RangeToggle value={range} recentCount={RECENT_WEEK_COUNT} disabled={!interactive} onChange={changeRange} />

@@ -10,13 +10,13 @@ import { tableDataView } from './tableDataView'
 const dashboardControl = vi.hoisted(() => ({ shouldThrow: false }))
 
 // Passes through to the real dashboard; throws during React render when the flag is set.
-vi.mock('../ElectricalDashboard', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../ElectricalDashboard')>()
+vi.mock('../../../qaqc-shared/src/components/InspectionDashboard', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../qaqc-shared/src/components/InspectionDashboard')>()
   return {
     ...actual,
-    ElectricalDashboard: (props: ComponentProps<typeof actual.ElectricalDashboard>) => {
+    InspectionDashboard: (props: ComponentProps<typeof actual.InspectionDashboard>) => {
       if (dashboardControl.shouldThrow) throw new Error('render boom')
-      return createElement(actual.ElectricalDashboard, props)
+      return createElement(actual.InspectionDashboard, props)
     },
   }
 })

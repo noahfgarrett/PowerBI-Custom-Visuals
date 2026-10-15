@@ -1,4 +1,4 @@
-import { ListChecks, LoaderCircle } from 'lucide-react'
+import { ListChecks, LoaderCircle, Zap } from 'lucide-react'
 import { createRoot } from 'react-dom/client'
 
 import '../style/visual.less'
@@ -6,12 +6,12 @@ import '../style/visual.less'
 import { ELECTRICAL_ROWS } from '../../qaqc-shared/src/__tests__/fixtures/electricalRows'
 import { syntheticInspectionRows } from '../../qaqc-shared/src/__tests__/fixtures/syntheticRows'
 import type { TooltipRequest } from '../../qaqc-shared/src/chartTypes'
+import { InspectionDashboard } from '../../qaqc-shared/src/components/InspectionDashboard'
 import { StatusPanel } from '../../qaqc-shared/src/components/StatusPanel'
+import { REQUIRED_SLOTS } from '../../qaqc-shared/src/dataView'
 import { buildFootnotes } from '../../qaqc-shared/src/footnotes'
 import { buildInspectionIndex } from '../../qaqc-shared/src/inspections'
 import { isPresetName, resolveTheme } from '../../qaqc-shared/src/theme'
-import { REQUIRED_SLOTS } from '../src/dataView'
-import { ElectricalDashboard } from '../src/ElectricalDashboard'
 
 const params = new URLSearchParams(window.location.search)
 const width = Number(params.get('w') ?? 1280)
@@ -78,7 +78,9 @@ if (data === 'missing') {
   const index = buildInspectionIndex(rows, columns, today)
   document.title = `index ${Math.round(performance.now() - started)} ms`
   root.render(
-    <ElectricalDashboard
+    <InspectionDashboard
+      title="Electrical Inspections"
+      icon={Zap}
       index={index}
       theme={theme}
       interactive={params.get('interactive') !== '0'}

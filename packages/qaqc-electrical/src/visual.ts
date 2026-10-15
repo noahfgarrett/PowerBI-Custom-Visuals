@@ -1,4 +1,4 @@
-import { ListChecks, TriangleAlert } from 'lucide-react'
+import { ListChecks, TriangleAlert, Zap } from 'lucide-react'
 import type powerbi from 'powerbi-visuals-api'
 import { FormattingSettingsService } from 'powerbi-visuals-utils-formattingmodel'
 import { createElement, type ReactNode } from 'react'
@@ -6,13 +6,13 @@ import { flushSync } from 'react-dom'
 import { createRoot, type Root } from 'react-dom/client'
 
 import type { TooltipRequest } from '../../qaqc-shared/src/chartTypes'
+import { InspectionDashboard } from '../../qaqc-shared/src/components/InspectionDashboard'
 import { StatusPanel } from '../../qaqc-shared/src/components/StatusPanel'
+import { readInspectionTable, type FieldSlot, type TableReadResult } from '../../qaqc-shared/src/dataView'
 import { buildFootnotes } from '../../qaqc-shared/src/footnotes'
 import { buildInspectionIndex } from '../../qaqc-shared/src/inspections'
 import { resolveTheme, type HighContrastColors, type ResolvedTheme } from '../../qaqc-shared/src/theme'
 import type { InspectionIndex } from '../../qaqc-shared/src/types'
-import { readInspectionTable, type FieldSlot, type TableReadResult } from './dataView'
-import { ElectricalDashboard } from './ElectricalDashboard'
 import { ElectricalSettingsModel, readDisplaySettings } from './settings'
 
 import '../style/visual.less'
@@ -113,7 +113,7 @@ export class QaqcElectricalVisual implements powerbi.extensibility.visual.IVisua
   }
 
   private readTable(dataView: powerbi.DataView | undefined): void {
-    this.table = readInspectionTable(dataView)
+    this.table = readInspectionTable(dataView?.table)
     this.index = this.table.kind === 'ready'
       ? buildInspectionIndex(this.table.rows, this.table.columns, new Date())
       : null
@@ -164,7 +164,9 @@ export class QaqcElectricalVisual implements powerbi.extensibility.visual.IVisua
     const index = this.index
     const footnotes = buildFootnotes(index, this.rowLimitReached)
     this.commit(
-      createElement(ElectricalDashboard, {
+      createElement(InspectionDashboard, {
+        title: 'Electrical Inspections',
+        icon: Zap,
         index,
         theme,
         interactive: this.interactionsAllowed(),

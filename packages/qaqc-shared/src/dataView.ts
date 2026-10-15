@@ -1,6 +1,4 @@
-import type powerbi from 'powerbi-visuals-api'
-
-import type { InspectionColumns, InspectionRows } from '../../qaqc-shared/src/types'
+import type { InspectionColumns, InspectionRows } from './types'
 
 export interface FieldSlot {
   role: keyof InspectionColumns | 'rowId'
@@ -22,8 +20,16 @@ export type TableReadResult =
   | { kind: 'missing'; missing: FieldSlot[] }
   | { kind: 'ready'; rows: InspectionRows; columns: InspectionColumns }
 
-export function readInspectionTable(dataView: powerbi.DataView | undefined): TableReadResult {
-  const table = dataView?.table
+export interface TableColumnLike {
+  roles?: { [role: string]: boolean }
+}
+
+export interface InspectionTableSource {
+  columns: ReadonlyArray<TableColumnLike>
+  rows?: InspectionRows
+}
+
+export function readInspectionTable(table: InspectionTableSource | undefined): TableReadResult {
   if (!table) return { kind: 'missing', missing: [...REQUIRED_SLOTS] }
 
   const positionOf = (role: string): number => table.columns.findIndex((column) => column.roles?.[role] === true)

@@ -1,12 +1,13 @@
+import { Cog, Zap } from 'lucide-react'
 import { act, type ReactElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { ELECTRICAL_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/electricalRows'
-import { render, type Rendered } from '../../../qaqc-shared/src/__tests__/render'
-import { buildInspectionIndex } from '../../../qaqc-shared/src/inspections'
-import { resolveTheme } from '../../../qaqc-shared/src/theme'
-import { parseWorkWeek } from '../../../qaqc-shared/src/workWeeks'
-import { ElectricalDashboard, type ElectricalDashboardProps } from '../ElectricalDashboard'
+import { InspectionDashboard, type InspectionDashboardProps } from '../components/InspectionDashboard'
+import { buildInspectionIndex } from '../inspections'
+import { resolveTheme } from '../theme'
+import { parseWorkWeek } from '../workWeeks'
+import { ELECTRICAL_ROWS } from './fixtures/electricalRows'
+import { render, type Rendered } from './render'
 
 const INDEX = buildInspectionIndex(ELECTRICAL_ROWS, { workWeek: 0, phase: 1, issue: 2, building: 3 }, new Date(2026, 9, 15))
 const THEME = resolveTheme({ preset: 'qaqc', backgroundColor: '', backgroundOpacity: 100, cardOpacity: 100, highContrast: null })
@@ -18,9 +19,11 @@ afterEach(() => {
   view = null
 })
 
-function draw(overrides: Partial<ElectricalDashboardProps> = {}): Rendered {
+function draw(overrides: Partial<InspectionDashboardProps> = {}): Rendered {
   return render(
-    <ElectricalDashboard
+    <InspectionDashboard
+      title="Electrical Inspections"
+      icon={Zap}
       index={INDEX}
       theme={THEME}
       interactive
@@ -39,7 +42,7 @@ function cardValue(container: HTMLElement, label: string): string | null {
   return container.querySelector(`[aria-label^="${label}:"] .qaqc-kpi-value`)?.textContent ?? null
 }
 
-describe('ElectricalDashboard', () => {
+describe('InspectionDashboard', () => {
   it('opens on the current week with the six cards', () => {
     view = draw()
     const { container } = view
@@ -51,6 +54,11 @@ describe('ElectricalDashboard', () => {
     expect(cardValue(container, 'Finals to Date')).toBe('238')
     expect(cardValue(container, 'SORs to Date')).toBe('48')
     expect(cardValue(container, 'NCR Pass Rate')).toBe('99.2%')
+  })
+
+  it('shows the title and icon it is given', () => {
+    view = draw({ title: 'Mechanical / Process Inspections', icon: Cog })
+    expect(view.container.querySelector('h2')?.textContent).toBe('Mechanical / Process Inspections')
   })
 
   it('switches cards and the to-date label when another week is picked', () => {
@@ -80,7 +88,9 @@ describe('ElectricalDashboard', () => {
     view = draw()
     expect(view.container.querySelectorAll('.qaqc-panel')).toHaveLength(3)
     view.rerender(
-      <ElectricalDashboard
+      <InspectionDashboard
+        title="Electrical Inspections"
+        icon={Zap}
         index={INDEX}
         theme={THEME}
         interactive
@@ -150,9 +160,11 @@ function clickRange(container: HTMLElement, label: string): void {
   })
 }
 
-function dashboardElement(index: ElectricalDashboardProps['index']): ReactElement {
+function dashboardElement(index: InspectionDashboardProps['index']): ReactElement {
   return (
-    <ElectricalDashboard
+    <InspectionDashboard
+      title="Electrical Inspections"
+      icon={Zap}
       index={index}
       theme={THEME}
       interactive
@@ -166,7 +178,7 @@ function dashboardElement(index: ElectricalDashboardProps['index']): ReactElemen
   )
 }
 
-describe('ElectricalDashboard with measured charts', () => {
+describe('InspectionDashboard with measured charts', () => {
   afterEach(() => {
     vi.restoreAllMocks()
   })
@@ -247,7 +259,7 @@ describe('ElectricalDashboard with measured charts', () => {
   })
 })
 
-describe('ElectricalDashboard empty states and landmarks', () => {
+describe('InspectionDashboard empty states and landmarks', () => {
   it('says the range is empty when data exists but the window has no inspections', () => {
     const oldRowsOnly = buildInspectionIndex(
       ELECTRICAL_ROWS.filter((row) => row[0] === "WW51'2025"),
