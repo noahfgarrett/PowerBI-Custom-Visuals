@@ -4,7 +4,7 @@
 
 The third QAQC visual, built on the Smartsheet **Welding Inspections / Signoffs** log. It shares the Electrical visual's foundation (`2026-10-15-qaqc-electrical-visual-design.md`): the look, presets, Format pane (background, card opacity, animation, accessibility), work-week picker and `30 WW | All` range, bar-click week selection, the **expanded chart view**, required Row ID, performance targets, error states, release gate, CSS build guard, and the per-package `visual.ts` / `settings.ts` rule.
 
-Package: `packages/qaqc-welding`, GUID `qaqcWelding_<12 hex chosen at scaffold time>`, class `QaqcWeldingVisual`, display name "QAQC Welding Signoffs", version 1.0.0, header icon lucide `Flame`, Fields-pane icon a new `flame` shape in `scripts/make-qaqc-icon.mjs`.
+Package: `packages/qaqc-welding`, GUID `qaqcWelding_8A4CE54C5018`, class `QaqcWeldingVisual`, display name "QAQC Welding Signoffs", version 1.0.0, header icon lucide `Flame`, Fields-pane icon a new `flame` shape in `scripts/make-qaqc-icon.mjs`.
 
 ## Field slots
 

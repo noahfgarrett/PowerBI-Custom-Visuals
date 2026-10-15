@@ -21,6 +21,7 @@ function regularPolygon(cx, cy, radius, sides, rotation) {
 // (even-odd fill), which lets a later polygon cut a hole in an earlier one.
 const SHAPES = {
   zap: [[[13, 2], [3, 14], [12, 14], [11, 22], [21, 10], [12, 10]]],
+  flame: [[[12, 2], [16.5, 7.5], [19, 12], [19, 16], [16, 21], [12, 22], [8, 21], [5, 16], [5, 12], [8, 9], [9.5, 12], [12, 7]]],
   'hex-nut': [regularPolygon(12, 12, 10.5, 6, Math.PI / 6), regularPolygon(12, 12, 4.2, 20, 0)],
 };
 

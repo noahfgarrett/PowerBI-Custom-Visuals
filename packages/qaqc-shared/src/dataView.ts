@@ -1,7 +1,7 @@
-import type { InspectionColumns, InspectionRows } from './types'
+import type { InspectionColumns, InspectionRows, WeldColumns } from './types'
 
-export interface FieldSlot {
-  role: keyof InspectionColumns | 'rowId'
+export interface FieldSlot<Role extends string = keyof InspectionColumns | 'rowId'> {
+  role: Role
   /** Field slot name in the Power BI Fields pane. */
   slot: string
   /** Smartsheet column the user drags into it. */
@@ -47,5 +47,55 @@ export function readInspectionTable(table: InspectionTableSource | undefined): T
     kind: 'ready',
     rows: table.rows ?? [],
     columns: { workWeek, phase, issue, building },
+  }
+}
+
+export type WeldSlotRole = keyof WeldColumns | 'rowId'
+export type WeldFieldSlot = FieldSlot<WeldSlotRole>
+
+export const WELD_SLOTS: readonly WeldFieldSlot[] = [
+  { role: 'weldWeek', slot: 'Weld Work Week', column: 'WELD WORK WEEK' },
+  { role: 'signature', slot: 'Signature', column: 'SIGNATURE' },
+  { role: 'signedWeek', slot: 'Work Week Signed', column: 'WORK WEEK SIGNED' },
+  { role: 'issue', slot: 'Issue Created', column: 'ISSUE CREATED? (Put BIM # If Yes)' },
+  { role: 'fluidCode', slot: 'Fluid Code', column: 'FLUID CODE' },
+  { role: 'pipeSpec', slot: 'Pipe Spec', column: 'PIPE SPEC' },
+  { role: 'tagNo', slot: 'Tag No', column: 'TAG NO' },
+  { role: 'rowId', slot: 'Row ID', column: 'Index' },
+]
+
+export type WeldTableReadResult =
+  | { kind: 'missing'; missing: WeldFieldSlot[] }
+  | { kind: 'ready'; rows: InspectionRows; columns: WeldColumns }
+
+export function readWeldTable(table: InspectionTableSource | undefined): WeldTableReadResult {
+  if (!table) return { kind: 'missing', missing: [...WELD_SLOTS] }
+
+  const positionOf = (role: string): number => table.columns.findIndex((column) => column.roles?.[role] === true)
+  const positions: Record<WeldSlotRole, number> = {
+    weldWeek: positionOf('weldWeek'),
+    signature: positionOf('signature'),
+    signedWeek: positionOf('signedWeek'),
+    issue: positionOf('issue'),
+    fluidCode: positionOf('fluidCode'),
+    pipeSpec: positionOf('pipeSpec'),
+    tagNo: positionOf('tagNo'),
+    rowId: positionOf('rowId'),
+  }
+  const missing = WELD_SLOTS.filter((slot) => positions[slot.role] < 0)
+  if (missing.length > 0) return { kind: 'missing', missing }
+
+  return {
+    kind: 'ready',
+    rows: table.rows ?? [],
+    columns: {
+      weldWeek: positions.weldWeek,
+      signature: positions.signature,
+      signedWeek: positions.signedWeek,
+      issue: positions.issue,
+      fluidCode: positions.fluidCode,
+      pipeSpec: positions.pipeSpec,
+      tagNo: positions.tagNo,
+    },
   }
 }
