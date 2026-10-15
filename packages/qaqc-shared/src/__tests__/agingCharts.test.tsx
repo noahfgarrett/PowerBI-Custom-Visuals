@@ -1,9 +1,11 @@
 import { act } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { ordinalOpacity } from '../chartMath'
 import type { ChartColors } from '../chartTypes'
 import { AgingStripChart } from '../components/AgingStripChart'
 import { OpenAgingChart, type OpenAgingChartProps } from '../components/OpenAgingChart'
+import { chartColorsFromTheme, compositeOver, contrastRatio, isPresetName, PRESETS, resolveTheme, type ThemeOptions } from '../theme'
 import type { AgingBucket, OverallAgingBucket } from '../types'
 import { render, type Rendered } from './render'
 
@@ -11,6 +13,8 @@ const COLORS: ChartColors = {
   series1: '#2E5AAC', series2: '#86B6EF', good: '#0A7A0A', bad: '#D03B3B', warn: '#B45309', card: '#FDFEFF',
   grid: '#EBEEF3', axisText: '#6A7583', ink: '#1B2530', accent: '#2E5AAC',
 }
+
+const THEME_BASE: ThemeOptions = { preset: 'qaqc', backgroundColor: '', backgroundOpacity: 100, cardOpacity: 100, highContrast: null }
 
 let view: Rendered | null = null
 
@@ -90,10 +94,39 @@ describe('OpenAgingChart', () => {
     expect(numberAttr(labels[2], 'y')).toBeCloseTo(barTop(11) + 17, 6)
   })
 
-  it('uses dark label text inside light bars and card text inside dark ones', () => {
+  it('gives every inside label whichever of ink or card contrasts more with its bar, on every preset', () => {
+    for (const preset of Object.keys(PRESETS)) {
+      if (!isPresetName(preset)) throw new Error(`bad preset ${preset}`)
+      const colors = chartColorsFromTheme(resolveTheme({ ...THEME_BASE, preset }))
+      view = draw({ buckets: buckets([50, 50, 50, 50, 50]), colors })
+      const labels = [...view.container.querySelectorAll('.qaqc-aging-value')]
+      labels.forEach((label, index) => {
+        const bar = compositeOver(colors.series1, ordinalOpacity(index, 5), colors.card)
+        const best = Math.max(contrastRatio(colors.ink, bar), contrastRatio(colors.card, bar))
+        expect(contrastRatio(label.getAttribute('fill') ?? '', bar), `${preset} bucket ${index}`).toBeCloseTo(best, 9)
+      })
+      view.unmount()
+      view = null
+    }
+  })
+
+  it('uses card text on the LotusWorks 2-3 bucket, where ink would be too faint', () => {
+    const colors = chartColorsFromTheme(resolveTheme({ ...THEME_BASE, preset: 'lotusworks' }))
+    view = draw({ buckets: buckets([50, 50, 50, 50, 50]), colors })
+    expect(view.container.querySelectorAll('.qaqc-aging-value')[2].getAttribute('fill')).toBe(colors.card)
+  })
+
+  it('uses dark text on the lightest qaqc bucket', () => {
     view = draw({ buckets: buckets([50, 50, 50, 50, 50]) })
+    expect(view.container.querySelector('.qaqc-aging-value')?.getAttribute('fill')).toBe(COLORS.ink)
+  })
+
+  it('uses card text on the solid foreground bars in high contrast', () => {
+    const highContrast = { foreground: '#FFFF00', background: '#000000', foregroundSelected: '#00FFFF' }
+    const colors = chartColorsFromTheme(resolveTheme({ ...THEME_BASE, highContrast }))
+    view = draw({ buckets: buckets([50, 50, 50, 50, 50]), colors, isHighContrast: true })
     const fills = [...view.container.querySelectorAll('.qaqc-aging-value')].map((label) => label.getAttribute('fill'))
-    expect(fills).toEqual([COLORS.ink, COLORS.ink, COLORS.ink, COLORS.card, COLORS.card])
+    expect(fills).toEqual(Array(5).fill('#000000'))
   })
 
   it('keeps a bucket with very few issues visible at 2 px', () => {

@@ -3,6 +3,7 @@ import type { MouseEvent, ReactElement } from 'react'
 import { niceScale, ordinalOpacity, roundedTopBarPath } from '../chartMath'
 import type { ChartColors, TooltipHandler } from '../chartTypes'
 import { formatCount } from '../format'
+import { compositeOver, contrastRatio } from '../theme'
 import type { AgingBucket } from '../types'
 
 // Matches the HTML app's OpenAgingChart.
@@ -20,8 +21,6 @@ const MIN_LABEL_Y = 14
 const BUCKET_LABEL_RISE = 20
 const X_TITLE_RISE = 4
 const Y_TITLE_X = 13
-/** Bars at least this opaque are dark enough for card-coloured text; lighter bars take ink. */
-const LIGHT_TEXT_MIN_OPACITY = 0.75
 const TITLE = 'Open issue aging by weeks'
 
 export interface OpenAgingChartProps {
@@ -76,7 +75,9 @@ export function OpenAgingChart({ buckets, width, height, colors, isHighContrast,
         const top = plotBottom - barHeight
         const opacity = isHighContrast ? 1 : ordinalOpacity(index, buckets.length)
         const isInside = barHeight >= MIN_INSIDE_LABEL_HEIGHT
-        const insideFill = opacity >= LIGHT_TEXT_MIN_OPACITY ? colors.card : colors.ink
+        // A label inside the bar takes whichever of ink or card reads better on the bar as drawn over the card.
+        const barColor = compositeOver(colors.series1, opacity, colors.card)
+        const insideFill = contrastRatio(colors.ink, barColor) > contrastRatio(colors.card, barColor) ? colors.ink : colors.card
         return (
           <g key={bucket.label}>
             {barHeight > 0 && (

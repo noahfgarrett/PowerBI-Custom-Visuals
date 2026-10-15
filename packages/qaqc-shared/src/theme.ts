@@ -87,6 +87,39 @@ export function withOpacity(hex: string, percent: number): string {
   return `rgba(${r}, ${g}, ${b}, ${Number(alpha.toFixed(3))})`
 }
 
+function hexChannels(hex: string): [number, number, number] | null {
+  const match = hex.match(HEX_COLOR)
+  if (!match) return null
+  return [parseInt(match[1], 16), parseInt(match[2], 16), parseInt(match[3], 16)]
+}
+
+/** The solid colour of `color` drawn at `opacity` (0–1) over `background`. Non-hex input returns `color` unchanged. */
+export function compositeOver(color: string, opacity: number, background: string): string {
+  const front = hexChannels(color)
+  const back = hexChannels(background)
+  if (front === null || back === null) return color
+  const alpha = Math.min(1, Math.max(0, opacity))
+  const mixed = front.map((channel, index) => Math.round(channel * alpha + back[index] * (1 - alpha)))
+  return `#${mixed.map((channel) => channel.toString(16).padStart(2, '0').toUpperCase()).join('')}`
+}
+
+function relativeLuminance(channels: [number, number, number]): number {
+  const [r, g, b] = channels.map((channel) => {
+    const value = channel / 255
+    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+  })
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+/** WCAG contrast ratio (1–21) between two hex colours; 1 when either is not hex. */
+export function contrastRatio(a: string, b: string): number {
+  const first = hexChannels(a)
+  const second = hexChannels(b)
+  if (first === null || second === null) return 1
+  const [light, dark] = [relativeLuminance(first), relativeLuminance(second)].sort((x, y) => y - x)
+  return (light + 0.05) / (dark + 0.05)
+}
+
 function highContrastColors(host: HighContrastColors): ThemeColors {
   return {
     page: host.background, card: host.background, weekCard: host.background,

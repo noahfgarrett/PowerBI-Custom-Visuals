@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest'
 
-import { chartColorsFromTheme, isPresetName, PRESETS, resolveTheme, STATUS_COLORS, withOpacity, type ThemeOptions } from '../theme'
+import {
+  chartColorsFromTheme,
+  compositeOver,
+  contrastRatio,
+  isPresetName,
+  PRESETS,
+  resolveTheme,
+  STATUS_COLORS,
+  withOpacity,
+  type ThemeOptions,
+} from '../theme'
 
 const BASE: ThemeOptions = { preset: 'qaqc', backgroundColor: '', backgroundOpacity: 100, cardOpacity: 100, highContrast: null }
 
@@ -77,5 +87,37 @@ describe('isPresetName', () => {
     expect(isPresetName('blue')).toBe(true)
     expect(isPresetName('neon')).toBe(false)
     expect(isPresetName(3)).toBe(false)
+  })
+})
+
+describe('compositeOver', () => {
+  it('blends a colour at an opacity over a background', () => {
+    expect(compositeOver('#003459', 0.675, '#FFFFFF')).toBe('#53768F')
+    expect(compositeOver('#000000', 0.5, '#FFFFFF')).toBe('#808080')
+  })
+
+  it('keeps the colour at full opacity and the background at none', () => {
+    expect(compositeOver('#2E5AAC', 1, '#FDFEFF')).toBe('#2E5AAC')
+    expect(compositeOver('#2E5AAC', 0, '#FDFEFF')).toBe('#FDFEFF')
+  })
+
+  it('returns the colour unchanged when either colour is not hex', () => {
+    expect(compositeOver('red', 0.5, '#FFFFFF')).toBe('red')
+  })
+})
+
+describe('contrastRatio', () => {
+  it('measures WCAG contrast between two colours', () => {
+    expect(contrastRatio('#000000', '#FFFFFF')).toBeCloseTo(21, 6)
+    expect(contrastRatio('#FFFFFF', '#FFFFFF')).toBeCloseTo(1, 6)
+    expect(contrastRatio('#FFFFFF', '#53768F')).toBeCloseTo(4.82, 2)
+  })
+
+  it('is the same in either order', () => {
+    expect(contrastRatio('#1B2530', '#86B6EF')).toBeCloseTo(contrastRatio('#86B6EF', '#1B2530'), 9)
+  })
+
+  it('is 1 when a colour is not hex', () => {
+    expect(contrastRatio('red', '#FFFFFF')).toBe(1)
   })
 })

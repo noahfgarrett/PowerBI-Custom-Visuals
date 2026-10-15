@@ -439,7 +439,7 @@ export function IssuesTrendChart({
       onHover({
         title: point.week.label,
         rows: [
-          { label: 'Remaining open', value: formatCount(point.remainingOpen) },
+          { label: 'Remaining', value: formatCount(point.remainingOpen) },
           { label: 'Opened', value: formatCount(point.opened) },
           { label: 'Closed', value: formatCount(point.closed) },
         ],

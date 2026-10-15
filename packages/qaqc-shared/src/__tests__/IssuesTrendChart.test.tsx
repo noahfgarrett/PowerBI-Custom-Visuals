@@ -462,7 +462,7 @@ describe('IssuesTrendChart selection and interaction', () => {
     expect(onHover).toHaveBeenLastCalledWith({
       title: "WW41'2026",
       rows: [
-        { label: 'Remaining open', value: '3' },
+        { label: 'Remaining', value: '3' },
         { label: 'Opened', value: '1' },
         { label: 'Closed', value: '1' },
       ],
