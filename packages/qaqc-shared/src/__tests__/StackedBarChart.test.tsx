@@ -184,4 +184,15 @@ describe('StackedBarChart', () => {
     view = draw({ weeks, showValues: true })
     expect([...view.container.querySelectorAll('.qaqc-bar-value')].map((node) => node.textContent)).toEqual(['4'])
   })
+
+  it('keeps value labels inside the chart when a tall bar carries an issue badge', () => {
+    const tall: WeekCounts[] = [
+      { week: makeWorkWeek(2026, 41), finals: 15, sors: 5, issuesFound: 1 },
+      { week: makeWorkWeek(2026, 42), finals: 3, sors: 1, issuesFound: 0 },
+    ]
+    view = draw({ weeks: tall, showValues: true })
+    const ys = [...view.container.querySelectorAll('.qaqc-bar-value')].map((node) => Number(node.getAttribute('y')))
+    expect(ys).toHaveLength(2)
+    for (const y of ys) expect(y).toBeGreaterThanOrEqual(10)
+  })
 })

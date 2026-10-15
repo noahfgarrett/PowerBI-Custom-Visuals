@@ -9,6 +9,7 @@ const MARGIN = { top: 14, right: 42, bottom: 10, left: 40 } as const
 const DOT_RADIUS = 4
 const ISSUE_LABEL_OFFSET = 10
 const ISSUE_LABEL_BELOW_OFFSET = 16
+const MIN_ISSUE_LABEL_SPACING = 34
 
 export interface LineChartProps {
   points: PassRatePoint[]
@@ -17,7 +18,7 @@ export interface LineChartProps {
   height: number
   colors: ChartColors
   describe: boolean
-  /** Writes the pass rate above the dot of every NCR week. */
+  /** Writes the pass rate beside the dot of NCR weeks. Skips the last point (the end label shows it) and any week closer than 34 px to the previous label. */
   labelIssueWeeks?: boolean
   onHover: TooltipHandler
 }
@@ -56,6 +57,17 @@ export function LineChart({
   const ticks = [domain.min, (domain.min + domain.max) / 2, domain.max]
   const lastRate = lastIndex >= 0 ? points[lastIndex].rate : null
   const summary = describe && lastRate !== null ? `NCR pass rate trend, ending at ${formatPercent(lastRate)}` : 'NCR pass rate trend'
+
+  const rateLabelIndices: number[] = []
+  if (labelIssueWeeks) {
+    let previousX = Number.NEGATIVE_INFINITY
+    points.forEach((item, index) => {
+      if (!item.hadIssue || item.rate === null || index === lastIndex) return
+      if (x(index) - previousX < MIN_ISSUE_LABEL_SPACING) return
+      rateLabelIndices.push(index)
+      previousX = x(index)
+    })
+  }
 
   function showTooltip(item: PassRatePoint, event: MouseEvent<SVGRectElement>): void {
     onHover({
@@ -108,8 +120,9 @@ export function LineChart({
           />
         ) : null,
       )}
-      {labelIssueWeeks && points.map((item, index) => {
-        if (!item.hadIssue || item.rate === null) return null
+      {rateLabelIndices.map((index) => {
+        const item = points[index]
+        if (item.rate === null) return null
         const dotY = y(item.rate)
         // Near the top edge there is no room above the dot, so the label goes below it.
         const hasRoomAbove = dotY - ISSUE_LABEL_OFFSET >= MARGIN.top + ISSUE_LABEL_OFFSET

@@ -1,6 +1,9 @@
 const COUNT_FORMAT = new Intl.NumberFormat('en-US')
 const MINUS = '−'
 
+/** Orders names so F63.2 comes before F63.10, ignoring case. */
+export const NAME_COLLATOR = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
+
 export type DeltaTone = 'neutral' | 'good' | 'warn' | 'bad'
 export type Trend = 'up' | 'down' | 'flat' | 'none'
 

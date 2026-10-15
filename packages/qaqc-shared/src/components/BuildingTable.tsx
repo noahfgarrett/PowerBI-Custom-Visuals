@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactElement } from 'react'
 
-import { formatCount } from '../format'
+import { formatCount, NAME_COLLATOR } from '../format'
 import type { BuildingBar } from '../types'
 
 type SortKey = 'building' | 'finals' | 'sors' | 'total'
@@ -27,7 +27,7 @@ function compareRows(a: BuildingBar, b: BuildingBar, sort: SortState): number {
   let difference = 0
   switch (sort.key) {
     case 'building':
-      difference = a.building.localeCompare(b.building)
+      difference = NAME_COLLATOR.compare(a.building, b.building)
       break
     case 'finals':
       difference = a.finals - b.finals
@@ -43,7 +43,7 @@ function compareRows(a: BuildingBar, b: BuildingBar, sort: SortState): number {
       return unreachable
     }
   }
-  return difference * sign || a.building.localeCompare(b.building)
+  return difference * sign || NAME_COLLATOR.compare(a.building, b.building)
 }
 
 export interface BuildingTableProps {
@@ -67,6 +67,7 @@ export function BuildingTable({ rows }: BuildingTableProps): ReactElement {
   return (
     <div className="qaqc-table-wrap">
       <table className="qaqc-table">
+        <caption className="qaqc-visually-hidden">Inspections by building</caption>
         <thead>
           <tr>
             {COLUMNS.map((column) => (

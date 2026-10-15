@@ -12,6 +12,8 @@ const MIN_BAR_WIDTH = 2
 const BADGE_RADIUS = 8
 const CORNER_RADIUS = 4
 const YEAR_LABEL_WIDTH = 54
+// Room above the tallest bar for a badge plus its value label.
+const TOP_WITH_VALUES = 36
 const MIN_VALUE_LABEL_BAND = 18
 const VALUE_LABEL_GAP = 4
 const BADGE_LABEL_GAP = 3
@@ -62,8 +64,9 @@ export function StackedBarChart({
     setHoverIndex(null)
   }, [weeks])
 
+  const top = showValues ? TOP_WITH_VALUES : MARGIN.top
   const plotWidth = Math.max(0, width - MARGIN.left - MARGIN.right)
-  const plotHeight = Math.max(0, height - MARGIN.top - MARGIN.bottom)
+  const plotHeight = Math.max(0, height - top - MARGIN.bottom)
   const band = weeks.length > 0 ? plotWidth / weeks.length : plotWidth
   const barWidth = Math.min(MAX_BAR_WIDTH, Math.max(MIN_BAR_WIDTH, band * 0.68))
   const scale = useMemo(() => niceScale(weeks.reduce((max, item) => Math.max(max, item.finals + item.sors), 0)), [weeks])
@@ -75,7 +78,7 @@ export function StackedBarChart({
     [weeks.length, plotWidth, selectedIndex, spansYears],
   )
   const focus = Math.min(Math.max(focusIndex, 0), weeks.length - 1)
-  const y = (value: number): number => MARGIN.top + plotHeight - (value / scale.max) * plotHeight
+  const y = (value: number): number => top + plotHeight - (value / scale.max) * plotHeight
   const bandX = (index: number): number => MARGIN.left + index * band
 
   function showTooltip(index: number, event: MouseEvent<SVGRectElement>): void {
@@ -147,7 +150,7 @@ export function StackedBarChart({
           <rect
             className="qaqc-selected-band"
             x={0}
-            y={MARGIN.top}
+            y={top}
             width={band}
             height={plotHeight}
             fill={colors.accent}
@@ -215,7 +218,7 @@ export function StackedBarChart({
         {hasFocus && showFocusRing && weeks.length > 0 && (
           <rect
             x={bandX(focus) + 1}
-            y={MARGIN.top - 2}
+            y={top - 2}
             width={Math.max(0, band - 2)}
             height={plotHeight + 4}
             rx={3}
@@ -231,7 +234,7 @@ export function StackedBarChart({
               className="qaqc-hit"
               data-week={item.week.key}
               x={bandX(index)}
-              y={MARGIN.top}
+              y={top}
               width={band}
               height={plotHeight}
               fill="transparent"

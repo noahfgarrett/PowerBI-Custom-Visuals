@@ -69,7 +69,7 @@ describe('LineChart', () => {
 
   it('puts the NCR-week label below the dot when there is no room above it', () => {
     view = render(
-      <LineChart points={[point(41, 99.1), point(42, 100, true)]} selectedKey={202642} width={300} height={160} colors={COLORS} describe labelIssueWeeks onHover={vi.fn()} />,
+      <LineChart points={[point(41, 100, true), point(42, 99.1)]} selectedKey={202642} width={300} height={160} colors={COLORS} describe labelIssueWeeks onHover={vi.fn()} />,
     )
     const dotY = Number(view.container.querySelector('.qaqc-issue-dot')?.getAttribute('cy'))
     const labelY = Number(view.container.querySelector('.qaqc-issue-rate')?.getAttribute('y'))
@@ -83,6 +83,33 @@ describe('LineChart', () => {
     const dotY = Number(view.container.querySelector('.qaqc-issue-dot')?.getAttribute('cy'))
     const labelY = Number(view.container.querySelector('.qaqc-issue-rate')?.getAttribute('y'))
     expect(labelY).toBeLessThan(dotY)
+  })
+
+  it('skips the NCR-week label on the last point because the end label shows it', () => {
+    view = render(
+      <LineChart points={[point(41, 99.5), point(42, 99.1, true)]} selectedKey={202642} width={300} height={160} colors={COLORS} describe labelIssueWeeks onHover={vi.fn()} />,
+    )
+    expect(view.container.querySelectorAll('.qaqc-issue-rate')).toHaveLength(0)
+    expect(view.container.querySelector('.qaqc-end-label')?.textContent).toBe('99.1%')
+  })
+
+  it('skips an NCR-week label that would crowd the previous one', () => {
+    // 4 points across 30 px of plot give 10 px between neighbours.
+    view = render(
+      <LineChart
+        points={[point(39, 99.5), point(40, 99.2, true), point(41, 99.1, true), point(42, 99.3)]}
+        selectedKey={202642}
+        width={112}
+        height={160}
+        colors={COLORS}
+        describe
+        labelIssueWeeks
+        onHover={vi.fn()}
+      />,
+    )
+    const labels = view.container.querySelectorAll('.qaqc-issue-rate')
+    expect(labels).toHaveLength(1)
+    expect(labels[0].textContent).toBe('99.2%')
   })
 
   it('skips weeks without Finals instead of drawing through them', () => {

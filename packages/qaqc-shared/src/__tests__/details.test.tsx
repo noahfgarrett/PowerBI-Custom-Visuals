@@ -129,6 +129,17 @@ describe('BuildingTable', () => {
     expect(buildingOrder(view.container)).toEqual(['B', 'C', 'A'])
   })
 
+  it('sorts building names naturally so F63.2 comes before F63.10', () => {
+    view = render(<BuildingTable rows={[{ building: 'F63.10', finals: 1, sors: 0 }, { building: 'F63.2', finals: 1, sors: 0 }]} />)
+    sortBy(view.container, 'Building')
+    expect(buildingOrder(view.container)).toEqual(['F63.2', 'F63.10'])
+  })
+
+  it('names the table for screen readers', () => {
+    view = render(<BuildingTable rows={BUILDINGS} />)
+    expect(view.container.querySelector('caption')?.textContent).toBe('Inspections by building')
+  })
+
   it('sizes each share bar against the largest total', () => {
     view = render(<BuildingTable rows={BUILDINGS} />)
     const widths = [...view.container.querySelectorAll<HTMLElement>('.qaqc-share-bar')].map((bar) => bar.style.width)

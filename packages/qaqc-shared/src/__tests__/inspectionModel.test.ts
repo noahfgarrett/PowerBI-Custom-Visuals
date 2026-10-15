@@ -114,6 +114,27 @@ describe('buildInspectionModel', () => {
     expect(model.allBuildings.map((bar) => bar.building)).toEqual(names)
   })
 
+  it('ranks tied buildings in natural order', () => {
+    const rows = ['F63.10', 'F63.2'].map((name) => ["WW42'2026", 'Final', '', name])
+    const index = buildInspectionIndex(rows, COLUMNS, TODAY)
+    const model = buildInspectionModel(index, defaultViewState(index))
+    expect(model.allBuildings.map((bar) => bar.building)).toEqual(['F63.2', 'F63.10'])
+  })
+
+  it('totals a window that does not start at the first week', () => {
+    const index = syntheticIndex()
+    const model = buildInspectionModel(index, view(index, { selectedKey: 202620, windowEndKey: 202620 }))
+    expect(model.windowTotals.weeks).toBe(20)
+    expect(model.windowTotals.finals).toBe(model.window.reduce((sum, item) => sum + item.finals, 0))
+    const later = buildInspectionModel(index, view(index, { selectedKey: 202635, windowEndKey: 202635 }))
+    expect(later.windowTotals).toEqual({
+      finals: later.window.reduce((sum, item) => sum + item.finals, 0),
+      sors: later.window.reduce((sum, item) => sum + item.sors, 0),
+      issuesFound: later.window.reduce((sum, item) => sum + item.issuesFound, 0),
+      weeks: 30,
+    })
+  })
+
   it('reports no data for an empty index', () => {
     const index = buildInspectionIndex([], COLUMNS, TODAY)
     const model = buildInspectionModel(index, defaultViewState(index))

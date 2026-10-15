@@ -13,6 +13,7 @@ import type {
   WindowTotals,
   WorkWeek,
 } from './types'
+import { NAME_COLLATOR } from './format'
 import { enumerateWorkWeeks, parseWorkWeek, previousWorkWeek, toIsoWorkWeek } from './workWeeks'
 
 export const UNSPECIFIED_BUILDING = 'Unspecified'
@@ -203,7 +204,7 @@ function summarizeBuildings(
   }
   const ranked: BuildingBar[] = [...totals.entries()]
     .map(([building, tally]) => ({ building, finals: tally.finals, sors: tally.sors }))
-    .sort((a, b) => b.finals + b.sors - (a.finals + a.sors) || a.building.localeCompare(b.building))
+    .sort((a, b) => b.finals + b.sors - (a.finals + a.sors) || NAME_COLLATOR.compare(a.building, b.building))
   const rest = ranked.slice(TOP_BUILDING_COUNT)
   return {
     buildings: ranked.slice(0, TOP_BUILDING_COUNT),
@@ -231,15 +232,13 @@ export function buildInspectionModel(index: InspectionIndex, view: ViewState): I
   const window = index.weeks.slice(startPosition, endPosition + 1)
   const { buildings, allBuildings, otherBuildings } = summarizeBuildings(index, startPosition, endPosition)
 
-  const windowTotals = window.reduce<WindowTotals>(
-    (totals, item) => ({
-      finals: totals.finals + item.finals,
-      sors: totals.sors + item.sors,
-      issuesFound: totals.issuesFound + item.issuesFound,
-      weeks: totals.weeks,
-    }),
-    { finals: 0, sors: 0, issuesFound: 0, weeks: window.length },
-  )
+  const before = (cumulative: number[]): number => (startPosition > 0 ? cumulative[startPosition - 1] : 0)
+  const windowTotals: WindowTotals = {
+    finals: index.cumulativeFinals[endPosition] - before(index.cumulativeFinals),
+    sors: index.cumulativeSors[endPosition] - before(index.cumulativeSors),
+    issuesFound: index.cumulativeIssues[endPosition] - before(index.cumulativeIssues),
+    weeks: window.length,
+  }
 
   return {
     selectedWeek: selected.week,
