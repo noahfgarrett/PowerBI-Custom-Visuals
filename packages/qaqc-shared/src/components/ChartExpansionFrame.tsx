@@ -6,6 +6,11 @@ import type { ElementSize } from '../hooks/useElementSize'
 import type { LegendItem } from './ChartPanel'
 import { ExpandedPanel, type PanelBox } from './ExpandedPanel'
 
+/** Dashboards narrower than this use the compact layout. */
+export const COMPACT_WIDTH = 900
+/** Dashboards shorter than this show only the cards. */
+export const CARDS_ONLY_HEIGHT = 420
+
 const ZERO_BOX: PanelBox = { top: 0, left: 0, width: 0, height: 0 }
 
 /** What the overlay needs to draw one expandable chart panel. */

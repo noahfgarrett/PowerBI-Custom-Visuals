@@ -24,9 +24,11 @@ export interface KpiCardProps {
   icon: LucideIcon
   /** Draws a colored status line under the value. */
   status?: KpiStatus
+  /** Colors the value bad red, for a value that misses its target on its own. */
+  isValueBad?: boolean
 }
 
-export function KpiCard({ label, value, detail, tone, trend, icon: Icon, status }: KpiCardProps): ReactElement {
+export function KpiCard({ label, value, detail, tone, trend, icon: Icon, status, isValueBad = false }: KpiCardProps): ReactElement {
   const TrendIcon = trend === 'none' ? null : TREND_ICONS[trend]
   const summary = `${label}: ${value}. ${detail}`
   return (
@@ -37,7 +39,7 @@ export function KpiCard({ label, value, detail, tone, trend, icon: Icon, status 
         </span>
         <span className="qaqc-kpi-label">{label}</span>
       </div>
-      <strong className="qaqc-kpi-value">{value}</strong>
+      <strong className={isValueBad ? 'qaqc-kpi-value is-bad' : 'qaqc-kpi-value'}>{value}</strong>
       {status !== undefined && <span className={`qaqc-kpi-status is-${status}`} aria-hidden="true" />}
       <span className={`qaqc-kpi-detail is-${tone}`}>
         {TrendIcon && <TrendIcon size={12} aria-hidden="true" />}

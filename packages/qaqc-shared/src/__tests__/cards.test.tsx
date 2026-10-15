@@ -34,6 +34,18 @@ describe('KpiCard', () => {
   })
 })
 
+describe('KpiCard value tone', () => {
+  it('colors the value red when it is marked bad', () => {
+    view = render(<KpiCard label="Sign-off %" value="5%" detail="1 of 20" tone="neutral" trend="none" icon={ClipboardCheck} isValueBad />)
+    expect(view.container.querySelector('.qaqc-kpi-value.is-bad')).not.toBeNull()
+  })
+
+  it('leaves the value uncolored by default', () => {
+    view = render(<KpiCard label="Sign-off %" value="80%" detail="67 of 84" tone="neutral" trend="none" icon={ClipboardCheck} />)
+    expect(view.container.querySelector('.qaqc-kpi-value')?.className).toBe('qaqc-kpi-value')
+  })
+})
+
 describe('KpiCard status', () => {
   it('draws a status line under the value and names it for screen readers', () => {
     view = render(<KpiCard label="Overall Sign-off %" value="12.0%" detail="+0.4 pts" tone="neutral" trend="up" icon={ClipboardCheck} status="warn" />)

@@ -4,7 +4,7 @@ import { useMemo, useState, type ReactElement, type ReactNode } from 'react'
 import type { TooltipHandler } from '../chartTypes'
 import type { ElementSize } from '../hooks/useElementSize'
 import { BuildingTable } from './BuildingTable'
-import { ChartExpansionFrame, type ExpandablePanel } from './ChartExpansionFrame'
+import { CARDS_ONLY_HEIGHT, ChartExpansionFrame, COMPACT_WIDTH, type ExpandablePanel } from './ChartExpansionFrame'
 import { ChartFill } from './ChartFill'
 import { ChartPanel, type LegendItem } from './ChartPanel'
 import { Footnotes } from './Footnotes'
@@ -32,8 +32,6 @@ import { chartColorsFromTheme, type ResolvedTheme } from '../theme'
 import type { InspectionIndex, RangeMode } from '../types'
 import { shortWeekLabel } from '../workWeeks'
 
-export const COMPACT_WIDTH = 900
-export const CARDS_ONLY_HEIGHT = 420
 const NO_ROWS_MESSAGE = 'No inspections match the current filters'
 const EMPTY_RANGE_MESSAGE = 'No inspections in this range'
 

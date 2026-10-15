@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactElement } from 'react'
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactElement } from 'react'
 
 import { roundedRightBarPath, truncateLabel } from '../chartMath'
 import type { ChartColors, TooltipHandler } from '../chartTypes'
@@ -28,6 +28,11 @@ export interface SystemDrillChartProps {
   describe: boolean
   /** A system name drills in; null returns to all systems. */
   onDrill: (system: string | null) => void
+  /**
+   * Called when the drill resets without the breadcrumb (the drilled system left the window) while the breadcrumb
+   * had focus, so the parent can move focus somewhere that still exists instead of letting it fall to the body.
+   */
+  onFocusLost?: () => void
   onHover: TooltipHandler
 }
 
@@ -85,6 +90,7 @@ export function SystemDrillChart({
   interactive,
   describe,
   onDrill,
+  onFocusLost,
   onHover,
 }: SystemDrillChartProps): ReactElement {
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null)
@@ -93,12 +99,28 @@ export function SystemDrillChart({
   const usedPointerRef = useRef(false)
   const pendingFocusRef = useRef<PendingFocus | null>(null)
   const breadcrumbRef = useRef<HTMLButtonElement | null>(null)
+  // Whether the breadcrumb held focus when it was removed. Focus is gone by the time effects run, so this is
+  // recorded by the ref cleanup, which React runs before it removes the button.
+  const breadcrumbHadFocusRef = useRef(false)
   const svgRef = useRef<SVGSVGElement | null>(null)
   const drilledSystem = drill?.system ?? null
 
+  const attachBreadcrumb = useCallback((node: HTMLButtonElement | null): (() => void) => {
+    breadcrumbRef.current = node
+    return () => {
+      breadcrumbHadFocusRef.current = node !== null && node.ownerDocument.activeElement === node
+      breadcrumbRef.current = null
+    }
+  }, [])
+
   useEffect(() => {
+    const breadcrumbHadFocus = breadcrumbHadFocusRef.current
+    breadcrumbHadFocusRef.current = false
     const pending = pendingFocusRef.current
-    if (pending === null) return
+    if (pending === null) {
+      if (breadcrumbHadFocus && drilledSystem === null) onFocusLost?.()
+      return
+    }
     pendingFocusRef.current = null
     if (pending.kind === 'breadcrumb') {
       if (drilledSystem !== null) breadcrumbRef.current?.focus()
@@ -168,7 +190,7 @@ export function SystemDrillChart({
     >
       {drill !== null && (
         <nav className="qaqc-breadcrumb" aria-label="System drill-down">
-          <button ref={breadcrumbRef} type="button" disabled={!interactive} onClick={returnToAll}>
+          <button ref={attachBreadcrumb} type="button" disabled={!interactive} onClick={returnToAll}>
             All systems
           </button>
           <span className="qaqc-breadcrumb-separator" aria-hidden="true">›</span>

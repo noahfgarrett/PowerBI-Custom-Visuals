@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import { BuildingTable } from '../components/BuildingTable'
 import { IssueWeekList } from '../components/IssueWeekList'
-import { WindowSummary } from '../components/WindowSummary'
+import { WeldWindowSummary, WindowSummary } from '../components/WindowSummary'
 import type { BuildingBar, PassRatePoint } from '../types'
 import { makeWorkWeek } from '../workWeeks'
 import { render, type Rendered } from './render'
@@ -40,6 +40,23 @@ describe('WindowSummary', () => {
   it('reads n/a for the average when the window has no weeks', () => {
     view = render(<WindowSummary totals={{ finals: 0, sors: 0, issuesFound: 0, weeks: 0 }} />)
     expect(summaryPairs(view.container)[3]).toEqual(['Avg per week', 'n/a'])
+  })
+})
+
+describe('WeldWindowSummary', () => {
+  it('shows welds, signed, sign-off %, and issues created for the window', () => {
+    view = render(<WeldWindowSummary totals={{ welds: 1570, signed: 963, issues: 11, weeks: 30 }} />)
+    expect(summaryPairs(view.container)).toEqual([
+      ['Welds', '1,570'],
+      ['Signed', '963'],
+      ['Sign-off %', '61.3%'],
+      ['Issues created', '11'],
+    ])
+  })
+
+  it('reads n/a for sign-off % when the window has no welds', () => {
+    view = render(<WeldWindowSummary totals={{ welds: 0, signed: 0, issues: 0, weeks: 30 }} />)
+    expect(summaryPairs(view.container)[2]).toEqual(['Sign-off %', 'n/a'])
   })
 })
 

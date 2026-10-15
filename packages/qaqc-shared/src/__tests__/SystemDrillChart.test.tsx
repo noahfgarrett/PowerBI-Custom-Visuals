@@ -190,6 +190,37 @@ describe('SystemDrillChart', () => {
     expect(document.activeElement).toBe(rowButton(view.container, 'AW'))
   })
 
+  it('reports lost focus when the drill resets from outside while the breadcrumb has focus', () => {
+    const onFocusLost = vi.fn()
+    view = draw({ drill: AW, onFocusLost })
+    act(() => {
+      allSystemsButton(view?.container ?? document.body).focus()
+    })
+    view.rerender(<SystemDrillChart {...props({ onFocusLost })} />)
+    expect(onFocusLost).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not report lost focus when the drill resets while focus is elsewhere', () => {
+    const onFocusLost = vi.fn()
+    view = draw({ drill: AW, onFocusLost })
+    view.rerender(<SystemDrillChart {...props({ onFocusLost })} />)
+    expect(onFocusLost).not.toHaveBeenCalled()
+  })
+
+  it('does not report lost focus when the breadcrumb returns to all systems', () => {
+    const onFocusLost = vi.fn()
+    const onDrill = vi.fn()
+    view = draw({ drill: AW, onDrill, onFocusLost })
+    const button = allSystemsButton(view.container)
+    act(() => {
+      button.focus()
+    })
+    fire(button, new MouseEvent('click', { bubbles: true }))
+    view.rerender(<SystemDrillChart {...props({ onDrill, onFocusLost })} />)
+    expect(onFocusLost).not.toHaveBeenCalled()
+    expect(document.activeElement).toBe(rowButton(view.container, 'AW'))
+  })
+
   it('shows the row focus ring only after keyboard use', () => {
     view = draw()
     const aw = rowButton(view.container, 'AW')
