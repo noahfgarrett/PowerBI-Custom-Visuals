@@ -30,7 +30,8 @@ function point(week: number, opened: number, closed: number, remainingOpen: numb
   return { week: makeWorkWeek(year, week), opened, closed, remainingOpen }
 }
 
-// Opened 3, 1, 3 and Closed 0, 1, 2 on a 0–3 axis; Remaining 3, 3, 4 on a 0–4 axis.
+// Opened 3, 1, 3 and Closed 0, 1, 2 on a 0–3 axis. Remaining 3, 3, 4 on a 0–6 axis: the right axis takes the left
+// axis's three steps, and 2 is the smallest nice step that reaches 4 in three.
 const POINTS: IssueTrendPoint[] = [point(40, 3, 0, 3), point(41, 1, 1, 3), point(42, 3, 2, 4)]
 
 let view: Rendered | null = null
@@ -68,6 +69,10 @@ function element(root: ParentNode, selector: string): Element {
   const found = root.querySelector(selector)
   if (!found) throw new Error(`${selector} missing`)
   return found
+}
+
+function pressKeys(target: Element, keys: string[]): void {
+  for (const key of keys) fire(target, new KeyboardEvent('keydown', { key, bubbles: true }))
 }
 
 function all(root: ParentNode, selector: string): Element[] {
@@ -220,14 +225,14 @@ describe('IssuesTrendChart remaining open line', () => {
     view = draw()
     const line = element(view.container, '.qaqc-remaining-line')
     expect(line.getAttribute('stroke')).toBe(COLORS.warn)
-    // Remaining 3, 3, 4 on a 0–4 axis: y 88.5, 88.5, 26.
-    expect(line.getAttribute('d')).toBe('M134,88.5 C194,88.5 254,88.5 314,88.5 C374,88.5 434,26 494,26')
+    // Remaining 3, 3, 4 on a 0–6 axis: y 151, 151, 109.33.
+    expect(line.getAttribute('d')).toBe('M134,151 C194,151 254,151 314,151 C374,151 434,109.33 494,109.33')
   })
 
   it('fills a light area under the line down to the baseline', () => {
     view = draw()
     const area = element(view.container, '.qaqc-remaining-area')
-    expect(area.getAttribute('d')).toBe('M134,88.5 C194,88.5 254,88.5 314,88.5 C374,88.5 434,26 494,26 L494,276 L134,276 Z')
+    expect(area.getAttribute('d')).toBe('M134,151 C194,151 254,151 314,151 C374,151 434,109.33 494,109.33 L494,276 L134,276 Z')
     const fill = area.getAttribute('fill') ?? ''
     const gradient = view.container.querySelector(`linearGradient[id="${fill.slice(5, -1)}"]`)
     expect(gradient).not.toBeNull()
@@ -245,12 +250,23 @@ describe('IssuesTrendChart remaining open line', () => {
     expect(new Set(ids).size).toBe(2)
   })
 
-  it('labels the right axis in amber on a nice scale', () => {
+  it('labels the right axis in amber on a nice scale with as many steps as the left axis', () => {
     view = draw()
     const ticks = all(view.container, '.qaqc-remaining-axis-text')
-    expect(ticks.map((tick) => tick.textContent)).toEqual(['0', '1', '2', '3', '4'])
+    expect(ticks.map((tick) => tick.textContent)).toEqual(['0', '2', '4', '6'])
     expect(ticks.every((tick) => tick.getAttribute('fill') === COLORS.warn)).toBe(true)
-    expect(numberAttr(ticks[4], 'y')).toBeCloseTo(PLOT_TOP + 3.5, 6)
+  })
+
+  it('puts every right axis label on a left axis gridline', () => {
+    for (const points of [POINTS, randomPoints(30, 12, 3), randomPoints(52, 40, 4), [point(42, 0, 0, 0)]]) {
+      view = draw({ points, selectedKey: points[points.length - 1].week.key })
+      const gridYs = all(view.container, '.qaqc-grid-line').map((line) => numberAttr(line, 'y1'))
+      const labelYs = all(view.container, '.qaqc-remaining-axis-text').map((tick) => numberAttr(tick, 'y') - 3.5)
+      expect(labelYs).toHaveLength(gridYs.length)
+      labelYs.forEach((y, index) => expect(y).toBeCloseTo(gridYs[index], 6))
+      view.unmount()
+      view = null
+    }
   })
 
   it('titles both axes', () => {
@@ -265,16 +281,12 @@ describe('IssuesTrendChart remaining open line', () => {
     expect(all(view.container, '.qaqc-remaining-dot')).toHaveLength(all(view.container, '.qaqc-remaining-label').length)
   })
 
-  it('draws a dot at every week when bands are at least 12 px', () => {
-    // 45 weeks give 12 px bands.
+  it('draws a dot at every week centre when bands are at least 12 px', () => {
+    // 45 weeks give 12 px bands, centred at 44 + 6, 44 + 18, …
     const points = steadyPoints(45)
     view = draw({ points, selectedKey: points[44].week.key })
-    expect(all(view.container, '.qaqc-remaining-dot')).toHaveLength(45)
-  })
-
-  it('draws a dot at every week', () => {
-    view = draw()
-    expect(all(view.container, '.qaqc-remaining-dot').map((dot) => numberAttr(dot, 'cx'))).toEqual([134, 314, 494])
+    const xs = all(view.container, '.qaqc-remaining-dot').map((dot) => numberAttr(dot, 'cx'))
+    expect(xs).toEqual(points.map((_, index) => 44 + 12 * index + 6))
   })
 
   it('labels every third point and the last point', () => {
@@ -288,7 +300,7 @@ describe('IssuesTrendChart remaining open line', () => {
     const lineLabels = all(view.container, '.qaqc-remaining-label')
     const last = lineLabels[lineLabels.length - 1]
     expect(last.textContent).toBe('4')
-    expect(numberAttr(last, 'y')).toBeCloseTo(remainingY(4, 4) - 7, 6)
+    expect(numberAttr(last, 'y')).toBeCloseTo(remainingY(4, 6) - 7, 6)
   })
 
   it('moves a line label below its dot when above would hit a bar label', () => {
@@ -440,19 +452,29 @@ describe('IssuesTrendChart selection and interaction', () => {
     expect(onSelectWeek).not.toHaveBeenCalled()
   })
 
-  it('moves focus with arrow keys and selects with Enter or Space', () => {
+  it('can take keyboard focus', () => {
+    view = draw()
+    expect(element(view.container, 'svg').getAttribute('tabindex')).toBe('0')
+  })
+
+  it('selects the week before the selected one with ArrowLeft then Enter', () => {
     const onSelectWeek = vi.fn()
     view = draw({ onSelectWeek })
-    const svg = element(view.container, 'svg')
-    expect(svg.getAttribute('tabindex')).toBe('0')
-    fire(svg, new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }))
-    fire(svg, new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    pressKeys(element(view.container, 'svg'), ['ArrowLeft', 'Enter'])
     expect(onSelectWeek).toHaveBeenLastCalledWith(202641)
-    fire(svg, new KeyboardEvent('keydown', { key: 'Home', bubbles: true }))
-    fire(svg, new KeyboardEvent('keydown', { key: ' ', bubbles: true }))
+  })
+
+  it('selects the first week with Home then Space', () => {
+    const onSelectWeek = vi.fn()
+    view = draw({ onSelectWeek })
+    pressKeys(element(view.container, 'svg'), ['Home', ' '])
     expect(onSelectWeek).toHaveBeenLastCalledWith(202640)
-    fire(svg, new KeyboardEvent('keydown', { key: 'End', bubbles: true }))
-    fire(svg, new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+  })
+
+  it('selects the last week with End then Enter', () => {
+    const onSelectWeek = vi.fn()
+    view = draw({ onSelectWeek, selectedKey: 202640 })
+    pressKeys(element(view.container, 'svg'), ['End', 'Enter'])
     expect(onSelectWeek).toHaveBeenLastCalledWith(202642)
   })
 
@@ -514,6 +536,14 @@ describe('IssuesTrendChart selection and interaction', () => {
   it('keeps a short label when not describing charts', () => {
     view = draw({ describe: false })
     expect(element(view.container, 'svg').getAttribute('aria-label')).toBe('Issues opened and closed by work week')
+  })
+
+  it('draws without errors or NaN when the chart is narrower and shorter than its margins', () => {
+    view = draw({ width: 40, height: 30 })
+    const html = view.container.innerHTML
+    expect(html).not.toContain('NaN')
+    expect(html).not.toContain('Infinity')
+    expect(all(view.container, '.qaqc-trend-label')).toHaveLength(0)
   })
 
   it('draws an empty plot without a line, labels, or hit areas when there are no weeks', () => {

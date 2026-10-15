@@ -450,7 +450,9 @@
 .qaqc-rate-label,
 .qaqc-total-label,
 .qaqc-signed-label:not(.is-inside),
-.qaqc-baseline-label {
+.qaqc-baseline-label,
+.qaqc-trend-label:not(.is-inside),
+.qaqc-open-aging-value:not(.is-inside) {
   paint-order: stroke;
   stroke: var(--qaqc-card-solid);
   stroke-width: 3px;
@@ -794,6 +796,12 @@
   text-align: left;
 }
 
+// Text columns beyond the first (marked .is-text) read left-aligned too.
+.qaqc-table thead th.is-text,
+.qaqc-table td.is-text {
+  text-align: left;
+}
+
 .qaqc-table thead th button {
   width: 100%;
   padding: 8px 10px;
@@ -1024,15 +1032,6 @@
   pointer-events: none;
 }
 
-/* Same card halo as the other value labels; labels inside a bar sit on the bar colour instead. */
-.qaqc-trend-label:not(.is-inside),
-.qaqc-aging-value:not(.is-inside) {
-  paint-order: stroke;
-  stroke: var(--qaqc-card-solid);
-  stroke-width: 3px;
-  stroke-linejoin: round;
-}
-
 .qaqc-remaining-area {
   pointer-events: none;
 }
@@ -1049,14 +1048,14 @@
   pointer-events: none;
 }
 
-.qaqc-aging-value {
+.qaqc-open-aging-value {
   font-size: 10px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   pointer-events: none;
 }
 
-.qaqc-aging-bucket {
+.qaqc-open-aging-bucket {
   font-size: 10px;
   font-weight: 700;
 }
@@ -1138,17 +1137,11 @@
   white-space: nowrap;
 }
 
-.qaqc-aging-row em {
+.qaqc-aging-percent {
   margin-left: 5px;
   color: var(--qaqc-muted);
   font-size: 9px;
-  font-style: normal;
   font-weight: 600;
-}
-
-.qaqc-table thead th.is-text,
-.qaqc-table td.is-text {
-  text-align: left;
 }
 
 // Windowed tables (hooks/useVirtualRows.ts) set every body row to TABLE_ROW_HEIGHT inline; cells stay on one line

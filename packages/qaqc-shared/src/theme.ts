@@ -98,7 +98,7 @@ export function compositeOver(color: string, opacity: number, background: string
   const front = hexChannels(color)
   const back = hexChannels(background)
   if (front === null || back === null) return color
-  const alpha = Math.min(1, Math.max(0, opacity))
+  const alpha = Number.isFinite(opacity) ? Math.min(1, Math.max(0, opacity)) : 1
   const mixed = front.map((channel, index) => Math.round(channel * alpha + back[index] * (1 - alpha)))
   return `#${mixed.map((channel) => channel.toString(16).padStart(2, '0').toUpperCase()).join('')}`
 }
@@ -106,7 +106,8 @@ export function compositeOver(color: string, opacity: number, background: string
 function relativeLuminance(channels: [number, number, number]): number {
   const [r, g, b] = channels.map((channel) => {
     const value = channel / 255
-    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+    // The sRGB transfer threshold; WCAG 2's 0.03928 differs only between 8-bit steps, so hex results are identical.
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
   })
   return 0.2126 * r + 0.7152 * g + 0.0722 * b
 }

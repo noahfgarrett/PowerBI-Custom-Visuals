@@ -101,6 +101,10 @@ describe('compositeOver', () => {
     expect(compositeOver('#2E5AAC', 0, '#FDFEFF')).toBe('#FDFEFF')
   })
 
+  it('treats a non-finite opacity as fully opaque, like withOpacity', () => {
+    expect(compositeOver('#003459', Number.NaN, '#FFFFFF')).toBe('#003459')
+  })
+
   it('returns the colour unchanged when either colour is not hex', () => {
     expect(compositeOver('red', 0.5, '#FFFFFF')).toBe('red')
   })

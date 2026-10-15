@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useState, type MouseEvent, type ReactElement } from 'react'
 
-import { labelIndices, niceScale, round, roundedTopBarPath, type NiceScale } from '../chartMath'
+import { alignedScale, labelIndices, niceScale, round, roundedTopBarPath, type NiceScale } from '../chartMath'
 import type { ChartColors, TooltipHandler } from '../chartTypes'
 import { formatCount } from '../format'
 import { useWeekFocus } from '../hooks/useWeekFocus'
@@ -186,7 +186,8 @@ export function layoutChart(points: IssueTrendPoint[], width: number, height: nu
     maxRemaining = Math.max(maxRemaining, point.remainingOpen)
   }
   const countScale = niceScale(maxCount)
-  const remainingScale = niceScale(maxRemaining)
+  // The right axis takes the left axis's step count, so its labels sit on the left axis's gridlines.
+  const remainingScale = alignedScale(maxRemaining, countScale.ticks.length - 1)
   const countHeight = (value: number): number => (value / countScale.max) * plotHeight
   const bandX = (index: number): number => MARGIN.left + index * band
   const openedX = (index: number): number => bandX(index) + (band - pairWidth) / 2
@@ -207,16 +208,16 @@ export function layoutChart(points: IssueTrendPoint[], width: number, height: nu
   })
 
   // Labels are placed in priority order, each at its first position that stays inside the plot and clear of every
-  // label already placed; a label with no such position is left out. The last line point comes first, then the
-  // bar counts (newest week first), then the other line points.
+  // label already placed; a label with no such position is left out. The last line point comes first, so only a
+  // plot too small to hold it can drop it; then the bar counts (newest week first), then the other line points.
   const placedBoxes: Box[] = []
   const placed: TrendLabel[] = []
   const isClear = (box: Box): boolean => box.left >= 0 && box.right <= width && box.top >= 0 && box.bottom <= plotBottom
     && placedBoxes.every((other) => !overlaps(box, other))
-  function place(label: Omit<TrendLabel, 'x' | 'y'>, candidates: PlotPoint[], isRequired = false): void {
+  function place(label: Omit<TrendLabel, 'x' | 'y'>, candidates: PlotPoint[]): void {
     for (const candidate of candidates) {
       const box = labelBox(label.text, candidate.x, candidate.y)
-      if (isRequired || isClear(box)) {
+      if (isClear(box)) {
         placedBoxes.push(box)
         placed.push({ ...label, x: candidate.x, y: candidate.y })
         return
@@ -227,9 +228,9 @@ export function layoutChart(points: IssueTrendPoint[], width: number, height: nu
     const { x, y } = linePoints[index]
     return [{ x, y: y - LINE_LABEL_ABOVE }, { x, y: y + LINE_LABEL_BELOW }]
   }
-  function placeLineLabel(index: number, isRequired: boolean): void {
+  function placeLineLabel(index: number): void {
     const label = { key: `r${index}`, index, series: 'remaining' as const, text: formatCount(points[index].remainingOpen), isInside: false }
-    place(label, isRequired ? lineCandidates(index).slice(0, 1) : lineCandidates(index), isRequired)
+    place(label, lineCandidates(index))
   }
   function placeBarLabel(index: number, series: 'opened' | 'closed'): void {
     const count = series === 'opened' ? points[index].opened : points[index].closed
@@ -251,7 +252,7 @@ export function layoutChart(points: IssueTrendPoint[], width: number, height: nu
 
   const lineIndices = lineLabelIndices(points.length, band, showValues)
   const lastIndex = points.length - 1
-  if (lastIndex >= 0) placeLineLabel(lastIndex, true)
+  if (lastIndex >= 0) placeLineLabel(lastIndex)
   if (band >= MIN_BAR_LABEL_BAND) {
     for (let index = lastIndex; index >= 0; index -= 1) {
       placeBarLabel(index, 'opened')
@@ -259,13 +260,13 @@ export function layoutChart(points: IssueTrendPoint[], width: number, height: nu
     }
   }
   for (let position = lineIndices.length - 1; position >= 0; position -= 1) {
-    if (lineIndices[position] !== lastIndex) placeLineLabel(lineIndices[position], false)
+    if (lineIndices[position] !== lastIndex) placeLineLabel(lineIndices[position])
   }
 
   // Bar labels by week (Opened before Closed), then the line labels by week, drawn over them.
-  const isLine = (label: TrendLabel): number => (label.series === 'remaining' ? 1 : 0)
-  const isClosed = (label: TrendLabel): number => (label.series === 'closed' ? 1 : 0)
-  const labels = placed.sort((a, b) => isLine(a) - isLine(b) || a.index - b.index || isClosed(a) - isClosed(b))
+  const lineRank = (label: TrendLabel): number => (label.series === 'remaining' ? 1 : 0)
+  const closedRank = (label: TrendLabel): number => (label.series === 'closed' ? 1 : 0)
+  const labels = placed.sort((a, b) => lineRank(a) - lineRank(b) || a.index - b.index || closedRank(a) - closedRank(b))
   const dotIndices = band >= MIN_DOT_BAND
     ? points.map((_, index) => index)
     : labels.filter((label) => label.series === 'remaining').map((label) => label.index)
@@ -319,7 +320,7 @@ export function IssuesTrendChart({
   }, [points])
 
   const layout = useMemo(() => layoutChart(points, width, height, showValues), [points, width, height, showValues])
-  const { plotRight, plotHeight, plotBottom, band } = layout
+  const { plotHeight, band } = layout
   const top = MARGIN.top
   const bandX = (index: number): number => MARGIN.left + index * band
   const hovered = hoverIndex !== null && hoverIndex < layout.linePoints.length ? layout.linePoints[hoverIndex] : null

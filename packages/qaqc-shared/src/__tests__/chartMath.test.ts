@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { labelIndices, niceScale, ordinalOpacity, round, passRateDomain, roundedRightBarPath, roundedTopBarPath, truncateLabel } from '../chartMath'
+import { alignedScale, labelIndices, niceScale, ordinalOpacity, round, passRateDomain, roundedRightBarPath, roundedTopBarPath, truncateLabel } from '../chartMath'
 
 describe('niceScale', () => {
   it('rounds the max up to a nice step with integer ticks', () => {
@@ -77,5 +77,25 @@ describe('round', () => {
     expect(round(88.4999)).toBe(88.5)
     expect(round(1 / 3)).toBe(0.33)
     expect(round(-2.005)).toBe(-2)
+  })
+})
+
+describe('alignedScale', () => {
+  it('takes the given number of steps with the smallest nice step that reaches the maximum', () => {
+    expect(alignedScale(4, 3)).toEqual({ max: 6, ticks: [0, 2, 4, 6] })
+    expect(alignedScale(51, 4)).toEqual({ max: 80, ticks: [0, 20, 40, 60, 80] })
+    expect(alignedScale(300, 3)).toEqual({ max: 300, ticks: [0, 100, 200, 300] })
+  })
+
+  it('never steps by less than 1', () => {
+    expect(alignedScale(2, 4)).toEqual({ max: 4, ticks: [0, 1, 2, 3, 4] })
+  })
+
+  it('treats a maximum of 0 as 1', () => {
+    expect(alignedScale(0, 1)).toEqual({ max: 1, ticks: [0, 1] })
+  })
+
+  it('takes at least one step', () => {
+    expect(alignedScale(5, 0)).toEqual({ max: 5, ticks: [0, 5] })
   })
 })

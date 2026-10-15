@@ -3,18 +3,37 @@ export interface NiceScale {
   ticks: number[]
 }
 
-/** Integer-step axis for counts. */
-export function niceScale(maxValue: number, tickCount = 4): NiceScale {
-  const safeMax = Math.max(1, maxValue)
-  const rawStep = safeMax / tickCount
+/** The smallest 1, 2 or 5 × 10ⁿ step of at least `rawStep`, and never less than 1. */
+function niceStep(rawStep: number): number {
   const magnitude = 10 ** Math.floor(Math.log10(rawStep))
   const residual = rawStep / magnitude
   const niceResidual = residual <= 1 ? 1 : residual <= 2 ? 2 : residual <= 5 ? 5 : 10
-  const step = Math.max(1, niceResidual * magnitude)
-  const max = Math.ceil(safeMax / step) * step
+  return Math.max(1, niceResidual * magnitude)
+}
+
+function ticksTo(max: number, step: number): number[] {
   const ticks: number[] = []
   for (let tick = 0; tick <= max; tick += step) ticks.push(tick)
-  return { max, ticks }
+  return ticks
+}
+
+/** Integer-step axis for counts. */
+export function niceScale(maxValue: number, tickCount = 4): NiceScale {
+  const safeMax = Math.max(1, maxValue)
+  const step = niceStep(safeMax / tickCount)
+  const max = Math.ceil(safeMax / step) * step
+  return { max, ticks: ticksTo(max, step) }
+}
+
+/**
+ * An integer-step axis with exactly `steps` steps, for a second axis whose ticks must sit on the first axis's
+ * gridlines: the smallest nice step that reaches `maxValue` in that many steps.
+ */
+export function alignedScale(maxValue: number, steps: number): NiceScale {
+  const stepCount = Math.max(1, steps)
+  const step = niceStep(Math.max(1, maxValue) / stepCount)
+  const max = step * stepCount
+  return { max, ticks: ticksTo(max, step) }
 }
 
 /** Which bar indices get an axis label: evenly spaced from the right, always including the selection. */

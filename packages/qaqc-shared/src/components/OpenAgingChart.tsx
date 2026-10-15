@@ -75,21 +75,22 @@ export function OpenAgingChart({ buckets, width, height, colors, isHighContrast,
         const top = plotBottom - barHeight
         const opacity = isHighContrast ? 1 : ordinalOpacity(index, buckets.length)
         const isInside = barHeight >= MIN_INSIDE_LABEL_HEIGHT
-        // A label inside the bar takes whichever of ink or card reads better on the bar as drawn over the card.
+        // A label inside the bar takes whichever of ink or card reads better on the bar as drawn over the card. The
+        // composite is over the solid card colour: a see-through card (Format pane cardOpacity) is not accounted for.
         const barColor = compositeOver(colors.series1, opacity, colors.card)
         const insideFill = contrastRatio(colors.ink, barColor) > contrastRatio(colors.card, barColor) ? colors.ink : colors.card
         return (
           <g key={bucket.label}>
             {barHeight > 0 && (
               <path
-                className="qaqc-aging-bar"
+                className="qaqc-open-aging-bar"
                 d={roundedTopBarPath(x, top, barWidth, barHeight, CORNER_RADIUS)}
                 fill={colors.series1}
                 fillOpacity={opacity}
               />
             )}
             <text
-              className={isInside ? 'qaqc-aging-value is-inside' : 'qaqc-aging-value'}
+              className={isInside ? 'qaqc-open-aging-value is-inside' : 'qaqc-open-aging-value'}
               x={center}
               y={isInside ? top + INSIDE_LABEL_INSET : Math.max(MIN_LABEL_Y, top - ABOVE_LABEL_GAP)}
               textAnchor="middle"
@@ -97,7 +98,7 @@ export function OpenAgingChart({ buckets, width, height, colors, isHighContrast,
             >
               {formatCount(bucket.count)}
             </text>
-            <text className="qaqc-aging-bucket" x={center} y={height - BUCKET_LABEL_RISE} textAnchor="middle" fill={colors.ink}>
+            <text className="qaqc-open-aging-bucket" x={center} y={height - BUCKET_LABEL_RISE} textAnchor="middle" fill={colors.ink}>
               {bucket.label}
             </text>
           </g>

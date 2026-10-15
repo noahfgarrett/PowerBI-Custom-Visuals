@@ -101,13 +101,22 @@ describe('OpenIssuesTable', () => {
     expect(rowIds(view.container)).toEqual(['#1020', '#1004', '#999', '#98'])
   })
 
-  it('sorts the text columns A to Z first, ignoring case', () => {
+  it('sorts titles A to Z first, ignoring case', () => {
     view = render(<OpenIssuesTable rows={ROWS} />)
     sortBy(view.container, 'Title')
     expect(rowIds(view.container)).toEqual(['#1004', '#98', '#999', '#1020'])
     expect(header(view.container, 'Title').getAttribute('aria-sort')).toBe('ascending')
+  })
+
+  it('sorts contractors A to Z first, treating case-only differences as equal', () => {
+    view = render(<OpenIssuesTable rows={ROWS} />)
     sortBy(view.container, 'Contractor')
+    // "bayside" (#1004) and "Bayside" (#1020) tie and keep oldest-first order.
     expect(rowIds(view.container)).toEqual(['#1004', '#1020', '#999', '#98'])
+  })
+
+  it('sorts statuses A to Z first', () => {
+    view = render(<OpenIssuesTable rows={ROWS} />)
     sortBy(view.container, 'Status')
     expect(rowIds(view.container)).toEqual(['#1004', '#999', '#1020', '#98'])
   })

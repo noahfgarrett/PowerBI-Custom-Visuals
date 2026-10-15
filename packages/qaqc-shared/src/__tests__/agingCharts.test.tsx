@@ -64,31 +64,31 @@ function barTop(count: number): number {
 describe('OpenAgingChart', () => {
   it('draws a bar for every bucket with issues, in series 1', () => {
     view = draw()
-    const bars = [...view.container.querySelectorAll('.qaqc-aging-bar')]
+    const bars = [...view.container.querySelectorAll('.qaqc-open-aging-bar')]
     expect(bars).toHaveLength(4)
     expect(bars.every((bar) => bar.getAttribute('fill') === COLORS.series1)).toBe(true)
   })
 
   it('shades the buckets on an ordinal ramp from 0.35 to full opacity', () => {
     view = draw({ buckets: buckets([1, 1, 1, 1, 1]) })
-    const opacities = [...view.container.querySelectorAll('.qaqc-aging-bar')].map((bar) => numberAttr(bar, 'fill-opacity'))
+    const opacities = [...view.container.querySelectorAll('.qaqc-open-aging-bar')].map((bar) => numberAttr(bar, 'fill-opacity'))
     expect(opacities).toEqual([0.35, 0.5125, 0.675, 0.8375, 1])
   })
 
   it('draws every bucket at full opacity in high contrast', () => {
     view = draw({ buckets: buckets([1, 1, 1, 1, 1]), isHighContrast: true })
-    const opacities = [...view.container.querySelectorAll('.qaqc-aging-bar')].map((bar) => numberAttr(bar, 'fill-opacity'))
+    const opacities = [...view.container.querySelectorAll('.qaqc-open-aging-bar')].map((bar) => numberAttr(bar, 'fill-opacity'))
     expect(opacities).toEqual([1, 1, 1, 1, 1])
   })
 
   it('labels every bucket with its count, including empty ones', () => {
     view = draw()
-    expect(texts(view.container, '.qaqc-aging-value')).toEqual(['0', '10', '11', '3', '51'])
+    expect(texts(view.container, '.qaqc-open-aging-value')).toEqual(['0', '10', '11', '3', '51'])
   })
 
   it('puts the label inside a bar at least 24 px tall and above a shorter one', () => {
     view = draw()
-    const labels = [...view.container.querySelectorAll('.qaqc-aging-value')]
+    const labels = [...view.container.querySelectorAll('.qaqc-open-aging-value')]
     expect(labels.map((label) => label.classList.contains('is-inside'))).toEqual([false, false, true, false, true])
     expect(numberAttr(labels[1], 'y')).toBeCloseTo(barTop(10) - 7, 6)
     expect(numberAttr(labels[2], 'y')).toBeCloseTo(barTop(11) + 17, 6)
@@ -99,7 +99,7 @@ describe('OpenAgingChart', () => {
       if (!isPresetName(preset)) throw new Error(`bad preset ${preset}`)
       const colors = chartColorsFromTheme(resolveTheme({ ...THEME_BASE, preset }))
       view = draw({ buckets: buckets([50, 50, 50, 50, 50]), colors })
-      const labels = [...view.container.querySelectorAll('.qaqc-aging-value')]
+      const labels = [...view.container.querySelectorAll('.qaqc-open-aging-value')]
       labels.forEach((label, index) => {
         const bar = compositeOver(colors.series1, ordinalOpacity(index, 5), colors.card)
         const best = Math.max(contrastRatio(colors.ink, bar), contrastRatio(colors.card, bar))
@@ -113,25 +113,25 @@ describe('OpenAgingChart', () => {
   it('uses card text on the LotusWorks 2-3 bucket, where ink would be too faint', () => {
     const colors = chartColorsFromTheme(resolveTheme({ ...THEME_BASE, preset: 'lotusworks' }))
     view = draw({ buckets: buckets([50, 50, 50, 50, 50]), colors })
-    expect(view.container.querySelectorAll('.qaqc-aging-value')[2].getAttribute('fill')).toBe(colors.card)
+    expect(view.container.querySelectorAll('.qaqc-open-aging-value')[2].getAttribute('fill')).toBe(colors.card)
   })
 
   it('uses dark text on the lightest qaqc bucket', () => {
     view = draw({ buckets: buckets([50, 50, 50, 50, 50]) })
-    expect(view.container.querySelector('.qaqc-aging-value')?.getAttribute('fill')).toBe(COLORS.ink)
+    expect(view.container.querySelector('.qaqc-open-aging-value')?.getAttribute('fill')).toBe(COLORS.ink)
   })
 
   it('uses card text on the solid foreground bars in high contrast', () => {
     const highContrast = { foreground: '#FFFF00', background: '#000000', foregroundSelected: '#00FFFF' }
     const colors = chartColorsFromTheme(resolveTheme({ ...THEME_BASE, highContrast }))
     view = draw({ buckets: buckets([50, 50, 50, 50, 50]), colors, isHighContrast: true })
-    const fills = [...view.container.querySelectorAll('.qaqc-aging-value')].map((label) => label.getAttribute('fill'))
+    const fills = [...view.container.querySelectorAll('.qaqc-open-aging-value')].map((label) => label.getAttribute('fill'))
     expect(fills).toEqual(Array(5).fill('#000000'))
   })
 
   it('keeps a bucket with very few issues visible at 2 px', () => {
     view = draw({ buckets: buckets([1, 0, 0, 0, 1000]) })
-    const first = view.container.querySelector('.qaqc-aging-bar')
+    const first = view.container.querySelector('.qaqc-open-aging-bar')
     // The path starts at the baseline (M x,bottom) and its first curve reaches the top (Q x,top).
     const box = first?.getAttribute('d')?.match(/^M[\d.]+,([\d.]+)V[\d.]+Q[\d.]+,([\d.]+)/)
     expect(Number(box?.[1]) - Number(box?.[2])).toBeCloseTo(2, 1)
@@ -139,7 +139,7 @@ describe('OpenAgingChart', () => {
 
   it('labels the buckets and titles both axes like the app', () => {
     view = draw()
-    expect(texts(view.container, '.qaqc-aging-bucket')).toEqual(['0-1', '1-2', '2-3', '3-4', '4+'])
+    expect(texts(view.container, '.qaqc-open-aging-bucket')).toEqual(['0-1', '1-2', '2-3', '3-4', '4+'])
     expect(texts(view.container, '.qaqc-axis-title')).toEqual(['Open issues', 'Weeks'])
   })
 
@@ -177,8 +177,8 @@ describe('OpenAgingChart', () => {
 
   it('draws no bars when no issue is open', () => {
     view = draw({ buckets: buckets([0, 0, 0, 0, 0]) })
-    expect(view.container.querySelectorAll('.qaqc-aging-bar')).toHaveLength(0)
-    expect(texts(view.container, '.qaqc-aging-value')).toEqual(['0', '0', '0', '0', '0'])
+    expect(view.container.querySelectorAll('.qaqc-open-aging-bar')).toHaveLength(0)
+    expect(texts(view.container, '.qaqc-open-aging-value')).toEqual(['0', '0', '0', '0', '0'])
   })
 })
 
@@ -237,7 +237,7 @@ describe('AgingStripChart', () => {
     expect(opacities(view.container, '.qaqc-aging-swatch')).toEqual([1, 1, 1])
   })
 
-  it('outlines the strip and tracks in high contrast, where the hairline colour would fill them', () => {
+  it('marks itself high contrast so the CSS outlines the strip and tracks', () => {
     view = render(<AgingStripChart buckets={OVERALL} colors={COLORS} isHighContrast />)
     expect(view.container.querySelector('.qaqc-aging')?.classList.contains('is-high-contrast')).toBe(true)
   })
@@ -245,6 +245,33 @@ describe('AgingStripChart', () => {
   it('keeps filled tracks outside high contrast', () => {
     view = render(<AgingStripChart buckets={OVERALL} colors={COLORS} isHighContrast={false} />)
     expect(view.container.querySelector('.qaqc-aging')?.classList.contains('is-high-contrast')).toBe(false)
+  })
+
+  it('rounds the percents so they add up to 100', () => {
+    const thirds = OVERALL.map((bucket) => ({ ...bucket, count: 1 }))
+    view = render(<AgingStripChart buckets={thirds} colors={COLORS} isHighContrast={false} />)
+    expect(texts(view.container, '.qaqc-aging-percent')).toEqual(['34%', '33%', '33%'])
+  })
+
+  it('gives the extra point to the largest remainder', () => {
+    // 2 / 7, 2 / 7 and 3 / 7 are 28.57%, 28.57% and 42.86%. Plain rounding gives 29 + 29 + 43 = 101; the floors sum
+    // to 98, so the two largest remainders (.86, then the first .57) gain a point each.
+    const counts = [2, 2, 3]
+    view = render(<AgingStripChart buckets={OVERALL.map((bucket, index) => ({ ...bucket, count: counts[index] }))} colors={COLORS} isHighContrast={false} />)
+    expect(texts(view.container, '.qaqc-aging-percent')).toEqual(['29%', '28%', '43%'])
+  })
+
+  it('shows each percent as plain text, not emphasis', () => {
+    view = render(<AgingStripChart buckets={OVERALL} colors={COLORS} isHighContrast={false} />)
+    expect(view.container.querySelectorAll('em')).toHaveLength(0)
+    expect(view.container.querySelector('.qaqc-aging-percent')?.tagName).toBe('SPAN')
+  })
+
+  it('hides the decorative swatches and bars from screen readers', () => {
+    view = render(<AgingStripChart buckets={OVERALL} colors={COLORS} isHighContrast={false} />)
+    const decorations = [...view.container.querySelectorAll('.qaqc-aging-row i')]
+    expect(decorations).toHaveLength(6)
+    expect(decorations.every((node) => node.getAttribute('aria-hidden') === 'true')).toBe(true)
   })
 
   it('formats large counts with a thousands separator', () => {
