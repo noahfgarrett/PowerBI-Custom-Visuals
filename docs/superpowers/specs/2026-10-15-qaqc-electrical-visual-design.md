@@ -160,7 +160,7 @@ The visual is designed to fill a full report page (about 1280×720).
 | Background (`cardSettings`) | Background color (blank = preset page color) | blank |
 | Background (`cardSettings`) | Background opacity (0–100%) | 100 |
 | Background (`cardSettings`) | Card opacity (0–100%) | 100 |
-| Animation (`animationSettings`) | Transitions (bar height and selection, 180 ms, off under reduced motion) | on |
+| Animation (`animationSettings`) | Transitions (selected-week highlight slide and hover dimming, 180 ms, off under reduced motion) | on |
 | Accessibility (`accessibility`) | Screen reader chart summaries | on |
 
 The `cardSettings`, `animationSettings`, and `accessibility` object names are required by the repo's `review:business` gate.
