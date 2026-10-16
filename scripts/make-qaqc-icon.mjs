@@ -17,6 +17,18 @@ function regularPolygon(cx, cy, radius, sides, rotation) {
   });
 }
 
+// The top half of an ellipse standing on the line y = cy, from the left (or minX) round to the right edge.
+function shoulders(cx, cy, rx, ry, minX = -Infinity) {
+  const points = [];
+  for (let i = 0; i <= 32; i++) {
+    const angle = Math.PI + (i * Math.PI) / 32;
+    const x = cx + rx * Math.cos(angle);
+    if (x >= minX) points.push([x, cy + ry * Math.sin(angle)]);
+  }
+  if (minX > cx - rx) points.unshift([minX, cy]);
+  return points;
+}
+
 // Polygon lists on the 24x24 grid. A point is filled when it is inside an odd number of polygons
 // (even-odd fill), which lets a later polygon cut a hole in an earlier one.
 const SHAPES = {
@@ -28,6 +40,14 @@ const SHAPES = {
     regularPolygon(12, 12, 10.5, 48, 0),
     [[10.4, 5.2], [13.6, 5.2], [13, 13.4], [11, 13.4]],
     regularPolygon(12, 17, 1.7, 20, 0),
+  ],
+  // Two heads and shoulders, one in front of the other. The back person stops short of the front one, so the
+  // even-odd fill never cuts the overlap out.
+  people: [
+    regularPolygon(9, 7.6, 3.9, 40, 0),
+    shoulders(9, 21, 6.6, 8),
+    regularPolygon(17.2, 6.9, 2.9, 40, 0),
+    shoulders(17.6, 20, 4.9, 7, 17.4),
   ],
 };
 

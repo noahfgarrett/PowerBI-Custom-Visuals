@@ -1,0 +1,24 @@
+{
+  "name": "@pbi/qaqc-performance",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/ensure-api.cjs && pbiviz package --all-locales && node ../../scripts/verify-pbiviz-css.mjs . .qaqc-root",
+    "start": "pbiviz start",
+    "dev": "vite --config dev/vite.config.ts",
+    "icon": "node ../../scripts/make-qaqc-icon.mjs assets/icon.png people"
+  },
+  "dependencies": {
+    "lucide-react": "1.24.0",
+    "powerbi-visuals-api": "~5.3.0",
+    "powerbi-visuals-utils-formattingmodel": "^6.0.0",
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "powerbi-visuals-tools": "^5.3.0",
+    "typescript": "^5.3.3"
+  }
+}
