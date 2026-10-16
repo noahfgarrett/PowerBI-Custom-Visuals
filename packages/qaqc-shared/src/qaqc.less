@@ -464,6 +464,7 @@
 .qaqc-signed-label:not(.is-inside),
 .qaqc-baseline-label,
 .qaqc-trend-label:not(.is-inside),
+.qaqc-overview-label,
 .qaqc-open-aging-value:not(.is-inside) {
   paint-order: stroke;
   stroke: var(--qaqc-card-solid);
@@ -1486,6 +1487,51 @@
 .qaqc-issue-detail-empty span {
   max-width: 46ch;
   font-size: 12px;
+}
+
+// Overview charts (OverviewLinesChart behind ActivityLinesChart and QualityRatesChart), their expanded week tables,
+// and the discipline row sparklines.
+
+.qaqc-overview-line {
+  stroke-width: 2px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+// Round caps would grow each dash into its gap; the high-contrast dash keeps the legend key's 5 / 4 rhythm.
+.qaqc-overview-line[stroke-dasharray] {
+  stroke-linecap: butt;
+}
+
+.qaqc-overview-dot {
+  stroke-width: 2px;
+  pointer-events: none;
+}
+
+.qaqc-overview-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.qaqc-overview-hover-guide {
+  stroke-width: 1px;
+  stroke-opacity: 0.35;
+  pointer-events: none;
+}
+
+.qaqc-sparkline {
+  display: block;
+  flex: 0 0 auto;
+  overflow: visible;
+}
+
+.qaqc-sparkline polyline {
+  stroke-width: 1.5px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 // Forced colors (Windows high contrast) drop backgrounds and box shadows, so the discussion marker becomes a real
