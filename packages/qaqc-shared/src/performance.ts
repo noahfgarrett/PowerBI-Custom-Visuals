@@ -21,8 +21,6 @@ export type PerformanceSource = 'electrical' | 'mechanical' | 'welding'
 export interface WeeklyBuckets {
   /** Finals for QCR/FE, credited welds for welders. */
   readonly volume: Int32Array
-  /** SOR rows, or null for welders, who have none. */
-  readonly sors: Int32Array | null
   /** Finals with an issue found, or credited welds with an issue. */
   readonly ncrs: Int32Array
 }
@@ -40,7 +38,7 @@ export interface PerformancePerson {
   key: string
   /** The first spelling seen. */
   name: string
-  /** QCR/FE only: every discipline the person has rows in. Empty for welders. */
+  /** QCR/FE only: every discipline the person has finals in. Empty for welders. */
   disciplines: DisciplineTag[]
   weekly: WeeklyBuckets
   /** QCR/FE only: per week, `TAG_BITS` of the disciplines the week's rows came from. Null for welders. */
@@ -58,7 +56,7 @@ export interface GroupTotals {
 /** The row counts the footnotes read, in the shape `buildFootnotes` takes. */
 export interface GroupRowCounts {
   totalRows: number
-  /** Counted rows (Final or SOR for QCR/FE, every weld) whose week can't be read. */
+  /** Counted rows (Final for QCR/FE, every weld) whose week can't be read. */
   skippedRows: number
   /** Counted rows dated after the current week. */
   futureRows: number
@@ -97,13 +95,13 @@ export interface PerformanceTrendWeek {
 export interface PerformanceRow {
   key: string
   name: string
-  /** QCR/FE only: the disciplines of the person's rows in the period. */
+  /** QCR/FE only: the disciplines of the person's finals in the period. */
   tags: DisciplineTag[]
+  /** Always at least 1: a row exists only when the period has finals or welds for it. */
   volume: number
-  sors: number
   ncrs: number
-  /** NCRs ÷ volume as a percentage, or null with no volume. */
-  rate: number | null
+  /** NCRs ÷ volume as a percentage. */
+  rate: number
   /** The 30 weeks ending at the period's last week, whatever the range. */
   trend: PerformanceTrendWeek[]
   /** Weeks in `trend` with an NCR. */
@@ -131,7 +129,7 @@ export interface PerformanceModel {
   ranked: PerformanceRow[]
   /** Everyone else with rows in the period: volume descending, then name. */
   belowMinimum: PerformanceRow[]
-  /** Rows with no recorded QCR/FE or welder in the period, or null when there are none. */
+  /** Finals or welds with no recorded QCR/FE or welder in the period, or null when there are none. */
   notRecorded: PerformanceRow | null
   /** Welds in the period that list more than one welder. Zero for QCR/FE. */
   sharedWelds: number
@@ -233,12 +231,8 @@ function welderIds(value: unknown, people: People, cache: Map<string, readonly n
   return ids
 }
 
-function emptyBuckets(weekCount: number, group: PerformanceGroup): WeeklyBuckets {
-  return {
-    volume: new Int32Array(weekCount),
-    sors: group === 'qcr' ? new Int32Array(weekCount) : null,
-    ncrs: new Int32Array(weekCount),
-  }
+function emptyBuckets(weekCount: number): WeeklyBuckets {
+  return { volume: new Int32Array(weekCount), ncrs: new Int32Array(weekCount) }
 }
 
 function disciplinesOf(tagBits: number): DisciplineTag[] {
@@ -253,7 +247,7 @@ function toPerson(draft: PersonDraft, weekCount: number, group: PerformanceGroup
     key: draft.key,
     name: draft.name,
     disciplines: disciplinesOf(draft.tagBits),
-    weekly: emptyBuckets(weekCount, group),
+    weekly: emptyBuckets(weekCount),
     tagsByWeek: group === 'qcr' ? new Uint8Array(weekCount) : null,
     ncrRows: draft.ncrRows,
   }
@@ -281,11 +275,10 @@ function countedWeek(value: unknown, scan: WeekScan, counts: GroupRowCounts): Wo
   return week
 }
 
-/** Counted inspections, one entry each, in parallel arrays. */
+/** Counted finals, one entry each, in parallel arrays. */
 interface InspectionEntries {
   weekKey: number[]
   person: number[]
-  isFinal: boolean[]
   isNcr: boolean[]
   /** The row's discipline, as a `TAG_BITS` value. */
   tag: number[]
@@ -311,12 +304,12 @@ function scanInspections(
   const tag = source === 'electrical' ? TAG_BITS.E : TAG_BITS.M
   for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
     const row = rows[rowIndex]
-    const phase = readPhase(row[columns.phase], phaseCache)
-    if (phase === 'other') continue
+    // SORs aren't tracked against QCR/FE, so only finals are counted (or skipped, or future).
+    if (readPhase(row[columns.phase], phaseCache) !== 'final') continue
     const week = countedWeek(row[columns.workWeek], scan, counts)
     if (!week) continue
 
-    const isNcr = phase === 'final' && isIssueFound(row[columns.issue])
+    const isNcr = isIssueFound(row[columns.issue])
     const id = people.idOf(cellText(row[columns.qcr]))
     if (id !== NOT_RECORDED_PERSON) {
       const draft = people.drafts[id]
@@ -325,7 +318,6 @@ function scanInspections(
     }
     entries.weekKey.push(week.key)
     entries.person.push(id)
-    entries.isFinal.push(phase === 'final')
     entries.isNcr.push(isNcr)
     entries.tag.push(tag)
   }
@@ -358,7 +350,7 @@ function scanWelds(
 
 /**
  * Per-person week buckets for both groups, built once per data update so the model can rank any period in
- * O(people × weeks). QCR/FE counts Electrical and Mechanical Final and SOR rows; welders count every weld.
+ * O(people × weeks). QCR/FE counts Electrical and Mechanical Final rows; welders count every weld.
  * Both skip unreadable and future weeks.
  */
 export function buildPerformanceIndex(split: CombinedSplit, columns: CombinedColumns, today: Date): PerformanceIndex {
@@ -366,7 +358,7 @@ export function buildPerformanceIndex(split: CombinedSplit, columns: CombinedCol
   const scan: WeekScan = { readWeek: createWeekReader(), currentKey: currentWeek.key, firstWeek: currentWeek }
   const qcrPeople = newPeople()
   const welderPeople = newPeople()
-  const inspections: InspectionEntries = { weekKey: [], person: [], isFinal: [], isNcr: [], tag: [] }
+  const inspections: InspectionEntries = { weekKey: [], person: [], isNcr: [], tag: [] }
   const welds: WeldEntries = { weekKey: [], welders: [], isIssue: [] }
   const qcrCounts: GroupRowCounts = { totalRows: split.electrical.length + split.mechanical.length, skippedRows: 0, futureRows: 0 }
   const welderCounts: GroupRowCounts = { totalRows: split.welding.length, skippedRows: 0, futureRows: 0 }
@@ -383,7 +375,7 @@ export function buildPerformanceIndex(split: CombinedSplit, columns: CombinedCol
   const weekCount = weeks.length
 
   const qcr = qcrPeople.drafts.map((draft) => toPerson(draft, weekCount, 'qcr'))
-  const qcrNotRecorded = emptyBuckets(weekCount, 'qcr')
+  const qcrNotRecorded = emptyBuckets(weekCount)
   const qcrTotals: GroupTotals = { volume: new Int32Array(weekCount), ncrs: new Int32Array(weekCount) }
   for (let entry = 0; entry < inspections.weekKey.length; entry += 1) {
     const position = positionOf(inspections.weekKey[entry])
@@ -395,18 +387,14 @@ export function buildPerformanceIndex(split: CombinedSplit, columns: CombinedCol
       weekly = person.weekly
       if (person.tagsByWeek) person.tagsByWeek[position] |= inspections.tag[entry]
     }
-    if (inspections.isFinal[entry]) {
-      qcrTotals.volume[position] += 1
-      qcrTotals.ncrs[position] += ncr
-      weekly.volume[position] += 1
-      weekly.ncrs[position] += ncr
-    } else if (weekly.sors) {
-      weekly.sors[position] += 1
-    }
+    qcrTotals.volume[position] += 1
+    qcrTotals.ncrs[position] += ncr
+    weekly.volume[position] += 1
+    weekly.ncrs[position] += ncr
   }
 
   const welders = welderPeople.drafts.map((draft) => toPerson(draft, weekCount, 'welders'))
-  const welderNotRecorded = emptyBuckets(weekCount, 'welders')
+  const welderNotRecorded = emptyBuckets(weekCount)
   const welderTotals: GroupTotals = { volume: new Int32Array(weekCount), ncrs: new Int32Array(weekCount) }
   const sharedWelds = new Int32Array(weekCount)
   for (let entry = 0; entry < welds.weekKey.length; entry += 1) {
@@ -483,11 +471,10 @@ function tagsInRange(tagsByWeek: Uint8Array, start: number, end: number): Discip
   return disciplinesOf(tagBits)
 }
 
-/** The row for the period, or null when the period has no rows for it. */
+/** The row for the period, or null when the period has no finals or welds for it. */
 function rowOf(key: string, name: string, weekly: WeeklyBuckets, tagsByWeek: Uint8Array | null, period: Period): PerformanceRow | null {
   const volume = sumRange(weekly.volume, period.start, period.end)
-  const sors = weekly.sors ? sumRange(weekly.sors, period.start, period.end) : 0
-  if (volume === 0 && sors === 0) return null
+  if (volume === 0) return null
   const ncrs = sumRange(weekly.ncrs, period.start, period.end)
 
   const trend: PerformanceTrendWeek[] = []
@@ -503,9 +490,8 @@ function rowOf(key: string, name: string, weekly: WeeklyBuckets, tagsByWeek: Uin
     name,
     tags: tagsByWeek ? tagsInRange(tagsByWeek, period.start, period.end) : [],
     volume,
-    sors,
     ncrs,
-    rate: rateOf(ncrs, volume),
+    rate: (ncrs / volume) * 100,
     trend,
     ncrWeeks,
   }

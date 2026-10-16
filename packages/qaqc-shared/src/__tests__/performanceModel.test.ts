@@ -46,8 +46,8 @@ function finals(qcr: string, weekNumber: number, count: number, ncrs = 0, source
   ])
 }
 
-function sors(qcr: string | null, weekNumber: number, count: number): Row[] {
-  return Array.from({ length: count }, () => ['Electrical', week(weekNumber), 'SOR', 'No Issue Found', 'B1', qcr, null, null])
+function sors(qcr: string | null, weekNumber: number, count: number, source: 'Electrical' | 'Mechanical' = 'Electrical'): Row[] {
+  return Array.from({ length: count }, () => [source, week(weekNumber), 'SOR', 'No Issue Found', 'B1', qcr, null, null])
 }
 
 function welds(welder: string | null, weekNumber: number, count: number, ncrs = 0): Row[] {
@@ -96,18 +96,31 @@ describe('buildPerformanceModel: ranking', () => {
     expect(names(model.belowMinimum)).toEqual(['Under'])
   })
 
-  it('sorts Below minimum by volume descending, keeping SOR-only people with a null rate', () => {
-    const built = index([...finals('Two', 42, 2), ...finals('Three', 42, 3), ...sors('Sor only', 42, 4)])
+  it('sorts Below minimum by volume descending', () => {
+    const built = index([...finals('Two', 42, 2), ...finals('Three', 42, 3)])
     const model = buildPerformanceModel(built, view('recent'), 'qcr', 5)
-    expect(names(model.belowMinimum)).toEqual(['Three', 'Two', 'Sor only'])
-    expect(model.belowMinimum[2]).toMatchObject({ volume: 0, sors: 4, ncrs: 0, rate: null })
+    expect(names(model.belowMinimum)).toEqual(['Three', 'Two'])
   })
 
-  it('treats a minimum below 1 as 1, so no one with zero volume is ranked', () => {
-    const built = index([...sors('Sor only', 42, 4), ...finals('One', 42, 1)])
-    const model = buildPerformanceModel(built, view('recent'), 'qcr', 0)
-    expect(names(model.ranked)).toEqual(['One'])
-    expect(names(model.belowMinimum)).toEqual(['Sor only'])
+  it('leaves out a person whose rows in the period are all SORs', () => {
+    const built = index([...finals('Two', 42, 2), ...sors('Sor only', 42, 4), ...finals('Mixed', 10, 1), ...sors('Mixed', 42, 3)])
+    const recent = buildPerformanceModel(built, view('recent'), 'qcr', 5)
+    expect(names(recent.belowMinimum)).toEqual(['Two'])
+    expect(recent.ranked).toEqual([])
+    const all = buildPerformanceModel(built, view('all'), 'qcr', 5)
+    expect(names(all.belowMinimum)).toEqual(['Two', 'Mixed'])
+    expect(all.belowMinimum[1]).toMatchObject({ volume: 1, ncrs: 0, rate: 0 })
+  })
+
+  it('tags a person with the disciplines of their finals in the period only', () => {
+    const built = index([...finals('QCR 01', 42, 5), ...sors('QCR 01', 42, 2, 'Mechanical')])
+    expect(buildPerformanceModel(built, view('recent'), 'qcr', 5).ranked[0].tags).toEqual(['E'])
+  })
+
+  it('treats a minimum below 1 as 1', () => {
+    const built = index(finals('One', 42, 1))
+    expect(names(buildPerformanceModel(built, view('recent'), 'qcr', 0).ranked)).toEqual(['One'])
+    expect(names(buildPerformanceModel(built, view('recent'), 'qcr', Number.NaN).ranked)).toEqual(['One'])
   })
 
   it('breaks a name tie under the collator by group key', () => {
@@ -184,8 +197,13 @@ describe('buildPerformanceModel: Not recorded and summary', () => {
   it('gathers Not recorded rows into one row and counts them in the summary', () => {
     const built = index([...finals('QCR 01', 42, 5, 1), ...sors(null, 42, 3), ...finals('N/A', 42, 2, 1)])
     const model = buildPerformanceModel(built, view('recent'), 'qcr', 5)
-    expect(model.notRecorded).toMatchObject({ name: 'Not recorded', volume: 2, sors: 3, ncrs: 1, rate: 50 })
+    expect(model.notRecorded).toMatchObject({ name: 'Not recorded', volume: 2, ncrs: 1, rate: 50 })
     expect(model.summary).toEqual({ peopleRanked: 1, volume: 7, ncrs: 2, rate: (2 / 7) * 100 })
+  })
+
+  it('has no Not recorded row when the only rows with no QCR/FE are SORs', () => {
+    const built = index([...finals('QCR 01', 42, 5), ...sors(null, 42, 3), ...sors('N/A', 42, 2)])
+    expect(buildPerformanceModel(built, view('recent'), 'qcr', 5).notRecorded).toBeNull()
   })
 
   it('has no Not recorded row when every row names someone', () => {
@@ -196,17 +214,18 @@ describe('buildPerformanceModel: Not recorded and summary', () => {
   it('counts a shared weld once in the summary and credits it to each welder', () => {
     const built = index([...welds('Welder 001, Welder 002', 42, 10, 1), ...welds('Welder 001', 42, 2)])
     const model = buildPerformanceModel(built, view('recent'), 'welders', 10)
-    expect(model.ranked.map((row) => [row.name, row.volume, row.ncrs, row.sors])).toEqual([
-      ['Welder 002', 10, 1, 0],
-      ['Welder 001', 12, 1, 0],
+    expect(model.ranked.map((row) => [row.name, row.volume, row.ncrs])).toEqual([
+      ['Welder 002', 10, 1],
+      ['Welder 001', 12, 1],
     ])
     expect(model.summary).toEqual({ peopleRanked: 2, volume: 12, ncrs: 1, rate: (1 / 12) * 100 })
     expect(model.sharedWelds).toBe(10)
   })
 
-  it('reports a null rate with no volume', () => {
+  it('reports a null rate and no rows when the period has only SORs', () => {
     const model = buildPerformanceModel(index(sors('QCR 01', 42, 2)), view('recent'), 'qcr', 5)
     expect(model.summary).toEqual({ peopleRanked: 0, volume: 0, ncrs: 0, rate: null })
+    expect([model.ranked, model.belowMinimum, model.notRecorded]).toEqual([[], [], null])
   })
 
   it('keeps the groups apart', () => {

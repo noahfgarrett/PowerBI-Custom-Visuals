@@ -71,7 +71,8 @@ function createHarness(hostOverrides: Record<string, unknown> = {}): Harness {
 const RESIZE_UPDATE = 4
 const STYLE_UPDATE = 16
 
-const NOT_RECORDED_NOTE = '70 inspections have no QCR/FE'
+// The All period's finals with no QCR/FE; every 30 WW final has one, so 30 WW has no such note.
+const NOT_RECORDED_NOTE = '7 finals have no QCR/FE'
 const ROW_LIMIT_NOTE = 'Showing the first 2,385 rows (Power BI data limit)'
 const SOURCE = COMBINED_COLUMNS.indexOf('Source')
 const QCR = COMBINED_COLUMNS.indexOf('QCR/FE')
@@ -121,6 +122,10 @@ function click(target: Element | null | undefined): void {
   act(() => {
     target.dispatchEvent(new MouseEvent('click', { bubbles: true }))
   })
+}
+
+function showAll(element: HTMLElement): void {
+  click([...element.querySelectorAll('[aria-label="Ranking period"] button')].find((button) => button.textContent === 'All'))
 }
 
 // Matches labels in code: jsdom's selector engine mishandles "%" inside attribute values.
@@ -282,7 +287,7 @@ describe('QaqcPerformanceVisual', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(COMBINED_ROWS, { objects: ranking({ minimumFinals: 250 }) })))
     expect(cardValue(harness.element, 'QCR/FE ranked')).toBe('0')
-    expect(harness.element.querySelector('[aria-label^="QCR/FE ranked:"] .qaqc-kpi-detail')?.textContent).toBe('Minimum 100 finals · 16 below')
+    expect(harness.element.querySelector('[aria-label^="QCR/FE ranked:"] .qaqc-kpi-detail')?.textContent).toBe('Minimum 100 finals · 10 below')
   })
 
   it('indexes the rows once per data update, not on a settings or resize update', () => {
@@ -303,9 +308,16 @@ describe('QaqcPerformanceVisual', () => {
     expect(cardValue(harness.element, 'QCR/FE ranked')).toBe('2')
   })
 
-  it('footnotes the inspections with no QCR/FE', () => {
+  it('has no footnote in 30 WW, where every final has a QCR/FE', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(COMBINED_ROWS)))
+    expect(footnotes(harness.element)).toEqual([])
+  })
+
+  it('footnotes the All finals with no QCR/FE', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(COMBINED_ROWS)))
+    showAll(harness.element)
     expect(footnotes(harness.element)).toEqual([NOT_RECORDED_NOTE])
   })
 
@@ -363,6 +375,8 @@ describe('QaqcPerformanceVisual', () => {
   it('renders what it has with a footnote when Power BI refuses more segments', () => {
     harness = createHarness({ fetchMoreData: () => false })
     apply(harness, update(tableDataView(COMBINED_ROWS, { segment: true })))
+    expect(footnotes(harness.element)).toEqual([ROW_LIMIT_NOTE])
+    showAll(harness.element)
     expect(footnotes(harness.element)).toEqual([ROW_LIMIT_NOTE, NOT_RECORDED_NOTE])
   })
 

@@ -40,8 +40,8 @@ function index(rows: Row[]): PerformanceIndex {
   return buildPerformanceIndex(splitCombinedRows(rows, COLUMNS.source), COLUMNS, TODAY)
 }
 
-function total(values: Int32Array | null): number {
-  return values === null ? 0 : values.reduce((sum, value) => sum + value, 0)
+function total(values: Int32Array): number {
+  return values.reduce((sum, value) => sum + value, 0)
 }
 
 function person(people: PerformancePerson[], name: string): PerformancePerson {
@@ -65,12 +65,11 @@ describe('buildPerformanceIndex: QCR/FE', () => {
     const built = index([
       inspection('Electrical', "WW40'2026", 'Final', 'Pat  Lee'),
       inspection('Electrical', "WW41'2026", 'Final', ' pat lee '),
-      inspection('Mechanical', "WW41'2026", 'SOR', 'PAT LEE'),
+      inspection('Mechanical', "WW41'2026", 'Final', 'PAT LEE'),
     ])
     expect(built.qcr.map((item) => item.name)).toEqual(['Pat  Lee'])
     expect(built.qcr[0].key).toBe('pat lee')
-    expect(total(built.qcr[0].weekly.volume)).toBe(2)
-    expect(total(built.qcr[0].weekly.sors)).toBe(1)
+    expect(total(built.qcr[0].weekly.volume)).toBe(3)
   })
 
   it('records E and M for a person with rows in both disciplines', () => {
@@ -83,14 +82,43 @@ describe('buildPerformanceIndex: QCR/FE', () => {
     expect(person(built.qcr, 'QCR 02').disciplines).toEqual(['M'])
   })
 
-  it('counts finals as volume, SORs apart, and NCRs only on finals with an issue found', () => {
+  it('takes E and M from finals only', () => {
+    const built = index([
+      inspection('Electrical', "WW40'2026", 'Final', 'QCR 01'),
+      inspection('Mechanical', "WW41'2026", 'SOR', 'QCR 01'),
+    ])
+    expect(person(built.qcr, 'QCR 01').disciplines).toEqual(['E'])
+    expect(Array.from(person(built.qcr, 'QCR 01').tagsByWeek ?? [])).toEqual([1, 0, 0])
+  })
+
+  it('counts finals as volume and NCRs only on finals with an issue found', () => {
     const built = index([
       inspection('Electrical', "WW41'2026", 'Final', 'QCR 01', 'Cable damaged'),
       inspection('Electrical', "WW41'2026", 'Final', 'QCR 01'),
       inspection('Electrical', "WW41'2026", 'SOR', 'QCR 01', 'Cable damaged'),
     ])
     const weekly = built.qcr[0].weekly
-    expect([total(weekly.volume), total(weekly.sors), total(weekly.ncrs)]).toEqual([2, 1, 1])
+    expect([total(weekly.volume), total(weekly.ncrs)]).toEqual([2, 1])
+  })
+
+  it('leaves out a person whose rows are all SORs', () => {
+    const built = index([
+      inspection('Electrical', "WW41'2026", 'SOR', 'QCR 01'),
+      inspection('Mechanical', "WW42'2026", 'SOR', 'QCR 01'),
+      inspection('Electrical', "WW41'2026", 'Final', 'QCR 02'),
+    ])
+    expect(built.qcr.map((item) => item.name)).toEqual(['QCR 02'])
+  })
+
+  it('ignores SORs entirely: not skipped, not future, and not the first week', () => {
+    const built = index([
+      inspection('Electrical', "WW39'2026", 'SOR', 'QCR 01'),
+      inspection('Electrical', 'next week', 'SOR', 'QCR 01'),
+      inspection('Electrical', "WW43'2026", 'SOR', 'QCR 01'),
+      inspection('Electrical', "WW41'2026", 'Final', 'QCR 02'),
+    ])
+    expect(built.footnotes.qcr).toEqual({ totalRows: 4, skippedRows: 0, futureRows: 0 })
+    expect(built.weeks.map((week) => week.label)).toEqual(["WW41'2026", "WW42'2026"])
   })
 
   it('skips other phases, unreadable weeks and future weeks', () => {
@@ -104,15 +132,24 @@ describe('buildPerformanceIndex: QCR/FE', () => {
     expect(built.footnotes.qcr).toEqual({ totalRows: 4, skippedRows: 1, futureRows: 1 })
   })
 
-  it('puts blank and placeholder QCR/FE values in Not recorded', () => {
+  it('puts finals with blank and placeholder QCR/FE values in Not recorded', () => {
     const built = index([
-      inspection('Electrical', "WW41'2026", 'SOR', null),
-      inspection('Electrical', "WW41'2026", 'SOR', 'N/A'),
+      inspection('Electrical', "WW41'2026", 'Final', null),
+      inspection('Electrical', "WW41'2026", 'Final', 'N/A'),
       inspection('Mechanical', "WW41'2026", 'Final', 'NA', 'Leak'),
     ])
     expect(built.qcr).toEqual([])
     const notRecorded = built.notRecorded.qcr
-    expect([total(notRecorded.volume), total(notRecorded.sors), total(notRecorded.ncrs)]).toEqual([1, 2, 1])
+    expect([total(notRecorded.volume), total(notRecorded.ncrs)]).toEqual([3, 1])
+  })
+
+  it('leaves SORs with no QCR/FE out of Not recorded', () => {
+    const built = index([
+      inspection('Electrical', "WW41'2026", 'SOR', null),
+      inspection('Electrical', "WW41'2026", 'SOR', 'N/A'),
+      inspection('Mechanical', "WW41'2026", 'Final', null),
+    ])
+    expect(total(built.notRecorded.qcr.volume)).toBe(1)
   })
 
   it('aligns weeks from the earliest counted week to the current week', () => {
@@ -196,11 +233,9 @@ describe('buildPerformanceIndex: welders', () => {
     expect(built.welders[0].disciplines).toEqual([])
   })
 
-  it('keeps no SOR or tag arrays for welders, who have neither', () => {
-    const built = index([weld("WW41'2026", 'Welder 001'), weld("WW41'2026", null)])
-    expect(built.welders[0].weekly.sors).toBeNull()
+  it('keeps no tag arrays for welders, who have no disciplines', () => {
+    const built = index([weld("WW41'2026", 'Welder 001')])
     expect(built.welders[0].tagsByWeek).toBeNull()
-    expect(built.notRecorded.welders.sors).toBeNull()
   })
 })
 

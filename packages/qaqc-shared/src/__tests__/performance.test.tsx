@@ -161,7 +161,6 @@ function personRow(name: string, overrides: Partial<PerformanceRow> = {}): Perfo
     name,
     tags: ['E'],
     volume: 10,
-    sors: 0,
     ncrs: 0,
     rate: 0,
     trend: trendOf(Array.from({ length: 30 }, () => 1)),
@@ -172,17 +171,18 @@ function personRow(name: string, overrides: Partial<PerformanceRow> = {}): Perfo
 
 // Model order: ranked by rate, then NCRs, then name. Values are chosen so every column orders the rows differently.
 const RANKED: PerformanceRow[] = [
-  personRow('QCR 10', { volume: 20, sors: 1, ncrs: 4, rate: 20, ncrWeeks: 3 }),
-  personRow('QCR 2', { volume: 50, sors: 3, ncrs: 5, rate: 10, ncrWeeks: 5, tags: ['E', 'M'] }),
-  personRow('QCR 01', { volume: 40, sors: 0, ncrs: 2, rate: 5, ncrWeeks: 1, tags: ['M'] }),
-  personRow('QCR 3', { volume: 30, sors: 2, ncrs: 0, rate: 0, ncrWeeks: 0 }),
+  personRow('QCR 10', { volume: 20, ncrs: 4, rate: 20, ncrWeeks: 3 }),
+  personRow('QCR 2', { volume: 50, ncrs: 5, rate: 10, ncrWeeks: 5, tags: ['E', 'M'] }),
+  personRow('QCR 01', { volume: 40, ncrs: 2, rate: 5, ncrWeeks: 1, tags: ['M'] }),
+  personRow('QCR 3', { volume: 30, ncrs: 0, rate: 0, ncrWeeks: 0 }),
 ]
+// Model order is volume descending; NCRs and NCR rate each order these differently.
 const BELOW: PerformanceRow[] = [
-  personRow('QCR 21', { volume: 4, sors: 0, ncrs: 1, rate: 25, ncrWeeks: 1 }),
-  personRow('QCR 20', { volume: 3, sors: 5, ncrs: 0, rate: 0, ncrWeeks: 0 }),
-  personRow('QCR 22', { volume: 0, sors: 2, ncrs: 0, rate: null, ncrWeeks: 0 }),
+  personRow('QCR 21', { volume: 4, ncrs: 1, rate: 25, ncrWeeks: 1 }),
+  personRow('QCR 20', { volume: 3, ncrs: 0, rate: 0, ncrWeeks: 0 }),
+  personRow('QCR 22', { volume: 2, ncrs: 1, rate: 50, ncrWeeks: 1 }),
 ]
-const NOT_RECORDED: PerformanceRow = personRow('Not recorded', { key: '', tags: [], volume: 7, sors: 120, ncrs: 1, rate: 100 / 7, ncrWeeks: 1 })
+const NOT_RECORDED: PerformanceRow = personRow('Not recorded', { key: '', tags: [], volume: 7, ncrs: 1, rate: 100 / 7, ncrWeeks: 1 })
 
 function drawTable(overrides: Partial<PerformanceTableProps> = {}): Rendered {
   return render(
@@ -266,9 +266,16 @@ function cellTexts(row: HTMLTableRowElement): string[] {
 }
 
 describe('PerformanceTable columns', () => {
-  it('heads the QCR / FE table with Name, Finals, SORs, NCRs, NCR rate and Trend', () => {
+  it('heads the QCR / FE table with Name, Finals, NCRs, NCR rate and Trend, with no SORs column', () => {
     view = drawTable()
-    expect([...view.container.querySelectorAll('thead th')].map((cell) => cell.textContent)).toEqual(['Name', 'Finals', 'SORs', 'NCRs', 'NCR rate', 'Trend'])
+    expect([...view.container.querySelectorAll('thead th')].map((cell) => cell.textContent)).toEqual(['Name', 'Finals', 'NCRs', 'NCR rate', 'Trend'])
+    expect(view.container.querySelectorAll('col')).toHaveLength(5)
+  })
+
+  it('gives every QCR / FE row one cell per column', () => {
+    view = drawTable()
+    expect(rowNamed(view.container, 'QCR 10').cells).toHaveLength(5)
+    expect(notRecordedRow(view.container).cells).toHaveLength(5)
   })
 
   it('heads the welders table with Welder, Welds, NCRs, NCR rate and Trend', () => {
@@ -277,14 +284,8 @@ describe('PerformanceTable columns', () => {
   })
 
   it('shows the counts and the NCR rate to two decimals', () => {
-    view = drawTable({ ranked: [personRow('QCR 02', { volume: 65, sors: 0, ncrs: 2, rate: (2 / 65) * 100 })] })
-    expect(cellTexts(rowNamed(view.container, 'QCR 02')).slice(1, 5)).toEqual(['65', '0', '2', '3.08%'])
-  })
-
-  it('shows n/a for a person with no finals', () => {
-    view = drawTable()
-    expand(view.container)
-    expect(cellTexts(rowNamed(view.container, 'QCR 22'))[4]).toBe('n/a')
+    view = drawTable({ ranked: [personRow('QCR 02', { volume: 65, ncrs: 2, rate: (2 / 65) * 100 })] })
+    expect(cellTexts(rowNamed(view.container, 'QCR 02')).slice(1, 4)).toEqual(['65', '2', '3.08%'])
   })
 
   it('quiets a zero NCR rate next to one with NCRs', () => {
@@ -404,7 +405,7 @@ describe('PerformanceTable blocks', () => {
 
   it('shows a message when the period has no rows', () => {
     view = drawTable({ ranked: [], belowMinimum: [], notRecorded: null })
-    expect(view.container.querySelector('.qaqc-perf-empty')?.textContent).toBe('No finals or SORs in this period')
+    expect(view.container.querySelector('.qaqc-perf-empty')?.textContent).toBe('No finals in this period')
   })
 
   it('tells screen readers the full row count', () => {
@@ -420,7 +421,7 @@ describe('PerformanceTable sorting', () => {
     expect(view.container.querySelectorAll('thead th[aria-sort]')).toHaveLength(0)
   })
 
-  it.each(['Name', 'Finals', 'SORs', 'NCRs', 'NCR rate', 'Trend'])('keeps the blocks in order when sorting by %s, both ways', (column) => {
+  it.each(['Name', 'Finals', 'NCRs', 'NCR rate', 'Trend'])('keeps the blocks in order when sorting by %s, both ways', (column) => {
     view = drawTable()
     expand(view.container)
     const expected = ['ranked', 'ranked', 'ranked', 'ranked', 'disclosure', 'below', 'below', 'below', 'not-recorded']
@@ -451,19 +452,21 @@ describe('PerformanceTable sorting', () => {
   it('sorts counts largest first', () => {
     view = drawTable()
     expand(view.container)
-    sortBy(view.container, 'SORs')
-    expect(names(view.container, 'ranked')).toEqual(['QCR 2', 'QCR 3', 'QCR 10', 'QCR 01'])
-    expect(names(view.container, 'below')).toEqual(['QCR 20', 'QCR 22', 'QCR 21'])
+    sortBy(view.container, 'Finals')
+    expect(names(view.container, 'ranked')).toEqual(['QCR 2', 'QCR 01', 'QCR 3', 'QCR 10'])
+    sortBy(view.container, 'NCRs')
+    expect(names(view.container, 'ranked')).toEqual(['QCR 2', 'QCR 10', 'QCR 01', 'QCR 3'])
+    expect(names(view.container, 'below')).toEqual(['QCR 21', 'QCR 22', 'QCR 20'])
   })
 
-  it('sorts the NCR rate highest first, with n/a last', () => {
+  it('sorts the NCR rate highest first', () => {
     view = drawTable()
     expand(view.container)
     sortBy(view.container, 'NCR rate')
-    expect(names(view.container, 'below')).toEqual(['QCR 21', 'QCR 20', 'QCR 22'])
+    expect(names(view.container, 'below')).toEqual(['QCR 22', 'QCR 21', 'QCR 20'])
   })
 
-  it('keeps n/a last when the NCR rate sorts lowest first', () => {
+  it('sorts the NCR rate lowest first on a second click', () => {
     view = drawTable()
     expand(view.container)
     sortBy(view.container, 'NCR rate')
@@ -1155,9 +1158,10 @@ describe('PersonDetail', () => {
     expect(view.container.querySelector('.qaqc-perf-person-empty span')?.textContent).toBe("94 finals in WW13'2026 to WW42'2026, none with an NCR.")
   })
 
-  it('shows a message instead of the chart and says so when the period has only SORs', () => {
+  it('shows a message instead of the chart and says so when the period has no finals', () => {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 900, 260))
-    view = drawDetail({ personKey: 'qcr 09' })
+    // QCR 03's finals are all before WW13.
+    view = drawDetail({ personKey: 'qcr 03' })
     expect(view.container.querySelector('.qaqc-perf-person-chart .qaqc-chart-empty')?.textContent).toBe('No finals in this period')
     expect(view.container.querySelector('.qaqc-perf-person-empty span')?.textContent).toBe("No finals in WW13'2026 to WW42'2026.")
   })
@@ -1165,6 +1169,12 @@ describe('PersonDetail', () => {
   it('shows a message for a key that is not in the group', () => {
     view = drawDetail({ personKey: 'nobody' })
     expect(view.container.querySelector('.qaqc-perf-person-missing')?.textContent).toBe('This person has no rows in the data')
+    expect(cardLabels(view.container)).toHaveLength(0)
+  })
+
+  it('has no page for a person with only SORs', () => {
+    view = drawDetail({ personKey: 'qcr 09' })
+    expect(view.container.querySelector('.qaqc-perf-person-missing')).not.toBeNull()
     expect(cardLabels(view.container)).toHaveLength(0)
   })
 

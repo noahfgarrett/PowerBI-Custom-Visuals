@@ -7,10 +7,10 @@ import { directionSign, type SortDirection, type SortState } from '../hooks/useT
 import { TABLE_ROW_HEIGHT, useVirtualRows } from '../hooks/useVirtualRows'
 import { RECENT_WEEK_COUNT } from '../inspections'
 import type { DisciplineTag, PerformanceGroup, PerformanceRow } from '../performance'
-import { compareNullLast, createRankCache } from '../tableSort'
+import { createRankCache } from '../tableSort'
 import { TREND_STRIP_WIDTH, TrendStrip } from './TrendStrip'
 
-type SortKey = 'name' | 'volume' | 'sors' | 'ncrs' | 'rate' | 'trend'
+type SortKey = 'name' | 'volume' | 'ncrs' | 'rate' | 'trend'
 
 interface Column {
   key: SortKey
@@ -29,7 +29,6 @@ const COLUMNS: Record<PerformanceGroup, readonly Column[]> = {
   qcr: [
     { key: 'name', label: 'Name', width: null },
     { key: 'volume', label: 'Finals', width: NUMBER_WIDTH },
-    { key: 'sors', label: 'SORs', width: NUMBER_WIDTH },
     { key: 'ncrs', label: 'NCRs', width: NUMBER_WIDTH },
     { key: 'rate', label: 'NCR rate', width: NUMBER_WIDTH + 8 },
     { key: 'trend', label: 'Trend', width: TREND_WIDTH },
@@ -49,12 +48,12 @@ const CAPTIONS: Record<PerformanceGroup, string> = {
 }
 
 const EMPTY_MESSAGES: Record<PerformanceGroup, string> = {
-  qcr: 'No finals or SORs in this period',
+  qcr: 'No finals in this period',
   welders: 'No welds in this period',
 }
 
 const NOT_RECORDED_TITLES: Record<PerformanceGroup, string> = {
-  qcr: 'Inspections with no QCR/FE recorded. Never ranked.',
+  qcr: 'Finals with no QCR/FE recorded. Never ranked.',
   welders: 'Welds with no welder recorded. Never ranked.',
 }
 
@@ -81,13 +80,11 @@ function firstDirection(key: SortKey): SortDirection {
   return key === 'name' ? 'ascending' : 'descending'
 }
 
-/** The number a row sorts on; null (an NCR rate with no volume) sorts last either way. */
-function numberValue(row: PerformanceRow, key: Exclude<SortKey, 'name'>): number | null {
+/** The number a row sorts on. */
+function numberValue(row: PerformanceRow, key: Exclude<SortKey, 'name'>): number {
   switch (key) {
     case 'volume':
       return row.volume
-    case 'sors':
-      return row.sors
     case 'ncrs':
       return row.ncrs
     case 'rate':
@@ -117,14 +114,13 @@ function sortBlock(
     positions.sort((a, b) => (nameRanks[rankOffset + a] - nameRanks[rankOffset + b]) * sign || a - b)
   } else {
     const values = rows.map((row) => numberValue(row, key))
-    positions.sort((a, b) => compareNullLast(values[a], values[b], sign) || a - b)
+    positions.sort((a, b) => (values[a] - values[b]) * sign || a - b)
   }
   return positions.map((position) => rows[position])
 }
 
-/** A zero rate is quieter than a rate with NCRs, and n/a quieter still. */
-function rateClass(rate: number | null): string {
-  if (rate === null) return 'qaqc-perf-rate is-empty'
+/** A zero rate is quieter than a rate with NCRs. */
+function rateClass(rate: number): string {
   return rate === 0 ? 'qaqc-perf-rate is-zero' : 'qaqc-perf-rate'
 }
 
@@ -152,7 +148,6 @@ export interface PerformanceTableProps {
 }
 
 interface CellsProps {
-  group: PerformanceGroup
   row: PerformanceRow
   colors: ChartColors
   isHighContrast: boolean
@@ -161,11 +156,10 @@ interface CellsProps {
 }
 
 /** Every cell after the name. */
-function NumberCells({ group, row, colors, isHighContrast, trendTextId }: CellsProps): ReactElement {
+function NumberCells({ row, colors, isHighContrast, trendTextId }: CellsProps): ReactElement {
   return (
     <>
       <td>{formatCount(row.volume)}</td>
-      {group === 'qcr' && <td>{formatCount(row.sors)}</td>}
       <td className={row.ncrs > 0 ? 'qaqc-perf-ncrs is-nonzero' : 'qaqc-perf-ncrs'}>{formatCount(row.ncrs)}</td>
       <td className={rateClass(row.rate)}>{formatNcrRate(row.rate)}</td>
       <td className="qaqc-perf-trend-cell">
@@ -301,7 +295,7 @@ export function PerformanceTable({
                 <PerformanceTags tags={row.tags} namesId={tagsTextId} />
               </span>
             </th>
-            <NumberCells group={group} row={row} colors={colors} isHighContrast={isHighContrast} trendTextId={trendTextId} />
+            <NumberCells row={row} colors={colors} isHighContrast={isHighContrast} trendTextId={trendTextId} />
           </tr>
         )
       }
@@ -324,7 +318,7 @@ export function PerformanceTable({
                 <span className="qaqc-perf-not-recorded-name">{item.row.name}</span>
               </span>
             </th>
-            <NumberCells group={group} row={item.row} colors={colors} isHighContrast={isHighContrast} trendTextId={`${idPrefix}-trend-${rowIndex}`} />
+            <NumberCells row={item.row} colors={colors} isHighContrast={isHighContrast} trendTextId={`${idPrefix}-trend-${rowIndex}`} />
           </tr>
         )
       default: {

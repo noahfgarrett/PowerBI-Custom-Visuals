@@ -77,7 +77,7 @@ export function buildOverviewFootnotes(index: Pick<OverviewIndex, 'currentWeek' 
 
 /**
  * The Performance view's notes: the row limit over every combined row, then the shown group's skipped and future
- * rows, then its period note (inspections with no QCR/FE, or welds crediting several welders), then the rows whose
+ * rows, then its period note (finals with no QCR/FE, or welds crediting several welders), then the rows whose
  * Source matched none of the four.
  */
 export function buildPerformanceFootnotes(
@@ -92,9 +92,9 @@ export function buildPerformanceFootnotes(
   notes.push(...buildFootnotes({ ...footnotes[group], currentWeek }, false))
 
   if (group === 'qcr') {
-    const inspections = model.notRecorded === null ? 0 : model.notRecorded.volume + model.notRecorded.sors
-    if (inspections > 0) {
-      notes.push(`${formatCount(inspections)} ${pluralize(inspections, 'inspection has', 'inspections have')} no QCR/FE`)
+    const finals = model.notRecorded === null ? 0 : model.notRecorded.volume
+    if (finals > 0) {
+      notes.push(`${formatCount(finals)} ${pluralize(finals, 'final has', 'finals have')} no QCR/FE`)
     }
   } else if (model.sharedWelds > 0) {
     notes.push(

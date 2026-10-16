@@ -50,7 +50,7 @@ const GROUP_WORDS: Record<PerformanceGroup, GroupWords> = {
     volumeNoun: 'finals',
     ncrDetail: 'Finals with an issue found',
     rateDetail: 'NCRs ÷ finals',
-    emptyTitle: 'No finals or SORs',
+    emptyTitle: 'No finals',
   },
   welders: {
     title: 'Welders',

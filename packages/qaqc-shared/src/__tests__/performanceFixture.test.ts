@@ -49,19 +49,18 @@ function percent(value: number | null): string {
   return value === null ? 'n/a' : `${value.toFixed(2)}%`
 }
 
-function qcrTable(rows: PerformanceRow[]): Array<[string, string, number, number, number, string]> {
-  return rows.map((row) => [row.name, row.tags.join('/'), row.volume, row.sors, row.ncrs, percent(row.rate)])
+function qcrTable(rows: PerformanceRow[]): Array<[string, string, number, number, string]> {
+  return rows.map((row) => [row.name, row.tags.join('/'), row.volume, row.ncrs, percent(row.rate)])
 }
 
 function welderTable(rows: PerformanceRow[]): Array<[string, number, number, string]> {
   return rows.map((row) => [row.name, row.volume, row.ncrs, percent(row.rate)])
 }
 
-function sums(rows: PerformanceRow[]): { people: number; volume: number; sors: number; ncrs: number } {
+function sums(rows: PerformanceRow[]): { people: number; volume: number; ncrs: number } {
   return {
     people: rows.length,
     volume: rows.reduce((sum, row) => sum + row.volume, 0),
-    sors: rows.reduce((sum, row) => sum + row.sors, 0),
     ncrs: rows.reduce((sum, row) => sum + row.ncrs, 0),
   }
 }
@@ -71,9 +70,9 @@ function rankedOnlyRate(rows: PerformanceRow[]): string {
   return percent((ncrs / volume) * 100)
 }
 
-/** Final and SOR rows of one source whose QCR/FE is Not recorded. */
-function notRecordedInspections(rows: ReadonlyArray<ReadonlyArray<unknown>>): Array<ReadonlyArray<unknown>> {
-  return rows.filter((row) => classifyPhase(row[COLUMNS.phase]) !== 'other' && isNotRecorded(row[COLUMNS.qcr]))
+/** Final rows of one source whose QCR/FE is Not recorded. */
+function notRecordedFinals(rows: ReadonlyArray<ReadonlyArray<unknown>>): Array<ReadonlyArray<unknown>> {
+  return rows.filter((row) => classifyPhase(row[COLUMNS.phase]) === 'final' && isNotRecorded(row[COLUMNS.qcr]))
 }
 
 /** The distinct pseudonyms in a column, over every row whatever its phase or week. */
@@ -91,7 +90,11 @@ describe('QAQC Performance fixture: pseudonyms', () => {
   it('holds 17 QCR/FE groups, numbered QCR 01 to QCR 17', () => {
     const names = pseudonyms([...split.electrical, ...split.mechanical], COLUMNS.qcr)
     expect([...names].sort()).toEqual(Array.from({ length: 17 }, (_, item) => `QCR ${String(item + 1).padStart(2, '0')}`))
-    expect(index.qcr).toHaveLength(17)
+  })
+
+  it('indexes the 11 QCR/FE groups with finals, leaving out the 6 with only SORs', () => {
+    const indexed = index.qcr.map((person) => person.name).sort()
+    expect(indexed).toEqual(['QCR 01', 'QCR 02', 'QCR 03', 'QCR 04', 'QCR 05', 'QCR 06', 'QCR 07', 'QCR 08', 'QCR 10', 'QCR 11', 'QCR 15'])
   })
 
   it('holds 74 welder groups, numbered Welder 001 to Welder 074', () => {
@@ -126,42 +129,44 @@ describe('QAQC Performance fixture: QCR / FE, minimum finals 5', () => {
   it('ranks the 30 WW period WW13 to WW42', () => {
     expect([recent.window.first.label, recent.window.last.label]).toEqual(["WW13'2026", "WW42'2026"])
     expect(qcrTable(recent.ranked)).toEqual([
-      ['QCR 02', 'E', 65, 0, 2, '3.08%'],
-      ['QCR 01', 'E', 94, 0, 0, '0.00%'],
-      ['QCR 04', 'E', 22, 0, 0, '0.00%'],
-      ['QCR 05', 'M', 12, 2, 0, '0.00%'],
-      ['QCR 06', 'M', 13, 1, 0, '0.00%'],
-      ['QCR 07', 'M', 5, 0, 0, '0.00%'],
+      ['QCR 02', 'E', 65, 2, '3.08%'],
+      ['QCR 01', 'E', 94, 0, '0.00%'],
+      ['QCR 04', 'E', 22, 0, '0.00%'],
+      ['QCR 05', 'M', 12, 0, '0.00%'],
+      ['QCR 06', 'M', 13, 0, '0.00%'],
+      ['QCR 07', 'M', 5, 0, '0.00%'],
     ])
   })
 
-  it('puts 10 people below the minimum in 30 WW', () => {
-    expect(sums(recent.belowMinimum)).toEqual({ people: 10, volume: 10, sors: 11, ncrs: 0 })
+  it('puts 4 people below the minimum in 30 WW', () => {
+    expect(recent.belowMinimum.map((row) => row.name).sort()).toEqual(['QCR 08', 'QCR 10', 'QCR 11', 'QCR 15'])
+    expect(sums(recent.belowMinimum)).toEqual({ people: 4, volume: 10, ncrs: 0 })
   })
 
-  it('has 70 Not recorded inspections in 30 WW, all SORs', () => {
-    expect(recent.notRecorded).toMatchObject({ volume: 0, sors: 70, ncrs: 0 })
+  it('has no Not recorded row in 30 WW', () => {
+    expect(recent.notRecorded).toBeNull()
   })
 
   it('ranks the All period from WW51 2025', () => {
     expect([all.window.first.label, all.window.last.label]).toEqual(["WW51'2025", "WW42'2026"])
     expect(qcrTable(all.ranked)).toEqual([
-      ['QCR 02', 'E', 70, 0, 2, '2.86%'],
-      ['QCR 01', 'E', 94, 0, 0, '0.00%'],
-      ['QCR 03', 'E', 39, 0, 0, '0.00%'],
-      ['QCR 04', 'E', 31, 0, 0, '0.00%'],
-      ['QCR 05', 'M', 12, 2, 0, '0.00%'],
-      ['QCR 06', 'M', 14, 1, 0, '0.00%'],
-      ['QCR 07', 'M', 5, 0, 0, '0.00%'],
+      ['QCR 02', 'E', 70, 2, '2.86%'],
+      ['QCR 01', 'E', 94, 0, '0.00%'],
+      ['QCR 03', 'E', 39, 0, '0.00%'],
+      ['QCR 04', 'E', 31, 0, '0.00%'],
+      ['QCR 05', 'M', 12, 0, '0.00%'],
+      ['QCR 06', 'M', 14, 0, '0.00%'],
+      ['QCR 07', 'M', 5, 0, '0.00%'],
     ])
   })
 
-  it('puts 10 people below the minimum in All', () => {
-    expect(sums(all.belowMinimum)).toEqual({ people: 10, volume: 10, sors: 11, ncrs: 0 })
+  it('puts 4 people below the minimum in All', () => {
+    expect(all.belowMinimum.map((row) => row.name).sort()).toEqual(['QCR 08', 'QCR 10', 'QCR 11', 'QCR 15'])
+    expect(sums(all.belowMinimum)).toEqual({ people: 4, volume: 10, ncrs: 0 })
   })
 
-  it('has 132 Not recorded inspections in All: 7 finals, 125 SORs and 1 NCR', () => {
-    expect(all.notRecorded).toMatchObject({ volume: 7, sors: 125, ncrs: 1 })
+  it('has 7 Not recorded finals in All, with 1 NCR', () => {
+    expect(all.notRecorded).toMatchObject({ volume: 7, ncrs: 1 })
   })
 
   it('logs the one Not recorded NCR in WW08 2026', () => {
@@ -169,19 +174,15 @@ describe('QAQC Performance fixture: QCR / FE, minimum finals 5', () => {
     expect(index.notRecorded.qcr.ncrs[week]).toBe(1)
   })
 
-  it('splits the Not recorded inspections as the spec does', () => {
-    const electrical = notRecordedInspections(split.electrical)
-    const mechanical = notRecordedInspections(split.mechanical)
-    expect([electrical.length, mechanical.length]).toEqual([48, 84])
-    const recentWeeks = new Set(recent.weekOptions.slice(0, 30).map((week) => week.label))
-    const recentBlanks = [...electrical, ...mechanical].filter((row) => recentWeeks.has(String(row[COLUMNS.workWeek])))
-    const blank = recentBlanks.filter((row) => row[COLUMNS.qcr] === null || String(row[COLUMNS.qcr]).trim() === '')
-    expect([blank.length, recentBlanks.length - blank.length]).toEqual([57, 13])
+  it('splits the Not recorded finals as the spec does', () => {
+    const qcrOf = (rows: Array<ReadonlyArray<unknown>>): unknown[] => rows.map((row) => row[COLUMNS.qcr])
+    expect(qcrOf(notRecordedFinals(split.electrical))).toEqual(['N/A'])
+    expect(qcrOf(notRecordedFinals(split.mechanical))).toEqual(['NA', 'NA', 'NA', 'NA', 'NA', 'NA'])
   })
 
-  it('tags only QCR 09 with both disciplines, below the minimum', () => {
-    expect(index.qcr.filter((person) => person.disciplines.length === 2).map((person) => person.name)).toEqual(['QCR 09'])
-    expect(all.belowMinimum.find((row) => row.name === 'QCR 09')?.tags).toEqual(['E', 'M'])
+  it('tags nobody with both disciplines', () => {
+    expect(index.qcr.filter((person) => person.disciplines.length === 2)).toEqual([])
+    expect([...all.ranked, ...all.belowMinimum].filter((row) => row.tags.length === 2)).toEqual([])
   })
 
   it('totals the summary strip over the whole group', () => {

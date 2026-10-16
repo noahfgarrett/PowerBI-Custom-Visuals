@@ -193,19 +193,29 @@ describe('buildPerformanceFootnotes', () => {
     expect(performanceNotes([qcrRow("WW42'2026", 'Final', 'QCR 01'), weldRow("WW42'2026", 'Welder 001')], 'welders')).toEqual([])
   })
 
-  it('counts the period\'s inspections with no QCR/FE in the QCR/FE view', () => {
-    const rows = [qcrRow("WW42'2026", 'SOR', null), qcrRow("WW41'2026", 'Final', 'N/A'), qcrRow("WW42'2026", 'Final', 'QCR 01')]
-    expect(performanceNotes(rows, 'qcr')).toEqual(['2 inspections have no QCR/FE'])
+  it('counts the period\'s finals with no QCR/FE in the QCR/FE view', () => {
+    const rows = [qcrRow("WW42'2026", 'Final', null), qcrRow("WW41'2026", 'Final', 'N/A'), qcrRow("WW42'2026", 'Final', 'QCR 01')]
+    expect(performanceNotes(rows, 'qcr')).toEqual(['2 finals have no QCR/FE'])
   })
 
-  it('uses the singular for one inspection with no QCR/FE', () => {
-    expect(performanceNotes([qcrRow("WW42'2026", 'SOR', '')], 'qcr')).toEqual(['1 inspection has no QCR/FE'])
+  it('uses the singular for one final with no QCR/FE', () => {
+    expect(performanceNotes([qcrRow("WW42'2026", 'Final', '')], 'qcr')).toEqual(['1 final has no QCR/FE'])
   })
 
-  it('counts only the period\'s inspections with no QCR/FE', () => {
-    const rows = [qcrRow("WW42'2026", 'SOR', null), qcrRow("WW02'2025", 'SOR', null)]
-    expect(performanceNotes(rows, 'qcr', false, 'recent')).toEqual(['1 inspection has no QCR/FE'])
-    expect(performanceNotes(rows, 'qcr', false, 'all')).toEqual(['2 inspections have no QCR/FE'])
+  it('leaves SORs with no QCR/FE out of the count', () => {
+    const rows = [qcrRow("WW42'2026", 'SOR', null), qcrRow("WW42'2026", 'SOR', 'N/A'), qcrRow("WW42'2026", 'Final', null)]
+    expect(performanceNotes(rows, 'qcr')).toEqual(['1 final has no QCR/FE'])
+  })
+
+  it('hides the note when the only rows with no QCR/FE are SORs', () => {
+    const rows = [qcrRow("WW42'2026", 'SOR', null), qcrRow("WW42'2026", 'Final', 'QCR 01')]
+    expect(performanceNotes(rows, 'qcr')).toEqual([])
+  })
+
+  it('counts only the period\'s finals with no QCR/FE', () => {
+    const rows = [qcrRow("WW42'2026", 'Final', null), qcrRow("WW02'2025", 'Final', null)]
+    expect(performanceNotes(rows, 'qcr', false, 'recent')).toEqual(['1 final has no QCR/FE'])
+    expect(performanceNotes(rows, 'qcr', false, 'all')).toEqual(['2 finals have no QCR/FE'])
   })
 
   it('counts the period\'s welds that list more than one welder in the welders view', () => {
@@ -220,8 +230,8 @@ describe('buildPerformanceFootnotes', () => {
   })
 
   it('keeps each group\'s note to its own view', () => {
-    const rows = [qcrRow("WW42'2026", 'SOR', null), weldRow("WW42'2026", 'Welder 001, Welder 002')]
-    expect(performanceNotes(rows, 'qcr')).toEqual(['1 inspection has no QCR/FE'])
+    const rows = [qcrRow("WW42'2026", 'Final', null), weldRow("WW42'2026", 'Welder 001, Welder 002')]
+    expect(performanceNotes(rows, 'qcr')).toEqual(['1 final has no QCR/FE'])
     expect(performanceNotes(rows, 'welders')).toEqual(['1 weld lists more than one welder; each welder is credited'])
   })
 
@@ -236,11 +246,16 @@ describe('buildPerformanceFootnotes', () => {
     expect(performanceNotes(rows, 'welders')).toEqual(['2 rows skipped: unreadable work week'])
   })
 
+  it('does not count SORs as skipped or future rows in the QCR/FE view', () => {
+    const rows = [qcrRow('UPW', 'SOR', 'QCR 01'), qcrRow("WW50'2026", 'SOR', 'QCR 01'), qcrRow("WW42'2026", 'Final', 'QCR 01')]
+    expect(performanceNotes(rows, 'qcr')).toEqual([])
+  })
+
   it('counts the rows with an unknown Source last', () => {
     const civil: PerformanceRow = ['Civil', "WW42'2026", 'Final', null, null, 'QCR 01', null, null]
     const blank: PerformanceRow = ['', "WW42'2026", 'Final', null, null, 'QCR 01', null, null]
-    expect(performanceNotes([qcrRow("WW42'2026", 'SOR', null), civil, blank], 'qcr')).toEqual([
-      '1 inspection has no QCR/FE',
+    expect(performanceNotes([qcrRow("WW42'2026", 'Final', null), civil, blank], 'qcr')).toEqual([
+      '1 final has no QCR/FE',
       '2 rows with an unknown Source',
     ])
     expect(performanceNotes([civil], 'welders')).toEqual(['1 row with an unknown Source'])

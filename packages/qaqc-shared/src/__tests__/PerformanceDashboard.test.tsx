@@ -244,10 +244,17 @@ describe('PerformanceDashboard ranking', () => {
     expect(rankedNames(view.container)).toEqual(['QCR 02', 'QCR 01', 'QCR 03', 'QCR 04', 'QCR 05', 'QCR 06', 'QCR 07'])
   })
 
-  it('collapses the ten people below the minimum', () => {
+  it('collapses the four people below the minimum', () => {
     view = draw()
-    expect(disclosure(view.container)?.textContent).toBe('Below minimum (10 people)')
+    expect(disclosure(view.container)?.textContent).toBe('Below minimum (4 people)')
     expect(disclosure(view.container)?.getAttribute('aria-expanded')).toBe('false')
+  })
+
+  it('leaves out the people with only SORs', () => {
+    // A minimum of 1 ranks everyone with a final, so all ten rows fit among the rows jsdom renders.
+    view = draw({ minimumFinals: 1 })
+    expect([...rankedNames(view.container)].sort()).toEqual(['QCR 01', 'QCR 02', 'QCR 04', 'QCR 05', 'QCR 06', 'QCR 07', 'QCR 08', 'QCR 10', 'QCR 11', 'QCR 15'])
+    expect(disclosure(view.container)).toBeNull()
   })
 
   it('ranks the 30 WW welders, Welder 024 first', () => {
@@ -329,7 +336,7 @@ describe('PerformanceDashboard summary strip', () => {
 
   it('names the minimum and the people below it', () => {
     view = draw()
-    expect(cardDetail(view.container, 'QCR/FE ranked')).toBe('Minimum 5 finals · 10 below')
+    expect(cardDetail(view.container, 'QCR/FE ranked')).toBe('Minimum 5 finals · 4 below')
     showGroup(view.container, 'Welders')
     expect(cardDetail(view.container, 'Welders ranked')).toBe('Minimum 10 welds · 27 below')
   })
@@ -519,7 +526,7 @@ describe('PerformanceDashboard layout', () => {
   it('says there is no activity in a period with no rows', () => {
     view = draw({ index: indexOf([]) })
     expect(view.container.querySelector('.qaqc-perf-table')).toBeNull()
-    expect(view.container.querySelector('.qaqc-perf-empty-state strong')?.textContent).toBe("No finals or SORs in WW42'2026")
+    expect(view.container.querySelector('.qaqc-perf-empty-state strong')?.textContent).toBe("No finals in WW42'2026")
     expect(summaryValues(view.container)).toEqual(['0', '0', '0', 'n/a'])
   })
 
@@ -532,15 +539,15 @@ describe('PerformanceDashboard layout', () => {
 })
 
 describe('PerformanceDashboard footnotes', () => {
-  it('notes the 30 WW inspections with no QCR/FE', () => {
+  it('has no QCR/FE note in 30 WW, where every final has a QCR/FE', () => {
     view = draw()
-    expect(footnotes(view.container)).toEqual(['70 inspections have no QCR/FE'])
+    expect(footnotes(view.container)).toEqual([])
   })
 
-  it('notes the All inspections with no QCR/FE', () => {
+  it('notes the All finals with no QCR/FE', () => {
     view = draw()
     showRange(view.container, 'All')
-    expect(footnotes(view.container)).toEqual(['132 inspections have no QCR/FE'])
+    expect(footnotes(view.container)).toEqual(['7 finals have no QCR/FE'])
   })
 
   it('notes the welds that credit several welders, by period', () => {
@@ -553,7 +560,7 @@ describe('PerformanceDashboard footnotes', () => {
 
   it('puts the row limit first', () => {
     view = draw({ rowLimitReached: true })
-    expect(footnotes(view.container)).toEqual(['Showing the first 2,385 rows (Power BI data limit)', '70 inspections have no QCR/FE'])
+    expect(footnotes(view.container)).toEqual(['Showing the first 2,385 rows (Power BI data limit)'])
   })
 })
 
