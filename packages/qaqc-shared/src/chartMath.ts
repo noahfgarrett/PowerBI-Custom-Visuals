@@ -59,7 +59,7 @@ export const YEAR_MARKER_OFFSET = 27
 export const WEEK_AXIS_HEIGHT = 31
 
 /** Which labelled indices get a year marker: the first labelled index, plus the first labelled index of each new year. */
-export function yearMarkers(labelledIndices: ReadonlySet<number> | readonly number[], weeks: ReadonlyArray<{ year: number }>): Set<number> {
+export function yearMarkers(labelledIndices: ReadonlySet<number>, weeks: ReadonlyArray<{ year: number }>): Set<number> {
   const result = new Set<number>()
   const sorted = [...labelledIndices].filter((index) => index >= 0 && index < weeks.length).sort((a, b) => a - b)
   let previousYear: number | null = null

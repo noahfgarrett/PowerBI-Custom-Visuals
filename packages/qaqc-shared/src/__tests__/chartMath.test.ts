@@ -104,26 +104,26 @@ describe('yearMarkers', () => {
   const years = (...list: number[]): Array<{ year: number }> => list.map((year) => ({ year }))
 
   it('marks only the first labelled index inside one year', () => {
-    expect([...yearMarkers(new Set([1, 3, 5]), years(2026, 2026, 2026, 2026, 2026, 2026))]).toEqual([1])
+    expect(yearMarkers(new Set([1, 3, 5]), years(2026, 2026, 2026, 2026, 2026, 2026))).toEqual(new Set([1]))
   })
 
   it('marks the first labelled index of each new year', () => {
-    expect([...yearMarkers([0, 2, 4, 6], years(2025, 2025, 2025, 2026, 2026, 2026, 2026))].sort()).toEqual([0, 4])
+    expect(yearMarkers(new Set([0, 2, 4, 6]), years(2025, 2025, 2025, 2026, 2026, 2026, 2026))).toEqual(new Set([0, 4]))
   })
 
   it('accepts labelled indices in any order', () => {
-    expect([...yearMarkers(new Set([6, 0, 4, 2]), years(2025, 2025, 2025, 2026, 2026, 2026, 2026))].sort()).toEqual([0, 4])
+    expect(yearMarkers(new Set([6, 0, 4, 2]), years(2025, 2025, 2025, 2026, 2026, 2026, 2026))).toEqual(new Set([0, 4]))
   })
 
   it('skips a year that has no labelled index', () => {
-    expect([...yearMarkers([0, 5], years(2024, 2024, 2025, 2025, 2026, 2026))].sort()).toEqual([0, 5])
+    expect(yearMarkers(new Set([0, 5]), years(2024, 2024, 2025, 2025, 2026, 2026))).toEqual(new Set([0, 5]))
   })
 
   it('is empty when nothing is labelled', () => {
-    expect(yearMarkers([], years(2026, 2026)).size).toBe(0)
+    expect(yearMarkers(new Set(), years(2026, 2026)).size).toBe(0)
   })
 
   it('ignores labelled indices outside the weeks', () => {
-    expect([...yearMarkers([-1, 1, 9], years(2026, 2026))]).toEqual([1])
+    expect(yearMarkers(new Set([-1, 1, 9]), years(2026, 2026))).toEqual(new Set([1]))
   })
 })

@@ -7,7 +7,9 @@ import { useWeekFocus } from '../hooks/useWeekFocus'
 import type { WeekCounts } from '../types'
 import { WeekAxisTick } from './WeekAxisTick'
 
-const MARGIN = { top: 22, right: 8, bottom: WEEK_AXIS_HEIGHT, left: 34 } as const
+// The right margin is half the widest week tick (a bold WW00 is about 36 px), so the last tick and its year marker
+// stay inside the chart.
+const MARGIN = { top: 22, right: 18, bottom: WEEK_AXIS_HEIGHT, left: 34 } as const
 const MAX_BAR_WIDTH = 24
 const MIN_BAR_WIDTH = 2
 const BADGE_RADIUS = 8

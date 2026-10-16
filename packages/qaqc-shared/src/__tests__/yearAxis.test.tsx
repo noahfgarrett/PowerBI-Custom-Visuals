@@ -200,12 +200,29 @@ describe.each(CHARTS)('$name year markers', ({ draw }) => {
     markerBoxes.forEach((box, index) => {
       expect(tickBoxes.some((tick) => overlaps(box, tick))).toBe(false)
       markerBoxes.slice(index + 1).forEach((other) => expect(overlaps(box, other)).toBe(false))
-      // Horizontally a marker stays inside its own tick label, so it reaches no further out than the ticks do.
-      const ownTick = tickBoxes[shownTicks.findIndex((node) => node.getAttribute('x') === found[index].getAttribute('x'))]
-      expect(box.left).toBeGreaterThanOrEqual(ownTick.left)
-      expect(box.right).toBeLessThanOrEqual(ownTick.right)
+      expect(box.left).toBeGreaterThanOrEqual(0)
+      expect(box.right).toBeLessThanOrEqual(width)
       expect(box.bottom).toBeLessThanOrEqual(height)
     })
+  })
+
+  it.each([
+    ['a grid tile', 600, 300],
+    ['an expanded chart', 1200, 420],
+  ])('keeps a year marker on the rightmost tick inside the chart on %s', (_size, width, height) => {
+    // Two years ending in WW02: the last tick is the first labelled tick of 2026.
+    view = render(draw(enumerateWorkWeeks(makeWorkWeek(2024, 1), makeWorkWeek(2026, 2)), width, height, COLORS))
+    const shownTicks = ticks(view.container)
+    const lastTick = shownTicks[shownTicks.length - 1]
+    const found = markers(view.container)
+    const lastMarker = found[found.length - 1]
+    expect(lastMarker.textContent).toBe('2026')
+    expect(lastMarker.getAttribute('x')).toBe(lastTick.getAttribute('x'))
+    const markerBox = textBox(lastMarker, fontSize('.qaqc-axis-year'), YEAR_CHAR_EM)
+    expect(markerBox.left).toBeGreaterThanOrEqual(0)
+    expect(markerBox.right).toBeLessThanOrEqual(width)
+    const tickBox = textBox(lastTick, fontSize('.qaqc-axis-text'), TICK_CHAR_EM)
+    expect(tickBox.right).toBeLessThanOrEqual(width)
   })
 
   it('draws markers in the muted axis colour', () => {

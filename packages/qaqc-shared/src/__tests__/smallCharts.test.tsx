@@ -165,6 +165,16 @@ describe('LineChart', () => {
     expect(weekLabels.map((node) => node.textContent)).toEqual(['WW52', 'WW01'])
   })
 
+  it('gives the week axis the shared axis height in place of the bottom margin', () => {
+    view = render(
+      <LineChart points={[point(41, 99.1), point(42, 99.16)]} selectedKey={202642} width={300} height={160} colors={COLORS} describe showWeekAxis onHover={vi.fn()} />,
+    )
+    // 160 px tall, 14 px top margin and a 31 px week axis: the plot spans y 14–129.
+    expect(view.container.querySelector('.qaqc-hit')?.getAttribute('height')).toBe('115')
+    const weekLabel = [...view.container.querySelectorAll('.qaqc-axis-text')].find((node) => node.textContent === 'WW42')
+    expect(weekLabel?.getAttribute('y')).toBe('145')
+  })
+
   it('thins week labels so they do not collide', () => {
     const many = Array.from({ length: 30 }, (_, index) => point(10 + index, 99.1))
     view = render(

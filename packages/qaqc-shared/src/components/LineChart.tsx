@@ -39,7 +39,7 @@ export function LineChart({
   onHover,
 }: LineChartProps): ReactElement {
   const plotWidth = Math.max(0, width - MARGIN.left - MARGIN.right)
-  const bottomMargin = MARGIN.bottom + (showWeekAxis ? WEEK_AXIS_HEIGHT : 0)
+  const bottomMargin = showWeekAxis ? WEEK_AXIS_HEIGHT : MARGIN.bottom
   const plotHeight = Math.max(0, height - MARGIN.top - bottomMargin)
   const domain = passRateDomain(points.map((item) => item.rate))
   const step = points.length > 1 ? plotWidth / (points.length - 1) : 0
