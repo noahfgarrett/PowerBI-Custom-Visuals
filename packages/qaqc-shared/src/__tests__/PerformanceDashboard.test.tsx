@@ -491,3 +491,11 @@ describe('PerformanceDashboard footnotes', () => {
     expect(footnotes(view.container)).toEqual(['Showing the first 2,385 rows (Power BI data limit)', '70 inspections have no QCR/FE'])
   })
 })
+
+describe('PerformanceDashboard compact strip', () => {
+  it('lays the four summary cards out two by two on compact tiles', () => {
+    const body = ruleBody('.qaqc-root.is-compact .qaqc-perf-summary .qaqc-kpi-group-body')
+    expect(body).toContain('grid-auto-flow: row;')
+    expect(body).toContain('grid-template-columns: repeat(2, minmax(0, 1fr));')
+  })
+})

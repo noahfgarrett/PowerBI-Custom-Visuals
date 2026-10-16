@@ -2081,6 +2081,13 @@ span.qaqc-perf-name {
   min-height: 140px;
 }
 
+// Compact strip: two by two, as on the Overview, so the labels and details keep their words on narrow tiles.
+.qaqc-root.is-compact .qaqc-perf-summary .qaqc-kpi-group-body {
+  grid-auto-flow: row;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 8px;
+}
+
 // Forced colors (Windows high contrast) drop backgrounds and box shadows, so the discussion marker becomes a real
 // border, and the legend swatches keep their outlines.
 @media (forced-colors: active) {
