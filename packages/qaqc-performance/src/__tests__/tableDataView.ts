@@ -15,7 +15,7 @@ export interface TableOptions {
 
 export const ALL_ROLES: SlotRole[] = ['source', 'rowId', 'workWeek', 'phase', 'issue', 'building', 'qcr', 'welder', 'tagNo']
 
-/** The QAQC Combined column each role is bound to. */
+/** The QCx Combined column each role is bound to. */
 const COLUMN_OF: Record<SlotRole, (typeof COMBINED_COLUMNS)[number]> = {
   source: 'Source',
   rowId: 'Row ID',
@@ -29,7 +29,7 @@ const COLUMN_OF: Record<SlotRole, (typeof COMBINED_COLUMNS)[number]> = {
 }
 
 /**
- * Builds a table data view whose columns carry the given roles, in order. Each input row is a QAQC Combined row
+ * Builds a table data view whose columns carry the given roles, in order. Each input row is a QCx Combined row
  * (`COMBINED_COLUMNS` order); a null cell becomes blank text, as Power BI sends it.
  */
 export function tableDataView(rows: ReadonlyArray<ReadonlyArray<Cell>>, options: TableOptions = {}): powerbi.DataView {

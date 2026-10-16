@@ -258,7 +258,7 @@ describe('QaqcOverviewVisual setup state', () => {
   it('lists every required field slot before data is bound, without the optional Green tags', () => {
     harness = createHarness()
     apply(harness, update(undefined))
-    expect(harness.element.querySelector('.qaqc-status h2')?.textContent).toBe('Add the QAQC Combined columns')
+    expect(harness.element.querySelector('.qaqc-status h2')?.textContent).toBe('Add the QCx Combined columns')
     expect(setupItems(harness.element)).toEqual([
       'Source → Source',
       'Row ID → Row ID',
@@ -277,10 +277,12 @@ describe('QaqcOverviewVisual setup state', () => {
     ])
   })
 
-  it('names the setup guide in the setup message', () => {
+  it('names the QCx setup guide in the setup message', () => {
     harness = createHarness()
     apply(harness, update(undefined))
-    expect(harness.element.querySelector('.qaqc-status p')?.textContent).toContain('QAQC_Overview_SETUP.md')
+    expect(harness.element.querySelector('.qaqc-status p')?.textContent).toBe(
+      'Drag these columns from the QCx Combined table into the matching field slots. See QCx_Overview_SETUP.md.',
+    )
   })
 
   it('shows the setup state until every required slot is bound', () => {

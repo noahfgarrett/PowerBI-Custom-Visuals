@@ -62,7 +62,7 @@ function position(name: (typeof COMBINED_COLUMNS)[number]): number {
   return COMBINED_COLUMNS.indexOf(name)
 }
 
-/** The fixture and the synthetic rows share the QAQC Combined column order. Performance binds only its own slots. */
+/** The fixture and the synthetic rows share the QCx Combined column order. Performance binds only its own slots. */
 const columns: CombinedColumns = {
   source: position('Source'),
   workWeek: position('Work Week'),
@@ -89,8 +89,8 @@ if (data === 'missing') {
   root.render(
     <StatusPanel
       icon={ListChecks}
-      title="Add the QAQC Combined columns"
-      message="Drag these columns from the QAQC Combined table into the matching field slots. See QAQC_Performance_SETUP.md."
+      title="Add the QCx Combined columns"
+      message="Drag these columns from the QCx Combined table into the matching field slots. See QCx_Performance_SETUP.md."
       items={PERFORMANCE_SLOTS.map((slot) => `${slot.column} → ${slot.slot}`)}
     />,
   )

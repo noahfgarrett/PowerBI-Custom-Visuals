@@ -8,15 +8,15 @@ NCR performance per person: each QCR / FE across Electrical and Mechanical final
 2. Choose `qaqcPerformance_AD661934E05F.1.0.0.0.pbiviz`.
 3. To update later, import the newer file the same way. It replaces the old version in place and keeps your field bindings.
 
-## 2. Add the QAQC Combined table (once per report, required)
+## 2. Add the QCx Combined table (once per report, required)
 
-The visual reads one table that holds all four sheets. Follow [QAQC_Combined_SETUP.md](QAQC_Combined_SETUP.md) to add the **QAQC Combined** query. It already includes the Row ID, so you don't need to add an index column for this visual.
+The visual reads one table that holds all four sheets. Follow [QCx_Combined_SETUP.md](QCx_Combined_SETUP.md) to add the **QCx Combined** query. It already includes the Row ID, so you don't need to add an index column for this visual.
 
 ## 3. Bind the columns
 
 All nine slots are required. The visual shows its setup screen, listing the slots still empty, until every one is bound.
 
-| Field slot | QAQC Combined column |
+| Field slot | QCx Combined column |
 |---|---|
 | Source | Source |
 | Row ID | Row ID |
@@ -38,7 +38,7 @@ The header holds three controls:
 - **`30 WW | All`** sets the ranking period: the 30 weeks ending at the selected week, or every week from the start of the data up to it.
 - **The week dropdown** opens on the current work week every time the report opens. The period ends at the week you pick.
 
-Format pane: **Colors → Preset** (QAQC, Ivory, LotusWorks, Grayscale), **Background** (color, background opacity, card opacity), **Animation**, **Accessibility**, and **Ranking**:
+Format pane: **Colors → Preset** (QCx, Blue, LotusWorks, Grayscale), **Background** (color, background opacity, card opacity), **Animation**, **Accessibility**, and **Ranking**:
 
 | Ranking setting | Default | Range | What it does |
 |---|---|---|---|
@@ -122,5 +122,5 @@ The footnotes at the bottom report, for the shown group:
 - rows skipped because the work week can't be read
 - rows dated after the current work week, which aren't counted
 - finals with no QCR/FE (QCR / FE), or welds listing more than one welder (Welders)
-- rows with an unknown Source (see the QAQC Combined guide)
+- rows with an unknown Source (see the QCx Combined guide)
 - `Showing the first n rows (Power BI data limit)`, if Power BI stopped sending rows

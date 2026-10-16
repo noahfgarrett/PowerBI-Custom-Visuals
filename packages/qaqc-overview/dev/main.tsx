@@ -65,7 +65,7 @@ function position(name: (typeof COMBINED_COLUMNS)[number]): number {
 }
 
 /**
- * The fixture and the synthetic rows share the QAQC Combined column order. The Overview binds every slot but the
+ * The fixture and the synthetic rows share the QCx Combined column order. The Overview binds every slot but the
  * Performance-only ones; the Green tags measure, when given, is one extra column after the combined columns.
  */
 const columns: CombinedColumns = {
@@ -99,8 +99,8 @@ if (data === 'missing') {
   root.render(
     <StatusPanel
       icon={ListChecks}
-      title="Add the QAQC Combined columns"
-      message="Drag these columns from the QAQC Combined table into the matching field slots. See QAQC_Overview_SETUP.md."
+      title="Add the QCx Combined columns"
+      message="Drag these columns from the QCx Combined table into the matching field slots. See QCx_Overview_SETUP.md."
       items={OVERVIEW_SLOTS.filter((slot) => !OPTIONAL_COMBINED_ROLES.has(slot.role)).map((slot) => `${slot.column} → ${slot.slot}`)}
     />,
   )

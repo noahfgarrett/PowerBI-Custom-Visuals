@@ -49,7 +49,7 @@ function prefixed(source: string, notes: string[]): string[] {
 }
 
 /**
- * The QAQC Combined table's notes: the row limit over every combined row, then each source's own notes in the
+ * The QCx Combined table's notes: the row limit over every combined row, then each source's own notes in the
  * discipline visuals' wording, prefixed with the source, then the rows whose Source matched none of the four.
  */
 export function buildOverviewFootnotes(index: Pick<OverviewIndex, 'currentWeek' | 'footnotes'>, rowLimitReached: boolean): string[] {

@@ -97,10 +97,10 @@ export interface ConnectedOverviewRow {
   trendText: string
 }
 
-/** A source with no rows in QAQC Combined. */
+/** A source with no rows in QCx Combined. */
 export interface DisconnectedOverviewRow {
   connected: false
-  /** Such as `Not connected: no Electrical rows in QAQC Combined`. */
+  /** Such as `Not connected: no Electrical rows in QCx Combined`. */
   message: string
 }
 
@@ -466,7 +466,7 @@ interface RowContext {
 }
 
 function disconnectedRow(name: string): DisconnectedOverviewRow {
-  return { connected: false, message: `Not connected: no ${name} rows in QAQC Combined` }
+  return { connected: false, message: `Not connected: no ${name} rows in QCx Combined` }
 }
 
 function connectedRow(context: RowContext, cards: OverviewCards, metricAt: (key: number) => number): ConnectedOverviewRow {

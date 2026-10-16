@@ -15,6 +15,13 @@ describe('OverviewSettingsModel', () => {
     })
   })
 
+  it('shows the qaqc preset as QCx in the Format pane while saved reports keep the qaqc value', () => {
+    const preset = new OverviewSettingsModel().colors.preset
+    const qcx = { value: 'qaqc', displayName: 'QCx', displayNameKey: 'Qaqc_preset_qaqc' }
+    expect(preset.value).toEqual(qcx)
+    expect(preset.items[0]).toEqual(qcx)
+  })
+
   it('falls back to QAQC for an unknown preset and clamps opacity', () => {
     const model = new OverviewSettingsModel()
     model.colors.preset.value = { value: 'neon', displayName: 'Neon' }

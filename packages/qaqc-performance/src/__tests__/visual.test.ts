@@ -221,11 +221,18 @@ describe('QaqcPerformanceVisual', () => {
     expect(Object.values(condition).every((range) => range.max === 1 && !('min' in range))).toBe(true)
   })
 
+  it('names the QCx setup guide in the setup message', () => {
+    harness = createHarness()
+    apply(harness, update(undefined))
+    expect(harness.element.querySelector('.qaqc-status p')?.textContent).toBe(
+      'Drag these columns from the QCx Combined table into the matching field slots. See QCx_Performance_SETUP.md.',
+    )
+  })
+
   it('lists every field slot before data is bound', () => {
     harness = createHarness()
     apply(harness, update(undefined))
-    expect(harness.element.querySelector('.qaqc-status h2')?.textContent).toBe('Add the QAQC Combined columns')
-    expect(harness.element.querySelector('.qaqc-status p')?.textContent).toContain('QAQC_Performance_SETUP.md')
+    expect(harness.element.querySelector('.qaqc-status h2')?.textContent).toBe('Add the QCx Combined columns')
     expect(setupItems(harness.element)).toEqual([
       'Source → Source',
       'Row ID → Row ID',

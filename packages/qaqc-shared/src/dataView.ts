@@ -145,7 +145,7 @@ export function readIssueTable(table: InspectionTableSource | undefined): IssueT
 export type CombinedSlotRole = keyof CombinedColumns | 'rowId'
 export type CombinedFieldSlot = FieldSlot<CombinedSlotRole>
 
-// The two visuals bind the same QAQC Combined table but declare only the slots they use.
+// The two visuals bind the same QCx Combined table but declare only the slots they use.
 export const OVERVIEW_SLOTS: readonly CombinedFieldSlot[] = [
   { role: 'source', slot: 'Source', column: 'Source' },
   { role: 'rowId', slot: 'Row ID', column: 'Row ID' },

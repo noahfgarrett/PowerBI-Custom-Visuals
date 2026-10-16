@@ -136,7 +136,7 @@ function bimRow(row: unknown[], random: Random, serial: number, days: string[]):
 }
 
 /**
- * QAQC Combined rows in `COMBINED_COLUMNS` order with mixed sources (about 12% Electrical, 6% Mechanical,
+ * QCx Combined rows in `COMBINED_COLUMNS` order with mixed sources (about 12% Electrical, 6% Mechanical,
  * 73% Welding and 9% BIM) in a seeded shuffled order. Columns that don't apply to a row's source are null.
  * Weeks and dates run from 2021 to WW42'2026. Row IDs are 1-based in the final order.
  */

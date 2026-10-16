@@ -287,7 +287,7 @@ export interface IssueColumns {
   createdBy: number
 }
 
-/** Column positions of each QAQC Combined field slot inside a table row, or −1 when the slot isn't bound. */
+/** Column positions of each QCx Combined field slot inside a table row, or −1 when the slot isn't bound. */
 export interface CombinedColumns {
   source: number
   workWeek: number

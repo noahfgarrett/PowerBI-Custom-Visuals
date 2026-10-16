@@ -186,13 +186,13 @@ export class QaqcOverviewVisual implements powerbi.extensibility.visual.IVisual 
     )
   }
 
-  /** Setup state: tells the author which QAQC Combined columns still need a field slot (QAQC_Overview_SETUP.md). */
+  /** Setup state: tells the author which QCx Combined columns still need a field slot (QCx_Overview_SETUP.md). */
   private renderEmptyState(missing: CombinedFieldSlot[]): void {
     this.commit(
       createElement(StatusPanel, {
         icon: ListChecks,
-        title: 'Add the QAQC Combined columns',
-        message: 'Drag these columns from the QAQC Combined table into the matching field slots. See QAQC_Overview_SETUP.md.',
+        title: 'Add the QCx Combined columns',
+        message: 'Drag these columns from the QCx Combined table into the matching field slots. See QCx_Overview_SETUP.md.',
         items: missing.map((slot) => `${slot.column} → ${slot.slot}`),
       }),
     )

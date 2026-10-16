@@ -41,7 +41,7 @@ Set every field to **Don't summarize**. The visual is designed to fill a full re
 - Click the expand icon on any chart to fill the visual with more detail; press Esc or the collapse icon to return. The icon is hidden on empty charts and in read-only views.
 - **Sign-off by System** drills down: click a system bar (or press Enter on the focused row) to see that system's pipe specs. A breadcrumb such as `All systems › AW` appears above the bars; select **All systems** to go back. The "Other" row is not clickable. The drill resets when the report is reopened and stays in place when you change weeks.
 - **Issues by Building** ranks only buildings with enough welds. Change the cutoff in Format pane → **Hotspots** → **Minimum welds** (default 10, range 1 to 100). Smaller buildings are grouped into "Other".
-- Format pane: **Colors → Preset** (QAQC, Ivory, LotusWorks, Grayscale), **Background** (color, background opacity, card opacity), **Animation**, **Accessibility**, **Hotspots**.
+- Format pane: **Colors → Preset** (QCx, Blue, LotusWorks, Grayscale), **Background** (color, background opacity, card opacity), **Animation**, **Accessibility**, **Hotspots**.
 
 ## Counting rules
 
@@ -50,6 +50,6 @@ Set every field to **Don't summarize**. The visual is designed to fill a full re
 - **Signed This Week:** signed welds counted by WORK WEEK SIGNED, not by weld week. A signed weld whose WORK WEEK SIGNED can't be read still counts as signed for its weld week, but not in Signed This Week.
 - **Sign-off %:** signed ÷ logged for the latest weld week (up to the selected week) that has welds.
 - **Overall Sign-off %:** all signed welds ÷ all welds through the selected week. Its status line is red below 10%, amber from 10% to below 15%, and green at 15% and above.
-- **Issue:** ISSUE CREATED? is filled in and is not "no", "n/a", "na", "none" or "-". QAQC Advisory Items are not used.
+- **Issue:** ISSUE CREATED? is filled in and is not "no", "n/a", "na", "none" or "-". The QAQC Advisory Item column is not used.
 - **Building:** taken from TAG NO (for example BK1, F631, WR1, PS1, F632). A leading "P4-" is ignored. Anything else is grouped as Site General.
 - **System and Pipe Spec:** FLUID CODE and PIPE SPEC, with blanks shown as Unspecified. Names are grouped ignoring case and extra spaces.

@@ -19,7 +19,7 @@
     "Qaqc_role_rowId_description": "Required unique row number (Power Query Index column). Keeps identical rows separate.",
     "Qaqc_colors": "Colors",
     "Qaqc_colors_preset": "Preset",
-    "Qaqc_preset_qaqc": "QAQC",
+    "Qaqc_preset_qaqc": "QCx",
     "Qaqc_preset_blue": "Blue",
     "Qaqc_preset_lotusworks": "LotusWorks",
     "Qaqc_preset_grayscale": "Grayscale",

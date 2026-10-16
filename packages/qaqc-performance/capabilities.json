@@ -13,7 +13,7 @@
       "kind": "Grouping",
       "displayName": "Row ID",
       "displayNameKey": "Qaqc_role_rowId",
-      "description": "Required unique row number (the QAQC Combined Row ID index column). Keeps identical rows separate.",
+      "description": "Required unique row number (the QCx Combined Row ID index column). Keeps identical rows separate.",
       "descriptionKey": "Qaqc_role_rowId_description"
     },
     {
@@ -176,7 +176,7 @@
             "enumeration": [
               {
                 "value": "qaqc",
-                "displayName": "QAQC",
+                "displayName": "QCx",
                 "displayNameKey": "Qaqc_preset_qaqc"
               },
               {

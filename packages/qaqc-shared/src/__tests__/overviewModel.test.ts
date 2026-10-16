@@ -297,9 +297,9 @@ describe('missing and early disciplines', () => {
   it('marks a source with no rows as not connected and says so', () => {
     const model = modelAt(overviewIndexOf([inspection('Electrical', WW42, 'Final')]), WW42, 'week')
     expect(model.rows.electrical.connected).toBe(true)
-    expect(model.rows.mechanical).toEqual({ connected: false, message: 'Not connected: no Mechanical rows in QAQC Combined' })
-    expect(model.rows.welding).toEqual({ connected: false, message: 'Not connected: no Welding rows in QAQC Combined' })
-    expect(model.rows.bim).toEqual({ connected: false, message: 'Not connected: no BIM Issues rows in QAQC Combined' })
+    expect(model.rows.mechanical).toEqual({ connected: false, message: 'Not connected: no Mechanical rows in QCx Combined' })
+    expect(model.rows.welding).toEqual({ connected: false, message: 'Not connected: no Welding rows in QCx Combined' })
+    expect(model.rows.bim).toEqual({ connected: false, message: 'Not connected: no BIM Issues rows in QCx Combined' })
   })
 
   it('counts a week before a discipline\'s first week as zero', () => {

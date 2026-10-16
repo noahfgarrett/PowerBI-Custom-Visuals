@@ -38,7 +38,7 @@ import { SegmentedToggle, type SegmentedOption } from './SegmentedToggle'
 import type { CardMode, OverviewIndex, OverviewRows } from '../overview'
 import { chartColorsFromTheme } from '../theme'
 
-const NO_ROWS_MESSAGE = 'No QAQC Combined rows match the current filters'
+const NO_ROWS_MESSAGE = 'No QCx Combined rows match the current filters'
 
 /**
  * Tiles shorter than this show the cards only, without the charts. The Overview stacks far more than the other
@@ -95,7 +95,7 @@ export interface OverviewDashboardProps extends DashboardChromeProps {
   index: OverviewIndex
 }
 
-/** The QAQC Overview: every discipline's cards for one week or to date, the quality strip, and two charts. */
+/** The QCx Overview: every discipline's cards for one week or to date, the quality strip, and two charts. */
 export function OverviewDashboard({
   title,
   icon,

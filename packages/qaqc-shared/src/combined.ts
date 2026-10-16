@@ -1,7 +1,7 @@
 import type { CombinedColumns, InspectionColumns, InspectionRows, IssueColumns, WeldColumns } from './types'
 import { cellText } from './inspections'
 
-/** A column the QAQC Combined table doesn't carry. `row[-1]` is undefined, which every builder reads as a blank cell. */
+/** A column the QCx Combined table doesn't carry. `row[-1]` is undefined, which every builder reads as a blank cell. */
 const ABSENT_COLUMN = -1
 
 /** The combined rows by Source. Rows are the table's own row arrays, never copies. */

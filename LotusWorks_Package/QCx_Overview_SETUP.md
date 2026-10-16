@@ -8,15 +8,15 @@ One page with Electrical, Mechanical, Welding and BIM Issues side by side, a qua
 2. Choose `qaqcOverview_AE84E1DA71E7.1.0.0.0.pbiviz`.
 3. To update later, import the newer file the same way. It replaces the old version in place and keeps your field bindings.
 
-## 2. Add the QAQC Combined table (once per report, required)
+## 2. Add the QCx Combined table (once per report, required)
 
-The visual reads one table that holds all four sheets. Follow [QAQC_Combined_SETUP.md](QAQC_Combined_SETUP.md) to add the **QAQC Combined** query. It already includes the Row ID, so you don't need to add an index column for this visual.
+The visual reads one table that holds all four sheets. Follow [QCx_Combined_SETUP.md](QCx_Combined_SETUP.md) to add the **QCx Combined** query. It already includes the Row ID, so you don't need to add an index column for this visual.
 
 ## 3. Bind the columns
 
 The 14 column slots are required. The visual shows its setup screen, listing the slots still empty, until every one is bound. Green tags is optional.
 
-| Field slot | QAQC Combined column |
+| Field slot | QCx Combined column |
 |---|---|
 | Source | Source |
 | Row ID | Row ID |
@@ -48,7 +48,7 @@ Replace `[Your green tag count]` with your own measure or expression for the tot
 
 Why the wrapper matters: Power BI drops every row on which all of a visual's measures are blank. If the green tag count is BLANK (for example, a filter leaves nothing to count), Power BI sends the visual no rows at all, and every discipline row shows "Not connected". `COALESCE(…, 0)` turns a blank into 0, so the rows still arrive. A value of 0 (or no Green tags measure at all) shows the DWN rate as n/a: `DWN rate n/a: add Green tags`.
 
-The measure doesn't need a relationship to QAQC Combined; the visual reads its value once.
+The measure doesn't need a relationship to QCx Combined; the visual reads its value once.
 
 ## 4. Use it
 
@@ -62,7 +62,7 @@ You can also click a week on either chart, or move along a chart with the arrow 
 
 Click the expand icon on a chart to fill the visual with more detail; press Esc or the collapse icon to return. The icon is hidden on empty charts and in read-only views.
 
-Format pane: **Colors → Preset** (QAQC, Ivory, LotusWorks, Grayscale), **Background** (color, background opacity, card opacity), **Animation**, **Accessibility**.
+Format pane: **Colors → Preset** (QCx, Blue, LotusWorks, Grayscale), **Background** (color, background opacity, card opacity), **Animation**, **Accessibility**.
 
 Week labels include the year, for example `WW41'2026`. Chart axes show `WW41` ticks, with the year under the first labelled week and under the first labelled week of each new year.
 
@@ -138,7 +138,7 @@ The charts follow `30 WW | All`.
 
 ## 7. Not connected and footnotes
 
-**"Not connected: no Electrical rows in QAQC Combined"** (or Mechanical, Welding, BIM Issues) replaces a row's cards when QAQC Combined has no rows for that source. Check that the source query is named correctly at the top of the QAQC Combined script and returns rows, and that no report filter or slicer removes that source. If every row says Not connected, check the Green tags measure is wrapped in `COALESCE` (see above).
+**"Not connected: no Electrical rows in QCx Combined"** (or Mechanical, Welding, BIM Issues) replaces a row's cards when QCx Combined has no rows for that source. Check that the source query is named correctly at the top of the QCx Combined script and returns rows, and that no report filter or slicer removes that source. If every row says Not connected, check the Green tags measure is wrapped in `COALESCE` (see above).
 
 The footnotes at the bottom report, per source:
 
@@ -147,7 +147,7 @@ The footnotes at the bottom report, per source:
 - BIM issues not created by LotusWorks, which are excluded
 - BIM issues with a blank or unreadable Created On, which are skipped
 
-They also report rows with an unknown Source (see the QAQC Combined guide), and `Showing the first n rows (Power BI data limit)` if Power BI stopped sending rows.
+They also report rows with an unknown Source (see the QCx Combined guide), and `Showing the first n rows (Power BI data limit)` if Power BI stopped sending rows.
 
 ## Counting rules
 

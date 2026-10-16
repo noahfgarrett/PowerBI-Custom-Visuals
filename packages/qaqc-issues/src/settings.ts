@@ -15,7 +15,7 @@ const PERCENT_OPTIONS: powerbi.visuals.NumUpDownFormat = {
 }
 
 const PRESET_ITEMS = [
-  { value: 'qaqc', displayName: 'QAQC', displayNameKey: 'Qaqc_preset_qaqc' },
+  { value: 'qaqc', displayName: 'QCx', displayNameKey: 'Qaqc_preset_qaqc' },
   { value: 'blue', displayName: 'Blue', displayNameKey: 'Qaqc_preset_blue' },
   { value: 'lotusworks', displayName: 'LotusWorks', displayNameKey: 'Qaqc_preset_lotusworks' },
   { value: 'grayscale', displayName: 'Grayscale', displayNameKey: 'Qaqc_preset_grayscale' },

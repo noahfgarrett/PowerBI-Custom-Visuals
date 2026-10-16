@@ -452,7 +452,7 @@ describe('OverviewDashboard layout', () => {
   it('says no rows match in both charts when the data is empty', () => {
     view = draw({ index: overviewIndexOf([]) })
     for (const title of [ACTIVITY_TITLE, RATES_TITLE]) {
-      expect(panel(view.container, title)?.querySelector('.qaqc-chart-empty')?.textContent).toBe('No QAQC Combined rows match the current filters')
+      expect(panel(view.container, title)?.querySelector('.qaqc-chart-empty')?.textContent).toBe('No QCx Combined rows match the current filters')
     }
     expect(panel(view.container, ACTIVITY_TITLE)?.querySelector('.qaqc-expand-button')).toBeNull()
   })
@@ -552,7 +552,7 @@ describe('OverviewDashboard layout', () => {
       viewport: { width: 800, height: 300 },
     })
     expect(row(view.container, 'Welding').querySelector('.qaqc-overview-row-message')?.textContent)
-      .toBe('Not connected: no Welding rows in QAQC Combined')
+      .toBe('Not connected: no Welding rows in QCx Combined')
   })
 
   it('shows the loading bar it is given', () => {
@@ -606,7 +606,7 @@ describe('OverviewDashboard disconnected sources', () => {
   it('shows the Not connected message in place of the cards and sparkline', () => {
     view = draw({ index: ELECTRICAL_ONLY })
     const mechanical = row(view.container, 'Mechanical')
-    expect(mechanical.querySelector('.qaqc-overview-row-message')?.textContent).toBe('Not connected: no Mechanical rows in QAQC Combined')
+    expect(mechanical.querySelector('.qaqc-overview-row-message')?.textContent).toBe('Not connected: no Mechanical rows in QCx Combined')
     expect(mechanical.querySelector('article.qaqc-kpi')).toBeNull()
     expect(mechanical.querySelector('svg.qaqc-sparkline')).toBeNull()
     expect(mechanical.classList.contains('is-disconnected')).toBe(true)
@@ -615,7 +615,7 @@ describe('OverviewDashboard disconnected sources', () => {
   it('labels a disconnected row by its name and keeps the connected rows', () => {
     view = draw({ index: ELECTRICAL_ONLY })
     expect(row(view.container, 'Welding').getAttribute('aria-label')).toBe('Welding')
-    expect(row(view.container, 'BIM Issues').textContent).toContain('Not connected: no BIM Issues rows in QAQC Combined')
+    expect(row(view.container, 'BIM Issues').textContent).toContain('Not connected: no BIM Issues rows in QCx Combined')
     expect(shown(row(view.container, 'Electrical'), 'SORs')).toEqual(['1', "+1 vs WW41'2026"])
   })
 })

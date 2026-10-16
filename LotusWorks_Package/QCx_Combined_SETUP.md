@@ -1,12 +1,12 @@
-# QAQC Combined table: setup
+# QCx Combined table: setup
 
-The QCx Overview and QCx Performance visuals read one table, **QAQC Combined**. This guide adds it to your report.
+The QCx Overview and QCx Performance visuals read one table, **QCx Combined**. This guide adds it to your report.
 
 ## Why the table is needed
 
 A custom visual sees only one table. The Electrical, Mechanical, Welding and BIM Issues sheets are four separate tables with no relationship between them, so a visual can't read all four at once.
 
-QAQC Combined appends the four into one table with fixed column names. Each row keeps a **Source** column that says which sheet it came from. Your four existing queries stay as they are, and the Electrical, Mechanical, Welding and BIM Issues visuals keep using them.
+QCx Combined appends the four into one table with fixed column names. Each row keeps a **Source** column that says which sheet it came from. Your four existing queries stay as they are, and the Electrical, Mechanical, Welding and BIM Issues visuals keep using them.
 
 ## 1. Add the query (once per report)
 
@@ -15,11 +15,11 @@ QAQC Combined appends the four into one table with fixed column names. Each row 
 3. Select **Home → New Source → Blank Query**. A new query called `Query1` appears.
 4. With `Query1` selected, select **Home → Advanced Editor**.
 5. Delete everything in the editor, paste the script below, and select **Done**.
-6. Rename the query to **QAQC Combined**: right-click `Query1` in the Queries pane, select **Rename**, and type `QAQC Combined`. You can also change **Name** under Query Settings → Properties on the right.
+6. Rename the query to **QCx Combined**: right-click `Query1` in the Queries pane, select **Rename**, and type `QCx Combined`. You can also change **Name** under Query Settings → Properties on the right.
 7. Check the preview. It should show 17 columns, starting with Source and Row ID, and rows from all four sheets.
 8. Select **Home → Close & Apply**.
 
-The script is also saved next to this guide as `QAQC_Combined.pq`, so you can open it in a text editor and copy it from there.
+The script is also saved next to this guide as `QCx_Combined.pq`, so you can open it in a text editor and copy it from there.
 
 ### Edit only the four names at the top
 
@@ -184,7 +184,7 @@ What it does:
 
 Row ID is one sequence, 1, 2, 3 …, through every row of the combined table. A dash (—) means the column is empty on that source's rows. Note the Mechanical header spelling `QCR / FE`, with spaces, which differs from Electrical's `QCR/FE`.
 
-The QCx Overview binds 14 of these columns and the QCx Performance visual binds 9. See `QAQC_Overview_SETUP.md` and `QAQC_Performance_SETUP.md`.
+The QCx Overview binds 14 of these columns and the QCx Performance visual binds 9. See `QCx_Overview_SETUP.md` and `QCx_Performance_SETUP.md`.
 
 ## Troubleshooting
 
@@ -198,4 +198,4 @@ A name at the top of the script doesn't match a query in the Queries pane. Copy 
 A value can't be converted, usually a Created On or Updated On cell that isn't a date. Fix the cell in Smartsheet, or check the BIM query's own type for that column.
 
 **The visuals' footnote says "n rows with an unknown Source".**
-The visuals read Source ignoring case and extra spaces, and only `Electrical`, `Mechanical`, `Welding` and `BIM` are counted. Rows with any other Source value are skipped, and the footnote gives how many. With the script unchanged this can't happen, so check whether the text in one of the `"Source", each "…"` lines was edited, or whether another step or table was appended to QAQC Combined.
+The visuals read Source ignoring case and extra spaces, and only `Electrical`, `Mechanical`, `Welding` and `BIM` are counted. Rows with any other Source value are skipped, and the footnote gives how many. With the script unchanged this can't happen, so check whether the text in one of the `"Source", each "…"` lines was edited, or whether another step or table was appended to QCx Combined.
