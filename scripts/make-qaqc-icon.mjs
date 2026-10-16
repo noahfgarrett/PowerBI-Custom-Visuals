@@ -29,6 +29,22 @@ function shoulders(cx, cy, rx, ry, minX = -Infinity) {
   return points;
 }
 
+// A rectangle from (x0, y0) to (x1, y1) with its corners rounded to `radius`.
+function roundedRect(x0, y0, x1, y1, radius) {
+  const corners = [
+    [x1 - radius, y0 + radius, -Math.PI / 2],
+    [x1 - radius, y1 - radius, 0],
+    [x0 + radius, y1 - radius, Math.PI / 2],
+    [x0 + radius, y0 + radius, Math.PI],
+  ];
+  return corners.flatMap(([cx, cy, start]) =>
+    Array.from({ length: 9 }, (_, i) => {
+      const angle = start + (i * Math.PI) / 16;
+      return [cx + radius * Math.cos(angle), cy + radius * Math.sin(angle)];
+    }),
+  );
+}
+
 // Polygon lists on the 24x24 grid. A point is filled when it is inside an odd number of polygons
 // (even-odd fill), which lets a later polygon cut a hole in an earlier one.
 const SHAPES = {
@@ -48,6 +64,14 @@ const SHAPES = {
     shoulders(9, 21, 6.6, 8),
     regularPolygon(17.2, 6.9, 2.9, 40, 0),
     shoulders(17.6, 20, 4.9, 7, 17.4),
+  ],
+  // A rounded square split into four panels, like lucide LayoutDashboard: a tall and a short panel on the left,
+  // a short and a tall one on the right.
+  dashboard: [
+    roundedRect(2, 2, 10.6, 13.2, 1.8),
+    roundedRect(2, 15.4, 10.6, 22, 1.8),
+    roundedRect(13.4, 2, 22, 8.6, 1.8),
+    roundedRect(13.4, 10.8, 22, 22, 1.8),
   ],
 };
 
