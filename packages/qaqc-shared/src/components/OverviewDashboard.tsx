@@ -21,6 +21,7 @@ import {
 import { useMemo, useState, type ReactElement } from 'react'
 
 import type { ElementSize } from '../hooks/useElementSize'
+import { useOverviewModel } from '../hooks/useOverviewModel'
 import { useWeekWindow } from '../hooks/useWeekWindow'
 import { activityLegend, ActivityLinesChart } from './ActivityLinesChart'
 import { CardModeToggle } from './CardModeToggle'
@@ -34,7 +35,7 @@ import { LoadingBar } from './LoadingBar'
 import { OverviewDenseValue, OverviewDisciplineRow, OverviewKpiCard, OverviewRowLabel, type OverviewCardIcons } from './OverviewDisciplineRow'
 import { OverviewWeekTable } from './OverviewWeekTable'
 import { QualityRatesChart, qualityRatesLegend } from './QualityRatesChart'
-import { buildOverviewModel, type CardMode, type OverviewIndex, type OverviewRows } from '../overview'
+import type { CardMode, OverviewIndex, OverviewRows } from '../overview'
 import { chartColorsFromTheme } from '../theme'
 
 const NO_ROWS_MESSAGE = 'No QAQC Combined rows match the current filters'
@@ -78,8 +79,11 @@ const DISCIPLINES: readonly DisciplineConfig[] = [
   { key: 'bim', name: 'BIM Issues', icon: CircleAlert, metric: 'Remaining open', cardIcons: [CirclePlus, CircleCheck, CircleDot, Gauge] },
 ] as const
 
+/** One icon per quality card, in the strip's order. */
+type QualityIcons = readonly [LucideIcon, LucideIcon, LucideIcon, LucideIcon, LucideIcon]
+
 /** CORs, NCRs, Inspection NCR pass rate, Welding NCR pass rate, DWNs. */
-const QUALITY_ICONS: readonly LucideIcon[] = [FilePen, CircleAlert, ClipboardCheck, Flame, FileText] as const
+const QUALITY_ICONS: QualityIcons = [FilePen, CircleAlert, ClipboardCheck, Flame, FileText] as const
 
 export interface OverviewDashboardProps extends DashboardChromeProps {
   index: OverviewIndex
@@ -102,22 +106,24 @@ export function OverviewDashboard({
   const { view, range, selectWeek, pickWeek, changeRange } = useWeekWindow(index)
   const [mode, setMode] = useState<CardMode>('week')
 
-  const model = useMemo(() => buildOverviewModel(index, view, mode), [index, view, mode])
+  // The series are memoised on the view alone, so a card mode switch never rebuilds the charts' data.
+  const { cards, series } = useOverviewModel(index, view, mode)
   // Memoized so the charts' own memos see the same colors object until the theme changes.
   const colors = useMemo(() => chartColorsFromTheme(theme), [theme])
   const isCompact = viewport.width < COMPACT_WIDTH
   const isCardsOnly = viewport.height < OVERVIEW_CARDS_ONLY_HEIGHT
   const isDense = isCardsOnly && (isCompact || viewport.height < OVERVIEW_DENSE_HEIGHT)
   const isWeekMode = mode === 'week'
-  const cardsSubtitle = isWeekMode ? model.selectedWeek.label : `Through ${model.selectedWeek.label}`
-  const emptyMessage = model.hasData ? null : NO_ROWS_MESSAGE
-  const rowsClass = ['qaqc-overview-rows', isWeekMode ? 'is-week' : 'is-total', isDense ? 'is-dense' : ''].filter(Boolean).join(' ')
+  const cardsSubtitle = isWeekMode ? cards.selectedWeek.label : `Through ${cards.selectedWeek.label}`
+  const emptyMessage = cards.hasData ? null : NO_ROWS_MESSAGE
+  const groupClass = isWeekMode ? 'qaqc-kpi-group is-week' : 'qaqc-kpi-group is-total'
+  const rowsClass = isDense ? `${groupClass} qaqc-overview-rows is-dense` : `${groupClass} qaqc-overview-rows`
 
   function renderActivity(size: ElementSize, showValues: boolean): ReactElement {
     return (
       <ActivityLinesChart
-        points={model.activity}
-        selectedKey={model.selectedWeek.key}
+        points={series.activity}
+        selectedKey={cards.selectedWeek.key}
         width={size.width}
         height={size.height}
         colors={colors}
@@ -135,8 +141,8 @@ export function OverviewDashboard({
   function renderRates(size: ElementSize, showValues: boolean): ReactElement {
     return (
       <QualityRatesChart
-        points={model.rates}
-        selectedKey={model.selectedWeek.key}
+        points={series.rates}
+        selectedKey={cards.selectedWeek.key}
         width={size.width}
         height={size.height}
         colors={colors}
@@ -162,7 +168,7 @@ export function OverviewDashboard({
       renderExpanded: () => (
         <div className="qaqc-overview-expanded">
           <ChartFill>{(size) => renderActivity(size, true)}</ChartFill>
-          <OverviewWeekTable variant="activity" points={model.activity} />
+          <OverviewWeekTable variant="activity" points={series.activity} />
         </div>
       ),
     },
@@ -175,7 +181,7 @@ export function OverviewDashboard({
       renderExpanded: () => (
         <div className="qaqc-overview-expanded">
           <ChartFill>{(size) => renderRates(size, true)}</ChartFill>
-          <OverviewWeekTable variant="rates" points={model.rates} />
+          <OverviewWeekTable variant="rates" points={series.rates} />
         </div>
       ),
     },
@@ -199,8 +205,8 @@ export function OverviewDashboard({
             interactive={interactive}
             range={range}
             onRangeChange={changeRange}
-            weekOptions={model.weekOptions}
-            selectedKey={model.selectedWeek.key}
+            weekOptions={cards.weekOptions}
+            selectedKey={cards.selectedWeek.key}
             onPickWeek={pickWeek}
           >
             <CardModeToggle value={mode} disabled={!interactive} onChange={setMode} />
@@ -208,7 +214,7 @@ export function OverviewDashboard({
 
           <div className="qaqc-overview-body">
             <section className={rowsClass} aria-label="Disciplines">
-              <header className="qaqc-overview-rows-head">
+              <header className="qaqc-kpi-group-head qaqc-overview-rows-head">
                 <span>Disciplines</span>
                 <em>{cardsSubtitle}</em>
               </header>
@@ -219,7 +225,7 @@ export function OverviewDashboard({
                   icon={discipline.icon}
                   metric={discipline.metric}
                   cardIcons={discipline.cardIcons}
-                  row={model.rows[discipline.key]}
+                  row={cards.rows[discipline.key]}
                   isDense={isDense}
                   sparklineColor={colors.accent}
                   ringColor={colors.card}
@@ -229,15 +235,15 @@ export function OverviewDashboard({
 
             <div className="qaqc-overview-quality">
               {isDense ? (
-                <section className={isWeekMode ? 'qaqc-overview-quality-dense is-week' : 'qaqc-overview-quality-dense is-total'} aria-label="Quality">
+                <section className={`${groupClass} qaqc-overview-quality-dense`} aria-label="Quality">
                   <OverviewRowLabel name="Quality" icon={ShieldCheck} />
-                  {model.quality.map((card) => (
+                  {cards.quality.map((card) => (
                     <OverviewDenseValue key={card.label} card={card} />
                   ))}
                 </section>
               ) : (
                 <KpiGroup title="Quality" subtitle={cardsSubtitle} variant={isWeekMode ? 'week' : 'total'}>
-                  {model.quality.map((card, at) => (
+                  {cards.quality.map((card, at) => (
                     <OverviewKpiCard key={card.label} card={card} icon={QUALITY_ICONS[at]} isTwoLine />
                   ))}
                 </KpiGroup>

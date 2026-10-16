@@ -274,9 +274,10 @@ describe('OverviewDashboard discipline rows, This WW', () => {
 
   it('labels each row with its icon and name', () => {
     view = draw()
+    const { container } = view
     const icons = ['lucide-zap', 'lucide-wrench', 'lucide-flame', 'lucide-circle-alert']
     ROW_NAMES.forEach((name, at) => {
-      const label = row(view!.container, name).querySelector('.qaqc-overview-row-label')
+      const label = row(container, name).querySelector('.qaqc-overview-row-label')
       expect(label?.textContent).toBe(name)
       expect(label?.querySelector(`svg.${icons[at]}`)).not.toBeNull()
     })
@@ -402,16 +403,17 @@ describe('OverviewDashboard layout', () => {
   it('puts the card mode toggle before the range toggle and week picker', () => {
     view = draw()
     const controls = view.container.querySelector('.qaqc-controls')
-    const order = [...(controls?.children ?? [])].map((node) => node.className)
-    expect(order).toEqual(['qaqc-range-toggle qaqc-mode-toggle', 'qaqc-range-toggle', 'qaqc-week-picker'])
-    expect(view.container.querySelector('.qaqc-mode-toggle')?.getAttribute('aria-label')).toBe('Card values')
+    // Each control by what it is to a screen reader: the two toggles are named groups, the picker is a select.
+    const order = [...(controls?.children ?? [])].map((node) =>
+      node.getAttribute('role') === 'group' ? node.getAttribute('aria-label') : node.querySelector('select') ? 'week picker' : null,
+    )
+    expect(order).toEqual(['Card values', 'Chart range', 'week picker'])
   })
 
   it('stacks the rows, then the quality strip, then the charts', () => {
     view = draw()
-    const body = view.container.querySelector('.qaqc-overview-body')
-    expect([...(body?.children ?? [])].map((node) => node.className))
-      .toEqual(['qaqc-overview-rows is-week', 'qaqc-overview-quality', 'qaqc-charts qaqc-overview-charts'])
+    const sections = [...view.container.querySelectorAll('.qaqc-root section[aria-label]')].map((node) => node.getAttribute('aria-label'))
+    expect(sections).toEqual(['Disciplines', 'Quality', ACTIVITY_TITLE, RATES_TITLE])
   })
 
   it('shows Activity large on the left and Quality rates on the right', () => {
@@ -423,8 +425,9 @@ describe('OverviewDashboard layout', () => {
 
   it('labels the chart legends', () => {
     view = draw()
+    const { container } = view
     const legend = (title: string): Array<string | null> =>
-      [...(panel(view!.container, title)?.querySelectorAll('.qaqc-legend li') ?? [])].map((item) => item.textContent)
+      [...(panel(container, title)?.querySelectorAll('.qaqc-legend li') ?? [])].map((item) => item.textContent)
     expect(legend(ACTIVITY_TITLE)).toEqual(['Electrical', 'Mechanical'])
     expect(legend(RATES_TITLE)).toEqual(['Inspection NCR pass rate', 'Welding NCR pass rate'])
   })
@@ -440,6 +443,18 @@ describe('OverviewDashboard layout', () => {
     view = draw({ viewport: { width: 1280, height: 720 } })
     expect(view.container.querySelector('.qaqc-root.is-cards-only')).toBeNull()
     expect(view.container.querySelectorAll('.qaqc-panel')).toHaveLength(2)
+    // The rows and the strip keep their natural height; only the charts flex into what is left.
+    expect(ruleBody('.qaqc-overview-rows')).toContain('flex: 0 0 auto;')
+    expect(ruleBody('.qaqc-overview-quality')).toContain('flex: 0 0 auto;')
+    expect(ruleBody('.qaqc-overview-row')).toContain('min-height: 54px;')
+  })
+
+  it('says no rows match in both charts when the data is empty', () => {
+    view = draw({ index: overviewIndexOf([]) })
+    for (const title of [ACTIVITY_TITLE, RATES_TITLE]) {
+      expect(panel(view.container, title)?.querySelector('.qaqc-chart-empty')?.textContent).toBe('No QAQC Combined rows match the current filters')
+    }
+    expect(panel(view.container, ACTIVITY_TITLE)?.querySelector('.qaqc-expand-button')).toBeNull()
   })
 
   it('keeps the charts at its own cards-only threshold', () => {
@@ -525,6 +540,10 @@ describe('OverviewDashboard layout', () => {
     expect(root?.classList.contains('is-compact')).toBe(true)
     expect(view.container.querySelectorAll('.qaqc-panel')).toHaveLength(0)
     expect(ruleBody('.qaqc-overview-row.is-dense')).toContain('min-height: 34px;')
+    expect(ruleBody('.qaqc-overview-quality-dense')).toContain('min-height: 34px;')
+    // Dense labels and values stay on one line; the full text is in the title.
+    expect(ruleBody('.qaqc-overview-value-label')).toContain('white-space: nowrap;')
+    expect(ruleBody('.qaqc-overview-value-number')).toContain('white-space: nowrap;')
   })
 
   it('shows a disconnected source\'s message in a dense row', () => {

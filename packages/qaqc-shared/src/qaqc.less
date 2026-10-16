@@ -1548,7 +1548,8 @@
 
 // Overview dashboard (OverviewDashboard, OverviewDisciplineRow, CardModeToggle): the discipline rows, the quality
 // strip and the two charts. Tiles at least OVERVIEW_CARDS_ONLY_HEIGHT (660 px) tall fit everything without a scroll:
-// the rows and the strip keep their natural height and the charts take the rest. Shorter tiles use the dense layout.
+// the rows and the strip keep their natural height and the charts take the rest. Shorter tiles drop the charts, and
+// below OVERVIEW_DENSE_HEIGHT (480 px), or on narrow tiles, they switch to the dense one-line layout.
 
 // Scrolls only as a safety net, so nothing ever paints over the footnotes; the 2 px inset keeps focus rings inside.
 .qaqc-overview-body {
@@ -1568,46 +1569,21 @@
   overflow-y: visible;
 }
 
-// One grid for all four rows (each row is a subgrid), so the card columns line up and keep their widths when the
-// mode changes. Cards 3 and 4 hold the long rate details (Sign-off % and the pass and closure rates), so they are wider.
+// The rows section is a .qaqc-kpi-group (card, week tint and head styles) laid out as one grid for all four rows: each
+// row is a subgrid, so the card columns line up and keep their widths when the mode changes. Cards 3 and 4 hold the
+// long rate details (Sign-off % and the pass and closure rates), so they are wider. At 1280 px the split leaves about
+// 13 px spare in a short column ("No change vs WW41'2026") and 15 px in a long one ("12,345 of 23,456 signed · ...").
 .qaqc-overview-rows {
   display: grid;
   flex: 0 0 auto;
-  grid-template-columns: 100px minmax(0, 0.7fr) minmax(0, 0.7fr) minmax(0, 1.3fr) minmax(0, 1.3fr) 100px;
-  column-gap: 10px;
+  grid-template-columns: 100px minmax(0, 0.75fr) minmax(0, 0.75fr) minmax(0, 1.25fr) minmax(0, 1.25fr) 100px;
+  gap: 0 10px;
   padding: 6px 12px 2px;
-  border: 1px solid var(--qaqc-border);
-  border-radius: 14px;
-  background: var(--qaqc-card);
-  box-shadow: 0 1px 2px rgba(27, 37, 48, 0.06);
-}
-
-.qaqc-overview-rows.is-week {
-  background: var(--qaqc-week-card);
 }
 
 .qaqc-overview-rows-head {
-  display: flex;
   grid-column: 1 / -1;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
   padding-bottom: 2px;
-}
-
-.qaqc-overview-rows-head span {
-  color: var(--qaqc-ink-2);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.qaqc-overview-rows-head em {
-  color: var(--qaqc-muted);
-  font-size: 10.5px;
-  font-style: normal;
-  font-weight: 600;
 }
 
 // Label, four cards, sparkline. Connected and disconnected rows share a minimum height.
@@ -1798,23 +1774,16 @@
   padding: 2px 0;
 }
 
+// Also a .qaqc-kpi-group, for the card and week tint.
 .qaqc-overview-quality-dense {
   display: grid;
   flex: 1 1 auto;
   // The two pass-rate labels are the long ones.
   grid-template-columns: 100px minmax(0, 0.8fr) minmax(0, 0.8fr) minmax(0, 1.3fr) minmax(0, 1.3fr) minmax(0, 0.8fr);
   align-items: center;
-  column-gap: 10px;
+  gap: 0 10px;
   min-height: 34px;
   padding: 3px 12px;
-  border: 1px solid var(--qaqc-border);
-  border-radius: 14px;
-  background: var(--qaqc-card);
-  box-shadow: 0 1px 2px rgba(27, 37, 48, 0.06);
-}
-
-.qaqc-overview-quality-dense.is-week {
-  background: var(--qaqc-week-card);
 }
 
 .qaqc-overview-value {

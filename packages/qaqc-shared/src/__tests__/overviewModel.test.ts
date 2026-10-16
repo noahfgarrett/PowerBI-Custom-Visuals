@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { CardMode, OverviewIndex, OverviewModel } from '../overview'
 import type { RangeMode, ViewState } from '../types'
-import { buildOverviewModel } from '../overview'
+import { buildOverviewCards, buildOverviewModel, buildOverviewSeries } from '../overview'
 import { parseWorkWeek } from '../workWeeks'
 import { bim, cardsOf, inspection, overviewIndexOf, rowOf, times, weld } from './overviewRows'
 
@@ -537,5 +537,32 @@ describe('chart series and week state', () => {
     const model = modelAt(index, "WW01'2026", 'week')
     expect(model.previousWeek.label).toBe("WW52'2025")
     expect(cardsOf(model, 'electrical')[0].deltaDisplay).toBe("+1 vs WW52'2025")
+  })
+})
+
+describe('cards and series built apart', () => {
+  const index = overviewIndexOf([
+    inspection('Electrical', WW41, 'Final'),
+    inspection('Mechanical', WW42, 'SOR'),
+    weld(WW42, { signedWeek: WW42 }),
+    bim('#1', '10/13/2026'),
+  ])
+
+  it('builds the chart series from the view alone, matching the model', () => {
+    const model = modelAt(index, WW42, 'week')
+    const series = buildOverviewSeries(index, viewAt(WW42))
+    expect(series.activity).toEqual(model.activity)
+    expect(series.rates).toEqual(model.rates)
+    expect(series.windowTotals).toEqual(model.windowTotals)
+  })
+
+  it('builds the cards for a mode, matching the model', () => {
+    const model = modelAt(index, WW42, 'toDate')
+    const cards = buildOverviewCards(index, viewAt(WW42), 'toDate')
+    expect(cards.rows).toEqual(model.rows)
+    expect(cards.quality).toEqual(model.quality)
+    expect(cards.selectedWeek).toEqual(model.selectedWeek)
+    expect(cards.hasData).toBe(true)
+    expect('activity' in cards).toBe(false)
   })
 })

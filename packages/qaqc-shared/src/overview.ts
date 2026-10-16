@@ -151,7 +151,8 @@ export interface OverviewWindowTotals {
   weeks: number
 }
 
-export interface OverviewModel {
+/** Everything that depends on the card mode: the selected week, the rows and the quality strip. */
+export interface OverviewCardsModel {
   selectedWeek: WorkWeek
   previousWeek: WorkWeek
   /** Newest first. */
@@ -159,14 +160,20 @@ export interface OverviewModel {
   rows: OverviewRows
   /** CORs, NCRs, Inspection NCR pass rate, Welding NCR pass rate, DWNs. */
   quality: OverviewQualityCards
+  /** True when any source has a counted row. */
+  hasData: boolean
+}
+
+/** The chart series, which depend on the view but not on the card mode. */
+export interface OverviewSeries {
   /** Per window week. */
   activity: ActivityPoint[]
   /** Per window week. */
   rates: QualityRatePoint[]
   windowTotals: OverviewWindowTotals
-  /** True when any source has a counted row. */
-  hasData: boolean
 }
+
+export interface OverviewModel extends OverviewCardsModel, OverviewSeries {}
 
 const COR_TYPE = 'cor'
 const DWN_TYPE = 'dwn'
@@ -601,14 +608,8 @@ function qualityCards(context: RowContext, electrical: InspectionCounts, mechani
   ]
 }
 
-interface WindowSeries {
-  activity: ActivityPoint[]
-  rates: QualityRatePoint[]
-  windowTotals: OverviewWindowTotals
-}
-
 /** The chart series and totals for the union weeks from `start` through `end`. */
-function windowSeries(index: OverviewIndex, start: number, end: number): WindowSeries {
+function windowSeries(index: OverviewIndex, start: number, end: number): OverviewSeries {
   const { electrical, mechanical, welding } = index
   const activity: ActivityPoint[] = []
   const rates: QualityRatePoint[] = []
@@ -669,11 +670,21 @@ function hasCountedRows(index: OverviewIndex): boolean {
   )
 }
 
-export function buildOverviewModel(index: OverviewIndex, view: ViewState, mode: CardMode): OverviewModel {
-  const lastPosition = index.weeks.length - 1
-  const selectedPosition = index.positionByKey.get(view.selectedKey) ?? lastPosition
-  const endPosition = index.positionByKey.get(view.windowEndKey) ?? lastPosition
+/** The union position of a view's week, or the current week's when the key is not in the data. */
+function viewPosition(index: OverviewIndex, key: number): number {
+  return index.positionByKey.get(key) ?? index.weeks.length - 1
+}
+
+/** The chart series for the view's window. Mode switches leave these unchanged, so callers can keep them. */
+export function buildOverviewSeries(index: OverviewIndex, view: ViewState): OverviewSeries {
+  const endPosition = viewPosition(index, view.windowEndKey)
   const startPosition = view.range === 'all' ? 0 : recentWindowStart(endPosition)
+  return windowSeries(index, startPosition, endPosition)
+}
+
+/** The rows and the quality strip for the view's selected week in one card mode. */
+export function buildOverviewCards(index: OverviewIndex, view: ViewState, mode: CardMode): OverviewCardsModel {
+  const selectedPosition = viewPosition(index, view.selectedKey)
   const selectedWeek = index.weeks[selectedPosition]
   const previousWeek = previousWorkWeek(selectedWeek)
   const key = selectedWeek.key
@@ -701,7 +712,10 @@ export function buildOverviewModel(index: OverviewIndex, view: ViewState, mode: 
       bim: bimRow(context, index.bim, key, previousKey),
     },
     quality: qualityCards(context, electrical, mechanical, welds),
-    ...windowSeries(index, startPosition, endPosition),
     hasData: hasCountedRows(index),
   }
+}
+
+export function buildOverviewModel(index: OverviewIndex, view: ViewState, mode: CardMode): OverviewModel {
+  return { ...buildOverviewCards(index, view, mode), ...buildOverviewSeries(index, view) }
 }
