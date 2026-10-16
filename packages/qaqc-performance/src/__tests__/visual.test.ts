@@ -5,11 +5,27 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createConstructorOptions } from '../../../core/src/__test-utils__'
 import { PERFORMANCE_SLOTS } from '../../../qaqc-shared/src/dataView'
 import { COMBINED_COLUMNS, COMBINED_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/combinedRows'
+import { splitCombinedRows } from '../../../qaqc-shared/src/combined'
+import { buildPerformanceIndex, buildPerformanceModel } from '../../../qaqc-shared/src/performance'
+import type { CombinedColumns } from '../../../qaqc-shared/src/types'
 import capabilities from '../../capabilities.json'
 import { QaqcPerformanceVisual } from '../visual'
 import { ALL_ROLES, tableDataView } from './tableDataView'
 
 const dashboardControl = vi.hoisted(() => ({ shouldThrow: false }))
+const indexBuilds = vi.hoisted(() => ({ count: 0 }))
+
+// Passes through to the real index builder, counting calls, so tests can show when the visual re-indexes.
+vi.mock('../../../qaqc-shared/src/performance', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../qaqc-shared/src/performance')>()
+  return {
+    ...actual,
+    buildPerformanceIndex: (...args: Parameters<typeof actual.buildPerformanceIndex>) => {
+      indexBuilds.count += 1
+      return actual.buildPerformanceIndex(...args)
+    },
+  }
+})
 
 // Passes through to the real dashboard; throws during React render when the flag is set.
 vi.mock('../../../qaqc-shared/src/components/PerformanceDashboard', async (importOriginal) => {
@@ -51,13 +67,44 @@ function createHarness(hostOverrides: Record<string, unknown> = {}): Harness {
   return { visual, element: options.element, host: options.host, events, showContextMenu, tooltip }
 }
 
-// powerbi.VisualUpdateType.Resize; Data is 2.
+// powerbi.VisualUpdateType.Resize and Style; Data is 2.
 const RESIZE_UPDATE = 4
+const STYLE_UPDATE = 16
 
 const NOT_RECORDED_NOTE = '70 inspections have no QCR/FE'
 const ROW_LIMIT_NOTE = 'Showing the first 2,385 rows (Power BI data limit)'
 const SOURCE = COMBINED_COLUMNS.indexOf('Source')
 const QCR = COMBINED_COLUMNS.indexOf('QCR/FE')
+
+function position(name: (typeof COMBINED_COLUMNS)[number]): number {
+  return COMBINED_COLUMNS.indexOf(name)
+}
+
+/** The fixture's 30 WW QCR/FE ranking at a minimum, built directly, to check the visual's wiring against. */
+function fixtureQcrModel(minimum: number): ReturnType<typeof buildPerformanceModel> {
+  const columns: CombinedColumns = {
+    source: SOURCE,
+    workWeek: position('Work Week'),
+    phase: position('Inspection Phase'),
+    issue: position('Issue'),
+    building: position('Building'),
+    qcr: QCR,
+    welder: position('Welder'),
+    tagNo: position('Tag No'),
+    signature: -1,
+    signedWeek: -1,
+    id: -1,
+    status: -1,
+    type: -1,
+    createdOn: -1,
+    updatedOn: -1,
+    createdBy: -1,
+    greenTags: -1,
+  }
+  const index = buildPerformanceIndex(splitCombinedRows(COMBINED_ROWS, SOURCE), columns, new Date(2026, 9, 15))
+  const key = index.currentWeek.key
+  return buildPerformanceModel(index, { selectedKey: key, windowEndKey: key, range: 'recent' }, 'qcr', minimum)
+}
 
 function update(dataView: powerbi.DataView | undefined, viewport = { width: 1280, height: 720 }, operationKind = 0, type = 2): UpdateOptions {
   return { viewport, dataViews: dataView ? [dataView] : [], type, operationKind }
@@ -123,6 +170,7 @@ let harness: Harness | null = null
 
 beforeEach(() => {
   dashboardControl.shouldThrow = false
+  indexBuilds.count = 0
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date(2026, 9, 15, 12))
 })
@@ -158,6 +206,7 @@ describe('QaqcPerformanceVisual', () => {
     harness = createHarness()
     apply(harness, update(undefined))
     expect(harness.element.querySelector('.qaqc-status h2')?.textContent).toBe('Add the QAQC Combined columns')
+    expect(harness.element.querySelector('.qaqc-status p')?.textContent).toContain('QAQC_Performance_SETUP.md')
     expect(setupItems(harness.element)).toEqual([
       'Source → Source',
       'Row ID → Row ID',
@@ -213,11 +262,38 @@ describe('QaqcPerformanceVisual', () => {
     expect(cardValue(harness.element, 'Welders ranked')).not.toBe('0')
   })
 
-  it('clamps a minimum outside 1 to 100', () => {
+  it('clamps a minimum below 1 to 1, ranking everyone with at least one final', () => {
+    const expected = fixtureQcrModel(1)
+    expect(expected.ranked.length).toBeGreaterThan(6)
+    expect(expected.ranked.every((row) => row.volume >= 1)).toBe(true)
+    expect(expected.belowMinimum.every((row) => row.volume === 0)).toBe(true)
     harness = createHarness()
     apply(harness, update(tableDataView(COMBINED_ROWS, { objects: ranking({ minimumFinals: 0 }) })))
-    // A minimum of 1 ranks every QCR/FE with a final: the six ranked at 5, plus the ten below it that have finals.
-    expect(Number(cardValue(harness.element, 'QCR/FE ranked'))).toBeGreaterThan(6)
+    expect(cardValue(harness.element, 'QCR/FE ranked')).toBe(String(expected.ranked.length))
+  })
+
+  it('ranks nobody at a minimum of 100 finals, the most QCR 01 has is 94', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(COMBINED_ROWS, { objects: ranking({ minimumFinals: 100 }) })))
+    expect(cardValue(harness.element, 'QCR/FE ranked')).toBe('0')
+  })
+
+  it('clamps a minimum above 100 to 100', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(COMBINED_ROWS, { objects: ranking({ minimumFinals: 250 }) })))
+    expect(cardValue(harness.element, 'QCR/FE ranked')).toBe('0')
+    expect(harness.element.querySelector('[aria-label^="QCR/FE ranked:"] .qaqc-kpi-detail')?.textContent).toBe('Minimum 100 finals · 16 below')
+  })
+
+  it('indexes the rows once per data update, not on a settings or resize update', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(COMBINED_ROWS)))
+    expect(indexBuilds.count).toBe(1)
+    apply(harness, update(tableDataView(COMBINED_ROWS, { objects: ranking({ minimumFinals: 60 }) }), undefined, 0, STYLE_UPDATE))
+    apply(harness, update(tableDataView(COMBINED_ROWS), { width: 900, height: 600 }, 0, RESIZE_UPDATE))
+    expect(indexBuilds.count).toBe(1)
+    apply(harness, update(tableDataView(COMBINED_ROWS)))
+    expect(indexBuilds.count).toBe(2)
   })
 
   it('re-ranks when only the Format pane changes', () => {

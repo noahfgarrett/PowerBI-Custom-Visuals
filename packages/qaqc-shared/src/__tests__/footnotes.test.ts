@@ -1,14 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildFootnotes, buildIssueFootnotes, buildOverviewFootnotes } from '../footnotes'
+import { splitCombinedRows } from '../combined'
+import { buildFootnotes, buildIssueFootnotes, buildOverviewFootnotes, buildPerformanceFootnotes } from '../footnotes'
 import { buildInspectionIndex } from '../inspections'
 import { buildIssueIndex } from '../issues'
-import type { IssueColumns } from '../types'
-import { bim, inspection, overviewIndexOf, weld } from './overviewRows'
-import { splitCombinedRows } from '../combined'
-import { buildPerformanceFootnotes } from '../footnotes'
 import { buildPerformanceIndex, buildPerformanceModel, type PerformanceGroup, type PerformanceIndex } from '../performance'
-import type { CombinedColumns } from '../types'
+import type { CombinedColumns, IssueColumns } from '../types'
+import { bim, inspection, overviewIndexOf, weld } from './overviewRows'
 
 const COLUMNS = { workWeek: 0, phase: 1, issue: 2, building: 3 }
 const TODAY = new Date(2026, 9, 15)

@@ -1,4 +1,4 @@
-import { ChartColumn, ClipboardCheck, Inbox, Percent, TriangleAlert } from 'lucide-react'
+import { ChartColumn, ClipboardCheck, Flame, Inbox, Percent, TriangleAlert, type LucideIcon } from 'lucide-react'
 import { useMemo, type ReactElement } from 'react'
 
 import type { ChartColors, TooltipHandler } from '../chartTypes'
@@ -15,10 +15,10 @@ import { KpiGroup } from './KpiGroup'
 import { formatNcrRate, PerformanceTags } from './PerformanceTable'
 import { PersonWeekChart, personWeekLegend } from './PersonWeekChart'
 
-const GROUP_NAMES: Record<PerformanceGroup, string> = { qcr: 'QCR / FE', welders: 'Welder' }
-
 interface CardWords {
   volumeLabel: string
+  /** The volume card's icon, matching the dashboard's summary strip. */
+  volumeIcon: LucideIcon
   volumeDetail: string
   ncrDetail: string
   rateDetail: string
@@ -29,6 +29,7 @@ interface CardWords {
 const CARD_WORDS: Record<PerformanceGroup, CardWords> = {
   qcr: {
     volumeLabel: 'Finals',
+    volumeIcon: ClipboardCheck,
     volumeDetail: 'Final inspections',
     ncrDetail: 'Finals with an issue found',
     rateDetail: 'NCRs ÷ finals',
@@ -36,6 +37,7 @@ const CARD_WORDS: Record<PerformanceGroup, CardWords> = {
   },
   welders: {
     volumeLabel: 'Welds',
+    volumeIcon: Flame,
     volumeDetail: 'Welds credited',
     ncrDetail: 'Welds with an issue',
     rateDetail: 'NCRs ÷ welds',
@@ -180,7 +182,7 @@ interface TotalsCardsProps {
 function TotalsCards({ title, subtitle, variant, totals, words }: TotalsCardsProps): ReactElement {
   return (
     <KpiGroup title={title} subtitle={subtitle} variant={variant}>
-      <KpiCard label={words.volumeLabel} icon={ClipboardCheck} value={formatCount(totals.volume)} detail={words.volumeDetail} tone="neutral" trend="none" />
+      <KpiCard label={words.volumeLabel} icon={words.volumeIcon} value={formatCount(totals.volume)} detail={words.volumeDetail} tone="neutral" trend="none" />
       <KpiCard label="NCRs" icon={TriangleAlert} value={formatCount(totals.ncrs)} detail={words.ncrDetail} tone="neutral" trend="none" />
       <KpiCard label="NCR rate" icon={Percent} value={formatNcrRate(totals.rate)} detail={words.rateDetail} tone="neutral" trend="none" />
     </KpiGroup>
@@ -195,6 +197,8 @@ export interface PersonDetailProps {
   view: ViewState
   colors: ChartColors
   animate: boolean
+  /** Screen reader chart summaries (Format pane, Accessibility), passed to the week chart. */
+  describe: boolean
   onHover: TooltipHandler
 }
 
@@ -202,7 +206,7 @@ export interface PersonDetailProps {
  * The person overlay's content: period and all-time cards, the week-by-week chart and the period's NCRs.
  * Mount it only while the overlay is open: the detail is built from the index on mount.
  */
-export function PersonDetail({ index, group, personKey, view, colors, animate, onHover }: PersonDetailProps): ReactElement {
+export function PersonDetail({ index, group, personKey, view, colors, animate, describe, onHover }: PersonDetailProps): ReactElement {
   const { selectedKey, windowEndKey, range } = view
   // Keyed on the view's values, not its object, so a dashboard re-render with an equal view does not rebuild.
   const detail = useMemo(
@@ -231,11 +235,12 @@ export function PersonDetail({ index, group, personKey, view, colors, animate, o
 
   return (
     <div className="qaqc-perf-person">
-      {/* The overlay title carries the name; this line adds the group and the disciplines. */}
-      <p className="qaqc-perf-person-head">
-        <span className="qaqc-perf-person-group">{GROUP_NAMES[group]}</span>
-        <PerformanceTags tags={detail.tags} />
-      </p>
+      {/* The overlay title carries the name and the group; this line adds the disciplines, when there are any. */}
+      {detail.tags.length > 0 && (
+        <p className="qaqc-perf-person-head">
+          <PerformanceTags tags={detail.tags} />
+        </p>
+      )}
 
       <div className="qaqc-kpi-row qaqc-perf-person-cards">
         <TotalsCards title="This period" subtitle={periodLabel} variant="week" totals={detail.period} words={words} />
@@ -257,6 +262,7 @@ export function PersonDetail({ index, group, personKey, view, colors, animate, o
             height={size.height}
             colors={colors}
             animate={animate}
+            describe={describe}
             onHover={onHover}
           />
         )}

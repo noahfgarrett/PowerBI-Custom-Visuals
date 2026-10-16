@@ -11,6 +11,20 @@ import { COMBINED_COLUMNS, COMBINED_ROWS } from './fixtures/combinedRows'
 import { render, type Rendered } from './render'
 import { ruleBody } from './stylesheet'
 
+const modelBuilds = vi.hoisted(() => ({ count: 0 }))
+
+// Passes through to the real model builder, counting calls, so tests can show when the ranking is rebuilt.
+vi.mock('../performance', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../performance')>()
+  return {
+    ...actual,
+    buildPerformanceModel: (...args: Parameters<typeof actual.buildPerformanceModel>) => {
+      modelBuilds.count += 1
+      return actual.buildPerformanceModel(...args)
+    },
+  }
+})
+
 type CombinedColumnName = (typeof COMBINED_COLUMNS)[number]
 
 function position(name: CombinedColumnName): number {
@@ -104,7 +118,7 @@ function showGroup(container: HTMLElement, label: 'QCR / FE' | 'Welders'): void 
 }
 
 function showRange(container: HTMLElement, label: '30 WW' | 'All'): void {
-  click(toggleButton(container, 'Chart range', label))
+  click(toggleButton(container, 'Ranking period', label))
 }
 
 // Matches labels in code: jsdom's selector engine mishandles "÷" and "%" inside attribute values.
@@ -190,7 +204,7 @@ describe('PerformanceDashboard header', () => {
     view = draw()
     const controls = view.container.querySelector('.qaqc-controls')
     const order = [...(controls?.children ?? [])].map((node) => node.getAttribute('aria-label') ?? node.className)
-    expect(order).toEqual(['People group', 'Chart range', 'qaqc-week-picker'])
+    expect(order).toEqual(['People group', 'Ranking period', 'qaqc-week-picker'])
   })
 
   it('starts on QCR / FE', () => {
@@ -371,6 +385,38 @@ describe('PerformanceDashboard person page', () => {
     click(nameButton(view.container, 'QCR 02'))
     const values = [...(dialog(view.container)?.querySelectorAll('.qaqc-kpi-group.is-week .qaqc-kpi-value') ?? [])].map((node) => node.textContent)
     expect(values).toEqual(['65', '2', '3.08%'])
+  })
+
+  it('names the person chart with its weeks when chart summaries are on', () => {
+    stubSize()
+    view = draw()
+    click(nameButton(view.container, 'QCR 02'))
+    expect(dialog(view.container)?.querySelector('.qaqc-perf-chart')?.getAttribute('aria-label')).toBe(
+      "Finals and NCRs by work week, with the running NCR rate, WW13'2026 to WW42'2026",
+    )
+  })
+
+  it('names the person chart by its title alone when chart summaries are off', () => {
+    stubSize()
+    view = draw({ describeCharts: false })
+    click(nameButton(view.container, 'QCR 02'))
+    expect(dialog(view.container)?.querySelector('.qaqc-perf-chart')?.getAttribute('aria-label')).toBe(
+      'Finals and NCRs by work week, with the running NCR rate',
+    )
+  })
+
+  it('neither rebuilds nor re-sorts the table when a person opens and closes', () => {
+    view = draw()
+    click(view.container.querySelector('.qaqc-perf-table thead th:nth-child(2) button'))
+    const sortedNames = rankedNames(view.container)
+    const row = rowNamed(view.container, 'QCR 04')
+    const builds = modelBuilds.count
+    click(nameButton(view.container, 'QCR 04'))
+    click(dialog(view.container)?.querySelector('button[aria-label="Back to dashboard"]') ?? null)
+    expect(modelBuilds.count).toBe(builds)
+    expect(rankedNames(view.container)).toEqual(sortedNames)
+    expect(view.container.querySelector('.qaqc-perf-table thead th:nth-child(2)')?.getAttribute('aria-sort')).toBe('descending')
+    expect(rowNamed(view.container, 'QCR 04')).toBe(row)
   })
 
   it('makes the dashboard behind the page inert', () => {

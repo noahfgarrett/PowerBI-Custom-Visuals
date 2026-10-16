@@ -690,6 +690,7 @@ function drawChart(overrides: Partial<PersonWeekChartProps> = {}): Rendered {
       height={300}
       colors={COLORS}
       animate={false}
+      describe
       onHover={vi.fn()}
       {...overrides}
     />,
@@ -812,6 +813,11 @@ describe('PersonWeekChart', () => {
     expect(view.container.querySelector('svg')?.getAttribute('aria-label')).toBe(
       "Finals and NCRs by work week, with the running NCR rate, WW36'2026 to WW42'2026",
     )
+  })
+
+  it('names the chart by its title alone when chart summaries are off', () => {
+    view = drawChart({ describe: false })
+    expect(view.container.querySelector('svg')?.getAttribute('aria-label')).toBe('Finals and NCRs by work week, with the running NCR rate')
   })
 
   it('names the welder chart by welds', () => {
@@ -967,6 +973,7 @@ function drawDetail(overrides: Partial<PersonDetailProps> = {}): Rendered {
       view={fixtureView('recent')}
       colors={COLORS}
       animate={false}
+      describe
       onHover={vi.fn()}
       {...overrides}
     />,
@@ -992,11 +999,11 @@ function hoverChartWeek(root: HTMLElement): void {
 }
 
 describe('PersonDetail', () => {
-  it('shows a subtitle line with the group and the discipline tags', () => {
+  it('shows the discipline tags under the title, leaving the group to the overlay title', () => {
     view = drawDetail()
     const head = view.container.querySelector('.qaqc-perf-person-head')
-    expect(head?.querySelector('.qaqc-perf-person-group')?.textContent).toBe('QCR / FE')
     expect([...(head?.querySelectorAll('.qaqc-perf-tag') ?? [])].map((tag) => tag.textContent)).toEqual(['E'])
+    expect(head?.textContent).not.toContain('QCR / FE')
   })
 
   it('leaves the name and its heading to the overlay title', () => {
@@ -1032,8 +1039,14 @@ describe('PersonDetail', () => {
       'NCRs: 3. Welds with an issue',
       'NCR rate: 11.11%. NCRs ÷ welds',
     ])
-    expect(view.container.querySelector('.qaqc-perf-person-group')?.textContent).toBe('Welder')
-    expect(view.container.querySelectorAll('.qaqc-perf-person-head .qaqc-perf-tag')).toHaveLength(0)
+    expect(view.container.querySelector('.qaqc-perf-person-head')).toBeNull()
+  })
+
+  it('marks the welds cards with the flame icon, as the summary strip does', () => {
+    view = drawDetail({ group: 'welders', personKey: 'welder 024' })
+    const welds = [...view.container.querySelectorAll('article.qaqc-kpi')].filter((card) => card.getAttribute('aria-label')?.startsWith('Welds:'))
+    expect(welds).toHaveLength(2)
+    expect(welds.every((card) => card.querySelector('svg.lucide-flame') !== null)).toBe(true)
   })
 
   it('uses the whole history as the period in All', () => {
@@ -1133,11 +1146,19 @@ describe('PersonDetail', () => {
     )
   })
 
+  it('names the week chart by its title alone when chart summaries are off', () => {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 900, 260))
+    view = drawDetail({ describe: false })
+    expect(view.container.querySelector('.qaqc-perf-chart')?.getAttribute('aria-label')).toBe(
+      'Finals and NCRs by work week, with the running NCR rate',
+    )
+  })
+
   // A rebuilt detail hands the chart new weeks, and the chart drops its hovered week when its weeks change; so a
   // hover that survives a re-render shows the detail was not rebuilt.
   it('keeps the detail across unrelated re-renders, so the hovered chart week survives', () => {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 900, 260))
-    const props: PersonDetailProps = { index: FIXTURE_INDEX, group: 'qcr', personKey: 'qcr 02', view: fixtureView('recent'), colors: COLORS, animate: false, onHover: vi.fn() }
+    const props: PersonDetailProps = { index: FIXTURE_INDEX, group: 'qcr', personKey: 'qcr 02', view: fixtureView('recent'), colors: COLORS, animate: false, describe: true, onHover: vi.fn() }
     view = render(<PersonDetail {...props} />)
     hoverChartWeek(view.container)
     expect(view.container.querySelector('.qaqc-perf-chart-hover')).not.toBeNull()
@@ -1148,7 +1169,7 @@ describe('PersonDetail', () => {
 
   it('rebuilds the detail when the period changes', () => {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 900, 260))
-    const props: PersonDetailProps = { index: FIXTURE_INDEX, group: 'qcr', personKey: 'qcr 02', view: fixtureView('recent'), colors: COLORS, animate: false, onHover: vi.fn() }
+    const props: PersonDetailProps = { index: FIXTURE_INDEX, group: 'qcr', personKey: 'qcr 02', view: fixtureView('recent'), colors: COLORS, animate: false, describe: true, onHover: vi.fn() }
     view = render(<PersonDetail {...props} />)
     hoverChartWeek(view.container)
     view.rerender(<PersonDetail {...props} view={fixtureView('all')} />)

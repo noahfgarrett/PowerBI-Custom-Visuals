@@ -28,6 +28,8 @@ export interface DashboardHeaderProps {
   interactive: boolean
   range: RangeMode
   onRangeChange: (mode: RangeMode) => void
+  /** The range toggle's accessible name; RangeToggle's default ("Chart range") when left out. */
+  rangeLabel?: string
   /** Newest first. */
   weekOptions: WorkWeek[]
   selectedKey: number
@@ -43,6 +45,7 @@ export function DashboardHeader({
   interactive,
   range,
   onRangeChange,
+  rangeLabel,
   weekOptions,
   selectedKey,
   onPickWeek,
@@ -58,7 +61,7 @@ export function DashboardHeader({
       </div>
       <div className="qaqc-controls">
         {children}
-        <RangeToggle value={range} recentCount={RECENT_WEEK_COUNT} disabled={!interactive} onChange={onRangeChange} />
+        <RangeToggle value={range} recentCount={RECENT_WEEK_COUNT} disabled={!interactive} label={rangeLabel} onChange={onRangeChange} />
         <WorkWeekPicker options={weekOptions} valueKey={selectedKey} disabled={!interactive} onChange={onPickWeek} />
       </div>
     </div>

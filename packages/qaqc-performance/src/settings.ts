@@ -16,8 +16,8 @@ const PERCENT_OPTIONS: powerbi.visuals.NumUpDownFormat = {
 
 const MINIMUM_LOWER = 1
 const MINIMUM_UPPER = 100
-const DEFAULT_MINIMUM_FINALS = 5
-const DEFAULT_MINIMUM_WELDS = 10
+export const DEFAULT_MINIMUM_FINALS = 5
+export const DEFAULT_MINIMUM_WELDS = 10
 
 const MINIMUM_OPTIONS: powerbi.visuals.NumUpDownFormat = {
   minValue: { type: VALIDATOR_MIN, value: MINIMUM_LOWER },
@@ -153,7 +153,8 @@ function clampPercent(value: number): number {
   return Number.isFinite(value) ? Math.min(100, Math.max(0, value)) : 100
 }
 
-function clampMinimum(value: number, fallback: number): number {
+/** A whole number from 1 to 100, or `fallback` for a non-number. Shared with the dev harness's URL minimums. */
+export function clampMinimum(value: number, fallback: number): number {
   return Number.isFinite(value) ? Math.min(MINIMUM_UPPER, Math.max(MINIMUM_LOWER, Math.round(value))) : fallback
 }
 

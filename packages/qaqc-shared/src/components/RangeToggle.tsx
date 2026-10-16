@@ -6,6 +6,8 @@ export interface RangeToggleProps {
   value: RangeMode
   recentCount: number
   disabled: boolean
+  /** The group's accessible name: what the range sets. Defaults to "Chart range". */
+  label?: string
   onChange: (mode: RangeMode) => void
 }
 
@@ -14,13 +16,13 @@ interface RangeOption {
   label: string
 }
 
-export function RangeToggle({ value, recentCount, disabled, onChange }: RangeToggleProps): ReactElement {
+export function RangeToggle({ value, recentCount, disabled, label = 'Chart range', onChange }: RangeToggleProps): ReactElement {
   const options: RangeOption[] = [
     { mode: 'recent', label: `${recentCount} WW` },
     { mode: 'all', label: 'All' },
   ]
   return (
-    <div className="qaqc-range-toggle" role="group" aria-label="Chart range">
+    <div className="qaqc-range-toggle" role="group" aria-label={label}>
       {options.map((option) => (
         <button
           key={option.mode}

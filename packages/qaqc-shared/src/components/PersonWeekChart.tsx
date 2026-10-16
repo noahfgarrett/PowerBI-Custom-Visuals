@@ -59,6 +59,8 @@ export interface PersonWeekChartProps {
   height: number
   colors: ChartColors
   animate: boolean
+  /** Screen reader chart summaries (Format pane, Accessibility): the label adds the weeks the chart covers. */
+  describe: boolean
   onHover: TooltipHandler
 }
 
@@ -262,7 +264,7 @@ function chartTitle(group: PerformanceGroup): string {
  * One person's weeks in the period: their Finals (or welds) with NCRs beside them, and the running NCR rate within
  * the period on a right axis. Hover shows each week; there is no week selection.
  */
-export function PersonWeekChart({ weeks, group, width, height, colors, animate, onHover }: PersonWeekChartProps): ReactElement {
+export function PersonWeekChart({ weeks, group, width, height, colors, animate, describe, onHover }: PersonWeekChartProps): ReactElement {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   const layout = useMemo(() => layoutPersonWeeks(weeks, width, height), [weeks, width, height])
   const volumeLabel = VOLUME_LABELS[group]
@@ -396,7 +398,7 @@ export function PersonWeekChart({ weeks, group, width, height, colors, animate, 
 
   const hoveredPoint = hoverIndex !== null && hoverIndex < layout.linePoints.length ? layout.linePoints[hoverIndex] : null
   const title = chartTitle(group)
-  const summary = weeks.length > 0 ? `${title}, ${weeks[0].week.label} to ${weeks[weeks.length - 1].week.label}` : title
+  const summary = describe && weeks.length > 0 ? `${title}, ${weeks[0].week.label} to ${weeks[weeks.length - 1].week.label}` : title
 
   return (
     <svg className={animate ? 'qaqc-chart qaqc-perf-chart qaqc-animate' : 'qaqc-chart qaqc-perf-chart'} width={width} height={height} role="img" aria-label={summary}>

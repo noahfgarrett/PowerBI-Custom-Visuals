@@ -1,7 +1,11 @@
 import { ClipboardCheck, Flame, Inbox, ListOrdered, Percent, TriangleAlert, UserRound, type LucideIcon } from 'lucide-react'
 import { useMemo, useState, type ReactElement } from 'react'
 
+import { buildPerformanceFootnotes } from '../footnotes'
+import { formatCount } from '../format'
 import { useWeekWindow } from '../hooks/useWeekWindow'
+import { buildPerformanceModel, type PerformanceGroup, type PerformanceIndex, type PerformanceWindow } from '../performance'
+import { chartColorsFromTheme } from '../theme'
 import { CARDS_ONLY_HEIGHT, ChartExpansionFrame, COMPACT_WIDTH, type ExpandablePanel, type OpenPage } from './ChartExpansionFrame'
 import { DashboardHeader, type DashboardChromeProps } from './DashboardHeader'
 import { Footnotes } from './Footnotes'
@@ -10,10 +14,6 @@ import { KpiGroup } from './KpiGroup'
 import { LoadingBar } from './LoadingBar'
 import { formatNcrRate, PerformanceTable } from './PerformanceTable'
 import { PersonDetail } from './PersonDetail'
-import { buildPerformanceFootnotes } from '../footnotes'
-import { formatCount } from '../format'
-import { buildPerformanceModel, type PerformanceGroup, type PerformanceIndex, type PerformanceWindow } from '../performance'
-import { chartColorsFromTheme } from '../theme'
 
 type PanelId = 'person'
 
@@ -121,6 +121,7 @@ export function PerformanceDashboard({
   theme,
   interactive,
   animate,
+  describeCharts,
   loading,
   rowLimitReached,
   viewport,
@@ -159,6 +160,7 @@ export function PerformanceDashboard({
             view={view}
             colors={colors}
             animate={animate}
+            describe={describeCharts}
             onHover={onHover}
           />
         ),
@@ -191,6 +193,7 @@ export function PerformanceDashboard({
             interactive={interactive}
             range={range}
             onRangeChange={changeRange}
+            rangeLabel="Ranking period"
             weekOptions={model.weekOptions}
             selectedKey={model.selectedWeek.key}
             onPickWeek={pickWeek}

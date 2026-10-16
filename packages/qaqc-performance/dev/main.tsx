@@ -13,6 +13,7 @@ import { PERFORMANCE_SLOTS } from '../../qaqc-shared/src/dataView'
 import { buildPerformanceIndex } from '../../qaqc-shared/src/performance'
 import { isPresetName, resolveTheme } from '../../qaqc-shared/src/theme'
 import type { CombinedColumns } from '../../qaqc-shared/src/types'
+import { clampMinimum, DEFAULT_MINIMUM_FINALS, DEFAULT_MINIMUM_WELDS } from '../src/settings'
 
 const params = new URLSearchParams(window.location.search)
 const width = Number(params.get('w') ?? 1280)
@@ -107,8 +108,8 @@ if (data === 'missing') {
       title="QAQC Performance"
       icon={Users}
       index={index}
-      minimumFinals={Number(params.get('minFinals') ?? 5)}
-      minimumWelds={Number(params.get('minWelds') ?? 10)}
+      minimumFinals={clampMinimum(Number(params.get('minFinals') ?? DEFAULT_MINIMUM_FINALS), DEFAULT_MINIMUM_FINALS)}
+      minimumWelds={clampMinimum(Number(params.get('minWelds') ?? DEFAULT_MINIMUM_WELDS), DEFAULT_MINIMUM_WELDS)}
       theme={theme}
       interactive={params.get('interactive') !== '0'}
       animate

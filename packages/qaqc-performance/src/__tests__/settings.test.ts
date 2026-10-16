@@ -1,7 +1,7 @@
 import { FormattingSettingsService } from 'powerbi-visuals-utils-formattingmodel'
 import { describe, expect, it } from 'vitest'
 
-import { PerformanceSettingsModel, readDisplaySettings } from '../settings'
+import { clampMinimum, PerformanceSettingsModel, readDisplaySettings } from '../settings'
 
 describe('PerformanceSettingsModel', () => {
   it('defaults to the QAQC preset, solid backgrounds, transitions, chart summaries, and minimums of 5 finals and 10 welds', () => {
@@ -51,6 +51,15 @@ describe('PerformanceSettingsModel', () => {
     const model = new PerformanceSettingsModel()
     model.ranking.minimumWelds.value = input
     expect(readDisplaySettings(model).minimumWelds).toBe(expected)
+  })
+
+  it.each([
+    [0, 1],
+    [250, 100],
+    [12.4, 12],
+    [Number.NaN, 7],
+  ])('clamps a minimum of %s to %s, falling back to the default for a non-number', (input, expected) => {
+    expect(clampMinimum(input, 7)).toBe(expected)
   })
 
   it('limits both minimums to 1 to 100 in the Format pane', () => {
