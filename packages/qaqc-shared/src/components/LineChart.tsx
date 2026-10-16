@@ -1,10 +1,10 @@
 import type { MouseEvent, ReactElement } from 'react'
 
-import { labelIndices, passRateDomain, WEEK_AXIS_HEIGHT, WEEK_TICK_OFFSET, YEAR_MARKER_OFFSET, yearMarkers } from '../chartMath'
+import { labelIndices, passRateDomain, WEEK_AXIS_HEIGHT, yearMarkers } from '../chartMath'
 import type { ChartColors, TooltipHandler } from '../chartTypes'
 import { formatCount, formatPercent } from '../format'
 import type { PassRatePoint } from '../types'
-import { shortWeekLabel } from '../workWeeks'
+import { WeekAxisTick } from './WeekAxisTick'
 
 const MARGIN = { top: 14, right: 42, bottom: 10, left: 40 } as const
 const DOT_RADIUS = 4
@@ -157,22 +157,15 @@ export function LineChart({
       )}
       {points.map((item, index) =>
         axisLabels.has(index) ? (
-          <g key={`axis-${item.week.key}`}>
-            <text
-              className={index === selectedIndex ? 'qaqc-axis-text is-selected' : 'qaqc-axis-text'}
-              x={x(index)}
-              y={plotBottom + WEEK_TICK_OFFSET}
-              textAnchor="middle"
-              fill={index === selectedIndex ? colors.ink : colors.axisText}
-            >
-              {shortWeekLabel(item.week)}
-            </text>
-            {axisYears.has(index) && (
-              <text className="qaqc-axis-year" x={x(index)} y={plotBottom + YEAR_MARKER_OFFSET} textAnchor="middle" fill={colors.axisText}>
-                {item.week.year}
-              </text>
-            )}
-          </g>
+          <WeekAxisTick
+            key={`axis-${item.week.key}`}
+            week={item.week}
+            x={x(index)}
+            plotBottom={plotBottom}
+            isSelected={index === selectedIndex}
+            hasYear={axisYears.has(index)}
+            colors={colors}
+          />
         ) : null,
       )}
       <g onMouseLeave={() => onHover(null)}>

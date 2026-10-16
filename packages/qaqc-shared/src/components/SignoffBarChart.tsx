@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState, type MouseEvent, type ReactElement } from 'react'
 
-import { labelIndices, niceScale, round, roundedTopBarPath, WEEK_AXIS_HEIGHT, WEEK_TICK_OFFSET, YEAR_MARKER_OFFSET, yearMarkers } from '../chartMath'
+import { labelIndices, niceScale, round, roundedTopBarPath, WEEK_AXIS_HEIGHT, yearMarkers } from '../chartMath'
 import type { ChartColors, TooltipHandler } from '../chartTypes'
 import { formatCount, formatSignoffRate, pluralize } from '../format'
 import { useWeekFocus } from '../hooks/useWeekFocus'
 import type { WeldWeekCounts } from '../types'
-import { shortWeekLabel } from '../workWeeks'
+import { WeekAxisTick } from './WeekAxisTick'
 
 // Matches the HTML app's Welding chart: counts on the left axis, sign-off % on a fixed 0–100% right axis.
 const MARGIN = { top: 34, right: 48, bottom: WEEK_AXIS_HEIGHT, left: 44 } as const
@@ -269,20 +269,7 @@ export function SignoffBarChart({
                 </text>
               )}
               {labels.has(index) && (
-                <text
-                  className={isSelected ? 'qaqc-axis-text is-selected' : 'qaqc-axis-text'}
-                  x={center}
-                  y={plotBottom + WEEK_TICK_OFFSET}
-                  textAnchor="middle"
-                  fill={isSelected ? colors.ink : colors.axisText}
-                >
-                  {shortWeekLabel(item.week)}
-                </text>
-              )}
-              {years.has(index) && (
-                <text className="qaqc-axis-year" x={center} y={plotBottom + YEAR_MARKER_OFFSET} textAnchor="middle" fill={colors.axisText}>
-                  {item.week.year}
-                </text>
+                <WeekAxisTick week={item.week} x={center} plotBottom={plotBottom} isSelected={isSelected} hasYear={years.has(index)} colors={colors} />
               )}
             </g>
           )

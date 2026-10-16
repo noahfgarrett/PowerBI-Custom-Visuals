@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState, type MouseEvent, type ReactElement } from 'react'
 
-import { labelIndices, niceScale, roundedTopBarPath, WEEK_AXIS_HEIGHT, WEEK_TICK_OFFSET, YEAR_MARKER_OFFSET, yearMarkers } from '../chartMath'
+import { labelIndices, niceScale, roundedTopBarPath, WEEK_AXIS_HEIGHT, yearMarkers } from '../chartMath'
 import type { ChartColors, TooltipHandler } from '../chartTypes'
 import { formatCount } from '../format'
 import { useWeekFocus } from '../hooks/useWeekFocus'
 import type { WeekCounts } from '../types'
-import { shortWeekLabel } from '../workWeeks'
+import { WeekAxisTick } from './WeekAxisTick'
 
 const MARGIN = { top: 22, right: 8, bottom: WEEK_AXIS_HEIGHT, left: 34 } as const
 const MAX_BAR_WIDTH = 24
@@ -166,20 +166,14 @@ export function StackedBarChart({
                 </text>
               )}
               {labels.has(index) && (
-                <text
-                  className={isSelected ? 'qaqc-axis-text is-selected' : 'qaqc-axis-text'}
+                <WeekAxisTick
+                  week={item.week}
                   x={bandX(index) + band / 2}
-                  y={top + plotHeight + WEEK_TICK_OFFSET}
-                  textAnchor="middle"
-                  fill={isSelected ? colors.ink : colors.axisText}
-                >
-                  {shortWeekLabel(item.week)}
-                </text>
-              )}
-              {years.has(index) && (
-                <text className="qaqc-axis-year" x={bandX(index) + band / 2} y={top + plotHeight + YEAR_MARKER_OFFSET} textAnchor="middle" fill={colors.axisText}>
-                  {item.week.year}
-                </text>
+                  plotBottom={top + plotHeight}
+                  isSelected={isSelected}
+                  hasYear={years.has(index)}
+                  colors={colors}
+                />
               )}
             </g>
           )

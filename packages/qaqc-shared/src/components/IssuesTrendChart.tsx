@@ -7,8 +7,6 @@ import {
   round,
   roundedTopBarPath,
   WEEK_AXIS_HEIGHT,
-  WEEK_TICK_OFFSET,
-  YEAR_MARKER_OFFSET,
   yearMarkers,
   type NiceScale,
 } from '../chartMath'
@@ -16,8 +14,8 @@ import type { ChartColors, TooltipHandler } from '../chartTypes'
 import { formatCount } from '../format'
 import { useWeekFocus } from '../hooks/useWeekFocus'
 import type { IssueTrendPoint } from '../types'
-import { shortWeekLabel } from '../workWeeks'
 import type { LegendItem } from './ChartPanel'
+import { WeekAxisTick } from './WeekAxisTick'
 
 // Matches the HTML app's RangeChart: Opened and Closed bars on the left axis, Remaining Open as a smooth line with
 // an area fill on its own right axis.
@@ -430,28 +428,18 @@ export function IssuesTrendChart({
   const weekAxis = useMemo(() => {
     const shown = labelIndices(points.length, layout.plotWidth, selectedIndex)
     const years = yearMarkers(shown, points.map((point) => point.week))
-    return [...shown].sort((a, b) => a - b).map((index) => {
-      const isSelected = index === selectedIndex
-      const x = layout.linePoints[index].x
-      return (
-        <g key={points[index].week.key}>
-          <text
-            className={isSelected ? 'qaqc-axis-text qaqc-week-axis-text is-selected' : 'qaqc-axis-text qaqc-week-axis-text'}
-            x={x}
-            y={layout.plotBottom + WEEK_TICK_OFFSET}
-            textAnchor="middle"
-            fill={isSelected ? colors.ink : colors.axisText}
-          >
-            {shortWeekLabel(points[index].week)}
-          </text>
-          {years.has(index) && (
-            <text className="qaqc-axis-year" x={x} y={layout.plotBottom + YEAR_MARKER_OFFSET} textAnchor="middle" fill={colors.axisText}>
-              {points[index].week.year}
-            </text>
-          )}
-        </g>
-      )
-    })
+    return [...shown].sort((a, b) => a - b).map((index) => (
+      <WeekAxisTick
+        key={points[index].week.key}
+        week={points[index].week}
+        x={layout.linePoints[index].x}
+        plotBottom={layout.plotBottom}
+        isSelected={index === selectedIndex}
+        hasYear={years.has(index)}
+        colors={colors}
+        className="qaqc-week-axis-text"
+      />
+    ))
   }, [points, layout, selectedIndex, colors])
 
   const hitAreas = useMemo(() => {
