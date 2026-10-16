@@ -38,7 +38,7 @@ To avoid two copies of the same layout, these move from `qaqc-electrical` into `
 - WW42 cards: Finals 0, SORs 0, Issues Found 0. WW41: Finals 0, SORs 2.
 - Project to date through WW42: Finals 44, SORs 91, clean Finals 43, NCR pass rate 97.73%, change vs WW41: no change.
 - The only NCR week is WW08'2026, which is outside the default 30-week window (WW13–WW42) and visible in All.
-- Buildings, 30-week window: F63.2 first with 14 Finals and 2 SORs; top 8 shown; Other = 12 buildings, 14 inspections.
+- Buildings, 30-week window: F63.2 first with 14 Finals and 2 SORs; top 8 shown; Other = 11 buildings, 14 inspections.
 
 ## Delivery
 
