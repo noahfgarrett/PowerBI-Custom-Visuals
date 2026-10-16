@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
-import { readInspectionTable, readIssueTable, readWeldTable, type InspectionTableSource } from '../dataView'
+import {
+  OVERVIEW_SLOTS,
+  PERFORMANCE_SLOTS,
+  readCombinedTable,
+  readGreenTags,
+  readInspectionTable,
+  readIssueTable,
+  readWeldTable,
+  type InspectionTableSource,
+} from '../dataView'
 
 type SlotRole = 'workWeek' | 'phase' | 'issue' | 'building' | 'rowId'
 const ALL_ROLES: SlotRole[] = ['workWeek', 'phase', 'issue', 'building', 'rowId']
@@ -174,5 +183,220 @@ describe('readIssueTable', () => {
     const result = readIssueTable({ columns: ALL_ISSUE_ROLES.map((role) => ({ roles: { [role]: true } })) })
     expect(result.kind).toBe('ready')
     if (result.kind === 'ready') expect(result.rows).toEqual([])
+  })
+})
+
+type CombinedRole =
+  | 'source'
+  | 'rowId'
+  | 'workWeek'
+  | 'phase'
+  | 'issue'
+  | 'building'
+  | 'qcr'
+  | 'welder'
+  | 'tagNo'
+  | 'signature'
+  | 'signedWeek'
+  | 'id'
+  | 'status'
+  | 'type'
+  | 'createdOn'
+  | 'updatedOn'
+  | 'createdBy'
+  | 'greenTags'
+
+const OVERVIEW_ROLES: CombinedRole[] = [
+  'source',
+  'rowId',
+  'workWeek',
+  'phase',
+  'issue',
+  'building',
+  'signature',
+  'signedWeek',
+  'id',
+  'status',
+  'type',
+  'createdOn',
+  'updatedOn',
+  'createdBy',
+  'greenTags',
+]
+const PERFORMANCE_ROLES: CombinedRole[] = ['source', 'rowId', 'workWeek', 'phase', 'issue', 'building', 'qcr', 'welder', 'tagNo']
+
+function combinedTable(roles: CombinedRole[]): InspectionTableSource {
+  return {
+    columns: roles.map((role) => ({ roles: { [role]: true } })),
+    rows: [roles.map((role) => role)],
+  }
+}
+
+describe('OVERVIEW_SLOTS and PERFORMANCE_SLOTS', () => {
+  it('lists the Overview slots from the spec in order, with their Smartsheet columns', () => {
+    expect(OVERVIEW_SLOTS.map((slot) => [slot.role, slot.slot, slot.column])).toEqual([
+      ['source', 'Source', 'Source'],
+      ['rowId', 'Row ID', 'Row ID'],
+      ['workWeek', 'Work Week', 'Work Week'],
+      ['phase', 'Inspection Phase', 'Inspection Phase'],
+      ['issue', 'Issue', 'Issue'],
+      ['building', 'Building', 'Building'],
+      ['signature', 'Signature', 'Signature'],
+      ['signedWeek', 'Work Week Signed', 'Work Week Signed'],
+      ['id', 'ID', 'ID'],
+      ['status', 'Status', 'Status'],
+      ['type', 'Type', 'Type'],
+      ['createdOn', 'Created On', 'Created On'],
+      ['updatedOn', 'Updated On', 'Updated On'],
+      ['createdBy', 'Created By', 'Created By'],
+      ['greenTags', 'Green tags', 'Green tags measure'],
+    ])
+  })
+
+  it('lists the Performance slots from the spec in order, with their Smartsheet columns', () => {
+    expect(PERFORMANCE_SLOTS.map((slot) => [slot.role, slot.slot, slot.column])).toEqual([
+      ['source', 'Source', 'Source'],
+      ['rowId', 'Row ID', 'Row ID'],
+      ['workWeek', 'Work Week', 'Work Week'],
+      ['phase', 'Inspection Phase', 'Inspection Phase'],
+      ['issue', 'Issue', 'Issue'],
+      ['building', 'Building', 'Building'],
+      ['qcr', 'QCR/FE', 'QCR/FE'],
+      ['welder', 'Welder', 'Welder'],
+      ['tagNo', 'Tag No', 'Tag No'],
+    ])
+  })
+})
+
+describe('readCombinedTable', () => {
+  it('reports every required Overview slot, but not Green tags, when there is no data view', () => {
+    const result = readCombinedTable(undefined, OVERVIEW_SLOTS)
+    expect(result.kind).toBe('missing')
+    if (result.kind === 'missing') {
+      expect(result.missing.map((slot) => slot.role)).toEqual(OVERVIEW_ROLES.filter((role) => role !== 'greenTags'))
+    }
+  })
+
+  it('reports every Performance slot when there is no data view', () => {
+    const result = readCombinedTable(undefined, PERFORMANCE_SLOTS)
+    expect(result.kind).toBe('missing')
+    if (result.kind === 'missing') expect(result.missing.map((slot) => slot.role)).toEqual(PERFORMANCE_ROLES)
+  })
+
+  it('names only the Overview slots that are still empty', () => {
+    const result = readCombinedTable(combinedTable(['source', 'rowId', 'workWeek', 'phase', 'issue', 'building', 'id']), OVERVIEW_SLOTS)
+    expect(result.kind).toBe('missing')
+    if (result.kind === 'missing') {
+      expect(result.missing.map((slot) => slot.column)).toEqual([
+        'Signature',
+        'Work Week Signed',
+        'Status',
+        'Type',
+        'Created On',
+        'Updated On',
+        'Created By',
+      ])
+    }
+  })
+
+  it('names only the Performance slots that are still empty', () => {
+    const result = readCombinedTable(combinedTable(['source', 'workWeek', 'phase', 'issue', 'building', 'qcr']), PERFORMANCE_SLOTS)
+    expect(result.kind).toBe('missing')
+    if (result.kind === 'missing') expect(result.missing.map((slot) => slot.column)).toEqual(['Row ID', 'Welder', 'Tag No'])
+  })
+
+  it('reads every Overview position when all slots are bound, leaving the Performance roles at −1', () => {
+    const result = readCombinedTable(combinedTable([...OVERVIEW_ROLES].reverse()), OVERVIEW_SLOTS)
+    expect(result.kind).toBe('ready')
+    if (result.kind === 'ready') {
+      expect(result.columns).toEqual({
+        source: 14,
+        workWeek: 12,
+        phase: 11,
+        issue: 10,
+        building: 9,
+        qcr: -1,
+        welder: -1,
+        tagNo: -1,
+        signature: 8,
+        signedWeek: 7,
+        id: 6,
+        status: 5,
+        type: 4,
+        createdOn: 3,
+        updatedOn: 2,
+        createdBy: 1,
+        greenTags: 0,
+      })
+      expect(result.rows[0][result.columns.source]).toBe('source')
+    }
+  })
+
+  it('reads every Performance position when all slots are bound, leaving the Overview roles at −1', () => {
+    const result = readCombinedTable(combinedTable(PERFORMANCE_ROLES), PERFORMANCE_SLOTS)
+    expect(result.kind).toBe('ready')
+    if (result.kind === 'ready') {
+      expect(result.columns).toEqual({
+        source: 0,
+        workWeek: 2,
+        phase: 3,
+        issue: 4,
+        building: 5,
+        qcr: 6,
+        welder: 7,
+        tagNo: 8,
+        signature: -1,
+        signedWeek: -1,
+        id: -1,
+        status: -1,
+        type: -1,
+        createdOn: -1,
+        updatedOn: -1,
+        createdBy: -1,
+        greenTags: -1,
+      })
+    }
+  })
+
+  it('is ready without the optional Green tags slot and reports it at −1', () => {
+    const result = readCombinedTable(combinedTable(OVERVIEW_ROLES.filter((role) => role !== 'greenTags')), OVERVIEW_SLOTS)
+    expect(result.kind).toBe('ready')
+    if (result.kind === 'ready') expect(result.columns.greenTags).toBe(-1)
+  })
+
+  it('treats a table without rows as ready and empty', () => {
+    const result = readCombinedTable({ columns: PERFORMANCE_ROLES.map((role) => ({ roles: { [role]: true } })) }, PERFORMANCE_SLOTS)
+    expect(result.kind).toBe('ready')
+    if (result.kind === 'ready') expect(result.rows).toEqual([])
+  })
+})
+
+describe('readGreenTags', () => {
+  it('reads the first finite number in the column', () => {
+    expect(readGreenTags([['Electrical', 412], ['Welding', 412]], 1)).toBe(412)
+  })
+
+  it('reads a numeric string', () => {
+    expect(readGreenTags([['Electrical', ' 37.5 ']], 1)).toBe(37.5)
+  })
+
+  it('skips blank and non-numeric cells before the first number', () => {
+    expect(readGreenTags([['Electrical', null], ['Mechanical', ''], ['Welding', 'n/a'], ['BIM', 9]], 1)).toBe(9)
+  })
+
+  it('returns null when every cell is blank', () => {
+    expect(readGreenTags([['Electrical', null], ['Mechanical', '  '], ['Welding', undefined]], 1)).toBeNull()
+  })
+
+  it('returns null for NaN, infinities and non-numbers', () => {
+    expect(readGreenTags([[Number.NaN], [Number.POSITIVE_INFINITY], ['twelve'], [true], [new Date(2026, 9, 15)]], 0)).toBeNull()
+  })
+
+  it('returns null when the slot is unbound', () => {
+    expect(readGreenTags([['Electrical', 412]], -1)).toBeNull()
+  })
+
+  it('returns null when there are no rows', () => {
+    expect(readGreenTags([], 1)).toBeNull()
   })
 })

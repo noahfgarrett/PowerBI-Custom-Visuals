@@ -287,6 +287,27 @@ export interface IssueColumns {
   createdBy: number
 }
 
+/** Column positions of each QAQC Combined field slot inside a table row, or −1 when the slot isn't bound. */
+export interface CombinedColumns {
+  source: number
+  workWeek: number
+  phase: number
+  issue: number
+  building: number
+  qcr: number
+  welder: number
+  tagNo: number
+  signature: number
+  signedWeek: number
+  id: number
+  status: number
+  type: number
+  createdOn: number
+  updatedOn: number
+  createdBy: number
+  greenTags: number
+}
+
 export type IssueStatusKind = 'open' | 'pending' | 'closed' | 'void'
 
 /** Void issues are excluded everywhere, so an indexed issue is never void. */
