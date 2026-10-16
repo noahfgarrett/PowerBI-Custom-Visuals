@@ -1,0 +1,266 @@
+{
+  "dataRoles": [
+    {
+      "name": "weldWeek",
+      "kind": "Grouping",
+      "displayName": "Weld Work Week",
+      "displayNameKey": "Qaqc_role_weldWeek",
+      "description": "Weld Work Week, for example WW42'2026.",
+      "descriptionKey": "Qaqc_role_weldWeek_description"
+    },
+    {
+      "name": "signature",
+      "kind": "Grouping",
+      "displayName": "Signature",
+      "displayNameKey": "Qaqc_role_signature",
+      "description": "QAQC signature. Blank means the weld is not signed off yet.",
+      "descriptionKey": "Qaqc_role_signature_description"
+    },
+    {
+      "name": "signedWeek",
+      "kind": "Grouping",
+      "displayName": "Work Week Signed",
+      "displayNameKey": "Qaqc_role_signedWeek",
+      "description": "Work Week the weld was signed, for example WW42'2026.",
+      "descriptionKey": "Qaqc_role_signedWeek_description"
+    },
+    {
+      "name": "issue",
+      "kind": "Grouping",
+      "displayName": "Issue Created",
+      "displayNameKey": "Qaqc_role_issue",
+      "description": "BIM number when an issue was created, or No / blank when none.",
+      "descriptionKey": "Qaqc_role_issue_description"
+    },
+    {
+      "name": "fluidCode",
+      "kind": "Grouping",
+      "displayName": "Fluid Code",
+      "displayNameKey": "Qaqc_role_fluidCode",
+      "description": "Fluid code of the system, for example AW or IW.",
+      "descriptionKey": "Qaqc_role_fluidCode_description"
+    },
+    {
+      "name": "pipeSpec",
+      "kind": "Grouping",
+      "displayName": "Pipe Spec",
+      "displayNameKey": "Qaqc_role_pipeSpec",
+      "description": "Pipe specification of the weld.",
+      "descriptionKey": "Qaqc_role_pipeSpec_description"
+    },
+    {
+      "name": "tagNo",
+      "kind": "Grouping",
+      "displayName": "Tag No",
+      "displayNameKey": "Qaqc_role_tagNo",
+      "description": "Weld tag number. The building is read from it.",
+      "descriptionKey": "Qaqc_role_tagNo_description"
+    },
+    {
+      "name": "rowId",
+      "kind": "Grouping",
+      "displayName": "Row ID",
+      "displayNameKey": "Qaqc_role_rowId",
+      "description": "Required unique row number (Power Query Index column). Keeps identical rows separate.",
+      "descriptionKey": "Qaqc_role_rowId_description"
+    }
+  ],
+  "dataViewMappings": [
+    {
+      "conditions": [
+        {
+          "weldWeek": {
+            "max": 1
+          },
+          "signature": {
+            "max": 1
+          },
+          "signedWeek": {
+            "max": 1
+          },
+          "issue": {
+            "max": 1
+          },
+          "fluidCode": {
+            "max": 1
+          },
+          "pipeSpec": {
+            "max": 1
+          },
+          "tagNo": {
+            "max": 1
+          },
+          "rowId": {
+            "max": 1
+          }
+        }
+      ],
+      "table": {
+        "rows": {
+          "select": [
+            {
+              "for": {
+                "in": "weldWeek"
+              }
+            },
+            {
+              "for": {
+                "in": "signature"
+              }
+            },
+            {
+              "for": {
+                "in": "signedWeek"
+              }
+            },
+            {
+              "for": {
+                "in": "issue"
+              }
+            },
+            {
+              "for": {
+                "in": "fluidCode"
+              }
+            },
+            {
+              "for": {
+                "in": "pipeSpec"
+              }
+            },
+            {
+              "for": {
+                "in": "tagNo"
+              }
+            },
+            {
+              "for": {
+                "in": "rowId"
+              }
+            }
+          ],
+          "dataReductionAlgorithm": {
+            "window": {
+              "count": 30000
+            }
+          }
+        }
+      }
+    }
+  ],
+  "objects": {
+    "colors": {
+      "displayName": "Colors",
+      "displayNameKey": "Qaqc_colors",
+      "properties": {
+        "preset": {
+          "displayName": "Preset",
+          "displayNameKey": "Qaqc_colors_preset",
+          "type": {
+            "enumeration": [
+              {
+                "value": "qaqc",
+                "displayName": "QAQC",
+                "displayNameKey": "Qaqc_preset_qaqc"
+              },
+              {
+                "value": "blue",
+                "displayName": "Blue",
+                "displayNameKey": "Qaqc_preset_blue"
+              },
+              {
+                "value": "lotusworks",
+                "displayName": "LotusWorks",
+                "displayNameKey": "Qaqc_preset_lotusworks"
+              },
+              {
+                "value": "grayscale",
+                "displayName": "Grayscale",
+                "displayNameKey": "Qaqc_preset_grayscale"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "cardSettings": {
+      "displayName": "Background",
+      "displayNameKey": "Qaqc_background",
+      "properties": {
+        "backgroundColor": {
+          "displayName": "Background color",
+          "displayNameKey": "Qaqc_background_color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "backgroundOpacity": {
+          "displayName": "Background opacity",
+          "displayNameKey": "Qaqc_background_opacity",
+          "type": {
+            "numeric": true
+          }
+        },
+        "cardOpacity": {
+          "displayName": "Card opacity",
+          "displayNameKey": "Qaqc_card_opacity",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "animationSettings": {
+      "displayName": "Animation",
+      "displayNameKey": "Qaqc_animation",
+      "properties": {
+        "enabled": {
+          "displayName": "Transitions",
+          "displayNameKey": "Qaqc_animation_enabled",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "accessibility": {
+      "displayName": "Accessibility",
+      "displayNameKey": "Qaqc_accessibility",
+      "properties": {
+        "chartSummaries": {
+          "displayName": "Screen reader chart summaries",
+          "displayNameKey": "Qaqc_accessibility_summaries",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "hotspots": {
+      "displayName": "Hotspots",
+      "displayNameKey": "Qaqc_hotspots",
+      "properties": {
+        "minWelds": {
+          "displayName": "Minimum welds",
+          "displayNameKey": "Qaqc_hotspots_minWelds",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    }
+  },
+  "tooltips": {
+    "supportedTypes": {
+      "default": true
+    },
+    "supportEnhancedTooltips": true
+  },
+  "supportsEmptyDataView": true,
+  "supportsKeyboardFocus": true,
+  "privileges": []
+}

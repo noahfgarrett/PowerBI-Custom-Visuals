@@ -12,6 +12,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "-w", "@pbi/qaqc-mechanical"],
       "port": 5191
+    },
+    {
+      "name": "qaqc-welding-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "-w", "@pbi/qaqc-welding"],
+      "port": 5192
     }
   ]
 }

@@ -1,8 +1,8 @@
-import { Minimize2, type LucideIcon } from 'lucide-react'
+import { ArrowLeft, Minimize2, type LucideIcon } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactElement, type ReactNode } from 'react'
 
 import { useElementSize, type ElementSize } from '../hooks/useElementSize'
-import type { LegendItem } from './ChartPanel'
+import { LegendSwatch, type LegendItem } from './ChartPanel'
 
 const OPEN_MS = 250
 const CLOSE_MS = 220
@@ -25,9 +25,17 @@ export interface PanelBox {
  */
 type Phase = 'opening' | 'open' | 'closing' | 'shrinking'
 
+/**
+ * chart: an expanded grid chart, closed with a collapse button at the end of its title bar.
+ * page: a view opened from a dashboard header button, closed with a back button at the start of its title bar.
+ */
+export type PanelKind = 'chart' | 'page'
+
 export interface ExpandedPanelProps {
   title: string
   icon: LucideIcon
+  /** Defaults to chart. */
+  kind?: PanelKind
   legend: LegendItem[]
   emptyMessage: string | null
   animate: boolean
@@ -73,6 +81,7 @@ function canAnimate(element: HTMLElement): boolean {
 export function ExpandedPanel({
   title,
   icon: Icon,
+  kind = 'chart',
   legend,
   emptyMessage,
   animate,
@@ -195,17 +204,25 @@ export function ExpandedPanel({
       onKeyDown={handleKeyDown}
     >
       <header className="qaqc-panel-title">
+        {kind === 'page' && (
+          <button ref={collapseRef} type="button" className="qaqc-back-button" aria-label="Back to dashboard" onClick={collapse}>
+            <ArrowLeft size={14} aria-hidden="true" />
+            <span>Back</span>
+          </button>
+        )}
         <Icon size={15} aria-hidden="true" />
         <h3>{title}</h3>
-        <button ref={collapseRef} type="button" className="qaqc-icon-button" aria-label={`Collapse ${title}`} onClick={collapse}>
-          <Minimize2 size={14} aria-hidden="true" />
-        </button>
+        {kind === 'chart' && (
+          <button ref={collapseRef} type="button" className="qaqc-icon-button" aria-label={`Collapse ${title}`} onClick={collapse}>
+            <Minimize2 size={14} aria-hidden="true" />
+          </button>
+        )}
       </header>
       {legend.length > 0 && (
         <ul className={`qaqc-legend${revealClass}${stateClass}`}>
           {legend.map((item) => (
             <li key={item.label}>
-              <span className={`qaqc-legend-swatch is-${item.shape}`} style={{ background: item.color }} />
+              <LegendSwatch item={item} />
               {item.label}
             </li>
           ))}

@@ -20,6 +20,11 @@ export const UNSPECIFIED_BUILDING = 'Unspecified'
 const NO_ISSUE = 'no issue found'
 
 export const RECENT_WEEK_COUNT = 30
+
+/** The position of the first week in the recent window that ends at `endPosition`. */
+export function recentWindowStart(endPosition: number): number {
+  return Math.max(0, endPosition - RECENT_WEEK_COUNT + 1)
+}
 export const TOP_BUILDING_COUNT = 8
 
 export function cellText(value: unknown): string {
@@ -173,7 +178,7 @@ export function buildInspectionIndex(
   }
 }
 
-export function defaultViewState(index: InspectionIndex): ViewState {
+export function defaultViewState(index: { currentWeek: WorkWeek }): ViewState {
   return { selectedKey: index.currentWeek.key, windowEndKey: index.currentWeek.key, range: 'recent' }
 }
 
@@ -223,7 +228,7 @@ export function buildInspectionModel(index: InspectionIndex, view: ViewState): I
   const lastPosition = index.weeks.length - 1
   const selectedPosition = index.positionByKey.get(view.selectedKey) ?? lastPosition
   const endPosition = index.positionByKey.get(view.windowEndKey) ?? lastPosition
-  const startPosition = view.range === 'all' ? 0 : Math.max(0, endPosition - RECENT_WEEK_COUNT + 1)
+  const startPosition = view.range === 'all' ? 0 : recentWindowStart(endPosition)
   const selected = index.weeks[selectedPosition]
   const previous = selectedPosition > 0 ? index.weeks[selectedPosition - 1] : null
   const finalsToDate = index.cumulativeFinals[selectedPosition]

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildInspectionIndex, buildInspectionModel, defaultViewState } from '../inspections'
+import { buildInspectionIndex, buildInspectionModel, defaultViewState, RECENT_WEEK_COUNT, recentWindowStart } from '../inspections'
 import type { InspectionIndex, ViewState } from '../types'
 
 const COLUMNS = { workWeek: 0, phase: 1, issue: 2, building: 3 }
@@ -165,5 +165,16 @@ describe('buildInspectionModel', () => {
     const index = buildInspectionIndex(rows, COLUMNS, TODAY)
     const model = buildInspectionModel(index, defaultViewState(index))
     expect(model.buildings.map((bar) => bar.building)).toEqual(['New'])
+  })
+})
+
+describe('recentWindowStart', () => {
+  it('starts the recent window so it ends on the given week and holds RECENT_WEEK_COUNT weeks', () => {
+    expect(recentWindowStart(100)).toBe(100 - RECENT_WEEK_COUNT + 1)
+  })
+
+  it('starts at the first week when there are fewer weeks than the window', () => {
+    expect(recentWindowStart(RECENT_WEEK_COUNT - 2)).toBe(0)
+    expect(recentWindowStart(RECENT_WEEK_COUNT - 1)).toBe(0)
   })
 })

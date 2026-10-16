@@ -1,7 +1,11 @@
 export interface ChartColors {
   series1: string
   series2: string
+  /** Green for closed and other good outcomes. */
+  good: string
   bad: string
+  /** Amber for hotspots that need attention but are not failures. */
+  warn: string
   /** Solid card color, used for marker rings and badge text. */
   card: string
   grid: string

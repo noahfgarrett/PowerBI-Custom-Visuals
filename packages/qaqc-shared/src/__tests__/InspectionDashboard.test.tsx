@@ -111,6 +111,13 @@ describe('InspectionDashboard', () => {
     expect(view.container.querySelector('.qaqc-root.is-compact')).not.toBeNull()
   })
 
+  it('uses the compact cards-only layout on a short, narrow tile', () => {
+    view = draw({ viewport: { width: 800, height: 300 } })
+    const root = view.container.querySelector('.qaqc-root')
+    expect(root?.classList.contains('is-cards-only')).toBe(true)
+    expect(root?.classList.contains('is-compact')).toBe(true)
+  })
+
   it('disables controls when interactions are not allowed', () => {
     view = draw({ interactive: false })
     expect(view.container.querySelector('select')?.disabled).toBe(true)

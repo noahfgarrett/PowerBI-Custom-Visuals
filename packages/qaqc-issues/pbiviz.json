@@ -1,0 +1,25 @@
+{
+  "visual": {
+    "name": "qaqcIssues",
+    "displayName": "QAQC BIM Issues",
+    "guid": "qaqcIssues_1999F247C7D6",
+    "visualClassName": "QaqcIssuesVisual",
+    "version": "1.0.0.0",
+    "description": "BIM Issues Log: opened vs closed by work week, open and overall issue aging, and an Issue Detail table.",
+    "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
+    "gitHubUrl": "https://github.com/noahgarrett/PowerBI"
+  },
+  "apiVersion": "5.3.0",
+  "author": {
+    "name": "LotusWorks",
+    "email": "contact@visualizebuild.com"
+  },
+  "assets": {
+    "icon": "assets/icon.png"
+  },
+  "style": "style/visual.less",
+  "capabilities": "capabilities.json",
+  "stringResources": [
+    "stringResources/en-US/resources.resjson"
+  ]
+}

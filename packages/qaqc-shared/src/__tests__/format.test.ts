@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatCount, formatDelta, formatPercent, formatPointsDelta, pluralize, trendOf } from '../format'
+import {
+  formatCount,
+  formatDelta,
+  formatPercent,
+  formatPointsDelta,
+  formatSignedCount,
+  formatSignoffRate,
+  pluralize,
+  pointsTone,
+  pointsTrend,
+  signoffStatus,
+  trendOf,
+} from '../format'
 
 describe('format', () => {
   it('formats counts with thousands separators', () => {
@@ -10,6 +22,12 @@ describe('format', () => {
   it('formats percents and n/a', () => {
     expect(formatPercent(99.1596)).toBe('99.2%')
     expect(formatPercent(null)).toBe('n/a')
+  })
+
+  it('formats a signed count with a true minus and no sign at zero', () => {
+    expect(formatSignedCount(1204)).toBe('+1,204')
+    expect(formatSignedCount(-3)).toBe('−3')
+    expect(formatSignedCount(0)).toBe('0')
   })
 
   it('formats signed deltas against a week', () => {
@@ -33,5 +51,61 @@ describe('format', () => {
   it('pluralizes', () => {
     expect(pluralize(1, 'row', 'rows')).toBe('row')
     expect(pluralize(2, 'row', 'rows')).toBe('rows')
+  })
+})
+
+describe('signoffStatus', () => {
+  it('is bad below 10%', () => {
+    expect(signoffStatus(9.99)).toBe('bad')
+  })
+
+  it('is warn from 10% to under 15%', () => {
+    expect(signoffStatus(10)).toBe('warn')
+    expect(signoffStatus(14.99)).toBe('warn')
+  })
+
+  it('is good from 15%', () => {
+    expect(signoffStatus(15)).toBe('good')
+  })
+
+  it('has no status without a rate', () => {
+    expect(signoffStatus(null)).toBeUndefined()
+  })
+})
+
+describe('formatSignoffRate', () => {
+  it('truncates a sign-off rate under 10% to one decimal so it never reads 10%', () => {
+    expect(formatSignoffRate(9.97)).toBe('9.9%')
+    expect(formatSignoffRate(9.6)).toBe('9.6%')
+    expect(formatSignoffRate((24 / 250) * 100)).toBe('9.6%')
+    expect(formatSignoffRate((29 / 500) * 100)).toBe('5.8%')
+  })
+
+  it('shows a sign-off rate of 10% or more as a whole percent', () => {
+    expect(formatSignoffRate(10)).toBe('10%')
+    expect(formatSignoffRate(79.76)).toBe('80%')
+  })
+
+  it('shows n/a for a missing sign-off rate', () => {
+    expect(formatSignoffRate(null)).toBe('n/a')
+  })
+
+  it('tones a points change good when it rises, bad when it falls, neutral otherwise', () => {
+    expect(pointsTone(1.2)).toBe('good')
+    expect(pointsTone(-0.4)).toBe('bad')
+    expect(pointsTone(0)).toBe('neutral')
+    expect(pointsTone(null)).toBe('neutral')
+  })
+
+  it('treats a points change that rounds to zero as no change', () => {
+    expect(pointsTone(0.004)).toBe('neutral')
+    expect(pointsTone(-0.004)).toBe('neutral')
+    expect(pointsTrend(0.004)).toBe('flat')
+  })
+
+  it('trends a points change by its rounded direction, with no arrow when there is no change to show', () => {
+    expect(pointsTrend(0.8)).toBe('up')
+    expect(pointsTrend(-0.8)).toBe('down')
+    expect(pointsTrend(null)).toBe('none')
   })
 })

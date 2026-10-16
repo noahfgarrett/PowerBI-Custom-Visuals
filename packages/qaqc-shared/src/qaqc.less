@@ -156,14 +156,15 @@
 }
 
 .qaqc-kpi-row {
-  display: grid;
+  display: flex;
   flex: 0 0 auto;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 10px;
 }
 
 .qaqc-kpi-group {
   display: flex;
+  // KpiGroup sets its card count, so a 4-card group gets 4/7 of the row beside a 3-card group.
+  flex: var(--qaqc-kpi-cards) 1 0;
   flex-direction: column;
   gap: 4px;
   min-width: 0;
@@ -202,7 +203,8 @@
 
 .qaqc-kpi-group-body {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
   gap: 8px;
 }
 
@@ -254,6 +256,29 @@
   white-space: nowrap;
 }
 
+.qaqc-kpi-value.is-bad {
+  color: var(--qaqc-bad);
+}
+
+.qaqc-kpi-status {
+  display: block;
+  height: 3px;
+  margin: 2px 0 1px;
+  border-radius: 2px;
+}
+
+.qaqc-kpi-status.is-good {
+  background: var(--qaqc-good);
+}
+
+.qaqc-kpi-status.is-warn {
+  background: var(--qaqc-warn);
+}
+
+.qaqc-kpi-status.is-bad {
+  background: var(--qaqc-bad);
+}
+
 .qaqc-root.is-cards-only .qaqc-kpi-row {
   flex: 1 1 auto;
 }
@@ -265,6 +290,11 @@
 
 .qaqc-root.is-cards-only .qaqc-kpi-value {
   font-size: 30px;
+}
+
+// Narrow tiles stack the groups, so the values stay smaller and a footnote line still fits on a 300 px tile.
+.qaqc-root.is-cards-only.is-compact .qaqc-kpi-value {
+  font-size: 24px;
 }
 
 .qaqc-kpi-detail {
@@ -366,6 +396,21 @@
   border-radius: 999px;
 }
 
+.qaqc-legend-swatch.is-line {
+  width: 16px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.qaqc-legend-swatch.is-hairline {
+  width: 16px;
+  height: 1px; // Matches the chart's 1px .qaqc-overall-line.
+}
+
+.qaqc-legend-swatch.is-dashed {
+  flex: 0 0 auto;
+}
+
 .qaqc-chart-body {
   position: relative;
   flex: 1 1 0;
@@ -405,7 +450,14 @@
 /* A card-coloured halo keeps value labels readable over lines and bars. */
 .qaqc-issue-rate,
 .qaqc-end-label,
-.qaqc-bar-value {
+.qaqc-bar-value,
+.qaqc-rate-value,
+.qaqc-rate-label,
+.qaqc-total-label,
+.qaqc-signed-label:not(.is-inside),
+.qaqc-baseline-label,
+.qaqc-trend-label:not(.is-inside),
+.qaqc-open-aging-value:not(.is-inside) {
   paint-order: stroke;
   stroke: var(--qaqc-card-solid);
   stroke-width: 3px;
@@ -557,7 +609,12 @@
 }
 
 .qaqc-root.is-compact .qaqc-kpi-row {
-  grid-template-columns: minmax(0, 1fr);
+  flex-direction: column;
+}
+
+// Stacked groups share any spare height evenly, so cards-only tiles still fill.
+.qaqc-root.is-compact .qaqc-kpi-group {
+  flex: 1 1 auto;
 }
 
 .qaqc-root.is-compact .qaqc-charts {
@@ -744,6 +801,12 @@
   text-align: left;
 }
 
+// Text columns beyond the first (marked .is-text) read left-aligned too.
+.qaqc-table thead th.is-text,
+.qaqc-table td.is-text {
+  text-align: left;
+}
+
 .qaqc-table thead th button {
   width: 100%;
   padding: 8px 10px;
@@ -757,6 +820,12 @@
   letter-spacing: 0.04em;
   text-align: inherit;
   text-transform: uppercase;
+}
+
+.qaqc-table thead th button:focus-visible {
+  // Header cells clip overflow (windowed tables), so the ring sits inside the button.
+  outline: 2px solid var(--qaqc-accent);
+  outline-offset: -2px;
 }
 
 .qaqc-table thead th[aria-sort] button {
@@ -826,6 +895,606 @@
 
 .qaqc-expanded.is-compact .qaqc-summary {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+// Welding charts.
+
+.qaqc-weld-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.qaqc-axis-title {
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.qaqc-rate-line {
+  stroke-width: 2.25px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.qaqc-rate-dot {
+  stroke-width: 2px;
+  pointer-events: none;
+}
+
+.qaqc-signoff-baseline {
+  stroke-width: 1.5px;
+  stroke-dasharray: 5 4; // The dashed legend swatch in ChartPanel.tsx uses the same pattern.
+  pointer-events: none;
+}
+
+.qaqc-baseline-label {
+  font-size: 9.5px;
+  font-weight: 700;
+}
+
+.qaqc-overall-line {
+  stroke-width: 1px;
+  pointer-events: none;
+}
+
+.qaqc-drill-chart {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.qaqc-breadcrumb {
+  display: flex;
+  flex: 0 0 24px;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  font-size: 11.5px;
+}
+
+.qaqc-breadcrumb button {
+  flex: 0 0 auto;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--qaqc-accent);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  transition: background-color 150ms ease-out;
+}
+
+.qaqc-breadcrumb button:hover:not(:disabled) {
+  background: var(--qaqc-accent-soft);
+}
+
+.qaqc-breadcrumb button:disabled {
+  color: var(--qaqc-muted);
+  cursor: not-allowed;
+}
+
+.qaqc-breadcrumb-separator {
+  color: var(--qaqc-faint);
+}
+
+.qaqc-breadcrumb-current {
+  overflow: hidden;
+  color: var(--qaqc-ink);
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Rows draw their own keyboard-only ring, so the browser outline stays off.
+.qaqc-drill-row {
+  cursor: pointer;
+  outline: none;
+}
+
+.qaqc-breadcrumb button:focus-visible,
+.qaqc-disclosure:focus-visible {
+  outline: 2px solid var(--qaqc-accent);
+  outline-offset: 1px;
+}
+
+.qaqc-disclosure {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.qaqc-disclosure svg {
+  flex: 0 0 auto;
+  color: var(--qaqc-muted);
+  transition: transform 150ms ease-out;
+}
+
+.qaqc-disclosure[aria-expanded="true"] svg {
+  transform: rotate(90deg);
+}
+
+// Indent past the chevron (14 px + 4 px gap) so spec names line up under their system's name.
+.qaqc-table tbody .qaqc-spec-row th {
+  padding-left: 28px;
+  color: var(--qaqc-ink-2);
+  font-weight: 500;
+}
+
+.qaqc-table .qaqc-spec-row td {
+  color: var(--qaqc-ink-2);
+}
+
+// Issue charts, ported from the HTML app's RangeChart, OpenAgingChart and AgingChart.
+
+.qaqc-trend-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.qaqc-remaining-area {
+  pointer-events: none;
+}
+
+.qaqc-remaining-line {
+  stroke-width: 2px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.qaqc-remaining-dot {
+  stroke-width: 2px;
+  pointer-events: none;
+}
+
+.qaqc-open-aging-value {
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.qaqc-open-aging-bucket {
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.qaqc-aging {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  height: 100%;
+  min-height: 0;
+}
+
+.qaqc-aging-strip {
+  display: flex;
+  gap: 2px;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--qaqc-hairline);
+}
+
+.qaqc-aging-strip i,
+.qaqc-aging-track i {
+  display: block;
+  height: 100%;
+}
+
+.qaqc-aging-row {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.qaqc-aging-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--qaqc-ink-2);
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.qaqc-aging-swatch {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 3px;
+}
+
+.qaqc-aging-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--qaqc-hairline);
+}
+
+.qaqc-aging-track i {
+  border-radius: inherit;
+}
+
+// High contrast makes the hairline the foreground colour, which would fill the empty tracks; outline them instead.
+.qaqc-aging.is-high-contrast .qaqc-aging-strip,
+.qaqc-aging.is-high-contrast .qaqc-aging-track {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--qaqc-hairline);
+}
+
+.qaqc-aging-row strong {
+  min-width: 52px;
+  color: var(--qaqc-ink);
+  font-size: 10.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.qaqc-aging-percent {
+  margin-left: 5px;
+  color: var(--qaqc-muted);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+// Expanded Overall Issue Aging: the strip and its rows, then the closed and open split, in a centred column.
+.qaqc-aging-expanded {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  max-width: 880px;
+  height: 100%;
+  margin: 0 auto;
+  padding-top: 10px;
+  overflow-y: auto;
+}
+
+.qaqc-aging-expanded > .qaqc-aging {
+  flex: 0 0 auto;
+  gap: 12px;
+  height: auto;
+}
+
+.qaqc-aging-expanded .qaqc-aging-strip {
+  height: 12px;
+}
+
+.qaqc-aging-expanded .qaqc-aging-row {
+  grid-template-columns: 110px minmax(0, 1fr) auto;
+}
+
+.qaqc-aging-expanded .qaqc-aging-label,
+.qaqc-aging-expanded .qaqc-aging-row strong {
+  font-size: 12px;
+}
+
+.qaqc-aging-expanded .qaqc-aging-track {
+  height: 10px;
+}
+
+.qaqc-aging-expanded > .qaqc-table-wrap {
+  flex: 0 0 auto;
+  height: auto;
+  overflow: visible;
+}
+
+// Its headers are plain text, not sort buttons, so they take the sort buttons' padding and type.
+.qaqc-aging-split-table thead th {
+  padding: 8px 10px;
+  color: var(--qaqc-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+// Windowed tables (hooks/useVirtualRows.ts) set every body row to TABLE_ROW_HEIGHT inline; cells stay on one line
+// so no row grows past it, and long text ends in an ellipsis with the full text in its title.
+.qaqc-table.is-windowed thead th,
+.qaqc-table.is-windowed td,
+.qaqc-table.is-windowed tbody th {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qaqc-table .qaqc-virtual-spacer td {
+  padding: 0;
+  border: 0;
+}
+
+// The title column takes the spare width and truncates rather than widening the table.
+.qaqc-open-issues-table .qaqc-issue-title {
+  width: 100%;
+  max-width: 0;
+}
+
+// Issue Detail: the page opened from the dashboard header (HeaderOverlayButton, IssueDetail, IssueDetailTable).
+
+.qaqc-header-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 11px 0 9px;
+  border: 1px solid var(--qaqc-border);
+  border-radius: 9px;
+  background: var(--qaqc-card-solid);
+  color: var(--qaqc-ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color 150ms ease-out, border-color 150ms ease-out;
+}
+
+.qaqc-header-button svg {
+  flex: 0 0 auto;
+  color: var(--qaqc-accent);
+}
+
+.qaqc-header-button:hover {
+  border-color: var(--qaqc-accent);
+  background: var(--qaqc-accent-soft);
+}
+
+.qaqc-header-button:focus-visible,
+.qaqc-back-button:focus-visible {
+  outline: 2px solid var(--qaqc-accent);
+  outline-offset: 2px;
+}
+
+.qaqc-back-button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  margin-right: 4px;
+  padding: 0 10px 0 7px;
+  border: 1px solid var(--qaqc-border);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--qaqc-ink-2);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+
+// The title bar colors its icons with the accent; the back arrow follows the button's own color.
+.qaqc-panel-title .qaqc-back-button svg {
+  color: inherit;
+}
+
+.qaqc-back-button:hover {
+  background: var(--qaqc-accent-soft);
+  color: var(--qaqc-accent);
+}
+
+.qaqc-issue-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  // On a short tile the page scrolls, so the table keeps its minimum height below.
+  overflow-y: auto;
+}
+
+// Two groups of two cards; they stack when the overlay is too narrow for both.
+.qaqc-issue-detail-cards {
+  flex-wrap: wrap;
+}
+
+.qaqc-issue-detail-cards .qaqc-kpi-group {
+  min-width: 240px;
+}
+
+.qaqc-issue-detail-legend {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 0;
+  padding: 0 2px;
+  list-style: none;
+}
+
+.qaqc-issue-detail-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--qaqc-ink-2);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.qaqc-issue-detail-legend strong {
+  color: var(--qaqc-ink);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.qaqc-issue-detail-swatch {
+  display: block;
+  flex: 0 0 auto;
+  width: 18px;
+  height: 12px;
+  border: 1px solid var(--qaqc-border);
+  border-radius: 4px;
+}
+
+.qaqc-issue-detail-swatch.is-report {
+  background: var(--qaqc-card-solid);
+}
+
+.qaqc-issue-detail-swatch.is-discussion {
+  background: var(--qaqc-discussion);
+  box-shadow: inset 3px 0 var(--qaqc-muted);
+}
+
+// A table wrap that shares a flex column with other content, instead of filling its parent's height.
+.qaqc-table-wrap.is-flex-fill {
+  flex: 1 1 0;
+  height: auto;
+  min-height: 0;
+}
+
+// The header and at least four rows stay in view however short the tile: 164px = about 36px for the sticky header row
+// and the wrap's border + 4 × TABLE_ROW_HEIGHT (32px, hooks/useVirtualRows.ts). Three classes, so it outranks
+// .qaqc-table-wrap.is-flex-fill's min-height: 0 by specificity, not by source order.
+.qaqc-issue-detail .qaqc-table-wrap.qaqc-issue-detail-wrap {
+  min-height: 164px;
+}
+
+.qaqc-issue-detail-wrap {
+  overflow: auto;
+  border: 1px solid var(--qaqc-border);
+  border-radius: 12px;
+  background: var(--qaqc-card-solid);
+}
+
+// Fixed layout: column widths and the minimum width come from IssueDetailTable's COLUMNS, so they do not shift as
+// windowed rows scroll past; narrow overlays scroll sideways rather than squeezing the title.
+.qaqc-issue-detail-table {
+  table-layout: fixed;
+}
+
+// No vertical padding: cells centre in the fixed TABLE_ROW_HEIGHT row, so the status pill never grows the row.
+.qaqc-issue-detail-table td,
+.qaqc-issue-detail-table tbody th {
+  padding-top: 0;
+  padding-bottom: 0;
+  vertical-align: middle;
+}
+
+.qaqc-issue-detail-table tbody tr:not(.qaqc-virtual-spacer):hover > * {
+  background: var(--qaqc-accent-soft);
+}
+
+// "Open for discussion" rows, as in the app: a tint from the preset and an inset bar on the leading edge.
+.qaqc-issue-detail-table tbody tr.is-discussion > * {
+  background: var(--qaqc-discussion);
+}
+
+.qaqc-issue-detail-table tbody tr.is-discussion > th {
+  box-shadow: inset 3px 0 var(--qaqc-muted);
+}
+
+// Text carries the contrast (ink on a light tint in every preset); the dot carries the status color.
+.qaqc-status-pill {
+  display: inline-block;
+  max-width: 100%;
+  padding: 1px 8px 1px 7px;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--qaqc-ink);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.qaqc-status-pill::before {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 5px;
+  border-radius: 999px;
+  background: var(--qaqc-muted);
+  content: "";
+  vertical-align: 1px;
+}
+
+.qaqc-status-pill.is-closed {
+  background: var(--qaqc-good-soft);
+}
+
+.qaqc-status-pill.is-closed::before {
+  background: var(--qaqc-good);
+}
+
+.qaqc-status-pill.is-open {
+  background: var(--qaqc-accent-soft);
+}
+
+.qaqc-status-pill.is-open::before {
+  background: var(--qaqc-accent);
+}
+
+.qaqc-status-pill.is-other {
+  border-color: var(--qaqc-border);
+  color: var(--qaqc-ink-2);
+}
+
+.qaqc-issue-detail-empty {
+  display: flex;
+  margin: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 24px;
+  border: 1px dashed var(--qaqc-border);
+  border-radius: 12px;
+  color: var(--qaqc-muted);
+  text-align: center;
+}
+
+.qaqc-issue-detail-empty svg {
+  margin-bottom: 4px;
+  color: var(--qaqc-faint);
+}
+
+.qaqc-issue-detail-empty strong {
+  color: var(--qaqc-ink);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.qaqc-issue-detail-empty span {
+  max-width: 46ch;
+  font-size: 12px;
+}
+
+// Forced colors (Windows high contrast) drop backgrounds and box shadows, so the discussion marker becomes a real
+// border, and the legend swatches keep their outlines.
+@media (forced-colors: active) {
+  .qaqc-issue-detail-table tbody tr.is-discussion > th {
+    border-left: 3px solid CanvasText;
+  }
+
+  .qaqc-issue-detail-swatch {
+    border: 1px solid CanvasText;
+  }
+
+  .qaqc-issue-detail-swatch.is-discussion {
+    border-left-width: 3px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

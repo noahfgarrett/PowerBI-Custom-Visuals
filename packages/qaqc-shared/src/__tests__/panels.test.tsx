@@ -48,6 +48,25 @@ describe('ChartPanel', () => {
   })
 })
 
+describe('ChartPanel legend shapes', () => {
+  it('draws line and dashed-line swatches', () => {
+    view = render(
+      <ChartPanel
+        title="Signoffs by Work Week"
+        icon={ChartColumnStacked}
+        legend={[{ label: 'Sign-off %', color: '#B45309', shape: 'line' }, { label: '10% baseline', color: '#D03B3B', shape: 'dashed' }]}
+        emptyMessage="No welds"
+      >
+        {() => null}
+      </ChartPanel>,
+    )
+    expect(view.container.querySelector<HTMLElement>('.qaqc-legend-swatch.is-line')?.style.background).toBe('rgb(180, 83, 9)')
+    const dash = view.container.querySelector('.qaqc-legend-swatch.is-dashed line')
+    expect(dash?.getAttribute('stroke')).toBe('#D03B3B')
+    expect(dash?.getAttribute('stroke-dasharray')).toBe('5 4')
+  })
+})
+
 describe('StatusPanel', () => {
   it('lists the items it is given', () => {
     view = render(<StatusPanel icon={ListChecks} title="Add columns" message="Drag these columns:" items={['Work Week Observed → Work Week']} />)

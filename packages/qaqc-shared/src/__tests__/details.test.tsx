@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import { BuildingTable } from '../components/BuildingTable'
 import { IssueWeekList } from '../components/IssueWeekList'
-import { WindowSummary } from '../components/WindowSummary'
+import { IssueWindowSummary, WeldWindowSummary, WindowSummary } from '../components/WindowSummary'
 import type { BuildingBar, PassRatePoint } from '../types'
 import { makeWorkWeek } from '../workWeeks'
 import { render, type Rendered } from './render'
@@ -40,6 +40,48 @@ describe('WindowSummary', () => {
   it('reads n/a for the average when the window has no weeks', () => {
     view = render(<WindowSummary totals={{ finals: 0, sors: 0, issuesFound: 0, weeks: 0 }} />)
     expect(summaryPairs(view.container)[3]).toEqual(['Avg per week', 'n/a'])
+  })
+})
+
+describe('WeldWindowSummary', () => {
+  it('shows welds, signed, sign-off %, and issues created for the window', () => {
+    view = render(<WeldWindowSummary totals={{ welds: 1570, signed: 963, issues: 11, weeks: 30 }} />)
+    expect(summaryPairs(view.container)).toEqual([
+      ['Welds', '1,570'],
+      ['Signed', '963'],
+      ['Sign-off %', '61.3%'],
+      ['Issues created', '11'],
+    ])
+  })
+
+  it('reads n/a for sign-off % when the window has no welds', () => {
+    view = render(<WeldWindowSummary totals={{ welds: 0, signed: 0, issues: 0, weeks: 30 }} />)
+    expect(summaryPairs(view.container)[2]).toEqual(['Sign-off %', 'n/a'])
+  })
+})
+
+describe('IssueWindowSummary', () => {
+  it('shows opened, closed, the change in remaining open, and the closure rate at the window end', () => {
+    view = render(<IssueWindowSummary totals={{ opened: 1204, closed: 9, remainingChange: 1195, closureRate: 71.186, weeks: 30 }} />)
+    expect(summaryPairs(view.container)).toEqual([
+      ['Opened', '1,204'],
+      ['Closed', '9'],
+      ['Change in remaining', '+1,195'],
+      ['Closure rate', '71.2%'],
+    ])
+  })
+
+  it('shows a fall in remaining open with a minus sign', () => {
+    view = render(<IssueWindowSummary totals={{ opened: 1, closed: 4, remainingChange: -3, closureRate: 50, weeks: 30 }} />)
+    expect(summaryPairs(view.container)[2]).toEqual(['Change in remaining', '−3'])
+  })
+
+  it('reads n/a for the closure rate when nothing was opened', () => {
+    view = render(<IssueWindowSummary totals={{ opened: 0, closed: 0, remainingChange: 0, closureRate: null, weeks: 30 }} />)
+    expect(summaryPairs(view.container).slice(2)).toEqual([
+      ['Change in remaining', '0'],
+      ['Closure rate', 'n/a'],
+    ])
   })
 })
 

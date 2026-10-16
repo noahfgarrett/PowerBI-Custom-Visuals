@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest'
 
-import { chartColorsFromTheme, isPresetName, PRESETS, resolveTheme, STATUS_COLORS, withOpacity, type ThemeOptions } from '../theme'
+import {
+  chartColorsFromTheme,
+  compositeOver,
+  contrastRatio,
+  isPresetName,
+  PRESETS,
+  resolveTheme,
+  STATUS_COLORS,
+  withOpacity,
+  type ThemeOptions,
+} from '../theme'
 
 const BASE: ThemeOptions = { preset: 'qaqc', backgroundColor: '', backgroundOpacity: 100, cardOpacity: 100, highContrast: null }
 
@@ -51,10 +61,48 @@ describe('resolveTheme', () => {
     expect(theme.cssVariables['--qaqc-page']).toBe('#000000')
   })
 
+  it('tints Issue Detail discussion rows with the preset series 1 over the solid card', () => {
+    expect(resolveTheme(BASE).cssVariables['--qaqc-discussion']).toBe('#ECF1F8')
+    expect(resolveTheme({ ...BASE, preset: 'lotusworks' }).cssVariables['--qaqc-discussion']).toBe(
+      compositeOver(PRESETS.lotusworks.series1, 0.08, PRESETS.lotusworks.card),
+    )
+  })
+
+  it('keeps the discussion tint solid when cards are transparent', () => {
+    expect(resolveTheme({ ...BASE, cardOpacity: 0 }).cssVariables['--qaqc-discussion']).toBe('#ECF1F8')
+  })
+
+  it('tints closed status pills with the fixed good color', () => {
+    expect(resolveTheme(BASE).cssVariables['--qaqc-good-soft']).toBe('rgba(10, 122, 10, 0.12)')
+  })
+
+  it('drops the row and pill tints in high-contrast mode', () => {
+    const theme = resolveTheme({
+      ...BASE,
+      highContrast: { foreground: '#FFFF00', background: '#000000', foregroundSelected: '#00FFFF' },
+    })
+    expect(theme.cssVariables['--qaqc-discussion']).toBe('#000000')
+    expect(theme.cssVariables['--qaqc-good-soft']).toBe('#000000')
+  })
+
   it('derives solid chart colors', () => {
     const colors = chartColorsFromTheme(resolveTheme({ ...BASE, cardOpacity: 0 }))
     expect(colors.card).toBe('#FDFEFF')
     expect(colors.bad).toBe('#D03B3B')
+  })
+
+  it('carries the good green into chart colors', () => {
+    expect(chartColorsFromTheme(resolveTheme(BASE)).good).toBe(STATUS_COLORS.good)
+  })
+
+  it('flags high-contrast mode on the resolved theme', () => {
+    const host = { foreground: '#FFFF00', background: '#000000', foregroundSelected: '#00FFFF' }
+    expect(resolveTheme(BASE).isHighContrast).toBe(false)
+    expect(resolveTheme({ ...BASE, highContrast: host }).isHighContrast).toBe(true)
+  })
+
+  it('carries the warn amber into chart colors', () => {
+    expect(chartColorsFromTheme(resolveTheme(BASE)).warn).toBe(STATUS_COLORS.warn)
   })
 })
 
@@ -63,5 +111,41 @@ describe('isPresetName', () => {
     expect(isPresetName('blue')).toBe(true)
     expect(isPresetName('neon')).toBe(false)
     expect(isPresetName(3)).toBe(false)
+  })
+})
+
+describe('compositeOver', () => {
+  it('blends a colour at an opacity over a background', () => {
+    expect(compositeOver('#003459', 0.675, '#FFFFFF')).toBe('#53768F')
+    expect(compositeOver('#000000', 0.5, '#FFFFFF')).toBe('#808080')
+  })
+
+  it('keeps the colour at full opacity and the background at none', () => {
+    expect(compositeOver('#2E5AAC', 1, '#FDFEFF')).toBe('#2E5AAC')
+    expect(compositeOver('#2E5AAC', 0, '#FDFEFF')).toBe('#FDFEFF')
+  })
+
+  it('treats a non-finite opacity as fully opaque, like withOpacity', () => {
+    expect(compositeOver('#003459', Number.NaN, '#FFFFFF')).toBe('#003459')
+  })
+
+  it('returns the colour unchanged when either colour is not hex', () => {
+    expect(compositeOver('red', 0.5, '#FFFFFF')).toBe('red')
+  })
+})
+
+describe('contrastRatio', () => {
+  it('measures WCAG contrast between two colours', () => {
+    expect(contrastRatio('#000000', '#FFFFFF')).toBeCloseTo(21, 6)
+    expect(contrastRatio('#FFFFFF', '#FFFFFF')).toBeCloseTo(1, 6)
+    expect(contrastRatio('#FFFFFF', '#53768F')).toBeCloseTo(4.82, 2)
+  })
+
+  it('is the same in either order', () => {
+    expect(contrastRatio('#1B2530', '#86B6EF')).toBeCloseTo(contrastRatio('#86B6EF', '#1B2530'), 9)
+  })
+
+  it('is 1 when a colour is not hex', () => {
+    expect(contrastRatio('red', '#FFFFFF')).toBe(1)
   })
 })

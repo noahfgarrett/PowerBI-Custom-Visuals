@@ -6,7 +6,19 @@ import { useElementSize, type ElementSize } from '../hooks/useElementSize'
 export interface LegendItem {
   label: string
   color: string
-  shape: 'bar' | 'dot'
+  shape: 'bar' | 'dot' | 'line' | 'hairline' | 'dashed'
+}
+
+/** One legend key. A dashed line is drawn in SVG so its dash pattern matches the chart's (`.qaqc-signoff-baseline` in qaqc.less). */
+export function LegendSwatch({ item }: { item: LegendItem }): ReactElement {
+  if (item.shape === 'dashed') {
+    return (
+      <svg className="qaqc-legend-swatch is-dashed" width={16} height={4} aria-hidden="true">
+        <line x1={0} x2={16} y1={2} y2={2} stroke={item.color} strokeWidth={1.5} strokeDasharray="5 4" />
+      </svg>
+    )
+  }
+  return <span className={`qaqc-legend-swatch is-${item.shape}`} style={{ background: item.color }} />
 }
 
 export interface ChartPanelProps {
@@ -50,7 +62,7 @@ export function ChartPanel({
         <ul className="qaqc-legend">
           {legend.map((item) => (
             <li key={item.label}>
-              <span className={`qaqc-legend-swatch is-${item.shape}`} style={{ background: item.color }} />
+              <LegendSwatch item={item} />
               {item.label}
             </li>
           ))}

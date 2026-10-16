@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { KpiCard } from '../components/KpiCard'
 import { KpiGroup } from '../components/KpiGroup'
 import { render, type Rendered } from './render'
+import { ruleBody } from './stylesheet'
 
 let view: Rendered | null = null
 
@@ -34,6 +35,49 @@ describe('KpiCard', () => {
   })
 })
 
+describe('KpiCard value tone', () => {
+  it('colors the value red when it is marked bad', () => {
+    view = render(<KpiCard label="Sign-off %" value="5%" detail="1 of 20" tone="neutral" trend="none" icon={ClipboardCheck} isValueBad />)
+    expect(view.container.querySelector('.qaqc-kpi-value.is-bad')).not.toBeNull()
+  })
+
+  it('names a bad value for screen readers', () => {
+    view = render(<KpiCard label="Sign-off %" value="5.0%" detail="1 of 20" tone="neutral" trend="none" icon={ClipboardCheck} isValueBad />)
+    expect(view.container.querySelector('article')?.getAttribute('aria-label')).toBe('Sign-off %: 5.0%. 1 of 20. Below target')
+  })
+
+  it('leaves the value uncolored by default', () => {
+    view = render(<KpiCard label="Sign-off %" value="80%" detail="67 of 84" tone="neutral" trend="none" icon={ClipboardCheck} />)
+    expect(view.container.querySelector('.qaqc-kpi-value')?.className).toBe('qaqc-kpi-value')
+  })
+})
+
+describe('KpiCard status', () => {
+  it('draws a status line under the value and names it for screen readers', () => {
+    view = render(<KpiCard label="Overall Sign-off %" value="12.0%" detail="+0.4 pts" tone="neutral" trend="up" icon={ClipboardCheck} status="warn" />)
+    const card = view.container.querySelector('article')
+    const line = card?.querySelector('.qaqc-kpi-status')
+    expect(line?.classList.contains('is-warn')).toBe(true)
+    expect(line?.previousElementSibling?.classList.contains('qaqc-kpi-value')).toBe(true)
+    expect(card?.getAttribute('aria-label')).toBe('Overall Sign-off %: 12.0%. +0.4 pts. Status: watch')
+  })
+
+  it('classes the line by status', () => {
+    view = render(<KpiCard label="Overall Sign-off %" value="60.2%" detail="No change" tone="neutral" trend="flat" icon={ClipboardCheck} status="good" />)
+    expect(view.container.querySelector('.qaqc-kpi-status.is-good')).not.toBeNull()
+    expect(view.container.querySelector('article')?.getAttribute('aria-label')).toMatch(/Status: on track$/)
+    view.rerender(<KpiCard label="Overall Sign-off %" value="8.0%" detail="No change" tone="neutral" trend="flat" icon={ClipboardCheck} status="bad" />)
+    expect(view.container.querySelector('.qaqc-kpi-status.is-bad')).not.toBeNull()
+    expect(view.container.querySelector('article')?.getAttribute('aria-label')).toMatch(/Status: below target$/)
+  })
+
+  it('draws no status line and adds no status text without a status', () => {
+    view = render(<KpiCard label="Total Welds" value="1,751" detail="+0 this WW" tone="neutral" trend="none" icon={ClipboardCheck} />)
+    expect(view.container.querySelector('.qaqc-kpi-status')).toBeNull()
+    expect(view.container.querySelector('article')?.getAttribute('aria-label')).toBe('Total Welds: 1,751. +0 this WW')
+  })
+})
+
 describe('KpiGroup', () => {
   it('renders a titled group with an optional subtitle', () => {
     view = render(
@@ -44,5 +88,45 @@ describe('KpiGroup', () => {
     const group = view.container.querySelector('section.qaqc-kpi-group.is-total')
     expect(group?.querySelector('em')?.textContent).toBe("Through WW42'2026")
     expect(group?.querySelector('.child')).not.toBeNull()
+  })
+})
+
+/** Class-only selectors: their specificity is the number of classes. */
+function classCount(selector: string): number {
+  return selector.match(/\.[a-z-]+/g)?.length ?? 0
+}
+
+describe('KpiGroup layout', () => {
+  it('passes its card count to the stylesheet so the groups share the row in proportion', () => {
+    view = render(
+      <KpiGroup title="WW42'2026" variant="week">
+        <span />
+        <span />
+        <span />
+        <span />
+      </KpiGroup>,
+    )
+    const group = view.container.querySelector<HTMLElement>('section.qaqc-kpi-group')
+    expect(group?.style.getPropertyValue('--qaqc-kpi-cards')).toBe('4')
+  })
+
+  it('lays the cards out in one row whatever their count', () => {
+    const body = ruleBody('.qaqc-kpi-group-body')
+    expect(body).toContain('grid-auto-flow: column;')
+    expect(body).toContain('grid-auto-columns: minmax(0, 1fr);')
+    expect(body).not.toContain('grid-template-columns')
+  })
+
+  it('sizes each group by its card count in the row', () => {
+    expect(ruleBody('.qaqc-kpi-row')).toContain('display: flex;')
+    expect(ruleBody('.qaqc-kpi-group')).toContain('flex: var(--qaqc-kpi-cards) 1 0;')
+  })
+
+  it('sizes card values on compact cards-only tiles with a rule that outranks the cards-only size', () => {
+    const cardsOnly = '.qaqc-root.is-cards-only .qaqc-kpi-value'
+    const compactCardsOnly = '.qaqc-root.is-cards-only.is-compact .qaqc-kpi-value'
+    expect(ruleBody(cardsOnly)).toContain('font-size:')
+    expect(ruleBody(compactCardsOnly)).toContain('font-size:')
+    expect(classCount(compactCardsOnly)).toBeGreaterThan(classCount(cardsOnly))
   })
 })

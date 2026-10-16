@@ -8,7 +8,7 @@ import { makeWorkWeek } from '../workWeeks'
 import { render, type Rendered } from './render'
 
 const COLORS: ChartColors = {
-  series1: '#2E5AAC', series2: '#86B6EF', bad: '#D03B3B', card: '#FDFEFF',
+  series1: '#2E5AAC', series2: '#86B6EF', good: '#0A7A0A', bad: '#D03B3B', warn: '#B45309', card: '#FDFEFF',
   grid: '#EBEEF3', axisText: '#6A7583', ink: '#1B2530', accent: '#2E5AAC',
 }
 
@@ -111,6 +111,15 @@ describe('StackedBarChart', () => {
     })
     fire(hit, new MouseEvent('mouseout', { bubbles: true, relatedTarget: document.body }))
     expect(onHover).toHaveBeenLastCalledWith(null)
+  })
+
+  it('draws its keyboard focus ring with the shared focus-ring class', () => {
+    view = draw()
+    const svg = view.container.querySelector('svg')
+    if (!svg) throw new Error('svg missing')
+    fire(svg, new FocusEvent('focusin', { bubbles: true }))
+    fire(svg, new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }))
+    expect(view.container.querySelector('.qaqc-focus-ring')).not.toBeNull()
   })
 
   it('announces the focused week through a live region', () => {

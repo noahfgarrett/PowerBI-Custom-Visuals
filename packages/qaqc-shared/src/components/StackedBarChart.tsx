@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState, type KeyboardEvent, type MouseEvent, type ReactElement } from 'react'
+import { useEffect, useMemo, useState, type MouseEvent, type ReactElement } from 'react'
 
 import { labelIndices, niceScale, roundedTopBarPath } from '../chartMath'
 import type { ChartColors, TooltipHandler } from '../chartTypes'
 import { formatCount } from '../format'
+import { useWeekFocus } from '../hooks/useWeekFocus'
 import type { WeekCounts } from '../types'
 import { shortWeekLabel, shortWeekLabelWithYear } from '../workWeeks'
 
@@ -51,14 +52,13 @@ export function StackedBarChart({
   onHover,
 }: StackedBarChartProps): ReactElement {
   const selectedIndex = weeks.findIndex((item) => item.week.key === selectedKey)
-  const [focusIndex, setFocusIndex] = useState(selectedIndex >= 0 ? selectedIndex : weeks.length - 1)
-  const [hasFocus, setHasFocus] = useState(false)
-  const [showFocusRing, setShowFocusRing] = useState(false)
+  const { focus, hasFocus, showFocusRing, svgProps } = useWeekFocus({
+    count: weeks.length,
+    selectedIndex,
+    interactive,
+    onSelect: (index) => onSelectWeek(weeks[index].week.key),
+  })
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
-
-  useEffect(() => {
-    if (selectedIndex >= 0) setFocusIndex(selectedIndex)
-  }, [selectedIndex])
 
   useEffect(() => {
     setHoverIndex(null)
@@ -77,7 +77,6 @@ export function StackedBarChart({
       : labelIndices(weeks.length, plotWidth, selectedIndex)),
     [weeks.length, plotWidth, selectedIndex, spansYears],
   )
-  const focus = Math.min(Math.max(focusIndex, 0), weeks.length - 1)
   const y = (value: number): number => top + plotHeight - (value / scale.max) * plotHeight
   const bandX = (index: number): number => MARGIN.left + index * band
 
@@ -101,28 +100,6 @@ export function StackedBarChart({
     onHover(null)
   }
 
-  function handleKeyDown(event: KeyboardEvent<SVGSVGElement>): void {
-    if (weeks.length === 0) return
-    const targets: Record<string, number> = {
-      ArrowLeft: focus - 1,
-      ArrowRight: focus + 1,
-      Home: 0,
-      End: weeks.length - 1,
-    }
-    const target = targets[event.key]
-    if (target !== undefined) {
-      event.preventDefault()
-      setShowFocusRing(true)
-      setFocusIndex(Math.min(Math.max(target, 0), weeks.length - 1))
-      return
-    }
-    if ((event.key === 'Enter' || event.key === ' ') && interactive) {
-      event.preventDefault()
-      setShowFocusRing(true)
-      onSelectWeek(weeks[focus].week.key)
-    }
-  }
-
   const summary = describe && weeks.length > 0
     ? `Finals and SORs by work week, ${weeks[0].week.label} to ${weeks[weeks.length - 1].week.label}`
     : 'Finals and SORs by work week'
@@ -137,14 +114,7 @@ export function StackedBarChart({
         height={height}
         role="group"
         aria-label={summary}
-        tabIndex={0}
-        onKeyDown={handleKeyDown}
-        onFocus={() => setHasFocus(true)}
-        onBlur={() => {
-          setHasFocus(false)
-          setShowFocusRing(false)
-        }}
-        onMouseDown={() => setShowFocusRing(false)}
+        {...svgProps}
       >
         {selectedIndex >= 0 && (
           <rect
@@ -217,6 +187,7 @@ export function StackedBarChart({
         })}
         {hasFocus && showFocusRing && weeks.length > 0 && (
           <rect
+            className="qaqc-focus-ring"
             x={bandX(focus) + 1}
             y={top - 2}
             width={Math.max(0, band - 2)}
