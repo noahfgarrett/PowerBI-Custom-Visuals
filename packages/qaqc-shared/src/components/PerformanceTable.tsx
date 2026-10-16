@@ -41,7 +41,7 @@ const COLUMNS: Record<PerformanceGroup, readonly Column[]> = {
     { key: 'rate', label: 'NCR rate', width: NUMBER_WIDTH + 8 },
     { key: 'trend', label: 'Trend', width: TREND_WIDTH },
   ],
-} as const
+}
 
 const CAPTIONS: Record<PerformanceGroup, string> = {
   qcr: 'QCR / FE NCR performance',
@@ -67,8 +67,6 @@ const TAG_NAMES: Record<DisciplineTag, string> = {
 export function formatNcrRate(rate: number | null): string {
   return formatPercent(rate, 2)
 }
-
-const EMPTY_RANKS = new Uint32Array(0)
 
 type Block = 'ranked' | 'below'
 
@@ -104,12 +102,18 @@ function numberValue(row: PerformanceRow, key: Exclude<SortKey, 'name'>): number
 }
 
 /** One block's rows in display order: the model's order with no sort, and ties keep it. */
-function sortBlock(rows: PerformanceRow[], sort: SortState<SortKey> | null, nameRanks: Uint32Array, rankOffset: number): PerformanceRow[] {
+function sortBlock(
+  rows: PerformanceRow[],
+  sort: SortState<SortKey> | null,
+  nameRanksFor: () => Uint32Array,
+  rankOffset: number,
+): PerformanceRow[] {
   if (sort === null) return rows
   const sign = directionSign(sort.direction)
   const positions = rows.map((_, position) => position)
   const key = sort.key
   if (key === 'name') {
+    const nameRanks = nameRanksFor()
     positions.sort((a, b) => (nameRanks[rankOffset + a] - nameRanks[rankOffset + b]) * sign || a - b)
   } else {
     const values = rows.map((row) => numberValue(row, key))
@@ -132,9 +136,11 @@ function rateClass(rate: number | null): string {
   return rate === 0 ? 'qaqc-perf-rate is-zero' : 'qaqc-perf-rate'
 }
 
+/** "NCRs in 2 of the last 30 weeks"; a one-week trend (the data's first week) reads as a plain sentence. */
 function trendText(row: PerformanceRow): string {
   const weeks = Math.min(RECENT_WEEK_COUNT, row.trend.length)
-  return `NCRs in ${formatCount(row.ncrWeeks)} of the last ${formatCount(weeks)} ${pluralize(weeks, 'week', 'weeks')}`
+  if (weeks === 1) return row.ncrWeeks > 0 ? 'NCRs in the last week' : 'No NCRs in the last week'
+  return `NCRs in ${formatCount(row.ncrWeeks)} of the last ${formatCount(weeks)} weeks`
 }
 
 export interface PerformanceTableProps {
@@ -210,17 +216,19 @@ export function PerformanceTable({
   const columns = COLUMNS[group]
   const tableMinWidth = columns.reduce((sum, column) => sum + (column.width ?? 0), NAME_MIN_WIDTH)
 
-  // Names ranked once per data set while the name column is sorted, across both blocks: ranked positions first,
-  // then below-minimum positions. Other sorts and the model order never touch the collator.
-  const isNameSort = sort !== null && sort.key === 'name'
-  const nameRanks = useMemo(
-    () => (isNameSort ? textRanks([...ranked, ...belowMinimum], (row) => row.name) : EMPTY_RANKS),
-    [isNameSort, ranked, belowMinimum],
-  )
-  const sortedRanked = useMemo(() => sortBlock(ranked, sort, nameRanks, 0), [ranked, sort, nameRanks])
+  // A fresh cache per data set: the names are ranked the first time the name column is sorted, across both
+  // blocks (ranked positions first, then below-minimum positions). Other sorts never touch the collator.
+  const nameRanksFor = useMemo(() => {
+    let ranks: Uint32Array | null = null
+    return (): Uint32Array => {
+      if (ranks === null) ranks = textRanks([...ranked, ...belowMinimum], (row) => row.name)
+      return ranks
+    }
+  }, [ranked, belowMinimum])
+  const sortedRanked = useMemo(() => sortBlock(ranked, sort, nameRanksFor, 0), [ranked, sort, nameRanksFor])
   const sortedBelow = useMemo(
-    () => sortBlock(belowMinimum, sort, nameRanks, ranked.length),
-    [belowMinimum, sort, nameRanks, ranked.length],
+    () => sortBlock(belowMinimum, sort, nameRanksFor, ranked.length),
+    [belowMinimum, sort, nameRanksFor, ranked.length],
   )
   const items = useMemo(() => {
     const list: TableItem[] = sortedRanked.map((row) => ({ kind: 'person', block: 'ranked', row }))

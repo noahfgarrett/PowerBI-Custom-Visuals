@@ -126,16 +126,27 @@ describe('TrendStrip', () => {
     expect(numericAttributes(svg).some((value) => value === 'NaN')).toBe(false)
   })
 
-  it('draws every bar in the foreground colour in high contrast', () => {
+  it('draws the volume bars in the foreground colour in high contrast', () => {
     view = render(<TrendStrip trend={thirty} colors={HIGH_CONTRAST} isHighContrast />)
-    const fills = new Set(all(view.container, '.qaqc-perf-trend-bar').map((bar) => bar.getAttribute('fill')))
+    const fills = new Set(all(view.container, '.qaqc-perf-trend-bar:not(.is-ncr)').map((bar) => bar.getAttribute('fill')))
     expect([...fills]).toEqual([HIGH_CONTRAST.ink])
   })
 
-  it('marks NCR weeks with a flag above the bar in high contrast, so colour is not the only signal', () => {
+  it('draws NCR weeks in the high-contrast selected colour, the theme bad colour there', () => {
     view = render(<TrendStrip trend={thirty} colors={HIGH_CONTRAST} isHighContrast />)
+    const marks = all(view.container, '.qaqc-perf-trend-bar.is-ncr, .qaqc-perf-trend-flag')
+    expect(marks).toHaveLength(4)
+    expect(marks.every((mark) => mark.getAttribute('fill') === HIGH_CONTRAST.bad)).toBe(true)
+  })
+
+  it.each([
+    ['the normal theme', COLORS, false],
+    ['high contrast', HIGH_CONTRAST, true],
+  ] as const)('marks NCR weeks with a flag above the bar in %s, so colour is not the only signal', (_, colors, isHighContrast) => {
+    view = render(<TrendStrip trend={thirty} colors={colors} isHighContrast={isHighContrast} />)
     const flags = all(view.container, '.qaqc-perf-trend-flag')
     expect(flags).toHaveLength(2)
+    expect(flags.every((flag) => flag.getAttribute('fill') === colors.bad)).toBe(true)
     const ncrBars = all(view.container, '.qaqc-perf-trend-bar.is-ncr')
     expect(flags.map((flag) => numberAttr(flag, 'x'))).toEqual(ncrBars.map((bar) => numberAttr(bar, 'x')))
     expect(flags.every((flag) => numberAttr(flag, 'y') + numberAttr(flag, 'height') <= Math.min(...ncrBars.map((bar) => numberAttr(bar, 'y'))))).toBe(true)
@@ -314,9 +325,21 @@ describe('PerformanceTable columns', () => {
     expect(rowNamed(view.container, 'QCR 1').textContent).toContain('NCRs in 1 of the last 4 weeks')
   })
 
-  it('says week, not weeks, for a one-week trend', () => {
+  it('says one NCR week in the singular', () => {
+    view = drawTable({ ranked: [personRow('QCR 1', { ncrWeeks: 1 })] })
+    expect(rowNamed(view.container, 'QCR 1').textContent).toContain('NCRs in 1 of the last 30 weeks')
+  })
+
+  it('words a one-week trend without an NCR as a plain sentence', () => {
     view = drawTable({ ranked: [personRow('QCR 1', { trend: trendOf([3]), ncrWeeks: 0 })] })
-    expect(rowNamed(view.container, 'QCR 1').textContent).toContain('NCRs in 0 of the last 1 week')
+    const text = rowNamed(view.container, 'QCR 1').textContent ?? ''
+    expect(text).toContain('No NCRs in the last week')
+    expect(text).not.toContain('of the last 1')
+  })
+
+  it('words a one-week trend with an NCR as a plain sentence', () => {
+    view = drawTable({ ranked: [personRow('QCR 1', { trend: trendOf([3], [0]), ncrWeeks: 1 })] })
+    expect(rowNamed(view.container, 'QCR 1').textContent).toContain('NCRs in the last week')
   })
 
   it('names the table for screen readers by group', () => {
@@ -452,6 +475,19 @@ describe('PerformanceTable sorting', () => {
     sortBy(view.container, 'NCRs')
     sortBy(view.container, 'NCR rate')
     expect(calls()).toBe(0)
+  })
+
+  it('ranks the names once per data set, however often the name sort comes back', () => {
+    view = drawTable()
+    expand(view.container)
+    const calls = countCompares()
+    sortBy(view.container, 'Name')
+    const first = calls()
+    expect(first).toBeGreaterThan(0)
+    sortBy(view.container, 'NCRs')
+    sortBy(view.container, 'Name')
+    sortBy(view.container, 'Name')
+    expect(calls()).toBe(first)
   })
 
   it('keeps model order among ties', () => {
@@ -931,27 +967,24 @@ function ncrRows(root: HTMLElement): HTMLTableRowElement[] {
   return [...root.querySelectorAll<HTMLTableRowElement>('.qaqc-perf-ncr-table tbody tr[aria-rowindex]')]
 }
 
-/** An index whose group list counts its reads: buildPersonDetail reads it once per build. */
-function countingIndex(group: 'qcr' | 'welders'): { index: PerformanceIndex; builds: () => number } {
-  const index = fixtureIndex()
-  const people = index[group]
-  let reads = 0
-  Object.defineProperty(index, group, {
-    get: () => {
-      reads += 1
-      return people
-    },
-  })
-  return { index, builds: () => reads }
+function hoverChartWeek(root: HTMLElement): void {
+  const hit = root.querySelector('.qaqc-perf-chart-hit')
+  if (!hit) throw new Error('hit area missing')
+  fire(hit, new MouseEvent('mousemove', { bubbles: true, clientX: 40, clientY: 100 }))
 }
 
 describe('PersonDetail', () => {
-  it('heads the page with the name, the group and the discipline tags', () => {
+  it('shows a subtitle line with the group and the discipline tags', () => {
     view = drawDetail()
     const head = view.container.querySelector('.qaqc-perf-person-head')
-    expect(head?.querySelector('h3')?.textContent).toBe('QCR 02')
     expect(head?.querySelector('.qaqc-perf-person-group')?.textContent).toBe('QCR / FE')
     expect([...(head?.querySelectorAll('.qaqc-perf-tag') ?? [])].map((tag) => tag.textContent)).toEqual(['E'])
+  })
+
+  it('leaves the name and its heading to the overlay title', () => {
+    view = drawDetail()
+    expect(view.container.querySelector('h1, h2, h3, h4')?.textContent).not.toBe('QCR 02')
+    expect(view.container.querySelector('.qaqc-perf-person-head')?.textContent).not.toContain('QCR 02')
   })
 
   it('shows the period and all-time cards for a ranked QCR / FE (spec: QCR 02 65 / 2 / 3.08%, all 70 / 2 / 2.86%)', () => {
@@ -968,7 +1001,7 @@ describe('PersonDetail', () => {
 
   it('heads the card groups with the period and the whole history', () => {
     view = drawDetail()
-    expect(groupHeads(view.container)).toEqual(["This periodWW13'2026 – WW42'2026", "All timeWW51'2025 – WW42'2026"])
+    expect(groupHeads(view.container)).toEqual(["This periodWW13'2026 to WW42'2026", "All timeWW51'2025 to WW42'2026"])
   })
 
   it('shows the period and all-time cards for a ranked welder (spec: Welder 024 22 / 3 / 13.64%, all 27 / 3 / 11.11%)', () => {
@@ -1021,6 +1054,23 @@ describe('PersonDetail', () => {
     expect(issue.classList.contains('qaqc-perf-ncr-issue')).toBe(true)
   })
 
+  it('names the NCR table with its sort', () => {
+    view = drawDetail()
+    const caption = (): string => view?.container.querySelector('.qaqc-perf-ncr-table caption')?.textContent ?? ''
+    expect(caption()).toBe("NCRs for QCR 02, WW13'2026 to WW42'2026, by Work Week, newest first")
+    const button = (name: string): Element => {
+      const found = [...(view?.container.querySelectorAll('.qaqc-perf-ncr-table thead th button') ?? [])].find((item) => item.textContent === name)
+      if (!found) throw new Error(`${name} button missing`)
+      return found
+    }
+    fire(button('Work Week'), new MouseEvent('click', { bubbles: true }))
+    expect(caption()).toBe("NCRs for QCR 02, WW13'2026 to WW42'2026, by Work Week, oldest first")
+    fire(button('Source'), new MouseEvent('click', { bubbles: true }))
+    expect(caption()).toBe("NCRs for QCR 02, WW13'2026 to WW42'2026, by Source, A to Z")
+    fire(button('Source'), new MouseEvent('click', { bubbles: true }))
+    expect(caption()).toBe("NCRs for QCR 02, WW13'2026 to WW42'2026, by Source, Z to A")
+  })
+
   it('sorts the NCR table by Work Week oldest first on a second click', () => {
     view = drawDetail({ group: 'welders', personKey: 'welder 024' })
     const before = ncrRows(view.container).map((row) => row.cells[0].textContent)
@@ -1041,14 +1091,14 @@ describe('PersonDetail', () => {
 
   it('says how many finals the period had when none had an NCR', () => {
     view = drawDetail({ personKey: 'qcr 01' })
-    expect(view.container.querySelector('.qaqc-perf-person-empty span')?.textContent).toBe("94 finals in WW13'2026 – WW42'2026, none with an NCR.")
+    expect(view.container.querySelector('.qaqc-perf-person-empty span')?.textContent).toBe("94 finals in WW13'2026 to WW42'2026, none with an NCR.")
   })
 
   it('shows a message instead of the chart and says so when the period has only SORs', () => {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 900, 260))
     view = drawDetail({ personKey: 'qcr 09' })
     expect(view.container.querySelector('.qaqc-perf-person-chart .qaqc-chart-empty')?.textContent).toBe('No finals in this period')
-    expect(view.container.querySelector('.qaqc-perf-person-empty span')?.textContent).toBe("No finals in WW13'2026 – WW42'2026.")
+    expect(view.container.querySelector('.qaqc-perf-person-empty span')?.textContent).toBe("No finals in WW13'2026 to WW42'2026.")
   })
 
   it('shows a message for a key that is not in the group', () => {
@@ -1065,21 +1115,26 @@ describe('PersonDetail', () => {
     )
   })
 
-  it('builds the detail once across unrelated re-renders', () => {
-    const { index, builds } = countingIndex('qcr')
-    const props: PersonDetailProps = { index, group: 'qcr', personKey: 'qcr 02', view: fixtureView('recent'), colors: COLORS, animate: false, onHover: vi.fn() }
+  // A rebuilt detail hands the chart new weeks, and the chart drops its hovered week when its weeks change; so a
+  // hover that survives a re-render shows the detail was not rebuilt.
+  it('keeps the detail across unrelated re-renders, so the hovered chart week survives', () => {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 900, 260))
+    const props: PersonDetailProps = { index: FIXTURE_INDEX, group: 'qcr', personKey: 'qcr 02', view: fixtureView('recent'), colors: COLORS, animate: false, onHover: vi.fn() }
     view = render(<PersonDetail {...props} />)
+    hoverChartWeek(view.container)
+    expect(view.container.querySelector('.qaqc-perf-chart-hover')).not.toBeNull()
     // A new view object with the same values and a new hover handler, as a dashboard re-render gives.
     view.rerender(<PersonDetail {...props} view={fixtureView('recent')} onHover={vi.fn()} />)
-    expect(builds()).toBe(1)
+    expect(view.container.querySelector('.qaqc-perf-chart-hover')).not.toBeNull()
   })
 
   it('rebuilds the detail when the period changes', () => {
-    const { index, builds } = countingIndex('qcr')
-    const props: PersonDetailProps = { index, group: 'qcr', personKey: 'qcr 02', view: fixtureView('recent'), colors: COLORS, animate: false, onHover: vi.fn() }
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 900, 260))
+    const props: PersonDetailProps = { index: FIXTURE_INDEX, group: 'qcr', personKey: 'qcr 02', view: fixtureView('recent'), colors: COLORS, animate: false, onHover: vi.fn() }
     view = render(<PersonDetail {...props} />)
+    hoverChartWeek(view.container)
     view.rerender(<PersonDetail {...props} view={fixtureView('all')} />)
-    expect(builds()).toBe(2)
+    expect(view.container.querySelector('.qaqc-perf-chart-hover')).toBeNull()
     expect(cardLabels(view.container)[0]).toBe('Finals: 70. Final inspections')
   })
 })

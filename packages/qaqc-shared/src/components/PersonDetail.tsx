@@ -79,10 +79,17 @@ function sortPositions(rows: PersonNcrRow[], sort: SortState<SortKey>, ranksFor:
   return positions.sort((a, b) => (ranks[a] - ranks[b]) * sign || a - b)
 }
 
+/** How the active sort reads in the caption: newest or oldest first for weeks, A to Z or Z to A for text. */
+function sortWords(sort: SortState<SortKey>): string {
+  if (sort.key === 'workWeek') return sort.direction === 'descending' ? 'newest first' : 'oldest first'
+  return sort.direction === 'ascending' ? 'A to Z' : 'Z to A'
+}
+
 interface NcrTableProps {
   group: PerformanceGroup
   /** Newest first. */
   rows: PersonNcrRow[]
+  /** Names the rows; the active sort is added to it. */
   caption: string
 }
 
@@ -113,7 +120,9 @@ function NcrTable({ group, rows, caption }: NcrTableProps): ReactElement {
   return (
     <div className="qaqc-table-wrap is-flex-fill qaqc-perf-ncr-wrap" ref={containerRef} onScroll={onScroll}>
       <table className="qaqc-table is-windowed qaqc-perf-ncr-table" aria-rowcount={rows.length + 1} style={{ minWidth: tableMinWidth }}>
-        <caption className="qaqc-visually-hidden">{caption}</caption>
+        <caption className="qaqc-visually-hidden">
+          {`${caption}, by ${columns.find((column) => column.key === sort.key)?.label ?? ''}, ${sortWords(sort)}`}
+        </caption>
         <colgroup>
           {columns.map((column) => (
             <col key={column.key} style={column.width === null ? undefined : { width: column.width }} />
@@ -142,7 +151,7 @@ function NcrTable({ group, rows, caption }: NcrTableProps): ReactElement {
               <tr key={position} aria-rowindex={start + offset + 2} style={{ height: TABLE_ROW_HEIGHT }}>
                 <td className="is-text">{row.weekLabel}</td>
                 <td className="is-text">
-                  <span className={`qaqc-perf-source is-${row.source.toLowerCase()}`}>{row.source}</span>
+                  <span className="qaqc-perf-source">{row.source}</span>
                 </td>
                 <td className="is-text" title={row.place}>{row.place}</td>
                 <td className="is-text qaqc-perf-ncr-issue" title={row.issue}>{row.issue}</td>
@@ -212,8 +221,8 @@ export function PersonDetail({ index, group, personKey, view, colors, animate, o
 
   const firstWeek = detail.weeks[0]?.week ?? null
   const lastWeek = detail.weeks[detail.weeks.length - 1]?.week ?? null
-  const periodLabel = firstWeek !== null && lastWeek !== null ? `${firstWeek.label} – ${lastWeek.label}` : ''
-  const allTimeLabel = index.weeks.length > 0 ? `${index.weeks[0].label} – ${index.weeks[index.weeks.length - 1].label}` : ''
+  const periodLabel = firstWeek !== null && lastWeek !== null ? `${firstWeek.label} to ${lastWeek.label}` : ''
+  const allTimeLabel = index.weeks.length > 0 ? `${index.weeks[0].label} to ${index.weeks[index.weeks.length - 1].label}` : ''
   const volumeNoun = pluralize(detail.period.volume, words.volumeNoun[0], words.volumeNoun[1])
   const inPeriod = periodLabel === '' ? '' : ` in ${periodLabel}`
   const emptyDetail = detail.period.volume === 0
@@ -222,11 +231,11 @@ export function PersonDetail({ index, group, personKey, view, colors, animate, o
 
   return (
     <div className="qaqc-perf-person">
-      <header className="qaqc-perf-person-head">
-        <h3>{detail.name}</h3>
+      {/* The overlay title carries the name; this line adds the group and the disciplines. */}
+      <p className="qaqc-perf-person-head">
         <span className="qaqc-perf-person-group">{GROUP_NAMES[group]}</span>
         <PerformanceTags tags={detail.tags} />
-      </header>
+      </p>
 
       <div className="qaqc-kpi-row qaqc-perf-person-cards">
         <TotalsCards title="This period" subtitle={periodLabel} variant="week" totals={detail.period} words={words} />
@@ -257,7 +266,7 @@ export function PersonDetail({ index, group, personKey, view, colors, animate, o
         <NcrTable
           group={group}
           rows={detail.ncrRows}
-          caption={`NCRs for ${detail.name}${periodLabel === '' ? '' : `, ${periodLabel}`}, newest first`}
+          caption={`NCRs for ${detail.name}${periodLabel === '' ? '' : `, ${periodLabel}`}`}
         />
       ) : (
         <p className="qaqc-issue-detail-empty qaqc-perf-person-empty">

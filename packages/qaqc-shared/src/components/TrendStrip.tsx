@@ -31,7 +31,7 @@ function barHeight(volume: number, maxVolume: number): number {
 
 /**
  * A row's 30-week strip: one tiny bar per week for its Finals (or welds), with NCR weeks in the bad colour and a
- * flag above them, so colour is not the only signal (high contrast draws every bar in the foreground colour).
+ * flag above them, so colour is not the only signal (high contrast draws the volume bars in the foreground colour).
  * Decorative: the row's text carries the NCR week count.
  */
 function TrendStripView({ trend, colors, isHighContrast }: TrendStripProps): ReactElement {
@@ -40,7 +40,8 @@ function TrendStripView({ trend, colors, isHighContrast }: TrendStripProps): Rea
   let maxVolume = 0
   for (const week of weeks) maxVolume = Math.max(maxVolume, week.volume)
   const volumeFill = isHighContrast ? colors.ink : colors.series2
-  const ncrFill = isHighContrast ? colors.ink : colors.bad
+  // High contrast maps bad to the host's selected foreground, so NCR weeks still stand out from the volume bars.
+  const ncrFill = colors.bad
 
   return (
     <svg

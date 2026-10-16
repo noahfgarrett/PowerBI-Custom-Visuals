@@ -1371,32 +1371,44 @@
 // The header and at least four rows stay in view however short the tile: 164px = about 36px for the sticky header row
 // and the wrap's border + 4 × TABLE_ROW_HEIGHT (32px, hooks/useVirtualRows.ts). Three classes, so it outranks
 // .qaqc-table-wrap.is-flex-fill's min-height: 0 by specificity, not by source order.
-.qaqc-issue-detail .qaqc-table-wrap.qaqc-issue-detail-wrap {
+.qaqc-issue-detail .qaqc-table-wrap.qaqc-issue-detail-wrap,
+.qaqc-perf-person .qaqc-table-wrap.qaqc-perf-ncr-wrap {
   min-height: 164px;
 }
 
-.qaqc-issue-detail-wrap {
+.qaqc-issue-detail-wrap,
+.qaqc-perf-wrap,
+.qaqc-perf-ncr-wrap {
   overflow: auto;
   border: 1px solid var(--qaqc-border);
   border-radius: 12px;
   background: var(--qaqc-card-solid);
 }
 
-// Fixed layout: column widths and the minimum width come from IssueDetailTable's COLUMNS, so they do not shift as
-// windowed rows scroll past; narrow overlays scroll sideways rather than squeezing the title.
-.qaqc-issue-detail-table {
+// Fixed layout: column widths and the minimum width come from each table's column list (IssueDetailTable,
+// PerformanceTable, PersonDetail), so they do not shift as windowed rows scroll past; narrow overlays scroll sideways
+// rather than squeezing the flexible column.
+.qaqc-issue-detail-table,
+.qaqc-perf-table,
+.qaqc-perf-ncr-table {
   table-layout: fixed;
 }
 
-// No vertical padding: cells centre in the fixed TABLE_ROW_HEIGHT row, so the status pill never grows the row.
+// No vertical padding: cells centre in the fixed TABLE_ROW_HEIGHT row, so status pills, tag chips and trend strips
+// never grow the row.
 .qaqc-issue-detail-table td,
-.qaqc-issue-detail-table tbody th {
+.qaqc-issue-detail-table tbody th,
+.qaqc-perf-table td,
+.qaqc-perf-table tbody th,
+.qaqc-perf-ncr-table td {
   padding-top: 0;
   padding-bottom: 0;
   vertical-align: middle;
 }
 
-.qaqc-issue-detail-table tbody tr:not(.qaqc-virtual-spacer):hover > * {
+.qaqc-issue-detail-table tbody tr:not(.qaqc-virtual-spacer):hover > *,
+.qaqc-perf-row:not(.is-not-recorded):hover > *,
+.qaqc-perf-ncr-table tbody tr:not(.qaqc-virtual-spacer):hover > * {
   background: var(--qaqc-accent-soft);
 }
 
@@ -1536,36 +1548,10 @@
 
 // Performance: the ranking table (PerformanceTable, TrendStrip) and the person page (PersonDetail, PersonWeekChart).
 
-.qaqc-perf-wrap,
-.qaqc-perf-ncr-wrap {
-  overflow: auto;
-  border: 1px solid var(--qaqc-border);
-  border-radius: 12px;
-  background: var(--qaqc-card-solid);
-}
-
-// Fixed layout: the widths come from the components' column lists, so windowed rows never shift the columns.
-.qaqc-perf-table,
-.qaqc-perf-ncr-table {
-  table-layout: fixed;
-}
-
-// No vertical padding: cells centre in the fixed TABLE_ROW_HEIGHT row, so chips and strips never grow it.
-.qaqc-perf-table td,
-.qaqc-perf-table tbody th,
-.qaqc-perf-ncr-table td {
-  padding-top: 0;
-  padding-bottom: 0;
-  vertical-align: middle;
-}
+// The wrap, fixed layout, cell padding and row hover share the Issue Detail table rules above.
 
 .qaqc-perf-row:not(.is-not-recorded) {
   cursor: pointer;
-}
-
-.qaqc-perf-row:not(.is-not-recorded):hover > *,
-.qaqc-perf-ncr-table tbody tr:not(.qaqc-virtual-spacer):hover > * {
-  background: var(--qaqc-accent-soft);
 }
 
 // The name button is each row's tab stop. The ring hugs the name, inside the cell padding the windowed cell clips to.
@@ -1621,7 +1607,7 @@
   background: var(--qaqc-accent-soft);
   color: var(--qaqc-accent);
   font-size: 9.5px;
-  font-weight: 750;
+  font-weight: 700;
   letter-spacing: 0.03em;
   line-height: 1;
 }
@@ -1719,20 +1705,11 @@
   align-items: center;
   gap: 8px;
   min-width: 0;
+  margin: 0;
   padding: 0 2px;
 }
 
-.qaqc-perf-person-head h3 {
-  margin: 0;
-  overflow: hidden;
-  color: var(--qaqc-ink);
-  font-size: 16px;
-  font-weight: 700;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-// On the page background the soft chip fill disappears, so the heading's chips sit on the card colour.
+// On the page background the soft chip fill disappears, so the subtitle's chips sit on the card colour.
 .qaqc-perf-person-head .qaqc-perf-tag {
   border-color: var(--qaqc-border);
   background: var(--qaqc-card-solid);
@@ -1760,11 +1737,6 @@
 .qaqc-perf-person-chart {
   flex: 0 0 auto;
   height: 280px;
-}
-
-// The header and at least four rows stay in view however short the overlay (see .qaqc-issue-detail-wrap).
-.qaqc-perf-person .qaqc-table-wrap.qaqc-perf-ncr-wrap {
-  min-height: 164px;
 }
 
 .qaqc-perf-source {
