@@ -3,7 +3,8 @@ import { Children, type CSSProperties, type ReactElement, type ReactNode } from 
 export interface KpiGroupProps {
   title: string
   subtitle?: string
-  variant: 'week' | 'total'
+  /** Week and period groups sit on the lighter card, project-to-date groups on the slightly darker tint. */
+  variant: 'week' | 'period' | 'toDate'
   children: ReactNode
 }
 

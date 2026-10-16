@@ -175,8 +175,9 @@
   box-shadow: 0 1px 2px rgba(27, 37, 48, 0.06);
 }
 
-.qaqc-kpi-group.is-week {
-  background: var(--qaqc-week-card);
+// Week and period groups keep the lighter card; project-to-date numbers always sit on the slightly darker tint.
+.qaqc-kpi-group.is-toDate {
+  background: var(--qaqc-to-date-card);
 }
 
 .qaqc-kpi-group-head {
@@ -740,7 +741,7 @@
   padding: 6px 10px;
   border: 1px solid var(--qaqc-border);
   border-radius: 10px;
-  background: var(--qaqc-week-card);
+  background: var(--qaqc-card-solid);
 }
 
 .qaqc-summary dt {
@@ -1571,7 +1572,7 @@
   overflow-y: visible;
 }
 
-// The rows section is a .qaqc-kpi-group (card, week tint and head styles) laid out as one grid for all four rows: each
+// The rows section is a .qaqc-kpi-group (card, mode shading and head styles) laid out as one grid for all four rows: each
 // row is a subgrid, so the card columns line up and keep their widths when the mode changes. Cards 3 and 4 hold the
 // long rate details (Sign-off % and the pass and closure rates), so they are wider. At 1280 px the split leaves about
 // 13 px spare in a short column ("No change vs WW41'2026") and 15 px in a long one ("12,345 of 23,456 signed · ...").
@@ -1776,7 +1777,7 @@
   padding: 2px 0;
 }
 
-// Also a .qaqc-kpi-group, for the card and week tint.
+// Also a .qaqc-kpi-group, for the card and its mode shading.
 .qaqc-overview-quality-dense {
   display: grid;
   flex: 1 1 auto;
@@ -1977,7 +1978,7 @@
 
 .qaqc-table tbody .qaqc-perf-disclosure-row > td {
   border-top: 1px solid var(--qaqc-border);
-  background: var(--qaqc-week-card);
+  background: var(--qaqc-card-solid);
   color: var(--qaqc-ink-2);
   font-size: 11.5px;
   font-weight: 650;

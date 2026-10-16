@@ -198,7 +198,7 @@ export function PerformanceDashboard({
           </DashboardHeader>
 
           <div className="qaqc-kpi-row qaqc-perf-summary">
-            <KpiGroup title={words.title} subtitle={period} variant="total">
+            <KpiGroup title={words.title} subtitle={period} variant="period">
               <KpiCard
                 label={words.rankedLabel}
                 icon={ListOrdered}

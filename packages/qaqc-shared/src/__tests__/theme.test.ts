@@ -106,6 +106,56 @@ describe('resolveTheme', () => {
   })
 })
 
+describe('to-date card', () => {
+  const HOST = { foreground: '#FFFF00', background: '#000000', foregroundSelected: '#00FFFF' }
+
+  function presetColors(preset: string): ReturnType<typeof resolveTheme>['colors'] {
+    if (!isPresetName(preset)) throw new Error(`bad preset ${preset}`)
+    return resolveTheme({ ...BASE, preset }).colors
+  }
+
+  it('is a slightly darker tint of the QAQC card', () => {
+    expect(resolveTheme(BASE).colors.toDateCard).toBe('#F6F8FC')
+  })
+
+  it.each(Object.keys(PRESETS))('is a tint of series 1 on the card in %s', (preset) => {
+    const colors = presetColors(preset)
+    expect(colors.toDateCard).toBe(compositeOver(colors.series1, 0.035, colors.card))
+  })
+
+  it.each(Object.keys(PRESETS))('is darker than the card by a small, consistent step in %s', (preset) => {
+    const colors = presetColors(preset)
+    expect(contrastRatio(colors.toDateCard, '#000000')).toBeLessThan(contrastRatio(colors.card, '#000000'))
+    const step = contrastRatio(colors.card, colors.toDateCard)
+    expect(step).toBeGreaterThanOrEqual(1.04)
+    expect(step).toBeLessThanOrEqual(1.07)
+  })
+
+  it.each(Object.keys(PRESETS))('keeps ink at 4.5:1 or more in %s', (preset) => {
+    const colors = presetColors(preset)
+    expect(contrastRatio(colors.ink, colors.toDateCard)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(colors.ink2, colors.toDateCard)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it.each(Object.keys(PRESETS))('keeps the status text colours at 4.5:1 or more in %s', (preset) => {
+    const colors = presetColors(preset)
+    const below = Object.entries(STATUS_COLORS).filter(([, color]) => contrastRatio(color, colors.toDateCard) < 4.5).map(([name]) => name)
+    expect(below).toEqual([])
+  })
+
+  it('reaches the stylesheet with the card opacity', () => {
+    const theme = resolveTheme({ ...BASE, cardOpacity: 50 })
+    expect(theme.cssVariables['--qaqc-to-date-card']).toBe(withOpacity(theme.colors.toDateCard, 50))
+    expect(theme.cssVariables['--qaqc-week-card']).toBeUndefined()
+  })
+
+  it('is the host background in high-contrast mode', () => {
+    const theme = resolveTheme({ ...BASE, highContrast: HOST })
+    expect(theme.colors.toDateCard).toBe('#000000')
+    expect(theme.cssVariables['--qaqc-to-date-card']).toBe('#000000')
+  })
+})
+
 describe('isPresetName', () => {
   it('accepts only known presets', () => {
     expect(isPresetName('blue')).toBe(true)

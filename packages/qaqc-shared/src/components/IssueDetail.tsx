@@ -45,7 +45,7 @@ export function IssueDetail({ index, selectedKey }: IssueDetailProps): ReactElem
             trend="none"
           />
         </KpiGroup>
-        <KpiGroup title="Last week" subtitle={previousWeek.label} variant="total">
+        <KpiGroup title="Last week" subtitle={previousWeek.label} variant="week">
           <KpiCard
             label="Opened Last Week"
             icon={CirclePlus}

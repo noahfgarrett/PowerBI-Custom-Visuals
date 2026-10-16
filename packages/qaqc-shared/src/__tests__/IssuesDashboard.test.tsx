@@ -199,6 +199,22 @@ function stubSize(width = 800, height = 400): void {
   })
 }
 
+
+/** The shading class of the card group with this title: is-week, is-period or is-toDate. */
+function groupShading(scope: Element | null | undefined, title: string): string[] {
+  const group = [...(scope?.querySelectorAll('section.qaqc-kpi-group') ?? [])].find((node) => node.getAttribute('aria-label') === title)
+  if (!group) throw new Error(`${title} group missing`)
+  return [...group.classList].filter((name) => name.startsWith('is-'))
+}
+
+describe('IssuesDashboard card shading', () => {
+  it('draws This WW on the lighter card and the project to date on the darker one', () => {
+    view = draw()
+    expect(groupShading(view.container, 'This WW')).toEqual(['is-week'])
+    expect(groupShading(view.container, 'Project to date')).toEqual(['is-toDate'])
+  })
+})
+
 describe('IssuesDashboard cards', () => {
   it('opens on the current week with the two this-week cards', () => {
     view = draw()
@@ -214,7 +230,7 @@ describe('IssuesDashboard cards', () => {
   it('opens with the four project-to-date cards through the current week', () => {
     view = draw()
     const { container } = view
-    expect(container.querySelector('.qaqc-kpi-group.is-total em')?.textContent).toBe("Through WW42'2026")
+    expect(container.querySelector('.qaqc-kpi-group.is-toDate em')?.textContent).toBe("Through WW42'2026")
     expect(cardValue(container, 'Total Opened')).toBe('177')
     expect(cardDetail(container, 'Total Opened')).toBe('+0 this WW')
     expect(cardValue(container, 'Total Closed')).toBe('126')

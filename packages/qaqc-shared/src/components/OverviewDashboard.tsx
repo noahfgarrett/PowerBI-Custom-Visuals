@@ -122,7 +122,7 @@ export function OverviewDashboard({
   const isWeekMode = mode === 'week'
   const cardsSubtitle = isWeekMode ? cards.selectedWeek.label : `Through ${cards.selectedWeek.label}`
   const emptyMessage = cards.hasData ? null : NO_ROWS_MESSAGE
-  const groupClass = isWeekMode ? 'qaqc-kpi-group is-week' : 'qaqc-kpi-group is-total'
+  const groupClass = `qaqc-kpi-group is-${mode}`
   const rowsClass = isDense ? `${groupClass} qaqc-overview-rows is-dense` : `${groupClass} qaqc-overview-rows`
 
   function renderActivity(size: ElementSize, showValues: boolean): ReactElement {
@@ -248,7 +248,7 @@ export function OverviewDashboard({
                   ))}
                 </section>
               ) : (
-                <KpiGroup title="Quality" subtitle={cardsSubtitle} variant={isWeekMode ? 'week' : 'total'}>
+                <KpiGroup title="Quality" subtitle={cardsSubtitle} variant={mode}>
                   {cards.quality.map((card, at) => (
                     <OverviewKpiCard key={card.label} card={card} icon={QUALITY_ICONS[at]} isTwoLine />
                   ))}

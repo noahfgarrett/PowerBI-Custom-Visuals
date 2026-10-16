@@ -250,7 +250,7 @@ export function WeldingDashboard({
                 trend={trendOf(thisWeek.issues.delta)}
               />
             </KpiGroup>
-            <KpiGroup title="Project to date" subtitle={`Through ${model.selectedWeek.label}`} variant="total">
+            <KpiGroup title="Project to date" subtitle={`Through ${model.selectedWeek.label}`} variant="toDate">
               <KpiCard
                 label="Total Welds"
                 icon={Layers}

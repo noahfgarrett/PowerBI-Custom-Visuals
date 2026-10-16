@@ -11,7 +11,7 @@ import { createRankCache } from '../tableSort'
 import type { ViewState } from '../types'
 import { ChartPanel } from './ChartPanel'
 import { KpiCard } from './KpiCard'
-import { KpiGroup } from './KpiGroup'
+import { KpiGroup, type KpiGroupProps } from './KpiGroup'
 import { formatNcrRate } from './PerformanceTable'
 import { PersonWeekChart, personWeekLegend } from './PersonWeekChart'
 
@@ -164,7 +164,7 @@ function NcrTable({ group, rows, caption }: NcrTableProps): ReactElement {
 interface TotalsCardsProps {
   title: string
   subtitle: string
-  variant: 'week' | 'total'
+  variant: KpiGroupProps['variant']
   totals: PerformanceTotals
   words: CardWords
 }
@@ -227,8 +227,8 @@ export function PersonDetail({ index, group, personKey, view, colors, animate, d
     <div className="qaqc-perf-person">
       {/* No heading or subtitle: the overlay title carries the name, the group and the disciplines. */}
       <div className="qaqc-kpi-row qaqc-perf-person-cards">
-        <TotalsCards title="This period" subtitle={periodLabel} variant="week" totals={detail.period} words={words} />
-        <TotalsCards title="All time" subtitle={allTimeLabel} variant="total" totals={detail.allTime} words={words} />
+        <TotalsCards title="This period" subtitle={periodLabel} variant="period" totals={detail.period} words={words} />
+        <TotalsCards title="All time" subtitle={allTimeLabel} variant="toDate" totals={detail.allTime} words={words} />
       </div>
 
       <ChartPanel

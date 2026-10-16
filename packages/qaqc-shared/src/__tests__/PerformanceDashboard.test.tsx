@@ -362,6 +362,29 @@ describe('PerformanceDashboard summary strip', () => {
   })
 })
 
+
+/** The shading class of the card group with this title: is-week, is-period or is-toDate. */
+function groupShading(scope: Element | null | undefined, title: string): string[] {
+  const group = [...(scope?.querySelectorAll('section.qaqc-kpi-group') ?? [])].find((node) => node.getAttribute('aria-label') === title)
+  if (!group) throw new Error(`${title} group missing`)
+  return [...group.classList].filter((name) => name.startsWith('is-'))
+}
+
+describe('PerformanceDashboard card shading', () => {
+  it('keeps the period summary strip on the lighter card', () => {
+    view = draw()
+    expect(groupShading(view.container.querySelector('.qaqc-perf-summary'), 'QCR / FE')).toEqual(['is-period'])
+  })
+
+  it('draws the person page period on the lighter card and all time on the darker one', () => {
+    stubSize()
+    view = draw()
+    click(nameButton(view.container, 'QCR 02'))
+    expect(groupShading(dialog(view.container), 'This period')).toEqual(['is-period'])
+    expect(groupShading(dialog(view.container), 'All time')).toEqual(['is-toDate'])
+  })
+})
+
 describe('PerformanceDashboard person page', () => {
   it('opens a person from their name, titled with the name, group and discipline', () => {
     stubSize()
@@ -409,7 +432,7 @@ describe('PerformanceDashboard person page', () => {
     stubSize()
     view = draw()
     click(nameButton(view.container, 'QCR 02'))
-    const values = [...(dialog(view.container)?.querySelectorAll('.qaqc-kpi-group.is-week .qaqc-kpi-value') ?? [])].map((node) => node.textContent)
+    const values = [...(dialog(view.container)?.querySelectorAll('.qaqc-kpi-group.is-period .qaqc-kpi-value') ?? [])].map((node) => node.textContent)
     expect(values).toEqual(['65', '2', '3.08%'])
   })
 

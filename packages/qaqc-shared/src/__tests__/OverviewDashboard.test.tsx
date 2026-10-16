@@ -566,6 +566,40 @@ describe('OverviewDashboard layout', () => {
   })
 })
 
+describe('OverviewDashboard card shading', () => {
+  function rowsSection(container: HTMLElement): HTMLElement {
+    const found = container.querySelector<HTMLElement>('.qaqc-root section.qaqc-overview-rows')
+    if (!found) throw new Error('rows section missing')
+    return found
+  }
+
+  function shading(section: HTMLElement): string[] {
+    return ['is-week', 'is-toDate'].filter((name) => section.classList.contains(name))
+  }
+
+  it('draws the rows and the quality strip on the lighter card in This WW', () => {
+    view = draw()
+    expect(shading(rowsSection(view.container))).toEqual(['is-week'])
+    expect(shading(quality(view.container))).toEqual(['is-week'])
+  })
+
+  it('draws the rows and the quality strip on the darker to-date card in To date', () => {
+    view = draw()
+    showToDate(view.container)
+    expect(shading(rowsSection(view.container))).toEqual(['is-toDate'])
+    expect(shading(quality(view.container))).toEqual(['is-toDate'])
+  })
+
+  it('follows the card mode in the dense layout', () => {
+    view = draw({ viewport: { width: 1340, height: 400 } })
+    expect(shading(rowsSection(view.container))).toEqual(['is-week'])
+    expect(shading(quality(view.container))).toEqual(['is-week'])
+    showToDate(view.container)
+    expect(shading(rowsSection(view.container))).toEqual(['is-toDate'])
+    expect(shading(quality(view.container))).toEqual(['is-toDate'])
+  })
+})
+
 describe('OverviewDashboard disconnected sources', () => {
   const ELECTRICAL_ONLY = overviewIndexOf([inspection('Electrical', "WW41'2026", 'Final'), inspection('Electrical', "WW42'2026", 'SOR')])
 

@@ -86,7 +86,7 @@ function stubChartSize(): void {
 }
 
 function totalGroupLabel(element: HTMLElement): string | null {
-  return element.querySelector('.qaqc-kpi-group.is-total em')?.textContent ?? null
+  return element.querySelector('.qaqc-kpi-group.is-toDate em')?.textContent ?? null
 }
 
 function cardValue(element: HTMLElement, label: string): string | null {

@@ -213,7 +213,7 @@ export function IssuesDashboard({
                 trend={trendOf(thisWeek.closed.delta)}
               />
             </KpiGroup>
-            <KpiGroup title="Project to date" subtitle={`Through ${model.selectedWeek.label}`} variant="total">
+            <KpiGroup title="Project to date" subtitle={`Through ${model.selectedWeek.label}`} variant="toDate">
               <KpiCard
                 label="Total Opened"
                 icon={Layers}

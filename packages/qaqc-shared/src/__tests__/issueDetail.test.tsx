@@ -492,6 +492,22 @@ function cardLabels(root: HTMLElement): string[] {
   return [...root.querySelectorAll('article.qaqc-kpi')].map((card) => card.getAttribute('aria-label') ?? '')
 }
 
+
+/** The shading class of the card group with this title: is-week, is-period or is-toDate. */
+function groupShading(scope: Element | null | undefined, title: string): string[] {
+  const group = [...(scope?.querySelectorAll('section.qaqc-kpi-group') ?? [])].find((node) => node.getAttribute('aria-label') === title)
+  if (!group) throw new Error(`${title} group missing`)
+  return [...group.classList].filter((name) => name.startsWith('is-'))
+}
+
+describe('IssueDetail card shading', () => {
+  it('keeps this week and last week on the lighter card', () => {
+    view = render(<IssueDetail index={buildIssueIndex(ROWS, COLUMNS, TODAY)} selectedKey={WW42} />)
+    expect(groupShading(view.container, 'This week')).toEqual(['is-week'])
+    expect(groupShading(view.container, 'Last week')).toEqual(['is-week'])
+  })
+})
+
 describe('IssueDetail', () => {
   it('shows the opened and closed counts for the selected week and the week before', () => {
     view = render(<IssueDetail index={buildIssueIndex(ROWS, COLUMNS, TODAY)} selectedKey={WW42} />)
