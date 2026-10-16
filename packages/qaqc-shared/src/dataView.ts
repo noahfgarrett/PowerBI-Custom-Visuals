@@ -177,7 +177,7 @@ export const PERFORMANCE_SLOTS: readonly CombinedFieldSlot[] = [
 ]
 
 /** Green tags is a measure the user may leave out; without it the DWN rate shows n/a. */
-const OPTIONAL_COMBINED_ROLES: ReadonlySet<CombinedSlotRole> = new Set<CombinedSlotRole>(['greenTags'])
+export const OPTIONAL_COMBINED_ROLES: ReadonlySet<CombinedSlotRole> = new Set<CombinedSlotRole>(['greenTags'])
 
 export type CombinedTableReadResult =
   | { kind: 'missing'; missing: CombinedFieldSlot[] }

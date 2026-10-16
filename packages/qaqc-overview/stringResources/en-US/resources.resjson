@@ -30,7 +30,7 @@
     "Qaqc_role_createdBy": "Created By",
     "Qaqc_role_createdBy_description": "Who created the BIM issue. Only issues created by LotusWorks are counted.",
     "Qaqc_role_greenTags": "Green tags",
-    "Qaqc_role_greenTags_description": "Optional measure with the total number of green tags. The DWN rate is DWNs to date divided by this value.",
+    "Qaqc_role_greenTags_description": "Your green tag count measure. Wrap it in COALESCE(…, 0) so a blank count never hides the data. The DWN rate is DWNs to date divided by this value.",
     "Qaqc_colors": "Colors",
     "Qaqc_colors_preset": "Preset",
     "Qaqc_preset_qaqc": "QAQC",

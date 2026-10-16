@@ -1,19 +1,19 @@
 import { LayoutDashboard, ListChecks, LoaderCircle } from 'lucide-react'
 import { createRoot } from 'react-dom/client'
 
-import '../style/visual.less'
-
 import { COMBINED_COLUMNS, COMBINED_ROWS } from '../../qaqc-shared/src/__tests__/fixtures/combinedRows'
 import { syntheticCombinedRows } from '../../qaqc-shared/src/__tests__/fixtures/syntheticCombined'
 import type { TooltipRequest } from '../../qaqc-shared/src/chartTypes'
 import { splitCombinedRows } from '../../qaqc-shared/src/combined'
 import { OverviewDashboard } from '../../qaqc-shared/src/components/OverviewDashboard'
 import { StatusPanel } from '../../qaqc-shared/src/components/StatusPanel'
-import { OVERVIEW_SLOTS } from '../../qaqc-shared/src/dataView'
+import { OPTIONAL_COMBINED_ROLES, OVERVIEW_SLOTS } from '../../qaqc-shared/src/dataView'
 import { buildOverviewFootnotes } from '../../qaqc-shared/src/footnotes'
 import { buildOverviewIndex } from '../../qaqc-shared/src/overview'
 import { isPresetName, resolveTheme } from '../../qaqc-shared/src/theme'
 import type { CombinedColumns } from '../../qaqc-shared/src/types'
+
+import '../style/visual.less'
 
 const params = new URLSearchParams(window.location.search)
 const width = Number(params.get('w') ?? 1280)
@@ -101,7 +101,7 @@ if (data === 'missing') {
       icon={ListChecks}
       title="Add the QAQC Combined columns"
       message="Drag these columns from the QAQC Combined table into the matching field slots. See QAQC_Overview_SETUP.md."
-      items={OVERVIEW_SLOTS.filter((slot) => slot.role !== 'greenTags').map((slot) => `${slot.column} → ${slot.slot}`)}
+      items={OVERVIEW_SLOTS.filter((slot) => !OPTIONAL_COMBINED_ROLES.has(slot.role)).map((slot) => `${slot.column} → ${slot.slot}`)}
     />,
   )
 } else if (data === 'loading') {

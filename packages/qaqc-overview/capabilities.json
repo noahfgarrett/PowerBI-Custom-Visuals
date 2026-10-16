@@ -117,7 +117,7 @@
       "kind": "Measure",
       "displayName": "Green tags",
       "displayNameKey": "Qaqc_role_greenTags",
-      "description": "Optional measure with the total number of green tags. The DWN rate is DWNs to date divided by this value.",
+      "description": "Your green tag count measure. Wrap it in COALESCE(…, 0) so a blank count never hides the data. The DWN rate is DWNs to date divided by this value.",
       "descriptionKey": "Qaqc_role_greenTags_description"
     }
   ],

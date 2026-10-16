@@ -72,6 +72,23 @@ const BIM_EXCLUDED_NOTE = 'BIM Issues: 5 issues not created by LotusWorks are ex
 const ROW_LIMIT_NOTE = 'Showing the first 2,385 rows (Power BI data limit)'
 const NO_GREEN_TAGS = 'DWN rate n/a: add Green tags'
 const SOURCE = COMBINED_COLUMNS.indexOf('Source')
+const STATUS = COMBINED_COLUMNS.indexOf('Status')
+const TYPE = COMBINED_COLUMNS.indexOf('Type')
+const CREATED_BY = COMBINED_COLUMNS.indexOf('Created By')
+
+/**
+ * The fixture with its first `count` open, LotusWorks-created CORs retyped as DWNs, so they count toward the DWN
+ * rate. The October exports have no DWNs.
+ */
+function rowsWithDwns(count: number): Array<ReadonlyArray<string | number | null>> {
+  let retyped = 0
+  return COMBINED_ROWS.map((cells) => {
+    const isOpenCor = cells[SOURCE] === 'BIM' && cells[TYPE] === 'COR' && cells[STATUS] === 'Open' && cells[CREATED_BY] === 'LotusWorks'
+    if (!isOpenCor || retyped >= count) return cells
+    retyped += 1
+    return cells.map((cell, column) => (column === TYPE ? 'DWN' : cell))
+  })
+}
 
 function update(dataView: powerbi.DataView | undefined, viewport = { width: 1280, height: 720 }, operationKind = 0, type = 2): UpdateOptions {
   return { viewport, dataViews: dataView ? [dataView] : [], type, operationKind }
@@ -115,6 +132,34 @@ function cardValue(scope: HTMLElement, label: string): string | null {
 /** The DWNs card's counts line, which carries the DWN rate. */
 function dwnRateLine(element: HTMLElement): string | null {
   return card(quality(element), 'DWNs')?.querySelector('.qaqc-kpi-context')?.textContent ?? null
+}
+
+/** Gives every element a measured size, so the charts draw in jsdom; the host element sits at the origin. */
+function stubElementSize(width = 800, height = 400): void {
+  vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+    x: 0,
+    y: 0,
+    top: 0,
+    left: 0,
+    right: width,
+    bottom: height,
+    width,
+    height,
+    toJSON: () => ({}),
+  })
+}
+
+function activityHit(element: HTMLElement, week: string): Element {
+  const panel = [...element.querySelectorAll('section.qaqc-panel')].find((node) => node.getAttribute('aria-label') === 'Inspection activity by Work Week')
+  const hit = panel?.querySelector(`.qaqc-hit[data-week="${week}"]`)
+  if (!hit) throw new Error(`activity hit ${week} missing`)
+  return hit
+}
+
+function hover(target: Element, clientX: number, clientY: number): void {
+  act(() => {
+    target.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX, clientY }))
+  })
 }
 
 function modeButton(element: HTMLElement, label: string): HTMLButtonElement | null {
@@ -182,6 +227,11 @@ describe('QaqcOverviewVisual capabilities', () => {
   it('selects every role, Green tags included, in the table mapping', () => {
     const selected = capabilities.dataViewMappings[0].table.rows.select.map((item) => item.for.in)
     expect(selected).toEqual(OVERVIEW_SLOTS.map((slot) => slot.role))
+  })
+
+  it('tells the author to wrap Green tags in COALESCE, since a blank measure drops every row', () => {
+    const greenTags = capabilities.dataRoles.find((role) => role.name === 'greenTags')
+    expect(greenTags?.description).toContain('COALESCE(…, 0)')
   })
 })
 
@@ -265,10 +315,19 @@ describe('QaqcOverviewVisual dashboard', () => {
     expect(cardValue(quality(element), 'NCRs')).toBe('14')
   })
 
-  it('shows the DWN rate of a bound Green tags value', () => {
+  it('divides the DWNs to date by a bound Green tags value', () => {
     harness = createHarness()
-    apply(harness, update(tableDataView(COMBINED_ROWS, { greenTags: 1000 })))
-    expect(dwnRateLine(harness.element)).toBe('0.0% of green tags (to date)')
+    apply(harness, update(tableDataView(rowsWithDwns(2), { greenTags: 400 })))
+    expect(dwnRateLine(harness.element)).toBe('0.5% of green tags (to date)')
+    click(modeButton(harness.element, 'To date'))
+    expect(cardValue(quality(harness.element), 'DWNs')).toBe('2')
+    expect(cardValue(quality(harness.element), 'CORs')).toBe('169')
+  })
+
+  it('reads a Green tags value sent as numeric text', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(rowsWithDwns(2), { greenTags: '400' })))
+    expect(dwnRateLine(harness.element)).toBe('0.5% of green tags (to date)')
   })
 
   it('shows the DWN rate as n/a when the bound Green tags value is blank', () => {
@@ -301,11 +360,13 @@ describe('QaqcOverviewVisual dashboard', () => {
     expect(indexBuilds.count).toBe(2)
   })
 
-  it('applies a Format pane change without re-indexing', () => {
+  it('applies a Format pane preset without re-indexing', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(COMBINED_ROWS)))
+    expect(indexBuilds.count).toBe(1)
     apply(harness, update(tableDataView(COMBINED_ROWS, { objects: { colors: { preset: 'grayscale' } } }), undefined, 0, STYLE_UPDATE))
-    expect(harness.element.style.getPropertyValue('--qaqc-series-1')).not.toBe('#2E5AAC')
+    expect(harness.element.style.getPropertyValue('--qaqc-series-1')).toBe('#3A3A3A')
+    expect(indexBuilds.count).toBe(1)
     expect(cardValue(row(harness.element, 'Electrical'), 'Finals')).toBe('3')
   })
 
@@ -416,6 +477,32 @@ describe('QaqcOverviewVisual host integration', () => {
     apply(harness, update(tableDataView(COMBINED_ROWS)))
     expect(cardValue(row(harness.element, 'Electrical'), 'Finals')).toBe('3')
     expect(harness.events.renderingFinished).toHaveBeenCalledTimes(1)
+  })
+
+  it('forwards a chart hover to the host tooltip service', () => {
+    stubElementSize()
+    harness = createHarness()
+    apply(harness, update(tableDataView(COMBINED_ROWS)))
+    hover(activityHit(harness.element, '202642'), 100, 120)
+    expect(harness.tooltip.show).toHaveBeenCalledWith(expect.objectContaining({
+      coordinates: [100, 120],
+      isTouchEvent: false,
+      identities: [],
+    }))
+    const [shown] = harness.tooltip.show.mock.lastCall ?? []
+    expect(shown?.dataItems?.[0]).toEqual(expect.objectContaining({ header: "WW42'2026" }))
+  })
+
+  it('hides the host tooltip when the pointer leaves the chart', () => {
+    stubElementSize()
+    harness = createHarness()
+    apply(harness, update(tableDataView(COMBINED_ROWS)))
+    const hit = activityHit(harness.element, '202642')
+    hover(hit, 100, 120)
+    act(() => {
+      hit.dispatchEvent(new MouseEvent('mouseout', { bubbles: true, relatedTarget: document.body }))
+    })
+    expect(harness.tooltip.hide).toHaveBeenCalledWith({ immediately: true, isTouchEvent: false })
   })
 
   it('opens the host context menu on right-click', () => {

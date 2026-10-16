@@ -1,7 +1,9 @@
 import type powerbi from 'powerbi-visuals-api'
 
 import { COMBINED_COLUMNS } from '../../../qaqc-shared/src/__tests__/fixtures/combinedRows'
+import { OPTIONAL_COMBINED_ROLES, OVERVIEW_SLOTS, type CombinedSlotRole } from '../../../qaqc-shared/src/dataView'
 
+/** The Overview's required column roles. Green tags is a measure, bound with `TableOptions.greenTags` instead. */
 export type SlotRole =
   | 'source'
   | 'rowId'
@@ -22,29 +24,12 @@ export type Cell = string | number | Date | null
 
 export interface TableOptions {
   roles?: SlotRole[]
-  /** Binds the Green tags measure with this value on every row; left out, the measure is unbound. */
-  greenTags?: Cell
+  /** Binds the Green tags measure with this value on every row; null is a BLANK measure. Left out, it is unbound. */
+  greenTags?: number | string | null
   segment?: boolean
   /** Format pane values, as Power BI delivers them in metadata.objects. */
   objects?: powerbi.DataViewObjects
 }
-
-export const ALL_ROLES: SlotRole[] = [
-  'source',
-  'rowId',
-  'workWeek',
-  'phase',
-  'issue',
-  'building',
-  'signature',
-  'signedWeek',
-  'id',
-  'status',
-  'type',
-  'createdOn',
-  'updatedOn',
-  'createdBy',
-]
 
 /** The QAQC Combined column each role is bound to. */
 const COLUMN_OF: Record<SlotRole, (typeof COMBINED_COLUMNS)[number]> = {
@@ -64,6 +49,16 @@ const COLUMN_OF: Record<SlotRole, (typeof COMBINED_COLUMNS)[number]> = {
   createdBy: 'Created By',
 }
 
+function isSlotRole(role: CombinedSlotRole): role is SlotRole {
+  return role in COLUMN_OF
+}
+
+/** Every required Overview slot, in OVERVIEW_SLOTS order. */
+export const ALL_ROLES: SlotRole[] = OVERVIEW_SLOTS
+  .map((slot) => slot.role)
+  .filter((role) => !OPTIONAL_COMBINED_ROLES.has(role))
+  .filter(isSlotRole)
+
 /**
  * Builds a table data view whose columns carry the given roles, in order, then the Green tags measure when it is
  * bound. Each input row is a QAQC Combined row (`COMBINED_COLUMNS` order); a null cell becomes blank text, as Power
@@ -77,14 +72,14 @@ export function tableDataView(rows: ReadonlyArray<ReadonlyArray<Cell>>, options:
     roles: { [role]: true },
   }))
   const positions = roles.map((role) => COMBINED_COLUMNS.indexOf(COLUMN_OF[role]))
-  const hasGreenTags = options.greenTags !== undefined
-  if (hasGreenTags) {
+  const greenTags = options.greenTags
+  if (greenTags !== undefined) {
     columns.push({ displayName: 'Green tags', index: columns.length, isMeasure: true, roles: { greenTags: true } })
   }
-  const greenTags = options.greenTags ?? ''
   const tableRows: powerbi.DataViewTableRow[] = rows.map((row) => {
     const cells: powerbi.PrimitiveValue[] = positions.map((position) => row[position] ?? '')
-    if (hasGreenTags) cells.push(greenTags)
+    // Power BI sends a BLANK measure as null, which the API's PrimitiveValue type leaves out, so set the cell directly.
+    if (greenTags !== undefined) Reflect.set(cells, cells.length, greenTags)
     return cells
   })
   const metadata: powerbi.DataViewMetadata = { columns }
