@@ -3,11 +3,15 @@ import { describe, expect, it } from 'vitest'
 
 import { IssueDetailTable } from '../components/IssueDetailTable'
 import { layoutChart } from '../components/IssuesTrendChart'
+import { splitCombinedRows } from '../combined'
 import { buildInspectionIndex, buildInspectionModel, defaultViewState } from '../inspections'
 import { buildIssueDetail, buildIssueIndex, buildIssueModel } from '../issues'
-import type { IssueDetailRow, IssueTrendPoint } from '../types'
+import { buildOverviewIndex, buildOverviewModel } from '../overview'
+import type { CombinedColumns, IssueDetailRow, IssueTrendPoint } from '../types'
 import { buildWeldIndex, buildWeldModel } from '../welds'
 import { makeWorkWeek } from '../workWeeks'
+import { COMBINED_COLUMNS } from './fixtures/combinedRows'
+import { syntheticCombinedRows } from './fixtures/syntheticCombined'
 import { syntheticInspectionRows, syntheticIssueRows, syntheticWeldRows } from './fixtures/syntheticRows'
 import { render } from './render'
 
@@ -87,6 +91,48 @@ describe('issues performance budgets', () => {
     const index = buildIssueIndex(syntheticIssueRows(200_000), ISSUE_COLUMNS, TODAY)
     buildIssueDetail(index, index.currentWeek.key)
     expect(elapsed(() => buildIssueDetail(index, index.currentWeek.key))).toBeLessThan(30)
+  })
+})
+
+describe('overview performance budgets', () => {
+  const position = (name: (typeof COMBINED_COLUMNS)[number]): number => COMBINED_COLUMNS.indexOf(name)
+  const COMBINED: CombinedColumns = {
+    source: position('Source'),
+    workWeek: position('Work Week'),
+    phase: position('Inspection Phase'),
+    issue: position('Issue'),
+    building: position('Building'),
+    qcr: position('QCR/FE'),
+    welder: position('Welder'),
+    tagNo: position('Tag No'),
+    signature: position('Signature'),
+    signedWeek: position('Work Week Signed'),
+    id: position('ID'),
+    status: position('Status'),
+    type: position('Type'),
+    createdOn: position('Created On'),
+    updatedOn: position('Updated On'),
+    createdBy: position('Created By'),
+    greenTags: -1,
+  }
+
+  /** One data update: split the combined rows by Source, then index every discipline. */
+  function indexCombined(rows: unknown[][]): ReturnType<typeof buildOverviewIndex> {
+    return buildOverviewIndex(splitCombinedRows(rows, COMBINED.source), COMBINED, TODAY)
+  }
+
+  it('splits and indexes 500,000 combined rows within budget', () => {
+    const rows = syntheticCombinedRows(500_000)
+    indexCombined(rows)
+    expect(elapsed(() => indexCombined(rows))).toBeLessThan(1500)
+  })
+
+  it.each(['week', 'toDate'] as const)('builds the All-range overview model (%s) from a 500,000-row index within one frame', (mode) => {
+    const index = indexCombined(syntheticCombinedRows(500_000))
+    expect(index.weeks.length).toBeGreaterThan(250)
+    const view = { ...defaultViewState(index), range: 'all' as const }
+    buildOverviewModel(index, view, mode)
+    expect(elapsed(() => buildOverviewModel(index, view, mode))).toBeLessThan(16)
   })
 })
 

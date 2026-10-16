@@ -231,8 +231,8 @@ function overallRateAt(index: WeldIndex, position: number): number | null {
   return logged === 0 ? null : (index.cumulativeSigned[position] / logged) * 100
 }
 
-/** Sign-off for the latest weld week at or before the position that has welds. */
-function latestSignoff(index: WeldIndex, position: number): SignoffSummary | null {
+/** Sign-off for the latest weld week at or before the position that has welds, or null when none does (or the position is −1). */
+export function latestSignoff(index: WeldIndex, position: number): SignoffSummary | null {
   for (let cursor = position; cursor >= 0; cursor -= 1) {
     const counts = index.weeks[cursor]
     if (counts.logged > 0) {
