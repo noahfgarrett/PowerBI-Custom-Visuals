@@ -42,6 +42,10 @@ function cardValue(container: HTMLElement, label: string): string | null {
   return container.querySelector(`[aria-label^="${label}:"] .qaqc-kpi-value`)?.textContent ?? null
 }
 
+function cardDetail(container: HTMLElement, label: string): string | null {
+  return container.querySelector(`[aria-label^="${label}:"] .qaqc-kpi-detail`)?.textContent ?? null
+}
+
 describe('InspectionDashboard', () => {
   it('opens on the current week with the six cards', () => {
     view = draw()
@@ -54,6 +58,14 @@ describe('InspectionDashboard', () => {
     expect(cardValue(container, 'Finals to Date')).toBe('238')
     expect(cardValue(container, 'SORs to Date')).toBe('48')
     expect(cardValue(container, 'NCR Pass Rate')).toBe('99.2%')
+  })
+
+  it('compares the week cards against the previous week by its full label', () => {
+    view = draw()
+    const { container } = view
+    expect(cardDetail(container, 'Final Inspections')).toBe("−3 vs WW41'2026")
+    expect(cardDetail(container, 'SORs')).toMatch(/ vs WW41'2026$/)
+    expect(cardDetail(container, 'Issues Found')).toMatch(/ vs WW41'2026$/)
   })
 
   it('shows the title and icon it is given', () => {

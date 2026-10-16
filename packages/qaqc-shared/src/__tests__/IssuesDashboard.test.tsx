@@ -206,9 +206,9 @@ describe('IssuesDashboard cards', () => {
     expect(container.querySelector('.qaqc-kpi-group.is-week span')?.textContent).toBe('This WW')
     expect(weekSubtitle(container)).toBe("WW42'2026")
     expect(cardValue(container, 'Issues Opened')).toBe('0')
-    expect(cardDetail(container, 'Issues Opened')).toBe('No change vs WW41')
+    expect(cardDetail(container, 'Issues Opened')).toBe("No change vs WW41'2026")
     expect(cardValue(container, 'Issues Closed')).toBe('0')
-    expect(cardDetail(container, 'Issues Closed')).toBe('No change vs WW41')
+    expect(cardDetail(container, 'Issues Closed')).toBe("No change vs WW41'2026")
   })
 
   it('opens with the four project-to-date cards through the current week', () => {
@@ -222,7 +222,7 @@ describe('IssuesDashboard cards', () => {
     expect(cardValue(container, 'Remaining Open')).toBe('51')
     expect(cardDetail(container, 'Remaining Open')).toBe('+0 this WW')
     expect(cardValue(container, 'Closure Rate')).toBe('71.2%')
-    expect(cardDetail(container, 'Closure Rate')).toBe('No change vs WW41')
+    expect(cardDetail(container, 'Closure Rate')).toBe("No change vs WW41'2026")
   })
 
   it('shows the WW31 activity when WW31 is picked', () => {
@@ -231,9 +231,9 @@ describe('IssuesDashboard cards', () => {
     const { container } = view
     expect(weekSubtitle(container)).toBe("WW31'2026")
     expect(cardValue(container, 'Issues Opened')).toBe('2')
-    expect(cardDetail(container, 'Issues Opened')).toBe('+1 vs WW30')
+    expect(cardDetail(container, 'Issues Opened')).toBe("+1 vs WW30'2026")
     expect(cardValue(container, 'Issues Closed')).toBe('1')
-    expect(cardDetail(container, 'Issues Closed')).toBe('No change vs WW30')
+    expect(cardDetail(container, 'Issues Closed')).toBe("No change vs WW30'2026")
   })
 
   it('shows the project-to-date change in the picked week', () => {
@@ -243,7 +243,7 @@ describe('IssuesDashboard cards', () => {
     expect(cardDetail(container, 'Total Opened')).toBe('+2 this WW')
     expect(cardDetail(container, 'Total Closed')).toBe('+1 this WW')
     expect(cardDetail(container, 'Remaining Open')).toBe('+1 this WW')
-    expect(cardDetail(container, 'Closure Rate')).toBe('−0.2 pts vs WW30')
+    expect(cardDetail(container, 'Closure Rate')).toBe("−0.2 pts vs WW30'2026")
   })
 
   it('colors each card with the model tone', () => {

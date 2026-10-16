@@ -1,20 +1,19 @@
 import { useEffect, useMemo, useState, type MouseEvent, type ReactElement } from 'react'
 
-import { labelIndices, niceScale, round, roundedTopBarPath } from '../chartMath'
+import { labelIndices, niceScale, round, roundedTopBarPath, WEEK_AXIS_HEIGHT, WEEK_TICK_OFFSET, YEAR_MARKER_OFFSET, yearMarkers } from '../chartMath'
 import type { ChartColors, TooltipHandler } from '../chartTypes'
 import { formatCount, formatSignoffRate, pluralize } from '../format'
 import { useWeekFocus } from '../hooks/useWeekFocus'
 import type { WeldWeekCounts } from '../types'
-import { shortWeekLabel, shortWeekLabelWithYear } from '../workWeeks'
+import { shortWeekLabel } from '../workWeeks'
 
 // Matches the HTML app's Welding chart: counts on the left axis, sign-off % on a fixed 0–100% right axis.
-const MARGIN = { top: 34, right: 48, bottom: 24, left: 44 } as const
+const MARGIN = { top: 34, right: 48, bottom: WEEK_AXIS_HEIGHT, left: 44 } as const
 const BAR_RATIO = 0.56
 const MAX_BAR_WIDTH = 24
 const MIN_BAR_WIDTH = 2
 const BADGE_RADIUS = 8
 const CORNER_RADIUS = 3
-const YEAR_LABEL_WIDTH = 54
 const RATE_TICKS = [0, 25, 50, 75, 100] as const
 /** Sign-off below this percent misses the baseline. */
 const BASELINE_PERCENT = 10
@@ -123,13 +122,8 @@ export function SignoffBarChart({
   const band = weeks.length > 0 ? plotWidth / weeks.length : plotWidth
   const barWidth = Math.min(MAX_BAR_WIDTH, Math.max(MIN_BAR_WIDTH, band * BAR_RATIO))
   const scale = useMemo(() => niceScale(weeks.reduce((max, item) => Math.max(max, item.logged), 0)), [weeks])
-  const spansYears = weeks.length > 0 && weeks[0].week.year !== weeks[weeks.length - 1].week.year
-  const labels = useMemo(
-    () => (spansYears
-      ? labelIndices(weeks.length, plotWidth, selectedIndex, YEAR_LABEL_WIDTH)
-      : labelIndices(weeks.length, plotWidth, selectedIndex)),
-    [weeks.length, plotWidth, selectedIndex, spansYears],
-  )
+  const labels = useMemo(() => labelIndices(weeks.length, plotWidth, selectedIndex), [weeks.length, plotWidth, selectedIndex])
+  const years = useMemo(() => yearMarkers(labels, weeks.map((item) => item.week)), [labels, weeks])
   const y = (value: number): number => plotBottom - (value / scale.max) * plotHeight
   const rateY = (rate: number): number => plotBottom - (rate / 100) * plotHeight
   const bandX = (index: number): number => MARGIN.left + index * band
@@ -278,11 +272,16 @@ export function SignoffBarChart({
                 <text
                   className={isSelected ? 'qaqc-axis-text is-selected' : 'qaqc-axis-text'}
                   x={center}
-                  y={height - 8}
+                  y={plotBottom + WEEK_TICK_OFFSET}
                   textAnchor="middle"
                   fill={isSelected ? colors.ink : colors.axisText}
                 >
-                  {spansYears ? shortWeekLabelWithYear(item.week) : shortWeekLabel(item.week)}
+                  {shortWeekLabel(item.week)}
+                </text>
+              )}
+              {years.has(index) && (
+                <text className="qaqc-axis-year" x={center} y={plotBottom + YEAR_MARKER_OFFSET} textAnchor="middle" fill={colors.axisText}>
+                  {item.week.year}
                 </text>
               )}
             </g>

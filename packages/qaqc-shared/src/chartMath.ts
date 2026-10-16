@@ -51,6 +51,26 @@ export function labelIndices(count: number, plotWidth: number, selectedIndex: nu
   return result
 }
 
+/** Baseline of a week tick label, in px below the plot. */
+export const WEEK_TICK_OFFSET = 16
+/** Baseline of a year marker, in px below the plot: one 9 px line under the 10.5 px tick label. */
+export const YEAR_MARKER_OFFSET = 27
+/** Room under the plot for a week tick label and a year marker. */
+export const WEEK_AXIS_HEIGHT = 31
+
+/** Which labelled indices get a year marker: the first labelled index, plus the first labelled index of each new year. */
+export function yearMarkers(labelledIndices: ReadonlySet<number> | readonly number[], weeks: ReadonlyArray<{ year: number }>): Set<number> {
+  const result = new Set<number>()
+  const sorted = [...labelledIndices].filter((index) => index >= 0 && index < weeks.length).sort((a, b) => a - b)
+  let previousYear: number | null = null
+  for (const index of sorted) {
+    const year = weeks[index].year
+    if (year !== previousYear) result.add(index)
+    previousYear = year
+  }
+  return result
+}
+
 /** Rounds to hundredths, enough precision for SVG coordinates. */
 export function round(value: number): number {
   return Math.round(value * 100) / 100

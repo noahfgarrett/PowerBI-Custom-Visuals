@@ -170,13 +170,13 @@ describe('WeldingDashboard cards', () => {
     const { container } = view
     expect(weekTitle(container)).toBe("WW42'2026")
     expect(cardValue(container, 'Welds Logged')).toBe('0')
-    expect(cardDetail(container, 'Welds Logged')).toBe('−84 vs WW41')
+    expect(cardDetail(container, 'Welds Logged')).toBe("−84 vs WW41'2026")
     expect(cardValue(container, 'Signed This Week')).toBe('70')
-    expect(cardDetail(container, 'Signed This Week')).toBe('+24 vs WW41')
+    expect(cardDetail(container, 'Signed This Week')).toBe("+24 vs WW41'2026")
     expect(cardValue(container, 'Sign-off %')).toBe('80%')
     expect(cardDetail(container, 'Sign-off %')).toBe("67 of 84 · WW41'2026")
     expect(cardValue(container, 'Issues Created')).toBe('0')
-    expect(cardDetail(container, 'Issues Created')).toBe('No change vs WW41')
+    expect(cardDetail(container, 'Issues Created')).toBe("No change vs WW41'2026")
   })
 
   it('opens with the three project-to-date cards through the current week', () => {
@@ -188,7 +188,7 @@ describe('WeldingDashboard cards', () => {
     expect(cardValue(container, 'Welds Signed')).toBe('1,054')
     expect(cardDetail(container, 'Welds Signed')).toBe('+70 signed this WW')
     expect(cardValue(container, 'Overall Sign-off %')).toBe('60.2%')
-    expect(cardDetail(container, 'Overall Sign-off %')).toBe('No change vs WW41')
+    expect(cardDetail(container, 'Overall Sign-off %')).toBe("No change vs WW41'2026")
   })
 
   it('marks Overall Sign-off % on track at 60%', () => {
@@ -205,9 +205,9 @@ describe('WeldingDashboard cards', () => {
     expect(weekTitle(container)).toBe("WW41'2026")
     expect(container.querySelector('.qaqc-kpi-group.is-total em')?.textContent).toBe("Through WW41'2026")
     expect(cardValue(container, 'Welds Logged')).toBe('84')
-    expect(cardDetail(container, 'Welds Logged')).toBe('−42 vs WW40')
+    expect(cardDetail(container, 'Welds Logged')).toBe("−42 vs WW40'2026")
     expect(cardValue(container, 'Signed This Week')).toBe('46')
-    expect(cardDetail(container, 'Signed This Week')).toBe('−21 vs WW40')
+    expect(cardDetail(container, 'Signed This Week')).toBe("−21 vs WW40'2026")
     expect(cardDetail(container, 'Sign-off %')).toBe("67 of 84 · WW41'2026")
     expect(cardDetail(container, 'Total Welds')).toBe('+84 this WW')
     expect(cardDetail(container, 'Welds Signed')).toBe('+46 signed this WW')
@@ -232,7 +232,7 @@ describe('WeldingDashboard cards', () => {
   it('warns when Issues Created goes up', () => {
     view = draw()
     pickWeekInDropdown(view.container, '202617')
-    expect(cardDetail(view.container, 'Issues Created')).toBe('+2 vs WW16')
+    expect(cardDetail(view.container, 'Issues Created')).toBe("+2 vs WW16'2026")
     expect(card(view.container, 'Issues Created')?.querySelector('.qaqc-kpi-detail.is-warn')).not.toBeNull()
   })
 

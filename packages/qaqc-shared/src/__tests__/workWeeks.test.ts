@@ -7,7 +7,6 @@ import {
   parseWorkWeek,
   previousWorkWeek,
   shortWeekLabel,
-  shortWeekLabelWithYear,
   toIsoWorkWeek,
   weeksInIsoYear,
 } from '../workWeeks'
@@ -72,9 +71,5 @@ describe('ISO week math', () => {
 
   it('formats a short axis label', () => {
     expect(shortWeekLabel(makeWorkWeek(2026, 7))).toBe('WW07')
-  })
-
-  it('formats a short axis label with a two-digit year', () => {
-    expect(shortWeekLabelWithYear(makeWorkWeek(2022, 16))).toBe("WW16'22")
   })
 })

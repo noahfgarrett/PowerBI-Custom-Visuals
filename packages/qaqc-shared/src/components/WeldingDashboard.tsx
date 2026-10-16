@@ -41,7 +41,6 @@ import {
 import { chartColorsFromTheme } from '../theme'
 import type { WeldIndex } from '../types'
 import { buildWeldModel } from '../welds'
-import { shortWeekLabel } from '../workWeeks'
 
 const NO_ROWS_MESSAGE = 'No welds match the current filters'
 const EMPTY_RANGE_MESSAGE = 'No welds in this range'
@@ -88,7 +87,7 @@ export function WeldingDashboard({
   const colors = useMemo(() => chartColorsFromTheme(theme), [theme])
   const { thisWeek, toDate } = model
   const signoff = thisWeek.signoff
-  const previousLabel = shortWeekLabel(model.previousWeek)
+  const previousLabel = model.previousWeek.label
   const isCompact = viewport.width < COMPACT_WIDTH
   const isCardsOnly = viewport.height < CARDS_ONLY_HEIGHT
   const rangeMessage = model.hasData ? EMPTY_RANGE_MESSAGE : NO_ROWS_MESSAGE

@@ -34,7 +34,6 @@ import { formatCount, formatDelta, formatPercent, formatPointsDelta, formatSigne
 import { buildIssueModel } from '../issues'
 import { chartColorsFromTheme } from '../theme'
 import type { ClosureRateCard, IssueIndex } from '../types'
-import { shortWeekLabel } from '../workWeeks'
 
 const NO_ROWS_MESSAGE = 'No issues match the current filters'
 const NO_OPEN_MESSAGE = 'No open issues'
@@ -78,7 +77,7 @@ export function IssuesDashboard({
   // Memoized so the charts' own memos see the same colors object until the theme changes.
   const colors = useMemo(() => chartColorsFromTheme(theme), [theme])
   const { thisWeek, toDate } = model
-  const previousLabel = shortWeekLabel(model.previousWeek)
+  const previousLabel = model.previousWeek.label
   const isCompact = viewport.width < COMPACT_WIDTH
   const isCardsOnly = viewport.height < CARDS_ONLY_HEIGHT
   const openCount = model.openAging.reduce((sum, bucket) => sum + bucket.count, 0)

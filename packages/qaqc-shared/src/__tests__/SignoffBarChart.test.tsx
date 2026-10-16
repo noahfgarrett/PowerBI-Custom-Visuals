@@ -12,7 +12,7 @@ const COLORS: ChartColors = {
   grid: '#EBEEF3', axisText: '#6A7583', ink: '#1B2530', accent: '#2E5AAC',
 }
 
-// Geometry at 602 × 300: the plot spans x 44–554 and y 34–276 (242 px tall), so three weeks get 170 px bands
+// Geometry at 602 × 307: the plot spans x 44–554 and y 34–276 (242 px tall), so three weeks get 170 px bands
 // centred at x 129, 299, and 469. The count axis runs 0–150 and the rate axis 0–100%.
 const PLOT_BOTTOM = 276
 const PLOT_HEIGHT = 242
@@ -40,7 +40,7 @@ function draw(overrides: Partial<SignoffBarChartProps> = {}): Rendered {
       weeks={WEEKS}
       selectedKey={202642}
       width={602}
-      height={300}
+      height={307}
       colors={COLORS}
       interactive
       animate={false}
@@ -364,14 +364,14 @@ describe('SignoffBarChart', () => {
     expect(svg.getAttribute('aria-label')).toBe("Weld sign-offs by work week, WW40'2026 to WW42'2026")
   })
 
-  it('adds the year to axis labels when the window spans years', () => {
+  it('keeps short week ticks when the window spans years', () => {
     const spanning: WeldWeekCounts[] = [
       { ...week(52, 4, 1), week: makeWorkWeek(2025, 52) },
       week(1, 4, 1),
       week(2, 4, 1),
     ]
     view = draw({ weeks: spanning, selectedKey: spanning[2].week.key })
-    expect(view.container.querySelector('.qaqc-axis-text.is-selected')?.textContent).toBe("WW02'26")
+    expect(view.container.querySelector('.qaqc-axis-text.is-selected')?.textContent).toBe('WW02')
   })
 
   it('skips issue badges when bands are too narrow', () => {

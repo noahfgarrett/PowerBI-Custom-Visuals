@@ -29,7 +29,6 @@ import {
 import { buildInspectionModel } from '../inspections'
 import { chartColorsFromTheme } from '../theme'
 import type { InspectionIndex } from '../types'
-import { shortWeekLabel } from '../workWeeks'
 
 const NO_ROWS_MESSAGE = 'No inspections match the current filters'
 const EMPTY_RANGE_MESSAGE = 'No inspections in this range'
@@ -61,7 +60,7 @@ export function InspectionDashboard({
   // Memoized so the charts' own memos see the same colors object until the theme changes.
   const colors = useMemo(() => chartColorsFromTheme(theme), [theme])
   const { thisWeek, toDate } = model
-  const previousLabel = shortWeekLabel(model.previousWeek)
+  const previousLabel = model.previousWeek.label
   const isCompact = viewport.width < COMPACT_WIDTH
   const isCardsOnly = viewport.height < CARDS_ONLY_HEIGHT
   const hasFinalsInWindow = model.passRateTrend.some((point) => point.rate !== null)

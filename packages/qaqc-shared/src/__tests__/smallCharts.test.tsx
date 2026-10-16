@@ -148,7 +148,7 @@ describe('LineChart', () => {
     expect(weekLabels.map((node) => node.classList.contains('is-selected'))).toEqual([false, true])
   })
 
-  it('adds the year to week labels when the window spans two years', () => {
+  it('keeps short week ticks when the window spans two years', () => {
     view = render(
       <LineChart
         points={[{ ...point(52, 99.1), week: makeWorkWeek(2025, 52) }, point(1, 99.16)]}
@@ -162,7 +162,7 @@ describe('LineChart', () => {
       />,
     )
     const weekLabels = [...view.container.querySelectorAll('.qaqc-axis-text')].filter((node) => node.textContent?.startsWith('WW'))
-    expect(weekLabels.map((node) => node.textContent)).toEqual(["WW52'25", "WW01'26"])
+    expect(weekLabels.map((node) => node.textContent)).toEqual(['WW52', 'WW01'])
   })
 
   it('thins week labels so they do not collide', () => {

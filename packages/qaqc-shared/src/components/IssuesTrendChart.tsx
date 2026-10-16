@@ -1,16 +1,27 @@
 import { useEffect, useId, useMemo, useState, type MouseEvent, type ReactElement } from 'react'
 
-import { alignedScale, labelIndices, niceScale, round, roundedTopBarPath, type NiceScale } from '../chartMath'
+import {
+  alignedScale,
+  labelIndices,
+  niceScale,
+  round,
+  roundedTopBarPath,
+  WEEK_AXIS_HEIGHT,
+  WEEK_TICK_OFFSET,
+  YEAR_MARKER_OFFSET,
+  yearMarkers,
+  type NiceScale,
+} from '../chartMath'
 import type { ChartColors, TooltipHandler } from '../chartTypes'
 import { formatCount } from '../format'
 import { useWeekFocus } from '../hooks/useWeekFocus'
 import type { IssueTrendPoint } from '../types'
-import { shortWeekLabel, shortWeekLabelWithYear } from '../workWeeks'
+import { shortWeekLabel } from '../workWeeks'
 import type { LegendItem } from './ChartPanel'
 
 // Matches the HTML app's RangeChart: Opened and Closed bars on the left axis, Remaining Open as a smooth line with
 // an area fill on its own right axis.
-const MARGIN = { top: 26, right: 48, bottom: 24, left: 44 } as const
+const MARGIN = { top: 26, right: 48, bottom: WEEK_AXIS_HEIGHT, left: 44 } as const
 /** The Opened + Closed pair fills this share of its week's band. */
 const PAIR_RATIO = 0.7
 const PAIR_GAP_RATIO = 0.08
@@ -20,7 +31,6 @@ const MIN_PAIR_GAP_BAND = 10
 const MAX_BAR_WIDTH = 16
 const MIN_BAR_WIDTH = 1
 const CORNER_RADIUS = 2.5
-const YEAR_LABEL_WIDTH = 54
 const AXIS_TITLE_INSET = 10
 const DOT_RADIUS = 3
 const HOVERED_DOT_RADIUS = 4.5
@@ -418,24 +428,31 @@ export function IssuesTrendChart({
   }, [layout, colors])
 
   const weekAxis = useMemo(() => {
-    const spansYears = points.length > 0 && points[0].week.year !== points[points.length - 1].week.year
-    const shown = labelIndices(points.length, layout.plotWidth, selectedIndex, spansYears ? YEAR_LABEL_WIDTH : undefined)
+    const shown = labelIndices(points.length, layout.plotWidth, selectedIndex)
+    const years = yearMarkers(shown, points.map((point) => point.week))
     return [...shown].sort((a, b) => a - b).map((index) => {
       const isSelected = index === selectedIndex
+      const x = layout.linePoints[index].x
       return (
-        <text
-          key={points[index].week.key}
-          className={isSelected ? 'qaqc-axis-text qaqc-week-axis-text is-selected' : 'qaqc-axis-text qaqc-week-axis-text'}
-          x={layout.linePoints[index].x}
-          y={height - 8}
-          textAnchor="middle"
-          fill={isSelected ? colors.ink : colors.axisText}
-        >
-          {spansYears ? shortWeekLabelWithYear(points[index].week) : shortWeekLabel(points[index].week)}
-        </text>
+        <g key={points[index].week.key}>
+          <text
+            className={isSelected ? 'qaqc-axis-text qaqc-week-axis-text is-selected' : 'qaqc-axis-text qaqc-week-axis-text'}
+            x={x}
+            y={layout.plotBottom + WEEK_TICK_OFFSET}
+            textAnchor="middle"
+            fill={isSelected ? colors.ink : colors.axisText}
+          >
+            {shortWeekLabel(points[index].week)}
+          </text>
+          {years.has(index) && (
+            <text className="qaqc-axis-year" x={x} y={layout.plotBottom + YEAR_MARKER_OFFSET} textAnchor="middle" fill={colors.axisText}>
+              {points[index].week.year}
+            </text>
+          )}
+        </g>
       )
     })
-  }, [points, layout, selectedIndex, height, colors])
+  }, [points, layout, selectedIndex, colors])
 
   const hitAreas = useMemo(() => {
     function showTooltip(index: number, event: MouseEvent<SVGRectElement>): void {
