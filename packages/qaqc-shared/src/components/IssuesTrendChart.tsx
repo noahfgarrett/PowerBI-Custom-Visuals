@@ -6,9 +6,11 @@ import {
   niceScale,
   round,
   roundedTopBarPath,
+  smoothPath,
   WEEK_AXIS_HEIGHT,
   yearMarkers,
   type NiceScale,
+  type PlotPoint,
 } from '../chartMath'
 import type { ChartColors, TooltipHandler } from '../chartTypes'
 import { formatCount } from '../format'
@@ -71,11 +73,6 @@ export interface IssuesTrendChartProps {
 
 type Series = 'opened' | 'closed' | 'remaining'
 
-interface PlotPoint {
-  x: number
-  y: number
-}
-
 interface BarMark {
   key: string
   series: 'opened' | 'closed'
@@ -124,18 +121,6 @@ export function issueTrendLegend(colors: ChartColors): LegendItem[] {
     { label: 'Opened', color: colors.bad, shape: 'bar' },
     { label: 'Closed', color: colors.good, shape: 'bar' },
   ]
-}
-
-/** The app's smooth line: each segment's control points sit a third of the way along, level with its ends. */
-function smoothPath(points: PlotPoint[]): string {
-  return points
-    .map((point, index) => {
-      if (index === 0) return `M${round(point.x)},${round(point.y)}`
-      const previous = points[index - 1]
-      const control = (point.x - previous.x) / 3
-      return `C${round(previous.x + control)},${round(previous.y)} ${round(point.x - control)},${round(point.y)} ${round(point.x)},${round(point.y)}`
-    })
-    .join(' ')
 }
 
 function areaPath(points: PlotPoint[], baseline: number): string {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type MouseEvent, type ReactElement } from 'react'
 
-import { labelIndices, niceScale, round, roundedTopBarPath, WEEK_AXIS_HEIGHT, yearMarkers } from '../chartMath'
+import { labelIndices, niceScale, roundedTopBarPath, smoothPath, WEEK_AXIS_HEIGHT, yearMarkers } from '../chartMath'
 import type { ChartColors, TooltipHandler } from '../chartTypes'
 import { formatCount, formatSignoffRate, pluralize } from '../format'
 import { useWeekFocus } from '../hooks/useWeekFocus'
@@ -74,18 +74,6 @@ function signedOfTotal(item: WeldWeekCounts): string {
 function describeWeek(item: WeldWeekCounts): string {
   const issues = `${formatCount(item.issues)} ${pluralize(item.issues, 'issue', 'issues')} created`
   return `${item.week.label}: ${signedOfTotal(item)} welds signed (${formatSignoffRate(signoffRate(item))}), ${issues}`
-}
-
-/** The app's smooth line: each segment's control points sit a third of the way along, level with its ends. */
-function smoothPath(points: RatePoint[]): string {
-  return points
-    .map((point, index) => {
-      if (index === 0) return `M${round(point.x)},${round(point.y)}`
-      const previous = points[index - 1]
-      const control = (point.x - previous.x) / 3
-      return `C${round(previous.x + control)},${round(previous.y)} ${round(point.x - control)},${round(point.y)} ${round(point.x)},${round(point.y)}`
-    })
-    .join(' ')
 }
 
 export function SignoffBarChart({

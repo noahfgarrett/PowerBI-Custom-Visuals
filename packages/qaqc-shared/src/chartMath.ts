@@ -76,6 +76,23 @@ export function round(value: number): number {
   return Math.round(value * 100) / 100
 }
 
+export interface PlotPoint {
+  x: number
+  y: number
+}
+
+/** The app's smooth line: each segment's control points sit a third of the way along, level with its ends. */
+export function smoothPath(points: ReadonlyArray<PlotPoint>): string {
+  return points
+    .map((point, index) => {
+      if (index === 0) return `M${round(point.x)},${round(point.y)}`
+      const previous = points[index - 1]
+      const control = (point.x - previous.x) / 3
+      return `C${round(previous.x + control)},${round(previous.y)} ${round(point.x - control)},${round(point.y)} ${round(point.x)},${round(point.y)}`
+    })
+    .join(' ')
+}
+
 /** Vertical bar with rounded top corners and a square baseline (DESIGN.md mark spec). */
 export function roundedTopBarPath(x: number, y: number, width: number, height: number, radius: number): string {
   if (width <= 0 || height <= 0) return ''
