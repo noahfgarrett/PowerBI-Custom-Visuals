@@ -1,4 +1,5 @@
 import { formatCount, pluralize } from './format'
+import type { OverviewIndex, SourceFootnoteCounts } from './overview'
 import type { InspectionIndex, IssueIndex } from './types'
 
 /** The row counts every index type carries, so one footnote builder serves inspection and weld indexes. */
@@ -38,6 +39,37 @@ export function buildIssueFootnotes(index: FootnoteSource & Pick<IssueIndex, 'ex
   }
   if (index.futureRows > 0) {
     notes.push(`${issueCount(index.futureRows)} created after ${index.currentWeek.label} not counted`)
+  }
+  return notes
+}
+
+function prefixed(source: string, notes: string[]): string[] {
+  return notes.map((note) => `${source}: ${note}`)
+}
+
+/**
+ * The QAQC Combined table's notes: the row limit over every combined row, then each source's own notes in the
+ * discipline visuals' wording, prefixed with the source, then the rows whose Source matched none of the four.
+ */
+export function buildOverviewFootnotes(index: Pick<OverviewIndex, 'currentWeek' | 'footnotes'>, rowLimitReached: boolean): string[] {
+  const { currentWeek, footnotes } = index
+  const sourceOf = (counts: SourceFootnoteCounts): FootnoteSource & Pick<IssueIndex, 'excludedRows'> => ({ ...counts, currentWeek })
+  const totalRows =
+    footnotes.electrical.totalRows +
+    footnotes.mechanical.totalRows +
+    footnotes.welding.totalRows +
+    footnotes.bim.totalRows +
+    footnotes.unknownSource
+  const notes: string[] = []
+  if (rowLimitReached) notes.push(rowLimitNote(totalRows))
+  notes.push(
+    ...prefixed('Electrical', buildFootnotes(sourceOf(footnotes.electrical), false)),
+    ...prefixed('Mechanical', buildFootnotes(sourceOf(footnotes.mechanical), false)),
+    ...prefixed('Welding', buildFootnotes(sourceOf(footnotes.welding), false)),
+    ...prefixed('BIM Issues', buildIssueFootnotes(sourceOf(footnotes.bim), false)),
+  )
+  if (footnotes.unknownSource > 0) {
+    notes.push(`${formatCount(footnotes.unknownSource)} ${pluralize(footnotes.unknownSource, 'row', 'rows')} with an unknown Source`)
   }
   return notes
 }

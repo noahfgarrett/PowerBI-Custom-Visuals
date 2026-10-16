@@ -1546,6 +1546,264 @@
   stroke-linejoin: round;
 }
 
+// Overview dashboard (OverviewDashboard, OverviewDisciplineRow, CardModeToggle): the discipline rows, the quality
+// strip and the two charts. At 1340 × 790 everything fits without a scroll: the rows and the strip keep their
+// natural height and the charts take the rest.
+
+.qaqc-overview-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+// A short tile keeps the header in place and scrolls the cards under it.
+.qaqc-root.is-cards-only .qaqc-overview-body {
+  overflow-y: auto;
+}
+
+// The compact root scrolls itself, so the body takes its content's height.
+.qaqc-root.is-compact .qaqc-overview-body {
+  flex: 0 0 auto;
+  overflow-y: visible;
+}
+
+// One grid for all four rows (each row is a subgrid), so the card columns line up and keep their widths when the
+// mode changes. Cards 3 and 4 hold the long rate details (Sign-off % and the pass and closure rates), so they are wider.
+.qaqc-overview-rows {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: 118px minmax(0, 0.8fr) minmax(0, 0.8fr) minmax(0, 1.2fr) minmax(0, 1.2fr) 124px;
+  column-gap: 12px;
+  padding: 6px 12px 2px;
+  border: 1px solid var(--qaqc-border);
+  border-radius: 14px;
+  background: var(--qaqc-card);
+  box-shadow: 0 1px 2px rgba(27, 37, 48, 0.06);
+}
+
+.qaqc-overview-rows.is-week {
+  background: var(--qaqc-week-card);
+}
+
+.qaqc-overview-rows-head {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 2px;
+}
+
+.qaqc-overview-rows-head span {
+  color: var(--qaqc-ink-2);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.qaqc-overview-rows-head em {
+  color: var(--qaqc-muted);
+  font-size: 10.5px;
+  font-style: normal;
+  font-weight: 600;
+}
+
+// Label, four cards, sparkline. Every row is the same height, connected or not.
+.qaqc-overview-row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: center;
+  min-height: 54px;
+  padding: 4px 0;
+  border-top: 1px solid var(--qaqc-hairline);
+}
+
+.qaqc-overview-rows-head + .qaqc-overview-row {
+  border-top: 0;
+}
+
+.qaqc-overview-row-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.qaqc-overview-row-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: var(--qaqc-accent-soft);
+  color: var(--qaqc-accent);
+}
+
+.qaqc-overview-row-name {
+  overflow: hidden;
+  color: var(--qaqc-ink);
+  font-size: 12.5px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// The cards sit straight in the row's subgrid.
+.qaqc-overview-row-cards {
+  display: contents;
+}
+
+// Hairlines between the cards read the row as one table line.
+.qaqc-overview-row-cards .qaqc-kpi {
+  gap: 1px;
+  padding: 1px 10px;
+  border-left: 1px solid var(--qaqc-hairline);
+}
+
+.qaqc-overview-row .qaqc-kpi-head {
+  gap: 6px;
+}
+
+.qaqc-overview-row .qaqc-kpi-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+}
+
+.qaqc-overview-body .qaqc-kpi-detail {
+  font-size: 10.5px;
+}
+
+.qaqc-overview-row-trend {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  min-width: 0;
+}
+
+.qaqc-overview-row-metric {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--qaqc-muted);
+  font-size: 10px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qaqc-overview-row-message {
+  grid-column: 2 / -1;
+  margin: 0;
+  color: var(--qaqc-muted);
+  font-size: 12px;
+  font-style: italic;
+}
+
+// The strip is one KpiGroup; this wrapper stops the group's card-count flex from growing it down the column.
+.qaqc-overview-quality {
+  display: flex;
+  flex: 0 0 auto;
+}
+
+// Each card is as wide as its detail needs (the DWN line is the longest), with the spare width shared out evenly.
+// The five details together nearly fill a 1340 px tile, so the gap is narrower than the other groups'.
+.qaqc-overview-quality .qaqc-kpi-group-body {
+  grid-auto-columns: auto;
+  column-gap: 4px;
+}
+
+// Smaller values than the discipline visuals so the rows and the strip leave the charts room. Each selector matches
+// or beats the specificity of the cards-only sizes above and comes after them, so it wins on every tile.
+.qaqc-root .qaqc-overview-row .qaqc-kpi-value,
+.qaqc-root.is-cards-only .qaqc-overview-row .qaqc-kpi-value {
+  font-size: 17px;
+}
+
+.qaqc-root .qaqc-overview-quality .qaqc-kpi-value,
+.qaqc-root.is-cards-only .qaqc-overview-quality .qaqc-kpi-value {
+  font-size: 18px;
+}
+
+// Two panels side by side in one grid row: Activity in the wider column, Quality rates in the narrower one.
+.qaqc-overview-charts {
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 180px;
+}
+
+.qaqc-overview-charts .qaqc-panel-main {
+  grid-row: auto;
+}
+
+.qaqc-root.is-compact .qaqc-overview-charts {
+  grid-template-rows: 300px 240px;
+}
+
+// Compact rows: the label and sparkline on one line, the cards two by two under them, so no detail is cut short.
+.qaqc-root.is-compact .qaqc-overview-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.qaqc-root.is-compact .qaqc-overview-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  row-gap: 6px;
+  padding: 6px 0;
+}
+
+.qaqc-root.is-compact .qaqc-overview-row-cards {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-row: 2;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  row-gap: 6px;
+}
+
+.qaqc-root.is-compact .qaqc-overview-row-cards .qaqc-kpi:nth-child(odd) {
+  padding-left: 2px;
+  border-left: 0;
+}
+
+.qaqc-root.is-compact .qaqc-overview-row-message {
+  grid-column: 1 / -1;
+}
+
+// Compact strip: two by two like the rows, with the DWN card (the longest detail) across the last line.
+.qaqc-root.is-compact .qaqc-overview-quality .qaqc-kpi-group-body {
+  grid-auto-flow: row;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 8px;
+}
+
+.qaqc-root.is-compact .qaqc-overview-quality .qaqc-kpi:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+// Expanded charts: the chart over its sortable week table.
+.qaqc-overview-expanded {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+}
+
+.qaqc-overview-expanded > .qaqc-chart-fill {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.qaqc-overview-expanded > .qaqc-overview-table-wrap {
+  flex: 0 0 auto;
+  height: 38%;
+  min-height: 132px;
+}
+
 // Performance: the ranking table (PerformanceTable, TrendStrip) and the person page (PersonDetail, PersonWeekChart).
 
 // The wrap, fixed layout, cell padding and row hover share the Issue Detail table rules above.
