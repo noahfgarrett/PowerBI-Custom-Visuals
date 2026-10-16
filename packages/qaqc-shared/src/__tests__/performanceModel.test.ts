@@ -110,6 +110,12 @@ describe('buildPerformanceModel: ranking', () => {
     expect(names(model.belowMinimum)).toEqual(['Sor only'])
   })
 
+  it('breaks a name tie under the collator by group key', () => {
+    const built = index([...finals('José', 42, 5), ...finals('Jose', 42, 5)])
+    expect(names(buildPerformanceModel(built, view('recent'), 'qcr', 5).ranked)).toEqual(['Jose', 'José'])
+    expect(names(buildPerformanceModel(built, view('recent'), 'qcr', 6).belowMinimum)).toEqual(['Jose', 'José'])
+  })
+
   it('leaves out people with no rows in the period', () => {
     const built = index([...finals('Old', 5, 6), ...finals('New', 42, 6)])
     const model = buildPerformanceModel(built, view('recent'), 'qcr', 5)
@@ -141,6 +147,13 @@ describe('buildPerformanceModel: period', () => {
     const model = buildPerformanceModel(built, view('all', 202641), 'qcr', 1)
     expect(model.ranked[0]).toMatchObject({ volume: 5, ncrs: 2 })
     expect(model.selectedWeek.label).toBe("WW41'2026")
+  })
+
+  it('ends the period at the last week when the picked week is not in the index', () => {
+    const model = buildPerformanceModel(built, view('all', 203001), 'qcr', 1)
+    expect(model.window.last.label).toBe("WW42'2026")
+    expect(model.selectedWeek.label).toBe("WW42'2026")
+    expect(model.ranked[0]).toMatchObject({ volume: 9, ncrs: 2 })
   })
 
   it('lists the weeks newest first', () => {

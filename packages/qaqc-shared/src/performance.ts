@@ -4,7 +4,7 @@ import { NAME_COLLATOR } from './format'
 import { createNameGrouper, createWeekReader } from './grouping'
 import { cellText, isIssueFound, readPhase, recentWindowStart } from './inspections'
 import { isWeldIssue } from './welds'
-import { enumerateWorkWeeks, makeWorkWeek, toIsoWorkWeek } from './workWeeks'
+import { enumerateWorkWeeks, toIsoWorkWeek } from './workWeeks'
 
 export type PerformanceGroup = 'qcr' | 'welders'
 
@@ -21,8 +21,8 @@ export type PerformanceSource = 'electrical' | 'mechanical' | 'welding'
 export interface WeeklyBuckets {
   /** Finals for QCR/FE, credited welds for welders. */
   readonly volume: Int32Array
-  /** SOR rows. Always zero for welders. */
-  readonly sors: Int32Array
+  /** SOR rows, or null for welders, who have none. */
+  readonly sors: Int32Array | null
   /** Finals with an issue found, or credited welds with an issue. */
   readonly ncrs: Int32Array
 }
@@ -43,8 +43,8 @@ export interface PerformancePerson {
   /** QCR/FE only: every discipline the person has rows in. Empty for welders. */
   disciplines: DisciplineTag[]
   weekly: WeeklyBuckets
-  /** QCR/FE only: per week, `TAG_BITS` of the disciplines the week's rows came from. All zero for welders. */
-  tagsByWeek: Uint8Array
+  /** QCR/FE only: per week, `TAG_BITS` of the disciplines the week's rows came from. Null for welders. */
+  tagsByWeek: Uint8Array | null
   /** In source row order, Electrical before Mechanical. */
   ncrRows: NcrRowRef[]
 }
@@ -181,13 +181,13 @@ export interface PersonDetail {
 /** Discipline bits in `PerformancePerson.tagsByWeek`. */
 export const TAG_BITS = { E: 1, M: 2 } as const
 
-/** The no-name values, matching the welding no-issue set plus blank. */
+/** The no-name values: blank, plus the welding no-issue placeholders except `no`, which could be a name. */
 const NOT_RECORDED_VALUES: ReadonlySet<string> = new Set(['', 'n/a', 'na', 'none', '-'])
 const NOT_RECORDED_PERSON = -1
-// Per counted inspection: its phase, whether it is an NCR, and its discipline (as TAG_BITS shifted left by 2).
-const FLAG_FINAL = 1
-const FLAG_NCR = 2
-const TAG_SHIFT = 2
+
+/** The Not recorded row's key. No person can have it, since a blank name is Not recorded. */
+export const NOT_RECORDED_KEY = ''
+const NOT_RECORDED_NAME = 'Not recorded'
 
 /** Blank, or `n/a`, `na`, `none` or `-`, trimmed and ignoring case. */
 export function isNotRecorded(value: unknown): boolean {
@@ -231,8 +231,12 @@ function welderIds(value: unknown, people: People, cache: Map<string, readonly n
   return ids
 }
 
-function emptyBuckets(weekCount: number): WeeklyBuckets {
-  return { volume: new Int32Array(weekCount), sors: new Int32Array(weekCount), ncrs: new Int32Array(weekCount) }
+function emptyBuckets(weekCount: number, group: PerformanceGroup): WeeklyBuckets {
+  return {
+    volume: new Int32Array(weekCount),
+    sors: group === 'qcr' ? new Int32Array(weekCount) : null,
+    ncrs: new Int32Array(weekCount),
+  }
 }
 
 function disciplinesOf(tagBits: number): DisciplineTag[] {
@@ -242,13 +246,13 @@ function disciplinesOf(tagBits: number): DisciplineTag[] {
   return tags
 }
 
-function toPerson(draft: PersonDraft, weekCount: number): PerformancePerson {
+function toPerson(draft: PersonDraft, weekCount: number, group: PerformanceGroup): PerformancePerson {
   return {
     key: draft.key,
     name: draft.name,
     disciplines: disciplinesOf(draft.tagBits),
-    weekly: emptyBuckets(weekCount),
-    tagsByWeek: new Uint8Array(weekCount),
+    weekly: emptyBuckets(weekCount, group),
+    tagsByWeek: group === 'qcr' ? new Uint8Array(weekCount) : null,
     ncrRows: draft.ncrRows,
   }
 }
@@ -279,7 +283,10 @@ function countedWeek(value: unknown, scan: WeekScan, counts: GroupRowCounts): Wo
 interface InspectionEntries {
   weekKey: number[]
   person: number[]
-  flags: number[]
+  isFinal: boolean[]
+  isNcr: boolean[]
+  /** The row's discipline, as a `TAG_BITS` value. */
+  tag: number[]
 }
 
 /** Counted welds, one entry each, in parallel arrays. */
@@ -316,7 +323,9 @@ function scanInspections(
     }
     entries.weekKey.push(week.key)
     entries.person.push(id)
-    entries.flags.push((phase === 'final' ? FLAG_FINAL : 0) | (isNcr ? FLAG_NCR : 0) | (tag << TAG_SHIFT))
+    entries.isFinal.push(phase === 'final')
+    entries.isNcr.push(isNcr)
+    entries.tag.push(tag)
   }
 }
 
@@ -355,7 +364,7 @@ export function buildPerformanceIndex(split: CombinedSplit, columns: CombinedCol
   const scan: WeekScan = { readWeek: createWeekReader(), currentKey: currentWeek.key, firstWeek: currentWeek }
   const qcrPeople = newPeople()
   const welderPeople = newPeople()
-  const inspections: InspectionEntries = { weekKey: [], person: [], flags: [] }
+  const inspections: InspectionEntries = { weekKey: [], person: [], isFinal: [], isNcr: [], tag: [] }
   const welds: WeldEntries = { weekKey: [], welders: [], isIssue: [] }
   const qcrCounts: GroupRowCounts = { totalRows: split.electrical.length + split.mechanical.length, skippedRows: 0, futureRows: 0 }
   const welderCounts: GroupRowCounts = { totalRows: split.welding.length, skippedRows: 0, futureRows: 0 }
@@ -371,35 +380,31 @@ export function buildPerformanceIndex(split: CombinedSplit, columns: CombinedCol
   const positionOf = (weekKey: number): number => positionByKey.get(weekKey) ?? 0
   const weekCount = weeks.length
 
-  const qcr = qcrPeople.drafts.map((draft) => toPerson(draft, weekCount))
-  const qcrNotRecorded = emptyBuckets(weekCount)
+  const qcr = qcrPeople.drafts.map((draft) => toPerson(draft, weekCount, 'qcr'))
+  const qcrNotRecorded = emptyBuckets(weekCount, 'qcr')
   const qcrTotals: GroupTotals = { volume: new Int32Array(weekCount), ncrs: new Int32Array(weekCount) }
   for (let entry = 0; entry < inspections.weekKey.length; entry += 1) {
     const position = positionOf(inspections.weekKey[entry])
-    const flags = inspections.flags[entry]
     const id = inspections.person[entry]
-    const isFinal = (flags & FLAG_FINAL) !== 0
-    const ncr = (flags & FLAG_NCR) !== 0 ? 1 : 0
-    if (isFinal) {
-      qcrTotals.volume[position] += 1
-      qcrTotals.ncrs[position] += ncr
-    }
-    let buckets = qcrNotRecorded
+    const ncr = inspections.isNcr[entry] ? 1 : 0
+    let weekly = qcrNotRecorded
     if (id !== NOT_RECORDED_PERSON) {
       const person = qcr[id]
-      person.tagsByWeek[position] |= flags >> TAG_SHIFT
-      buckets = person.weekly
+      weekly = person.weekly
+      if (person.tagsByWeek) person.tagsByWeek[position] |= inspections.tag[entry]
     }
-    if (isFinal) {
-      buckets.volume[position] += 1
-      buckets.ncrs[position] += ncr
-    } else {
-      buckets.sors[position] += 1
+    if (inspections.isFinal[entry]) {
+      qcrTotals.volume[position] += 1
+      qcrTotals.ncrs[position] += ncr
+      weekly.volume[position] += 1
+      weekly.ncrs[position] += ncr
+    } else if (weekly.sors) {
+      weekly.sors[position] += 1
     }
   }
 
-  const welders = welderPeople.drafts.map((draft) => toPerson(draft, weekCount))
-  const welderNotRecorded = emptyBuckets(weekCount)
+  const welders = welderPeople.drafts.map((draft) => toPerson(draft, weekCount, 'welders'))
+  const welderNotRecorded = emptyBuckets(weekCount, 'welders')
   const welderTotals: GroupTotals = { volume: new Int32Array(weekCount), ncrs: new Int32Array(weekCount) }
   const sharedWelds = new Int32Array(weekCount)
   for (let entry = 0; entry < welds.weekKey.length; entry += 1) {
@@ -435,10 +440,6 @@ export function buildPerformanceIndex(split: CombinedSplit, columns: CombinedCol
     columns,
   }
 }
-
-/** The Not recorded row's key. No person can have it, since a blank name is Not recorded. */
-export const NOT_RECORDED_KEY = ''
-const NOT_RECORDED_NAME = 'Not recorded'
 
 const SOURCE_LABELS: Record<PerformanceSource, PersonNcrSource> = {
   electrical: 'Electrical',
@@ -478,7 +479,7 @@ function tagsInRange(tagsByWeek: Uint8Array, start: number, end: number): Discip
 /** The row for the period, or null when the period has no rows for it. */
 function rowOf(key: string, name: string, weekly: WeeklyBuckets, tagsByWeek: Uint8Array | null, period: Period): PerformanceRow | null {
   const volume = sumRange(weekly.volume, period.start, period.end)
-  const sors = sumRange(weekly.sors, period.start, period.end)
+  const sors = weekly.sors ? sumRange(weekly.sors, period.start, period.end) : 0
   if (volume === 0 && sors === 0) return null
   const ncrs = sumRange(weekly.ncrs, period.start, period.end)
 
@@ -503,13 +504,18 @@ function rowOf(key: string, name: string, weekly: WeeklyBuckets, tagsByWeek: Uin
   }
 }
 
+/** Name, then group key in code-point order for names the collator treats as equal (Jose and José). */
+function compareNames(a: PerformanceRow, b: PerformanceRow): number {
+  return NAME_COLLATOR.compare(a.name, b.name) || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0)
+}
+
 /** NCR rate descending (compared exactly, as fractions), then NCRs descending, then name. */
 function compareRanked(a: PerformanceRow, b: PerformanceRow): number {
-  return b.ncrs * a.volume - a.ncrs * b.volume || b.ncrs - a.ncrs || NAME_COLLATOR.compare(a.name, b.name)
+  return b.ncrs * a.volume - a.ncrs * b.volume || b.ncrs - a.ncrs || compareNames(a, b)
 }
 
 function compareBelowMinimum(a: PerformanceRow, b: PerformanceRow): number {
-  return b.volume - a.volume || NAME_COLLATOR.compare(a.name, b.name)
+  return b.volume - a.volume || compareNames(a, b)
 }
 
 /**
@@ -557,7 +563,8 @@ function ncrRowOf(index: PerformanceIndex, ref: NcrRowRef): PersonNcrRow {
   const placeColumn = ref.source === 'welding' ? index.columns.tagNo : index.columns.building
   return {
     weekKey: ref.weekKey,
-    weekLabel: makeWorkWeek(Math.floor(ref.weekKey / 100), ref.weekKey % 100).label,
+    // Every reference's week was counted, so it is always in the index.
+    weekLabel: index.weeks[index.positionByKey.get(ref.weekKey) ?? 0].label,
     source: SOURCE_LABELS[ref.source],
     place: cellText(row[placeColumn]),
     issue: cellText(row[index.columns.issue]),
@@ -595,7 +602,7 @@ export function buildPersonDetail(
     key: person.key,
     name: person.name,
     group,
-    tags: tagsInRange(person.tagsByWeek, period.start, period.end),
+    tags: person.tagsByWeek ? tagsInRange(person.tagsByWeek, period.start, period.end) : [],
     period: { volume: runningVolume, ncrs: runningNcrs, rate: rateOf(runningNcrs, runningVolume) },
     allTime: { volume: allTimeVolume, ncrs: allTimeNcrs, rate: rateOf(allTimeNcrs, allTimeVolume) },
     weeks,

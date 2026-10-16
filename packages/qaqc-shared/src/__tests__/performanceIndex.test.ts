@@ -40,8 +40,8 @@ function index(rows: Row[]): PerformanceIndex {
   return buildPerformanceIndex(splitCombinedRows(rows, COLUMNS.source), COLUMNS, TODAY)
 }
 
-function total(values: Int32Array): number {
-  return values.reduce((sum, value) => sum + value, 0)
+function total(values: Int32Array | null): number {
+  return values === null ? 0 : values.reduce((sum, value) => sum + value, 0)
 }
 
 function person(people: PerformancePerson[], name: string): PerformancePerson {
@@ -194,5 +194,12 @@ describe('buildPerformanceIndex: welders', () => {
   it('leaves welders without discipline tags', () => {
     const built = index([weld("WW41'2026", 'Welder 001')])
     expect(built.welders[0].disciplines).toEqual([])
+  })
+
+  it('keeps no SOR or tag arrays for welders, who have neither', () => {
+    const built = index([weld("WW41'2026", 'Welder 001'), weld("WW41'2026", null)])
+    expect(built.welders[0].weekly.sors).toBeNull()
+    expect(built.welders[0].tagsByWeek).toBeNull()
+    expect(built.notRecorded.welders.sors).toBeNull()
   })
 })

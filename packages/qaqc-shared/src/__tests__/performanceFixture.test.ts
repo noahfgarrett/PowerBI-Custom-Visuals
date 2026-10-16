@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { splitCombinedRows } from '../combined'
-import { classifyPhase } from '../inspections'
+import { classifyPhase, isIssueFound } from '../inspections'
 import { buildPerformanceIndex, buildPerformanceModel, isNotRecorded } from '../performance'
 import type { PerformanceModel, PerformanceRow } from '../performance'
 import type { CombinedColumns, RangeMode } from '../types'
@@ -75,6 +75,49 @@ function rankedOnlyRate(rows: PerformanceRow[]): string {
 function notRecordedInspections(rows: ReadonlyArray<ReadonlyArray<unknown>>): Array<ReadonlyArray<unknown>> {
   return rows.filter((row) => classifyPhase(row[COLUMNS.phase]) !== 'other' && isNotRecorded(row[COLUMNS.qcr]))
 }
+
+/** The distinct pseudonyms in a column, over every row whatever its phase or week. */
+function pseudonyms(rows: ReadonlyArray<ReadonlyArray<unknown>>, column: number): Set<string> {
+  const names = new Set<string>()
+  for (const row of rows) {
+    for (const part of String(row[column] ?? '').split(',')) {
+      if (!isNotRecorded(part)) names.add(part.trim())
+    }
+  }
+  return names
+}
+
+describe('QAQC Performance fixture: pseudonyms', () => {
+  it('holds 17 QCR/FE groups, numbered QCR 01 to QCR 17', () => {
+    const names = pseudonyms([...split.electrical, ...split.mechanical], COLUMNS.qcr)
+    expect([...names].sort()).toEqual(Array.from({ length: 17 }, (_, item) => `QCR ${String(item + 1).padStart(2, '0')}`))
+    expect(index.qcr).toHaveLength(17)
+  })
+
+  it('holds 74 welder groups, numbered Welder 001 to Welder 074', () => {
+    const names = pseudonyms(split.welding, COLUMNS.welder)
+    expect([...names].sort()).toEqual(Array.from({ length: 74 }, (_, item) => `Welder ${String(item + 1).padStart(3, '0')}`))
+    expect(index.welders).toHaveLength(74)
+  })
+
+  it('has no Not recorded part inside a welder list', () => {
+    const parts = split.welding
+      .map((row) => row[COLUMNS.welder])
+      .filter((cell): cell is string => typeof cell === 'string' && cell.includes(','))
+      .flatMap((cell) => cell.split(','))
+    expect(parts.length).toBeGreaterThan(0)
+    expect(parts.filter((part) => isNotRecorded(part))).toEqual([])
+  })
+
+  it('logs the WW08 2026 Not recorded NCR as Mechanical, under NA', () => {
+    const notRecordedNcrs = [...split.electrical, ...split.mechanical].filter(
+      (row) => classifyPhase(row[COLUMNS.phase]) === 'final' && isIssueFound(row[COLUMNS.issue]) && isNotRecorded(row[COLUMNS.qcr]),
+    )
+    expect(notRecordedNcrs.map((row) => [row[COLUMNS.source], row[COLUMNS.workWeek], row[COLUMNS.qcr]])).toEqual([
+      ['Mechanical', "WW08'2026", 'NA'],
+    ])
+  })
+})
 
 describe('QAQC Performance fixture: QCR / FE, minimum finals 5', () => {
   const recent = model('qcr', 'recent')

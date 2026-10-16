@@ -4,6 +4,7 @@ import type { CombinedColumns } from '../types'
 import { inspectionColumnsOf, issueColumnsOf, splitCombinedRows, weldColumnsOf } from '../combined'
 import { buildInspectionIndex, buildInspectionModel, defaultViewState } from '../inspections'
 import { buildIssueIndex, buildIssueModel } from '../issues'
+import { isNotRecorded } from '../performance'
 import { buildWeldIndex } from '../welds'
 import { COMBINED_COLUMNS, COMBINED_ROWS } from './fixtures/combinedRows'
 import { ELECTRICAL_ROWS } from './fixtures/electricalRows'
@@ -41,12 +42,6 @@ const split = splitCombinedRows(COMBINED_ROWS, COLUMNS.source)
 
 function pick(rows: ReadonlyArray<ReadonlyArray<unknown>>, columns: number[]): unknown[][] {
   return rows.map((row) => columns.map((column) => row[column]))
-}
-
-const NOT_RECORDED = new Set(['', 'n/a', 'na', 'none', '-'])
-
-function isNotRecorded(value: string): boolean {
-  return NOT_RECORDED.has(value.trim().toLowerCase())
 }
 
 describe('QAQC Combined fixture (2026-10-14 exports)', () => {
