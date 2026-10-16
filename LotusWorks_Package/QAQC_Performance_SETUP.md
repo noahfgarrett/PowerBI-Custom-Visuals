@@ -1,6 +1,6 @@
 # QAQC Performance visual: setup
 
-NCR performance per person: each QCR / FE across Electrical and Mechanical inspections, and, separately, each welder. People are ranked by NCR rate over a period you choose, and each has their own page.
+NCR performance per person: each QCR / FE across Electrical and Mechanical final inspections, and, separately, each welder. People are ranked by NCR rate over a period you choose, and each has their own page.
 
 ## 1. Import the visual (once per report)
 
@@ -34,7 +34,7 @@ Set every field to **Don't summarize**. The visual is designed to fill a full re
 
 The header holds three controls:
 
-- **`QCR / FE | Welders`** switches between the two groups. QCR / FE (the default) ranks the people on Electrical and Mechanical inspections; Welders ranks the welders on the welding log. The two groups are never mixed.
+- **`QCR / FE | Welders`** switches between the two groups. QCR / FE (the default) ranks the people on Electrical and Mechanical finals; Welders ranks the welders on the welding log. The two groups are never mixed.
 - **`30 WW | All`** sets the ranking period: the 30 weeks ending at the selected week, or every week from the start of the data up to it.
 - **The week dropdown** opens on the current work week every time the report opens. The period ends at the week you pick.
 
@@ -62,13 +62,13 @@ Four cards for the shown group and period:
 
 | QCR / FE columns | Welders columns |
 |---|---|
-| Name, Finals, SORs, NCRs, NCR rate, Trend | Welder, Welds, NCRs, NCR rate, Trend |
+| Name, Finals, NCRs, NCR rate, Trend | Welder, Welds, NCRs, NCR rate, Trend |
 
 The table has three blocks, in this order:
 
-1. **Ranked people:** everyone with at least the minimum finals (or welds) in the period, ordered by NCR rate (highest first), then NCRs (most first), then name. QCR / FE names carry `E` and `M` tags for the disciplines they inspected in the period.
+1. **Ranked people:** everyone with at least the minimum finals (or welds) in the period, ordered by NCR rate (highest first), then NCRs (most first), then name. QCR / FE names carry `E` and `M` tags for the disciplines of their finals in the period.
 2. **Below minimum (n people):** a collapsed group with a disclosure button. Open it to see everyone under the minimum, ordered by finals (or welds), most first. They are listed but never ranked.
-3. **Not recorded:** a single row totalling every final and SOR (or weld) with no name recorded, shown last and never ranked.
+3. **Not recorded:** a single row totalling every final (or weld) with no name recorded, shown last and never ranked. It only appears when there is at least one.
 
 Click any column header to sort by it; click again to reverse. The three blocks stay in their order and each sorts within itself. The header stays in place as you scroll.
 
@@ -97,11 +97,11 @@ The page shows:
 
 ### QCR / FE
 
-- **Who's counted:** Electrical and Mechanical rows in the period whose Work Week can be read and isn't after the current work week.
+- **Who's counted:** Electrical and Mechanical **finals** in the period whose Work Week can be read and isn't after the current work week. Only finals count. SORs aren't tracked against QCR / FE: an SOR row isn't credited to anyone, and someone whose rows in the period are all SORs doesn't appear in the table.
 - **Names** are trimmed and grouped ignoring letter case and extra spaces, so `Jane  Smith` and `jane smith` are one person. The first spelling found is shown.
-- **One row per person:** someone who inspects for both Electrical and Mechanical has one row, with both `E` and `M` tags.
-- **Finals:** Inspection Phase is Final (any case), starts with "Final ", or contains "final inspection". **SORs:** the phase contains "SOR". Other phases aren't counted.
-- **NCRs:** finals whose Issue is filled in and is not "No Issue Found". SORs never count.
+- **One row per person:** someone with finals in both Electrical and Mechanical has one row, with both `E` and `M` tags.
+- **Finals:** Inspection Phase is Final (any case), starts with "Final ", or contains "final inspection". Every other phase, SORs included, isn't counted.
+- **NCRs:** finals whose Issue is filled in and is not "No Issue Found".
 - **NCR rate:** NCRs ÷ Finals.
 
 ### Welders
@@ -113,7 +113,7 @@ The page shows:
 
 ### Not recorded
 
-A QCR/FE or Welder cell that is blank, or is `n/a`, `na`, `none` or `-` (trimmed, any letter case), is **Not recorded**. For welders this applies to each comma-separated part; a weld with no recorded welder goes to Not recorded. The footnote says how many inspections have no QCR/FE.
+A QCR/FE or Welder cell that is blank, or is `n/a`, `na`, `none` or `-` (trimmed, any letter case), is **Not recorded**. For welders this applies to each comma-separated part; a weld with no recorded welder goes to Not recorded. For QCR / FE only finals go to Not recorded, and the footnote says `n finals have no QCR/FE`. It's hidden when there are none.
 
 ## Footnotes
 
@@ -121,6 +121,6 @@ The footnotes at the bottom report, for the shown group:
 
 - rows skipped because the work week can't be read
 - rows dated after the current work week, which aren't counted
-- inspections with no QCR/FE (QCR / FE), or welds listing more than one welder (Welders)
+- finals with no QCR/FE (QCR / FE), or welds listing more than one welder (Welders)
 - rows with an unknown Source (see the QAQC Combined guide)
 - `Showing the first n rows (Power BI data limit)`, if Power BI stopped sending rows
