@@ -12,7 +12,7 @@ const GUIDE_FOLDERS = ['LotusWorks_Package', 'Business_Package'] as const
  * Text that keeps "QAQC" because it names the user's own data: Smartsheet columns and the QAQC sign-off they record.
  * Everything else users see says QCx.
  */
-const QAQC_ALLOW_LIST = ['QAQC Advisory Item', 'QAQC signature'] as const
+const QAQC_ALLOW_LIST = ['QAQC Advisory Item'] as const
 
 const REPO_ROOT = join(__dirname, '..', '..', '..', '..')
 

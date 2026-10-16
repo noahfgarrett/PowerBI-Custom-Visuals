@@ -14,7 +14,7 @@
     "Qaqc_role_building": "Building",
     "Qaqc_role_building_description": "Building or area inspected.",
     "Qaqc_role_signature": "Signature",
-    "Qaqc_role_signature_description": "Weld QAQC signature. Blank means the weld is not signed off yet.",
+    "Qaqc_role_signature_description": "Weld QCx signature. Blank means the weld is not signed off yet.",
     "Qaqc_role_signedWeek": "Work Week Signed",
     "Qaqc_role_signedWeek_description": "Work Week the weld was signed, for example WW42'2026.",
     "Qaqc_role_id": "ID",
