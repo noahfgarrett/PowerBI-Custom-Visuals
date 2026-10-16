@@ -4,7 +4,13 @@ import { useMemo, useState, type ReactElement } from 'react'
 import { buildPerformanceFootnotes } from '../footnotes'
 import { formatCount } from '../format'
 import { useWeekWindow } from '../hooks/useWeekWindow'
-import { buildPerformanceModel, type PerformanceGroup, type PerformanceIndex, type PerformanceWindow } from '../performance'
+import {
+  buildPerformanceModel,
+  type DisciplineTag,
+  type PerformanceGroup,
+  type PerformanceIndex,
+  type PerformanceWindow,
+} from '../performance'
 import { chartColorsFromTheme } from '../theme'
 import { CARDS_ONLY_HEIGHT, ChartExpansionFrame, COMPACT_WIDTH, type ExpandablePanel, type OpenPage } from './ChartExpansionFrame'
 import { DashboardHeader, type DashboardChromeProps } from './DashboardHeader'
@@ -12,7 +18,7 @@ import { Footnotes } from './Footnotes'
 import { KpiCard } from './KpiCard'
 import { KpiGroup } from './KpiGroup'
 import { LoadingBar } from './LoadingBar'
-import { formatNcrRate, PerformanceTable } from './PerformanceTable'
+import { disciplineNames, formatNcrRate, PerformanceTable } from './PerformanceTable'
 import { PersonDetail } from './PersonDetail'
 import { SegmentedToggle, type SegmentedOption } from './SegmentedToggle'
 
@@ -85,6 +91,15 @@ interface OpenPerson {
   key: string
   name: string
   group: PerformanceGroup
+  /** QCR/FE only: the disciplines the title names. Empty for welders. */
+  tags: DisciplineTag[]
+}
+
+/** "QCR 02 · QCR / FE · Electrical", or "Welder 024 · Welder". */
+function personTitle(person: OpenPerson): string {
+  const parts = [person.name, GROUP_WORDS[person.group].personGroup]
+  if (person.tags.length > 0) parts.push(disciplineNames(person.tags))
+  return parts.join(' · ')
 }
 
 /**
@@ -124,7 +139,7 @@ export function PerformanceDashboard({
 
   const panels: Record<PanelId, ExpandablePanel> = {
     person: {
-      title: openPerson === null ? 'Person' : `${openPerson.name} · ${GROUP_WORDS[openPerson.group].personGroup}`,
+      title: openPerson === null ? 'Person' : personTitle(openPerson),
       icon: UserRound,
       kind: 'page',
       legend: [],
@@ -150,7 +165,9 @@ export function PerformanceDashboard({
     const person = model.ranked.find((candidate) => candidate.key === key) ?? model.belowMinimum.find((candidate) => candidate.key === key)
     const name = row.querySelector<HTMLElement>('.qaqc-perf-name')
     if (!person || !name) return
-    setOpenPerson({ key, name: person.name, group })
+    // The period row's disciplines; the person's all-time ones if the period row has none.
+    const tags = person.tags.length > 0 ? person.tags : index[group].find((candidate) => candidate.key === key)?.disciplines ?? []
+    setOpenPerson({ key, name: person.name, group, tags })
     openPage('person', row, name)
   }
 

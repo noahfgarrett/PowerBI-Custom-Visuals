@@ -177,6 +177,11 @@ function NumberCells({ group, row, colors, isHighContrast, trendTextId }: CellsP
 }
 
 /** E and M chips, with the discipline names for screen readers (`namesId` lets a button be described by them). */
+/** "Electrical", "Mechanical" or "Electrical and Mechanical": the disciplines in words, for titles and screen readers. */
+export function disciplineNames(tags: DisciplineTag[]): string {
+  return tags.map((tag) => TAG_NAMES[tag]).join(' and ')
+}
+
 export function PerformanceTags({ tags, namesId }: { tags: DisciplineTag[]; namesId?: string }): ReactElement | null {
   if (tags.length === 0) return null
   return (
@@ -186,7 +191,7 @@ export function PerformanceTags({ tags, namesId }: { tags: DisciplineTag[]; name
           {tag}
         </span>
       ))}
-      <span id={namesId} className="qaqc-visually-hidden">{`, ${tags.map((tag) => TAG_NAMES[tag]).join(' and ')}`}</span>
+      <span id={namesId} className="qaqc-visually-hidden">{`, ${disciplineNames(tags)}`}</span>
     </span>
   )
 }

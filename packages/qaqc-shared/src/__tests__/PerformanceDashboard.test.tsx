@@ -356,11 +356,12 @@ describe('PerformanceDashboard summary strip', () => {
 })
 
 describe('PerformanceDashboard person page', () => {
-  it('opens a person from their name, titled with the name and group', () => {
+  it('opens a person from their name, titled with the name, group and discipline', () => {
     stubSize()
     view = draw()
     click(nameButton(view.container, 'QCR 02'))
-    expect(dialog(view.container)?.getAttribute('aria-label')).toBe('QCR 02 · QCR / FE')
+    expect(dialog(view.container)?.getAttribute('aria-label')).toBe('QCR 02 · QCR / FE · Electrical')
+    expect(dialog(view.container)?.querySelector('h3')?.textContent).toBe('QCR 02 · QCR / FE · Electrical')
     expect(dialog(view.container)?.querySelector('.qaqc-perf-person')).not.toBeNull()
   })
 
@@ -376,7 +377,25 @@ describe('PerformanceDashboard person page', () => {
     stubSize()
     view = draw()
     click(rowNamed(view.container, 'QCR 01').cells[2])
-    expect(dialog(view.container)?.getAttribute('aria-label')).toBe('QCR 01 · QCR / FE')
+    expect(dialog(view.container)?.getAttribute('aria-label')).toBe('QCR 01 · QCR / FE · Electrical')
+  })
+
+  it('names a Mechanical QCR/FE\'s discipline in the title', () => {
+    stubSize()
+    view = draw()
+    click(nameButton(view.container, 'QCR 05'))
+    expect(dialog(view.container)?.getAttribute('aria-label')).toBe('QCR 05 · QCR / FE · Mechanical')
+  })
+
+  it('falls back to the person\'s all-time disciplines when the period row has none', () => {
+    const index = indexOf(COMBINED_ROWS)
+    const person = index.qcr.find((candidate) => candidate.name === 'QCR 02')
+    if (!person || !person.tagsByWeek) throw new Error('QCR 02 missing')
+    person.tagsByWeek.fill(0)
+    stubSize()
+    view = draw({ index })
+    click(nameButton(view.container, 'QCR 02'))
+    expect(dialog(view.container)?.getAttribute('aria-label')).toBe('QCR 02 · QCR / FE · Electrical')
   })
 
   it('shows the person\'s period cards on the page', () => {
@@ -448,7 +467,7 @@ describe('PerformanceDashboard person page', () => {
     const below = view.container.querySelector('.qaqc-root tr.qaqc-perf-row.is-below .qaqc-perf-name')
     const name = below?.textContent ?? ''
     click(below)
-    expect(dialog(view.container)?.getAttribute('aria-label')).toBe(`${name} · QCR / FE`)
+    expect(dialog(view.container)?.getAttribute('aria-label')).toMatch(new RegExp(`^${name} · QCR / FE · (Electrical|Mechanical|Electrical and Mechanical)$`))
   })
 
   it('opens no page and shows plain names when interactions are not allowed', () => {

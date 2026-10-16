@@ -320,7 +320,7 @@ describe('QaqcPerformanceVisual', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(COMBINED_ROWS)))
     click(nameButton(harness.element, 'QCR 02'))
-    expect(harness.element.querySelector('[role="dialog"]')?.getAttribute('aria-label')).toBe('QCR 02 · QCR / FE')
+    expect(harness.element.querySelector('[role="dialog"]')?.getAttribute('aria-label')).toBe('QCR 02 · QCR / FE · Electrical')
   })
 
   it('shows plain names and disabled controls when interactions are not allowed', () => {

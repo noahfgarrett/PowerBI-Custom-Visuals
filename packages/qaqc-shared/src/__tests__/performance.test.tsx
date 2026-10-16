@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { LABEL_METRICS } from '../chartLabels'
 import type { ChartColors } from '../chartTypes'
 import { splitCombinedRows } from '../combined'
-import { formatNcrRate, PerformanceTable, type PerformanceTableProps } from '../components/PerformanceTable'
+import { disciplineNames, formatNcrRate, PerformanceTable, type PerformanceTableProps } from '../components/PerformanceTable'
 import { PersonDetail, type PersonDetailProps } from '../components/PersonDetail'
 import { PersonWeekChart, type PersonWeekChartProps } from '../components/PersonWeekChart'
 import { TrendStrip } from '../components/TrendStrip'
@@ -1018,18 +1018,28 @@ function hoverChartWeek(root: HTMLElement): void {
   fire(hit, new MouseEvent('mousemove', { bubbles: true, clientX: 40, clientY: 100 }))
 }
 
+describe('disciplineNames', () => {
+  it.each([
+    [['E'], 'Electrical'],
+    [['M'], 'Mechanical'],
+    [['E', 'M'], 'Electrical and Mechanical'],
+    [[], ''],
+  ] as const)('names %j as %j', (tags, expected) => {
+    expect(disciplineNames([...tags])).toBe(expected)
+  })
+})
+
 describe('PersonDetail', () => {
-  it('shows the discipline tags under the title, leaving the group to the overlay title', () => {
+  it('leaves the group and the disciplines to the overlay title, with no subtitle line', () => {
     view = drawDetail()
-    const head = view.container.querySelector('.qaqc-perf-person-head')
-    expect([...(head?.querySelectorAll('.qaqc-perf-tag') ?? [])].map((tag) => tag.textContent)).toEqual(['E'])
-    expect(head?.textContent).not.toContain('QCR / FE')
+    expect(view.container.querySelector('.qaqc-perf-person-head')).toBeNull()
+    expect(view.container.querySelector('.qaqc-perf-tag')).toBeNull()
   })
 
   it('leaves the name and its heading to the overlay title', () => {
     view = drawDetail()
     expect(view.container.querySelector('h1, h2, h3, h4')?.textContent).not.toBe('QCR 02')
-    expect(view.container.querySelector('.qaqc-perf-person-head')?.textContent).not.toContain('QCR 02')
+    expect(view.container.querySelector('.qaqc-perf-person')?.firstElementChild?.textContent).not.toContain('QCR 02')
   })
 
   it('shows the period and all-time cards for a ranked QCR / FE (spec: QCR 02 65 / 2 / 3.08%, all 70 / 2 / 2.86%)', () => {

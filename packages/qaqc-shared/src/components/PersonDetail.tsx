@@ -12,7 +12,7 @@ import type { ViewState } from '../types'
 import { ChartPanel } from './ChartPanel'
 import { KpiCard } from './KpiCard'
 import { KpiGroup } from './KpiGroup'
-import { formatNcrRate, PerformanceTags } from './PerformanceTable'
+import { formatNcrRate } from './PerformanceTable'
 import { PersonWeekChart, personWeekLegend } from './PersonWeekChart'
 
 interface CardWords {
@@ -225,13 +225,7 @@ export function PersonDetail({ index, group, personKey, view, colors, animate, d
 
   return (
     <div className="qaqc-perf-person">
-      {/* The overlay title carries the name and the group; this line adds the disciplines, when there are any. */}
-      {detail.tags.length > 0 && (
-        <p className="qaqc-perf-person-head">
-          <PerformanceTags tags={detail.tags} />
-        </p>
-      )}
-
+      {/* No heading or subtitle: the overlay title carries the name, the group and the disciplines. */}
       <div className="qaqc-kpi-row qaqc-perf-person-cards">
         <TotalsCards title="This period" subtitle={periodLabel} variant="week" totals={detail.period} words={words} />
         <TotalsCards title="All time" subtitle={allTimeLabel} variant="total" totals={detail.allTime} words={words} />
