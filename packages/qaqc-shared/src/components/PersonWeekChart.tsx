@@ -181,7 +181,8 @@ export function layoutPersonWeeks(weeks: PersonWeek[], width: number, height: nu
   // volumes (newest week first), then the other rate points.
   const placedBoxes: Box[] = []
   const placed: ChartLabel[] = []
-  const isClear = (box: Box): boolean => box.left >= 0 && box.right <= width && box.top >= 0 && box.bottom <= plotBottom
+  // Labels stay between the axes, so they never run into either column of tick labels.
+  const isClear = (box: Box): boolean => box.left >= MARGIN.left && box.right <= plotRight && box.top >= 0 && box.bottom <= plotBottom
     && placedBoxes.every((other) => !overlaps(box, other))
   function place(label: Omit<ChartLabel, 'x' | 'y'>, candidates: PlotPoint[]): void {
     for (const candidate of candidates) {

@@ -462,34 +462,71 @@ describe('PerformanceTable sorting', () => {
 })
 
 describe('PerformanceTable opening a person', () => {
-  it('opens a person when their name is clicked, passing the row', () => {
+  function nameButton(row: HTMLTableRowElement): HTMLButtonElement {
+    const button = row.querySelector<HTMLButtonElement>('button.qaqc-perf-name')
+    if (!button) throw new Error('name button missing')
+    return button
+  }
+
+  it('makes the name button the one tab stop in each row', () => {
+    view = drawTable()
+    const row = rowNamed(view.container, 'QCR 2')
+    expect(row.hasAttribute('tabindex')).toBe(false)
+    expect(nameButton(row).tabIndex).toBe(0)
+    expect([...row.querySelectorAll('[tabindex]')].filter((node) => node instanceof HTMLElement && node.tabIndex >= 0)).toHaveLength(0)
+    nameButton(row).focus()
+    expect(document.activeElement).toBe(nameButton(row))
+  })
+
+  it('opens a person once when their name is clicked, passing the row', () => {
     const onOpenPerson = vi.fn()
     view = drawTable({ onOpenPerson })
     const row = rowNamed(view.container, 'QCR 2')
-    const name = row.querySelector('.qaqc-perf-name')
-    if (!name) throw new Error('name missing')
-    fire(name, new MouseEvent('click', { bubbles: true }))
+    fire(nameButton(row), new MouseEvent('click', { bubbles: true }))
     expect(onOpenPerson).toHaveBeenCalledTimes(1)
     expect(onOpenPerson).toHaveBeenCalledWith('qcr 2', row)
   })
 
-  it('opens a person with Enter on the focused row', () => {
+  it('opens a person from the keyboard through the native name button', () => {
+    // Enter and Space on a focused <button type="button"> dispatch its click; jsdom does not synthesise that.
     const onOpenPerson = vi.fn()
     view = drawTable({ onOpenPerson })
     const row = rowNamed(view.container, 'QCR 01')
-    expect(row.tabIndex).toBe(0)
-    fire(row, new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    const button = nameButton(row)
+    expect(button.getAttribute('type')).toBe('button')
+    button.focus()
+    act(() => {
+      button.click()
+    })
+    expect(onOpenPerson).toHaveBeenCalledTimes(1)
     expect(onOpenPerson).toHaveBeenCalledWith('qcr 01', row)
   })
 
-  it('opens a person with Space on the focused row, without scrolling the table', () => {
+  it('opens a person once when another cell of their row is clicked', () => {
     const onOpenPerson = vi.fn()
     view = drawTable({ onOpenPerson })
     const row = rowNamed(view.container, 'QCR 3')
-    const event = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true })
-    fire(row, event)
+    fire(row.cells[3], new MouseEvent('click', { bubbles: true }))
+    expect(onOpenPerson).toHaveBeenCalledTimes(1)
     expect(onOpenPerson).toHaveBeenCalledWith('qcr 3', row)
-    expect(event.defaultPrevented).toBe(true)
+  })
+
+  it('describes the name button with the row trend text', () => {
+    view = drawTable()
+    const button = nameButton(rowNamed(view.container, 'QCR 2'))
+    const id = button.getAttribute('aria-describedby') ?? ''
+    expect(id).not.toBe('')
+    expect(document.getElementById(id)?.textContent).toBe('NCRs in 5 of the last 30 weeks')
+  })
+
+  it('gives every rendered row its own description', () => {
+    view = drawTable()
+    expand(view.container)
+    const ids = bodyRows(view.container)
+      .map((row) => row.querySelector('button.qaqc-perf-name')?.getAttribute('aria-describedby'))
+      .filter((id): id is string => typeof id === 'string')
+    expect(ids).toHaveLength(7)
+    expect(new Set(ids).size).toBe(7)
   })
 
   it('opens a below-minimum person', () => {
@@ -497,25 +534,18 @@ describe('PerformanceTable opening a person', () => {
     view = drawTable({ onOpenPerson })
     expand(view.container)
     const row = rowNamed(view.container, 'QCR 20')
-    fire(row, new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    fire(nameButton(row), new MouseEvent('click', { bubbles: true }))
     expect(onOpenPerson).toHaveBeenCalledWith('qcr 20', row)
   })
 
-  it('ignores other keys', () => {
-    const onOpenPerson = vi.fn()
-    view = drawTable({ onOpenPerson })
-    fire(rowNamed(view.container, 'QCR 3'), new KeyboardEvent('keydown', { key: 'a', bubbles: true }))
-    expect(onOpenPerson).not.toHaveBeenCalled()
-  })
-
-  it('cannot open Not recorded by click or keyboard', () => {
+  it('cannot open Not recorded by click', () => {
     const onOpenPerson = vi.fn()
     view = drawTable({ onOpenPerson })
     const row = notRecordedRow(view.container)
     expect(row.hasAttribute('tabindex')).toBe(false)
     expect(row.querySelector('button')).toBeNull()
     fire(row.cells[0], new MouseEvent('click', { bubbles: true }))
-    fire(row, new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    fire(row.cells[2], new MouseEvent('click', { bubbles: true }))
     expect(onOpenPerson).not.toHaveBeenCalled()
   })
 
@@ -639,6 +669,31 @@ function labelCollisions(root: ParentNode): Array<[string, string]> {
       if (a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom) found.push([a.text, b.text])
     })
   })
+  return found
+}
+
+// Axis tick text: 10.5 px digits are at most about 6.2 px wide, 8 px above the baseline and 3 below.
+const AXIS_CHAR_WIDTH = 6.2
+
+/** The box of an axis tick label, from its anchor: the count axis is end-anchored, the rate axis start-anchored. */
+function axisTickBox(node: Element): LabelBox {
+  const text = node.textContent ?? ''
+  const width = text.length * AXIS_CHAR_WIDTH
+  const x = numberAttr(node, 'x')
+  const y = numberAttr(node, 'y')
+  const isEndAnchored = node.getAttribute('text-anchor') === 'end'
+  return { text, left: isEndAnchored ? x - width : x, right: isEndAnchored ? x : x + width, top: y - 8, bottom: y + 3 }
+}
+
+/** Point labels that overlap a left or right axis tick label. */
+function axisCollisions(root: ParentNode): Array<[string, string]> {
+  const ticks = all(root, '.qaqc-perf-count-axis-text, .qaqc-perf-rate-axis-text').map(axisTickBox)
+  const found: Array<[string, string]> = []
+  for (const label of all(root, '.qaqc-perf-chart-label').map(chartLabelBox)) {
+    for (const tick of ticks) {
+      if (label.left < tick.right && tick.left < label.right && label.top < tick.bottom && tick.top < label.bottom) found.push([label.text, tick.text])
+    }
+  }
   return found
 }
 
@@ -775,6 +830,11 @@ describe('PersonWeekChart', () => {
     it.each(SIZES)('places labels without collisions at %i × %i', (width, height) => {
       view = drawChart({ weeks, width, height })
       expect(labelCollisions(view.container)).toEqual([])
+    })
+
+    it.each(SIZES)('keeps labels clear of the axis tick labels at %i × %i', (width, height) => {
+      view = drawChart({ weeks, width, height })
+      expect(axisCollisions(view.container)).toEqual([])
     })
 
     it.each(SIZES)('keeps every label inside the chart at %i × %i', (width, height) => {

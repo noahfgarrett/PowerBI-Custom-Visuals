@@ -1,5 +1,5 @@
 import { ChevronRight } from 'lucide-react'
-import { useMemo, useState, type KeyboardEvent, type MouseEvent, type ReactElement } from 'react'
+import { useId, useMemo, useState, type MouseEvent, type ReactElement } from 'react'
 
 import type { ChartColors } from '../chartTypes'
 import { formatCount, formatPercent, pluralize } from '../format'
@@ -155,10 +155,12 @@ interface CellsProps {
   row: PerformanceRow
   colors: ChartColors
   isHighContrast: boolean
+  /** The id of the hidden trend text, which the name button points at with aria-describedby. */
+  trendTextId: string
 }
 
 /** Every cell after the name. */
-function NumberCells({ group, row, colors, isHighContrast }: CellsProps): ReactElement {
+function NumberCells({ group, row, colors, isHighContrast, trendTextId }: CellsProps): ReactElement {
   return (
     <>
       <td>{formatCount(row.volume)}</td>
@@ -167,7 +169,7 @@ function NumberCells({ group, row, colors, isHighContrast }: CellsProps): ReactE
       <td className={rateClass(row.rate)}>{formatNcrRate(row.rate)}</td>
       <td className="qaqc-perf-trend-cell">
         <TrendStrip trend={row.trend} colors={colors} isHighContrast={isHighContrast} />
-        <span className="qaqc-visually-hidden">{trendText(row)}</span>
+        <span id={trendTextId} className="qaqc-visually-hidden">{trendText(row)}</span>
       </td>
     </>
   )
@@ -204,6 +206,7 @@ export function PerformanceTable({
   // Null until a header is clicked: the model order is not any one column's order.
   const [sort, setSort] = useState<SortState<SortKey> | null>(null)
   const [isBelowOpen, setIsBelowOpen] = useState(false)
+  const idPrefix = `qaqc-perf-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`
   const columns = COLUMNS[group]
   const tableMinWidth = columns.reduce((sum, column) => sum + (column.width ?? 0), NAME_MIN_WIDTH)
 
@@ -244,15 +247,15 @@ export function PerformanceTable({
     })
   }
 
-  function openOnClick(key: string, event: MouseEvent<HTMLTableRowElement>): void {
-    onOpenPerson(key, event.currentTarget)
+  /** The name button: the row's one tab stop, so Enter and Space come from the button itself. */
+  function openFromName(key: string, event: MouseEvent<HTMLButtonElement>): void {
+    const row = event.currentTarget.closest('tr')
+    if (row instanceof HTMLTableRowElement) onOpenPerson(key, row)
   }
 
-  function openOnKey(key: string, event: KeyboardEvent<HTMLTableRowElement>): void {
-    // Keys on the name button reach the row too; the button's own click already opens the person.
-    if (event.target !== event.currentTarget) return
-    if (event.key !== 'Enter' && event.key !== ' ') return
-    event.preventDefault()
+  /** The rest of the row, for mouse users; a click on the name button already opened the person. */
+  function openFromRow(key: string, event: MouseEvent<HTMLTableRowElement>): void {
+    if (event.target instanceof Element && event.target.closest('button') !== null) return
     onOpenPerson(key, event.currentTarget)
   }
 
@@ -260,26 +263,31 @@ export function PerformanceTable({
     switch (item.kind) {
       case 'person': {
         const { row } = item
+        // The row's position is unique among the rendered rows, and unlike a name it never holds a space.
+        const trendTextId = `${idPrefix}-trend-${rowIndex}`
         return (
           <tr
             key={`${item.block}:${row.key}`}
             aria-rowindex={rowIndex}
             className={item.block === 'below' ? 'qaqc-perf-row is-below' : 'qaqc-perf-row'}
-            tabIndex={0}
             style={{ height: TABLE_ROW_HEIGHT }}
-            onClick={(event) => openOnClick(row.key, event)}
-            onKeyDown={(event) => openOnKey(row.key, event)}
+            onClick={(event) => openFromRow(row.key, event)}
           >
             <th scope="row" className="is-text">
               <span className="qaqc-perf-name-cell">
-                {/* Not a tab stop: the row is. The click bubbles to the row, which opens the person. */}
-                <button type="button" className="qaqc-perf-name" tabIndex={-1} title={row.name}>
+                <button
+                  type="button"
+                  className="qaqc-perf-name"
+                  title={row.name}
+                  aria-describedby={trendTextId}
+                  onClick={(event) => openFromName(row.key, event)}
+                >
                   {row.name}
                 </button>
                 <PerformanceTags tags={row.tags} />
               </span>
             </th>
-            <NumberCells group={group} row={row} colors={colors} isHighContrast={isHighContrast} />
+            <NumberCells group={group} row={row} colors={colors} isHighContrast={isHighContrast} trendTextId={trendTextId} />
           </tr>
         )
       }
@@ -302,7 +310,7 @@ export function PerformanceTable({
                 <span className="qaqc-perf-not-recorded-name">{item.row.name}</span>
               </span>
             </th>
-            <NumberCells group={group} row={item.row} colors={colors} isHighContrast={isHighContrast} />
+            <NumberCells group={group} row={item.row} colors={colors} isHighContrast={isHighContrast} trendTextId={`${idPrefix}-trend-${rowIndex}`} />
           </tr>
         )
       default: {
