@@ -1650,8 +1650,12 @@
   color: var(--qaqc-ink-2);
 }
 
-.qaqc-perf-row.is-below .qaqc-perf-name {
+// The indent sits on the cell, not the button, so the button's focus ring hugs the name.
+.qaqc-perf-row.is-below .qaqc-perf-name-cell {
   padding-left: 18px;
+}
+
+.qaqc-perf-row.is-below .qaqc-perf-name {
   color: var(--qaqc-ink-2);
   font-weight: 500;
 }

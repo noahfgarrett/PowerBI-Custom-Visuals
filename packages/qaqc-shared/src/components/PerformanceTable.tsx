@@ -181,8 +181,8 @@ function NumberCells({ group, row, colors, isHighContrast, trendTextId }: CellsP
   )
 }
 
-/** E and M chips, with the discipline names for screen readers. */
-export function PerformanceTags({ tags }: { tags: DisciplineTag[] }): ReactElement | null {
+/** E and M chips, with the discipline names for screen readers (`namesId` lets a button be described by them). */
+export function PerformanceTags({ tags, namesId }: { tags: DisciplineTag[]; namesId?: string }): ReactElement | null {
   if (tags.length === 0) return null
   return (
     <span className="qaqc-perf-tags">
@@ -191,7 +191,7 @@ export function PerformanceTags({ tags }: { tags: DisciplineTag[] }): ReactEleme
           {tag}
         </span>
       ))}
-      <span className="qaqc-visually-hidden">{`, ${tags.map((tag) => TAG_NAMES[tag]).join(' and ')}`}</span>
+      <span id={namesId} className="qaqc-visually-hidden">{`, ${tags.map((tag) => TAG_NAMES[tag]).join(' and ')}`}</span>
     </span>
   )
 }
@@ -273,6 +273,8 @@ export function PerformanceTable({
         const { row } = item
         // The row's position is unique among the rendered rows, and unlike a name it never holds a space.
         const trendTextId = `${idPrefix}-trend-${rowIndex}`
+        // The button's description names the disciplines too, so tabbing to a name announces them.
+        const tagsTextId = `${idPrefix}-tags-${rowIndex}`
         return (
           <tr
             key={`${item.block}:${row.key}`}
@@ -287,12 +289,12 @@ export function PerformanceTable({
                   type="button"
                   className="qaqc-perf-name"
                   title={row.name}
-                  aria-describedby={trendTextId}
+                  aria-describedby={row.tags.length > 0 ? `${tagsTextId} ${trendTextId}` : trendTextId}
                   onClick={(event) => openFromName(row.key, event)}
                 >
                   {row.name}
                 </button>
-                <PerformanceTags tags={row.tags} />
+                <PerformanceTags tags={row.tags} namesId={tagsTextId} />
               </span>
             </th>
             <NumberCells group={group} row={row} colors={colors} isHighContrast={isHighContrast} trendTextId={trendTextId} />

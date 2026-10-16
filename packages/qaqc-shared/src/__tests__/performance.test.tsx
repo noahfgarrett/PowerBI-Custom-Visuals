@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { ChartColors } from '../chartTypes'
 import { splitCombinedRows } from '../combined'
-import { PerformanceTable, type PerformanceTableProps } from '../components/PerformanceTable'
+import { formatNcrRate, PerformanceTable, type PerformanceTableProps } from '../components/PerformanceTable'
 import { PersonDetail, type PersonDetailProps } from '../components/PersonDetail'
 import { PersonWeekChart, type PersonWeekChartProps } from '../components/PersonWeekChart'
 import { TrendStrip } from '../components/TrendStrip'
@@ -15,6 +15,7 @@ import { enumerateWorkWeeks, makeWorkWeek } from '../workWeeks'
 import { countCompares } from './countCompares'
 import { COMBINED_COLUMNS, COMBINED_ROWS } from './fixtures/combinedRows'
 import { render, type Rendered } from './render'
+import { ruleBody } from './stylesheet'
 
 const COLORS: ChartColors = {
   series1: '#2E5AAC', series2: '#86B6EF', series3: '#1A9C7B', good: '#0A7A0A', bad: '#D03B3B', warn: '#B45309', card: '#FDFEFF',
@@ -351,6 +352,13 @@ describe('PerformanceTable columns', () => {
   })
 })
 
+describe('PerformanceTable stylesheet', () => {
+  it('indents below-minimum names outside the name button, so the focus ring hugs the name', () => {
+    expect(ruleBody('.qaqc-perf-row.is-below .qaqc-perf-name-cell')).toContain('padding-left: 18px')
+    expect(ruleBody('.qaqc-perf-row.is-below .qaqc-perf-name')).not.toContain('padding-left')
+  })
+})
+
 describe('PerformanceTable blocks', () => {
   it('lists the ranked people in model order, then the collapsed below-minimum group, then Not recorded', () => {
     view = drawTable()
@@ -547,12 +555,20 @@ describe('PerformanceTable opening a person', () => {
     expect(onOpenPerson).toHaveBeenCalledWith('qcr 3', row)
   })
 
-  it('describes the name button with the row trend text', () => {
+  /** The text of every element the button's aria-describedby names, in order. */
+  function description(button: HTMLButtonElement): string[] {
+    const ids = (button.getAttribute('aria-describedby') ?? '').split(' ').filter((id) => id !== '')
+    return ids.map((id) => document.getElementById(id)?.textContent ?? `missing ${id}`)
+  }
+
+  it('describes the name button with the disciplines and the row trend text', () => {
     view = drawTable()
-    const button = nameButton(rowNamed(view.container, 'QCR 2'))
-    const id = button.getAttribute('aria-describedby') ?? ''
-    expect(id).not.toBe('')
-    expect(document.getElementById(id)?.textContent).toBe('NCRs in 5 of the last 30 weeks')
+    expect(description(nameButton(rowNamed(view.container, 'QCR 2')))).toEqual([', Electrical and Mechanical', 'NCRs in 5 of the last 30 weeks'])
+  })
+
+  it('describes a welder name with the trend text alone', () => {
+    view = drawTable({ group: 'welders', ranked: [personRow('Welder 001', { tags: [], ncrWeeks: 2 })] })
+    expect(description(nameButton(rowNamed(view.container, 'Welder 001')))).toEqual(['NCRs in 2 of the last 30 weeks'])
   })
 
   it('gives every rendered row its own description', () => {
@@ -881,7 +897,9 @@ describe('PersonWeekChart', () => {
 
     it.each(SIZES)('labels the latest running rate at %i × %i', (width, height) => {
       view = drawChart({ weeks, width, height })
-      expect(all(view.container, '.qaqc-perf-chart-label.is-rate').length).toBeGreaterThan(0)
+      const latest = weeks[weeks.length - 1]
+      const label = view.container.querySelector(`.qaqc-perf-chart-label.is-rate[data-week="${latest.week.key}"]`)
+      expect(label?.textContent).toBe(formatNcrRate(latest.runningRate))
     })
   })
 

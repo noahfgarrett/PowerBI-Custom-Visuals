@@ -198,9 +198,14 @@ export function layoutPersonWeeks(weeks: PersonWeek[], width: number, height: nu
     const point = linePoints[index]
     const rate = weeks[index].runningRate
     if (point === null || rate === null) return
-    place({ key: `r${index}`, index, series: 'rate', text: formatNcrRate(rate) }, [
-      { x: point.x, y: point.y - LINE_LABEL_ABOVE },
-      { x: point.x, y: point.y + LINE_LABEL_BELOW },
+    const text = formatNcrRate(rate)
+    // A point within half a label of either axis (the newest week always is, on narrow bands) slides its label
+    // inward until it ends at the axis, rather than losing it.
+    const half = textWidth(text) / 2 + LABEL_GAP / 2
+    const x = Math.min(Math.max(point.x, MARGIN.left + half), plotRight - half)
+    place({ key: `r${index}`, index, series: 'rate', text }, [
+      { x, y: point.y - LINE_LABEL_ABOVE },
+      { x, y: point.y + LINE_LABEL_BELOW },
     ])
   }
   function placeBarLabel(index: number, series: 'volume' | 'ncr'): void {
@@ -329,11 +334,19 @@ export function PersonWeekChart({ weeks, group, width, height, colors, animate, 
       return colors.ink
     }
     return layout.labels.map((label) => (
-      <text key={label.key} className={`qaqc-perf-chart-label is-${label.series}`} x={label.x} y={label.y} textAnchor="middle" fill={fillOf(label.series)}>
+      <text
+        key={label.key}
+        className={`qaqc-perf-chart-label is-${label.series}`}
+        data-week={weeks[label.index]?.week.key}
+        x={label.x}
+        y={label.y}
+        textAnchor="middle"
+        fill={fillOf(label.series)}
+      >
         {label.text}
       </text>
     ))
-  }, [layout, colors])
+  }, [layout, colors, weeks])
 
   const weekAxis = useMemo(() => {
     const shown = labelIndices(weeks.length, layout.plotWidth, -1)
