@@ -751,6 +751,14 @@ function axisCollisions(root: ParentNode): Array<[string, string]> {
   return found
 }
 
+/** A bar's box from its path: every x,y pair in a roundedTopBarPath lies on the bar's outline. */
+function barBox(node: Element): LabelBox {
+  const pairs = [...(node.getAttribute('d') ?? '').matchAll(/(-?[\d.]+),(-?[\d.]+)/g)].map((match) => [Number(match[1]), Number(match[2])])
+  const xs = pairs.map(([x]) => x)
+  const ys = pairs.map(([, y]) => y)
+  return { text: 'bar', left: Math.min(...xs), right: Math.max(...xs), top: Math.min(...ys), bottom: Math.max(...ys) }
+}
+
 /** The x of the path's start and of each curve's end point, in order. */
 function pathXs(path: string): number[] {
   if (path === '') return []
@@ -889,6 +897,17 @@ describe('PersonWeekChart', () => {
     it.each(SIZES)('places labels without collisions at %i × %i', (width, height) => {
       view = drawChart({ weeks, width, height })
       expect(labelCollisions(view.container)).toEqual([])
+    })
+
+    it.each(SIZES)('keeps rate labels off the bars, except the newest when it has nowhere else to go, at %i × %i', (width, height) => {
+      view = drawChart({ weeks, width, height })
+      const bars = all(view.container, '.qaqc-perf-chart-bar').map(barBox)
+      const newestKey = String(weeks[weeks.length - 1].week.key)
+      const onBars = all(view.container, '.qaqc-perf-chart-label.is-rate')
+        .filter((label) => label.getAttribute('data-week') !== newestKey)
+        .map(chartLabelBox)
+        .filter((label) => bars.some((bar) => label.left < bar.right && bar.left < label.right && label.top < bar.bottom && bar.top < label.bottom))
+      expect(onBars.map((label) => label.text)).toEqual([])
     })
 
     it.each(SIZES)('keeps labels clear of the axis tick labels at %i × %i', (width, height) => {

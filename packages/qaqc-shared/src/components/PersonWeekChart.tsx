@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type MouseEvent, type ReactElement } from 'react'
 
-import { createLabelPlacer, LABEL_GAP, labelHalfWidth, labelTextWidth } from '../chartLabels'
+import { boxesOverlap, createLabelPlacer, LABEL_GAP, labelBox, labelHalfWidth, labelTextWidth, type LabelBox } from '../chartLabels'
 import {
   alignedScale,
   labelIndices,
@@ -43,6 +43,8 @@ const LINE_LABEL_EVERY = 3
 const MIN_LINE_LABEL_SPACING = 40
 const LINE_LABEL_ABOVE = 7
 const LINE_LABEL_BELOW = 14
+/** Rate labels keep at least this far from every bar. */
+const BAR_LABEL_PAD = 2
 
 const VOLUME_LABELS: Record<PerformanceGroup, string> = { qcr: 'Finals', welders: 'Welds' }
 
@@ -137,17 +139,19 @@ export function layoutPersonWeeks(weeks: PersonWeek[], width: number, height: nu
   const ncrX = (index: number): number => volumeX(index) + barWidth + pairGap
 
   const bars: BarMark[] = []
+  /** Every bar's rect grown by BAR_LABEL_PAD; rate labels stay off them. */
+  const barBoxes: LabelBox[] = []
+  const addBar = (key: string, series: BarMark['series'], x: number, count: number): void => {
+    const barHeight = countHeight(count)
+    const top = plotBottom - barHeight
+    bars.push({ key, series, path: roundedTopBarPath(x, top, barWidth, barHeight, CORNER_RADIUS) })
+    barBoxes.push({ left: x - BAR_LABEL_PAD, right: x + barWidth + BAR_LABEL_PAD, top: top - BAR_LABEL_PAD, bottom: plotBottom })
+  }
   const centers: number[] = []
   const linePoints: Array<PlotPoint | null> = []
   weeks.forEach((week, index) => {
-    if (week.volume > 0) {
-      const barHeight = countHeight(week.volume)
-      bars.push({ key: `v${index}`, series: 'volume', path: roundedTopBarPath(volumeX(index), plotBottom - barHeight, barWidth, barHeight, CORNER_RADIUS) })
-    }
-    if (week.ncrs > 0) {
-      const barHeight = countHeight(week.ncrs)
-      bars.push({ key: `n${index}`, series: 'ncr', path: roundedTopBarPath(ncrX(index), plotBottom - barHeight, barWidth, barHeight, CORNER_RADIUS) })
-    }
+    if (week.volume > 0) addBar(`v${index}`, 'volume', volumeX(index), week.volume)
+    if (week.ncrs > 0) addBar(`n${index}`, 'ncr', ncrX(index), week.ncrs)
     const center = bandX(index) + band / 2
     centers.push(center)
     linePoints.push(week.runningRate === null ? null : { x: center, y: plotBottom - (week.runningRate / rateScale.max) * plotHeight })
@@ -172,10 +176,15 @@ export function layoutPersonWeeks(weeks: PersonWeek[], width: number, height: nu
     // inward until it ends at the axis, rather than losing it.
     const half = labelHalfWidth(text)
     const x = Math.min(Math.max(point.x, MARGIN.left + half), plotRight - half)
-    place({ key: `r${index}`, index, series: 'rate', text }, [
-      { x, y: point.y - LINE_LABEL_ABOVE },
-      { x, y: point.y + LINE_LABEL_BELOW },
-    ])
+    const candidates = [{ x, y: point.y - LINE_LABEL_ABOVE }, { x, y: point.y + LINE_LABEL_BELOW }]
+    // Rate labels stay off the bars (bar counts may sit right on top of theirs, so the bars only block rate labels).
+    // The newest rate is the one readers take as current: with every position on a bar, it keeps them anyway.
+    const offBars = candidates.filter((candidate) => {
+      const box = labelBox(text, candidate.x, candidate.y)
+      return barBoxes.every((bar) => !boxesOverlap(box, bar))
+    })
+    const isNewest = index === weeks.length - 1
+    place({ key: `r${index}`, index, series: 'rate', text }, offBars.length === 0 && isNewest ? candidates : offBars)
   }
   function placeBarLabel(index: number, series: 'volume' | 'ncr'): void {
     const count = series === 'volume' ? weeks[index].volume : weeks[index].ncrs
