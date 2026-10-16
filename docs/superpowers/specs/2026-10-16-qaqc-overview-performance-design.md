@@ -203,14 +203,13 @@ A summary strip under the header shows, for the group and period: people ranked,
 ### QCR / FE view
 
 **Who's counted**
-- Electrical and Mechanical rows in the period.
+- Electrical and Mechanical **Final** rows in the period. SORs aren't tracked against QCR/FE: SOR rows aren't credited to anyone, and a person whose rows in the period are all SORs doesn't appear.
 - People are keyed on QCR/FE, trimmed and grouped ignoring case and whitespace; the first spelling is shown.
-- A person who appears in both disciplines is one row, with `E` and `M` tags.
+- A person who has finals in both disciplines is one row, with `E` and `M` tags.
 - A blank value, or one of `n/a`, `na`, `none`, `-` (trimmed, case-insensitive), is Not recorded.
 
 **Per person**
 - **Finals:** final-phase rows.
-- **SORs:** SOR-phase rows.
 - **NCRs:** finals with an issue found.
 - **NCR rate:** NCRs ÷ Finals.
 
@@ -218,9 +217,9 @@ A summary strip under the header shows, for the group and period: people ranked,
 - **Order:** NCR rate descending, then NCRs descending, then name.
 - **Eligibility:** only people with at least **Minimum finals** are ranked. This is a Format pane setting under Ranking, numeric, default 5, range 1–100.
 - **Below the minimum:** everyone else goes in a collapsed **Below minimum (n people)** group at the bottom, with a disclosure button.
-- **Not recorded:** rows with a blank QCR/FE form one **Not recorded** row, shown last, never ranked, and footnoted (`n inspections have no QCR/FE`).
+- **Not recorded:** finals with a blank QCR/FE form one **Not recorded** row, shown last, never ranked, and footnoted (`n finals have no QCR/FE`). Like the other footnotes, it's hidden when n is 0.
 
-**Columns:** Name, Finals, SORs, NCRs, NCR rate, Trend.
+**Columns:** Name, Finals, NCRs, NCR rate, Trend.
 
 ### Welders view
 
@@ -347,31 +346,33 @@ On the activity chart, WW19 is Electrical 7 and Mechanical 3, WW22 is 6 and 1, a
 
 **QCR / FE, minimum finals 5.** Rows are ranked by NCR rate, then NCRs, then name.
 
-| # | 30 WW (WW13–WW42) | Tags | Finals | SORs | NCRs | NCR rate |
-|---|---|---|---|---|---|---|
-| 1 | QCR 02 | E | 65 | 0 | 2 | 3.08% |
-| 2 | QCR 01 | E | 94 | 0 | 0 | 0.00% |
-| 3 | QCR 04 | E | 22 | 0 | 0 | 0.00% |
-| 4 | QCR 05 | M | 12 | 2 | 0 | 0.00% |
-| 5 | QCR 06 | M | 13 | 1 | 0 | 0.00% |
-| 6 | QCR 07 | M | 5 | 0 | 0 | 0.00% |
+Only Final rows count. QCR 09, 12, 13, 14, 16 and 17 have only SORs, in both periods and all time, so they don't appear.
 
-- **Below minimum:** 10 people, with 10 finals, 11 SORs and 0 NCRs between them.
-- **Not recorded:** 70 inspections, all of them SORs (57 blank and 13 `N/A`).
+| # | 30 WW (WW13–WW42) | Tags | Finals | NCRs | NCR rate |
+|---|---|---|---|---|---|
+| 1 | QCR 02 | E | 65 | 2 | 3.08% |
+| 2 | QCR 01 | E | 94 | 0 | 0.00% |
+| 3 | QCR 04 | E | 22 | 0 | 0.00% |
+| 4 | QCR 05 | M | 12 | 0 | 0.00% |
+| 5 | QCR 06 | M | 13 | 0 | 0.00% |
+| 6 | QCR 07 | M | 5 | 0 | 0.00% |
 
-| # | All (WW51'2025–WW42) | Tags | Finals | SORs | NCRs | NCR rate |
-|---|---|---|---|---|---|---|
-| 1 | QCR 02 | E | 70 | 0 | 2 | 2.86% |
-| 2 | QCR 01 | E | 94 | 0 | 0 | 0.00% |
-| 3 | QCR 03 | E | 39 | 0 | 0 | 0.00% |
-| 4 | QCR 04 | E | 31 | 0 | 0 | 0.00% |
-| 5 | QCR 05 | M | 12 | 2 | 0 | 0.00% |
-| 6 | QCR 06 | M | 14 | 1 | 0 | 0.00% |
-| 7 | QCR 07 | M | 5 | 0 | 0 | 0.00% |
+- **Below minimum:** 4 people (QCR 08, 10, 11 and 15), with 10 finals and 0 NCRs between them.
+- **Not recorded:** none. Every final in the period has a QCR/FE, so there is no Not recorded row and no footnote.
 
-- **Below minimum:** 10 people, with 10 finals, 11 SORs and 0 NCRs between them.
-- **Not recorded:** 132 inspections (48 Electrical, 84 Mechanical): 7 finals, 125 SORs and 1 NCR. That NCR is the WW08'2026 Mechanical NCR, logged under `NA`.
-- **Both disciplines:** only QCR 09 has rows in both, and it is below the minimum.
+| # | All (WW51'2025–WW42) | Tags | Finals | NCRs | NCR rate |
+|---|---|---|---|---|---|
+| 1 | QCR 02 | E | 70 | 2 | 2.86% |
+| 2 | QCR 01 | E | 94 | 0 | 0.00% |
+| 3 | QCR 03 | E | 39 | 0 | 0.00% |
+| 4 | QCR 04 | E | 31 | 0 | 0.00% |
+| 5 | QCR 05 | M | 12 | 0 | 0.00% |
+| 6 | QCR 06 | M | 14 | 0 | 0.00% |
+| 7 | QCR 07 | M | 5 | 0 | 0.00% |
+
+- **Below minimum:** 4 people (QCR 08, 10, 11 and 15), with 10 finals and 0 NCRs between them.
+- **Not recorded:** 7 finals (1 Electrical `N/A`, 6 Mechanical `NA`) and 1 NCR, footnoted `7 finals have no QCR/FE`. That NCR is the WW08'2026 Mechanical NCR, logged under `NA`.
+- **Both disciplines:** nobody has finals in both. QCR 09, the only person with rows in both, has only SORs, so it doesn't appear.
 
 **Welders, minimum welds 10.** This is the top 10 in each period.
 
@@ -397,7 +398,7 @@ On the activity chart, WW19 is Electrical 7 and Mechanical 3, WW22 is 6 and 1, a
 
 No issue weld lists more than one welder, so the credited NCRs add up to the 11 issue welds. The one Not recorded weld has a blank Welder.
 
-**Summary strip.** The totals cover the whole group in the period: distinct finals or welds, including people below the minimum and Not recorded. They match the discipline windows. The bracketed figures sum only the ranked people (credited welds for welders).
+**Summary strip.** The totals cover the whole group in the period: distinct finals or welds, including people below the minimum and Not recorded. They match the discipline windows. They were already Finals-based, so leaving SORs out changes none of them. The bracketed figures sum only the ranked people (credited welds for welders).
 
 | Group | Period | People ranked | Finals / Welds | NCRs | NCR rate |
 |---|---|---|---|---|---|
@@ -413,7 +414,8 @@ No issue weld lists more than one welder, so the credited NCRs add up to the 11 
 - **To-date Signed.** The `+n` is Signed This Week, counted by signing week, as in the Welding visual.
 - **Quality strip sub-lines.** Count cards follow the discipline rows: the change against W−1 in This WW, and `+n this WW` in To date. Rate cards show the points change against W−1, or against through W−1.
 - **Placeholder names (decided 2026-10-16).** `n/a`, `na`, `none` and `-` (trimmed, case-insensitive) are Not recorded for QCR/FE and for each welder part. This is the same set as the welding no-issue values. It moves the `N/A` and `NA` QCR/FE values into Not recorded. One consequence: in All, Mechanical's only NCR now sits in Not recorded, not with a ranked person.
-- **Who's counted for QCR/FE.** Performance counts Final and SOR rows with a readable, non-future week, as the inspection index does. E/M tags come from the rows in the period. Not recorded counts Final and SOR rows with a Not recorded QCR/FE. Pseudonym ordering counts every sheet row, including the 5 rows whose phase is neither Final nor SOR.
+- **Who's counted for QCR/FE.** Performance counts Final rows with a readable, non-future week. SOR rows are ignored, like rows whose phase is neither Final nor SOR, so they never count as skipped or future rows either. E/M tags come from the finals in the period. Not recorded counts Final rows with a Not recorded QCR/FE. Pseudonym ordering counts every sheet row, including SORs and the 5 rows whose phase is neither Final nor SOR.
+- **SORs are not tracked against QCR/FE (decided 2026-10-16).**
 - **Summary strip totals.** These are whole-group totals, not sums over the ranked people (see the bracketed figures above).
 - **Welder grouping.** Grouping collapses whitespace as well as case, the same as for QCR/FE. No welder or QCR/FE spelling in the exports differs only by case or whitespace, and no weld cell repeats a welder, so this changes nothing here.
 
@@ -427,7 +429,8 @@ No issue weld lists more than one welder, so the credited NCRs add up to the 11 
 
 **Expected numbers**
 - The Overview's discipline cards must equal the numbers the four discipline visuals show for the same week. The test asserts this against the existing fixtures' expectations.
-- The quality strip and Performance numbers are derived independently in Python from the xlsx exports and listed in Expected numbers above.
+- The quality strip and Performance numbers are derived independently in Python from the xlsx exports and listed in Expected numbers above. For QCR/FE the Python counts Final rows only.
+- Performance tests also cover the SOR rule: a person with only SORs doesn't appear, the QCR/FE table has no SORs column, Not recorded counts only finals, and the `n finals have no QCR/FE` footnote is hidden at 0.
 
 **Benchmarks:** the two targets above, using synthetic combined rows.
 
