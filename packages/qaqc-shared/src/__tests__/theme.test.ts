@@ -150,6 +150,93 @@ describe('contrastRatio', () => {
   })
 })
 
+/** CIE Lab (D65) of a #rrggbb colour. */
+function hexToLab(hex: string): Lab {
+  const channels = [1, 3, 5].map((start) => parseInt(hex.slice(start, start + 2), 16) / 255)
+  const [r, g, b] = channels.map((value) => (value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4))
+  const x = (0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047
+  const y = 0.2126 * r + 0.7152 * g + 0.0722 * b
+  const z = (0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883
+  const f = (t: number): number => (t > 216 / 24389 ? Math.cbrt(t) : ((24389 / 27) * t + 16) / 116)
+  return [116 * f(y) - 16, 500 * (f(x) - f(y)), 200 * (f(y) - f(z))]
+}
+
+type Lab = [number, number, number]
+
+/** CIEDE2000 colour difference between two Lab colours (Sharma, Wu and Dalal's formulation). */
+function labDeltaE2000([l1, a1, b1]: Lab, [l2, a2, b2]: Lab): number {
+  const radians = (degrees: number): number => (degrees * Math.PI) / 180
+  const meanChroma = (Math.hypot(a1, b1) + Math.hypot(a2, b2)) / 2
+  const g = 0.5 * (1 - Math.sqrt(meanChroma ** 7 / (meanChroma ** 7 + 25 ** 7)))
+  const [a1p, a2p] = [a1 * (1 + g), a2 * (1 + g)]
+  const [c1, c2] = [Math.hypot(a1p, b1), Math.hypot(a2p, b2)]
+  const hue = (a: number, b: number): number => ((Math.atan2(b, a) * 180) / Math.PI + 360) % 360
+  const [h1, h2] = [hue(a1p, b1), hue(a2p, b2)]
+  let hueStep = h2 - h1
+  if (hueStep > 180) hueStep -= 360
+  if (hueStep < -180) hueStep += 360
+  if (c1 * c2 === 0) hueStep = 0
+  const deltaL = l2 - l1
+  const deltaC = c2 - c1
+  const deltaH = 2 * Math.sqrt(c1 * c2) * Math.sin(radians(hueStep / 2))
+  const meanL = (l1 + l2) / 2
+  const meanC = (c1 + c2) / 2
+  let meanH = h1 + h2
+  if (c1 * c2 !== 0) meanH = Math.abs(h1 - h2) <= 180 ? (h1 + h2) / 2 : (h1 + h2 + (h1 + h2 < 360 ? 360 : -360)) / 2
+  const t = 1 - 0.17 * Math.cos(radians(meanH - 30)) + 0.24 * Math.cos(radians(2 * meanH)) + 0.32 * Math.cos(radians(3 * meanH + 6))
+    - 0.2 * Math.cos(radians(4 * meanH - 63))
+  const rotation = 30 * Math.exp(-(((meanH - 275) / 25) ** 2))
+  const rc = 2 * Math.sqrt(meanC ** 7 / (meanC ** 7 + 25 ** 7))
+  const sl = 1 + (0.015 * (meanL - 50) ** 2) / Math.sqrt(20 + (meanL - 50) ** 2)
+  const sc = 1 + 0.045 * meanC
+  const sh = 1 + 0.015 * meanC * t
+  const rt = -Math.sin(radians(2 * rotation)) * rc
+  return Math.sqrt((deltaL / sl) ** 2 + (deltaC / sc) ** 2 + (deltaH / sh) ** 2 + rt * (deltaC / sc) * (deltaH / sh))
+}
+
+function deltaE2000(first: string, second: string): number {
+  return labDeltaE2000(hexToLab(first), hexToLab(second))
+}
+
+type Matrix = [[number, number, number], [number, number, number], [number, number, number]]
+
+/** Machado, Oliveira and Fernandes (2009) full-severity simulations, applied in linear RGB. */
+const CVD_SIMULATIONS: Record<'protan' | 'deutan' | 'tritan', Matrix> = {
+  protan: [[0.152286, 1.052583, -0.204868], [0.114503, 0.786281, 0.099216], [-0.003882, -0.048116, 1.051998]],
+  deutan: [[0.367322, 0.860646, -0.227968], [0.280085, 0.672501, 0.047413], [-0.01182, 0.04294, 0.968881]],
+  tritan: [[1.255528, -0.076749, -0.178779], [-0.078411, 0.930809, 0.147602], [0.004733, 0.691367, 0.3039]],
+}
+
+function simulate(hex: string, matrix: Matrix): string {
+  const linear = [1, 3, 5].map((start) => {
+    const value = parseInt(hex.slice(start, start + 2), 16) / 255
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+  })
+  return `#${matrix.map((row) => {
+    const value = Math.min(1, Math.max(0, row[0] * linear[0] + row[1] * linear[1] + row[2] * linear[2]))
+    const encoded = value <= 0.0031308 ? value * 12.92 : 1.055 * value ** (1 / 2.4) - 0.055
+    return Math.round(encoded * 255).toString(16).padStart(2, '0')
+  }).join('')}`
+}
+
+describe('deltaE2000', () => {
+  it('matches Sharma, Wu and Dalal\'s published test pairs', () => {
+    expect(labDeltaE2000([50, 2.6772, -79.7751], [50, 0, -82.7485])).toBeCloseTo(2.0425, 4)
+    expect(labDeltaE2000([50, 0, 0], [50, -1, 2])).toBeCloseTo(2.3669, 4)
+    expect(labDeltaE2000([50, 2.5, 0], [73, 25, -18])).toBeCloseTo(27.1492, 4)
+    expect(labDeltaE2000([2.0776, 0.0795, -1.135], [0.9033, -0.0636, -0.5514])).toBeCloseTo(0.9082, 4)
+  })
+
+  it('is 0 for identical colours and symmetric', () => {
+    expect(deltaE2000('#2E5AAC', '#2E5AAC')).toBe(0)
+    expect(deltaE2000('#2E5AAC', '#D03B3B')).toBeCloseTo(deltaE2000('#D03B3B', '#2E5AAC'), 10)
+  })
+
+  it('tells black from white by about 100', () => {
+    expect(deltaE2000('#000000', '#FFFFFF')).toBeCloseTo(100, 0)
+  })
+})
+
 describe('series 3', () => {
   it('differs from series 1 and the status colours in every preset, with at least 3:1 contrast on the card', () => {
     for (const preset of Object.keys(PRESETS)) {
@@ -159,6 +246,23 @@ describe('series 3', () => {
       expect(Object.values(STATUS_COLORS)).not.toContain(colors.series3)
       expect(contrastRatio(colors.series3, colors.card)).toBeGreaterThanOrEqual(3)
     }
+  })
+
+  it.each(Object.keys(PRESETS))('is perceptually distinct from series 1, the accent and every status colour in %s', (preset) => {
+    if (!isPresetName(preset)) throw new Error(`bad preset ${preset}`)
+    const colors = PRESETS[preset]
+    const others: Record<string, string> = { series1: colors.series1, accent: colors.accent, ...STATUS_COLORS }
+    const tooClose = Object.entries(others).filter(([, color]) => deltaE2000(colors.series3, color) <= 20).map(([name]) => name)
+    expect(tooClose).toEqual([])
+  })
+
+  it.each(Object.keys(PRESETS))('stays apart from series 1 under every colour vision deficiency in %s', (preset) => {
+    if (!isPresetName(preset)) throw new Error(`bad preset ${preset}`)
+    const colors = PRESETS[preset]
+    const tooClose = Object.entries(CVD_SIMULATIONS)
+      .filter(([, matrix]) => deltaE2000(simulate(colors.series3, matrix), simulate(colors.series1, matrix)) < 15)
+      .map(([name]) => name)
+    expect(tooClose).toEqual([])
   })
 
   it('reaches the stylesheet and the chart colours', () => {

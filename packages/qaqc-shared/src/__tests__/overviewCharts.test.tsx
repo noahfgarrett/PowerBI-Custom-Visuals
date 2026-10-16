@@ -7,6 +7,8 @@ import {
   activityLegend,
   type ActivityLinesChartProps,
 } from '../components/ActivityLinesChart'
+import { LegendSwatch } from '../components/ChartPanel'
+import { LABEL_METRICS, OverviewLinesChart, type WeekLine } from '../components/OverviewLinesChart'
 import { OverviewWeekTable } from '../components/OverviewWeekTable'
 import {
   QualityRatesChart,
@@ -26,10 +28,7 @@ const COLORS: ChartColors = {
 const WIDTH = 800
 const HEIGHT = 420
 
-// Label metrics shared with the charts: 9.5 px bold digits are about 5.6 px wide, 7 px above the baseline and 2 below.
-const CHAR_WIDTH = 5.6
-const ASCENT = 7
-const DESCENT = 2
+const { charWidth: CHAR_WIDTH, ascent: ASCENT, descent: DESCENT } = LABEL_METRICS
 /** Labels on one baseline keep at least twice this much space between them, so neighbours never read as one. */
 const SIDE_GAP = 2
 
@@ -279,6 +278,11 @@ describe('ActivityLinesChart lines', () => {
     expect(element(view.container, '.qaqc-overview-line.is-electrical').hasAttribute('stroke-dasharray')).toBe(false)
   })
 
+  it('dashes the legend key the same way as the line', () => {
+    view = render(<LegendSwatch item={activityLegend(COLORS, true)[1]} />)
+    expect(element(view.container, 'line').getAttribute('stroke-dasharray')).toBe('5 4')
+  })
+
   it('draws a nice left axis with a gridline per tick', () => {
     // The highest total is 7, so the axis runs 0–8 in steps of 2.
     view = drawActivity()
@@ -338,9 +342,14 @@ describe('ActivityLinesChart labels', () => {
   it('thins the showValues labels on narrow weeks', () => {
     const many = randomActivity(200, 20, 8)
     view = drawActivity({ points: many, selectedKey: many[199].week.key, showValues: true })
-    const count = all(view.container, '.qaqc-overview-label.is-electrical').length
-    expect(count).toBeGreaterThan(5)
-    expect(count).toBeLessThan(60)
+    // Each line's labels keep at least 30 px between neighbours (the last label may sit closer to the one before it),
+    // so a line carries at most one label per 30 px of plot, plus the last.
+    const grid = element(view.container, '.qaqc-grid-line')
+    const plotWidth = numberAttr(grid, 'x2') - numberAttr(grid, 'x1')
+    const xs = all(view.container, '.qaqc-overview-label.is-electrical').map((label) => numberAttr(label, 'x')).sort((a, b) => a - b)
+    expect(xs.length).toBeLessThanOrEqual(Math.floor(plotWidth / 30) + 1)
+    expect(xs.length).toBeGreaterThanOrEqual(Math.floor(plotWidth / 90))
+    expect(xs.slice(1, -1).every((x, index) => x - xs[index] >= 29.9)).toBe(true)
   })
 
   it('labels a point both lines share once', () => {
@@ -490,10 +499,21 @@ describe('ActivityLinesChart selection and interaction', () => {
     expect(texts(view.container, '.qaqc-axis-year')).toEqual(['2025', '2026'])
   })
 
-  it('draws without NaN when there are no weeks', () => {
+  it('shows an empty message when neither discipline has inspections in the range', () => {
+    view = drawActivity({ points: [activity(41, 0, 0, 0, 0), activity(42, 0, 0, 0, 0)], selectedKey: 202642 })
+    expect(view.container.querySelector('svg')).toBeNull()
+    expect(element(view.container, '.qaqc-chart-empty').textContent).toBe('No Electrical or Mechanical inspections in this range')
+  })
+
+  it('shows the empty message when there are no weeks', () => {
     view = drawActivity({ points: [] })
     expect(view.container.innerHTML).not.toContain('NaN')
-    expect(all(view.container, '.qaqc-overview-dot, .qaqc-overview-label, .qaqc-hit')).toHaveLength(0)
+    expect(element(view.container, '.qaqc-chart-empty').textContent).toBe('No Electrical or Mechanical inspections in this range')
+  })
+
+  it('still draws a range where only one discipline has inspections', () => {
+    view = drawActivity({ points: [activity(41, 0, 0, 0, 0), activity(42, 0, 0, 1, 0)], selectedKey: 202642 })
+    expect(all(view.container, '.qaqc-overview-line')).toHaveLength(2)
   })
 
   it('draws without NaN or labels when the chart is smaller than its margins', () => {
@@ -507,6 +527,59 @@ describe('ActivityLinesChart selection and interaction', () => {
     const points = randomActivity(520, 20, 3)
     view = drawActivity({ points, selectedKey: points[519].week.key })
     expect(all(view.container, 'svg *').length).toBeLessThanOrEqual(520 + 160)
+  })
+})
+
+describe('OverviewLinesChart hover', () => {
+  function drawFrame(weeks: ReturnType<typeof makeWorkWeek>[], formatValue: (value: number) => string, formatTick: (value: number) => string): Rendered {
+    const lines: WeekLine[] = [{ key: 'electrical', color: COLORS.series1, isDashed: false, values: weeks.map((_, index) => index + 1) }]
+    return render(
+      <OverviewLinesChart
+        title="Test chart"
+        axisTitle={null}
+        weeks={weeks}
+        lines={lines}
+        scale={{ min: 0, max: 10, ticks: [0, 5, 10] }}
+        formatTick={formatTick}
+        formatValue={formatValue}
+        tooltipRows={() => []}
+        describeWeek={() => ''}
+        selectedKey={weeks[weeks.length - 1].key}
+        width={WIDTH}
+        height={HEIGHT}
+        colors={COLORS}
+        interactive
+        animate={false}
+        describe
+        showValues
+        onSelectWeek={vi.fn()}
+        onHover={vi.fn()}
+      />,
+    )
+  }
+
+  function hoverWeeks(root: ParentNode, keys: number[]): void {
+    for (const key of keys) fire(element(root, `.qaqc-hit[data-week="${key}"]`), new MouseEvent('mousemove', { bubbles: true }))
+  }
+
+  it('does not rebuild the layout, the axis or the marks while the pointer moves', () => {
+    const weeks = [40, 41, 42].map((week) => makeWorkWeek(2026, week))
+    const formatValue = vi.fn((value: number) => String(value))
+    const formatTick = vi.fn((value: number) => String(value))
+    view = drawFrame(weeks, formatValue, formatTick)
+    const [valueCalls, tickCalls] = [formatValue.mock.calls.length, formatTick.mock.calls.length]
+    hoverWeeks(view.container, [202640, 202641, 202642])
+    expect(all(view.container, '.qaqc-overview-dot.is-hovered')).toHaveLength(1)
+    expect([formatValue.mock.calls.length, formatTick.mock.calls.length]).toEqual([valueCalls, tickCalls])
+  })
+
+  it('does not search the weeks for the selection while the pointer moves', () => {
+    const weeks = [40, 41, 42].map((week) => makeWorkWeek(2026, week))
+    const findIndex = vi.spyOn(weeks, 'findIndex')
+    view = drawFrame(weeks, String, String)
+    const calls = findIndex.mock.calls.length
+    hoverWeeks(view.container, [202640, 202641, 202642])
+    expect(findIndex.mock.calls.length).toBe(calls)
   })
 })
 
@@ -774,7 +847,7 @@ describe('OverviewWeekTable', () => {
 
   it('shows the activity columns', () => {
     view = render(<OverviewWeekTable variant="activity" points={activityRows} />)
-    expect(texts(view.container, 'thead th')).toEqual(['Week', 'Elec Finals', 'Elec SORs', 'Mech Finals', 'Mech SORs'])
+    expect(texts(view.container, 'thead th')).toEqual(['Week', 'Electrical Finals', 'Electrical SORs', 'Mechanical Finals', 'Mechanical SORs'])
   })
 
   it('lists the newest week first by default, by week and not by label text', () => {
@@ -785,22 +858,29 @@ describe('OverviewWeekTable', () => {
 
   it('sorts a count column by value, largest first, then flips', () => {
     view = render(<OverviewWeekTable variant="activity" points={activityRows} />)
-    sortBy(view.container, 'Elec Finals')
+    sortBy(view.container, 'Electrical Finals')
     expect(column(view.container, 1)).toEqual(['1,200', '100', '10', '9'])
-    sortBy(view.container, 'Elec Finals')
+    sortBy(view.container, 'Electrical Finals')
     expect(column(view.container, 1)).toEqual(['9', '10', '100', '1,200'])
   })
 
   it('marks only the sorted column with aria-sort', () => {
     view = render(<OverviewWeekTable variant="activity" points={activityRows} />)
-    sortBy(view.container, 'Mech SORs')
-    expect(headerCell(view.container, 'Mech SORs').getAttribute('aria-sort')).toBe('descending')
+    sortBy(view.container, 'Mechanical SORs')
+    expect(headerCell(view.container, 'Mechanical SORs').getAttribute('aria-sort')).toBe('descending')
     expect(headerCell(view.container, 'Week').hasAttribute('aria-sort')).toBe(false)
-    sortBy(view.container, 'Mech SORs')
-    expect(headerCell(view.container, 'Mech SORs').getAttribute('aria-sort')).toBe('ascending')
+    sortBy(view.container, 'Mechanical SORs')
+    expect(headerCell(view.container, 'Mechanical SORs').getAttribute('aria-sort')).toBe('ascending')
   })
 
   const rateRows = [rates(1, [1, 7], [2, 86]), rates(2, null, [0, 29]), rates(3, [0, 6], null), rates(4, [3, 14], [3, 53])]
+
+  it('titles every header and cell with its full text, since windowed cells truncate', () => {
+    view = render(<OverviewWeekTable variant="rates" points={rateRows} />)
+    const cells = all(view.container, 'thead th, tbody tr[aria-rowindex] > *')
+    expect(cells.length).toBeGreaterThan(5)
+    expect(cells.every((cell) => cell.getAttribute('title') === cell.textContent)).toBe(true)
+  })
 
   it('shows the rates columns, with counts as NCRs / total', () => {
     view = render(<OverviewWeekTable variant="rates" points={rateRows} />)

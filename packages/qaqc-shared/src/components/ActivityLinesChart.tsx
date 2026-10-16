@@ -9,6 +9,7 @@ import { OverviewLinesChart, type WeekLine, type YScale } from './OverviewLinesC
 
 const TITLE = 'Inspection activity by work week'
 const AXIS_TITLE = 'Finals + SORs'
+const EMPTY_MESSAGE = 'No Electrical or Mechanical inspections in this range'
 
 export interface ActivityLinesChartProps {
   points: ReadonlyArray<ActivityPoint>
@@ -68,10 +69,10 @@ export function ActivityLinesChart({
     { key: 'electrical', color: colors.series1, isDashed: false, values: points.map((point) => point.electricalFinals + point.electricalSors) },
     { key: 'mechanical', color: colors.series3, isDashed: isHighContrast, values: points.map((point) => point.mechanicalFinals + point.mechanicalSors) },
   ], [points, colors, isHighContrast])
-  const scale = useMemo((): YScale => {
+  const { scale, hasInspections } = useMemo((): { scale: YScale; hasInspections: boolean } => {
     let max = 0
     for (const point of points) max = Math.max(max, point.electricalFinals + point.electricalSors, point.mechanicalFinals + point.mechanicalSors)
-    return { min: 0, ...niceScale(max) }
+    return { scale: { min: 0, ...niceScale(max) }, hasInspections: max > 0 }
   }, [points])
   const tooltipRows = useCallback(
     (index: number): TooltipRow[] => {
@@ -86,6 +87,8 @@ export function ActivityLinesChart({
     const mechanical = describeDiscipline('Mechanical', point.mechanicalFinals, point.mechanicalSors)
     return `${point.week.label}: ${electrical}, ${mechanical}`
   }, [points])
+
+  if (!hasInspections) return <p className="qaqc-chart-empty" style={{ width, height }}>{EMPTY_MESSAGE}</p>
 
   return (
     <OverviewLinesChart

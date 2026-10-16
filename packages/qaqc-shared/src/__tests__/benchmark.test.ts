@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { IssueDetailTable } from '../components/IssueDetailTable'
 import { layoutChart } from '../components/IssuesTrendChart'
+import { layoutWeekLines, type WeekLine } from '../components/OverviewLinesChart'
 import { splitCombinedRows } from '../combined'
 import { buildInspectionIndex, buildInspectionModel, defaultViewState } from '../inspections'
 import { buildIssueDetail, buildIssueIndex, buildIssueModel } from '../issues'
@@ -211,5 +212,25 @@ describe('issue chart performance budgets', () => {
   it('lays out the 520-week trend chart with every value shown within one frame', () => {
     layoutChart(points, 2400, 900, true)
     expect(elapsed(() => layoutChart(points, 2400, 900, true))).toBeLessThan(16)
+  })
+})
+
+describe('overview chart performance budgets', () => {
+  // Ten years of weeks: a busy count line, and a rate line with a gap every seventh week.
+  const lines: WeekLine[] = [
+    { key: 'inspection', color: '#2E5AAC', isDashed: false, values: Array.from({ length: 520 }, (_, index) => 80 + ((index * 7) % 21)) },
+    { key: 'welding', color: '#1A9C7B', isDashed: true, values: Array.from({ length: 520 }, (_, index) => (index % 7 === 3 ? null : 85 + ((index * 5) % 16))) },
+  ]
+  const scale = { min: 79, max: 100, ticks: [79, 89.5, 100] }
+  const formatValue = (value: number): string => `${value.toFixed(1)}%`
+
+  it('lays out the 520-week overview lines within one frame', () => {
+    layoutWeekLines(lines, 520, scale, 1200, 520, false, 260, false, formatValue)
+    expect(elapsed(() => layoutWeekLines(lines, 520, scale, 1200, 520, false, 260, false, formatValue))).toBeLessThanOrEqual(16)
+  })
+
+  it('lays out the 520-week overview lines with every value shown within one frame', () => {
+    layoutWeekLines(lines, 520, scale, 2400, 900, false, 260, true, formatValue)
+    expect(elapsed(() => layoutWeekLines(lines, 520, scale, 2400, 900, false, 260, true, formatValue))).toBeLessThanOrEqual(16)
   })
 })

@@ -71,6 +71,9 @@ export function yearMarkers(labelledIndices: ReadonlySet<number>, weeks: Readonl
   return result
 }
 
+/** The dash of a dashed series line and of its legend key. */
+export const LINE_DASH = '5 4'
+
 /** Rounds to hundredths, enough precision for SVG coordinates. */
 export function round(value: number): number {
   return Math.round(value * 100) / 100

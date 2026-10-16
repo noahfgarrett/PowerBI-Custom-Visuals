@@ -39,12 +39,12 @@ export const PRESETS: Record<PresetName, PresetColors> = {
   blue: {
     page: '#F7F8FA', card: '#FFFFFF', weekCard: '#F5F9FD', border: '#E3E7ED', hairline: '#EEF1F5',
     ink: '#00325B', ink2: '#2B4A6B', muted: '#5B6B7F', faint: '#98A6B6',
-    accent: '#0071C5', accentSoft: '#E6F1FA', series1: '#0071C5', series2: '#9CCBEE', series3: '#009A98',
+    accent: '#0071C5', accentSoft: '#E6F1FA', series1: '#0071C5', series2: '#9CCBEE', series3: '#A98804',
   },
   lotusworks: {
     page: '#F3F5F8', card: '#FFFFFF', weekCard: '#FFF9F5', border: '#DDE3EA', hairline: '#ECEFF3',
     ink: '#003459', ink2: '#2E4A66', muted: '#5E6E80', faint: '#9AA6B4',
-    accent: '#E85D04', accentSoft: '#FDEFE6', series1: '#003459', series2: '#0077B6', series3: '#E85D04',
+    accent: '#E85D04', accentSoft: '#FDEFE6', series1: '#003459', series2: '#0077B6', series3: '#2A9D8F',
   },
   grayscale: {
     page: '#F2F2F2', card: '#FFFFFF', weekCard: '#FAFAFA', border: '#DADADA', hairline: '#ECECEC',

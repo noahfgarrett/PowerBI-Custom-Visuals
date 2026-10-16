@@ -70,11 +70,13 @@ export function QualityRatesChart({
   onHover,
 }: QualityRatesChartProps): ReactElement {
   const weeks = useMemo(() => points.map((point) => point.week), [points])
-  const lines = useMemo((): WeekLine[] => [
-    { key: 'inspection', color: colors.series1, isDashed: false, values: points.map((point) => point.inspection.rate) },
-    { key: 'welding', color: colors.series3, isDashed: isHighContrast, values: points.map((point) => point.welding.rate) },
-  ], [points, colors, isHighContrast])
-  const hasRates = lines.some((line) => line.values.some((value) => value !== null))
+  const { lines, hasRates } = useMemo(() => {
+    const series: WeekLine[] = [
+      { key: 'inspection', color: colors.series1, isDashed: false, values: points.map((point) => point.inspection.rate) },
+      { key: 'welding', color: colors.series3, isDashed: isHighContrast, values: points.map((point) => point.welding.rate) },
+    ]
+    return { lines: series, hasRates: series.some((line) => line.values.some((value) => value !== null)) }
+  }, [points, colors, isHighContrast])
   const scale = useMemo((): YScale => {
     const domain = passRateDomain(lines.flatMap((line) => line.values))
     return { ...domain, ticks: [domain.min, (domain.min + domain.max) / 2, domain.max] }

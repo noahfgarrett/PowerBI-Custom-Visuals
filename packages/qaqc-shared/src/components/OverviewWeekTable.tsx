@@ -6,8 +6,11 @@ import { TABLE_ROW_HEIGHT, useVirtualRows } from '../hooks/useVirtualRows'
 import type { ActivityPoint, QualityRatePoint } from '../overview'
 import type { WorkWeek } from '../types'
 
-interface WeekColumn<Row> {
-  key: string
+type ActivityKey = 'week' | 'electricalFinals' | 'electricalSors' | 'mechanicalFinals' | 'mechanicalSors'
+type RatesKey = 'week' | 'inspectionRate' | 'inspectionCounts' | 'weldingRate' | 'weldingCounts'
+
+interface WeekColumn<Row, Key extends string> {
+  key: Key
   label: string
   /** What the column sorts on; null (an n/a rate) sorts last in both directions. */
   sortValue: (row: Row) => number | null
@@ -18,23 +21,24 @@ interface WeekColumn<Row> {
 
 const WEEK_KEY = 'week'
 
-function weekColumn<Row extends { week: WorkWeek }>(): WeekColumn<Row> {
+function weekColumn<Row extends { week: WorkWeek }>(): WeekColumn<Row, typeof WEEK_KEY> {
   return { key: WEEK_KEY, label: 'Week', sortValue: (row) => row.week.key, display: (row) => row.week.label }
 }
 
-function countColumn<Row>(key: string, label: string, valueOf: (row: Row) => number): WeekColumn<Row> {
+function countColumn<Row, Key extends string>(key: Key, label: string, valueOf: (row: Row) => number): WeekColumn<Row, Key> {
   return { key, label, sortValue: valueOf, display: (row) => formatCount(valueOf(row)) }
 }
 
-const ACTIVITY_COLUMNS: ReadonlyArray<WeekColumn<ActivityPoint>> = [
+// The spec's full header wording fits the expanded chart's table: the longest, "Mechanical Finals", is about 130 px.
+const ACTIVITY_COLUMNS: ReadonlyArray<WeekColumn<ActivityPoint, ActivityKey>> = [
   weekColumn<ActivityPoint>(),
-  countColumn<ActivityPoint>('electricalFinals', 'Elec Finals', (row) => row.electricalFinals),
-  countColumn<ActivityPoint>('electricalSors', 'Elec SORs', (row) => row.electricalSors),
-  countColumn<ActivityPoint>('mechanicalFinals', 'Mech Finals', (row) => row.mechanicalFinals),
-  countColumn<ActivityPoint>('mechanicalSors', 'Mech SORs', (row) => row.mechanicalSors),
+  countColumn<ActivityPoint, ActivityKey>('electricalFinals', 'Electrical Finals', (row) => row.electricalFinals),
+  countColumn<ActivityPoint, ActivityKey>('electricalSors', 'Electrical SORs', (row) => row.electricalSors),
+  countColumn<ActivityPoint, ActivityKey>('mechanicalFinals', 'Mechanical Finals', (row) => row.mechanicalFinals),
+  countColumn<ActivityPoint, ActivityKey>('mechanicalSors', 'Mechanical SORs', (row) => row.mechanicalSors),
 ]
 
-const RATE_COLUMNS: ReadonlyArray<WeekColumn<QualityRatePoint>> = [
+const RATE_COLUMNS: ReadonlyArray<WeekColumn<QualityRatePoint, RatesKey>> = [
   weekColumn<QualityRatePoint>(),
   { key: 'inspectionRate', label: 'Inspection rate', sortValue: (row) => row.inspection.rate, display: (row) => formatPercent(row.inspection.rate) },
   {
@@ -55,7 +59,11 @@ const RATE_COLUMNS: ReadonlyArray<WeekColumn<QualityRatePoint>> = [
 ]
 
 /** Row positions in display order. Ties fall back to newest week first. */
-function sortPositions<Row extends { week: WorkWeek }>(rows: ReadonlyArray<Row>, column: WeekColumn<Row>, sort: SortState<string>): number[] {
+function sortPositions<Row extends { week: WorkWeek }, Key extends string>(
+  rows: ReadonlyArray<Row>,
+  column: WeekColumn<Row, Key>,
+  sort: SortState<Key>,
+): number[] {
   const sign = directionSign(sort.direction)
   const values = rows.map(column.sortValue)
   const thenBy = column.thenBy
@@ -72,15 +80,19 @@ function sortPositions<Row extends { week: WorkWeek }>(rows: ReadonlyArray<Row>,
   })
 }
 
-interface WeekTableProps<Row extends { week: WorkWeek }> {
+interface WeekTableProps<Row extends { week: WorkWeek }, Key extends string> {
   caption: string
-  columns: ReadonlyArray<WeekColumn<Row>>
+  columns: ReadonlyArray<WeekColumn<Row, Key>>
+  /** Newest week first. */
+  initialSort: SortState<Key>
   rows: ReadonlyArray<Row>
 }
 
-function WeekTable<Row extends { week: WorkWeek }>({ caption, columns, rows }: WeekTableProps<Row>): ReactElement {
+const NEWEST_FIRST = { key: WEEK_KEY, direction: 'descending' } as const
+
+function WeekTable<Row extends { week: WorkWeek }, Key extends string>({ caption, columns, initialSort, rows }: WeekTableProps<Row, Key>): ReactElement {
   // Every column is a number (the week sorts on its key), so each starts descending: newest or largest first.
-  const { sort, toggleSort } = useTableSort<string>({ key: WEEK_KEY, direction: 'descending' }, [])
+  const { sort, toggleSort } = useTableSort<Key>(initialSort, [])
   const column = columns.find((item) => item.key === sort.key) ?? columns[0]
   const order = useMemo(() => sortPositions(rows, column, sort), [rows, column, sort])
   // The All range can hold hundreds of weeks, so only the rows in view are rendered.
@@ -97,7 +109,7 @@ function WeekTable<Row extends { week: WorkWeek }>({ caption, columns, rows }: W
         <thead>
           <tr aria-rowindex={1}>
             {columns.map((item) => (
-              <th key={item.key} scope="col" aria-sort={sort.key === item.key ? sort.direction : undefined}>
+              <th key={item.key} scope="col" title={item.label} aria-sort={sort.key === item.key ? sort.direction : undefined}>
                 <button type="button" onClick={() => toggleSort(item.key)}>
                   {item.label}
                 </button>
@@ -115,9 +127,12 @@ function WeekTable<Row extends { week: WorkWeek }>({ caption, columns, rows }: W
             const row = rows[position]
             return (
               <tr key={row.week.key} aria-rowindex={start + offset + 2} style={{ height: TABLE_ROW_HEIGHT }}>
-                {columns.map((item, index) =>
-                  index === 0 ? <th key={item.key} scope="row">{item.display(row)}</th> : <td key={item.key}>{item.display(row)}</td>,
-                )}
+                {columns.map((item, index) => {
+                  const text = item.display(row)
+                  return index === 0
+                    ? <th key={item.key} scope="row" title={text}>{text}</th>
+                    : <td key={item.key} title={text}>{text}</td>
+                })}
               </tr>
             )
           })}
@@ -132,7 +147,7 @@ function WeekTable<Row extends { week: WorkWeek }>({ caption, columns, rows }: W
   )
 }
 
-export interface ActivityPointTableProps {
+export interface ActivityWeekTableProps {
   variant: 'activity'
   points: ReadonlyArray<ActivityPoint>
 }
@@ -142,15 +157,15 @@ export interface RatesWeekTableProps {
   points: ReadonlyArray<QualityRatePoint>
 }
 
-export type OverviewWeekTableProps = ActivityPointTableProps | RatesWeekTableProps
+export type OverviewWeekTableProps = ActivityWeekTableProps | RatesWeekTableProps
 
 /** The expanded charts' sortable week tables: inspection activity counts, or the weekly quality rates with their counts. */
 export function OverviewWeekTable(props: OverviewWeekTableProps): ReactElement {
   switch (props.variant) {
     case 'activity':
-      return <WeekTable caption="Inspection activity by work week" columns={ACTIVITY_COLUMNS} rows={props.points} />
+      return <WeekTable key="activity" caption="Inspection activity by work week" columns={ACTIVITY_COLUMNS} initialSort={NEWEST_FIRST} rows={props.points} />
     case 'rates':
-      return <WeekTable caption="Quality rates by work week" columns={RATE_COLUMNS} rows={props.points} />
+      return <WeekTable key="rates" caption="Quality rates by work week" columns={RATE_COLUMNS} initialSort={NEWEST_FIRST} rows={props.points} />
     default: {
       const unreachable: never = props
       return unreachable

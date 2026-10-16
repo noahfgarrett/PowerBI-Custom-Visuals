@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type MouseEvent, type ReactElement } from 'react'
 
-import { labelIndices, smoothPath, WEEK_AXIS_HEIGHT, yearMarkers, type PlotPoint } from '../chartMath'
+import { labelIndices, LINE_DASH, smoothPath, WEEK_AXIS_HEIGHT, yearMarkers, type PlotPoint } from '../chartMath'
 import type { ChartColors, TooltipHandler, TooltipRow } from '../chartTypes'
 import { useWeekFocus } from '../hooks/useWeekFocus'
 import type { WorkWeek } from '../types'
@@ -29,16 +29,12 @@ const LABEL_BELOW = 16
 const LABEL_BESIDE = DOT_RADIUS + 4
 /** Puts a label's digits level with the point when it sits beside the dot. */
 const LABEL_BESIDE_BASELINE = 3.5
-// Label metrics for 9.5 px bold digits; the tests share them.
-const CHAR_WIDTH = 5.6
-const TEXT_ASCENT = 7
-const TEXT_DESCENT = 2
+/** Label metrics for 9.5 px bold digits (`.qaqc-overview-label`), exported so the collision tests measure the same boxes. */
+export const LABEL_METRICS = { charWidth: 5.6, ascent: 7, descent: 2 } as const
 /** Placed labels keep at least this much space between them. */
 const LABEL_GAP = 1
 /** Labels side by side keep twice this much more, so neighbouring numbers never run together. */
 const LABEL_PAD_X = 2.5
-/** Matches LegendSwatch's dashed key. */
-export const LINE_DASH = '5 4'
 
 export interface WeekLine {
   /** CSS modifier and label key: `is-electrical`. */
@@ -94,12 +90,12 @@ export interface WeekLinesLayout {
 }
 
 function textWidth(text: string): number {
-  return text.length * CHAR_WIDTH
+  return text.length * LABEL_METRICS.charWidth
 }
 
 function labelBox(text: string, x: number, y: number): Box {
   const half = textWidth(text) / 2 + LABEL_GAP / 2 + LABEL_PAD_X
-  return { left: x - half, right: x + half, top: y - TEXT_ASCENT - LABEL_GAP / 2, bottom: y + TEXT_DESCENT + LABEL_GAP / 2 }
+  return { left: x - half, right: x + half, top: y - LABEL_METRICS.ascent - LABEL_GAP / 2, bottom: y + LABEL_METRICS.descent + LABEL_GAP / 2 }
 }
 
 function overlaps(a: Box, b: Box): boolean {
@@ -273,7 +269,8 @@ export function OverviewLinesChart({
   onSelectWeek,
   onHover,
 }: OverviewLinesChartProps): ReactElement {
-  const selectedIndex = weeks.findIndex((week) => week.key === selectedKey)
+  // Memoised: hover re-renders the chart on every pointer move, and this is a scan of every week.
+  const selectedIndex = useMemo(() => weeks.findIndex((week) => week.key === selectedKey), [weeks, selectedKey])
   const { focus, hasFocus, showFocusRing, svgProps } = useWeekFocus({
     count: weeks.length,
     selectedIndex,
