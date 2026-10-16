@@ -1,11 +1,11 @@
 {
   "visual": {
     "name": "qaqcOverview",
-    "displayName": "QAQC Overview",
+    "displayName": "QCx Overview",
     "guid": "qaqcOverview_AE84E1DA71E7",
     "visualClassName": "QaqcOverviewVisual",
     "version": "1.0.0.0",
-    "description": "One-stop QAQC page: Electrical, Mechanical, Welding and BIM Issues by work week, with quality rates.",
+    "description": "One-stop QCx page: Electrical, Mechanical, Welding and BIM Issues by work week, with quality rates.",
     "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
     "gitHubUrl": "https://github.com/noahgarrett/PowerBI"
   },

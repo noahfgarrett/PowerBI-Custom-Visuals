@@ -1,7 +1,7 @@
 {
   "visual": {
     "name": "qaqcMechanical",
-    "displayName": "QAQC Mechanical / Process Inspections",
+    "displayName": "QCx Mechanical / Process Inspections",
     "guid": "qaqcMechanical_7064EE749149",
     "visualClassName": "QaqcMechanicalVisual",
     "version": "1.0.1.0",

@@ -47,12 +47,12 @@ export class QaqcIssuesVisual implements powerbi.extensibility.visual.IVisual {
   private viewport: powerbi.IViewport = { width: 0, height: 0 }
 
   constructor(options?: VisualConstructorOptions) {
-    if (!options) throw new Error('QAQC BIM Issues requires a Power BI visual host.')
+    if (!options) throw new Error('QCx BIM Issues requires a Power BI visual host.')
     this.host = options.host
     this.element = options.element
     this.element.classList.add('qaqc-host')
     this.element.setAttribute('role', 'region')
-    this.element.setAttribute('aria-label', 'BIM issues dashboard')
+    this.element.setAttribute('aria-label', 'QCx BIM issues dashboard')
     this.selectionManager = this.host.createSelectionManager()
     this.formattingSettingsService = new FormattingSettingsService(this.host.createLocalizationManager())
     // React 19 reports render errors here instead of re-throwing from flushSync; commit() re-throws them.
@@ -135,7 +135,7 @@ export class QaqcIssuesVisual implements powerbi.extensibility.visual.IVisual {
       this.commit(
         createElement(StatusPanel, {
           icon: TriangleAlert,
-          title: 'Could not draw the BIM Issues visual',
+          title: 'Could not draw the QCx BIM Issues visual',
           message: 'Check the bound columns, then refresh the report.',
           items: [],
         }),
@@ -165,7 +165,7 @@ export class QaqcIssuesVisual implements powerbi.extensibility.visual.IVisual {
     const footnotes = buildIssueFootnotes(index, this.rowLimitReached)
     this.commit(
       createElement(IssuesDashboard, {
-        title: 'BIM Issues',
+        title: 'QCx BIM Issues',
         icon: CircleAlert,
         index,
         theme,

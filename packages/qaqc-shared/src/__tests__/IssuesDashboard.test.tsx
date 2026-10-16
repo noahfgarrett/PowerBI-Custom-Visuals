@@ -27,7 +27,7 @@ const THEME = resolveTheme({ preset: 'qaqc', backgroundColor: '', backgroundOpac
 const TREND_TITLE = 'Issues by Work Week'
 const OPEN_AGING_TITLE = 'Open Issue Aging'
 const OVERALL_AGING_TITLE = 'Overall Issue Aging'
-const DETAIL_TITLE = 'BIM Issues Detail'
+const DETAIL_TITLE = 'QCx BIM Issues Detail'
 
 let view: Rendered | null = null
 
@@ -40,7 +40,7 @@ afterEach(() => {
 function dashboardElement(overrides: Partial<IssuesDashboardProps> = {}): ReactElement {
   return (
     <IssuesDashboard
-      title="BIM Issues"
+      title="QCx BIM Issues"
       icon={CircleAlert}
       index={INDEX}
       theme={THEME}
@@ -313,7 +313,7 @@ describe('IssuesDashboard cards', () => {
 describe('IssuesDashboard layout', () => {
   it('shows the title and icon it is given', () => {
     view = draw()
-    expect(view.container.querySelector('h2')?.textContent).toBe('BIM Issues')
+    expect(view.container.querySelector('h2')?.textContent).toBe('QCx BIM Issues')
     expect(view.container.querySelector('.qaqc-title-icon svg.lucide-circle-alert')).not.toBeNull()
   })
 

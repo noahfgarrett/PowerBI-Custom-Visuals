@@ -1,4 +1,4 @@
-# QAQC Performance visual: setup
+# QCx Performance visual: setup
 
 NCR performance per person: each QCR / FE across Electrical and Mechanical final inspections, and, separately, each welder. People are ranked by NCR rate over a period you choose, and each has their own page.
 

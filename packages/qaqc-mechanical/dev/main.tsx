@@ -79,7 +79,7 @@ if (data === 'missing') {
   document.title = `index ${Math.round(performance.now() - started)} ms`
   root.render(
     <InspectionDashboard
-      title="Mechanical / Process Inspections"
+      title="QCx Mechanical / Process Inspections"
       icon={Cog}
       index={index}
       theme={theme}

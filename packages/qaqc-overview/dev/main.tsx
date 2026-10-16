@@ -116,7 +116,7 @@ if (data === 'missing') {
   document.title = `index ${Math.round(performance.now() - started)} ms`
   root.render(
     <OverviewDashboard
-      title="QAQC Overview"
+      title="QCx Overview"
       icon={LayoutDashboard}
       index={index}
       theme={theme}

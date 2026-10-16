@@ -1,4 +1,4 @@
-# QAQC Electrical Inspections visual: setup
+# QCx Electrical Inspections visual: setup
 
 **Version 1.1.1:** week labels now include the year (`WW41'2026`). Chart axes keep `WW41` ticks and show the year under the first labelled week and under the first labelled week of each new year.
 

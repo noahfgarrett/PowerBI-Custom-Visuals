@@ -6,6 +6,7 @@ import { createConstructorOptions } from '../../../core/src/__test-utils__'
 import { ISSUE_SLOTS } from '../../../qaqc-shared/src/dataView'
 import { ISSUE_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/issueRows'
 import capabilities from '../../capabilities.json'
+import pbiviz from '../../pbiviz.json'
 import { QaqcIssuesVisual } from '../visual'
 import { ALL_ROLES, tableDataView, type Cell } from './tableDataView'
 
@@ -135,10 +136,23 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
+describe('QaqcIssuesVisual name', () => {
+  it('heads the dashboard with its QCx title', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(ISSUE_ROWS)))
+    expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QCx BIM Issues')
+  })
+
+  it('shows its QCx name in Power BI', () => {
+    expect(pbiviz.visual.displayName).toBe('QCx BIM Issues')
+    expect(pbiviz.visual.description).not.toContain('QAQC')
+  })
+})
+
 describe('QaqcIssuesVisual', () => {
   it('labels the visual for assistive technology', () => {
     harness = createHarness()
-    expect(harness.element.getAttribute('aria-label')).toBe('BIM issues dashboard')
+    expect(harness.element.getAttribute('aria-label')).toBe('QCx BIM issues dashboard')
   })
 
   it('names each data role like its field slot', () => {
@@ -170,10 +184,10 @@ describe('QaqcIssuesVisual', () => {
     expect(cardValue(harness.element, 'Total Opened')).toBeNull()
   })
 
-  it('renders the BIM Issues header', () => {
+  it('renders the QCx BIM Issues header', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(ISSUE_ROWS)))
-    expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('BIM Issues')
+    expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QCx BIM Issues')
   })
 
   it('renders the WW42 project-to-date cards from bound columns', () => {
@@ -276,7 +290,7 @@ describe('QaqcIssuesVisual', () => {
     expect(() => applyOutsideAct(target, update(tableDataView(ISSUE_ROWS)))).not.toThrow()
     expect(target.events.renderingFailed).toHaveBeenCalledWith(expect.anything(), 'render boom')
     expect(target.events.renderingFinished).not.toHaveBeenCalled()
-    expect(target.element.querySelector('.qaqc-status h2')?.textContent).toBe('Could not draw the BIM Issues visual')
+    expect(target.element.querySelector('.qaqc-status h2')?.textContent).toBe('Could not draw the QCx BIM Issues visual')
   })
 
   it('recovers on the next update after a render error', () => {

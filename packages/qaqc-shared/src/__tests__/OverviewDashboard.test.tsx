@@ -58,7 +58,7 @@ afterEach(() => {
 function dashboardElement(overrides: Partial<OverviewDashboardProps> = {}): ReactElement {
   return (
     <OverviewDashboard
-      title="QAQC Overview"
+      title="QCx Overview"
       icon={LayoutDashboard}
       index={INDEX}
       theme={THEME}
@@ -396,7 +396,7 @@ describe('OverviewDashboard quality strip', () => {
 describe('OverviewDashboard layout', () => {
   it('shows the title and icon it is given', () => {
     view = draw()
-    expect(view.container.querySelector('h2')?.textContent).toBe('QAQC Overview')
+    expect(view.container.querySelector('h2')?.textContent).toBe('QCx Overview')
     expect(view.container.querySelector('.qaqc-title-icon svg.lucide-layout-dashboard')).not.toBeNull()
   })
 

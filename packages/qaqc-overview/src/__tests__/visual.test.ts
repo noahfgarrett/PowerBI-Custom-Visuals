@@ -6,6 +6,7 @@ import { createConstructorOptions } from '../../../core/src/__test-utils__'
 import { OVERVIEW_SLOTS } from '../../../qaqc-shared/src/dataView'
 import { COMBINED_COLUMNS, COMBINED_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/combinedRows'
 import capabilities from '../../capabilities.json'
+import pbiviz from '../../pbiviz.json'
 import { QaqcOverviewVisual } from '../visual'
 import { ALL_ROLES, tableDataView } from './tableDataView'
 
@@ -206,6 +207,19 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
+describe('QaqcOverviewVisual name', () => {
+  it('heads the dashboard with its QCx title', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(COMBINED_ROWS)))
+    expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QCx Overview')
+  })
+
+  it('shows its QCx name in Power BI', () => {
+    expect(pbiviz.visual.displayName).toBe('QCx Overview')
+    expect(pbiviz.visual.description).not.toContain('QAQC')
+  })
+})
+
 describe('QaqcOverviewVisual capabilities', () => {
   it('names each data role like its field slot', () => {
     const roleNames = Object.fromEntries(capabilities.dataRoles.map((role) => [role.name, role.displayName]))
@@ -238,7 +252,7 @@ describe('QaqcOverviewVisual capabilities', () => {
 describe('QaqcOverviewVisual setup state', () => {
   it('labels the visual for assistive technology', () => {
     harness = createHarness()
-    expect(harness.element.getAttribute('aria-label')).toBe('QAQC overview dashboard')
+    expect(harness.element.getAttribute('aria-label')).toBe('QCx overview dashboard')
   })
 
   it('lists every required field slot before data is bound, without the optional Green tags', () => {
@@ -285,10 +299,10 @@ describe('QaqcOverviewVisual setup state', () => {
 })
 
 describe('QaqcOverviewVisual dashboard', () => {
-  it('renders the QAQC Overview header with the dashboard icon', () => {
+  it('renders the QCx Overview header with the dashboard icon', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(COMBINED_ROWS)))
-    expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QAQC Overview')
+    expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QCx Overview')
     expect(harness.element.querySelector('.qaqc-title-icon svg.lucide-layout-dashboard')).not.toBeNull()
   })
 
@@ -456,7 +470,7 @@ describe('QaqcOverviewVisual host integration', () => {
     Object.defineProperty(broken.table, 'rows', { get: () => { throw new Error('boom') } })
     expect(() => applyOutsideAct(target, update(broken))).not.toThrow()
     expect(target.events.renderingFailed).toHaveBeenCalledWith(expect.anything(), 'boom')
-    expect(target.element.querySelector('.qaqc-status h2')?.textContent).toBe('Could not draw the QAQC Overview visual')
+    expect(target.element.querySelector('.qaqc-status h2')?.textContent).toBe('Could not draw the QCx Overview visual')
   })
 
   it('reports a React render error and shows a fallback instead of going blank', () => {
@@ -466,7 +480,7 @@ describe('QaqcOverviewVisual host integration', () => {
     expect(() => applyOutsideAct(target, update(tableDataView(COMBINED_ROWS)))).not.toThrow()
     expect(target.events.renderingFailed).toHaveBeenCalledWith(expect.anything(), 'render boom')
     expect(target.events.renderingFinished).not.toHaveBeenCalled()
-    expect(target.element.querySelector('.qaqc-status h2')?.textContent).toBe('Could not draw the QAQC Overview visual')
+    expect(target.element.querySelector('.qaqc-status h2')?.textContent).toBe('Could not draw the QCx Overview visual')
   })
 
   it('recovers on the next update after a render error', () => {

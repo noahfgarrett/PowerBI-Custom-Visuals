@@ -159,7 +159,7 @@ export function IssuesDashboard({
   const panels: Record<PanelId, ExpandablePanel> = {
     ...charts,
     detail: {
-      title: 'BIM Issues Detail',
+      title: 'QCx BIM Issues Detail',
       icon: TableProperties,
       kind: 'page',
       legend: [],

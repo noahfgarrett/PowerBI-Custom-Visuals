@@ -1,4 +1,4 @@
-# QAQC Mechanical / Process Inspections visual: setup
+# QCx Mechanical / Process Inspections visual: setup
 
 **Version 1.0.1:** week labels now include the year (`WW41'2026`). Chart axes keep `WW41` ticks and show the year under the first labelled week and under the first labelled week of each new year.
 
@@ -41,4 +41,4 @@ Set every field to **Don't summarize**. The visual is designed to fill a full re
 - **Final:** Inspection Phase is Final (any case), starts with "Final ", or contains "final inspection". **SOR:** contains "SOR".
 - **Issues Found:** Final rows whose Issue? is filled in and is not "No Issue Found". SOR rows never count.
 - **NCR Pass Rate:** Finals with no issue ÷ all Finals, through the selected week.
-- **Pass / Fail column:** not used. NCR Pass Rate comes from Issue? so it matches the Electrical visual.
+- **Pass / Fail column:** not used. NCR Pass Rate comes from Issue? so it matches the QCx Electrical Inspections visual.

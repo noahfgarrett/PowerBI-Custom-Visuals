@@ -66,7 +66,7 @@ afterEach(() => {
 function dashboardElement(overrides: Partial<PerformanceDashboardProps> = {}): ReactElement {
   return (
     <PerformanceDashboard
-      title="QAQC Performance"
+      title="QCx Performance"
       icon={Users}
       index={INDEX}
       minimumFinals={5}
@@ -196,7 +196,7 @@ function stubSize(width = 800, height = 400): void {
 describe('PerformanceDashboard header', () => {
   it('shows the title and icon it is given', () => {
     view = draw()
-    expect(view.container.querySelector('h2')?.textContent).toBe('QAQC Performance')
+    expect(view.container.querySelector('h2')?.textContent).toBe('QCx Performance')
     expect(view.container.querySelector('.qaqc-title-icon svg.lucide-users')).not.toBeNull()
   })
 

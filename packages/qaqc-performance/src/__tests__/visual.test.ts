@@ -9,6 +9,7 @@ import { splitCombinedRows } from '../../../qaqc-shared/src/combined'
 import { buildPerformanceIndex, buildPerformanceModel } from '../../../qaqc-shared/src/performance'
 import type { CombinedColumns } from '../../../qaqc-shared/src/types'
 import capabilities from '../../capabilities.json'
+import pbiviz from '../../pbiviz.json'
 import { QaqcPerformanceVisual } from '../visual'
 import { ALL_ROLES, tableDataView } from './tableDataView'
 
@@ -190,10 +191,23 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
+describe('QaqcPerformanceVisual name', () => {
+  it('heads the dashboard with its QCx title', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(COMBINED_ROWS)))
+    expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QCx Performance')
+  })
+
+  it('shows its QCx name in Power BI', () => {
+    expect(pbiviz.visual.displayName).toBe('QCx Performance')
+    expect(pbiviz.visual.description).not.toContain('QAQC')
+  })
+})
+
 describe('QaqcPerformanceVisual', () => {
   it('labels the visual for assistive technology', () => {
     harness = createHarness()
-    expect(harness.element.getAttribute('aria-label')).toBe('QAQC performance dashboard')
+    expect(harness.element.getAttribute('aria-label')).toBe('QCx performance dashboard')
   })
 
   it('names each data role like its field slot', () => {
@@ -232,10 +246,10 @@ describe('QaqcPerformanceVisual', () => {
     expect(cardValue(harness.element, 'QCR/FE ranked')).toBeNull()
   })
 
-  it('renders the QAQC Performance header with the people icon', () => {
+  it('renders the QCx Performance header with the people icon', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(COMBINED_ROWS)))
-    expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QAQC Performance')
+    expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QCx Performance')
     expect(harness.element.querySelector('.qaqc-title-icon svg.lucide-users')).not.toBeNull()
   })
 
@@ -430,7 +444,7 @@ describe('QaqcPerformanceVisual', () => {
     Object.defineProperty(broken.table, 'rows', { get: () => { throw new Error('boom') } })
     expect(() => applyOutsideAct(target, update(broken))).not.toThrow()
     expect(target.events.renderingFailed).toHaveBeenCalledWith(expect.anything(), 'boom')
-    expect(target.element.querySelector('.qaqc-status h2')?.textContent).toBe('Could not draw the QAQC Performance visual')
+    expect(target.element.querySelector('.qaqc-status h2')?.textContent).toBe('Could not draw the QCx Performance visual')
   })
 
   it('reports a React render error and shows a fallback instead of going blank', () => {
@@ -440,7 +454,7 @@ describe('QaqcPerformanceVisual', () => {
     expect(() => applyOutsideAct(target, update(tableDataView(COMBINED_ROWS)))).not.toThrow()
     expect(target.events.renderingFailed).toHaveBeenCalledWith(expect.anything(), 'render boom')
     expect(target.events.renderingFinished).not.toHaveBeenCalled()
-    expect(target.element.querySelector('.qaqc-status h2')?.textContent).toBe('Could not draw the QAQC Performance visual')
+    expect(target.element.querySelector('.qaqc-status h2')?.textContent).toBe('Could not draw the QCx Performance visual')
   })
 
   it('recovers on the next update after a render error', () => {

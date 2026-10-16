@@ -1,4 +1,4 @@
-# QAQC BIM Issues visual: setup
+# QCx BIM Issues visual: setup
 
 **Version 1.0.1:** week labels now include the year (`WW41'2026`). Chart axes keep `WW41` ticks and show the year under the first labelled week and under the first labelled week of each new year.
 
@@ -65,7 +65,7 @@ There is no Row ID slot: issue IDs are unique, so Power BI cannot merge two diff
 
 ### Issue Detail
 
-Select **Issue Detail** in the header to open the BIM Issues Detail view for the selected week. Esc or the back button returns. The button is hidden when interactions are off (read-only views).
+Select **Issue Detail** in the header to open the QCx BIM Issues Detail view for the selected week. Esc or the back button returns. The button is hidden when interactions are off (read-only views).
 
 - Cards: Opened This Week, Closed This Week, Opened Last Week, Closed Last Week.
 - Table, in two blocks:

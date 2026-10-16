@@ -1,4 +1,4 @@
-# QAQC Overview visual: setup
+# QCx Overview visual: setup
 
 One page with Electrical, Mechanical, Welding and BIM Issues side by side, a quality strip, and two charts. Its numbers match the four discipline visuals for the same week.
 
@@ -82,7 +82,7 @@ Each row has the discipline's name, four cards, and a sparkline of the 30 weeks 
 **This WW:**
 
 - Counts show the selected week, with the change against the week before.
-- **Welding Signed** counts welds by the week they were signed (WORK WEEK SIGNED), as the Welding visual's Signed This Week does.
+- **Welding Signed** counts welds by the week they were signed (WORK WEEK SIGNED), as the QCx Welding Signoffs visual's Signed This Week does.
 - **Welding Sign-off %** is signed ÷ logged for the latest weld week, up to the selected week, that has welds. Its sub-line names that week.
 - **NCR pass rate** uses only the selected week's finals. It shows `n/a` when that week has no finals.
 - Rates show their change in points.

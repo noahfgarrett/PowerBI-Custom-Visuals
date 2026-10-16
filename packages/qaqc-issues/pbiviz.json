@@ -1,7 +1,7 @@
 {
   "visual": {
     "name": "qaqcIssues",
-    "displayName": "QAQC BIM Issues",
+    "displayName": "QCx BIM Issues",
     "guid": "qaqcIssues_1999F247C7D6",
     "visualClassName": "QaqcIssuesVisual",
     "version": "1.0.1.0",

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createConstructorOptions } from '../../../core/src/__test-utils__'
 import { MECHANICAL_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/mechanicalRows'
+import pbiviz from '../../pbiviz.json'
 import { QaqcMechanicalVisual } from '../visual'
 import { tableDataView } from './tableDataView'
 
@@ -100,10 +101,23 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
+describe('QaqcMechanicalVisual name', () => {
+  it('heads the dashboard with its QCx title', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(MECHANICAL_ROWS)))
+    expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QCx Mechanical / Process Inspections')
+  })
+
+  it('shows its QCx name in Power BI', () => {
+    expect(pbiviz.visual.displayName).toBe('QCx Mechanical / Process Inspections')
+    expect(pbiviz.visual.description).not.toContain('QAQC')
+  })
+})
+
 describe('QaqcMechanicalVisual', () => {
   it('labels the visual for assistive technology', () => {
     harness = createHarness()
-    expect(harness.element.getAttribute('aria-label')).toBe('Mechanical / Process inspections dashboard')
+    expect(harness.element.getAttribute('aria-label')).toBe('QCx mechanical / process inspections dashboard')
   })
 
   it('lists the missing field slots before data is bound', () => {
@@ -193,7 +207,7 @@ describe('QaqcMechanicalVisual', () => {
     expect(() => applyOutsideAct(target, update(tableDataView(MECHANICAL_ROWS)))).not.toThrow()
     expect(target.events.renderingFailed).toHaveBeenCalledWith(expect.anything(), 'render boom')
     expect(target.events.renderingFinished).not.toHaveBeenCalled()
-    expect(target.element.querySelector('.qaqc-status h2')?.textContent).toBe('Could not draw the Mechanical / Process visual')
+    expect(target.element.querySelector('.qaqc-status h2')?.textContent).toBe('Could not draw the QCx Mechanical / Process visual')
   })
 
   it('recovers on the next update after a render error', () => {

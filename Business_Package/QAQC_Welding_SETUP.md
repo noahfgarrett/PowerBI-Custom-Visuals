@@ -1,4 +1,4 @@
-# QAQC Welding Signoffs visual: setup
+# QCx Welding Signoffs visual: setup
 
 **Version 1.0.1:** week labels now include the year (`WW41'2026`). Chart axes keep `WW41` ticks and show the year under the first labelled week and under the first labelled week of each new year.
 

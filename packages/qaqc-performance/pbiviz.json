@@ -1,7 +1,7 @@
 {
   "visual": {
     "name": "qaqcPerformance",
-    "displayName": "QAQC Performance",
+    "displayName": "QCx Performance",
     "guid": "qaqcPerformance_AD661934E05F",
     "visualClassName": "QaqcPerformanceVisual",
     "version": "1.0.0.0",

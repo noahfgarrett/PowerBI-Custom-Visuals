@@ -1,7 +1,7 @@
 {
   "visual": {
     "name": "qaqcWelding",
-    "displayName": "QAQC Welding Signoffs",
+    "displayName": "QCx Welding Signoffs",
     "guid": "qaqcWelding_8A4CE54C5018",
     "visualClassName": "QaqcWeldingVisual",
     "version": "1.0.1.0",

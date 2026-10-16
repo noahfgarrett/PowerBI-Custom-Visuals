@@ -80,7 +80,7 @@ if (data === 'missing') {
   document.title = `index ${Math.round(performance.now() - started)} ms`
   root.render(
     <IssuesDashboard
-      title="BIM Issues"
+      title="QCx BIM Issues"
       icon={CircleAlert}
       index={index}
       theme={theme}

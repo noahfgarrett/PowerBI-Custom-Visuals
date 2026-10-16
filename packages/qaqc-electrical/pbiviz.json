@@ -1,7 +1,7 @@
 {
   "visual": {
     "name": "qaqcElectrical",
-    "displayName": "QAQC Electrical Inspections",
+    "displayName": "QCx Electrical Inspections",
     "guid": "qaqcElectrical_6B2E9D4A1C7F",
     "visualClassName": "QaqcElectricalVisual",
     "version": "1.1.1.0",

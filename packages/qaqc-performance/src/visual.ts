@@ -51,12 +51,12 @@ export class QaqcPerformanceVisual implements powerbi.extensibility.visual.IVisu
   private viewport: powerbi.IViewport = { width: 0, height: 0 }
 
   constructor(options?: VisualConstructorOptions) {
-    if (!options) throw new Error('QAQC Performance requires a Power BI visual host.')
+    if (!options) throw new Error('QCx Performance requires a Power BI visual host.')
     this.host = options.host
     this.element = options.element
     this.element.classList.add('qaqc-host')
     this.element.setAttribute('role', 'region')
-    this.element.setAttribute('aria-label', 'QAQC performance dashboard')
+    this.element.setAttribute('aria-label', 'QCx performance dashboard')
     this.selectionManager = this.host.createSelectionManager()
     this.formattingSettingsService = new FormattingSettingsService(this.host.createLocalizationManager())
     // React 19 reports render errors here instead of re-throwing from flushSync; commit() re-throws them.
@@ -140,7 +140,7 @@ export class QaqcPerformanceVisual implements powerbi.extensibility.visual.IVisu
       this.commit(
         createElement(StatusPanel, {
           icon: TriangleAlert,
-          title: 'Could not draw the QAQC Performance visual',
+          title: 'Could not draw the QCx Performance visual',
           message: 'Check the bound columns, then refresh the report.',
           items: [],
         }),
@@ -169,7 +169,7 @@ export class QaqcPerformanceVisual implements powerbi.extensibility.visual.IVisu
     // The footnotes depend on the group and period on screen, so the dashboard builds them (buildPerformanceFootnotes).
     this.commit(
       createElement(PerformanceDashboard, {
-        title: 'QAQC Performance',
+        title: 'QCx Performance',
         icon: Users,
         index: this.index,
         minimumFinals: display.minimumFinals,

@@ -1,6 +1,6 @@
 # QAQC Combined table: setup
 
-The QAQC Overview and QAQC Performance visuals read one table, **QAQC Combined**. This guide adds it to your report.
+The QCx Overview and QCx Performance visuals read one table, **QAQC Combined**. This guide adds it to your report.
 
 ## Why the table is needed
 
@@ -184,7 +184,7 @@ What it does:
 
 Row ID is one sequence, 1, 2, 3 …, through every row of the combined table. A dash (—) means the column is empty on that source's rows. Note the Mechanical header spelling `QCR / FE`, with spaces, which differs from Electrical's `QCR/FE`.
 
-The QAQC Overview binds 14 of these columns and the QAQC Performance visual binds 9. See `QAQC_Overview_SETUP.md` and `QAQC_Performance_SETUP.md`.
+The QCx Overview binds 14 of these columns and the QCx Performance visual binds 9. See `QAQC_Overview_SETUP.md` and `QAQC_Performance_SETUP.md`.
 
 ## Troubleshooting
 

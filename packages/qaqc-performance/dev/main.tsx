@@ -105,7 +105,7 @@ if (data === 'missing') {
   document.title = `index ${Math.round(performance.now() - started)} ms`
   root.render(
     <PerformanceDashboard
-      title="QAQC Performance"
+      title="QCx Performance"
       icon={Users}
       index={index}
       minimumFinals={clampMinimum(Number(params.get('minFinals') ?? DEFAULT_MINIMUM_FINALS), DEFAULT_MINIMUM_FINALS)}
