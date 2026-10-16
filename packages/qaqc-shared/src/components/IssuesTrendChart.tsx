@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useState, type MouseEvent, type ReactElement } from 'react'
 
+import { createLabelPlacer, LABEL_GAP, labelTextWidth } from '../chartLabels'
 import {
   alignedScale,
   labelIndices,
@@ -48,12 +49,6 @@ const LINE_LABEL_EVERY = 3
 const MIN_LINE_LABEL_SPACING = 28
 const LINE_LABEL_ABOVE = 7
 const LINE_LABEL_BELOW = 14
-// Label metrics for 9.5 px bold digits.
-const CHAR_WIDTH = 5.6
-const TEXT_ASCENT = 7
-const TEXT_DESCENT = 2
-/** Placed labels keep at least this much space between them. */
-const LABEL_GAP = 1
 const TITLE = 'Issues opened and closed by work week'
 
 export interface IssuesTrendChartProps {
@@ -90,13 +85,6 @@ interface TrendLabel {
   isInside: boolean
 }
 
-interface Box {
-  left: number
-  right: number
-  top: number
-  bottom: number
-}
-
 export interface Layout {
   plotRight: number
   plotWidth: number
@@ -128,19 +116,6 @@ function areaPath(points: PlotPoint[], baseline: number): string {
   const first = points[0]
   const last = points[points.length - 1]
   return `${smoothPath(points)} L${round(last.x)},${round(baseline)} L${round(first.x)},${round(baseline)} Z`
-}
-
-function textWidth(text: string): number {
-  return text.length * CHAR_WIDTH
-}
-
-function labelBox(text: string, x: number, y: number): Box {
-  const half = textWidth(text) / 2 + LABEL_GAP / 2
-  return { left: x - half, right: x + half, top: y - TEXT_ASCENT - LABEL_GAP / 2, bottom: y + TEXT_DESCENT + LABEL_GAP / 2 }
-}
-
-function overlaps(a: Box, b: Box): boolean {
-  return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom
 }
 
 /**
@@ -203,19 +178,11 @@ export function layoutChart(points: IssueTrendPoint[], width: number, height: nu
   // Labels are placed in priority order, each at its first position that stays inside the plot and clear of every
   // label already placed; a label with no such position is left out. The last line point comes first, so only a
   // plot too small to hold it can drop it; then the bar counts (newest week first), then the other line points.
-  const placedBoxes: Box[] = []
+  const placer = createLabelPlacer({ bounds: { left: 0, right: width, top: 0, bottom: plotBottom } })
   const placed: TrendLabel[] = []
-  const isClear = (box: Box): boolean => box.left >= 0 && box.right <= width && box.top >= 0 && box.bottom <= plotBottom
-    && placedBoxes.every((other) => !overlaps(box, other))
   function place(label: Omit<TrendLabel, 'x' | 'y'>, candidates: PlotPoint[]): void {
-    for (const candidate of candidates) {
-      const box = labelBox(label.text, candidate.x, candidate.y)
-      if (isClear(box)) {
-        placedBoxes.push(box)
-        placed.push({ ...label, x: candidate.x, y: candidate.y })
-        return
-      }
-    }
+    const spot = placer.place(label.text, candidates)
+    if (spot !== null) placed.push({ ...label, x: spot.x, y: spot.y })
   }
   function lineCandidates(index: number): PlotPoint[] {
     const { x, y } = linePoints[index]
@@ -231,7 +198,7 @@ export function layoutChart(points: IssueTrendPoint[], width: number, height: nu
     const text = formatCount(count)
     const center = (series === 'opened' ? openedX(index) : closedX(index)) + barWidth / 2
     const barHeight = countHeight(count)
-    const isInside = barHeight >= MIN_INSIDE_LABEL_HEIGHT && textWidth(text) <= barWidth
+    const isInside = barHeight >= MIN_INSIDE_LABEL_HEIGHT && labelTextWidth(text) <= barWidth
     const label = { key: `${series === 'opened' ? 'o' : 'c'}${index}`, index, series, text, isInside }
     if (isInside) {
       place(label, [{ x: center, y: plotBottom - INSIDE_LABEL_INSET }])
@@ -239,7 +206,7 @@ export function layoutChart(points: IssueTrendPoint[], width: number, height: nu
     }
     // When the centred spot is taken, the label slides off its bar's outer edge: Opened to the left, Closed to the right.
     const y = plotBottom - barHeight - OUTSIDE_LABEL_GAP
-    const outward = (series === 'opened' ? -1 : 1) * (textWidth(text) / 2 + LABEL_GAP)
+    const outward = (series === 'opened' ? -1 : 1) * (labelTextWidth(text) / 2 + LABEL_GAP)
     place(label, [{ x: center, y }, { x: center + outward, y }])
   }
 

@@ -1,6 +1,7 @@
 import { act } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { LABEL_METRICS } from '../chartLabels'
 import type { ChartColors } from '../chartTypes'
 import {
   ActivityLinesChart,
@@ -8,7 +9,7 @@ import {
   type ActivityLinesChartProps,
 } from '../components/ActivityLinesChart'
 import { LegendSwatch } from '../components/ChartPanel'
-import { LABEL_METRICS, OverviewLinesChart, type WeekLine } from '../components/OverviewLinesChart'
+import { OverviewLinesChart, type WeekLine } from '../components/OverviewLinesChart'
 import { OverviewWeekTable } from '../components/OverviewWeekTable'
 import {
   QualityRatesChart,

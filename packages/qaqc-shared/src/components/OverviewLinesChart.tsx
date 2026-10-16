@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type MouseEvent, type ReactElement } from 'react'
 
+import { createLabelPlacer, LABEL_GAP, labelTextWidth } from '../chartLabels'
 import { labelIndices, LINE_DASH, smoothPath, WEEK_AXIS_HEIGHT, yearMarkers, type PlotPoint } from '../chartMath'
 import type { ChartColors, TooltipHandler, TooltipRow } from '../chartTypes'
 import { useWeekFocus } from '../hooks/useWeekFocus'
@@ -29,10 +30,6 @@ const LABEL_BELOW = 16
 const LABEL_BESIDE = DOT_RADIUS + 4
 /** Puts a label's digits level with the point when it sits beside the dot. */
 const LABEL_BESIDE_BASELINE = 3.5
-/** Label metrics for 9.5 px bold digits (`.qaqc-overview-label`), exported so the collision tests measure the same boxes. */
-export const LABEL_METRICS = { charWidth: 5.6, ascent: 7, descent: 2 } as const
-/** Placed labels keep at least this much space between them. */
-const LABEL_GAP = 1
 /** Labels side by side keep twice this much more, so neighbouring numbers never run together. */
 const LABEL_PAD_X = 2.5
 
@@ -69,13 +66,6 @@ interface LineLayout {
   dotIndices: number[]
 }
 
-interface Box {
-  left: number
-  right: number
-  top: number
-  bottom: number
-}
-
 export interface WeekLinesLayout {
   plotLeft: number
   plotRight: number
@@ -87,19 +77,6 @@ export interface WeekLinesLayout {
   lines: LineLayout[]
   /** By line, then week. */
   labels: PlacedLabel[]
-}
-
-function textWidth(text: string): number {
-  return text.length * LABEL_METRICS.charWidth
-}
-
-function labelBox(text: string, x: number, y: number): Box {
-  const half = textWidth(text) / 2 + LABEL_GAP / 2 + LABEL_PAD_X
-  return { left: x - half, right: x + half, top: y - LABEL_METRICS.ascent - LABEL_GAP / 2, bottom: y + LABEL_METRICS.descent + LABEL_GAP / 2 }
-}
-
-function overlaps(a: Box, b: Box): boolean {
-  return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom
 }
 
 function lastValueIndex(values: ReadonlyArray<number | null>): number {
@@ -140,11 +117,9 @@ export function layoutWeekLines(
   // Labels are placed in priority order, each at its first position that stays inside the plot and clear of every
   // label already placed; a label with no such position is left out. Each line's last point comes first, then the
   // selected week, then (with showValues) the rest, newest first.
-  const placedBoxes: Box[] = []
+  const placer = createLabelPlacer({ bounds: { left: plotLeft, right: width, top: 0, bottom: plotBottom }, padX: LABEL_PAD_X })
   const placed: PlacedLabel[] = []
   const labelled = lines.map(() => new Set<number>())
-  const isClear = (box: Box): boolean => box.left >= plotLeft && box.right <= width && box.top >= 0 && box.bottom <= plotBottom
-    && placedBoxes.every((other) => !overlaps(box, other))
 
   function place(lineIndex: number, index: number, canSlide: boolean): void {
     const value = lines[lineIndex].values[index] ?? null
@@ -167,25 +142,20 @@ export function layoutWeekLines(
     const below = { x: point.x, y: point.y + LABEL_BELOW }
     const candidates = isHigher ? [above, below] : [below, above]
     if (canSlide) {
-      const beside = textWidth(text) / 2 + LABEL_BESIDE
+      const beside = labelTextWidth(text) / 2 + LABEL_BESIDE
       candidates.push({ x: point.x + beside, y: point.y + LABEL_BESIDE_BASELINE }, { x: point.x - beside, y: point.y + LABEL_BESIDE_BASELINE })
     }
-    for (const candidate of candidates) {
-      const box = labelBox(text, candidate.x, candidate.y)
-      if (isClear(box)) {
-        placedBoxes.push(box)
-        labelled[lineIndex].add(index)
-        placed.push({ key: `${lines[lineIndex].key}-${index}`, line: lineIndex, index, text, x: candidate.x, y: candidate.y })
-        return
-      }
-    }
+    const spot = placer.place(text, candidates)
+    if (spot === null) return
+    labelled[lineIndex].add(index)
+    placed.push({ key: `${lines[lineIndex].key}-${index}`, line: lineIndex, index, text, x: spot.x, y: spot.y })
   }
 
   if (count > 0) {
     lines.forEach((line, lineIndex) => place(lineIndex, Math.min(lastValueIndex(line.values), count - 1), true))
     if (selectedIndex >= 0 && selectedIndex < count) lines.forEach((_, lineIndex) => place(lineIndex, selectedIndex, true))
     if (showValues) {
-      const spacing = Math.max(MIN_LABEL_SPACING, textWidth(formatValue(scale.max)) + LABEL_PAD_X * 2 + LABEL_GAP)
+      const spacing = Math.max(MIN_LABEL_SPACING, labelTextWidth(formatValue(scale.max)) + LABEL_PAD_X * 2 + LABEL_GAP)
       const every = band > 0 ? Math.max(1, Math.ceil(spacing / band)) : count
       const lastTried = lines.map((line) => Math.min(lastValueIndex(line.values), count - 1))
       for (let index = count - 1; index >= 0; index -= 1) {

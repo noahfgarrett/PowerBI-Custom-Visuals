@@ -1,6 +1,7 @@
 import { act } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { LABEL_METRICS } from '../chartLabels'
 import type { ChartColors } from '../chartTypes'
 import { splitCombinedRows } from '../combined'
 import { formatNcrRate, PerformanceTable, type PerformanceTableProps } from '../components/PerformanceTable'
@@ -708,10 +709,10 @@ interface LabelBox {
 
 function chartLabelBox(node: Element): LabelBox {
   const text = node.textContent ?? ''
-  const half = (text.length * 5.6) / 2
+  const half = (text.length * LABEL_METRICS.charWidth) / 2
   const x = numberAttr(node, 'x')
   const y = numberAttr(node, 'y')
-  return { text, left: x - half, right: x + half, top: y - 7, bottom: y + 2 }
+  return { text, left: x - half, right: x + half, top: y - LABEL_METRICS.ascent, bottom: y + LABEL_METRICS.descent }
 }
 
 function labelCollisions(root: ParentNode): Array<[string, string]> {

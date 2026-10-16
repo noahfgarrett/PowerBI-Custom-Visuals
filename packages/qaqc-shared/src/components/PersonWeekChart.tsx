@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type MouseEvent, type ReactElement } from 'react'
 
+import { createLabelPlacer, LABEL_GAP, labelHalfWidth, labelTextWidth } from '../chartLabels'
 import {
   alignedScale,
   labelIndices,
@@ -42,12 +43,6 @@ const LINE_LABEL_EVERY = 3
 const MIN_LINE_LABEL_SPACING = 40
 const LINE_LABEL_ABOVE = 7
 const LINE_LABEL_BELOW = 14
-// Label metrics for 9.5 px bold digits.
-const CHAR_WIDTH = 5.6
-const TEXT_ASCENT = 7
-const TEXT_DESCENT = 2
-/** Placed labels keep at least this much space between them. */
-const LABEL_GAP = 1
 
 const VOLUME_LABELS: Record<PerformanceGroup, string> = { qcr: 'Finals', welders: 'Welds' }
 
@@ -81,13 +76,6 @@ interface ChartLabel {
   y: number
 }
 
-interface Box {
-  left: number
-  right: number
-  top: number
-  bottom: number
-}
-
 export interface PersonWeekLayout {
   plotRight: number
   plotWidth: number
@@ -112,19 +100,6 @@ export function personWeekLegend(colors: ChartColors, group: PerformanceGroup): 
     { label: 'NCRs', color: colors.bad, shape: 'bar' },
     { label: 'Running NCR rate', color: colors.warn, shape: 'line' },
   ]
-}
-
-function textWidth(text: string): number {
-  return text.length * CHAR_WIDTH
-}
-
-function labelBox(text: string, x: number, y: number): Box {
-  const half = textWidth(text) / 2 + LABEL_GAP / 2
-  return { left: x - half, right: x + half, top: y - TEXT_ASCENT - LABEL_GAP / 2, bottom: y + TEXT_DESCENT + LABEL_GAP / 2 }
-}
-
-function overlaps(a: Box, b: Box): boolean {
-  return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom
 }
 
 /** Every third week and the last, thinned on narrow bands so labels sit at least 40 px apart. */
@@ -181,20 +156,12 @@ export function layoutPersonWeeks(weeks: PersonWeek[], width: number, height: nu
   // Labels go in priority order, each at its first position inside the plot and clear of every label already
   // placed; a label with no such position is left out. The latest rate comes first, then the NCR counts and the
   // volumes (newest week first), then the other rate points.
-  const placedBoxes: Box[] = []
-  const placed: ChartLabel[] = []
   // Labels stay between the axes, so they never run into either column of tick labels.
-  const isClear = (box: Box): boolean => box.left >= MARGIN.left && box.right <= plotRight && box.top >= 0 && box.bottom <= plotBottom
-    && placedBoxes.every((other) => !overlaps(box, other))
+  const placer = createLabelPlacer({ bounds: { left: MARGIN.left, right: plotRight, top: 0, bottom: plotBottom } })
+  const placed: ChartLabel[] = []
   function place(label: Omit<ChartLabel, 'x' | 'y'>, candidates: PlotPoint[]): void {
-    for (const candidate of candidates) {
-      const box = labelBox(label.text, candidate.x, candidate.y)
-      if (isClear(box)) {
-        placedBoxes.push(box)
-        placed.push({ ...label, x: candidate.x, y: candidate.y })
-        return
-      }
-    }
+    const spot = placer.place(label.text, candidates)
+    if (spot !== null) placed.push({ ...label, x: spot.x, y: spot.y })
   }
   function placeRateLabel(index: number): void {
     const point = linePoints[index]
@@ -203,7 +170,7 @@ export function layoutPersonWeeks(weeks: PersonWeek[], width: number, height: nu
     const text = formatNcrRate(rate)
     // A point within half a label of either axis (the newest week always is, on narrow bands) slides its label
     // inward until it ends at the axis, rather than losing it.
-    const half = textWidth(text) / 2 + LABEL_GAP / 2
+    const half = labelHalfWidth(text)
     const x = Math.min(Math.max(point.x, MARGIN.left + half), plotRight - half)
     place({ key: `r${index}`, index, series: 'rate', text }, [
       { x, y: point.y - LINE_LABEL_ABOVE },
@@ -217,7 +184,7 @@ export function layoutPersonWeeks(weeks: PersonWeek[], width: number, height: nu
     const center = (series === 'volume' ? volumeX(index) : ncrX(index)) + barWidth / 2
     const y = plotBottom - countHeight(count) - OUTSIDE_LABEL_GAP
     // When the centred spot is taken, the label slides off its bar's outer edge: volume to the left, NCRs to the right.
-    const outward = (series === 'volume' ? -1 : 1) * (textWidth(text) / 2 + LABEL_GAP)
+    const outward = (series === 'volume' ? -1 : 1) * (labelTextWidth(text) / 2 + LABEL_GAP)
     place({ key: `${series === 'volume' ? 'v' : 'n'}${index}`, index, series, text }, [{ x: center, y }, { x: center + outward, y }])
   }
 

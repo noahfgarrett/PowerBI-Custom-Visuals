@@ -1,6 +1,7 @@
 import { act } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { LABEL_METRICS } from '../chartLabels'
 import type { ChartColors } from '../chartTypes'
 import { IssuesTrendChart, issueTrendLegend, type IssuesTrendChartProps } from '../components/IssuesTrendChart'
 import type { IssueTrendPoint } from '../types'
@@ -22,9 +23,7 @@ const PLOT_BOTTOM = 276
 const PLOT_HEIGHT = 250
 
 // Label metrics shared with the chart: 9.5 px bold digits are about 5.6 px wide, 7 px above the baseline and 2 below.
-const CHAR_WIDTH = 5.6
-const ASCENT = 7
-const DESCENT = 2
+const { charWidth: CHAR_WIDTH, ascent: ASCENT, descent: DESCENT } = LABEL_METRICS
 
 function point(week: number, opened: number, closed: number, remainingOpen: number, year = 2026): IssueTrendPoint {
   return { week: makeWorkWeek(year, week), opened, closed, remainingOpen }
