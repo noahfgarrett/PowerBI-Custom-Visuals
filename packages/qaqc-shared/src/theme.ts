@@ -16,6 +16,8 @@ export interface PresetColors {
   accentSoft: string
   series1: string
   series2: string
+  /** A second categorical hue for a two-line chart, far from series 1 in every preset. */
+  series3: string
 }
 
 export interface ThemeColors extends PresetColors {
@@ -32,22 +34,22 @@ export const PRESETS: Record<PresetName, PresetColors> = {
   qaqc: {
     page: '#EDF1F6', card: '#FDFEFF', weekCard: '#F8FAFF', border: '#DCE3EC', hairline: '#EBEEF3',
     ink: '#1B2530', ink2: '#45505F', muted: '#6A7583', faint: '#9AA4B2',
-    accent: '#2E5AAC', accentSoft: '#EAF0FA', series1: '#2E5AAC', series2: '#86B6EF',
+    accent: '#2E5AAC', accentSoft: '#EAF0FA', series1: '#2E5AAC', series2: '#86B6EF', series3: '#1A9C7B',
   },
   blue: {
     page: '#F7F8FA', card: '#FFFFFF', weekCard: '#F5F9FD', border: '#E3E7ED', hairline: '#EEF1F5',
     ink: '#00325B', ink2: '#2B4A6B', muted: '#5B6B7F', faint: '#98A6B6',
-    accent: '#0071C5', accentSoft: '#E6F1FA', series1: '#0071C5', series2: '#9CCBEE',
+    accent: '#0071C5', accentSoft: '#E6F1FA', series1: '#0071C5', series2: '#9CCBEE', series3: '#009A98',
   },
   lotusworks: {
     page: '#F3F5F8', card: '#FFFFFF', weekCard: '#FFF9F5', border: '#DDE3EA', hairline: '#ECEFF3',
     ink: '#003459', ink2: '#2E4A66', muted: '#5E6E80', faint: '#9AA6B4',
-    accent: '#E85D04', accentSoft: '#FDEFE6', series1: '#003459', series2: '#0077B6',
+    accent: '#E85D04', accentSoft: '#FDEFE6', series1: '#003459', series2: '#0077B6', series3: '#E85D04',
   },
   grayscale: {
     page: '#F2F2F2', card: '#FFFFFF', weekCard: '#FAFAFA', border: '#DADADA', hairline: '#ECECEC',
     ink: '#1E1E1E', ink2: '#444444', muted: '#6B6B6B', faint: '#A0A0A0',
-    accent: '#3A3A3A', accentSoft: '#EDEDED', series1: '#3A3A3A', series2: '#A6A6A6',
+    accent: '#3A3A3A', accentSoft: '#EDEDED', series1: '#3A3A3A', series2: '#A6A6A6', series3: '#8A8A8A',
   },
 }
 
@@ -132,7 +134,7 @@ function highContrastColors(host: HighContrastColors): ThemeColors {
     border: host.foreground, hairline: host.foreground,
     ink: host.foreground, ink2: host.foreground, muted: host.foreground, faint: host.foreground,
     accent: host.foregroundSelected, accentSoft: host.background, onAccent: host.background,
-    series1: host.foreground, series2: host.foregroundSelected,
+    series1: host.foreground, series2: host.foregroundSelected, series3: host.foreground,
     good: host.foreground, bad: host.foregroundSelected, warn: host.foreground,
   }
 }
@@ -164,6 +166,7 @@ export function resolveTheme(options: ThemeOptions): ResolvedTheme {
       '--qaqc-on-accent': colors.onAccent,
       '--qaqc-series-1': colors.series1,
       '--qaqc-series-2': colors.series2,
+      '--qaqc-series-3': colors.series3,
       '--qaqc-good': colors.good,
       '--qaqc-bad': colors.bad,
       '--qaqc-warn': colors.warn,
@@ -179,6 +182,7 @@ export function chartColorsFromTheme(theme: ResolvedTheme): ChartColors {
   return {
     series1: colors.series1,
     series2: colors.series2,
+    series3: colors.series3,
     good: colors.good,
     bad: colors.bad,
     warn: colors.warn,

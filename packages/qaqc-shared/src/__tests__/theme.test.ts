@@ -149,3 +149,26 @@ describe('contrastRatio', () => {
     expect(contrastRatio('red', '#FFFFFF')).toBe(1)
   })
 })
+
+describe('series 3', () => {
+  it('differs from series 1 and the status colours in every preset, with at least 3:1 contrast on the card', () => {
+    for (const preset of Object.keys(PRESETS)) {
+      if (!isPresetName(preset)) throw new Error(`bad preset ${preset}`)
+      const colors = PRESETS[preset]
+      expect(colors.series3).not.toBe(colors.series1)
+      expect(Object.values(STATUS_COLORS)).not.toContain(colors.series3)
+      expect(contrastRatio(colors.series3, colors.card)).toBeGreaterThanOrEqual(3)
+    }
+  })
+
+  it('reaches the stylesheet and the chart colours', () => {
+    const theme = resolveTheme(BASE)
+    expect(theme.cssVariables['--qaqc-series-3']).toBe(PRESETS.qaqc.series3)
+    expect(chartColorsFromTheme(theme).series3).toBe(PRESETS.qaqc.series3)
+  })
+
+  it('is the host foreground in high-contrast mode, where charts tell it apart by a dash', () => {
+    const host = { foreground: '#FFFF00', background: '#000000', foregroundSelected: '#00FFFF' }
+    expect(resolveTheme({ ...BASE, highContrast: host }).colors.series3).toBe('#FFFF00')
+  })
+})
