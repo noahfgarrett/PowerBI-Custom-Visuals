@@ -9,7 +9,8 @@ const STATUS_WORDS: Record<KpiStatus, string> = {
   bad: 'below target',
 }
 
-const TREND_ICONS: Record<Exclude<Trend, 'none'>, LucideIcon> = {
+/** The arrow each trend draws; exported so denser value layouts draw the same arrows. */
+export const TREND_ICONS: Record<Exclude<Trend, 'none'>, LucideIcon> = {
   up: ArrowUpRight,
   down: ArrowDownRight,
   flat: Minus,
@@ -18,6 +19,8 @@ const TREND_ICONS: Record<Exclude<Trend, 'none'>, LucideIcon> = {
 export interface KpiCardProps {
   label: string
   value: string
+  /** A muted line above the detail, such as the counts behind a rate; the detail then holds only the change. */
+  context?: string
   detail: string
   tone: DeltaTone
   trend: Trend
@@ -28,9 +31,10 @@ export interface KpiCardProps {
   isValueBad?: boolean
 }
 
-export function KpiCard({ label, value, detail, tone, trend, icon: Icon, status, isValueBad = false }: KpiCardProps): ReactElement {
+export function KpiCard({ label, value, context, detail, tone, trend, icon: Icon, status, isValueBad = false }: KpiCardProps): ReactElement {
   const TrendIcon = trend === 'none' ? null : TREND_ICONS[trend]
-  const summary = isValueBad ? `${label}: ${value}. ${detail}. Below target` : `${label}: ${value}. ${detail}`
+  const text = context === undefined ? detail : `${context}. ${detail}`
+  const summary = isValueBad ? `${label}: ${value}. ${text}. Below target` : `${label}: ${value}. ${text}`
   return (
     <article className="qaqc-kpi" aria-label={status === undefined ? summary : `${summary}. Status: ${STATUS_WORDS[status]}`}>
       <div className="qaqc-kpi-head">
@@ -41,6 +45,7 @@ export function KpiCard({ label, value, detail, tone, trend, icon: Icon, status,
       </div>
       <strong className={isValueBad ? 'qaqc-kpi-value is-bad' : 'qaqc-kpi-value'}>{value}</strong>
       {status !== undefined && <span className={`qaqc-kpi-status is-${status}`} aria-hidden="true" />}
+      {context !== undefined && <span className="qaqc-kpi-context">{context}</span>}
       <span className={`qaqc-kpi-detail is-${tone}`}>
         {TrendIcon && <TrendIcon size={12} aria-hidden="true" />}
         {detail}

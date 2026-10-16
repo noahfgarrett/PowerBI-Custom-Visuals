@@ -11,6 +11,7 @@ import {
   Gauge,
   Layers,
   Percent,
+  ShieldCheck,
   Signature,
   TrendingUp,
   Wrench,
@@ -23,20 +24,37 @@ import type { ElementSize } from '../hooks/useElementSize'
 import { useWeekWindow } from '../hooks/useWeekWindow'
 import { activityLegend, ActivityLinesChart } from './ActivityLinesChart'
 import { CardModeToggle } from './CardModeToggle'
-import { CARDS_ONLY_HEIGHT, ChartExpansionFrame, COMPACT_WIDTH, type GridPanel } from './ChartExpansionFrame'
+import { ChartExpansionFrame, COMPACT_WIDTH, type GridPanel } from './ChartExpansionFrame'
 import { ChartFill } from './ChartFill'
 import { ChartPanel } from './ChartPanel'
 import { DashboardHeader, type DashboardChromeProps } from './DashboardHeader'
 import { Footnotes } from './Footnotes'
 import { KpiGroup } from './KpiGroup'
 import { LoadingBar } from './LoadingBar'
-import { OverviewDisciplineRow, OverviewKpiCard, type OverviewCardIcons } from './OverviewDisciplineRow'
+import { OverviewDenseValue, OverviewDisciplineRow, OverviewKpiCard, OverviewRowLabel, type OverviewCardIcons } from './OverviewDisciplineRow'
 import { OverviewWeekTable } from './OverviewWeekTable'
 import { QualityRatesChart, qualityRatesLegend } from './QualityRatesChart'
 import { buildOverviewModel, type CardMode, type OverviewIndex, type OverviewRows } from '../overview'
 import { chartColorsFromTheme } from '../theme'
 
 const NO_ROWS_MESSAGE = 'No QAQC Combined rows match the current filters'
+
+/**
+ * Tiles shorter than this show the cards only, without the charts. The Overview stacks far more than the other
+ * dashboards, so the shared CARDS_ONLY_HEIGHT (420) would leave the charts no room. Measured from the stylesheet: the
+ * root's 12 + 10 px padding, the 30 px header, the root's two 10 px gaps (header, footnotes), the 267 px discipline rows
+ * (a 15 px head and four 61 px rows of cards inside 8 px padding and the border), the body's two 8 px gaps, the 110 px
+ * two-line quality strip, the 180 px chart minimum (`.qaqc-overview-charts`) and a 12 px footnote line:
+ * 22 + 30 + 20 + 267 + 16 + 110 + 180 + 12 = 657, rounded up to 660.
+ */
+export const OVERVIEW_CARDS_ONLY_HEIGHT = 660
+
+/**
+ * Cards-only tiles shorter than this use the dense one-line layout: the full cards alone need the same parts without
+ * the charts and the body gap above them, 22 + 30 + 20 + 267 + 8 + 110 + 12 = 469, rounded up to 480. Narrow
+ * cards-only tiles are always dense, since their full cards stack two by two.
+ */
+export const OVERVIEW_DENSE_HEIGHT = 480
 
 type ChartId = 'activity' | 'rates'
 
@@ -88,10 +106,12 @@ export function OverviewDashboard({
   // Memoized so the charts' own memos see the same colors object until the theme changes.
   const colors = useMemo(() => chartColorsFromTheme(theme), [theme])
   const isCompact = viewport.width < COMPACT_WIDTH
-  const isCardsOnly = viewport.height < CARDS_ONLY_HEIGHT
+  const isCardsOnly = viewport.height < OVERVIEW_CARDS_ONLY_HEIGHT
+  const isDense = isCardsOnly && (isCompact || viewport.height < OVERVIEW_DENSE_HEIGHT)
   const isWeekMode = mode === 'week'
   const cardsSubtitle = isWeekMode ? model.selectedWeek.label : `Through ${model.selectedWeek.label}`
   const emptyMessage = model.hasData ? null : NO_ROWS_MESSAGE
+  const rowsClass = ['qaqc-overview-rows', isWeekMode ? 'is-week' : 'is-total', isDense ? 'is-dense' : ''].filter(Boolean).join(' ')
 
   function renderActivity(size: ElementSize, showValues: boolean): ReactElement {
     return (
@@ -187,7 +207,7 @@ export function OverviewDashboard({
           </DashboardHeader>
 
           <div className="qaqc-overview-body">
-            <section className={isWeekMode ? 'qaqc-overview-rows is-week' : 'qaqc-overview-rows is-total'} aria-label="Disciplines">
+            <section className={rowsClass} aria-label="Disciplines">
               <header className="qaqc-overview-rows-head">
                 <span>Disciplines</span>
                 <em>{cardsSubtitle}</em>
@@ -200,6 +220,7 @@ export function OverviewDashboard({
                   metric={discipline.metric}
                   cardIcons={discipline.cardIcons}
                   row={model.rows[discipline.key]}
+                  isDense={isDense}
                   sparklineColor={colors.accent}
                   ringColor={colors.card}
                 />
@@ -207,11 +228,20 @@ export function OverviewDashboard({
             </section>
 
             <div className="qaqc-overview-quality">
-              <KpiGroup title="Quality" subtitle={cardsSubtitle} variant={isWeekMode ? 'week' : 'total'}>
-                {model.quality.map((card, at) => (
-                  <OverviewKpiCard key={card.label} card={card} icon={QUALITY_ICONS[at]} />
-                ))}
-              </KpiGroup>
+              {isDense ? (
+                <section className={isWeekMode ? 'qaqc-overview-quality-dense is-week' : 'qaqc-overview-quality-dense is-total'} aria-label="Quality">
+                  <OverviewRowLabel name="Quality" icon={ShieldCheck} />
+                  {model.quality.map((card) => (
+                    <OverviewDenseValue key={card.label} card={card} />
+                  ))}
+                </section>
+              ) : (
+                <KpiGroup title="Quality" subtitle={cardsSubtitle} variant={isWeekMode ? 'week' : 'total'}>
+                  {model.quality.map((card, at) => (
+                    <OverviewKpiCard key={card.label} card={card} icon={QUALITY_ICONS[at]} isTwoLine />
+                  ))}
+                </KpiGroup>
+              )}
             </div>
 
             {!isCardsOnly && (

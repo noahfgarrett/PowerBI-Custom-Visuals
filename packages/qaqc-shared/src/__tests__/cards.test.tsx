@@ -29,6 +29,21 @@ describe('KpiCard', () => {
     expect(view.container.querySelector('.qaqc-kpi-detail.is-warn')).not.toBeNull()
   })
 
+  it('puts an optional context line above the detail and reads it before the change', () => {
+    view = render(
+      <KpiCard label="Pass rate" value="98.9%" context="3 NCRs of 282 finals" detail="+0.01 pts" tone="good" trend="up" icon={ClipboardCheck} />,
+    )
+    const card = view.container.querySelector('article')
+    expect(card?.querySelector('.qaqc-kpi-context')?.textContent).toBe('3 NCRs of 282 finals')
+    expect(card?.querySelector('.qaqc-kpi-context + .qaqc-kpi-detail')?.textContent).toBe('+0.01 pts')
+    expect(card?.getAttribute('aria-label')).toBe('Pass rate: 98.9%. 3 NCRs of 282 finals. +0.01 pts')
+  })
+
+  it('has no context line by default', () => {
+    view = render(<KpiCard label="Finals" value="3" detail="+3 this WW" tone="neutral" trend="none" icon={ClipboardCheck} />)
+    expect(view.container.querySelector('.qaqc-kpi-context')).toBeNull()
+  })
+
   it('omits the trend icon when trend is none', () => {
     view = render(<KpiCard label="Finals to Date" value="238" detail="+3 this WW" tone="neutral" trend="none" icon={ClipboardCheck} />)
     expect(view.container.querySelector('.qaqc-kpi-detail svg')).toBeNull()

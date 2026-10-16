@@ -2,7 +2,7 @@ import { LayoutDashboard } from 'lucide-react'
 import { act, type ReactElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { OverviewDashboard, type OverviewDashboardProps } from '../components/OverviewDashboard'
+import { OVERVIEW_CARDS_ONLY_HEIGHT, OVERVIEW_DENSE_HEIGHT, OverviewDashboard, type OverviewDashboardProps } from '../components/OverviewDashboard'
 import { splitCombinedRows } from '../combined'
 import { buildOverviewFootnotes } from '../footnotes'
 import { buildOverviewIndex } from '../overview'
@@ -11,6 +11,7 @@ import type { CombinedColumns } from '../types'
 import { COMBINED_COLUMNS, COMBINED_ROWS } from './fixtures/combinedRows'
 import { inspection, overviewIndexOf } from './overviewRows'
 import { render, type Rendered } from './render'
+import { ruleBody } from './stylesheet'
 
 type CombinedColumnName = (typeof COMBINED_COLUMNS)[number]
 
@@ -102,6 +103,29 @@ function card(scope: HTMLElement, label: string): HTMLElement {
 function shown(scope: HTMLElement, label: string): [string | null, string | null] {
   const node = card(scope, label)
   return [node.querySelector('.qaqc-kpi-value')?.textContent ?? null, node.querySelector('.qaqc-kpi-detail')?.textContent ?? null]
+}
+
+/** A strip card's value, its counts line (null when it has none) and its change line. */
+function shownLines(scope: HTMLElement, label: string): [string | null, string | null, string | null] {
+  const node = card(scope, label)
+  return [
+    node.querySelector('.qaqc-kpi-value')?.textContent ?? null,
+    node.querySelector('.qaqc-kpi-context')?.textContent ?? null,
+    node.querySelector('.qaqc-kpi-detail')?.textContent ?? null,
+  ]
+}
+
+/** A dense cards-only value, found by its label like the cards. */
+function denseValue(scope: HTMLElement, label: string): HTMLElement {
+  const found = [...scope.querySelectorAll<HTMLElement>('article.qaqc-overview-value')]
+    .find((node) => node.getAttribute('aria-label')?.startsWith(`${label}:`))
+  if (!found) throw new Error(`${label} value missing`)
+  return found
+}
+
+function denseTone(scope: HTMLElement, label: string): string | null {
+  const trend = denseValue(scope, label).querySelector('.qaqc-overview-value-trend')
+  return [...(trend?.classList ?? [])].find((name) => name.startsWith('is-')) ?? null
 }
 
 function tone(scope: HTMLElement, label: string): string | null {
@@ -343,21 +367,21 @@ describe('OverviewDashboard quality strip', () => {
   it('shows the WW42 quality cards', () => {
     view = draw()
     const strip = quality(view.container)
-    expect(shown(strip, 'CORs')).toEqual(['0', "No change vs WW41'2026"])
-    expect(shown(strip, 'NCRs')).toEqual(['0', "E 0 · M 0 · W 0 · No change vs WW41'2026"])
-    expect(shown(strip, 'Inspection NCR pass rate')).toEqual(['100.0%', "0 NCRs of 3 finals · No change vs WW41'2026"])
-    expect(shown(strip, 'Welding NCR pass rate')).toEqual(['n/a', '0 welds · Change n/a'])
-    expect(shown(strip, 'DWNs')).toEqual(['0', "DWN rate n/a: add Green tags · No change vs WW41'2026"])
+    expect(shownLines(strip, 'CORs')).toEqual(['0', null, "No change vs WW41'2026"])
+    expect(shownLines(strip, 'NCRs')).toEqual(['0', 'E 0 · M 0 · W 0', "No change vs WW41'2026"])
+    expect(shownLines(strip, 'Inspection NCR pass rate')).toEqual(['100.0%', '0 NCRs of 3 finals', "No change vs WW41'2026"])
+    expect(shownLines(strip, 'Welding NCR pass rate')).toEqual(['n/a', '0 welds', 'Change n/a'])
+    expect(shownLines(strip, 'DWNs')).toEqual(['0', 'DWN rate n/a: add Green tags', "No change vs WW41'2026"])
   })
 
   it('shows the quality cards through WW42 in To date', () => {
     view = draw()
     showToDate(view.container)
     const strip = quality(view.container)
-    expect(shown(strip, 'CORs')).toEqual(['171', '+0 this WW'])
-    expect(shown(strip, 'NCRs')).toEqual(['14', 'E 2 · M 1 · W 11 · +0 this WW'])
-    expect(shown(strip, 'Inspection NCR pass rate')).toEqual(['98.9%', "3 NCRs of 282 finals · +0.01 pts vs WW41'2026"])
-    expect(shown(strip, 'Welding NCR pass rate')).toEqual(['99.4%', "11 NCRs of 1,751 welds · No change vs WW41'2026"])
+    expect(shownLines(strip, 'CORs')).toEqual(['171', null, '+0 this WW'])
+    expect(shownLines(strip, 'NCRs')).toEqual(['14', 'E 2 · M 1 · W 11', '+0 this WW'])
+    expect(shownLines(strip, 'Inspection NCR pass rate')).toEqual(['98.9%', '3 NCRs of 282 finals', "+0.01 pts vs WW41'2026"])
+    expect(shownLines(strip, 'Welding NCR pass rate')).toEqual(['99.4%', '11 NCRs of 1,751 welds', "No change vs WW41'2026"])
   })
 
   it('subtitles the strip with the cards\' week or range', () => {
@@ -412,21 +436,104 @@ describe('OverviewDashboard layout', () => {
     expect(view.container.querySelectorAll('.qaqc-overview-row')).toHaveLength(4)
   })
 
-  it('shows only the rows and the strip on a short tile', () => {
-    view = draw({ viewport: { width: 1340, height: 400 } })
+  it('keeps the charts on Power BI\'s default 1280 × 720 page', () => {
+    view = draw({ viewport: { width: 1280, height: 720 } })
+    expect(view.container.querySelector('.qaqc-root.is-cards-only')).toBeNull()
+    expect(view.container.querySelectorAll('.qaqc-panel')).toHaveLength(2)
+  })
+
+  it('keeps the charts at its own cards-only threshold', () => {
+    view = draw({ viewport: { width: 1340, height: OVERVIEW_CARDS_ONLY_HEIGHT } })
+    expect(view.container.querySelectorAll('.qaqc-panel')).toHaveLength(2)
+  })
+
+  it('drops the charts but keeps the full cards on tiles with room for the cards alone', () => {
+    view = draw({ viewport: { width: 1340, height: 600 } })
     expect(view.container.querySelector('.qaqc-root.is-cards-only')).not.toBeNull()
     expect(view.container.querySelectorAll('.qaqc-panel')).toHaveLength(0)
-    expect(view.container.querySelectorAll('.qaqc-overview-row')).toHaveLength(4)
+    expect(view.container.querySelectorAll('.qaqc-overview-row.is-dense')).toHaveLength(0)
     expect(view.container.querySelectorAll('article.qaqc-kpi')).toHaveLength(21)
   })
 
-  it('uses the compact cards-only layout on an 800 × 300 tile', () => {
+  it('switches to the dense layout below the height the full cards need', () => {
+    view = draw({ viewport: { width: 1340, height: OVERVIEW_DENSE_HEIGHT - 1 } })
+    expect(view.container.querySelectorAll('.qaqc-overview-row.is-dense')).toHaveLength(4)
+    view.unmount()
+    view = draw({ viewport: { width: 1340, height: OVERVIEW_DENSE_HEIGHT } })
+    expect(view.container.querySelectorAll('.qaqc-overview-row.is-dense')).toHaveLength(0)
+  })
+
+  it('uses the dense layout on narrow cards-only tiles, where full cards would stack two by two', () => {
+    view = draw({ viewport: { width: 800, height: 600 } })
+    expect(view.container.querySelectorAll('.qaqc-overview-row.is-dense')).toHaveLength(4)
+  })
+
+  it('sizes its threshold from the stylesheet\'s chart minimum, and scrolls rather than paint over the footnotes', () => {
+    expect(OVERVIEW_CARDS_ONLY_HEIGHT).toBe(660)
+    expect(OVERVIEW_DENSE_HEIGHT).toBe(480)
+    expect(ruleBody('.qaqc-overview-charts')).toContain('min-height: 180px;')
+    expect(ruleBody('.qaqc-overview-body')).toContain('overflow-y: auto;')
+  })
+
+  it('shows the rows and the strip as dense values on a short tile', () => {
+    view = draw({ viewport: { width: 1340, height: 400 } })
+    expect(view.container.querySelector('.qaqc-root.is-cards-only')).not.toBeNull()
+    expect(view.container.querySelectorAll('.qaqc-panel')).toHaveLength(0)
+    expect(view.container.querySelectorAll('.qaqc-overview-row.is-dense')).toHaveLength(4)
+    expect(view.container.querySelectorAll('article.qaqc-kpi')).toHaveLength(0)
+    expect(view.container.querySelectorAll('article.qaqc-overview-value')).toHaveLength(21)
+    expect(view.container.querySelector('.qaqc-overview-value .qaqc-kpi-detail')).toBeNull()
+  })
+
+  it('keeps each dense value\'s full detail in its label and tooltip', () => {
+    view = draw({ viewport: { width: 800, height: 300 } })
+    const finals = denseValue(row(view.container, 'Electrical'), 'Finals')
+    expect(finals.getAttribute('aria-label')).toBe("Finals: 3. −3 vs WW41'2026")
+    expect(finals.getAttribute('title')).toBe("Finals: 3. −3 vs WW41'2026")
+    expect(finals.querySelector('.qaqc-overview-value-label')?.textContent).toBe('Finals')
+    expect(finals.querySelector('.qaqc-overview-value-number')?.textContent).toBe('3')
+    expect(finals.querySelector('.qaqc-overview-value-trend svg.lucide-arrow-down-right')).not.toBeNull()
+    const rate = denseValue(row(view.container, 'Electrical'), 'NCR pass rate')
+    expect(rate.getAttribute('aria-label')).toBe("NCR pass rate: 100.0%. 3 / 3 Finals · No change vs WW41'2026")
+  })
+
+  it('colours each dense trend arrow with the card tone', () => {
+    view = draw({ viewport: { width: 800, height: 300 } })
+    pickWeekInDropdown(view.container, '202622')
+    const electrical = row(view.container, 'Electrical')
+    expect(denseTone(electrical, 'NCRs')).toBe('is-warn')
+    expect(denseTone(electrical, 'NCR pass rate')).toBe('is-bad')
+  })
+
+  it('keeps the sparkline in each dense row', () => {
+    view = draw({ viewport: { width: 800, height: 300 } })
+    for (const name of ROW_NAMES) expect(row(view.container, name).querySelector('svg.qaqc-sparkline')).not.toBeNull()
+  })
+
+  it('shows the quality strip as one line of five dense values', () => {
+    view = draw({ viewport: { width: 800, height: 300 } })
+    const strip = quality(view.container)
+    expect([...strip.querySelectorAll('.qaqc-overview-value-label')].map((node) => node.textContent))
+      .toEqual(['CORs', 'NCRs', 'Inspection NCR pass rate', 'Welding NCR pass rate', 'DWNs'])
+    expect(denseValue(strip, 'DWNs').getAttribute('title')).toBe("DWNs: 0. DWN rate n/a: add Green tags · No change vs WW41'2026")
+  })
+
+  it('fits an 800 × 300 tile with 34 px dense rows', () => {
     view = draw({ viewport: { width: 800, height: 300 } })
     const root = view.container.querySelector('.qaqc-root')
     expect(root?.classList.contains('is-cards-only')).toBe(true)
     expect(root?.classList.contains('is-compact')).toBe(true)
     expect(view.container.querySelectorAll('.qaqc-panel')).toHaveLength(0)
-    expect(view.container.querySelectorAll('article.qaqc-kpi')).toHaveLength(21)
+    expect(ruleBody('.qaqc-overview-row.is-dense')).toContain('min-height: 34px;')
+  })
+
+  it('shows a disconnected source\'s message in a dense row', () => {
+    view = draw({
+      index: overviewIndexOf([inspection('Electrical', "WW42'2026", 'Final')]),
+      viewport: { width: 800, height: 300 },
+    })
+    expect(row(view.container, 'Welding').querySelector('.qaqc-overview-row-message')?.textContent)
+      .toBe('Not connected: no Welding rows in QAQC Combined')
   })
 
   it('shows the loading bar it is given', () => {
