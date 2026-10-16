@@ -46,15 +46,19 @@ const FIRST_YEAR = 2021
 
 /** A seeded linear congruential generator (Numerical Recipes constants), so every run gets the same rows. */
 interface Random {
-  next: () => number
+  /** A whole number from 0 up to, but not including, `count`. */
+  below: (count: number) => number
 }
+
+const TWO_TO_32 = 2 ** 32
 
 function seededRandom(seed: number): Random {
   let state = seed >>> 0
   return {
-    next(): number {
+    below(count: number): number {
       state = (Math.imul(state, 1_664_525) + 1_013_904_223) >>> 0
-      return state
+      // Scaling the whole state uses its high bits; `state % count` would use the low bits, which repeat in short cycles.
+      return Math.floor((state / TWO_TO_32) * count)
     },
   }
 }
@@ -73,9 +77,9 @@ interface PickedWeek {
 }
 
 function pickWeek(random: Random): PickedWeek {
-  const year = FIRST_YEAR + (random.next() % (LAST_YEAR - FIRST_YEAR + 1))
+  const year = FIRST_YEAR + random.below(LAST_YEAR - FIRST_YEAR + 1)
   const weekCount = year === LAST_YEAR ? LAST_YEAR_WEEKS : 52
-  return { year, week: 1 + (random.next() % weekCount) }
+  return { year, week: 1 + random.below(weekCount) }
 }
 
 function sourceAt(position: number, count: number): string {
@@ -89,28 +93,28 @@ function sourceAt(position: number, count: number): string {
 function inspectionRow(row: unknown[], random: Random): void {
   const { year, week } = pickWeek(random)
   row[WORK_WEEK] = weekLabel(year, week)
-  row[PHASE] = PHASES[random.next() % PHASES.length]
-  row[ISSUE] = random.next() % 25 === 0 ? 'NCR - cable damaged' : 'No Issue Found'
-  row[BUILDING] = `B${random.next() % 40}`
-  row[QCR] = random.next() % 15 === 0
-    ? QCR_NOT_RECORDED[random.next() % QCR_NOT_RECORDED.length]
-    : `QCR ${pad(1 + (random.next() % 30), 2)}`
+  row[PHASE] = PHASES[random.below(PHASES.length)]
+  row[ISSUE] = random.below(25) === 0 ? 'NCR - cable damaged' : 'No Issue Found'
+  row[BUILDING] = `B${random.below(40)}`
+  row[QCR] = random.below(15) === 0
+    ? QCR_NOT_RECORDED[random.below(QCR_NOT_RECORDED.length)]
+    : `QCR ${pad(1 + random.below(30), 2)}`
 }
 
 function welderName(random: Random): string {
-  return `Welder ${pad(1 + (random.next() % 120), 3)}`
+  return `Welder ${pad(1 + random.below(120), 3)}`
 }
 
 function weldingRow(row: unknown[], random: Random, serial: number): void {
   const { year, week } = pickWeek(random)
   row[WORK_WEEK] = weekLabel(year, week)
-  row[WELDER] = random.next() % 10 === 0 ? `${welderName(random)}, ${welderName(random)}` : welderName(random)
-  row[TAG_NO] = `${WELD_TAGS[random.next() % WELD_TAGS.length]}${serial}`
-  const isSigned = random.next() % 5 < 3
+  row[WELDER] = random.below(10) === 0 ? `${welderName(random)}, ${welderName(random)}` : welderName(random)
+  row[TAG_NO] = `${WELD_TAGS[random.below(WELD_TAGS.length)]}${serial}`
+  const isSigned = random.below(5) < 3
   row[SIGNATURE] = isSigned ? 'signed' : null
-  const signedWeek = Math.min(week + (random.next() % 3), year === LAST_YEAR ? LAST_YEAR_WEEKS : 52)
+  const signedWeek = Math.min(week + random.below(3), year === LAST_YEAR ? LAST_YEAR_WEEKS : 52)
   row[SIGNED_WEEK] = isSigned ? weekLabel(year, signedWeek) : null
-  row[ISSUE] = random.next() % 50 === 0 ? `BIM #${serial}` : 'No'
+  row[ISSUE] = random.below(50) === 0 ? `BIM #${serial}` : 'No'
 }
 
 function monthDayYear(date: Date): string {
@@ -121,14 +125,14 @@ function monthDayYear(date: Date): string {
 const ISSUE_DAY_SPAN = 2_100
 
 function bimRow(row: unknown[], random: Random, serial: number, days: string[]): void {
-  const status = ISSUE_STATUSES[random.next() % ISSUE_STATUSES.length]
-  const createdDay = random.next() % ISSUE_DAY_SPAN
+  const status = ISSUE_STATUSES[random.below(ISSUE_STATUSES.length)]
+  const createdDay = random.below(ISSUE_DAY_SPAN)
   row[ID] = `#${serial}`
   row[STATUS] = status
-  row[TYPE] = ISSUE_TYPES[random.next() % ISSUE_TYPES.length]
+  row[TYPE] = ISSUE_TYPES[random.below(ISSUE_TYPES.length)]
   row[CREATED_ON] = days[createdDay]
-  row[UPDATED_ON] = status === 'Closed' ? days[createdDay + (random.next() % 40)] : null
-  row[CREATED_BY] = random.next() % 20 === 0 ? 'Other Contractor' : 'LotusWorks'
+  row[UPDATED_ON] = status === 'Closed' ? days[createdDay + random.below(40)] : null
+  row[CREATED_BY] = random.below(20) === 0 ? 'Other Contractor' : 'LotusWorks'
 }
 
 /**
@@ -153,7 +157,7 @@ export function syntheticCombinedRows(count: number, seed = 1): unknown[][] {
   }
 
   for (let last = rows.length - 1; last > 0; last -= 1) {
-    const swap = random.next() % (last + 1)
+    const swap = random.below(last + 1)
     const item = rows[last]
     rows[last] = rows[swap]
     rows[swap] = item
