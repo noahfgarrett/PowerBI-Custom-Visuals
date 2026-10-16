@@ -6,16 +6,15 @@ import {
   ActivityLinesChart,
   activityLegend,
   type ActivityLinesChartProps,
-  type ActivityWeek,
 } from '../components/ActivityLinesChart'
 import { OverviewWeekTable } from '../components/OverviewWeekTable'
 import {
   QualityRatesChart,
   qualityRatesLegend,
   type QualityRatesChartProps,
-  type QualityRateWeek,
 } from '../components/QualityRatesChart'
 import { Sparkline, type SparklineProps } from '../components/Sparkline'
+import type { ActivityPoint, QualityRatePoint } from '../overview'
 import { makeWorkWeek } from '../workWeeks'
 import { render, type Rendered } from './render'
 
@@ -41,27 +40,23 @@ afterEach(() => {
   view = null
 })
 
-function activity(week: number, electricalFinals: number, electricalSors: number, mechanicalFinals: number, mechanicalSors: number, year = 2026): ActivityWeek {
-  return {
-    week: makeWorkWeek(year, week),
-    electrical: { finals: electricalFinals, sors: electricalSors },
-    mechanical: { finals: mechanicalFinals, sors: mechanicalSors },
-  }
+function activity(week: number, electricalFinals: number, electricalSors: number, mechanicalFinals: number, mechanicalSors: number, year = 2026): ActivityPoint {
+  return { week: makeWorkWeek(year, week), electricalFinals, electricalSors, mechanicalFinals, mechanicalSors }
 }
 
-function rates(week: number, inspection: [number, number] | null, welding: [number, number] | null, year = 2026): QualityRateWeek {
+function rates(week: number, inspection: [number, number] | null, welding: [number, number] | null, year = 2026): QualityRatePoint {
   // Each pair is [NCRs, total]; null means no finals (or welds) that week.
   const rateOf = (pair: [number, number] | null): number | null => (pair === null || pair[1] === 0 ? null : ((pair[1] - pair[0]) / pair[1]) * 100)
   return {
     week: makeWorkWeek(year, week),
-    inspection: { rate: rateOf(inspection), ncrs: inspection?.[0] ?? 0, finals: inspection?.[1] ?? 0 },
-    welding: { rate: rateOf(welding), ncrs: welding?.[0] ?? 0, welds: welding?.[1] ?? 0 },
+    inspection: { rate: rateOf(inspection), ncrs: inspection?.[0] ?? 0, total: inspection?.[1] ?? 0 },
+    welding: { rate: rateOf(welding), ncrs: welding?.[0] ?? 0, total: welding?.[1] ?? 0 },
   }
 }
 
 // The spec's chart spot checks: WW19 is Electrical 7 and Mechanical 3, WW22 is 6 and 1, WW23 is 5 and 5.
-const ACTIVITY: ActivityWeek[] = [activity(19, 6, 1, 0, 3), activity(22, 6, 0, 1, 0), activity(23, 5, 0, 2, 3)]
-const RATES: QualityRateWeek[] = [rates(19, [0, 6], [3, 53]), rates(22, [1, 7], [0, 29]), rates(23, [1, 7], [2, 86]), rates(42, [0, 3], null)]
+const ACTIVITY: ActivityPoint[] = [activity(19, 6, 1, 0, 3), activity(22, 6, 0, 1, 0), activity(23, 5, 0, 2, 3)]
+const RATES: QualityRatePoint[] = [rates(19, [0, 6], [3, 53]), rates(22, [1, 7], [0, 29]), rates(23, [1, 7], [2, 86]), rates(42, [0, 3], null)]
 
 function drawActivity(overrides: Partial<ActivityLinesChartProps> = {}): Rendered {
   return render(
@@ -187,7 +182,7 @@ function weekAt(index: number): { year: number; week: number } {
   return { year: 2016 + Math.floor(index / 52), week: (index % 52) + 1 }
 }
 
-function randomActivity(count: number, maxPerWeek: number, seed: number): ActivityWeek[] {
+function randomActivity(count: number, maxPerWeek: number, seed: number): ActivityPoint[] {
   const next = seeded(seed)
   return Array.from({ length: count }, (_, index) => {
     const { year, week } = weekAt(index)
@@ -196,14 +191,14 @@ function randomActivity(count: number, maxPerWeek: number, seed: number): Activi
 }
 
 /** Both lines on the same values, the worst case for their labels. */
-function tiedActivity(count: number): ActivityWeek[] {
+function tiedActivity(count: number): ActivityPoint[] {
   return Array.from({ length: count }, (_, index) => {
     const { year, week } = weekAt(index)
     return activity(week, 4 + (index % 3), 0, 4 + (index % 3), 0, year)
   })
 }
 
-function randomRates(count: number, seed: number): QualityRateWeek[] {
+function randomRates(count: number, seed: number): QualityRatePoint[] {
   const next = seeded(seed)
   return Array.from({ length: count }, (_, index) => {
     const { year, week } = weekAt(index)

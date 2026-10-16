@@ -3,26 +3,15 @@ import { useCallback, useMemo, type ReactElement } from 'react'
 import { niceScale } from '../chartMath'
 import type { ChartColors, TooltipHandler, TooltipRow } from '../chartTypes'
 import { formatCount, pluralize } from '../format'
-import type { WorkWeek } from '../types'
+import type { ActivityPoint } from '../overview'
 import type { LegendItem } from './ChartPanel'
 import { OverviewLinesChart, type WeekLine, type YScale } from './OverviewLinesChart'
 
 const TITLE = 'Inspection activity by work week'
 const AXIS_TITLE = 'Finals + SORs'
 
-export interface DisciplineActivity {
-  finals: number
-  sors: number
-}
-
-export interface ActivityWeek {
-  week: WorkWeek
-  electrical: DisciplineActivity
-  mechanical: DisciplineActivity
-}
-
 export interface ActivityLinesChartProps {
-  points: ReadonlyArray<ActivityWeek>
+  points: ReadonlyArray<ActivityPoint>
   selectedKey: number
   width: number
   height: number
@@ -38,21 +27,17 @@ export interface ActivityLinesChartProps {
   onHover: TooltipHandler
 }
 
-function totalOf(activity: DisciplineActivity): number {
-  return activity.finals + activity.sors
+function describeDiscipline(name: string, finals: number, sors: number): string {
+  const finalsText = `${formatCount(finals)} ${pluralize(finals, 'Final', 'Finals')}`
+  const sorsText = `${formatCount(sors)} ${pluralize(sors, 'SOR', 'SORs')}`
+  return `${name} ${formatCount(finals + sors)} (${finalsText}, ${sorsText})`
 }
 
-function describeDiscipline(name: string, activity: DisciplineActivity): string {
-  const finals = `${formatCount(activity.finals)} ${pluralize(activity.finals, 'Final', 'Finals')}`
-  const sors = `${formatCount(activity.sors)} ${pluralize(activity.sors, 'SOR', 'SORs')}`
-  return `${name} ${formatCount(totalOf(activity))} (${finals}, ${sors})`
-}
-
-function disciplineRows(name: string, activity: DisciplineActivity): TooltipRow[] {
+function disciplineRows(name: string, finals: number, sors: number): TooltipRow[] {
   return [
-    { label: `${name} Finals`, value: formatCount(activity.finals) },
-    { label: `${name} SORs`, value: formatCount(activity.sors) },
-    { label: `${name} total`, value: formatCount(totalOf(activity)) },
+    { label: `${name} Finals`, value: formatCount(finals) },
+    { label: `${name} SORs`, value: formatCount(sors) },
+    { label: `${name} total`, value: formatCount(finals + sors) },
   ]
 }
 
@@ -80,21 +65,26 @@ export function ActivityLinesChart({
 }: ActivityLinesChartProps): ReactElement {
   const weeks = useMemo(() => points.map((point) => point.week), [points])
   const lines = useMemo((): WeekLine[] => [
-    { key: 'electrical', color: colors.series1, isDashed: false, values: points.map((point) => totalOf(point.electrical)) },
-    { key: 'mechanical', color: colors.series3, isDashed: isHighContrast, values: points.map((point) => totalOf(point.mechanical)) },
+    { key: 'electrical', color: colors.series1, isDashed: false, values: points.map((point) => point.electricalFinals + point.electricalSors) },
+    { key: 'mechanical', color: colors.series3, isDashed: isHighContrast, values: points.map((point) => point.mechanicalFinals + point.mechanicalSors) },
   ], [points, colors, isHighContrast])
   const scale = useMemo((): YScale => {
     let max = 0
-    for (const point of points) max = Math.max(max, totalOf(point.electrical), totalOf(point.mechanical))
+    for (const point of points) max = Math.max(max, point.electricalFinals + point.electricalSors, point.mechanicalFinals + point.mechanicalSors)
     return { min: 0, ...niceScale(max) }
   }, [points])
   const tooltipRows = useCallback(
-    (index: number): TooltipRow[] => [...disciplineRows('Electrical', points[index].electrical), ...disciplineRows('Mechanical', points[index].mechanical)],
+    (index: number): TooltipRow[] => {
+      const point = points[index]
+      return [...disciplineRows('Electrical', point.electricalFinals, point.electricalSors), ...disciplineRows('Mechanical', point.mechanicalFinals, point.mechanicalSors)]
+    },
     [points],
   )
   const describeWeek = useCallback((index: number): string => {
     const point = points[index]
-    return `${point.week.label}: ${describeDiscipline('Electrical', point.electrical)}, ${describeDiscipline('Mechanical', point.mechanical)}`
+    const electrical = describeDiscipline('Electrical', point.electricalFinals, point.electricalSors)
+    const mechanical = describeDiscipline('Mechanical', point.mechanicalFinals, point.mechanicalSors)
+    return `${point.week.label}: ${electrical}, ${mechanical}`
   }, [points])
 
   return (

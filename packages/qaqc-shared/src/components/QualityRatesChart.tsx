@@ -3,35 +3,16 @@ import { useCallback, useMemo, type ReactElement } from 'react'
 import { passRateDomain } from '../chartMath'
 import type { ChartColors, TooltipHandler, TooltipRow } from '../chartTypes'
 import { formatCount, formatPercent, pluralize } from '../format'
-import type { WorkWeek } from '../types'
+import type { QualityRatePoint } from '../overview'
 import type { LegendItem } from './ChartPanel'
 import { OverviewLinesChart, type WeekLine, type YScale } from './OverviewLinesChart'
 
 const TITLE = 'Quality rates by work week'
 const EMPTY_MESSAGE = 'No finals or welds in this range'
 
-export interface InspectionRate {
-  /** Percent 0–100, as LineChart takes it; null when the week has no finals. */
-  rate: number | null
-  ncrs: number
-  finals: number
-}
-
-export interface WeldingRate {
-  /** Percent 0–100; null when the week has no welds. */
-  rate: number | null
-  ncrs: number
-  welds: number
-}
-
-export interface QualityRateWeek {
-  week: WorkWeek
-  inspection: InspectionRate
-  welding: WeldingRate
-}
-
 export interface QualityRatesChartProps {
-  points: ReadonlyArray<QualityRateWeek>
+  /** Rates are percent 0–100, as LineChart takes them. */
+  points: ReadonlyArray<QualityRatePoint>
   selectedKey: number
   width: number
   height: number
@@ -47,10 +28,14 @@ export interface QualityRatesChartProps {
   onHover: TooltipHandler
 }
 
+type CountUnit = 'finals' | 'welds'
+
+const SINGULAR: Record<CountUnit, string> = { finals: 'final', welds: 'weld' }
+
 /** "2 NCRs of 14 finals", or "No finals" ("no finals" mid-sentence) when the week has none. */
-function ncrsOf(ncrs: number, total: number, unit: 'final' | 'weld', isMidSentence = false): string {
-  if (total === 0) return `${isMidSentence ? 'no' : 'No'} ${unit}s`
-  return `${formatCount(ncrs)} ${pluralize(ncrs, 'NCR', 'NCRs')} of ${formatCount(total)} ${pluralize(total, unit, `${unit}s`)}`
+function ncrsOf(ncrs: number, total: number, unit: CountUnit, isMidSentence = false): string {
+  if (total === 0) return `${isMidSentence ? 'no' : 'No'} ${unit}`
+  return `${formatCount(ncrs)} ${pluralize(ncrs, 'NCR', 'NCRs')} of ${formatCount(total)} ${pluralize(total, SINGULAR[unit], unit)}`
 }
 
 function formatTick(value: number): string {
@@ -98,15 +83,15 @@ export function QualityRatesChart({
     const { inspection, welding } = points[index]
     return [
       { label: 'Inspection NCR pass rate', value: formatPercent(inspection.rate) },
-      { label: 'Inspection NCRs', value: ncrsOf(inspection.ncrs, inspection.finals, 'final') },
+      { label: 'Inspection NCRs', value: ncrsOf(inspection.ncrs, inspection.total, 'finals') },
       { label: 'Welding NCR pass rate', value: formatPercent(welding.rate) },
-      { label: 'Welding NCRs', value: ncrsOf(welding.ncrs, welding.welds, 'weld') },
+      { label: 'Welding NCRs', value: ncrsOf(welding.ncrs, welding.total, 'welds') },
     ]
   }, [points])
   const describeWeek = useCallback((index: number): string => {
     const { week, inspection, welding } = points[index]
-    const inspectionText = `inspection NCR pass rate ${formatPercent(inspection.rate)} (${ncrsOf(inspection.ncrs, inspection.finals, 'final', true)})`
-    const weldingText = `welding NCR pass rate ${formatPercent(welding.rate)} (${ncrsOf(welding.ncrs, welding.welds, 'weld', true)})`
+    const inspectionText = `inspection NCR pass rate ${formatPercent(inspection.rate)} (${ncrsOf(inspection.ncrs, inspection.total, 'finals', true)})`
+    const weldingText = `welding NCR pass rate ${formatPercent(welding.rate)} (${ncrsOf(welding.ncrs, welding.total, 'welds', true)})`
     return `${week.label}: ${inspectionText}, ${weldingText}`
   }, [points])
 

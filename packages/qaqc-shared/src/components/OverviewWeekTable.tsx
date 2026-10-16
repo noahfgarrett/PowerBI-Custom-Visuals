@@ -3,9 +3,8 @@ import { useMemo, type ReactElement } from 'react'
 import { formatCount, formatPercent } from '../format'
 import { directionSign, useTableSort, type SortState } from '../hooks/useTableSort'
 import { TABLE_ROW_HEIGHT, useVirtualRows } from '../hooks/useVirtualRows'
+import type { ActivityPoint, QualityRatePoint } from '../overview'
 import type { WorkWeek } from '../types'
-import type { ActivityWeek } from './ActivityLinesChart'
-import type { QualityRateWeek } from './QualityRatesChart'
 
 interface WeekColumn<Row> {
   key: string
@@ -27,31 +26,31 @@ function countColumn<Row>(key: string, label: string, valueOf: (row: Row) => num
   return { key, label, sortValue: valueOf, display: (row) => formatCount(valueOf(row)) }
 }
 
-const ACTIVITY_COLUMNS: ReadonlyArray<WeekColumn<ActivityWeek>> = [
-  weekColumn<ActivityWeek>(),
-  countColumn<ActivityWeek>('electricalFinals', 'Elec Finals', (row) => row.electrical.finals),
-  countColumn<ActivityWeek>('electricalSors', 'Elec SORs', (row) => row.electrical.sors),
-  countColumn<ActivityWeek>('mechanicalFinals', 'Mech Finals', (row) => row.mechanical.finals),
-  countColumn<ActivityWeek>('mechanicalSors', 'Mech SORs', (row) => row.mechanical.sors),
+const ACTIVITY_COLUMNS: ReadonlyArray<WeekColumn<ActivityPoint>> = [
+  weekColumn<ActivityPoint>(),
+  countColumn<ActivityPoint>('electricalFinals', 'Elec Finals', (row) => row.electricalFinals),
+  countColumn<ActivityPoint>('electricalSors', 'Elec SORs', (row) => row.electricalSors),
+  countColumn<ActivityPoint>('mechanicalFinals', 'Mech Finals', (row) => row.mechanicalFinals),
+  countColumn<ActivityPoint>('mechanicalSors', 'Mech SORs', (row) => row.mechanicalSors),
 ]
 
-const RATE_COLUMNS: ReadonlyArray<WeekColumn<QualityRateWeek>> = [
-  weekColumn<QualityRateWeek>(),
+const RATE_COLUMNS: ReadonlyArray<WeekColumn<QualityRatePoint>> = [
+  weekColumn<QualityRatePoint>(),
   { key: 'inspectionRate', label: 'Inspection rate', sortValue: (row) => row.inspection.rate, display: (row) => formatPercent(row.inspection.rate) },
   {
     key: 'inspectionCounts',
     label: 'Inspection NCRs / Finals',
     sortValue: (row) => row.inspection.ncrs,
-    thenBy: (row) => row.inspection.finals,
-    display: (row) => `${formatCount(row.inspection.ncrs)} / ${formatCount(row.inspection.finals)}`,
+    thenBy: (row) => row.inspection.total,
+    display: (row) => `${formatCount(row.inspection.ncrs)} / ${formatCount(row.inspection.total)}`,
   },
   { key: 'weldingRate', label: 'Welding rate', sortValue: (row) => row.welding.rate, display: (row) => formatPercent(row.welding.rate) },
   {
     key: 'weldingCounts',
     label: 'Welding NCRs / Welds',
     sortValue: (row) => row.welding.ncrs,
-    thenBy: (row) => row.welding.welds,
-    display: (row) => `${formatCount(row.welding.ncrs)} / ${formatCount(row.welding.welds)}`,
+    thenBy: (row) => row.welding.total,
+    display: (row) => `${formatCount(row.welding.ncrs)} / ${formatCount(row.welding.total)}`,
   },
 ]
 
@@ -133,17 +132,17 @@ function WeekTable<Row extends { week: WorkWeek }>({ caption, columns, rows }: W
   )
 }
 
-export interface ActivityWeekTableProps {
+export interface ActivityPointTableProps {
   variant: 'activity'
-  points: ReadonlyArray<ActivityWeek>
+  points: ReadonlyArray<ActivityPoint>
 }
 
 export interface RatesWeekTableProps {
   variant: 'rates'
-  points: ReadonlyArray<QualityRateWeek>
+  points: ReadonlyArray<QualityRatePoint>
 }
 
-export type OverviewWeekTableProps = ActivityWeekTableProps | RatesWeekTableProps
+export type OverviewWeekTableProps = ActivityPointTableProps | RatesWeekTableProps
 
 /** The expanded charts' sortable week tables: inspection activity counts, or the weekly quality rates with their counts. */
 export function OverviewWeekTable(props: OverviewWeekTableProps): ReactElement {
