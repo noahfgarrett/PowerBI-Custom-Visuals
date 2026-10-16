@@ -1,9 +1,10 @@
 import type { CombinedSplit } from './combined'
 import type { CombinedColumns, InspectionPhase, InspectionRows, ViewState, WorkWeek } from './types'
 import { NAME_COLLATOR } from './format'
-import { cellText, classifyPhase, isIssueFound, recentWindowStart } from './inspections'
+import { createNameGrouper, createWeekReader } from './grouping'
+import { cellText, isIssueFound, readPhase, recentWindowStart } from './inspections'
 import { isWeldIssue } from './welds'
-import { enumerateWorkWeeks, makeWorkWeek, parseWorkWeek, toIsoWorkWeek } from './workWeeks'
+import { enumerateWorkWeeks, makeWorkWeek, toIsoWorkWeek } from './workWeeks'
 
 export type PerformanceGroup = 'qcr' | 'welders'
 
@@ -183,8 +184,6 @@ export const TAG_BITS = { E: 1, M: 2 } as const
 /** The no-name values, matching the welding no-issue set plus blank. */
 const NOT_RECORDED_VALUES: ReadonlySet<string> = new Set(['', 'n/a', 'na', 'none', '-'])
 const NOT_RECORDED_PERSON = -1
-const UNREADABLE_WEEK = -1
-const FUTURE_WEEK = -2
 // Per counted inspection: its phase, whether it is an NCR, and its discipline (as TAG_BITS shifted left by 2).
 const FLAG_FINAL = 1
 const FLAG_NCR = 2
@@ -195,40 +194,6 @@ export function isNotRecorded(value: unknown): boolean {
   return NOT_RECORDED_VALUES.has(cellText(value).toLowerCase())
 }
 
-/** The case- and whitespace-insensitive key people are grouped by. */
-function personKey(name: string): string {
-  return name.toLowerCase().replace(/\s+/g, ' ')
-}
-
-// Week text repeats heavily, so each distinct text maps once to a slot: an index into `weeks`, in first-seen order.
-interface WeekSlots {
-  currentKey: number
-  byText: Map<string, number>
-  byKey: Map<number, number>
-  weeks: WorkWeek[]
-}
-
-function slotOfWeek(week: WorkWeek | null, slots: WeekSlots): number {
-  if (!week) return UNREADABLE_WEEK
-  if (week.key > slots.currentKey) return FUTURE_WEEK
-  const known = slots.byKey.get(week.key)
-  if (known !== undefined) return known
-  const slot = slots.weeks.length
-  slots.weeks.push(week)
-  slots.byKey.set(week.key, slot)
-  return slot
-}
-
-function weekSlot(value: unknown, slots: WeekSlots): number {
-  if (typeof value !== 'string' && typeof value !== 'number') return slotOfWeek(parseWorkWeek(value), slots)
-  const text = String(value)
-  const cached = slots.byText.get(text)
-  if (cached !== undefined) return cached
-  const slot = slotOfWeek(parseWorkWeek(text), slots)
-  slots.byText.set(text, slot)
-  return slot
-}
-
 interface PersonDraft {
   key: string
   name: string
@@ -237,34 +202,19 @@ interface PersonDraft {
 }
 
 interface People {
-  /** Trimmed spelling → person id, or NOT_RECORDED_PERSON. */
-  bySpelling: Map<string, number>
-  byKey: Map<string, number>
   drafts: PersonDraft[]
+  /** Trimmed spelling → person id, or NOT_RECORDED_PERSON. */
+  idOf: (spelling: string) => number
 }
 
 function newPeople(): People {
-  return { bySpelling: new Map(), byKey: new Map(), drafts: [] }
-}
-
-function personId(value: unknown, people: People): number {
-  const text = cellText(value)
-  const known = people.bySpelling.get(text)
-  if (known !== undefined) return known
-  let id = NOT_RECORDED_PERSON
-  if (!NOT_RECORDED_VALUES.has(text.toLowerCase())) {
-    const key = personKey(text)
-    const existing = people.byKey.get(key)
-    if (existing !== undefined) {
-      id = existing
-    } else {
-      id = people.drafts.length
-      people.drafts.push({ key, name: text, tagBits: 0, ncrRows: [] })
-      people.byKey.set(key, id)
-    }
-  }
-  people.bySpelling.set(text, id)
-  return id
+  const drafts: PersonDraft[] = []
+  const idOf = createNameGrouper((key, spelling): number => {
+    if (isNotRecorded(spelling)) return NOT_RECORDED_PERSON
+    drafts.push({ key, name: spelling, tagBits: 0, ncrRows: [] })
+    return drafts.length - 1
+  })
+  return { drafts, idOf }
 }
 
 /** The distinct recorded welders a Welder cell lists, cached by cell text. Empty when none is recorded. */
@@ -274,7 +224,7 @@ function welderIds(value: unknown, people: People, cache: Map<string, readonly n
   if (cached !== undefined) return cached
   const ids: number[] = []
   for (const part of text.split(',')) {
-    const id = personId(part, people)
+    const id = people.idOf(part.trim())
     if (id !== NOT_RECORDED_PERSON && !ids.includes(id)) ids.push(id)
   }
   cache.set(text, ids)
@@ -303,16 +253,38 @@ function toPerson(draft: PersonDraft, weekCount: number): PerformancePerson {
   }
 }
 
+/** Reads each row's week once, tracking the earliest counted week. */
+interface WeekScan {
+  readWeek: (value: unknown) => WorkWeek | null
+  currentKey: number
+  firstWeek: WorkWeek
+}
+
+/** The counted week, or null after counting the row as skipped (unreadable) or future. */
+function countedWeek(value: unknown, scan: WeekScan, counts: GroupRowCounts): WorkWeek | null {
+  const week = scan.readWeek(value)
+  if (!week) {
+    counts.skippedRows += 1
+    return null
+  }
+  if (week.key > scan.currentKey) {
+    counts.futureRows += 1
+    return null
+  }
+  if (week.key < scan.firstWeek.key) scan.firstWeek = week
+  return week
+}
+
 /** Counted inspections, one entry each, in parallel arrays. */
 interface InspectionEntries {
-  slot: number[]
+  weekKey: number[]
   person: number[]
   flags: number[]
 }
 
 /** Counted welds, one entry each, in parallel arrays. */
 interface WeldEntries {
-  slot: number[]
+  weekKey: number[]
   welders: Array<readonly number[]>
   isIssue: boolean[]
 }
@@ -321,7 +293,7 @@ function scanInspections(
   rows: InspectionRows,
   source: 'electrical' | 'mechanical',
   columns: CombinedColumns,
-  slots: WeekSlots,
+  scan: WeekScan,
   people: People,
   entries: InspectionEntries,
   counts: GroupRowCounts,
@@ -330,32 +302,19 @@ function scanInspections(
   const tag = source === 'electrical' ? TAG_BITS.E : TAG_BITS.M
   for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
     const row = rows[rowIndex]
-    const phaseValue = row[columns.phase]
-    let phase: InspectionPhase | undefined = typeof phaseValue === 'string' ? phaseCache.get(phaseValue) : undefined
-    if (phase === undefined) {
-      phase = classifyPhase(phaseValue)
-      if (typeof phaseValue === 'string') phaseCache.set(phaseValue, phase)
-    }
+    const phase = readPhase(row[columns.phase], phaseCache)
     if (phase === 'other') continue
-
-    const slot = weekSlot(row[columns.workWeek], slots)
-    if (slot === UNREADABLE_WEEK) {
-      counts.skippedRows += 1
-      continue
-    }
-    if (slot === FUTURE_WEEK) {
-      counts.futureRows += 1
-      continue
-    }
+    const week = countedWeek(row[columns.workWeek], scan, counts)
+    if (!week) continue
 
     const isNcr = phase === 'final' && isIssueFound(row[columns.issue])
-    const id = personId(row[columns.qcr], people)
+    const id = people.idOf(cellText(row[columns.qcr]))
     if (id !== NOT_RECORDED_PERSON) {
       const draft = people.drafts[id]
       draft.tagBits |= tag
-      if (isNcr) draft.ncrRows.push({ source, row: rowIndex, weekKey: slots.weeks[slot].key })
+      if (isNcr) draft.ncrRows.push({ source, row: rowIndex, weekKey: week.key })
     }
-    entries.slot.push(slot)
+    entries.weekKey.push(week.key)
     entries.person.push(id)
     entries.flags.push((phase === 'final' ? FLAG_FINAL : 0) | (isNcr ? FLAG_NCR : 0) | (tag << TAG_SHIFT))
   }
@@ -364,7 +323,7 @@ function scanInspections(
 function scanWelds(
   rows: InspectionRows,
   columns: CombinedColumns,
-  slots: WeekSlots,
+  scan: WeekScan,
   people: People,
   entries: WeldEntries,
   counts: GroupRowCounts,
@@ -372,22 +331,15 @@ function scanWelds(
   const cellCache = new Map<string, readonly number[]>()
   for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
     const row = rows[rowIndex]
-    const slot = weekSlot(row[columns.workWeek], slots)
-    if (slot === UNREADABLE_WEEK) {
-      counts.skippedRows += 1
-      continue
-    }
-    if (slot === FUTURE_WEEK) {
-      counts.futureRows += 1
-      continue
-    }
+    const week = countedWeek(row[columns.workWeek], scan, counts)
+    if (!week) continue
 
     const isIssue = isWeldIssue(row[columns.issue])
     const welders = welderIds(row[columns.welder], people, cellCache)
     if (isIssue) {
-      for (const id of welders) people.drafts[id].ncrRows.push({ source: 'welding', row: rowIndex, weekKey: slots.weeks[slot].key })
+      for (const id of welders) people.drafts[id].ncrRows.push({ source: 'welding', row: rowIndex, weekKey: week.key })
     }
-    entries.slot.push(slot)
+    entries.weekKey.push(week.key)
     entries.welders.push(welders)
     entries.isIssue.push(isIssue)
   }
@@ -400,33 +352,30 @@ function scanWelds(
  */
 export function buildPerformanceIndex(split: CombinedSplit, columns: CombinedColumns, today: Date): PerformanceIndex {
   const currentWeek = toIsoWorkWeek(today)
-  const slots: WeekSlots = { currentKey: currentWeek.key, byText: new Map(), byKey: new Map(), weeks: [] }
+  const scan: WeekScan = { readWeek: createWeekReader(), currentKey: currentWeek.key, firstWeek: currentWeek }
   const qcrPeople = newPeople()
   const welderPeople = newPeople()
-  const inspections: InspectionEntries = { slot: [], person: [], flags: [] }
-  const welds: WeldEntries = { slot: [], welders: [], isIssue: [] }
+  const inspections: InspectionEntries = { weekKey: [], person: [], flags: [] }
+  const welds: WeldEntries = { weekKey: [], welders: [], isIssue: [] }
   const qcrCounts: GroupRowCounts = { totalRows: split.electrical.length + split.mechanical.length, skippedRows: 0, futureRows: 0 }
   const welderCounts: GroupRowCounts = { totalRows: split.welding.length, skippedRows: 0, futureRows: 0 }
 
-  scanInspections(split.electrical, 'electrical', columns, slots, qcrPeople, inspections, qcrCounts)
-  scanInspections(split.mechanical, 'mechanical', columns, slots, qcrPeople, inspections, qcrCounts)
-  scanWelds(split.welding, columns, slots, welderPeople, welds, welderCounts)
+  scanInspections(split.electrical, 'electrical', columns, scan, qcrPeople, inspections, qcrCounts)
+  scanInspections(split.mechanical, 'mechanical', columns, scan, qcrPeople, inspections, qcrCounts)
+  scanWelds(split.welding, columns, scan, welderPeople, welds, welderCounts)
 
-  let firstWeek = currentWeek
-  for (const week of slots.weeks) {
-    if (week.key < firstWeek.key) firstWeek = week
-  }
-  const weeks = enumerateWorkWeeks(firstWeek, currentWeek)
+  const weeks = enumerateWorkWeeks(scan.firstWeek, currentWeek)
   const positionByKey = new Map<number, number>()
   weeks.forEach((week, position) => positionByKey.set(week.key, position))
-  const slotPosition = Int32Array.from(slots.weeks, (week) => positionByKey.get(week.key) ?? 0)
+  // Every counted week lies between the first counted week and the current week, so the lookups always hit.
+  const positionOf = (weekKey: number): number => positionByKey.get(weekKey) ?? 0
   const weekCount = weeks.length
 
   const qcr = qcrPeople.drafts.map((draft) => toPerson(draft, weekCount))
   const qcrNotRecorded = emptyBuckets(weekCount)
   const qcrTotals: GroupTotals = { volume: new Int32Array(weekCount), ncrs: new Int32Array(weekCount) }
-  for (let entry = 0; entry < inspections.slot.length; entry += 1) {
-    const position = slotPosition[inspections.slot[entry]]
+  for (let entry = 0; entry < inspections.weekKey.length; entry += 1) {
+    const position = positionOf(inspections.weekKey[entry])
     const flags = inspections.flags[entry]
     const id = inspections.person[entry]
     const isFinal = (flags & FLAG_FINAL) !== 0
@@ -453,8 +402,8 @@ export function buildPerformanceIndex(split: CombinedSplit, columns: CombinedCol
   const welderNotRecorded = emptyBuckets(weekCount)
   const welderTotals: GroupTotals = { volume: new Int32Array(weekCount), ncrs: new Int32Array(weekCount) }
   const sharedWelds = new Int32Array(weekCount)
-  for (let entry = 0; entry < welds.slot.length; entry += 1) {
-    const position = slotPosition[welds.slot[entry]]
+  for (let entry = 0; entry < welds.weekKey.length; entry += 1) {
+    const position = positionOf(welds.weekKey[entry])
     const ncr = welds.isIssue[entry] ? 1 : 0
     const ids = welds.welders[entry]
     welderTotals.volume[position] += 1
