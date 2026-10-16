@@ -14,6 +14,7 @@ import { KpiGroup } from './KpiGroup'
 import { LoadingBar } from './LoadingBar'
 import { formatNcrRate, PerformanceTable } from './PerformanceTable'
 import { PersonDetail } from './PersonDetail'
+import { SegmentedToggle, type SegmentedOption } from './SegmentedToggle'
 
 type PanelId = 'person'
 
@@ -58,7 +59,11 @@ const GROUP_WORDS: Record<PerformanceGroup, GroupWords> = {
   },
 }
 
-const GROUPS: readonly PerformanceGroup[] = ['qcr', 'welders'] as const
+/** The `QCR / FE | Welders` switch. */
+const GROUP_OPTIONS: ReadonlyArray<SegmentedOption<PerformanceGroup>> = [
+  { value: 'qcr', text: GROUP_WORDS.qcr.title },
+  { value: 'welders', text: GROUP_WORDS.welders.title },
+]
 
 export interface PerformanceDashboardProps extends Omit<DashboardChromeProps, 'footnotes'> {
   index: PerformanceIndex
@@ -68,32 +73,6 @@ export interface PerformanceDashboardProps extends Omit<DashboardChromeProps, 'f
   minimumWelds: number
   /** The footnotes depend on the group and period shown, so the dashboard builds them; this adds the row-limit note. */
   rowLimitReached: boolean
-}
-
-interface GroupToggleProps {
-  value: PerformanceGroup
-  disabled: boolean
-  onChange: (group: PerformanceGroup) => void
-}
-
-/** The `QCR / FE | Welders` switch, drawn like the range toggle. */
-function GroupToggle({ value, disabled, onChange }: GroupToggleProps): ReactElement {
-  return (
-    <div className="qaqc-range-toggle" role="group" aria-label="People group">
-      {GROUPS.map((group) => (
-        <button
-          key={group}
-          type="button"
-          className={value === group ? 'is-active' : undefined}
-          aria-pressed={value === group}
-          disabled={disabled}
-          onClick={() => onChange(group)}
-        >
-          {GROUP_WORDS[group].title}
-        </button>
-      ))}
-    </div>
-  )
 }
 
 /** "WW13'2026 to WW42'2026", or the one week's label. */
@@ -198,7 +177,7 @@ export function PerformanceDashboard({
             selectedKey={model.selectedWeek.key}
             onPickWeek={pickWeek}
           >
-            <GroupToggle value={group} disabled={!interactive} onChange={setGroup} />
+            <SegmentedToggle label="People group" options={GROUP_OPTIONS} value={group} disabled={!interactive} onChange={setGroup} />
           </DashboardHeader>
 
           <div className="qaqc-kpi-row qaqc-perf-summary">

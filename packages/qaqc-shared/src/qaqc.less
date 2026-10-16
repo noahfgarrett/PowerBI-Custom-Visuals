@@ -69,7 +69,7 @@
   gap: 8px;
 }
 
-.qaqc-range-toggle {
+.qaqc-segmented {
   display: inline-flex;
   padding: 2px;
   border: 1px solid var(--qaqc-border);
@@ -77,7 +77,7 @@
   background: var(--qaqc-card-solid);
 }
 
-.qaqc-range-toggle button {
+.qaqc-segmented button {
   padding: 4px 10px;
   border: 0;
   border-radius: 7px;
@@ -90,22 +90,22 @@
   transition: background-color 150ms ease-out, color 150ms ease-out;
 }
 
-.qaqc-range-toggle button:hover:not(:disabled) {
+.qaqc-segmented button:hover:not(:disabled) {
   color: var(--qaqc-ink);
 }
 
-.qaqc-range-toggle button.is-active {
+.qaqc-segmented button.is-active {
   background: var(--qaqc-accent);
   color: var(--qaqc-on-accent);
 }
 
-.qaqc-range-toggle button:disabled,
+.qaqc-segmented button:disabled,
 .qaqc-week-picker select:disabled {
   cursor: not-allowed;
   opacity: 0.5;
 }
 
-.qaqc-range-toggle button:focus-visible,
+.qaqc-segmented button:focus-visible,
 .qaqc-chart:focus-visible {
   outline: 2px solid var(--qaqc-accent);
   outline-offset: 2px;
@@ -1546,7 +1546,7 @@
   stroke-linejoin: round;
 }
 
-// Overview dashboard (OverviewDashboard, OverviewDisciplineRow, CardModeToggle): the discipline rows, the quality
+// Overview dashboard (OverviewDashboard, OverviewDisciplineRow): the discipline rows, the quality
 // strip and the two charts. Tiles at least OVERVIEW_CARDS_ONLY_HEIGHT (660 px) tall fit everything without a scroll:
 // the rows and the strip keep their natural height and the charts take the rest. Shorter tiles drop the charts, and
 // below OVERVIEW_DENSE_HEIGHT (480 px), or on narrow tiles, they switch to the dense one-line layout.

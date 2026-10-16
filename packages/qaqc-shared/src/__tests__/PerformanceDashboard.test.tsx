@@ -222,7 +222,7 @@ describe('PerformanceDashboard header', () => {
 
   it('draws the group switch like the range toggle', () => {
     view = draw()
-    expect(view.container.querySelector('[aria-label="People group"]')?.classList.contains('qaqc-range-toggle')).toBe(true)
+    expect(view.container.querySelector('[aria-label="People group"]')?.classList.contains('qaqc-segmented')).toBe(true)
   })
 
   it('disables the controls when interactions are not allowed', () => {

@@ -90,7 +90,7 @@ function pickWeekInDropdown(container: HTMLElement, key: string): void {
 }
 
 function clickRange(container: HTMLElement, label: string): void {
-  const button = [...container.querySelectorAll('.qaqc-range-toggle button')].find((item) => item.textContent === label)
+  const button = [...container.querySelectorAll('.qaqc-segmented button')].find((item) => item.textContent === label)
   if (!button) throw new Error(`${label} button missing`)
   act(() => {
     button.dispatchEvent(new MouseEvent('click', { bubbles: true }))
@@ -273,7 +273,7 @@ describe('WeldingDashboard layout', () => {
   it('toggles the chart range', () => {
     view = draw()
     clickRange(view.container, 'All')
-    const all = [...view.container.querySelectorAll('.qaqc-range-toggle button')].find((button) => button.textContent === 'All')
+    const all = [...view.container.querySelectorAll('.qaqc-segmented button')].find((button) => button.textContent === 'All')
     expect(all?.getAttribute('aria-pressed')).toBe('true')
   })
 

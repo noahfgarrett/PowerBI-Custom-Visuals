@@ -152,7 +152,7 @@ function pressKeys(target: Element, keys: string[]): void {
 }
 
 function modeButton(container: HTMLElement, label: string): HTMLButtonElement {
-  const button = [...container.querySelectorAll<HTMLButtonElement>('.qaqc-mode-toggle button')].find((item) => item.textContent === label)
+  const button = [...container.querySelectorAll<HTMLButtonElement>('.qaqc-segmented button')].find((item) => item.textContent === label)
   if (!button) throw new Error(`${label} button missing`)
   return button
 }

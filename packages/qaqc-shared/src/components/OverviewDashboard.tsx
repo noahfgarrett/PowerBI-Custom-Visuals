@@ -24,7 +24,6 @@ import type { ElementSize } from '../hooks/useElementSize'
 import { useOverviewModel } from '../hooks/useOverviewModel'
 import { useWeekWindow } from '../hooks/useWeekWindow'
 import { activityLegend, ActivityLinesChart } from './ActivityLinesChart'
-import { CardModeToggle } from './CardModeToggle'
 import { ChartExpansionFrame, COMPACT_WIDTH, type GridPanel } from './ChartExpansionFrame'
 import { ChartFill } from './ChartFill'
 import { ChartPanel } from './ChartPanel'
@@ -35,6 +34,7 @@ import { LoadingBar } from './LoadingBar'
 import { OverviewDenseValue, OverviewDisciplineRow, OverviewKpiCard, OverviewRowLabel, type OverviewCardIcons } from './OverviewDisciplineRow'
 import { OverviewWeekTable } from './OverviewWeekTable'
 import { QualityRatesChart, qualityRatesLegend } from './QualityRatesChart'
+import { SegmentedToggle, type SegmentedOption } from './SegmentedToggle'
 import type { CardMode, OverviewIndex, OverviewRows } from '../overview'
 import { chartColorsFromTheme } from '../theme'
 
@@ -56,6 +56,12 @@ export const OVERVIEW_CARDS_ONLY_HEIGHT = 660
  * cards-only tiles are always dense, since their full cards stack two by two.
  */
 export const OVERVIEW_DENSE_HEIGHT = 480
+
+/** The `This WW | To date` switch for the cards. */
+const CARD_MODE_OPTIONS: ReadonlyArray<SegmentedOption<CardMode>> = [
+  { value: 'week', text: 'This WW' },
+  { value: 'toDate', text: 'To date' },
+]
 
 type ChartId = 'activity' | 'rates'
 
@@ -209,7 +215,7 @@ export function OverviewDashboard({
             selectedKey={cards.selectedWeek.key}
             onPickWeek={pickWeek}
           >
-            <CardModeToggle value={mode} disabled={!interactive} onChange={setMode} />
+            <SegmentedToggle label="Card values" options={CARD_MODE_OPTIONS} value={mode} disabled={!interactive} onChange={setMode} />
           </DashboardHeader>
 
           <div className="qaqc-overview-body">

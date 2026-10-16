@@ -89,7 +89,7 @@ describe('InspectionDashboard', () => {
 
   it('toggles the chart range', () => {
     view = draw()
-    const all = Array.from(view.container.querySelectorAll('.qaqc-range-toggle button')).find((button) => button.textContent === 'All')
+    const all = Array.from(view.container.querySelectorAll('.qaqc-segmented button')).find((button) => button.textContent === 'All')
     if (!all) throw new Error('All button missing')
     act(() => {
       all.dispatchEvent(new MouseEvent('click', { bubbles: true }))
@@ -173,7 +173,7 @@ function pickWeekInDropdown(container: HTMLElement, key: string): void {
 }
 
 function clickRange(container: HTMLElement, label: string): void {
-  const button = Array.from(container.querySelectorAll('.qaqc-range-toggle button')).find((item) => item.textContent === label)
+  const button = Array.from(container.querySelectorAll('.qaqc-segmented button')).find((item) => item.textContent === label)
   if (!button) throw new Error(`${label} button missing`)
   act(() => {
     button.dispatchEvent(new MouseEvent('click', { bubbles: true }))

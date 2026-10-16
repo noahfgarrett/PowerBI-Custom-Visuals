@@ -111,7 +111,7 @@ function pickWeekInDropdown(container: HTMLElement, key: string): void {
 }
 
 function clickRange(container: HTMLElement, label: string): void {
-  const button = [...container.querySelectorAll('.qaqc-range-toggle button')].find((item) => item.textContent === label)
+  const button = [...container.querySelectorAll('.qaqc-segmented button')].find((item) => item.textContent === label)
   if (!button) throw new Error(`${label} button missing`)
   click(button)
 }
@@ -305,14 +305,14 @@ describe('IssuesDashboard layout', () => {
     view = draw()
     const controls = view.container.querySelector('.qaqc-controls')
     const order = [...(controls?.children ?? [])].map((node) => node.className)
-    expect(order).toEqual(['qaqc-header-button', 'qaqc-range-toggle', 'qaqc-week-picker'])
+    expect(order).toEqual(['qaqc-header-button', 'qaqc-segmented', 'qaqc-week-picker'])
     expect(detailButton(view.container)?.textContent).toBe('Issue Detail')
   })
 
   it('toggles the chart range', () => {
     view = draw()
     clickRange(view.container, 'All')
-    const all = [...view.container.querySelectorAll('.qaqc-range-toggle button')].find((button) => button.textContent === 'All')
+    const all = [...view.container.querySelectorAll('.qaqc-segmented button')].find((button) => button.textContent === 'All')
     expect(all?.getAttribute('aria-pressed')).toBe('true')
   })
 
