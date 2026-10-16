@@ -363,3 +363,107 @@ describe('ChartExpansionFrame header-button pages', () => {
     }
   })
 })
+
+interface RowPageDashboardProps {
+  interactive?: boolean
+  animate?: boolean
+  /** Leaves the row out, as when a data update drops it while the page is open. */
+  isRowHidden?: boolean
+}
+
+/** A dashboard that opens the page from a table row, the way the Performance table opens a person. */
+function RowPageDashboard({ interactive = true, animate = false, isRowHidden = false }: RowPageDashboardProps): ReactElement {
+  return (
+    <ChartExpansionFrame
+      panels={PAGE_PANELS}
+      interactive={interactive}
+      animate={animate}
+      isCompact={false}
+      isCardsOnly={false}
+      onHover={vi.fn()}
+    >
+      {(_expandable, openPage) => (
+        <table>
+          <tbody>
+            {!isRowHidden && (
+              <tr
+                className="test-row"
+                onClick={(event) => {
+                  const name = event.currentTarget.querySelector<HTMLElement>('.test-name')
+                  if (name) openPage('detail', event.currentTarget, name)
+                }}
+              >
+                <th>
+                  <button type="button" className="test-name">Name</button>
+                </th>
+                <td>value</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      )}
+    </ChartExpansionFrame>
+  )
+}
+
+function rowCell(container: HTMLElement): Element | null {
+  return container.querySelector('.test-row td')
+}
+
+describe('ChartExpansionFrame pages opened from any element', () => {
+  it('opens the page from a table row', () => {
+    view = render(<RowPageDashboard />)
+    click(rowCell(view.container))
+    expect(dialog(view.container)?.getAttribute('aria-label')).toBe('Detail Page')
+    expect(root(view.container)?.hasAttribute('inert')).toBe(true)
+  })
+
+  it('grows the page from the row it was opened from', () => {
+    const keyframes: Keyframe[][] = []
+    const animate = vi.fn((frames: Keyframe[]) => {
+      keyframes.push(frames)
+      return { finished: new Promise<void>(() => undefined), cancel: vi.fn(), playState: 'running' }
+    })
+    Object.defineProperty(HTMLElement.prototype, 'animate', { value: animate, configurable: true, writable: true })
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function rect(this: Element): DOMRect {
+      return this.matches('.test-row') ? new DOMRect(14, 220, 960, 32) : new DOMRect(0, 0, 1000, 600)
+    })
+    try {
+      view = render(<RowPageDashboard animate />)
+      click(rowCell(view.container))
+      expect(keyframes[0][0]).toEqual({ top: '220px', left: '14px', width: '960px', height: '32px' })
+    } finally {
+      Reflect.deleteProperty(HTMLElement.prototype, 'animate')
+    }
+  })
+
+  it('returns focus to the given element after Back', () => {
+    view = render(<RowPageDashboard />)
+    click(rowCell(view.container))
+    click(dialog(view.container)?.querySelector('button[aria-label="Back to dashboard"]') ?? null)
+    expect(dialog(view.container)).toBeNull()
+    expect(document.activeElement).toBe(view.container.querySelector('.test-name'))
+  })
+
+  it('returns focus to the given element after Esc', () => {
+    view = render(<RowPageDashboard />)
+    click(rowCell(view.container))
+    pressEscape(dialog(view.container))
+    expect(document.activeElement).toBe(view.container.querySelector('.test-name'))
+  })
+
+  it('returns focus to the frame when the row is gone', () => {
+    view = render(<RowPageDashboard />)
+    click(rowCell(view.container))
+    view.rerender(<RowPageDashboard isRowHidden />)
+    pressEscape(dialog(view.container))
+    expect(dialog(view.container)).toBeNull()
+    expect(document.activeElement).toBe(view.container.querySelector('.qaqc-frame'))
+  })
+
+  it('opens nothing when interactions are not allowed', () => {
+    view = render(<RowPageDashboard interactive={false} />)
+    click(rowCell(view.container))
+    expect(dialog(view.container)).toBeNull()
+  })
+})

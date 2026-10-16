@@ -68,6 +68,8 @@ export interface PerformanceFootnotes {
   qcr: GroupRowCounts
   welders: GroupRowCounts
   unknownSource: number
+  /** Every combined row received, BIM and unknown Source included, for the row-limit note. */
+  combinedRows: number
 }
 
 export interface PerformanceIndex {
@@ -435,7 +437,12 @@ export function buildPerformanceIndex(split: CombinedSplit, columns: CombinedCol
     notRecorded: { qcr: qcrNotRecorded, welders: welderNotRecorded },
     totals: { qcr: qcrTotals, welders: welderTotals },
     sharedWelds,
-    footnotes: { qcr: qcrCounts, welders: welderCounts, unknownSource: split.unknownSource },
+    footnotes: {
+      qcr: qcrCounts,
+      welders: welderCounts,
+      unknownSource: split.unknownSource,
+      combinedRows: qcrCounts.totalRows + welderCounts.totalRows + split.bim.length + split.unknownSource,
+    },
     sources: { electrical: split.electrical, mechanical: split.mechanical, welding: split.welding },
     columns,
   }

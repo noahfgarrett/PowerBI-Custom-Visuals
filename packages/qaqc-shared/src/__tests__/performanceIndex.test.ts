@@ -203,3 +203,16 @@ describe('buildPerformanceIndex: welders', () => {
     expect(built.notRecorded.welders.sors).toBeNull()
   })
 })
+
+describe('buildPerformanceIndex combined row count', () => {
+  it('counts every combined row for the row-limit note, BIM and unknown Source included', () => {
+    const built = index([
+      inspection('Electrical', "WW40'2026", 'Final', 'QCR 01'),
+      weld("WW40'2026", 'Welder 001'),
+      ['BIM', null, null, null, null, null, null, null],
+      ['Civil', "WW40'2026", 'Final', null, null, 'QCR 01', null, null],
+    ])
+    expect(built.footnotes.combinedRows).toBe(4)
+    expect(built.footnotes.unknownSource).toBe(1)
+  })
+})

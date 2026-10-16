@@ -152,8 +152,11 @@ export interface PerformanceTableProps {
   notRecorded: PerformanceRow | null
   colors: ChartColors
   isHighContrast: boolean
-  /** Called with the person's key and their row, so the overlay can grow from it and return focus to it. */
-  onOpenPerson: (key: string, row: HTMLTableRowElement) => void
+  /**
+   * Called with the person's key and their row, so the overlay can grow from it and return focus to it. Null when
+   * interactions are not allowed: names are plain text and rows open nothing.
+   */
+  onOpenPerson: ((key: string, row: HTMLTableRowElement) => void) | null
 }
 
 interface CellsProps {
@@ -258,13 +261,13 @@ export function PerformanceTable({
   /** The name button: the row's one tab stop, so Enter and Space come from the button itself. */
   function openFromName(key: string, event: MouseEvent<HTMLButtonElement>): void {
     const row = event.currentTarget.closest('tr')
-    if (row instanceof HTMLTableRowElement) onOpenPerson(key, row)
+    if (row instanceof HTMLTableRowElement) onOpenPerson?.(key, row)
   }
 
   /** The rest of the row, for mouse users; a click on the name button already opened the person. */
   function openFromRow(key: string, event: MouseEvent<HTMLTableRowElement>): void {
     if (event.target instanceof Element && event.target.closest('button') !== null) return
-    onOpenPerson(key, event.currentTarget)
+    onOpenPerson?.(key, event.currentTarget)
   }
 
   function renderItem(item: TableItem, rowIndex: number): ReactElement {
@@ -275,25 +278,35 @@ export function PerformanceTable({
         const trendTextId = `${idPrefix}-trend-${rowIndex}`
         // The button's description names the disciplines too, so tabbing to a name announces them.
         const tagsTextId = `${idPrefix}-tags-${rowIndex}`
+        const describedBy = row.tags.length > 0 ? `${tagsTextId} ${trendTextId}` : trendTextId
+        const rowClass = ['qaqc-perf-row', item.block === 'below' ? 'is-below' : '', onOpenPerson === null ? 'is-static' : '']
+          .filter(Boolean)
+          .join(' ')
         return (
           <tr
             key={`${item.block}:${row.key}`}
             aria-rowindex={rowIndex}
-            className={item.block === 'below' ? 'qaqc-perf-row is-below' : 'qaqc-perf-row'}
+            className={rowClass}
             style={{ height: TABLE_ROW_HEIGHT }}
-            onClick={(event) => openFromRow(row.key, event)}
+            onClick={onOpenPerson === null ? undefined : (event) => openFromRow(row.key, event)}
           >
             <th scope="row" className="is-text">
               <span className="qaqc-perf-name-cell">
-                <button
-                  type="button"
-                  className="qaqc-perf-name"
-                  title={row.name}
-                  aria-describedby={row.tags.length > 0 ? `${tagsTextId} ${trendTextId}` : trendTextId}
-                  onClick={(event) => openFromName(row.key, event)}
-                >
-                  {row.name}
-                </button>
+                {onOpenPerson === null ? (
+                  <span className="qaqc-perf-name" title={row.name} aria-describedby={describedBy}>
+                    {row.name}
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    className="qaqc-perf-name"
+                    title={row.name}
+                    aria-describedby={describedBy}
+                    onClick={(event) => openFromName(row.key, event)}
+                  >
+                    {row.name}
+                  </button>
+                )}
                 <PerformanceTags tags={row.tags} namesId={tagsTextId} />
               </span>
             </th>

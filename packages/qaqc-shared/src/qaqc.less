@@ -2044,6 +2044,43 @@
   pointer-events: none;
 }
 
+// Performance dashboard (PerformanceDashboard): the summary strip over the ranking table, and the static table rows
+// drawn when interactions are not allowed.
+
+// Static rows open nothing, so they drop the pointer and the hover link look; the span keeps the button's type.
+.qaqc-perf-row.is-static {
+  cursor: default;
+}
+
+.qaqc-perf-row.is-static:hover .qaqc-perf-name {
+  color: var(--qaqc-ink);
+  text-decoration: none;
+}
+
+.qaqc-perf-row.is-below.is-static:hover .qaqc-perf-name {
+  color: var(--qaqc-ink-2);
+}
+
+span.qaqc-perf-name {
+  cursor: default;
+}
+
+// The strip keeps its natural height and the table takes the rest of the tile, scrolling its own windowed rows.
+.qaqc-perf-summary .qaqc-kpi-group {
+  flex: 1 1 auto;
+}
+
+// A compact root scrolls, so the table keeps a usable height of its own instead of shrinking to its header. Its basis
+// stays 0: an auto basis would grow the wrap to every windowed row and stop the windowing.
+.qaqc-root.is-compact .qaqc-perf-wrap {
+  flex: 1 1 0;
+  min-height: 300px;
+}
+
+.qaqc-perf-empty-state {
+  min-height: 140px;
+}
+
 // Forced colors (Windows high contrast) drop backgrounds and box shadows, so the discussion marker becomes a real
 // border, and the legend swatches keep their outlines.
 @media (forced-colors: active) {

@@ -1156,3 +1156,31 @@ describe('PersonDetail', () => {
     expect(cardLabels(view.container)[0]).toBe('Finals: 70. Final inspections')
   })
 })
+
+describe('PerformanceTable without interactions', () => {
+  it('shows names as plain text, with no button to open a person', () => {
+    view = drawTable({ onOpenPerson: null })
+    const row = rowNamed(view.container, 'QCR 2')
+    expect(row.querySelector('button.qaqc-perf-name')).toBeNull()
+    expect(row.querySelector('.qaqc-perf-name')?.textContent).toBe('QCR 2')
+    expect(row.classList.contains('is-static')).toBe(true)
+  })
+
+  it('keeps the disciplines and the trend text as the name\'s description', () => {
+    view = drawTable({ onOpenPerson: null })
+    const name = rowNamed(view.container, 'QCR 3').querySelector('.qaqc-perf-name')
+    const ids = (name?.getAttribute('aria-describedby') ?? '').split(' ')
+    expect(ids.map((id) => document.getElementById(id)?.textContent)).toEqual([', Electrical', 'NCRs in 0 of the last 30 weeks'])
+  })
+
+  it('still sorts and discloses the below-minimum group', () => {
+    view = drawTable({ onOpenPerson: null })
+    expand(view.container)
+    expect(rowNamed(view.container, 'QCR 20').classList.contains('is-below')).toBe(true)
+  })
+
+  it('keeps static rows from looking clickable', () => {
+    expect(ruleBody('.qaqc-perf-row.is-static')).toContain('cursor: default;')
+    expect(ruleBody('.qaqc-perf-row.is-static:hover .qaqc-perf-name')).toContain('text-decoration: none;')
+  })
+})

@@ -5,6 +5,10 @@ import { buildInspectionIndex } from '../inspections'
 import { buildIssueIndex } from '../issues'
 import type { IssueColumns } from '../types'
 import { bim, inspection, overviewIndexOf, weld } from './overviewRows'
+import { splitCombinedRows } from '../combined'
+import { buildPerformanceFootnotes } from '../footnotes'
+import { buildPerformanceIndex, buildPerformanceModel, type PerformanceGroup, type PerformanceIndex } from '../performance'
+import type { CombinedColumns } from '../types'
 
 const COLUMNS = { workWeek: 0, phase: 1, issue: 2, building: 3 }
 const TODAY = new Date(2026, 9, 15)
@@ -141,5 +145,113 @@ describe('buildOverviewFootnotes', () => {
       'Welding: 1 row skipped: unreadable work week',
       '1 row with an unknown Source',
     ])
+  })
+})
+
+const PERFORMANCE_COLUMNS: CombinedColumns = {
+  source: 0,
+  workWeek: 1,
+  phase: 2,
+  issue: 3,
+  building: 4,
+  qcr: 5,
+  welder: 6,
+  tagNo: 7,
+  signature: -1,
+  signedWeek: -1,
+  id: -1,
+  status: -1,
+  type: -1,
+  createdOn: -1,
+  updatedOn: -1,
+  createdBy: -1,
+  greenTags: -1,
+}
+
+type PerformanceRow = ReadonlyArray<string | null>
+
+function qcrRow(week: string, phase: string, qcr: string | null): PerformanceRow {
+  return ['Electrical', week, phase, 'No Issue Found', 'F63.1', qcr, null, null]
+}
+
+function weldRow(week: string, welder: string | null): PerformanceRow {
+  return ['Welding', week, null, 'No', null, null, welder, 'TAG-1']
+}
+
+function performanceIndexOf(rows: PerformanceRow[]): PerformanceIndex {
+  return buildPerformanceIndex(splitCombinedRows(rows, PERFORMANCE_COLUMNS.source), PERFORMANCE_COLUMNS, TODAY)
+}
+
+function performanceNotes(rows: PerformanceRow[], group: PerformanceGroup, rowLimitReached = false, range: 'recent' | 'all' = 'recent'): string[] {
+  const index = performanceIndexOf(rows)
+  const key = index.currentWeek.key
+  const model = buildPerformanceModel(index, { selectedKey: key, windowEndKey: key, range }, group, 1)
+  return buildPerformanceFootnotes(index, group, model, rowLimitReached)
+}
+
+describe('buildPerformanceFootnotes', () => {
+  it('is empty for clean data', () => {
+    expect(performanceNotes([qcrRow("WW42'2026", 'Final', 'QCR 01'), weldRow("WW42'2026", 'Welder 001')], 'qcr')).toEqual([])
+    expect(performanceNotes([qcrRow("WW42'2026", 'Final', 'QCR 01'), weldRow("WW42'2026", 'Welder 001')], 'welders')).toEqual([])
+  })
+
+  it('counts the period\'s inspections with no QCR/FE in the QCR/FE view', () => {
+    const rows = [qcrRow("WW42'2026", 'SOR', null), qcrRow("WW41'2026", 'Final', 'N/A'), qcrRow("WW42'2026", 'Final', 'QCR 01')]
+    expect(performanceNotes(rows, 'qcr')).toEqual(['2 inspections have no QCR/FE'])
+  })
+
+  it('uses the singular for one inspection with no QCR/FE', () => {
+    expect(performanceNotes([qcrRow("WW42'2026", 'SOR', '')], 'qcr')).toEqual(['1 inspection has no QCR/FE'])
+  })
+
+  it('counts only the period\'s inspections with no QCR/FE', () => {
+    const rows = [qcrRow("WW42'2026", 'SOR', null), qcrRow("WW02'2025", 'SOR', null)]
+    expect(performanceNotes(rows, 'qcr', false, 'recent')).toEqual(['1 inspection has no QCR/FE'])
+    expect(performanceNotes(rows, 'qcr', false, 'all')).toEqual(['2 inspections have no QCR/FE'])
+  })
+
+  it('counts the period\'s welds that list more than one welder in the welders view', () => {
+    const rows = [weldRow("WW42'2026", 'Welder 001, Welder 002'), weldRow("WW41'2026", 'Welder 001,Welder 003'), weldRow("WW42'2026", 'Welder 001')]
+    expect(performanceNotes(rows, 'welders')).toEqual(['2 welds list more than one welder; each welder is credited'])
+  })
+
+  it('uses the singular for one weld that lists more than one welder', () => {
+    expect(performanceNotes([weldRow("WW42'2026", 'Welder 001, Welder 002')], 'welders')).toEqual([
+      '1 weld lists more than one welder; each welder is credited',
+    ])
+  })
+
+  it('keeps each group\'s note to its own view', () => {
+    const rows = [qcrRow("WW42'2026", 'SOR', null), weldRow("WW42'2026", 'Welder 001, Welder 002')]
+    expect(performanceNotes(rows, 'qcr')).toEqual(['1 inspection has no QCR/FE'])
+    expect(performanceNotes(rows, 'welders')).toEqual(['1 weld lists more than one welder; each welder is credited'])
+  })
+
+  it('explains the view\'s skipped and future rows', () => {
+    const rows = [
+      qcrRow('UPW', 'Final', 'QCR 01'),
+      qcrRow("WW50'2026", 'Final', 'QCR 01'),
+      weldRow('not a week', 'Welder 001'),
+      weldRow('', 'Welder 001'),
+    ]
+    expect(performanceNotes(rows, 'qcr')).toEqual(['1 row skipped: unreadable work week', "1 row dated after WW42'2026 not counted"])
+    expect(performanceNotes(rows, 'welders')).toEqual(['2 rows skipped: unreadable work week'])
+  })
+
+  it('counts the rows with an unknown Source last', () => {
+    const civil: PerformanceRow = ['Civil', "WW42'2026", 'Final', null, null, 'QCR 01', null, null]
+    const blank: PerformanceRow = ['', "WW42'2026", 'Final', null, null, 'QCR 01', null, null]
+    expect(performanceNotes([qcrRow("WW42'2026", 'SOR', null), civil, blank], 'qcr')).toEqual([
+      '1 inspection has no QCR/FE',
+      '2 rows with an unknown Source',
+    ])
+    expect(performanceNotes([civil], 'welders')).toEqual(['1 row with an unknown Source'])
+  })
+
+  it('puts the row limit first, counting every combined row', () => {
+    const bimRow: PerformanceRow = ['BIM', null, null, null, null, null, null, null]
+    const rows = [qcrRow("WW42'2026", 'Final', 'QCR 01'), weldRow("WW42'2026", 'Welder 001'), bimRow, bimRow]
+    expect(performanceNotes(rows, 'qcr', true)).toEqual(['Showing the first 4 rows (Power BI data limit)'])
+    expect(performanceNotes(rows, 'welders', true)).toEqual(['Showing the first 4 rows (Power BI data limit)'])
   })
 })
