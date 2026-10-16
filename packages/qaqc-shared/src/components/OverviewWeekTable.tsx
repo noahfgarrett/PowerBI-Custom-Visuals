@@ -4,6 +4,7 @@ import { formatCount, formatPercent } from '../format'
 import { directionSign, useTableSort, type SortState } from '../hooks/useTableSort'
 import { TABLE_ROW_HEIGHT, useVirtualRows } from '../hooks/useVirtualRows'
 import type { ActivityPoint, QualityRatePoint } from '../overview'
+import { compareNullLast } from '../tableSort'
 import type { WorkWeek } from '../types'
 
 type ActivityKey = 'week' | 'electricalFinals' | 'electricalSors' | 'mechanicalFinals' | 'mechanicalSors'
@@ -68,13 +69,8 @@ function sortPositions<Row extends { week: WorkWeek }, Key extends string>(
   const values = rows.map(column.sortValue)
   const thenBy = column.thenBy
   return rows.map((_, position) => position).sort((a, b) => {
-    const first = values[a]
-    const second = values[b]
-    if (first === null || second === null) {
-      if (first !== second) return first === null ? 1 : -1
-    } else if (first !== second) {
-      return (first - second) * sign
-    }
+    const order = compareNullLast(values[a], values[b], sign)
+    if (order !== 0) return order
     const tie = thenBy === undefined ? 0 : (thenBy(rows[a]) - thenBy(rows[b])) * sign
     return tie || rows[b].week.key - rows[a].week.key
   })

@@ -7,7 +7,7 @@ import { directionSign, useTableSort, type SortState } from '../hooks/useTableSo
 import { TABLE_ROW_HEIGHT, useVirtualRows } from '../hooks/useVirtualRows'
 import { buildPersonDetail } from '../performance'
 import type { PerformanceGroup, PerformanceIndex, PerformanceTotals, PersonNcrRow } from '../performance'
-import { textRanks } from '../tableSort'
+import { createRankCache } from '../tableSort'
 import type { ViewState } from '../types'
 import { ChartPanel } from './ChartPanel'
 import { KpiCard } from './KpiCard'
@@ -101,17 +101,7 @@ function NcrTable({ group, rows, caption }: NcrTableProps): ReactElement {
   // The detail is newest first, so this initial sort matches it.
   const { sort, toggleSort } = useTableSort<SortKey>({ key: 'workWeek', direction: 'descending' }, ASCENDING_FIRST)
   // A fresh cache per data set; each text column's ranks are built the first time it is sorted.
-  const ranksFor = useMemo(() => {
-    const cache = new Map<TextKey, Uint32Array>()
-    return (key: TextKey): Uint32Array => {
-      let ranks = cache.get(key)
-      if (ranks === undefined) {
-        ranks = textRanks(rows, (row) => row[key])
-        cache.set(key, ranks)
-      }
-      return ranks
-    }
-  }, [rows])
+  const ranksFor = useMemo(() => createRankCache<TextKey, PersonNcrRow>(rows), [rows])
   const order = useMemo(() => sortPositions(rows, sort, ranksFor), [rows, sort, ranksFor])
   const { containerRef, onScroll, start, end, paddingTop, paddingBottom } = useVirtualRows<HTMLDivElement>(
     order.length,

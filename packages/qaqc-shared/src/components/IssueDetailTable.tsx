@@ -2,7 +2,7 @@ import { useMemo, useState, type ReactElement } from 'react'
 
 import { directionSign, type SortState } from '../hooks/useTableSort'
 import { TABLE_ROW_HEIGHT, useVirtualRows } from '../hooks/useVirtualRows'
-import { textRanks } from '../tableSort'
+import { compareNullLast, createRankCache } from '../tableSort'
 import type { IssueDetailRow } from '../types'
 
 type TextKey = 'subtype' | 'status' | 'title' | 'contractor'
@@ -87,15 +87,7 @@ function sortPositions(rows: IssueDetailRow[], sort: SortState<SortKey> | null, 
     return positions.sort((a, b) => (ranks[a] - ranks[b]) * sign || a - b)
   }
   const values = rows.map((row) => numberValue(row, key))
-  return positions.sort((a, b) => {
-    const first = values[a]
-    const second = values[b]
-    if (first === null || second === null) {
-      if (first === second) return a - b
-      return first === null ? 1 : -1
-    }
-    return (first - second) * sign || a - b
-  })
+  return positions.sort((a, b) => compareNullLast(values[a], values[b], sign) || a - b)
 }
 
 export interface IssueDetailTableProps {
@@ -113,17 +105,7 @@ export function IssueDetailTable({ reportRows, discussionRows, caption }: IssueD
   const rows = useMemo(() => [...reportRows, ...discussionRows], [reportRows, discussionRows])
   const discussionStart = reportRows.length
   // A fresh cache per data set; each text column's ranks are built the first time it is sorted.
-  const ranksFor = useMemo(() => {
-    const cache = new Map<TextKey, Uint32Array>()
-    return (key: TextKey): Uint32Array => {
-      let ranks = cache.get(key)
-      if (ranks === undefined) {
-        ranks = textRanks(rows, (row) => row[key])
-        cache.set(key, ranks)
-      }
-      return ranks
-    }
-  }, [rows])
+  const ranksFor = useMemo(() => createRankCache<TextKey, IssueDetailRow>(rows), [rows])
   const order = useMemo(() => sortPositions(rows, sort, ranksFor), [rows, sort, ranksFor])
   const { containerRef, onScroll, start, end, paddingTop, paddingBottom } = useVirtualRows<HTMLDivElement>(
     order.length,

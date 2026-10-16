@@ -7,7 +7,7 @@ import { directionSign, type SortDirection, type SortState } from '../hooks/useT
 import { TABLE_ROW_HEIGHT, useVirtualRows } from '../hooks/useVirtualRows'
 import { RECENT_WEEK_COUNT } from '../inspections'
 import type { DisciplineTag, PerformanceGroup, PerformanceRow } from '../performance'
-import { textRanks } from '../tableSort'
+import { compareNullLast, createRankCache } from '../tableSort'
 import { TREND_STRIP_WIDTH, TrendStrip } from './TrendStrip'
 
 type SortKey = 'name' | 'volume' | 'sors' | 'ncrs' | 'rate' | 'trend'
@@ -105,7 +105,7 @@ function numberValue(row: PerformanceRow, key: Exclude<SortKey, 'name'>): number
 function sortBlock(
   rows: PerformanceRow[],
   sort: SortState<SortKey> | null,
-  nameRanksFor: () => Uint32Array,
+  ranksFor: (key: 'name') => Uint32Array,
   rankOffset: number,
 ): PerformanceRow[] {
   if (sort === null) return rows
@@ -113,19 +113,11 @@ function sortBlock(
   const positions = rows.map((_, position) => position)
   const key = sort.key
   if (key === 'name') {
-    const nameRanks = nameRanksFor()
+    const nameRanks = ranksFor('name')
     positions.sort((a, b) => (nameRanks[rankOffset + a] - nameRanks[rankOffset + b]) * sign || a - b)
   } else {
     const values = rows.map((row) => numberValue(row, key))
-    positions.sort((a, b) => {
-      const first = values[a]
-      const second = values[b]
-      if (first === null || second === null) {
-        if (first === second) return a - b
-        return first === null ? 1 : -1
-      }
-      return (first - second) * sign || a - b
-    })
+    positions.sort((a, b) => compareNullLast(values[a], values[b], sign) || a - b)
   }
   return positions.map((position) => rows[position])
 }
@@ -221,17 +213,11 @@ export function PerformanceTable({
 
   // A fresh cache per data set: the names are ranked the first time the name column is sorted, across both
   // blocks (ranked positions first, then below-minimum positions). Other sorts never touch the collator.
-  const nameRanksFor = useMemo(() => {
-    let ranks: Uint32Array | null = null
-    return (): Uint32Array => {
-      if (ranks === null) ranks = textRanks([...ranked, ...belowMinimum], (row) => row.name)
-      return ranks
-    }
-  }, [ranked, belowMinimum])
-  const sortedRanked = useMemo(() => sortBlock(ranked, sort, nameRanksFor, 0), [ranked, sort, nameRanksFor])
+  const ranksFor = useMemo(() => createRankCache<'name', PerformanceRow>([...ranked, ...belowMinimum]), [ranked, belowMinimum])
+  const sortedRanked = useMemo(() => sortBlock(ranked, sort, ranksFor, 0), [ranked, sort, ranksFor])
   const sortedBelow = useMemo(
-    () => sortBlock(belowMinimum, sort, nameRanksFor, ranked.length),
-    [belowMinimum, sort, nameRanksFor, ranked.length],
+    () => sortBlock(belowMinimum, sort, ranksFor, ranked.length),
+    [belowMinimum, sort, ranksFor, ranked.length],
   )
   const items = useMemo(() => {
     const list: TableItem[] = sortedRanked.map((row) => ({ kind: 'person', block: 'ranked', row }))
