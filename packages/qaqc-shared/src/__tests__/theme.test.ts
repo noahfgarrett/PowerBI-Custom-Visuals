@@ -137,6 +137,11 @@ describe('to-date card', () => {
     expect(contrastRatio(colors.ink2, colors.toDateCard)).toBeGreaterThanOrEqual(4.5)
   })
 
+  it.each(Object.keys(PRESETS))('keeps muted label text at 4.5:1 or more on the to-date card in %s', (preset) => {
+    const colors = presetColors(preset)
+    expect(contrastRatio(colors.muted, colors.toDateCard)).toBeGreaterThanOrEqual(4.5)
+  })
+
   it.each(Object.keys(PRESETS))('keeps the status text colours at 4.5:1 or more in %s', (preset) => {
     const colors = presetColors(preset)
     const below = Object.entries(STATUS_COLORS).filter(([, color]) => contrastRatio(color, colors.toDateCard) < 4.5).map(([name]) => name)

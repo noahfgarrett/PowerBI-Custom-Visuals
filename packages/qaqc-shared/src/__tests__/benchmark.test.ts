@@ -181,17 +181,21 @@ describe('issue table performance budgets', () => {
     return time
   }
 
+  // Best of three: the full suite runs files in parallel, so a single run can be slowed by CPU contention. The fastest
+  // run still catches a real regression (a return to sorting with the collator would take seconds).
+  function bestFirstSortTime(rows: IssueDetailRow[], column: string): number {
+    return Math.min(firstSortTime(rows, column), firstSortTime(rows, column), firstSortTime(rows, column))
+  }
+
   it('sorts 70,000 detail rows by Title on the first click within budget', () => {
     const rows = detailRows()
     expect(rows).toHaveLength(DETAIL_ROWS)
-    firstSortTime(rows, 'Title')
-    expect(firstSortTime(rows, 'Title')).toBeLessThan(300)
+    expect(bestFirstSortTime(rows, 'Title')).toBeLessThan(300)
   })
 
   it('sorts 70,000 detail rows by ID on the first click within budget', () => {
     const rows = detailRows()
-    firstSortTime(rows, 'ID')
-    expect(firstSortTime(rows, 'ID')).toBeLessThan(150)
+    expect(bestFirstSortTime(rows, 'ID')).toBeLessThan(150)
   })
 })
 

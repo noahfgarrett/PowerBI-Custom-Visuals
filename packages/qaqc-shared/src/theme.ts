@@ -34,7 +34,7 @@ export const STATUS_COLORS = { good: '#0A7A0A', bad: '#D03B3B', warn: '#B45309' 
 export const PRESETS: Record<PresetName, PresetColors> = {
   qaqc: {
     page: '#EDF1F6', card: '#FDFEFF', border: '#DCE3EC', hairline: '#EBEEF3',
-    ink: '#1B2530', ink2: '#45505F', muted: '#6A7583', faint: '#9AA4B2',
+    ink: '#1B2530', ink2: '#45505F', muted: '#636E7C', faint: '#9AA4B2',
     accent: '#2E5AAC', accentSoft: '#EAF0FA', series1: '#2E5AAC', series2: '#86B6EF', series3: '#1A9C7B',
   },
   blue: {
