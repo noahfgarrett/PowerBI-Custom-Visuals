@@ -135,7 +135,7 @@ BIM Closure rate is always to date, like Remaining open.
 **Tones** match the discipline visuals:
 - **Electrical and Mechanical:** NCRs are amber when up. NCR pass rate is green when up and red when down.
 - **Welding:** NCRs are amber when up. Sign-off % is red below 10%.
-- **BIM:** Opened is amber when up. Closed is green when it is at least the previous value and above 0. Remaining open is red when up and green when down. Closure rate is green when up and red when down.
+- **BIM:** Opened is amber when up in This WW and red when up in To date, as in BIM Issues. Closed is green when it is at least the previous value and above 0 in This WW, and green when it rose in To date. Remaining open is red when up and green when down. Closure rate is green when up and red when down.
 
 **Sparklines:**
 - 30 weeks ending at W, as a line with the W point marked.
