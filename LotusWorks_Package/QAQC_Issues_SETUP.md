@@ -1,9 +1,11 @@
 # QAQC BIM Issues visual: setup
 
+**Version 1.0.1:** week labels now include the year (`WW41'2026`). Chart axes keep `WW41` ticks and show the year under the first labelled week and under the first labelled week of each new year.
+
 ## 1. Import the visual (once per report)
 
 1. In Power BI Desktop, open the Visualizations pane, select the three dots (…), then **Import a visual from a file**.
-2. Choose `qaqcIssues_1999F247C7D6.1.0.0.0.pbiviz`.
+2. Choose `qaqcIssues_1999F247C7D6.1.0.1.0.pbiviz`.
 3. To update later, import the newer file the same way. It replaces the old version in place and keeps your field bindings.
 
 ## 2. Bind the columns
