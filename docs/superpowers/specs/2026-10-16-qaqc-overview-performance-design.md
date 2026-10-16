@@ -183,7 +183,7 @@ Rules for these cards:
 ### Modes
 
 - **Compact:** rows stack and the charts drop below them.
-- **Cards-only:** the discipline rows and the quality strip only, with no charts.
+- **Cards-only:** the discipline rows and the quality strip only, with no charts. Its threshold is the Overview's own (about 660 px tall, the height the rows, strip and chart minimum need). Rows switch to a dense one-line layout: the label, four values each with a tone-coloured trend arrow and no detail line, then the sparkline. The strip becomes one line of five values. Full details stay in each value's `aria-label` and `title`. An 800×300 tile fits without scrolling.
 - **Loading bar and footnotes:**
   - Skipped rows per source: unreadable week, future week, no Created On, excluded creator.
   - Unknown Source rows.
