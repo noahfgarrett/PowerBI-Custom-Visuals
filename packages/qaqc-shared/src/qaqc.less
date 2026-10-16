@@ -1534,6 +1534,285 @@
   stroke-linejoin: round;
 }
 
+// Performance: the ranking table (PerformanceTable, TrendStrip) and the person page (PersonDetail, PersonWeekChart).
+
+.qaqc-perf-wrap,
+.qaqc-perf-ncr-wrap {
+  overflow: auto;
+  border: 1px solid var(--qaqc-border);
+  border-radius: 12px;
+  background: var(--qaqc-card-solid);
+}
+
+// Fixed layout: the widths come from the components' column lists, so windowed rows never shift the columns.
+.qaqc-perf-table,
+.qaqc-perf-ncr-table {
+  table-layout: fixed;
+}
+
+// No vertical padding: cells centre in the fixed TABLE_ROW_HEIGHT row, so chips and strips never grow it.
+.qaqc-perf-table td,
+.qaqc-perf-table tbody th,
+.qaqc-perf-ncr-table td {
+  padding-top: 0;
+  padding-bottom: 0;
+  vertical-align: middle;
+}
+
+.qaqc-perf-row:not(.is-not-recorded) {
+  cursor: pointer;
+}
+
+.qaqc-perf-row:not(.is-not-recorded):hover > *,
+.qaqc-perf-ncr-table tbody tr:not(.qaqc-virtual-spacer):hover > * {
+  background: var(--qaqc-accent-soft);
+}
+
+// Rows are the tab stops; the ring sits inside the row so the wrap's overflow never clips it.
+.qaqc-perf-row:focus {
+  outline: none;
+}
+
+.qaqc-perf-row:focus-visible {
+  outline: 2px solid var(--qaqc-accent);
+  outline-offset: -2px;
+}
+
+.qaqc-perf-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.qaqc-perf-name {
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  color: var(--qaqc-ink);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qaqc-perf-row:hover .qaqc-perf-name {
+  color: var(--qaqc-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.qaqc-perf-tags {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 3px;
+}
+
+// A hairline border keeps the chip's edge in high contrast, where the soft fill becomes the background.
+.qaqc-perf-tag {
+  display: inline-grid;
+  place-items: center;
+  min-width: 17px;
+  height: 16px;
+  padding: 0 4px;
+  border: 1px solid var(--qaqc-hairline);
+  border-radius: 4px;
+  background: var(--qaqc-accent-soft);
+  color: var(--qaqc-accent);
+  font-size: 9.5px;
+  font-weight: 750;
+  letter-spacing: 0.03em;
+  line-height: 1;
+}
+
+// The hovered row takes the chip's soft fill, so the chip switches to the card colour to keep its shape.
+.qaqc-perf-row:hover .qaqc-perf-tag {
+  background: var(--qaqc-card-solid);
+}
+
+.qaqc-perf-ncrs.is-nonzero {
+  color: var(--qaqc-bad);
+  font-weight: 650;
+}
+
+.qaqc-perf-rate {
+  font-weight: 600;
+}
+
+.qaqc-perf-rate.is-zero {
+  color: var(--qaqc-ink-2);
+  font-weight: 500;
+}
+
+.qaqc-perf-rate.is-empty {
+  color: var(--qaqc-faint);
+  font-weight: 500;
+}
+
+.qaqc-perf-trend {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.qaqc-table .qaqc-perf-trend-head,
+.qaqc-table .qaqc-perf-trend-cell {
+  text-align: center;
+}
+
+.qaqc-table tbody .qaqc-perf-row.is-below > * {
+  color: var(--qaqc-ink-2);
+}
+
+.qaqc-perf-row.is-below .qaqc-perf-name {
+  padding-left: 18px;
+  color: var(--qaqc-ink-2);
+  font-weight: 500;
+}
+
+.qaqc-table tbody .qaqc-perf-disclosure-row > td {
+  border-top: 1px solid var(--qaqc-border);
+  background: var(--qaqc-week-card);
+  color: var(--qaqc-ink-2);
+  font-size: 11.5px;
+  font-weight: 650;
+}
+
+.qaqc-perf-disclosure-row .qaqc-disclosure {
+  height: 22px;
+}
+
+// Not recorded is never ranked: a rule above it, and its name in muted italics.
+.qaqc-table tbody .qaqc-perf-row.is-not-recorded > * {
+  border-top: 1px solid var(--qaqc-border);
+  color: var(--qaqc-ink-2);
+}
+
+.qaqc-perf-not-recorded-name {
+  overflow: hidden;
+  color: var(--qaqc-muted);
+  font-style: italic;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qaqc-table td.qaqc-perf-empty {
+  padding: 28px 10px;
+  color: var(--qaqc-muted);
+  text-align: center;
+  white-space: normal;
+}
+
+.qaqc-perf-person {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  // On a short tile the page scrolls, so the chart and the table keep their minimum heights below.
+  overflow-y: auto;
+}
+
+.qaqc-perf-person-head {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 2px;
+}
+
+.qaqc-perf-person-head h3 {
+  margin: 0;
+  overflow: hidden;
+  color: var(--qaqc-ink);
+  font-size: 16px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// On the page background the soft chip fill disappears, so the heading's chips sit on the card colour.
+.qaqc-perf-person-head .qaqc-perf-tag {
+  border-color: var(--qaqc-border);
+  background: var(--qaqc-card-solid);
+}
+
+.qaqc-perf-person-group {
+  flex: 0 0 auto;
+  color: var(--qaqc-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+// Two groups of three cards; they stack when the overlay is too narrow for both.
+.qaqc-perf-person-cards {
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+}
+
+.qaqc-perf-person-cards .qaqc-kpi-group {
+  min-width: 320px;
+}
+
+.qaqc-perf-person-chart {
+  flex: 0 0 auto;
+  height: 280px;
+}
+
+// The header and at least four rows stay in view however short the overlay (see .qaqc-issue-detail-wrap).
+.qaqc-perf-person .qaqc-table-wrap.qaqc-perf-ncr-wrap {
+  min-height: 164px;
+}
+
+.qaqc-perf-source {
+  color: var(--qaqc-ink-2);
+  font-weight: 600;
+}
+
+.qaqc-perf-person-empty {
+  min-height: 140px;
+}
+
+.qaqc-perf-person-missing {
+  margin: auto;
+  color: var(--qaqc-muted);
+  font-size: 13px;
+}
+
+.qaqc-perf-chart-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  paint-order: stroke;
+  stroke: var(--qaqc-card-solid);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.qaqc-perf-rate-line {
+  stroke-width: 2px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.qaqc-perf-rate-dot {
+  stroke-width: 1.5px;
+  pointer-events: none;
+}
+
+.qaqc-perf-chart-hover {
+  opacity: 0.08;
+  pointer-events: none;
+}
+
 // Forced colors (Windows high contrast) drop backgrounds and box shadows, so the discussion marker becomes a real
 // border, and the legend swatches keep their outlines.
 @media (forced-colors: active) {
