@@ -6,6 +6,7 @@ import { layoutChart } from '../components/IssuesTrendChart'
 import { splitCombinedRows } from '../combined'
 import { buildInspectionIndex, buildInspectionModel, defaultViewState } from '../inspections'
 import { buildIssueDetail, buildIssueIndex, buildIssueModel } from '../issues'
+import type { OverviewIndex } from '../overview'
 import { buildOverviewIndex, buildOverviewModel } from '../overview'
 import type { CombinedColumns, IssueDetailRow, IssueTrendPoint } from '../types'
 import { buildWeldIndex, buildWeldModel } from '../welds'
@@ -117,18 +118,25 @@ describe('overview performance budgets', () => {
   }
 
   /** One data update: split the combined rows by Source, then index every discipline. */
-  function indexCombined(rows: unknown[][]): ReturnType<typeof buildOverviewIndex> {
-    return buildOverviewIndex(splitCombinedRows(rows, COMBINED.source), COMBINED, TODAY)
+  function indexCombined(rows: unknown[][], columns: CombinedColumns = COMBINED): OverviewIndex {
+    return buildOverviewIndex(splitCombinedRows(rows, columns.source), columns, TODAY)
   }
 
+  const rows = syntheticCombinedRows(500_000)
+  const index = indexCombined(rows)
+
   it('splits and indexes 500,000 combined rows within budget', () => {
-    const rows = syntheticCombinedRows(500_000)
-    indexCombined(rows)
     expect(elapsed(() => indexCombined(rows))).toBeLessThan(1500)
   })
 
+  it('splits and indexes 500,000 combined rows with Green tags bound to a blank column within budget', () => {
+    // A position past the last column reads as a blank cell in every row, so the Green tags scan visits them all.
+    const columns: CombinedColumns = { ...COMBINED, greenTags: COMBINED_COLUMNS.length }
+    expect(indexCombined(rows, columns).greenTags).toBeNull()
+    expect(elapsed(() => indexCombined(rows, columns))).toBeLessThan(1500)
+  })
+
   it.each(['week', 'toDate'] as const)('builds the All-range overview model (%s) from a 500,000-row index within one frame', (mode) => {
-    const index = indexCombined(syntheticCombinedRows(500_000))
     expect(index.weeks.length).toBeGreaterThan(250)
     const view = { ...defaultViewState(index), range: 'all' as const }
     buildOverviewModel(index, view, mode)

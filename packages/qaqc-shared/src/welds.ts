@@ -188,7 +188,7 @@ function deltaMetric(value: number, previous: number): DeltaMetric {
   return { value, delta: value - previous }
 }
 
-function overallRateAt(index: WeldIndex, position: number): number | null {
+export function overallRateAt(index: WeldIndex, position: number): number | null {
   if (position < 0) return null
   const logged = index.cumulativeLogged[position]
   return logged === 0 ? null : (index.cumulativeSigned[position] / logged) * 100

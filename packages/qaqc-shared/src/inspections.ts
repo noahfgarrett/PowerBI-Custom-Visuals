@@ -173,7 +173,7 @@ function deltaMetric(value: number, previous: number): DeltaMetric {
   return { value, delta: value - previous }
 }
 
-function passRateAt(index: InspectionIndex, position: number): number | null {
+export function passRateAt(index: InspectionIndex, position: number): number | null {
   if (position < 0) return null
   const finals = index.cumulativeFinals[position]
   if (finals === 0) return null

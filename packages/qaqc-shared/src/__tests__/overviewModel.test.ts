@@ -4,7 +4,7 @@ import type { CardMode, OverviewIndex, OverviewModel } from '../overview'
 import type { RangeMode, ViewState } from '../types'
 import { buildOverviewModel } from '../overview'
 import { parseWorkWeek } from '../workWeeks'
-import { bim, inspection, overviewIndexOf, times, weld } from './overviewRows'
+import { bim, cardsOf, inspection, overviewIndexOf, rowOf, times, weld } from './overviewRows'
 
 function viewAt(label: string, range: RangeMode = 'recent'): ViewState {
   const week = parseWorkWeek(label)
@@ -30,21 +30,21 @@ describe('Electrical and Mechanical rows', () => {
   ])
 
   it("shows W's Finals, SORs and NCRs with the change against W−1 in This WW", () => {
-    const [finals, sors, ncrs] = modelAt(index, WW42, 'week').rows.electrical.cards
+    const [finals, sors, ncrs] = cardsOf(modelAt(index, WW42, 'week'), 'electrical')
     expect([finals.label, finals.value, finals.delta, finals.deltaDisplay, finals.trend]).toEqual(['Finals', 4, 2, "+2 vs WW41'2026", 'up'])
     expect([sors.label, sors.value, sors.deltaDisplay, sors.trend]).toEqual(['SORs', 1, "−1 vs WW41'2026", 'down'])
     expect([ncrs.label, ncrs.value, ncrs.deltaDisplay]).toEqual(['NCRs', 1, "+1 vs WW41'2026"])
   })
 
   it('shows the totals through W with +n this WW in To date', () => {
-    const [finals, sors, ncrs] = modelAt(index, WW42, 'toDate').rows.electrical.cards
+    const [finals, sors, ncrs] = cardsOf(modelAt(index, WW42, 'toDate'), 'electrical')
     expect([finals.value, finals.delta, finals.deltaDisplay, finals.trend]).toEqual([6, 4, '+4 this WW', 'none'])
     expect([sors.value, sors.deltaDisplay]).toEqual([3, '+1 this WW'])
     expect([ncrs.value, ncrs.deltaDisplay]).toEqual([1, '+1 this WW'])
   })
 
   it("rates W's finals only in This WW, with the change in points against W−1", () => {
-    const rate = modelAt(index, WW42, 'week').rows.electrical.cards[3]
+    const rate = cardsOf(modelAt(index, WW42, 'week'), 'electrical')[3]
     expect(rate.label).toBe('NCR pass rate')
     expect(rate.value).toBe(75)
     expect(rate.display).toBe('75.0%')
@@ -54,26 +54,26 @@ describe('Electrical and Mechanical rows', () => {
   })
 
   it('rates the finals through W in To date, with the change against through W−1', () => {
-    const rate = modelAt(index, WW42, 'toDate').rows.electrical.cards[3]
+    const rate = cardsOf(modelAt(index, WW42, 'toDate'), 'electrical')[3]
     expect(rate.value).toBeCloseTo(83.3333, 4)
     expect(rate.subLine).toBe('5 / 6 Finals')
     expect(rate.delta).toBeCloseTo(-16.6667, 4)
   })
 
   it('shows Finals and SORs in neutral', () => {
-    const [finals, sors] = modelAt(index, WW42, 'week').rows.electrical.cards
+    const [finals, sors] = cardsOf(modelAt(index, WW42, 'week'), 'electrical')
     expect([finals.tone, sors.tone]).toEqual(['neutral', 'neutral'])
   })
 
   it('shows the NCR pass rate as n/a with the change n/a when W has no finals', () => {
     const sorsOnly = overviewIndexOf([inspection('Mechanical', WW41, 'Final'), inspection('Mechanical', WW42, 'SOR')])
-    const rate = modelAt(sorsOnly, WW42, 'week').rows.mechanical.cards[3]
+    const rate = cardsOf(modelAt(sorsOnly, WW42, 'week'), 'mechanical')[3]
     expect([rate.value, rate.display, rate.subLine]).toEqual([null, 'n/a', '0 Finals'])
     expect([rate.delta, rate.deltaDisplay, rate.tone, rate.trend]).toEqual([null, 'Change n/a', 'neutral', 'none'])
   })
 
   it('shows the NCR pass rate change as n/a when W−1 has no finals', () => {
-    const rate = modelAt(overviewIndexOf([inspection('Mechanical', WW42, 'Final')]), WW42, 'week').rows.mechanical.cards[3]
+    const rate = cardsOf(modelAt(overviewIndexOf([inspection('Mechanical', WW42, 'Final')]), WW42, 'week'), 'mechanical')[3]
     expect([rate.value, rate.delta, rate.deltaDisplay]).toEqual([100, null, 'Change n/a'])
   })
 })
@@ -81,22 +81,22 @@ describe('Electrical and Mechanical rows', () => {
 describe('Electrical and Mechanical tones', () => {
   it('shows NCRs in amber when they go up', () => {
     const index = overviewIndexOf([inspection('Electrical', WW41, 'Final'), inspection('Electrical', WW42, 'Final', 'NCR')])
-    expect(modelAt(index, WW42, 'week').rows.electrical.cards[2].tone).toBe('warn')
+    expect(cardsOf(modelAt(index, WW42, 'week'), 'electrical')[2].tone).toBe('warn')
   })
 
   it('shows NCRs in neutral when they go down', () => {
     const index = overviewIndexOf([inspection('Electrical', WW41, 'Final', 'NCR'), inspection('Electrical', WW42, 'Final')])
-    expect(modelAt(index, WW42, 'week').rows.electrical.cards[2].tone).toBe('neutral')
+    expect(cardsOf(modelAt(index, WW42, 'week'), 'electrical')[2].tone).toBe('neutral')
   })
 
   it('shows NCRs to date in amber when W added one', () => {
     const index = overviewIndexOf([inspection('Mechanical', WW41, 'Final', 'NCR'), inspection('Mechanical', WW42, 'Final', 'NCR')])
-    expect(modelAt(index, WW42, 'toDate').rows.mechanical.cards[2].tone).toBe('warn')
+    expect(cardsOf(modelAt(index, WW42, 'toDate'), 'mechanical')[2].tone).toBe('warn')
   })
 
   it('shows NCRs to date in neutral when W added none', () => {
     const index = overviewIndexOf([inspection('Mechanical', WW41, 'Final', 'NCR'), inspection('Mechanical', WW42, 'Final')])
-    expect(modelAt(index, WW42, 'toDate').rows.mechanical.cards[2].tone).toBe('neutral')
+    expect(cardsOf(modelAt(index, WW42, 'toDate'), 'mechanical')[2].tone).toBe('neutral')
   })
 
   it('shows the NCR pass rate in green when it goes up', () => {
@@ -105,13 +105,13 @@ describe('Electrical and Mechanical tones', () => {
       inspection('Electrical', WW41, 'Final'),
       inspection('Electrical', WW42, 'Final'),
     ])
-    const rate = modelAt(index, WW42, 'week').rows.electrical.cards[3]
+    const rate = cardsOf(modelAt(index, WW42, 'week'), 'electrical')[3]
     expect([rate.tone, rate.trend, rate.deltaDisplay]).toEqual(['good', 'up', "+50.0 pts vs WW41'2026"])
   })
 
   it('shows the NCR pass rate in red when it goes down', () => {
     const index = overviewIndexOf([inspection('Electrical', WW41, 'Final'), inspection('Electrical', WW42, 'Final', 'NCR')])
-    const rate = modelAt(index, WW42, 'toDate').rows.electrical.cards[3]
+    const rate = cardsOf(modelAt(index, WW42, 'toDate'), 'electrical')[3]
     expect([rate.tone, rate.trend]).toEqual(['bad', 'down'])
   })
 })
@@ -126,27 +126,27 @@ describe('Welding row', () => {
   ])
 
   it('counts Welds logged by weld week and Signed by signed week in This WW', () => {
-    const [logged, signed, , ncrs] = modelAt(index, WW42, 'week').rows.welding.cards
+    const [logged, signed, , ncrs] = cardsOf(modelAt(index, WW42, 'week'), 'welding')
     expect([logged.label, logged.value, logged.deltaDisplay]).toEqual(['Welds logged', 0, "−1 vs WW41'2026"])
     expect([signed.label, signed.value, signed.deltaDisplay]).toEqual(['Signed', 2, "+1 vs WW41'2026"])
     expect([ncrs.label, ncrs.value, ncrs.deltaDisplay]).toEqual(['NCRs', 0, "−1 vs WW41'2026"])
   })
 
   it('counts signed welds through W with the welds signed in W underneath in To date', () => {
-    const [logged, signed, , ncrs] = modelAt(index, WW42, 'toDate').rows.welding.cards
+    const [logged, signed, , ncrs] = cardsOf(modelAt(index, WW42, 'toDate'), 'welding')
     expect([logged.value, logged.deltaDisplay]).toEqual([5, '+0 this WW'])
     expect([signed.value, signed.delta, signed.deltaDisplay]).toEqual([3, 2, '+2 signed this WW'])
     expect([ncrs.value, ncrs.deltaDisplay]).toEqual([1, '+0 this WW'])
   })
 
   it('shows Sign-off % for the latest weld week up to W that has welds in This WW', () => {
-    const signoff = modelAt(overviewIndexOf([weld(WW40, { signedWeek: WW41 }), weld(WW40)]), WW42, 'week').rows.welding.cards[2]
+    const signoff = cardsOf(modelAt(overviewIndexOf([weld(WW40, { signedWeek: WW41 }), weld(WW40)]), WW42, 'week'), 'welding')[2]
     expect([signoff.label, signoff.value, signoff.display, signoff.subLine]).toEqual(['Sign-off %', 50, '50%', "1 of 2 · WW40'2026"])
     expect([signoff.delta, signoff.deltaDisplay, signoff.trend, signoff.tone]).toEqual([null, null, 'none', 'neutral'])
   })
 
   it('shows the overall Sign-off % with its change in points in To date', () => {
-    const signoff = modelAt(index, WW41, 'toDate').rows.welding.cards[2]
+    const signoff = cardsOf(modelAt(index, WW41, 'toDate'), 'welding')[2]
     expect(signoff.value).toBe(60)
     expect(signoff.display).toBe('60.0%')
     expect(signoff.subLine).toBe('3 of 5 signed')
@@ -156,21 +156,21 @@ describe('Welding row', () => {
 
   it('flags Sign-off % below 10% as bad', () => {
     const low = overviewIndexOf([weld(WW42, { signedWeek: WW42 }), ...times(19, () => weld(WW42))])
-    expect(modelAt(low, WW42, 'week').rows.welding.cards[2]).toMatchObject({ value: 5, display: '5.0%', isValueBad: true })
-    expect(modelAt(low, WW42, 'toDate').rows.welding.cards[2].isValueBad).toBe(true)
+    expect(cardsOf(modelAt(low, WW42, 'week'), 'welding')[2]).toMatchObject({ value: 5, display: '5.0%', isValueBad: true })
+    expect(cardsOf(modelAt(low, WW42, 'toDate'), 'welding')[2].isValueBad).toBe(true)
   })
 
   it('does not flag Sign-off % of 10% or more', () => {
     const fine = overviewIndexOf([weld(WW42, { signedWeek: WW42 }), ...times(9, () => weld(WW42))])
-    expect(modelAt(fine, WW42, 'week').rows.welding.cards[2].isValueBad).toBe(false)
+    expect(cardsOf(modelAt(fine, WW42, 'week'), 'welding')[2].isValueBad).toBe(false)
   })
 
   it('shows NCRs in amber when they go up', () => {
-    expect(modelAt(index, WW41, 'week').rows.welding.cards[3].tone).toBe('warn')
+    expect(cardsOf(modelAt(index, WW41, 'week'), 'welding')[3].tone).toBe('warn')
   })
 
   it('shows Welds logged and Signed in neutral', () => {
-    const [logged, signed] = modelAt(index, WW41, 'week').rows.welding.cards
+    const [logged, signed] = cardsOf(modelAt(index, WW41, 'week'), 'welding')
     expect([logged.tone, signed.tone]).toEqual(['neutral', 'neutral'])
   })
 })
@@ -186,27 +186,27 @@ describe('BIM Issues row', () => {
   ])
 
   it("shows W's Opened and Closed with the change against W−1 in This WW", () => {
-    const [opened, closed] = modelAt(index, WW42, 'week').rows.bim.cards
+    const [opened, closed] = cardsOf(modelAt(index, WW42, 'week'), 'bim')
     expect([opened.label, opened.value, opened.deltaDisplay]).toEqual(['Opened', 3, "+1 vs WW41'2026"])
     expect([closed.label, closed.value, closed.deltaDisplay]).toEqual(['Closed', 1, "No change vs WW41'2026"])
   })
 
   it('shows Opened and Closed through W in To date', () => {
-    const [opened, closed] = modelAt(index, WW42, 'toDate').rows.bim.cards
+    const [opened, closed] = cardsOf(modelAt(index, WW42, 'toDate'), 'bim')
     expect([opened.value, opened.deltaDisplay]).toEqual([6, '+3 this WW'])
     expect([closed.value, closed.deltaDisplay]).toEqual([2, '+1 this WW'])
   })
 
   it('shows Remaining open to date with the change against W−1 in both modes', () => {
     for (const mode of ['week', 'toDate'] as const) {
-      const remaining = modelAt(index, WW42, mode).rows.bim.cards[2]
+      const remaining = cardsOf(modelAt(index, WW42, mode), 'bim')[2]
       expect([remaining.label, remaining.value, remaining.delta, remaining.deltaDisplay]).toEqual(['Remaining open', 4, 2, "+2 vs WW41'2026"])
     }
   })
 
   it('shows the to-date Closure rate in both modes', () => {
-    const week = modelAt(index, WW42, 'week').rows.bim.cards[3]
-    const toDate = modelAt(index, WW42, 'toDate').rows.bim.cards[3]
+    const week = cardsOf(modelAt(index, WW42, 'week'), 'bim')[3]
+    const toDate = cardsOf(modelAt(index, WW42, 'toDate'), 'bim')[3]
     expect(week).toEqual(toDate)
     expect(week.label).toBe('Closure rate')
     expect(week.value).toBeCloseTo((2 / 6) * 100, 6)
@@ -215,21 +215,21 @@ describe('BIM Issues row', () => {
   })
 
   it('shows Opened in amber when it goes up', () => {
-    expect(modelAt(index, WW42, 'week').rows.bim.cards[0].tone).toBe('warn')
+    expect(cardsOf(modelAt(index, WW42, 'week'), 'bim')[0].tone).toBe('warn')
   })
 
   it('shows Opened in neutral when it goes down', () => {
     const fewer = overviewIndexOf([bim('#1', '10/6/2026'), bim('#2', '10/6/2026'), bim('#3', '10/13/2026')])
-    expect(modelAt(fewer, WW42, 'week').rows.bim.cards[0].tone).toBe('neutral')
+    expect(cardsOf(modelAt(fewer, WW42, 'week'), 'bim')[0].tone).toBe('neutral')
   })
 
   it('shows Closed in green when it is at least the previous value and above 0', () => {
-    expect(modelAt(index, WW42, 'week').rows.bim.cards[1].tone).toBe('good')
+    expect(cardsOf(modelAt(index, WW42, 'week'), 'bim')[1].tone).toBe('good')
   })
 
   it('shows Closed in neutral when nothing closed in either week', () => {
     const none = overviewIndexOf([bim('#1', '10/6/2026'), bim('#2', '10/13/2026')])
-    expect(modelAt(none, WW42, 'week').rows.bim.cards[1].tone).toBe('neutral')
+    expect(cardsOf(modelAt(none, WW42, 'week'), 'bim')[1].tone).toBe('neutral')
   })
 
   it('shows Closed in neutral when fewer closed than the week before', () => {
@@ -238,29 +238,58 @@ describe('BIM Issues row', () => {
       bim('#2', '10/6/2026', { status: 'Closed', updatedOn: '10/7/2026' }),
       bim('#3', '10/6/2026', { status: 'Closed', updatedOn: '10/13/2026' }),
     ])
-    expect(modelAt(fewer, WW42, 'week').rows.bim.cards[1].tone).toBe('neutral')
+    expect(cardsOf(modelAt(fewer, WW42, 'week'), 'bim')[1].tone).toBe('neutral')
   })
 
-  it('shows Remaining open in red when it goes up and green when it goes down', () => {
-    const closing = overviewIndexOf([
-      bim('#1', '10/6/2026'),
-      bim('#2', '10/6/2026', { status: 'Closed', updatedOn: '10/13/2026' }),
-    ])
-    expect(modelAt(index, WW42, 'week').rows.bim.cards[2].tone).toBe('bad')
-    expect(modelAt(closing, WW42, 'week').rows.bim.cards[2].tone).toBe('good')
+  /** One issue opened in WW41 and another opened in WW41 and closed in WW42, so Remaining open falls in WW42. */
+  const closing = overviewIndexOf([
+    bim('#1', '10/6/2026'),
+    bim('#2', '10/6/2026', { status: 'Closed', updatedOn: '10/13/2026' }),
+  ])
+  /** One issue opened and closed in WW41 and another opened in WW42, so the Closure rate falls in WW42. */
+  const opening = overviewIndexOf([
+    bim('#1', '10/6/2026', { status: 'Closed', updatedOn: '10/7/2026' }),
+    bim('#2', '10/13/2026'),
+  ])
+
+  it('shows Remaining open in red when it goes up', () => {
+    expect(cardsOf(modelAt(index, WW42, 'week'), 'bim')[2].tone).toBe('bad')
   })
 
-  it('shows the Closure rate in green when it goes up and red when it goes down', () => {
-    const closing = overviewIndexOf([
-      bim('#1', '10/6/2026'),
-      bim('#2', '10/6/2026', { status: 'Closed', updatedOn: '10/13/2026' }),
-    ])
-    expect(modelAt(closing, WW42, 'week').rows.bim.cards[3].tone).toBe('good')
-    const opening = overviewIndexOf([
-      bim('#1', '10/6/2026', { status: 'Closed', updatedOn: '10/7/2026' }),
-      bim('#2', '10/13/2026'),
-    ])
-    expect(modelAt(opening, WW42, 'week').rows.bim.cards[3].tone).toBe('bad')
+  it('shows Remaining open in green when it goes down', () => {
+    expect(cardsOf(modelAt(closing, WW42, 'week'), 'bim')[2].tone).toBe('good')
+  })
+
+  it('shows the Closure rate in green when it goes up', () => {
+    expect(cardsOf(modelAt(closing, WW42, 'week'), 'bim')[3].tone).toBe('good')
+  })
+
+  it('shows the Closure rate in red when it goes down', () => {
+    expect(cardsOf(modelAt(opening, WW42, 'week'), 'bim')[3].tone).toBe('bad')
+  })
+
+  it('shows Opened to date in red when it goes up, as Total Opened does in BIM Issues', () => {
+    expect(cardsOf(modelAt(index, WW42, 'toDate'), 'bim')[0].tone).toBe('bad')
+  })
+
+  it('shows Opened to date in neutral when nothing opened in W', () => {
+    expect(cardsOf(modelAt(closing, WW42, 'toDate'), 'bim')[0].tone).toBe('neutral')
+  })
+
+  it('shows Closed to date in green when something closed in W', () => {
+    expect(cardsOf(modelAt(closing, WW42, 'toDate'), 'bim')[1].tone).toBe('good')
+  })
+
+  it('shows Closed to date in neutral when nothing closed in W', () => {
+    expect(cardsOf(modelAt(opening, WW42, 'toDate'), 'bim')[1].tone).toBe('neutral')
+  })
+
+  it('shows Remaining open to date in red when it goes up', () => {
+    expect(cardsOf(modelAt(opening, WW42, 'toDate'), 'bim')[2].tone).toBe('bad')
+  })
+
+  it('shows Remaining open to date in green when it goes down', () => {
+    expect(cardsOf(modelAt(closing, WW42, 'toDate'), 'bim')[2].tone).toBe('good')
   })
 })
 
@@ -268,10 +297,9 @@ describe('missing and early disciplines', () => {
   it('marks a source with no rows as not connected and says so', () => {
     const model = modelAt(overviewIndexOf([inspection('Electrical', WW42, 'Final')]), WW42, 'week')
     expect(model.rows.electrical.connected).toBe(true)
-    expect(model.rows.mechanical.connected).toBe(false)
-    expect(model.rows.mechanical.trendText).toBe('Not connected: no Mechanical rows in QAQC Combined')
-    expect(model.rows.welding.trendText).toBe('Not connected: no Welding rows in QAQC Combined')
-    expect(model.rows.bim.trendText).toBe('Not connected: no BIM Issues rows in QAQC Combined')
+    expect(model.rows.mechanical).toEqual({ connected: false, message: 'Not connected: no Mechanical rows in QAQC Combined' })
+    expect(model.rows.welding).toEqual({ connected: false, message: 'Not connected: no Welding rows in QAQC Combined' })
+    expect(model.rows.bim).toEqual({ connected: false, message: 'Not connected: no BIM Issues rows in QAQC Combined' })
   })
 
   it('counts a week before a discipline\'s first week as zero', () => {
@@ -283,12 +311,12 @@ describe('missing and early disciplines', () => {
     ])
     const week = modelAt(index, WW41, 'week')
     const toDate = modelAt(index, WW41, 'toDate')
-    expect(week.rows.mechanical.cards.map((card) => card.value)).toEqual([0, 0, 0, null])
-    expect(toDate.rows.mechanical.cards.map((card) => card.value)).toEqual([0, 0, 0, null])
-    expect(week.rows.welding.cards.map((card) => card.value)).toEqual([0, 0, null, 0])
-    expect(week.rows.welding.cards[2].subLine).toBe('No welds logged yet')
-    expect(toDate.rows.welding.cards[2].value).toBeNull()
-    expect(week.rows.bim.cards.map((card) => card.value)).toEqual([0, 0, 0, null])
+    expect(cardsOf(week, 'mechanical').map((card) => card.value)).toEqual([0, 0, 0, null])
+    expect(cardsOf(toDate, 'mechanical').map((card) => card.value)).toEqual([0, 0, 0, null])
+    expect(cardsOf(week, 'welding').map((card) => card.value)).toEqual([0, 0, null, 0])
+    expect(cardsOf(week, 'welding')[2].subLine).toBe('No welds logged yet')
+    expect(cardsOf(toDate, 'welding')[2].value).toBeNull()
+    expect(cardsOf(week, 'bim').map((card) => card.value)).toEqual([0, 0, 0, null])
     expect(week.quality.map((card) => card.value)).toEqual([0, 0, null, null, 0])
   })
 
@@ -312,35 +340,35 @@ describe('sparklines', () => {
   ])
 
   it('covers the 30 weeks ending at W with W as the last point', () => {
-    const row = modelAt(index, WW42, 'week').rows.electrical
+    const row = rowOf(modelAt(index, WW42, 'week'), 'electrical')
     expect(row.sparkline).toHaveLength(30)
     expect(row.sparkline.slice(-2)).toEqual([2, 6])
     expect(row.sparklineSelected).toBe(29)
   })
 
   it('ends at the selected week', () => {
-    const row = modelAt(index, WW41, 'week').rows.electrical
+    const row = rowOf(modelAt(index, WW41, 'week'), 'electrical')
     expect(row.sparkline[row.sparkline.length - 1]).toBe(2)
     expect(row.sparklineSelected).toBe(29)
   })
 
   it('is shorter when fewer than 30 weeks lead up to W', () => {
-    const row = modelAt(index, "WW03'2026", 'week').rows.electrical
+    const row = rowOf(modelAt(index, "WW03'2026", 'week'), 'electrical')
     expect(row.sparkline).toEqual([1, 0, 0])
     expect(row.sparklineSelected).toBe(2)
   })
 
   it('states the change at W in words', () => {
     const model = modelAt(index, WW42, 'week')
-    expect(model.rows.electrical.trendText).toBe("up 4 vs WW41'2026")
-    expect(model.rows.welding.trendText).toBe("down 1 vs WW41'2026")
-    expect(model.rows.bim.trendText).toBe("no change vs WW41'2026")
+    expect(rowOf(model, 'electrical').trendText).toBe("up 4 vs WW41'2026")
+    expect(rowOf(model, 'welding').trendText).toBe("down 1 vs WW41'2026")
+    expect(rowOf(model, 'bim').trendText).toBe("no change vs WW41'2026")
   })
 
   it('plots Welds logged for Welding and Remaining open for BIM', () => {
     const model = modelAt(index, WW42, 'week')
-    expect(model.rows.welding.sparkline.slice(-2)).toEqual([2, 1])
-    expect(model.rows.bim.sparkline.slice(-3)).toEqual([0, 1, 1])
+    expect(rowOf(model, 'welding').sparkline.slice(-2)).toEqual([2, 1])
+    expect(rowOf(model, 'bim').sparkline.slice(-3)).toEqual([0, 1, 1])
   })
 })
 
@@ -508,6 +536,6 @@ describe('chart series and week state', () => {
   it('reads the previous week across a year boundary', () => {
     const model = modelAt(index, "WW01'2026", 'week')
     expect(model.previousWeek.label).toBe("WW52'2025")
-    expect(model.rows.electrical.cards[0].deltaDisplay).toBe("+1 vs WW52'2025")
+    expect(cardsOf(model, 'electrical')[0].deltaDisplay).toBe("+1 vs WW52'2025")
   })
 })

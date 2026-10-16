@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest'
 
 import type { CardMode, OverviewCard, OverviewModel } from '../overview'
 import type { CombinedColumns, ViewState } from '../types'
-import { splitCombinedRows } from '../combined'
+import { inspectionColumnsOf, issueColumnsOf, splitCombinedRows, weldColumnsOf } from '../combined'
 import { buildInspectionIndex, buildInspectionModel } from '../inspections'
 import { buildIssueIndex, buildIssueModel } from '../issues'
 import { buildOverviewIndex, buildOverviewModel } from '../overview'
 import { buildWeldIndex, buildWeldModel } from '../welds'
-import { inspectionColumnsOf, issueColumnsOf, weldColumnsOf } from '../combined'
 import { COMBINED_COLUMNS, COMBINED_ROWS } from './fixtures/combinedRows'
+import { cardsOf } from './overviewRows'
 
 type CombinedColumnName = (typeof COMBINED_COLUMNS)[number]
 
@@ -220,7 +220,7 @@ describe('QAQC Overview on the October exports (today 2026-10-15)', () => {
   })
 
   it.each(CASES.map((item, caseIndex) => [item.name, item, caseIndex] as const))('Electrical row, %s', (_, item, caseIndex) => {
-    const [finals, sors, ncrs, rate] = modelAt(item.key, item.mode).rows.electrical.cards
+    const [finals, sors, ncrs, rate] = cardsOf(modelAt(item.key, item.mode), 'electrical')
     const expected = ELECTRICAL[caseIndex]
     expectCount(finals, expected.finals)
     expectCount(sors, expected.sors)
@@ -229,7 +229,7 @@ describe('QAQC Overview on the October exports (today 2026-10-15)', () => {
   })
 
   it.each(CASES.map((item, caseIndex) => [item.name, item, caseIndex] as const))('Mechanical row, %s', (_, item, caseIndex) => {
-    const [finals, sors, ncrs, rate] = modelAt(item.key, item.mode).rows.mechanical.cards
+    const [finals, sors, ncrs, rate] = cardsOf(modelAt(item.key, item.mode), 'mechanical')
     const expected = MECHANICAL[caseIndex]
     expectCount(finals, expected.finals)
     expectCount(sors, expected.sors)
@@ -238,7 +238,7 @@ describe('QAQC Overview on the October exports (today 2026-10-15)', () => {
   })
 
   it.each(CASES.map((item, caseIndex) => [item.name, item, caseIndex] as const))('Welding row, %s', (_, item, caseIndex) => {
-    const [logged, signed, signoff, ncrs] = modelAt(item.key, item.mode).rows.welding.cards
+    const [logged, signed, signoff, ncrs] = cardsOf(modelAt(item.key, item.mode), 'welding')
     const expected = WELDING[caseIndex]
     expectCount(logged, expected.logged)
     expectCount(signed, expected.signed)
@@ -251,7 +251,7 @@ describe('QAQC Overview on the October exports (today 2026-10-15)', () => {
   })
 
   it.each(CASES.map((item, caseIndex) => [item.name, item, caseIndex] as const))('BIM Issues row, %s', (_, item, caseIndex) => {
-    const [opened, closed, remaining, closure] = modelAt(item.key, item.mode).rows.bim.cards
+    const [opened, closed, remaining, closure] = cardsOf(modelAt(item.key, item.mode), 'bim')
     const expected = BIM[caseIndex]
     expectCount(opened, expected.opened)
     expectCount(closed, expected.closed)
@@ -279,6 +279,12 @@ describe('QAQC Overview on the October exports (today 2026-10-15)', () => {
   it('shows a 0.0% DWN rate with a Green tags value', () => {
     const model = buildOverviewModel({ ...index, greenTags: 1200 }, viewAt(WW42), 'week')
     expect(model.quality[4].subLine).toBe('0.0% of green tags (to date)')
+  })
+
+  it('includes COR 171, NCR 5 and Inspection 1 among the BIM types', () => {
+    const types = new Map<string, number>()
+    for (const issue of index.bim.issues) types.set(issue.subtype, (types.get(issue.subtype) ?? 0) + 1)
+    expect(Object.fromEntries(types)).toEqual({ COR: 171, NCR: 5, Inspection: 1 })
   })
 
   it('counts 171 included CORs and no DWNs through WW42', () => {
@@ -317,35 +323,47 @@ describe('QAQC Overview on the October exports (today 2026-10-15)', () => {
     })
   })
 
-  describe('matches the discipline visuals at WW42', () => {
-    const view = viewAt(WW42)
-    const week = modelAt(WW42, 'week')
-    const toDate = modelAt(WW42, 'toDate')
+  describe.each([
+    ["WW42'2026", WW42],
+    ["WW41'2026", WW41],
+  ] as const)('matches the discipline visuals at %s', (_, key) => {
+    const view = viewAt(key)
+    const week = modelAt(key, 'week')
+    const toDate = modelAt(key, 'toDate')
 
-    it('matches the Electrical visual', () => {
-      const electrical = buildInspectionModel(buildInspectionIndex(split.electrical, inspectionColumnsOf(COLUMNS), TODAY), view)
-      expect(week.rows.electrical.cards.slice(0, 3).map((card) => card.value)).toEqual([
-        electrical.thisWeek.finals.value,
-        electrical.thisWeek.sors.value,
-        electrical.thisWeek.issuesFound.value,
+    it.each([
+      ['Electrical', 'electrical', split.electrical],
+      ['Mechanical', 'mechanical', split.mechanical],
+    ] as const)('matches the %s visual', (_name, row, rows) => {
+      const inspections = buildInspectionModel(buildInspectionIndex(rows, inspectionColumnsOf(COLUMNS), TODAY), view)
+      expect(cardsOf(week, row).slice(0, 3).map((card) => card.value)).toEqual([
+        inspections.thisWeek.finals.value,
+        inspections.thisWeek.sors.value,
+        inspections.thisWeek.issuesFound.value,
       ])
-      expect(toDate.rows.electrical.cards[3].value).toBe(electrical.toDate.passRate)
+      expect(cardsOf(toDate, row).slice(0, 2).map((card) => card.value)).toEqual([inspections.toDate.finals, inspections.toDate.sors])
+      expect(cardsOf(toDate, row)[3].value).toBe(inspections.toDate.passRate)
     })
 
     it('matches the Welding visual', () => {
       const welding = buildWeldModel(buildWeldIndex(split.welding, weldColumnsOf(COLUMNS), TODAY), view, null, 10)
-      expect(week.rows.welding.cards.map((card) => card.value)).toEqual([
+      expect(cardsOf(week, 'welding').map((card) => card.value)).toEqual([
         welding.thisWeek.logged.value,
         welding.thisWeek.signedInWeek.value,
         welding.thisWeek.signoff?.rate ?? null,
         welding.thisWeek.issues.value,
       ])
-      expect(toDate.rows.welding.cards[2].value).toBe(welding.toDate.overallRate)
+      expect(cardsOf(toDate, 'welding').slice(0, 3).map((card) => card.value)).toEqual([
+        welding.toDate.total,
+        welding.toDate.signed,
+        welding.toDate.overallRate,
+      ])
     })
 
     it('matches the BIM Issues visual', () => {
       const issues = buildIssueModel(buildIssueIndex(split.bim, issueColumnsOf(COLUMNS), TODAY), view)
-      expect(toDate.rows.bim.cards.map((card) => card.value)).toEqual([
+      expect(cardsOf(week, 'bim').slice(0, 2).map((card) => card.value)).toEqual([issues.thisWeek.opened.value, issues.thisWeek.closed.value])
+      expect(cardsOf(toDate, 'bim').map((card) => card.value)).toEqual([
         issues.toDate.opened.value,
         issues.toDate.closed.value,
         issues.toDate.remaining.value,

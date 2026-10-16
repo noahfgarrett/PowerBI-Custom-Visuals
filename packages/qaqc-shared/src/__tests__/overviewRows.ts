@@ -1,5 +1,5 @@
 import type { CombinedColumns } from '../types'
-import type { OverviewIndex } from '../overview'
+import type { ConnectedOverviewRow, OverviewCards, OverviewIndex, OverviewModel, OverviewRows } from '../overview'
 import { splitCombinedRows } from '../combined'
 import { buildOverviewIndex } from '../overview'
 
@@ -86,4 +86,15 @@ export function overviewIndexOf(rows: unknown[][], greenTags?: unknown): Overvie
     for (const row of rows) row[COLUMNS.greenTags] = greenTags
   }
   return buildOverviewIndex(splitCombinedRows(rows, COLUMNS.source), COLUMNS, TODAY)
+}
+
+/** A row the test expects to be connected; fails the test with the row's message when it isn't. */
+export function rowOf(model: OverviewModel, name: keyof OverviewRows): ConnectedOverviewRow {
+  const row = model.rows[name]
+  if (!row.connected) throw new Error(`${name} row is not connected: ${row.message}`)
+  return row
+}
+
+export function cardsOf(model: OverviewModel, name: keyof OverviewRows): OverviewCards {
+  return rowOf(model, name).cards
 }

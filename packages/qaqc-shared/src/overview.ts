@@ -13,11 +13,12 @@ import {
   pluralize,
   pointsTone,
   pointsTrend,
+  SIGNOFF_BAD_BELOW,
   trendOf,
 } from './format'
-import { buildInspectionIndex, recentWindowStart } from './inspections'
-import { buildIssueIndex } from './issues'
-import { buildWeldIndex, latestSignoff } from './welds'
+import { buildInspectionIndex, passRateAt, recentWindowStart } from './inspections'
+import { buildIssueIndex, closureRateAt, riseIsBad } from './issues'
+import { buildWeldIndex, latestSignoff, overallRateAt } from './welds'
 import { enumerateWorkWeeks, previousWorkWeek } from './workWeeks'
 
 /** The Overview's cards show the selected week (`week`) or the project to date through it (`toDate`). */
@@ -64,7 +65,7 @@ export interface OverviewIndex {
   footnotes: OverviewFootnoteCounts
 }
 
-/** One card, in the shape `KpiCard` draws. */
+/** One card. `KpiCard` takes a single `detail`, so the dashboard joins `subLine` and `deltaDisplay` into it. */
 export interface OverviewCard {
   label: string
   /** A count, or a percent 0–100 for rates; null when a rate has no denominator. */
@@ -85,17 +86,25 @@ export interface OverviewCard {
 
 export type OverviewCards = [OverviewCard, OverviewCard, OverviewCard, OverviewCard]
 
-export interface OverviewRow {
-  /** False when the source has no rows in QAQC Combined. */
-  connected: boolean
+export interface ConnectedOverviewRow {
+  connected: true
   cards: OverviewCards
   /** The row's metric for the 30 weeks ending at the selected week, oldest first. */
   sparkline: number[]
   /** The position of the selected week in `sparkline` (its last point). */
   sparklineSelected: number
-  /** The sparkline's change in words for screen readers, such as `up 4 vs WW41'2026`, or the Not connected message. */
+  /** The sparkline's change in words for screen readers, such as `up 4 vs WW41'2026`. */
   trendText: string
 }
+
+/** A source with no rows in QAQC Combined. */
+export interface DisconnectedOverviewRow {
+  connected: false
+  /** Such as `Not connected: no Electrical rows in QAQC Combined`. */
+  message: string
+}
+
+export type OverviewRow = ConnectedOverviewRow | DisconnectedOverviewRow
 
 export interface OverviewRows {
   electrical: OverviewRow
@@ -250,23 +259,18 @@ const CHANGE_NA = 'Change n/a'
 const NO_WELDS_YET = 'No welds logged yet'
 const NO_ISSUES_YET = 'No issues opened yet'
 const GREEN_TAGS_MISSING = 'DWN rate n/a: add Green tags'
-const SIGNOFF_BAD_BELOW_PERCENT = 10
 
 const neutralTone: CountTone = () => 'neutral'
 const amberWhenUp: CountTone = (value, previous) => (value > previous ? 'warn' : 'neutral')
+/** This WW: amber when up. To date: red when up, as Total Opened is in the BIM Issues visual. */
+const openedTone: CountTone = (value, previous, mode) => (mode === 'toDate' ? riseIsBad(value - previous) : amberWhenUp(value, previous, mode))
 /**
  * This WW: green when at least as many closed as the week before, but a week with nothing closed is never green.
- * To date the total never falls, so it is green when it rose, as in the BIM Issues visual.
+ * To date: green when the total rose, as in the BIM Issues visual.
  */
 const closedTone: CountTone = (value, previous, mode) => {
   if (mode === 'toDate') return value > previous ? 'good' : 'neutral'
   return value > 0 && value >= previous ? 'good' : 'neutral'
-}
-
-function riseIsBad(delta: number): DeltaTone {
-  if (delta > 0) return 'bad'
-  if (delta < 0) return 'good'
-  return 'neutral'
 }
 
 /** The position of a week in a discipline index, or −1 when the week is before that discipline's first week. */
@@ -287,20 +291,25 @@ function thisWeekChange(delta: number, noun = 'this WW'): string {
   return `${delta === 0 ? '+0' : formatSignedCount(delta)} ${noun}`
 }
 
+/** A count in the selected week with its change against the week before. */
+function weekCountCard(label: string, value: number, previous: number, previousLabel: string, tone: DeltaTone): OverviewCard {
+  const delta = value - previous
+  return {
+    label,
+    value,
+    display: formatCount(value),
+    delta,
+    deltaDisplay: formatDelta(delta, previousLabel),
+    trend: trendOf(delta),
+    tone,
+    subLine: null,
+    isValueBad: false,
+  }
+}
+
 function countCard(label: string, counts: CountSeries, mode: CardMode, previousLabel: string, toneOf: CountTone): OverviewCard {
   if (mode === 'week') {
-    const delta = counts.week - counts.previousWeek
-    return {
-      label,
-      value: counts.week,
-      display: formatCount(counts.week),
-      delta,
-      deltaDisplay: formatDelta(delta, previousLabel),
-      trend: trendOf(delta),
-      tone: toneOf(counts.week, counts.previousWeek, mode),
-      subLine: null,
-      isValueBad: false,
-    }
+    return weekCountCard(label, counts.week, counts.previousWeek, previousLabel, toneOf(counts.week, counts.previousWeek, mode))
   }
   const delta = counts.toDate - counts.previousToDate
   return {
@@ -331,7 +340,10 @@ function rateCard(label: string, rate: number | null, previousRate: number | nul
   }
 }
 
-/** Percent of the total without an NCR, or null when the total is 0. */
+/**
+ * Percent of the total without an NCR, or null when the total is 0. For the rates no discipline model has: a single
+ * week's, Electrical and Mechanical together, and issue welds. The disciplines' own to-date rates use their helpers.
+ */
 function passRate(ncrs: number, total: number): number | null {
   return total === 0 ? null : ((total - ncrs) / total) * 100
 }
@@ -361,19 +373,45 @@ function seriesAt(weekly: (position: number) => number, cumulative: readonly num
   }
 }
 
-interface InspectionCounts {
+/** A discipline's positions for the selected week and the week before; −1 before its first week. */
+interface Positions {
+  position: number
+  previousPosition: number
+}
+
+function positionsIn(index: { positionByKey: ReadonlyMap<number, number> }, key: number, previousKey: number): Positions {
+  return { position: positionIn(index, key), previousPosition: positionIn(index, previousKey) }
+}
+
+interface InspectionCounts extends Positions {
   finals: CountSeries
   sors: CountSeries
   ncrs: CountSeries
 }
 
 function inspectionCounts(index: InspectionIndex, key: number, previousKey: number): InspectionCounts {
-  const position = positionIn(index, key)
-  const previousPosition = positionIn(index, previousKey)
+  const { position, previousPosition } = positionsIn(index, key, previousKey)
   return {
+    position,
+    previousPosition,
     finals: seriesAt((at) => index.weeks[at].finals, index.cumulativeFinals, position, previousPosition),
     sors: seriesAt((at) => index.weeks[at].sors, index.cumulativeSors, position, previousPosition),
     ncrs: seriesAt((at) => index.weeks[at].issuesFound, index.cumulativeIssues, position, previousPosition),
+  }
+}
+
+interface WeldCounts extends Positions {
+  welds: CountSeries
+  ncrs: CountSeries
+}
+
+function weldCounts(index: WeldIndex, key: number, previousKey: number): WeldCounts {
+  const { position, previousPosition } = positionsIn(index, key, previousKey)
+  return {
+    position,
+    previousPosition,
+    welds: seriesAt((at) => index.weeks[at].logged, index.cumulativeLogged, position, previousPosition),
+    ncrs: seriesAt((at) => index.weeks[at].issues, index.cumulativeIssues, position, previousPosition),
   }
 }
 
@@ -391,15 +429,18 @@ function cleanFinalsLine(ncrs: number, finals: number): string {
   return finals === 0 ? '0 Finals' : `${formatCount(finals - ncrs)} / ${formatCount(finals)} Finals`
 }
 
+/** A discipline's NCR pass rate: W's finals only in This WW, the Inspection visual's own rate in To date. */
+function inspectionPassRateCard(index: InspectionIndex, counts: InspectionCounts, mode: CardMode, previousLabel: string): OverviewCard {
+  if (mode === 'week') return passRateCard('NCR pass rate', counts.ncrs, counts.finals, mode, previousLabel, cleanFinalsLine)
+  const subLine = cleanFinalsLine(counts.ncrs.toDate, counts.finals.toDate)
+  return rateCard('NCR pass rate', passRateAt(index, counts.position), passRateAt(index, counts.previousPosition), subLine, previousLabel)
+}
+
 function ncrsOfLine(unit: string, units: string): (ncrs: number, total: number) => string {
   return (ncrs, total) =>
     total === 0
       ? `0 ${units}`
       : `${formatCount(ncrs)} ${pluralize(ncrs, 'NCR', 'NCRs')} of ${formatCount(total)} ${pluralize(total, unit, units)}`
-}
-
-function notConnectedText(name: string): string {
-  return `Not connected: no ${name} rows in QAQC Combined`
 }
 
 function trendWords(delta: number, previousLabel: string): string {
@@ -410,43 +451,53 @@ function trendWords(delta: number, previousLabel: string): string {
 
 interface RowContext {
   index: OverviewIndex
+  mode: CardMode
   /** Union positions of the sparkline's first week and the selected week. */
   sparkStart: number
   selectedPosition: number
   previousLabel: string
 }
 
-function buildRow(context: RowContext, name: string, connected: boolean, cards: OverviewCards, metricAt: (key: number) => number): OverviewRow {
+function disconnectedRow(name: string): DisconnectedOverviewRow {
+  return { connected: false, message: `Not connected: no ${name} rows in QAQC Combined` }
+}
+
+function connectedRow(context: RowContext, cards: OverviewCards, metricAt: (key: number) => number): ConnectedOverviewRow {
   const { index, sparkStart, selectedPosition, previousLabel } = context
   const sparkline: number[] = []
   for (let position = sparkStart; position <= selectedPosition; position += 1) sparkline.push(metricAt(index.weeks[position].key))
   const previous = selectedPosition > 0 ? metricAt(index.weeks[selectedPosition - 1].key) : 0
   return {
-    connected,
+    connected: true,
     cards,
     sparkline,
     sparklineSelected: sparkline.length - 1,
-    trendText: connected ? trendWords(sparkline[sparkline.length - 1] - previous, previousLabel) : notConnectedText(name),
+    trendText: trendWords(sparkline[sparkline.length - 1] - previous, previousLabel),
   }
 }
 
-function inspectionRow(context: RowContext, name: string, index: InspectionIndex, counts: InspectionCounts, mode: CardMode): OverviewRow {
-  const { previousLabel } = context
+function inspectionRow(context: RowContext, name: string, index: InspectionIndex, counts: InspectionCounts): OverviewRow {
+  if (index.totalRows === 0) return disconnectedRow(name)
+  const { mode, previousLabel } = context
   const cards: OverviewCards = [
     countCard('Finals', counts.finals, mode, previousLabel, neutralTone),
     countCard('SORs', counts.sors, mode, previousLabel, neutralTone),
     countCard('NCRs', counts.ncrs, mode, previousLabel, amberWhenUp),
-    passRateCard('NCR pass rate', counts.ncrs, counts.finals, mode, previousLabel, cleanFinalsLine),
+    inspectionPassRateCard(index, counts, mode, previousLabel),
   ]
-  return buildRow(context, name, index.totalRows > 0, cards, (key) => {
-    const position = positionIn(index, key)
-    return position < 0 ? 0 : index.weeks[position].finals + index.weeks[position].sors
+  return connectedRow(context, cards, (key) => {
+    const week = weekAt(index.weeks, positionIn(index, key))
+    return week === null ? 0 : week.finals + week.sors
   })
 }
 
-function signoffCard(index: WeldIndex, position: number, previousPosition: number, mode: CardMode, previousLabel: string): OverviewCard {
+function isBelowSignoffBaseline(rate: number | null): boolean {
+  return rate !== null && rate < SIGNOFF_BAD_BELOW
+}
+
+function signoffCard(index: WeldIndex, counts: WeldCounts, mode: CardMode, previousLabel: string): OverviewCard {
   if (mode === 'week') {
-    const signoff = latestSignoff(index, position)
+    const signoff = latestSignoff(index, counts.position)
     const rate = signoff?.rate ?? null
     return {
       label: 'Sign-off %',
@@ -457,27 +508,22 @@ function signoffCard(index: WeldIndex, position: number, previousPosition: numbe
       trend: 'none',
       tone: 'neutral',
       subLine: signoff === null ? NO_WELDS_YET : `${formatCount(signoff.signed)} of ${formatCount(signoff.total)} · ${signoff.week.label}`,
-      isValueBad: rate !== null && rate < SIGNOFF_BAD_BELOW_PERCENT,
+      isValueBad: isBelowSignoffBaseline(rate),
     }
   }
-  const logged = valueAt(index.cumulativeLogged, position)
-  const signed = valueAt(index.cumulativeSigned, position)
-  const previousLogged = valueAt(index.cumulativeLogged, previousPosition)
-  const rate = logged === 0 ? null : (signed / logged) * 100
-  const previousRate = previousLogged === 0 ? null : (valueAt(index.cumulativeSigned, previousPosition) / previousLogged) * 100
-  const subLine = logged === 0 ? NO_WELDS_YET : `${formatCount(signed)} of ${formatCount(logged)} signed`
-  return { ...rateCard('Sign-off %', rate, previousRate, subLine, previousLabel), isValueBad: rate !== null && rate < SIGNOFF_BAD_BELOW_PERCENT }
+  const rate = overallRateAt(index, counts.position)
+  const logged = counts.welds.toDate
+  const subLine = logged === 0 ? NO_WELDS_YET : `${formatCount(valueAt(index.cumulativeSigned, counts.position))} of ${formatCount(logged)} signed`
+  const card = rateCard('Sign-off %', rate, overallRateAt(index, counts.previousPosition), subLine, previousLabel)
+  return { ...card, isValueBad: isBelowSignoffBaseline(rate) }
 }
 
-function signedCard(index: WeldIndex, position: number, previousPosition: number, mode: CardMode, previousLabel: string): OverviewCard {
-  const signedInWeek = (at: number): number => (at < 0 ? 0 : index.weeks[at].signedInWeek)
-  const thisWeek = signedInWeek(position)
-  if (mode === 'week') {
-    const counts: CountSeries = { week: thisWeek, previousWeek: signedInWeek(previousPosition), toDate: 0, previousToDate: 0 }
-    return countCard('Signed', counts, mode, previousLabel, neutralTone)
-  }
+function signedCard(index: WeldIndex, counts: WeldCounts, mode: CardMode, previousLabel: string): OverviewCard {
+  const signedInWeek = (position: number): number => weekAt(index.weeks, position)?.signedInWeek ?? 0
+  const thisWeek = signedInWeek(counts.position)
+  if (mode === 'week') return weekCountCard('Signed', thisWeek, signedInWeek(counts.previousPosition), previousLabel, 'neutral')
   // Signed to date counts by weld week, as the Welding visual does; the change is the welds signed in the week.
-  const signed = valueAt(index.cumulativeSigned, position)
+  const signed = valueAt(index.cumulativeSigned, counts.position)
   return {
     label: 'Signed',
     value: signed,
@@ -491,104 +537,79 @@ function signedCard(index: WeldIndex, position: number, previousPosition: number
   }
 }
 
+function weldingRow(context: RowContext, index: WeldIndex, counts: WeldCounts): OverviewRow {
+  if (index.totalRows === 0) return disconnectedRow('Welding')
+  const { mode, previousLabel } = context
+  const cards: OverviewCards = [
+    countCard('Welds logged', counts.welds, mode, previousLabel, neutralTone),
+    signedCard(index, counts, mode, previousLabel),
+    signoffCard(index, counts, mode, previousLabel),
+    countCard('NCRs', counts.ncrs, mode, previousLabel, amberWhenUp),
+  ]
+  return connectedRow(context, cards, (key) => weekAt(index.weeks, positionIn(index, key))?.logged ?? 0)
+}
+
+/** Remaining open is always to date, with its change against the week before. */
 function remainingCard(opened: CountSeries, closed: CountSeries, previousLabel: string): OverviewCard {
   const remaining = opened.toDate - closed.toDate
-  const delta = remaining - (opened.previousToDate - closed.previousToDate)
-  return {
-    label: 'Remaining open',
-    value: remaining,
-    display: formatCount(remaining),
-    delta,
-    deltaDisplay: formatDelta(delta, previousLabel),
-    trend: trendOf(delta),
-    tone: riseIsBad(delta),
-    subLine: null,
-    isValueBad: false,
-  }
+  const previous = opened.previousToDate - closed.previousToDate
+  return weekCountCard('Remaining open', remaining, previous, previousLabel, riseIsBad(remaining - previous))
 }
 
-function closureRateCard(opened: CountSeries, closed: CountSeries, previousLabel: string): OverviewCard {
-  const rate = opened.toDate === 0 ? null : (closed.toDate / opened.toDate) * 100
-  const previousRate = opened.previousToDate === 0 ? null : (closed.previousToDate / opened.previousToDate) * 100
+/** The Closure rate is always to date. */
+function closureRateCard(index: IssueIndex, positions: Positions, opened: CountSeries, closed: CountSeries, previousLabel: string): OverviewCard {
   const subLine = opened.toDate === 0 ? NO_ISSUES_YET : `${formatCount(closed.toDate)} of ${formatCount(opened.toDate)} closed`
-  return rateCard('Closure rate', rate, previousRate, subLine, previousLabel)
+  return rateCard('Closure rate', closureRateAt(index, positions.position), closureRateAt(index, positions.previousPosition), subLine, previousLabel)
 }
 
+function bimRow(context: RowContext, index: IssueIndex, key: number, previousKey: number): OverviewRow {
+  if (index.totalRows === 0) return disconnectedRow('BIM Issues')
+  const { mode, previousLabel } = context
+  const positions = positionsIn(index, key, previousKey)
+  const opened = seriesAt((at) => index.weeks[at].opened, index.cumulativeOpened, positions.position, positions.previousPosition)
+  const closed = seriesAt((at) => index.weeks[at].closed, index.cumulativeClosed, positions.position, positions.previousPosition)
+  const cards: OverviewCards = [
+    countCard('Opened', opened, mode, previousLabel, openedTone),
+    countCard('Closed', closed, mode, previousLabel, closedTone),
+    remainingCard(opened, closed, previousLabel),
+    closureRateCard(index, positions, opened, closed, previousLabel),
+  ]
+  return connectedRow(context, cards, (weekKey) => {
+    const position = positionIn(index, weekKey)
+    return valueAt(index.cumulativeOpened, position) - valueAt(index.cumulativeClosed, position)
+  })
+}
+
+/** The DWN rate is always to date. The index already treats a Green tags value of 0 or below as missing. */
 function dwnRateLine(dwnsToDate: number, greenTags: number | null): string {
-  if (greenTags === null || greenTags <= 0) return GREEN_TAGS_MISSING
+  if (greenTags === null) return GREEN_TAGS_MISSING
   return `${formatPercent((dwnsToDate / greenTags) * 100)} of green tags (to date)`
 }
 
-export function buildOverviewModel(index: OverviewIndex, view: ViewState, mode: CardMode): OverviewModel {
-  const lastPosition = index.weeks.length - 1
-  const selectedPosition = index.positionByKey.get(view.selectedKey) ?? lastPosition
-  const endPosition = index.positionByKey.get(view.windowEndKey) ?? lastPosition
-  const startPosition = view.range === 'all' ? 0 : recentWindowStart(endPosition)
-  const selectedWeek = index.weeks[selectedPosition]
-  const previousWeek = previousWorkWeek(selectedWeek)
-  const previousLabel = previousWeek.label
-  const key = selectedWeek.key
-  const previousKey = previousWeek.key
-  const context: RowContext = { index, sparkStart: recentWindowStart(selectedPosition), selectedPosition, previousLabel }
-  const { electrical, mechanical, welding, bim } = index
-
-  const electricalCounts = inspectionCounts(electrical, key, previousKey)
-  const mechanicalCounts = inspectionCounts(mechanical, key, previousKey)
-
-  const weldPosition = positionIn(welding, key)
-  const weldPreviousPosition = positionIn(welding, previousKey)
-  const welds = seriesAt((at) => welding.weeks[at].logged, welding.cumulativeLogged, weldPosition, weldPreviousPosition)
-  const weldNcrs = seriesAt((at) => welding.weeks[at].issues, welding.cumulativeIssues, weldPosition, weldPreviousPosition)
-  const weldingRow = buildRow(
-    context,
-    'Welding',
-    welding.totalRows > 0,
-    [
-      countCard('Welds logged', welds, mode, previousLabel, neutralTone),
-      signedCard(welding, weldPosition, weldPreviousPosition, mode, previousLabel),
-      signoffCard(welding, weldPosition, weldPreviousPosition, mode, previousLabel),
-      countCard('NCRs', weldNcrs, mode, previousLabel, amberWhenUp),
-    ],
-    (weekKey) => {
-      const position = positionIn(welding, weekKey)
-      return position < 0 ? 0 : welding.weeks[position].logged
-    },
-  )
-
-  const bimPosition = positionIn(bim, key)
-  const bimPreviousPosition = positionIn(bim, previousKey)
-  const opened = seriesAt((at) => bim.weeks[at].opened, bim.cumulativeOpened, bimPosition, bimPreviousPosition)
-  const closed = seriesAt((at) => bim.weeks[at].closed, bim.cumulativeClosed, bimPosition, bimPreviousPosition)
-  const bimRow = buildRow(
-    context,
-    'BIM Issues',
-    bim.totalRows > 0,
-    [
-      countCard('Opened', opened, mode, previousLabel, amberWhenUp),
-      countCard('Closed', closed, mode, previousLabel, closedTone),
-      remainingCard(opened, closed, previousLabel),
-      closureRateCard(opened, closed, previousLabel),
-    ],
-    (weekKey) => {
-      const position = positionIn(bim, weekKey)
-      return position < 0 ? 0 : bim.cumulativeOpened[position] - bim.cumulativeClosed[position]
-    },
-  )
-
+function qualityCards(context: RowContext, electrical: InspectionCounts, mechanical: InspectionCounts, welds: WeldCounts): OverviewQualityCards {
+  const { index, mode, selectedPosition, previousLabel } = context
   const cors = seriesAt((at) => index.corsByWeek[at], index.cumulativeCors, selectedPosition, selectedPosition - 1)
   const dwns = seriesAt((at) => index.dwnsByWeek[at], index.cumulativeDwns, selectedPosition, selectedPosition - 1)
-  const ncrs = sumSeries([electricalCounts.ncrs, mechanicalCounts.ncrs, weldNcrs])
-  const inspectionNcrs = sumSeries([electricalCounts.ncrs, mechanicalCounts.ncrs])
-  const inspectionFinals = sumSeries([electricalCounts.finals, mechanicalCounts.finals])
-  const breakdown = `E ${formatCount(modeValue(electricalCounts.ncrs, mode))} · M ${formatCount(modeValue(mechanicalCounts.ncrs, mode))} · W ${formatCount(modeValue(weldNcrs, mode))}`
-  const quality: OverviewQualityCards = [
+  const inspectionNcrs = sumSeries([electrical.ncrs, mechanical.ncrs])
+  const breakdown = `E ${formatCount(modeValue(electrical.ncrs, mode))} · M ${formatCount(modeValue(mechanical.ncrs, mode))} · W ${formatCount(modeValue(welds.ncrs, mode))}`
+  return [
     countCard('CORs', cors, mode, previousLabel, amberWhenUp),
-    { ...countCard('NCRs', ncrs, mode, previousLabel, amberWhenUp), subLine: breakdown },
-    passRateCard('Inspection NCR pass rate', inspectionNcrs, inspectionFinals, mode, previousLabel, ncrsOfLine('final', 'finals')),
-    passRateCard('Welding NCR pass rate', weldNcrs, welds, mode, previousLabel, ncrsOfLine('weld', 'welds')),
+    { ...countCard('NCRs', sumSeries([inspectionNcrs, welds.ncrs]), mode, previousLabel, amberWhenUp), subLine: breakdown },
+    passRateCard('Inspection NCR pass rate', inspectionNcrs, sumSeries([electrical.finals, mechanical.finals]), mode, previousLabel, ncrsOfLine('final', 'finals')),
+    passRateCard('Welding NCR pass rate', welds.ncrs, welds.welds, mode, previousLabel, ncrsOfLine('weld', 'welds')),
     { ...countCard('DWNs', dwns, mode, previousLabel, neutralTone), subLine: dwnRateLine(dwns.toDate, index.greenTags) },
   ]
+}
 
+interface WindowSeries {
+  activity: ActivityPoint[]
+  rates: QualityRatePoint[]
+  windowTotals: OverviewWindowTotals
+}
+
+/** The chart series and totals for the union weeks from `start` through `end`. */
+function windowSeries(index: OverviewIndex, start: number, end: number): WindowSeries {
+  const { electrical, mechanical, welding } = index
   const activity: ActivityPoint[] = []
   const rates: QualityRatePoint[] = []
   const windowTotals: OverviewWindowTotals = {
@@ -599,9 +620,9 @@ export function buildOverviewModel(index: OverviewIndex, view: ViewState, mode: 
     inspectionNcrs: 0,
     welds: 0,
     weldNcrs: 0,
-    weeks: endPosition - startPosition + 1,
+    weeks: end - start + 1,
   }
-  for (let position = startPosition; position <= endPosition; position += 1) {
+  for (let position = start; position <= end; position += 1) {
     const week = index.weeks[position]
     const electricalWeek = weekAt(electrical.weeks, positionIn(electrical, week.key))
     const mechanicalWeek = weekAt(mechanical.weeks, positionIn(mechanical, week.key))
@@ -631,31 +652,56 @@ export function buildOverviewModel(index: OverviewIndex, view: ViewState, mode: 
     windowTotals.welds += logged
     windowTotals.weldNcrs += issues
   }
+  return { activity, rates, windowTotals }
+}
 
-  const inspectionLast = (inspections: InspectionIndex): number => {
+function hasCountedRows(index: OverviewIndex): boolean {
+  const { electrical, mechanical, welding, bim } = index
+  const inspectionsAtEnd = (inspections: InspectionIndex): number => {
     const last = inspections.weeks.length - 1
     return inspections.cumulativeFinals[last] + inspections.cumulativeSors[last]
   }
-  const hasData =
-    inspectionLast(electrical) > 0 ||
-    inspectionLast(mechanical) > 0 ||
+  return (
+    inspectionsAtEnd(electrical) > 0 ||
+    inspectionsAtEnd(mechanical) > 0 ||
     welding.cumulativeLogged[welding.weeks.length - 1] > 0 ||
     bim.cumulativeOpened[bim.weeks.length - 1] > 0
+  )
+}
+
+export function buildOverviewModel(index: OverviewIndex, view: ViewState, mode: CardMode): OverviewModel {
+  const lastPosition = index.weeks.length - 1
+  const selectedPosition = index.positionByKey.get(view.selectedKey) ?? lastPosition
+  const endPosition = index.positionByKey.get(view.windowEndKey) ?? lastPosition
+  const startPosition = view.range === 'all' ? 0 : recentWindowStart(endPosition)
+  const selectedWeek = index.weeks[selectedPosition]
+  const previousWeek = previousWorkWeek(selectedWeek)
+  const key = selectedWeek.key
+  const previousKey = previousWeek.key
+  const context: RowContext = {
+    index,
+    mode,
+    sparkStart: recentWindowStart(selectedPosition),
+    selectedPosition,
+    previousLabel: previousWeek.label,
+  }
+
+  const electrical = inspectionCounts(index.electrical, key, previousKey)
+  const mechanical = inspectionCounts(index.mechanical, key, previousKey)
+  const welds = weldCounts(index.welding, key, previousKey)
 
   return {
     selectedWeek,
     previousWeek,
     weekOptions: [...index.weeks].reverse(),
     rows: {
-      electrical: inspectionRow(context, 'Electrical', electrical, electricalCounts, mode),
-      mechanical: inspectionRow(context, 'Mechanical', mechanical, mechanicalCounts, mode),
-      welding: weldingRow,
-      bim: bimRow,
+      electrical: inspectionRow(context, 'Electrical', index.electrical, electrical),
+      mechanical: inspectionRow(context, 'Mechanical', index.mechanical, mechanical),
+      welding: weldingRow(context, index.welding, welds),
+      bim: bimRow(context, index.bim, key, previousKey),
     },
-    quality,
-    activity,
-    rates,
-    windowTotals,
-    hasData,
+    quality: qualityCards(context, electrical, mechanical, welds),
+    ...windowSeries(index, startPosition, endPosition),
+    hasData: hasCountedRows(index),
   }
 }

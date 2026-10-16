@@ -8,8 +8,8 @@ export type DeltaTone = 'neutral' | 'good' | 'warn' | 'bad'
 export type Trend = 'up' | 'down' | 'flat' | 'none'
 export type KpiStatus = 'good' | 'warn' | 'bad'
 
-/** Overall sign-off below this percent is bad. */
-const SIGNOFF_BAD_BELOW = 10
+/** Sign-off below this percent misses the 10% baseline and is bad, for a week or overall. */
+export const SIGNOFF_BAD_BELOW = 10
 /** Overall sign-off below this percent (and at or above the bad line) is a warning. */
 const SIGNOFF_WARN_BELOW = 15
 

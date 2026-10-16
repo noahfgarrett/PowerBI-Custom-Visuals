@@ -35,6 +35,7 @@ import {
   formatSignoffRate,
   pointsTone,
   pointsTrend,
+  SIGNOFF_BAD_BELOW,
   signoffStatus,
   trendOf,
 } from '../format'
@@ -44,8 +45,6 @@ import { buildWeldModel } from '../welds'
 
 const NO_ROWS_MESSAGE = 'No welds match the current filters'
 const EMPTY_RANGE_MESSAGE = 'No welds in this range'
-/** A week's sign-off below this percent misses the 10% baseline. */
-const SIGNOFF_BASELINE_PERCENT = 10
 
 type PanelId = 'signoff' | 'systems' | 'buildings'
 
@@ -240,7 +239,7 @@ export function WeldingDashboard({
                 detail={signoffDetail}
                 tone="neutral"
                 trend="none"
-                isValueBad={signoff !== null && signoff.rate < SIGNOFF_BASELINE_PERCENT}
+                isValueBad={signoff !== null && signoff.rate < SIGNOFF_BAD_BELOW}
               />
               <KpiCard
                 label="Issues Created"
