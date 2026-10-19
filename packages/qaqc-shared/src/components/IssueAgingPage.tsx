@@ -42,10 +42,9 @@ function listContent(filter: ListFilter, benchmarks: IssueBenchmarks, buckets: r
       const bucket = buckets.find((item) => item.key === filter.key)
       return bucket === undefined ? { rows: benchmarks.open, label: null } : { rows: bucket.issues, label: bucket.label }
     }
-    case 'past': {
-      const { window } = benchmarks
-      return { rows: window === null ? [] : benchmarks.open.filter((open) => open.age > window), label: PAST_WINDOW_LABEL }
-    }
+    case 'past':
+      // The open issues are oldest first, so those past the window are the first pastWindow of them.
+      return { rows: benchmarks.open.slice(0, benchmarks.pastWindow), label: PAST_WINDOW_LABEL }
     default: {
       const unreachable: never = filter
       return unreachable
@@ -108,7 +107,8 @@ export function IssueAgingPage({
 }: IssueAgingPageProps): ReactElement {
   const benchmarks = useMemo(() => buildIssueBenchmarks(index, view.selectedKey, index.today), [index, view.selectedKey])
   const buckets = useMemo(() => ageBuckets(benchmarks), [benchmarks])
-  const profile = useMemo(() => agingProfile(index, view, index.today), [index, view])
+  // The profile reads only the range and the window end, so selecting another week inside the window keeps it.
+  const profile = useMemo(() => agingProfile(index, view, index.today), [index, view.range, view.windowEndKey])
   const quarters = useMemo(() => quarterMedians(index, view.selectedKey, index.today), [index, view.selectedKey])
   const [listFilter, setListFilter] = useState<ListFilter | null>(null)
   const openerRef = useRef<HTMLElement | SVGElement | null>(null)
@@ -120,7 +120,8 @@ export function IssueAgingPage({
   const previousLabel = previousWorkWeek(asOf).label
   const hasWindow = window !== null
   const isPastClickable = hasWindow && pastWindow > 0
-  const content = listFilter === null ? null : listContent(listFilter, benchmarks, buckets)
+  // Memoized so a re-render hands the list the same rows, and it does not sort them again.
+  const content = useMemo(() => (listFilter === null ? null : listContent(listFilter, benchmarks, buckets)), [listFilter, benchmarks, buckets])
   const hasOpenProfile = profile.some((point) => point.median !== null)
 
   // Focus returns to what opened the list: a bar, the red card, or the expand button; or to the chart panel when

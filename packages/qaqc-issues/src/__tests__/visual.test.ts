@@ -98,8 +98,9 @@ function detailButton(element: HTMLElement): HTMLButtonElement | null {
   return element.querySelector<HTMLButtonElement>('.qaqc-header button[aria-label="Open Issue Detail"]')
 }
 
+/** The header button that opens a page, found by its accessible name: `Open the <page> page`. */
 function headerButton(element: HTMLElement, label: string): HTMLButtonElement | null {
-  return element.querySelector<HTMLButtonElement>(`.qaqc-header button[aria-label="Open ${label}"]`)
+  return element.querySelector<HTMLButtonElement>(`.qaqc-header button[aria-label="Open the ${label} page"]`)
 }
 
 /** Gives every element a measured size, so the page draws in jsdom; the host element sits at the origin. */

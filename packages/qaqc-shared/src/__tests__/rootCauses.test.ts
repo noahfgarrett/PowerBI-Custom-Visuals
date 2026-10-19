@@ -292,6 +292,11 @@ describe('buildRootCausePareto read-out', () => {
     expect(readoutText(model.readout)).toBe('The top 9 causes cover 75.0%; 80% is reached only inside Other. Cause 0 is 1 of 12 (8.3%).')
   })
 
+  it('groups the thousands in the top cause counts', () => {
+    const model = pareto([...many('A', 1200, 'Alpha'), ...many('B', 300, 'Beta')])
+    expect(model.readout[1]).toEqual({ lead: 'Alpha', rest: ' is 1,200 of 1,500 (80.0%).' })
+  })
+
   it('counts Not recorded issues in the top cause share', () => {
     expect(readoutText(pareto([...many('A', 3, 'Alpha'), ...many('N', 1, null)]).readout)).toBe('The top cause covers 100.0%. Alpha is 3 of 4 (75.0%).')
   })

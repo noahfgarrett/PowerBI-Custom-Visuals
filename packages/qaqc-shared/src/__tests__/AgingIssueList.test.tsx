@@ -5,6 +5,7 @@ import { ageBuckets, buildIssueBenchmarks } from '../issueBenchmarks'
 import { syntheticIssueRows } from './fixtures/syntheticRows'
 import { agingIndex, all, click, pressKey, stubSize, texts, WW42 } from './agingFixture'
 import { render, type Rendered } from './render'
+import { ruleBody } from './stylesheet'
 
 const INDEX = agingIndex()
 const BENCHMARKS = buildIssueBenchmarks(INDEX, WW42, INDEX.today)
@@ -187,5 +188,18 @@ describe('AgingIssueList chip focus', () => {
     chip.focus()
     click(chip)
     expect(document.activeElement?.textContent).toBe('Back')
+  })
+})
+
+describe('AgingIssueList title bar layout', () => {
+  // jsdom cannot lay out the stylesheet, so these read the rules that keep the title whole on narrow tiles.
+  it('wraps the chip and the note onto another line before the title is cut short', () => {
+    expect(ruleBody('.qaqc-aging-list .qaqc-panel-title')).toContain('flex-wrap: wrap;')
+  })
+
+  it('lets the note shrink rather than push the title', () => {
+    const note = ruleBody('.qaqc-aging-list-note')
+    expect(note).toContain('flex: 0 1 auto;')
+    expect(note).toContain('min-width: 0;')
   })
 })

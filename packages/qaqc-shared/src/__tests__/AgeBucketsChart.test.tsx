@@ -89,6 +89,17 @@ describe('AgeBucketsChart window', () => {
     expect(texts(view.container, '.qaqc-aging-typical-label')).toEqual(['typical: 32 d'])
   })
 
+  it('draws the typical marker line', () => {
+    view = draw(AT_WW42)
+    expect(all(view.container, '.qaqc-aging-typical-marker')).toHaveLength(1)
+  })
+
+  it('keeps the typical marker line when its label does not fit', () => {
+    view = draw(AT_WW42, { width: 260, height: 150 })
+    expect(view.container.querySelector('.qaqc-aging-typical-label')).toBeNull()
+    expect(all(view.container, '.qaqc-aging-typical-marker')).toHaveLength(1)
+  })
+
   it('draws the band from the left of the plot to the window edge, between the 77 and 78 day buckets', () => {
     view = draw(AT_WW42)
     const band = view.container.querySelector('.qaqc-aging-band')
@@ -101,6 +112,7 @@ describe('AgeBucketsChart window', () => {
     view = draw(NO_CLOSURES)
     expect(view.container.querySelector('.qaqc-aging-band')).toBeNull()
     expect(view.container.querySelector('.qaqc-aging-typical-label')).toBeNull()
+    expect(view.container.querySelector('.qaqc-aging-typical-marker')).toBeNull()
     const fills = barFills(view.container)
     expect(fills.length).toBeGreaterThan(0)
     expect(new Set(fills)).toEqual(new Set([AGING_COLORS.series1]))

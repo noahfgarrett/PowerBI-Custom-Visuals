@@ -41,15 +41,33 @@ export function quarterLegend(colors: ChartColors, typical: number | null): Lege
   ]
 }
 
+/** How the median compares with typical, in days either way. */
+function versusTypical(median: number, typical: number | null): string {
+  if (typical === null) return 'n/a'
+  if (median === typical) return 'same as typical'
+  return median < typical
+    ? `${formatQuarterDays(typical - median)} faster than typical`
+    : `${formatQuarterDays(median - typical)} slower than typical`
+}
+
 function tooltipRows(point: QuarterPoint, typical: number | null): TooltipRow[] {
   if (point.median === null) return [{ label: 'Closed', value: formatCount(point.closed) }]
-  const versus = typical === null ? 'n/a' : point.median <= typical ? 'at or faster' : `${formatQuarterDays(point.median - typical)} slower`
+  const versus = versusTypical(point.median, typical)
   return [
     { label: 'Closed', value: formatCount(point.closed) },
     { label: 'Median days to close', value: formatQuarterDays(point.median) },
     { label: 'Slowest', value: point.slowest === null ? 'n/a' : formatQuarterDays(point.slowest) },
     { label: 'vs typical', value: versus },
   ]
+}
+
+/** The chart for screen readers: typical, then each quarter's median and closed count. */
+function quarterDescription(points: readonly QuarterPoint[], typical: number | null): string {
+  const heading = typical === null ? 'Median days to close by calendar quarter' : `Median days to close by calendar quarter, typical ${formatQuarterDays(typical)}`
+  const quarters = points.map((point) => (point.median === null
+    ? `${point.label}: no closures`
+    : `${point.label}: ${formatQuarterDays(point.median)}, ${formatCount(point.closed)} closed`))
+  return quarters.length === 0 ? `${heading}.` : `${heading}. ${quarters.join('; ')}.`
 }
 
 interface QuarterLayout {
@@ -109,6 +127,7 @@ export function QuarterCloseChart({ points, typical, width, height, colors, onHo
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   const layout = useMemo(() => layoutQuarters(points, typical, width, height), [points, typical, width, height])
   const { plotLeft, plotRight, plotTop, plotBottom, slot, barWidth, y } = layout
+  const description = useMemo(() => quarterDescription(points, typical), [points, typical])
 
   function showTooltip(index: number, event: MouseEvent<SVGRectElement>): void {
     setHoverIndex(index)
@@ -119,7 +138,7 @@ export function QuarterCloseChart({ points, typical, width, height, colors, onHo
   const emptyWidth = Math.max(0, Math.min(slot - 6, EMPTY_SLOT_MAX_WIDTH))
 
   return (
-    <svg className="qaqc-chart qaqc-aging-quarters" width={width} height={height} role="img" aria-label="Median days to close by calendar quarter">
+    <svg className="qaqc-chart qaqc-aging-quarters" width={width} height={height} role="img" aria-label={description}>
       {layout.ticks.map((tick) => (
         <g key={tick}>
           <line className="qaqc-grid-line" x1={plotLeft} x2={plotRight} y1={y(tick)} y2={y(tick)} stroke={colors.grid} />

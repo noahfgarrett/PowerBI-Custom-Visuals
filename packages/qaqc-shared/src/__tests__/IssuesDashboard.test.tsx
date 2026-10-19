@@ -560,7 +560,7 @@ const PARETO_ALL_TITLE = "Issues by Root Cause Pareto · WW46'2024 to WW42'2026"
 const PARETO_RECENT_TITLE = "Issues by Root Cause Pareto · WW13'2026 to WW42'2026"
 
 function paretoButton(container: HTMLElement): HTMLButtonElement | null {
-  return container.querySelector<HTMLButtonElement>('.qaqc-header button[aria-label="Open Issues by Root Cause Pareto"]')
+  return container.querySelector<HTMLButtonElement>('.qaqc-header button[aria-label="Open the Issues by Root Cause Pareto page"]')
 }
 
 function openPareto(container: HTMLElement, title = PARETO_RECENT_TITLE): HTMLElement {
@@ -573,6 +573,15 @@ function openPareto(container: HTMLElement, title = PARETO_RECENT_TITLE): HTMLEl
 }
 
 describe('IssuesDashboard Issues by Root Cause Pareto', () => {
+  it('names the page buttons apart from every chart panel', () => {
+    stubSize()
+    view = draw()
+    const names = [...view.container.querySelectorAll('[aria-label]')].map((node) => node.getAttribute('aria-label'))
+    for (const name of ['Open the Issue Aging page', 'Open the Issues by Root Cause Pareto page', OPEN_AGING_TITLE]) {
+      expect(names.filter((candidate) => candidate === name)).toHaveLength(1)
+    }
+  })
+
   it('shows the Pareto button with the decreasing column chart icon', () => {
     view = draw()
     const button = paretoButton(view.container)

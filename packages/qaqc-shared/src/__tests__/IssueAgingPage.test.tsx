@@ -3,11 +3,19 @@ import { act, type ReactElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { IssuesDashboard, type IssuesDashboardProps } from '../components/IssuesDashboard'
+import { agingProfile } from '../issueBenchmarks'
 import { resolveTheme } from '../theme'
 import type { IssueIndex } from '../types'
 import { ISSUE_ROWS } from './fixtures/issueRows'
 import { agingIndex, all, click, noClosuresIndex, pressKey, stubSize, texts } from './agingFixture'
+import { countCompares } from './countCompares'
 import { render, type Rendered } from './render'
+
+// The real aging profile, wrapped so a test can see how often the page builds it.
+vi.mock('../issueBenchmarks', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../issueBenchmarks')>()
+  return { ...actual, agingProfile: vi.fn(actual.agingProfile) }
+})
 
 const INDEX = agingIndex()
 const THEME = resolveTheme({ preset: 'qaqc', backgroundColor: '', backgroundOpacity: 100, cardOpacity: 100, highContrast: null })
@@ -41,7 +49,7 @@ function dashboard(overrides: Partial<IssuesDashboardProps> = {}): ReactElement 
 }
 
 function agingButton(root: ParentNode): HTMLButtonElement | null {
-  return root.querySelector<HTMLButtonElement>('.qaqc-header button[aria-label="Open Issue Aging"]')
+  return root.querySelector<HTMLButtonElement>('.qaqc-header button[aria-label="Open the Issue Aging page"]')
 }
 
 function openPage(overrides: Partial<IssuesDashboardProps> = {}): HTMLElement {
@@ -348,6 +356,29 @@ describe('Issue Aging week and range', () => {
     pressKey(page, 'Escape')
     const dashboardAll = all(view?.container ?? document, '.qaqc-root .qaqc-segmented button').find((node) => node.textContent === 'All')
     expect(dashboardAll?.getAttribute('aria-pressed')).toBe('true')
+  })
+})
+
+describe('Issue Aging memoization', () => {
+  it('does not re-sort the past-window list when the page re-renders', () => {
+    const page = openPage()
+    click(pastCardButton(page))
+    const titleHeader = all(list(page) ?? page, 'thead th button').find((node) => node.textContent === 'Title')
+    if (!titleHeader) throw new Error('Title header missing')
+    click(titleHeader)
+    const compares = countCompares()
+    view?.rerender(dashboard({ onHover: vi.fn() }))
+    expect(listTitle(page)).toBe('Past the normal close window · 51 open issues')
+    expect(compares()).toBe(0)
+  })
+
+  it('keeps the same aging profile when a week is selected inside the window', () => {
+    const page = openPage()
+    const points = all(page, '.qaqc-aging-backlog .qaqc-hit')
+    const before = vi.mocked(agingProfile).mock.calls.length
+    click(points[points.length - 2])
+    expect(page.getAttribute('aria-label')).toBe("Issue Aging · as of WW41'2026")
+    expect(vi.mocked(agingProfile).mock.calls.length).toBe(before)
   })
 })
 

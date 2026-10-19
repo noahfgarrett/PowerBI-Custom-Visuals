@@ -99,18 +99,51 @@ describe('QuarterCloseChart', () => {
         { label: 'Closed', value: '45' },
         { label: 'Median days to close', value: '59 d' },
         { label: 'Slowest', value: `${QUARTERS[4].slowest} d` },
-        { label: 'vs typical', value: '27 d slower' },
+        { label: 'vs typical', value: '27 d slower than typical' },
       ],
       clientX: 3,
       clientY: 4,
     })
   })
 
-  it('says a quarter at or under typical is at or faster than typical', () => {
+  it('says how much faster than typical a quarter under typical closed', () => {
+    const onHover = vi.fn()
+    view = draw({ onHover })
+    fire(quarterHit(view.container, "Q2'26"), new MouseEvent('mousemove', { bubbles: true }))
+    expect(onHover.mock.lastCall?.[0].rows[3]).toEqual({ label: 'vs typical', value: '16 d faster than typical' })
+  })
+
+  it('keeps half days in the difference from typical', () => {
+    const onHover = vi.fn()
+    view = draw({ onHover })
+    fire(quarterHit(view.container, "Q3'25"), new MouseEvent('mousemove', { bubbles: true }))
+    expect(onHover.mock.lastCall?.[0].rows[3]).toEqual({ label: 'vs typical', value: '9.5 d faster than typical' })
+  })
+
+  it('says a quarter at typical is the same as typical', () => {
     const onHover = vi.fn()
     view = draw({ onHover })
     fire(quarterHit(view.container, "Q3'26"), new MouseEvent('mousemove', { bubbles: true }))
-    expect(onHover.mock.lastCall?.[0].rows[3]).toEqual({ label: 'vs typical', value: 'at or faster' })
+    expect(onHover.mock.lastCall?.[0].rows[3]).toEqual({ label: 'vs typical', value: 'same as typical' })
+  })
+
+  it('reads out each quarter, its median and its closed count to screen readers', () => {
+    view = draw()
+    expect(view.container.querySelector('svg')?.getAttribute('aria-label')).toBe(
+      "Median days to close by calendar quarter, typical 32 d. Q4'24: 30 d, 2 closed; Q1'25: 19 d, 3 closed; "
+        + "Q2'25: 14 d, 8 closed; Q3'25: 22.5 d, 32 closed; Q4'25: 59 d, 45 closed; Q1'26: 13.5 d, 10 closed; "
+        + "Q2'26: 16 d, 17 closed; Q3'26: 32 d, 9 closed; Q4'26: no closures.",
+    )
+  })
+
+  it('reads out only the heading without quarters', () => {
+    view = draw({ points: [], typical: null })
+    expect(view.container.querySelector('svg')?.getAttribute('aria-label')).toBe('Median days to close by calendar quarter.')
+  })
+
+  it('reads out the quarters without a typical close time', () => {
+    view = draw({ points: QUARTERS.slice(0, 1), typical: null })
+    expect(view.container.querySelector('svg')?.getAttribute('aria-label')).toBe("Median days to close by calendar quarter. Q4'24: 30 d, 2 closed.")
   })
 
   it('shows only the closed count for a quarter with no closures', () => {

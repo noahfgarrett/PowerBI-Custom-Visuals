@@ -11,7 +11,7 @@ import { buildIssueDetail, buildIssueIndex, buildIssueModel } from '../issues'
 import type { OverviewIndex } from '../overview'
 import { buildOverviewIndex, buildOverviewModel } from '../overview'
 import { buildRootCausePareto, paretoIssues } from '../rootCauses'
-import type { CombinedColumns, IssueDetailRow, IssueTrendPoint } from '../types'
+import type { CombinedColumns, IssueDetailRow, IssueTrendPoint, ViewState } from '../types'
 import { buildWeldIndex, buildWeldModel } from '../welds'
 import { makeWorkWeek } from '../workWeeks'
 import { COMBINED_COLUMNS } from './fixtures/combinedRows'
@@ -212,6 +212,21 @@ describe('overview performance budgets', () => {
     const view = { ...defaultViewState(index), range: 'all' as const }
     buildOverviewModel(index, view, mode)
     expect(bestOf(TIMING_RUNS, () => elapsed(() => buildOverviewModel(index, view, mode)))).toBeLessThan(16)
+  })
+
+  it.each(['week', 'toDate'] as const)('builds the overview model (%s) for a new week, benchmarks not yet built for it, within one frame', (mode) => {
+    // Every run selects a week no earlier call has selected, so the issue benchmarks are built for it from scratch.
+    const keys = index.weeks.slice(-2 - TIMING_RUNS).map((week) => week.key)
+    const viewAt = (key: number): ViewState => ({ ...defaultViewState(index), range: 'all', selectedKey: key, windowEndKey: key })
+    // The day numbers are worked out once per index, on the first build; this is a week change after that.
+    buildOverviewModel(index, viewAt(keys[0]), mode)
+    let next = 1
+    const coldWeekTime = (): number => {
+      const view = viewAt(keys[next])
+      next += 1
+      return elapsed(() => buildOverviewModel(index, view, mode))
+    }
+    expect(bestOf(TIMING_RUNS, coldWeekTime)).toBeLessThan(16)
   })
 })
 

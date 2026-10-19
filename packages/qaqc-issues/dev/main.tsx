@@ -1,4 +1,5 @@
 import { CircleAlert, ListChecks, LoaderCircle } from 'lucide-react'
+import { useEffect, type ReactElement, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 
 import '../style/visual.less'
@@ -91,47 +92,58 @@ if (data === 'missing') {
   const index = buildIssueIndex(rows, columns, today)
   document.title = `index ${Math.round(performance.now() - started)} ms`
   root.render(
-    <IssuesDashboard
-      title="QCx BIM Issues"
-      icon={CircleAlert}
-      index={index}
-      theme={theme}
-      interactive={params.get('interactive') !== '0'}
-      animate={params.get('animate') !== '0'}
-      describeCharts
-      loading={false}
-      footnotes={buildIssueFootnotes(index, false)}
-      viewport={{ width, height }}
-      onHover={showTooltip}
-    />,
+    <Harness>
+      <IssuesDashboard
+        title="QCx BIM Issues"
+        icon={CircleAlert}
+        index={index}
+        theme={theme}
+        interactive={params.get('interactive') !== '0'}
+        animate={params.get('animate') !== '0'}
+        describeCharts
+        loading={false}
+        footnotes={buildIssueFootnotes(index, false)}
+        viewport={{ width, height }}
+        onHover={showTooltip}
+      />
+    </Harness>,
   )
-  openRequestedPage()
+}
+
+interface HarnessProps {
+  children: ReactNode
+}
+
+/** Draws the dashboard, then opens any page the URL asks for once the dashboard has mounted. */
+function Harness({ children }: HarnessProps): ReactElement {
+  useEffect(() => {
+    openRequestedPage().catch((error: unknown) => {
+      document.title = `open failed: ${error instanceof Error ? error.message : String(error)}`
+    })
+  }, [])
+  return <>{children}</>
 }
 
 /**
- * Screenshot helpers: ?open=aging opens the Issue Aging page once the dashboard is drawn, and with it
- * &list=all|past|<bucket position> opens its issue list. ?open=pareto opens the Issues by Root Cause Pareto page,
- * with &range=all for every week, &scope=open for Open only and &bar=<position> to select a bar.
+ * Resolves with the first element matching `selector`, now or as soon as the dashboard draws it. A page's content
+ * appears only after its open animation, so this waits on the DOM rather than on a guess at the timing.
  */
-function openRequestedPage(): void {
-  if (params.get('open') === 'pareto') {
-    openParetoPage()
-    return
-  }
-  if (params.get('open') !== 'aging') return
-  window.setTimeout(() => {
-    document.querySelector<HTMLButtonElement>('button[aria-label="Open Issue Aging"]')?.click()
-    const list = params.get('list')
-    if (list === null) return
-    window.setTimeout(() => {
-      const target = list === 'past'
-        ? document.querySelector('.qaqc-aging-card-button')
-        : list === 'all'
-          ? document.querySelector('.qaqc-aging-page .qaqc-expand-button')
-          : document.querySelectorAll('.qaqc-aging-bucket')[Number(list)] ?? null
-      target?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-    }, 400)
-  }, 50)
+function whenPresent(selector: string): Promise<Element> {
+  const found = document.querySelector(selector)
+  if (found !== null) return Promise.resolve(found)
+  return new Promise((resolve) => {
+    const observer = new MutationObserver(() => {
+      const element = document.querySelector(selector)
+      if (element === null) return
+      observer.disconnect()
+      resolve(element)
+    })
+    observer.observe(document.body, { childList: true, subtree: true })
+  })
+}
+
+function clickElement(element: Element | null | undefined): void {
+  element?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
 }
 
 function clickButton(scope: ParentNode, text: string): void {
@@ -139,18 +151,39 @@ function clickButton(scope: ParentNode, text: string): void {
   button?.click()
 }
 
-function openParetoPage(): void {
-  window.setTimeout(() => {
-    if (params.get('range') === 'all') clickButton(document.querySelector('.qaqc-header') ?? document, 'All')
-    document.querySelector<HTMLButtonElement>('button[aria-label="Open Issues by Root Cause Pareto"]')?.click()
-    window.setTimeout(() => {
-      if (params.get('scope') === 'open') clickButton(document, 'Open only')
-      const bar = params.get('bar')
-      if (bar === null) return
-      window.setTimeout(() => {
-        document.querySelectorAll('.qaqc-pareto-chart .qaqc-hit')[Number(bar)]?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-      }, 50)
-    }, 400)
-  }, 50)
+/**
+ * Screenshot helpers: ?open=aging opens the Issue Aging page, and with it &list=all|past|<bucket position> opens
+ * its issue list. ?open=pareto opens the Issues by Root Cause Pareto page, with &range=all for every week,
+ * &scope=open for Open only and &bar=<position> to select a bar.
+ */
+async function openRequestedPage(): Promise<void> {
+  const page = params.get('open')
+  if (page === 'aging') await openAgingPage()
+  else if (page === 'pareto') await openParetoPage()
 }
 
+async function openAgingPage(): Promise<void> {
+  clickElement(await whenPresent('button[aria-label="Open the Issue Aging page"]'))
+  const list = params.get('list')
+  // The buckets are drawn once the page has opened and measured its charts.
+  await whenPresent('.qaqc-aging-page .qaqc-aging-bucket')
+  if (list === null) return
+  const target = list === 'past'
+    ? document.querySelector('.qaqc-aging-card-button')
+    : list === 'all'
+      ? document.querySelector('.qaqc-aging-page .qaqc-expand-button')
+      : document.querySelectorAll('.qaqc-aging-bucket')[Number(list)]
+  clickElement(target)
+}
+
+async function openParetoPage(): Promise<void> {
+  const button = await whenPresent('button[aria-label="Open the Issues by Root Cause Pareto page"]')
+  if (params.get('range') === 'all') clickButton(document.querySelector('.qaqc-header') ?? document, 'All')
+  clickElement(button)
+  // The bars are drawn once the page has opened and measured its chart.
+  await whenPresent('.qaqc-pareto-chart .qaqc-hit')
+  if (params.get('scope') === 'open') clickButton(document.querySelector('.qaqc-pareto-controls') ?? document, 'Open only')
+  const bar = params.get('bar')
+  if (bar === null) return
+  clickElement(document.querySelectorAll('.qaqc-pareto-chart .qaqc-hit')[Number(bar)])
+}

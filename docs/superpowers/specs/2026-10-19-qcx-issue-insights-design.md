@@ -76,6 +76,7 @@ A new shared module computes the benchmarks **as of week W**. QCx BIM Issues and
 ### Period and filter
 
 - **Period:** follows the dashboard's `30 WW | All` and W. Issues are those **created** in the window.
+- **Page controls:** the page has its own `30 WW | All` and week picker in the chart's title bar, beside the scope switch, because the dashboard header is hidden behind the page. They share the dashboard's `useWeekWindow` state, so changing them moves the dashboard too, and the overlay title follows.
 - **Scope switch:** `All issues | Open only`. Open only means open as of W.
 
 ### Chart
@@ -144,7 +145,7 @@ The third card is always bad red when its value is above 0. It is clickable: it 
   - `3–6 months` (90–179 d)
   - `6–12 months` (180–364 d)
   - `12+ months` (365+ d)
-- **When the window is 30 d or less, or 90 d or more:** fall back to the five month buckets. A bucket that straddles the window edge is coloured warn amber.
+- **When the window is under 31 d or over 88 d:** fall back to the five month buckets (`Under 1 month`, `1–3 months`, `3–6 months`, `6–12 months`, `12+ months`). A bucket that straddles the window edge is coloured warn amber. The reason: the window edge splits `1–3 months` (30–89 d) in two, and outside 31–88 d one part would be degenerate. At 30 d or less, `1 month – W90 d` would be at most one day wide; at 89 d or more, `W90+1 d – 3 months` would be empty.
 - **Background:** a light good-green band behind the 0–W90 region, labelled "Normal close window: 90% of issues close within W90 days". A dashed marker sits at typical (`typical: 32 d`).
 - **Bar colour:** buckets inside the window are good green, buckets past it are bad red, and a straddling bucket is warn amber. Every bar has a count label.
 - **Caption:**

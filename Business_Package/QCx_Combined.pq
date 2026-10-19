@@ -50,10 +50,17 @@ let
     Welding = Table.AddColumn(WeldingRenamed, "Source", each "Welding", type text),
 
     // ---- BIM Issues ----
+    // The required columns: the refresh fails here if one of them is missing.
+    BimRequired = Table.SelectColumns(
+        BimSource,
+        {"ID", "Status", "Type", "Created On", "Updated On", "Created By"},
+        MissingField.Error
+    ),
+    // Root Cause is optional: a sheet without it still loads, with Root Cause empty (null) on its rows.
     BimSelected = Table.SelectColumns(
         BimSource,
-        {"ID", "Status", "Type", "Created On", "Updated On", "Created By", "Root Cause"},
-        MissingField.Error
+        Table.ColumnNames(BimRequired) & {"Root Cause"},
+        MissingField.UseNull
     ),
     // The BIM column names already match the combined table, so there is nothing to rename.
     Bim = Table.AddColumn(BimSelected, "Source", each "BIM", type text),

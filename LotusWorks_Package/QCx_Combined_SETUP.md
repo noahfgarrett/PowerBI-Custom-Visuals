@@ -89,10 +89,17 @@ let
     Welding = Table.AddColumn(WeldingRenamed, "Source", each "Welding", type text),
 
     // ---- BIM Issues ----
+    // The required columns: the refresh fails here if one of them is missing.
+    BimRequired = Table.SelectColumns(
+        BimSource,
+        {"ID", "Status", "Type", "Created On", "Updated On", "Created By"},
+        MissingField.Error
+    ),
+    // Root Cause is optional: a sheet without it still loads, with Root Cause empty (null) on its rows.
     BimSelected = Table.SelectColumns(
         BimSource,
-        {"ID", "Status", "Type", "Created On", "Updated On", "Created By", "Root Cause"},
-        MissingField.Error
+        Table.ColumnNames(BimRequired) & {"Root Cause"},
+        MissingField.UseNull
     ),
     // The BIM column names already match the combined table, so there is nothing to rename.
     Bim = Table.AddColumn(BimSelected, "Source", each "BIM", type text),
@@ -155,7 +162,7 @@ in
 
 What it does:
 
-1. **Selects** the columns the visuals need from each source. `MissingField.Error` makes the refresh fail if one of those columns is missing (see Troubleshooting), so a renamed Smartsheet column can never turn into silent zeros.
+1. **Selects** the columns the visuals need from each source. `MissingField.Error` makes the refresh fail if one of those columns is missing (see Troubleshooting), so a renamed Smartsheet column can never turn into silent zeros. The BIM **Root Cause** column is optional: it is selected with `MissingField.UseNull`, so a BIM sheet without it still loads and Root Cause is empty on its rows.
 2. **Renames** them to the combined names (for example `Work Week Observed` → `Work Week`) and adds **Source**: `Electrical`, `Mechanical`, `Welding` or `BIM`.
 3. **Appends** the four tables. A column a source doesn't have is empty (null) on that source's rows.
 4. **Sets types:** text for every text column, including both Work Week columns, and date for Created On and Updated On. If a Work Week column comes through as a number (for example `42.2026`), it becomes the text `42.2026`, which the visuals read as WW42'2026, the same as `WW42'2026` typed as text. One catch: a number drops trailing zeros, so `42.2030` would arrive as `42.203`. Keep the Smartsheet column as text if you can.

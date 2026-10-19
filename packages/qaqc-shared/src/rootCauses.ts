@@ -1,5 +1,5 @@
 import type { IssueIndex, IssueRecord, ViewState, WorkWeek } from './types'
-import { formatPercent, NAME_COLLATOR } from './format'
+import { formatCount, formatPercent, NAME_COLLATOR } from './format'
 import { createNameGrouper, groupKey } from './grouping'
 import { recentWindowStart } from './inspections'
 import type { IssueTimeline } from './issueBenchmarks'
@@ -202,7 +202,7 @@ export function readoutText(lines: readonly ReadoutLine[]): string {
 function readoutOf(bars: readonly ParetoBar[], crossIndex: number | null, topNShare: number | null, total: number): ReadoutLine[] {
   if (crossIndex === null || topNShare === null) return []
   const top = bars[0]
-  const topCause: ReadoutLine = { lead: top.label, rest: ` is ${top.count} of ${total} (${formatPercent(top.share)}).` }
+  const topCause: ReadoutLine = { lead: top.label, rest: ` is ${formatCount(top.count)} of ${formatCount(total)} (${formatPercent(top.share)}).` }
   if (bars[crossIndex].kind === 'other') {
     return [{ lead: `The top ${TOP_CAUSES} causes`, rest: ` cover ${formatPercent(topNShare)}; 80% is reached only inside Other.` }, topCause]
   }

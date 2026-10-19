@@ -250,11 +250,11 @@ export function IssuesDashboard({
               <HeaderOverlayButton
                 {...expandable('pareto')}
                 label="Issues by Root Cause Pareto"
-                ariaLabel="Open Issues by Root Cause Pareto"
+                ariaLabel="Open the Issues by Root Cause Pareto page"
                 icon={ChartColumnDecreasing}
               />
             )}
-            <HeaderOverlayButton {...expandable('aging')} label="Issue Aging" ariaLabel="Open Issue Aging" icon={Hourglass} />
+            <HeaderOverlayButton {...expandable('aging')} label="Issue Aging" ariaLabel="Open the Issue Aging page" icon={Hourglass} />
           </DashboardHeader>
 
           <div className="qaqc-kpi-row">

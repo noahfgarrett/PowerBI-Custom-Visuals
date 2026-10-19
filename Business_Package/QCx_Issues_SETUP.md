@@ -102,7 +102,7 @@ Select **Issues by Root Cause Pareto** in the header (after Issue Detail) to ope
   - a 100% strip, and one row per category with its count and %
   - **Inside Other (n causes):** the causes folded into Other with their counts, up to 10 rows, then `n more causes`
 - **Read-out:** in the category panel, or under the chart when there is no panel. For example:
-  - `The top 4 causes cover 82.4%.` when 80% is reached within the top 9 causes
+  - `The top 9 causes cover 82.4%.` when 80% is reached within the top 9 causes (for example with Open only)
   - `The top 9 causes cover 79.1%; 80% is reached only inside Other.` when it isn't
   - then the top cause, for example `Installation is 48 of 177 (27.1%).`
 - **Drill-down:** click a bar, or move along the bars with the arrow keys and press Enter, to list its issues in the table below. The top bar is selected when the page opens.

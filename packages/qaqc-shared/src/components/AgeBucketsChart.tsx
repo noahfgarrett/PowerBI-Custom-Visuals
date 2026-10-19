@@ -241,9 +241,11 @@ export function AgeBucketsChart({ benchmarks, buckets, width, height, colors, on
           Open issues
         </text>
         <line x1={plotLeft} x2={plotRight} y1={plotBottom} y2={plotBottom} stroke={colors.ink} strokeOpacity={0.3} />
-        {typical !== null && layout.typicalLabel !== null && (
+        {/* The typical line is always drawn; only its label gives way when no spot is clear. */}
+        {typical !== null && (
           <g pointerEvents="none">
             <line
+              className="qaqc-aging-typical-marker"
               x1={layout.xOfDay(typical)}
               x2={layout.xOfDay(typical)}
               y1={plotTop - 4}
@@ -253,15 +255,17 @@ export function AgeBucketsChart({ benchmarks, buckets, width, height, colors, on
               strokeWidth={1.25}
               strokeDasharray="3 3"
             />
-            <text
-              className="qaqc-aging-label qaqc-aging-typical-label"
-              x={layout.typicalLabel.x}
-              y={layout.typicalLabel.y}
-              textAnchor="middle"
-              fill={colors.ink}
-            >
-              {`typical: ${days(typical)}`}
-            </text>
+            {layout.typicalLabel !== null && (
+              <text
+                className="qaqc-aging-label qaqc-aging-typical-label"
+                x={layout.typicalLabel.x}
+                y={layout.typicalLabel.y}
+                textAnchor="middle"
+                fill={colors.ink}
+              >
+                {`typical: ${days(typical)}`}
+              </text>
+            )}
           </g>
         )}
         <g
