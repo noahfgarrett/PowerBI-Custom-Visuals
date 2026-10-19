@@ -22,6 +22,7 @@ import { ChartPanel } from './ChartPanel'
 import { DashboardHeader, type DashboardChromeProps } from './DashboardHeader'
 import { Footnotes } from './Footnotes'
 import { HeaderOverlayButton } from './HeaderOverlayButton'
+import { IssueAgingPage, issueAgingTitle } from './IssueAgingPage'
 import { IssueDetail } from './IssueDetail'
 import { issueTrendLegend, IssuesTrendChart } from './IssuesTrendChart'
 import { KpiCard } from './KpiCard'
@@ -39,7 +40,7 @@ const NO_ROWS_MESSAGE = 'No issues match the current filters'
 const NO_OPEN_MESSAGE = 'No open issues'
 
 type ChartId = 'trend' | 'openAging' | 'overallAging'
-type PanelId = ChartId | 'detail'
+type PanelId = ChartId | 'detail' | 'aging'
 
 const CHART_IDS: readonly ChartId[] = ['trend', 'openAging', 'overallAging'] as const
 
@@ -167,6 +168,29 @@ export function IssuesDashboard({
       // Mounted only while the page is open, so the detail is built only then.
       renderExpanded: () => <IssueDetail index={index} selectedKey={model.selectedWeek.key} />,
     },
+    aging: {
+      title: issueAgingTitle(model.selectedWeek),
+      icon: Hourglass,
+      kind: 'page',
+      legend: [],
+      emptyMessage: null,
+      // Mounted only while the page is open, so the benchmarks are built only then. It shares the dashboard's week
+      // window, so its own range toggle and week picker move the dashboard too.
+      renderExpanded: () => (
+        <IssueAgingPage
+          index={index}
+          view={view}
+          weekOptions={model.weekOptions}
+          colors={colors}
+          animate={animate}
+          footnotes={footnotes}
+          onSelectWeek={selectWeek}
+          onPickWeek={pickWeek}
+          onRangeChange={changeRange}
+          onHover={onHover}
+        />
+      ),
+    },
   }
 
   return (
@@ -192,6 +216,7 @@ export function IssuesDashboard({
             onPickWeek={pickWeek}
           >
             <HeaderOverlayButton {...expandable('detail')} label="Issue Detail" ariaLabel="Open Issue Detail" icon={TableProperties} />
+            <HeaderOverlayButton {...expandable('aging')} label="Issue Aging" ariaLabel="Open Issue Aging" icon={Hourglass} />
           </DashboardHeader>
 
           <div className="qaqc-kpi-row">

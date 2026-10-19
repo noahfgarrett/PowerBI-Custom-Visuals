@@ -1503,6 +1503,315 @@
   font-size: 12px;
 }
 
+// Issue aging: the page opened from the BIM Issues header (IssueAgingPage, AgeBucketsChart, BacklogAgeChart,
+// QuarterCloseChart, AgingIssueList). The issue list slides up over the charts; the cards and controls stay above it.
+
+.qaqc-aging-page {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  // On a short tile the page scrolls, so the charts keep the minimum height below.
+  overflow-y: auto;
+}
+
+.qaqc-aging-top {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.qaqc-aging-top .qaqc-kpi-group {
+  flex: 1 1 auto;
+}
+
+.qaqc-aging-controls {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 8px;
+}
+
+.qaqc-aging-body {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  // Enough for the two small charts beside the large one; shorter tiles scroll the page.
+  min-height: 420px;
+}
+
+.qaqc-aging-charts {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+// The page sits on the solid overlay card, so its panels take a lighter shadow than the dashboard's.
+.qaqc-aging-page .qaqc-panel {
+  box-shadow: 0 1px 2px rgba(27, 37, 48, 0.06);
+}
+
+.qaqc-aging-caption {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--qaqc-ink-2);
+  font-size: 12px;
+  font-weight: 650;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qaqc-aging-caption.is-bad {
+  color: var(--qaqc-bad);
+}
+
+.qaqc-aging-caption-hint {
+  color: var(--qaqc-muted);
+  font-weight: 500;
+}
+
+.qaqc-aging-count {
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.qaqc-aging-bucket-label {
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.qaqc-aging-bucket-range {
+  font-size: 9.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.qaqc-aging-band-label {
+  font-size: 10.5px;
+  font-weight: 500;
+}
+
+.qaqc-aging-band-label.is-title {
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+// LABEL_METRICS in chartLabels.ts measures these 9.5 px bold labels for placement; change both together.
+.qaqc-aging-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+// A card-coloured halo keeps the labels readable over the lines, bars and band.
+.qaqc-aging-label,
+.qaqc-aging-count,
+.qaqc-aging-band-label {
+  paint-order: stroke;
+  stroke: var(--qaqc-card-solid);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.qaqc-aging-bucket.is-clickable {
+  cursor: pointer;
+}
+
+// A bucket draws its own outline while hovered or focused.
+.qaqc-aging-bucket:focus {
+  outline: none;
+}
+
+// The past-window card is a button that opens its issues; the hint sits at its top right.
+.qaqc-aging-card-button {
+  position: relative;
+  min-width: 0;
+  margin: -3px -6px;
+  padding: 3px 6px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 150ms ease-out;
+}
+
+.qaqc-aging-card-button:hover {
+  background: color-mix(in srgb, var(--qaqc-bad) 6%, transparent);
+}
+
+.qaqc-aging-card-button:focus-visible,
+.qaqc-aging-chip:focus-visible {
+  outline: 2px solid var(--qaqc-accent);
+  outline-offset: 1px;
+}
+
+.qaqc-aging-card-button:focus:not(:focus-visible) {
+  outline: none;
+}
+
+// The label stops short of the hint and ends in an ellipsis on narrow overlays.
+.qaqc-aging-card-button .qaqc-kpi-label {
+  padding-right: 80px;
+}
+
+.qaqc-aging-card-hint {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--qaqc-bad);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.qaqc-aging-list {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+}
+
+// Two classes, so it outranks the page's lighter panel shadow: the list floats over the charts.
+.qaqc-aging-page .qaqc-aging-list {
+  box-shadow: 0 12px 34px rgba(27, 37, 48, 0.16);
+}
+
+.qaqc-aging-list.is-animated {
+  animation: qaqc-aging-slide-up 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes qaqc-aging-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qaqc-aging-list.is-animated {
+    animation: none;
+  }
+}
+
+.qaqc-aging-list .qaqc-panel-title h3 {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qaqc-aging-chip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  margin-left: 4px;
+  padding: 2px 8px 2px 10px;
+  border: 1px solid color-mix(in srgb, var(--qaqc-bad) 35%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--qaqc-bad) 8%, transparent);
+  color: var(--qaqc-bad);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.qaqc-aging-chip:hover {
+  background: color-mix(in srgb, var(--qaqc-bad) 14%, transparent);
+}
+
+.qaqc-panel-title .qaqc-aging-chip svg {
+  color: inherit;
+}
+
+.qaqc-aging-list-note {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--qaqc-ink-2);
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.qaqc-aging-list-note b {
+  color: var(--qaqc-ink);
+  font-weight: 700;
+}
+
+.qaqc-aging-list-wrap {
+  margin-top: 8px;
+}
+
+.qaqc-aging-list-table {
+  table-layout: fixed;
+}
+
+// No vertical padding: cells centre in the fixed TABLE_ROW_HEIGHT row.
+.qaqc-aging-list-table td,
+.qaqc-aging-list-table tbody th {
+  padding-top: 0;
+  padding-bottom: 0;
+  vertical-align: middle;
+}
+
+.qaqc-aging-list-table tbody tr:not(.qaqc-virtual-spacer):hover > * {
+  background: var(--qaqc-accent-soft);
+}
+
+.qaqc-aging-days {
+  font-weight: 650;
+}
+
+.qaqc-aging-days.is-bad {
+  color: var(--qaqc-bad);
+}
+
+.qaqc-aging-days.is-good {
+  color: var(--qaqc-good);
+}
+
+.qaqc-aging-list-empty {
+  height: auto;
+  padding: 24px;
+}
+
+// Narrow overlays stack the cards over the controls and the charts in one column.
+.qaqc-expanded.is-compact .qaqc-aging-top {
+  flex-direction: column;
+}
+
+.qaqc-expanded.is-compact .qaqc-aging-controls {
+  flex-direction: row;
+  justify-content: flex-start;
+}
+
+.qaqc-expanded.is-compact .qaqc-aging-body {
+  flex: 0 0 auto;
+}
+
+.qaqc-expanded.is-compact .qaqc-aging-charts {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 340px 220px 220px;
+}
+
+.qaqc-expanded.is-compact .qaqc-aging-charts .qaqc-panel-main {
+  grid-row: auto;
+}
+
 // Overview charts (OverviewLinesChart behind ActivityLinesChart and QualityRatesChart), their expanded week tables,
 // and the discipline row sparklines.
 

@@ -97,7 +97,7 @@ if (data === 'missing') {
       index={index}
       theme={theme}
       interactive={params.get('interactive') !== '0'}
-      animate
+      animate={params.get('animate') !== '0'}
       describeCharts
       loading={false}
       footnotes={buildIssueFootnotes(index, false)}
@@ -105,4 +105,26 @@ if (data === 'missing') {
       onHover={showTooltip}
     />,
   )
+  openRequestedPage()
+}
+
+/**
+ * Screenshot helpers: ?open=aging opens the Issue Aging page once the dashboard is drawn, and with it
+ * &list=all|past|<bucket position> opens its issue list.
+ */
+function openRequestedPage(): void {
+  if (params.get('open') !== 'aging') return
+  window.setTimeout(() => {
+    document.querySelector<HTMLButtonElement>('button[aria-label="Open Issue Aging"]')?.click()
+    const list = params.get('list')
+    if (list === null) return
+    window.setTimeout(() => {
+      const target = list === 'past'
+        ? document.querySelector('.qaqc-aging-card-button')
+        : list === 'all'
+          ? document.querySelector('.qaqc-aging-page .qaqc-expand-button')
+          : document.querySelectorAll('.qaqc-aging-bucket')[Number(list)] ?? null
+      target?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    }, 400)
+  }, 50)
 }

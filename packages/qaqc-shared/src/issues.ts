@@ -321,6 +321,7 @@ export function buildIssueIndex(rows: InspectionRows, columns: IssueColumns, tod
 
   return {
     currentWeek,
+    today: todayNoon,
     issues,
     weeks,
     cumulativeOpened,

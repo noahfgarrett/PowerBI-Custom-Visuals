@@ -397,6 +397,8 @@ export interface OpenIssueRow {
 
 export interface IssueIndex {
   currentWeek: WorkWeek
+  /** Noon of the day the index was built for; ages and as-of-week benchmarks are measured to it. */
+  today: Date
   /** Included issues created through the current week, sorted by ID descending (numeric-aware). */
   issues: IssueRecord[]
   /** Continuous weeks from the first created or closed week through the current week. Always holds at least one week, the current week. */

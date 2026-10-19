@@ -319,12 +319,12 @@ describe('IssuesDashboard layout', () => {
     expect(view.container.querySelector('.qaqc-title-icon svg.lucide-circle-alert')).not.toBeNull()
   })
 
-  it('puts the Issue Detail button before the range toggle and week picker', () => {
+  it('puts the Issue Detail and Issue Aging buttons before the range toggle and week picker', () => {
     view = draw()
     const controls = view.container.querySelector('.qaqc-controls')
     const order = [...(controls?.children ?? [])].map((node) => node.className)
-    expect(order).toEqual(['qaqc-header-button', 'qaqc-segmented', 'qaqc-week-picker'])
-    expect(detailButton(view.container)?.textContent).toBe('Issue Detail')
+    expect(order).toEqual(['qaqc-header-button', 'qaqc-header-button', 'qaqc-segmented', 'qaqc-week-picker'])
+    expect([...(controls?.querySelectorAll('.qaqc-header-button') ?? [])].map((node) => node.textContent)).toEqual(['Issue Detail', 'Issue Aging'])
   })
 
   it('toggles the chart range', () => {

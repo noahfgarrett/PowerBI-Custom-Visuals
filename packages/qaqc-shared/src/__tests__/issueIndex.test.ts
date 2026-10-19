@@ -408,3 +408,10 @@ describe('buildIssueIndex', () => {
     })
   })
 })
+
+describe('buildIssueIndex today', () => {
+  it('keeps the noon of the day it was built for, so as-of-week ages use the same today', () => {
+    const index = buildIssueIndex([issue('#1', '10/5/2026')], COLUMNS, new Date(2026, 9, 15, 8, 30))
+    expect(index.today).toEqual(new Date(2026, 9, 15, 12))
+  })
+})
