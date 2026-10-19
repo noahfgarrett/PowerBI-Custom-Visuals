@@ -65,7 +65,10 @@ export function weldColumnsOf(columns: CombinedColumns): WeldColumns {
   }
 }
 
-/** The combined table has no Title, Contractor or Due Date, so issues take the builder's defaults for those. */
+/**
+ * The combined table has no Title, Contractor, Due Date or Root Cause Category, so issues take the builder's defaults
+ * for those. Root Cause stays −1 when the visual has no Root Cause slot bound.
+ */
 export function issueColumnsOf(columns: CombinedColumns): IssueColumns {
   return {
     id: columns.id,
@@ -77,5 +80,7 @@ export function issueColumnsOf(columns: CombinedColumns): IssueColumns {
     updatedOn: columns.updatedOn,
     dueDate: ABSENT_COLUMN,
     createdBy: columns.createdBy,
+    rootCause: columns.rootCause,
+    rootCauseCategory: ABSENT_COLUMN,
   }
 }

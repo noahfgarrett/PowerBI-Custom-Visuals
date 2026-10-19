@@ -29,6 +29,8 @@ const ISSUE_COLUMNS = {
   updatedOn: 6,
   dueDate: 7,
   createdBy: 8,
+  rootCause: 9,
+  rootCauseCategory: 10,
 }
 const TODAY = new Date(2026, 9, 15)
 
@@ -115,6 +117,7 @@ describe('overview performance budgets', () => {
     createdOn: position('Created On'),
     updatedOn: position('Updated On'),
     createdBy: position('Created By'),
+    rootCause: position('Root Cause'),
     greenTags: -1,
   }
 

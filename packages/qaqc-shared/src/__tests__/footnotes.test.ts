@@ -41,6 +41,8 @@ const ISSUE_COLUMNS: IssueColumns = {
   updatedOn: 6,
   dueDate: 7,
   createdBy: 8,
+  rootCause: 9,
+  rootCauseCategory: 10,
 }
 
 function issueRow(id: string, createdOn: string | null, createdBy = 'LotusWorks'): Array<string | null> {
@@ -163,6 +165,7 @@ const PERFORMANCE_COLUMNS: CombinedColumns = {
   createdOn: -1,
   updatedOn: -1,
   createdBy: -1,
+  rootCause: -1,
   greenTags: -1,
 }
 

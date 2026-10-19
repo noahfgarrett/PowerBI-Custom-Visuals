@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  ISSUE_SLOTS,
   OVERVIEW_SLOTS,
   PERFORMANCE_SLOTS,
   readCombinedTable,
@@ -110,8 +111,20 @@ describe('readWeldTable', () => {
   })
 })
 
-type IssueRole = 'id' | 'title' | 'status' | 'type' | 'contractor' | 'createdOn' | 'updatedOn' | 'dueDate' | 'createdBy'
-const ALL_ISSUE_ROLES: IssueRole[] = ['id', 'title', 'status', 'type', 'contractor', 'createdOn', 'updatedOn', 'dueDate', 'createdBy']
+type IssueRole =
+  | 'id'
+  | 'title'
+  | 'status'
+  | 'type'
+  | 'contractor'
+  | 'createdOn'
+  | 'updatedOn'
+  | 'dueDate'
+  | 'createdBy'
+  | 'rootCause'
+  | 'rootCauseCategory'
+const REQUIRED_ISSUE_ROLES: IssueRole[] = ['id', 'title', 'status', 'type', 'contractor', 'createdOn', 'updatedOn', 'dueDate', 'createdBy']
+const ALL_ISSUE_ROLES: IssueRole[] = [...REQUIRED_ISSUE_ROLES, 'rootCause', 'rootCauseCategory']
 
 function issueTable(rows: ReadonlyArray<ReadonlyArray<unknown>>, roles: IssueRole[] = ALL_ISSUE_ROLES): InspectionTableSource {
   return {
@@ -120,7 +133,37 @@ function issueTable(rows: ReadonlyArray<ReadonlyArray<unknown>>, roles: IssueRol
   }
 }
 
-const ISSUE_ROW = ['#1020', 'WR1 - GF PVC Protection Deficiency', 'Ready to Inspect', 'COR', 'Bayside', '7/27/2026', '7/27/2026', '8/14/2026', 'LotusWorks']
+const ISSUE_ROW = [
+  '#1020',
+  'WR1 - GF PVC Protection Deficiency',
+  'Ready to Inspect',
+  'COR',
+  'Bayside',
+  '7/27/2026',
+  '7/27/2026',
+  '8/14/2026',
+  'LotusWorks',
+  'Installation',
+  'Quality',
+]
+
+describe('ISSUE_SLOTS', () => {
+  it('ends with the optional Root Cause and Root Cause Category slots, after the required ones', () => {
+    expect(ISSUE_SLOTS.map((slot) => [slot.role, slot.slot, slot.column])).toEqual([
+      ['id', 'ID', 'ID'],
+      ['title', 'Title', 'Title'],
+      ['status', 'Status', 'Status'],
+      ['type', 'Type', 'Type'],
+      ['contractor', 'Contractor', 'Contractor'],
+      ['createdOn', 'Created On', 'Created On'],
+      ['updatedOn', 'Updated On', 'Updated On'],
+      ['dueDate', 'Due Date', 'Due Date'],
+      ['createdBy', 'Created By', 'Created By'],
+      ['rootCause', 'Root Cause', 'Root Cause'],
+      ['rootCauseCategory', 'Root Cause Category', 'Root Cause Category'],
+    ])
+  })
+})
 
 describe('readIssueTable', () => {
   it('reports every required slot when there is no data view', () => {
@@ -148,7 +191,7 @@ describe('readIssueTable', () => {
   })
 
   it('requires the Created By slot on its own', () => {
-    const result = readIssueTable(issueTable([ISSUE_ROW], ALL_ISSUE_ROLES.filter((role) => role !== 'createdBy')))
+    const result = readIssueTable(issueTable([ISSUE_ROW], REQUIRED_ISSUE_ROLES.filter((role) => role !== 'createdBy')))
     expect(result.kind).toBe('missing')
     if (result.kind === 'missing') expect(result.missing.map((slot) => slot.role)).toEqual(['createdBy'])
   })
@@ -158,17 +201,46 @@ describe('readIssueTable', () => {
     expect(result.kind).toBe('ready')
     if (result.kind === 'ready') {
       expect(result.columns).toEqual({
-        id: 8,
-        title: 7,
-        status: 6,
-        type: 5,
-        contractor: 4,
-        createdOn: 3,
-        updatedOn: 2,
-        dueDate: 1,
-        createdBy: 0,
+        id: 10,
+        title: 9,
+        status: 8,
+        type: 7,
+        contractor: 6,
+        createdOn: 5,
+        updatedOn: 4,
+        dueDate: 3,
+        createdBy: 2,
+        rootCause: 1,
+        rootCauseCategory: 0,
       })
       expect(result.rows[0][result.columns.id]).toBe('#1020')
+      expect(result.rows[0][result.columns.rootCause]).toBe('Installation')
+    }
+  })
+
+  it('is ready without the optional Root Cause slots and reports them at −1', () => {
+    const result = readIssueTable(issueTable([ISSUE_ROW], REQUIRED_ISSUE_ROLES))
+    expect(result.kind).toBe('ready')
+    if (result.kind === 'ready') {
+      expect(result.columns.rootCause).toBe(-1)
+      expect(result.columns.rootCauseCategory).toBe(-1)
+    }
+  })
+
+  it('never names the optional Root Cause slots as missing', () => {
+    const result = readIssueTable(issueTable([ISSUE_ROW], ['id', 'title']))
+    expect(result.kind).toBe('missing')
+    if (result.kind === 'missing') {
+      expect(result.missing.map((slot) => slot.role)).toEqual(['status', 'type', 'contractor', 'createdOn', 'updatedOn', 'dueDate', 'createdBy'])
+    }
+  })
+
+  it('reads Root Cause without Root Cause Category', () => {
+    const result = readIssueTable(issueTable([ISSUE_ROW], [...REQUIRED_ISSUE_ROLES, 'rootCause']))
+    expect(result.kind).toBe('ready')
+    if (result.kind === 'ready') {
+      expect(result.columns.rootCause).toBe(9)
+      expect(result.columns.rootCauseCategory).toBe(-1)
     }
   })
 
@@ -204,6 +276,7 @@ type CombinedRole =
   | 'createdOn'
   | 'updatedOn'
   | 'createdBy'
+  | 'rootCause'
   | 'greenTags'
 
 const OVERVIEW_ROLES: CombinedRole[] = [
@@ -221,8 +294,10 @@ const OVERVIEW_ROLES: CombinedRole[] = [
   'createdOn',
   'updatedOn',
   'createdBy',
+  'rootCause',
   'greenTags',
 ]
+const OPTIONAL_OVERVIEW_ROLES: CombinedRole[] = ['rootCause', 'greenTags']
 const PERFORMANCE_ROLES: CombinedRole[] = ['source', 'rowId', 'workWeek', 'phase', 'issue', 'building', 'qcr', 'welder', 'tagNo']
 
 function combinedTable(roles: CombinedRole[]): InspectionTableSource {
@@ -249,6 +324,7 @@ describe('OVERVIEW_SLOTS and PERFORMANCE_SLOTS', () => {
       ['createdOn', 'Created On', 'Created On'],
       ['updatedOn', 'Updated On', 'Updated On'],
       ['createdBy', 'Created By', 'Created By'],
+      ['rootCause', 'Root Cause', 'Root Cause'],
       ['greenTags', 'Green tags', 'Green tags measure'],
     ])
   })
@@ -269,11 +345,11 @@ describe('OVERVIEW_SLOTS and PERFORMANCE_SLOTS', () => {
 })
 
 describe('readCombinedTable', () => {
-  it('reports every required Overview slot, but not Green tags, when there is no data view', () => {
+  it('reports every required Overview slot, but not Root Cause or Green tags, when there is no data view', () => {
     const result = readCombinedTable(undefined, OVERVIEW_SLOTS)
     expect(result.kind).toBe('missing')
     if (result.kind === 'missing') {
-      expect(result.missing.map((slot) => slot.role)).toEqual(OVERVIEW_ROLES.filter((role) => role !== 'greenTags'))
+      expect(result.missing.map((slot) => slot.role)).toEqual(OVERVIEW_ROLES.filter((role) => !OPTIONAL_OVERVIEW_ROLES.includes(role)))
     }
   })
 
@@ -310,22 +386,23 @@ describe('readCombinedTable', () => {
     expect(result.kind).toBe('ready')
     if (result.kind === 'ready') {
       expect(result.columns).toEqual({
-        source: 14,
-        workWeek: 12,
-        phase: 11,
-        issue: 10,
-        building: 9,
+        source: 15,
+        workWeek: 13,
+        phase: 12,
+        issue: 11,
+        building: 10,
         qcr: -1,
         welder: -1,
         tagNo: -1,
-        signature: 8,
-        signedWeek: 7,
-        id: 6,
-        status: 5,
-        type: 4,
-        createdOn: 3,
-        updatedOn: 2,
-        createdBy: 1,
+        signature: 9,
+        signedWeek: 8,
+        id: 7,
+        status: 6,
+        type: 5,
+        createdOn: 4,
+        updatedOn: 3,
+        createdBy: 2,
+        rootCause: 1,
         greenTags: 0,
       })
       expect(result.rows[0][result.columns.source]).toBe('source')
@@ -353,9 +430,16 @@ describe('readCombinedTable', () => {
         createdOn: -1,
         updatedOn: -1,
         createdBy: -1,
+        rootCause: -1,
         greenTags: -1,
       })
     }
+  })
+
+  it('is ready without the optional Root Cause slot and reports it at −1', () => {
+    const result = readCombinedTable(combinedTable(OVERVIEW_ROLES.filter((role) => role !== 'rootCause')), OVERVIEW_SLOTS)
+    expect(result.kind).toBe('ready')
+    if (result.kind === 'ready') expect(result.columns.rootCause).toBe(-1)
   })
 
   it('is ready without the optional Green tags slot and reports it at −1', () => {

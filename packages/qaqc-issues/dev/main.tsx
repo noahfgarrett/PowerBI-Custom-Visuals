@@ -8,7 +8,7 @@ import { syntheticIssueRows } from '../../qaqc-shared/src/__tests__/fixtures/syn
 import type { TooltipRequest } from '../../qaqc-shared/src/chartTypes'
 import { IssuesDashboard } from '../../qaqc-shared/src/components/IssuesDashboard'
 import { StatusPanel } from '../../qaqc-shared/src/components/StatusPanel'
-import { ISSUE_SLOTS } from '../../qaqc-shared/src/dataView'
+import { ISSUE_SLOTS, OPTIONAL_ISSUE_ROLES } from '../../qaqc-shared/src/dataView'
 import { buildIssueFootnotes } from '../../qaqc-shared/src/footnotes'
 import { buildIssueIndex } from '../../qaqc-shared/src/issues'
 import { isPresetName, resolveTheme } from '../../qaqc-shared/src/theme'
@@ -58,7 +58,19 @@ function showTooltip(request: TooltipRequest | null): void {
 }
 
 const root = createRoot(frame)
-const columns: IssueColumns = { id: 0, title: 1, status: 2, type: 3, contractor: 4, createdOn: 5, updatedOn: 6, dueDate: 7, createdBy: 8 }
+const columns: IssueColumns = {
+  id: 0,
+  title: 1,
+  status: 2,
+  type: 3,
+  contractor: 4,
+  createdOn: 5,
+  updatedOn: 6,
+  dueDate: 7,
+  createdBy: 8,
+  rootCause: 9,
+  rootCauseCategory: 10,
+}
 
 if (data === 'missing') {
   root.render(
@@ -66,7 +78,7 @@ if (data === 'missing') {
       icon={ListChecks}
       title="Add the BIM Issues Log columns"
       message="Drag these columns from your Smartsheet table into the matching field slots."
-      items={ISSUE_SLOTS.map((slot) => `${slot.column} → ${slot.slot}`)}
+      items={ISSUE_SLOTS.filter((slot) => !OPTIONAL_ISSUE_ROLES.has(slot.role)).map((slot) => `${slot.column} → ${slot.slot}`)}
     />,
   )
 } else if (data === 'loading') {

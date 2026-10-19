@@ -972,6 +972,7 @@ const FIXTURE_COLUMNS: CombinedColumns = {
   createdOn: position('Created On'),
   updatedOn: position('Updated On'),
   createdBy: position('Created By'),
+  rootCause: position('Root Cause'),
   greenTags: -1,
 }
 const FIXTURE_TODAY = new Date(2026, 9, 15) // WW42'2026

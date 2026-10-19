@@ -16,7 +16,7 @@ QCx Combined appends the four into one table with fixed column names. Each row k
 4. With `Query1` selected, select **Home → Advanced Editor**.
 5. Delete everything in the editor, paste the script below, and select **Done**.
 6. Rename the query to **QCx Combined**: right-click `Query1` in the Queries pane, select **Rename**, and type `QCx Combined`. You can also change **Name** under Query Settings → Properties on the right.
-7. Check the preview. It should show 17 columns, starting with Source and Row ID, and rows from all four sheets.
+7. Check the preview. It should show 18 columns, starting with Source and Row ID, and rows from all four sheets.
 8. Select **Home → Close & Apply**.
 
 The script is also saved next to this guide as `QCx_Combined.pq`, so you can open it in a text editor and copy it from there.
@@ -91,7 +91,7 @@ let
     // ---- BIM Issues ----
     BimSelected = Table.SelectColumns(
         BimSource,
-        {"ID", "Status", "Type", "Created On", "Updated On", "Created By"},
+        {"ID", "Status", "Type", "Created On", "Updated On", "Created By", "Root Cause"},
         MissingField.Error
     ),
     // The BIM column names already match the combined table, so there is nothing to rename.
@@ -118,7 +118,8 @@ let
             {"Type", type text},
             {"Created On", type date},
             {"Updated On", type date},
-            {"Created By", type text}
+            {"Created By", type text},
+            {"Root Cause", type text}
         }
     ),
 
@@ -144,7 +145,8 @@ let
             "Type",
             "Created On",
             "Updated On",
-            "Created By"
+            "Created By",
+            "Root Cause"
         }
     )
 in
@@ -181,10 +183,11 @@ What it does:
 | Created On | — | — | — | Created On |
 | Updated On | — | — | — | Updated On |
 | Created By | — | — | — | Created By |
+| Root Cause | — | — | — | Root Cause |
 
 Row ID is one sequence, 1, 2, 3 …, through every row of the combined table. A dash (—) means the column is empty on that source's rows. Note the Mechanical header spelling `QCR / FE`, with spaces, which differs from Electrical's `QCR/FE`.
 
-The QCx Overview binds 14 of these columns and the QCx Performance visual binds 9. See `QCx_Overview_SETUP.md` and `QCx_Performance_SETUP.md`.
+The QCx Overview binds 14 of these columns, plus Root Cause if you add it to its optional slot, and the QCx Performance visual binds 9. See `QCx_Overview_SETUP.md` and `QCx_Performance_SETUP.md`.
 
 ## Troubleshooting
 

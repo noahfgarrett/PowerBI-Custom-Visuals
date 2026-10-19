@@ -22,7 +22,8 @@ const COLUMNS: CombinedColumns = {
   createdOn: 13,
   updatedOn: 14,
   createdBy: 15,
-  greenTags: 16,
+  rootCause: 16,
+  greenTags: 17,
 }
 const TODAY = new Date(2026, 9, 15) // WW42'2026
 
@@ -80,7 +81,7 @@ describe('column mapping helpers', () => {
     })
   })
 
-  it('maps the issue columns, with Title, Contractor and Due Date absent', () => {
+  it('maps the issue columns, with Title, Contractor, Due Date and Root Cause Category absent', () => {
     expect(issueColumnsOf(COLUMNS)).toEqual({
       id: 10,
       title: -1,
@@ -91,7 +92,13 @@ describe('column mapping helpers', () => {
       updatedOn: 14,
       dueDate: -1,
       createdBy: 15,
+      rootCause: 16,
+      rootCauseCategory: -1,
     })
+  })
+
+  it('leaves Root Cause unbound when the Overview has no Root Cause slot', () => {
+    expect(issueColumnsOf({ ...COLUMNS, rootCause: -1 }).rootCause).toBe(-1)
   })
 })
 
@@ -112,6 +119,7 @@ const ROLES: ReadonlyArray<keyof CombinedColumns> = [
   'createdOn',
   'updatedOn',
   'createdBy',
+  'rootCause',
   'greenTags',
 ]
 
@@ -153,5 +161,19 @@ describe('builders read absent columns (−1) as blank cells', () => {
     expect(index.issues.map((issue) => issue.contractor).sort()).toEqual(['Bayside', DEFAULT_CONTRACTOR].sort())
     expect(index.issues.map((issue) => issue.dueDate)).toEqual([null, null])
     expect(index.issues.map((issue) => issue.subtype).sort()).toEqual(['COR', 'NCR'])
+  })
+
+  it('indexes BIM rows with their Root Cause and no Root Cause Category', () => {
+    const rows = [
+      combinedRow({ source: 'BIM', id: '#1019', status: 'Open', createdOn: '7/27/2026', createdBy: 'LotusWorks', rootCause: ' Installation ' }),
+      combinedRow({ source: 'BIM', id: '#1018', status: 'Open', createdOn: '7/24/2026', createdBy: 'LotusWorks' }),
+    ]
+    const index = buildIssueIndex(rows, issueColumnsOf(COLUMNS), TODAY)
+    expect(index.hasRootCause).toBe(true)
+    expect(index.hasRootCauseCategory).toBe(false)
+    expect(index.issues.map((issue) => [issue.id, issue.rootCause, issue.rootCauseCategory])).toEqual([
+      ['#1019', 'Installation', ''],
+      ['#1018', '', ''],
+    ])
   })
 })

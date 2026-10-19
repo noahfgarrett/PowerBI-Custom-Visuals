@@ -20,6 +20,8 @@ const COLUMNS: IssueColumns = {
   updatedOn: 6,
   dueDate: 7,
   createdBy: 8,
+  rootCause: 9,
+  rootCauseCategory: 10,
 }
 const TODAY = new Date(2026, 9, 15) // WW42'2026
 const INDEX = buildIssueIndex(ISSUE_ROWS, COLUMNS, TODAY)

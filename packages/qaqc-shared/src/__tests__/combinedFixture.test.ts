@@ -35,6 +35,7 @@ const COLUMNS: CombinedColumns = {
   createdOn: position('Created On'),
   updatedOn: position('Updated On'),
   createdBy: position('Created By'),
+  rootCause: position('Root Cause'),
   greenTags: -1,
 }
 const TODAY = new Date(2026, 9, 15) // WW42'2026
@@ -70,6 +71,12 @@ describe('QAQC Combined fixture (2026-10-14 exports)', () => {
     )
   })
 
+  it('appends Root Cause as the last column, carrying the BIM Root Cause', () => {
+    expect(COMBINED_COLUMNS[COMBINED_COLUMNS.length - 1]).toBe('Root Cause')
+    expect(COMBINED_ROWS.every((row) => row.length === COMBINED_COLUMNS.length)).toBe(true)
+    expect(pick(split.bim, [COLUMNS.rootCause])).toEqual(pick(ISSUE_ROWS, [9]))
+  })
+
   it('holds only pseudonyms or Not recorded values in QCR/FE', () => {
     const values = [...split.electrical, ...split.mechanical].map((row) => row[COLUMNS.qcr])
     const named = values.filter((value) => typeof value === 'string' && !isNotRecorded(value))
@@ -89,7 +96,10 @@ describe('QAQC Combined fixture (2026-10-14 exports)', () => {
     const welderOutsideWelding = [...split.electrical, ...split.mechanical, ...split.bim].filter((row) => row[COLUMNS.welder] !== null)
     const qcrOutsideInspections = [...split.welding, ...split.bim].filter((row) => row[COLUMNS.qcr] !== null)
     const idOutsideBim = [...split.electrical, ...split.mechanical, ...split.welding].filter((row) => row[COLUMNS.id] !== null)
-    expect([...welderOutsideWelding, ...qcrOutsideInspections, ...idOutsideBim]).toEqual([])
+    const rootCauseOutsideBim = [...split.electrical, ...split.mechanical, ...split.welding].filter(
+      (row) => row[COLUMNS.rootCause] !== null,
+    )
+    expect([...welderOutsideWelding, ...qcrOutsideInspections, ...idOutsideBim, ...rootCauseOutsideBim]).toEqual([])
   })
 
   it('reproduces the Electrical to-date totals through WW42', () => {
@@ -119,5 +129,11 @@ describe('QAQC Combined fixture (2026-10-14 exports)', () => {
     expect(model.toDate.opened.value).toBe(177)
     expect(model.toDate.closed.value).toBe(126)
     expect(model.toDate.remaining.value).toBe(51)
+  })
+
+  it('reproduces the 48 Installation issues through the combined Root Cause column', () => {
+    const index = buildIssueIndex(split.bim, issueColumnsOf(COLUMNS), TODAY)
+    expect(index.hasRootCause).toBe(true)
+    expect(index.issues.filter((issue) => issue.rootCause === 'Installation')).toHaveLength(48)
   })
 })

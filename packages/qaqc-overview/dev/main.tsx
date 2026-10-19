@@ -85,6 +85,7 @@ const columns: CombinedColumns = {
   createdOn: position('Created On'),
   updatedOn: position('Updated On'),
   createdBy: position('Created By'),
+  rootCause: position('Root Cause'),
   greenTags: greenTagsParam === null ? -1 : COMBINED_COLUMNS.length,
 }
 

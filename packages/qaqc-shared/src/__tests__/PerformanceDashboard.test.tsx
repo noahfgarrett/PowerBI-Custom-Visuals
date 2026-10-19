@@ -48,6 +48,7 @@ const COLUMNS: CombinedColumns = {
   createdOn: -1,
   updatedOn: -1,
   createdBy: -1,
+  rootCause: -1,
   greenTags: -1,
 }
 const TODAY = new Date(2026, 9, 15) // WW42'2026

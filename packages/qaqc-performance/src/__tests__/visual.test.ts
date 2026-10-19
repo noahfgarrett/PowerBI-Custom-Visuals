@@ -101,6 +101,7 @@ function fixtureQcrModel(minimum: number): ReturnType<typeof buildPerformanceMod
     createdOn: -1,
     updatedOn: -1,
     createdBy: -1,
+    rootCause: -1,
     greenTags: -1,
   }
   const index = buildPerformanceIndex(splitCombinedRows(COMBINED_ROWS, SOURCE), columns, new Date(2026, 9, 15))

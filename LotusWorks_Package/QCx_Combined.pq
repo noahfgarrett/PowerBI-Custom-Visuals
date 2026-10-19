@@ -52,7 +52,7 @@ let
     // ---- BIM Issues ----
     BimSelected = Table.SelectColumns(
         BimSource,
-        {"ID", "Status", "Type", "Created On", "Updated On", "Created By"},
+        {"ID", "Status", "Type", "Created On", "Updated On", "Created By", "Root Cause"},
         MissingField.Error
     ),
     // The BIM column names already match the combined table, so there is nothing to rename.
@@ -79,7 +79,8 @@ let
             {"Type", type text},
             {"Created On", type date},
             {"Updated On", type date},
-            {"Created By", type text}
+            {"Created By", type text},
+            {"Root Cause", type text}
         }
     ),
 
@@ -105,7 +106,8 @@ let
             "Type",
             "Created On",
             "Updated On",
-            "Created By"
+            "Created By",
+            "Root Cause"
         }
     )
 in

@@ -285,6 +285,9 @@ export function buildIssueIndex(rows: InspectionRows, columns: IssueColumns, tod
       createdOn: created.date,
       updatedOn: updated?.date ?? null,
       dueDate,
+      // An unbound slot is −1, and row[-1] is undefined, which reads as ''.
+      rootCause: cellText(row[columns.rootCause]),
+      rootCauseCategory: cellText(row[columns.rootCauseCategory]),
       createdWeek: created.week,
       closedWeek,
       detail,
@@ -330,6 +333,8 @@ export function buildIssueIndex(rows: InspectionRows, columns: IssueColumns, tod
     skippedRows,
     futureRows,
     excludedRows,
+    hasRootCause: columns.rootCause >= 0,
+    hasRootCauseCategory: columns.rootCauseCategory >= 0,
   }
 }
 

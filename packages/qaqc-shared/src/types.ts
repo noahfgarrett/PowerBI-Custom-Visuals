@@ -274,7 +274,7 @@ export interface WeldModel {
   hasData: boolean
 }
 
-/** Column positions of each BIM issue field slot inside a table row. */
+/** Column positions of each BIM issue field slot inside a table row. The Root Cause slots are optional: −1 when unbound. */
 export interface IssueColumns {
   id: number
   title: number
@@ -285,6 +285,8 @@ export interface IssueColumns {
   updatedOn: number
   dueDate: number
   createdBy: number
+  rootCause: number
+  rootCauseCategory: number
 }
 
 /** Column positions of each QCx Combined field slot inside a table row, or −1 when the slot isn't bound. */
@@ -305,6 +307,7 @@ export interface CombinedColumns {
   createdOn: number
   updatedOn: number
   createdBy: number
+  rootCause: number
   greenTags: number
 }
 
@@ -349,6 +352,10 @@ export interface IssueRecord {
   /** Updated On, or null when blank or unreadable. */
   updatedOn: Date | null
   dueDate: Date | null
+  /** Trimmed Root Cause, '' when blank or unbound. */
+  rootCause: string
+  /** Trimmed Root Cause Category, '' when blank or unbound. */
+  rootCauseCategory: string
   createdWeek: WorkWeek
   /** ISO week of Updated On for closed issues that have one, otherwise null. */
   closedWeek: WorkWeek | null
@@ -411,6 +418,10 @@ export interface IssueIndex {
   futureRows: number
   /** Rows whose Created By is not a LotusWorks creator. */
   excludedRows: number
+  /** Whether the optional Root Cause slot is bound. */
+  hasRootCause: boolean
+  /** Whether the optional Root Cause Category slot is bound. */
+  hasRootCauseCategory: boolean
 }
 
 export interface IssueCountCard {

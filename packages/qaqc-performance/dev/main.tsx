@@ -80,6 +80,7 @@ const columns: CombinedColumns = {
   createdOn: -1,
   updatedOn: -1,
   createdBy: -1,
+  rootCause: -1,
   greenTags: -1,
 }
 

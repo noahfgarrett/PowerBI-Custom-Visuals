@@ -21,6 +21,7 @@ export const COLUMNS: CombinedColumns = {
   createdOn: 11,
   updatedOn: 12,
   createdBy: 13,
+  rootCause: -1,
   greenTags: 14,
 }
 const WIDTH = 15
