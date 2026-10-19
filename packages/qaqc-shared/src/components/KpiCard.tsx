@@ -29,9 +29,11 @@ export interface KpiCardProps {
   status?: KpiStatus
   /** Colors the value bad red, for a value that misses its target on its own. */
   isValueBad?: boolean
+  /** The value's full text as a tooltip, for a long value the card cuts short. */
+  valueTitle?: string
 }
 
-export function KpiCard({ label, value, context, detail, tone, trend, icon: Icon, status, isValueBad = false }: KpiCardProps): ReactElement {
+export function KpiCard({ label, value, context, detail, tone, trend, icon: Icon, status, isValueBad = false, valueTitle }: KpiCardProps): ReactElement {
   const TrendIcon = trend === 'none' ? null : TREND_ICONS[trend]
   const text = context === undefined ? detail : `${context}. ${detail}`
   const summary = isValueBad ? `${label}: ${value}. ${text}. Below target` : `${label}: ${value}. ${text}`
@@ -43,7 +45,9 @@ export function KpiCard({ label, value, context, detail, tone, trend, icon: Icon
         </span>
         <span className="qaqc-kpi-label">{label}</span>
       </div>
-      <strong className={isValueBad ? 'qaqc-kpi-value is-bad' : 'qaqc-kpi-value'}>{value}</strong>
+      <strong className={isValueBad ? 'qaqc-kpi-value is-bad' : 'qaqc-kpi-value'} title={valueTitle}>
+        {value}
+      </strong>
       {status !== undefined && <span className={`qaqc-kpi-status is-${status}`} aria-hidden="true" />}
       {context !== undefined && <span className="qaqc-kpi-context">{context}</span>}
       <span className={`qaqc-kpi-detail is-${tone}`}>

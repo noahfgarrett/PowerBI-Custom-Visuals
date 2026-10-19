@@ -45,6 +45,7 @@ export function OverviewKpiCard({ card, icon, isTwoLine = false }: OverviewKpiCa
       tone={card.tone}
       trend={card.trend}
       isValueBad={card.isValueBad}
+      valueTitle={card.valueTitle}
     />
   )
 }

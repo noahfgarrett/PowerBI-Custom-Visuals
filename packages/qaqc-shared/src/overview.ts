@@ -10,13 +10,16 @@ import {
   formatPointsDelta,
   formatSignedCount,
   formatSignoffRate,
+  NAME_COLLATOR,
   pluralize,
   pointsTone,
   pointsTrend,
   SIGNOFF_BAD_BELOW,
   trendOf,
 } from './format'
+import { createNameGrouper } from './grouping'
 import { buildInspectionIndex, passRateAt, recentWindowStart } from './inspections'
+import { buildIssueBenchmarks, type IssueBenchmarks } from './issueBenchmarks'
 import { buildIssueIndex, closureRateAt, riseIsBad } from './issues'
 import { buildWeldIndex, latestSignoff, overallRateAt } from './welds'
 import { enumerateWorkWeeks, previousWorkWeek } from './workWeeks'
@@ -46,6 +49,8 @@ export interface OverviewFootnoteCounts {
 
 export interface OverviewIndex {
   currentWeek: WorkWeek
+  /** The day the index was built for; the issue benchmarks' end of a week is never later. */
+  today: Date
   /** Each discipline indexed with its own builder. A source with no rows holds an empty index (one week, all zero). */
   electrical: InspectionIndex
   mechanical: InspectionIndex
@@ -82,6 +87,8 @@ export interface OverviewCard {
   subLine: string | null
   /** The value misses its target on its own (Sign-off % below 10%). */
   isValueBad: boolean
+  /** The value's full text as a tooltip, for a value a narrow card may cut short (a root cause name). */
+  valueTitle?: string
 }
 
 export type OverviewCards = [OverviewCard, OverviewCard, OverviewCard, OverviewCard]
@@ -113,7 +120,7 @@ export interface OverviewRows {
   bim: OverviewRow
 }
 
-export type OverviewQualityCards = [OverviewCard, OverviewCard, OverviewCard, OverviewCard, OverviewCard]
+export type OverviewQualityCards = [OverviewCard, OverviewCard, OverviewCard, OverviewCard, OverviewCard, OverviewCard]
 
 export interface ActivityPoint {
   week: WorkWeek
@@ -158,7 +165,7 @@ export interface OverviewCardsModel {
   /** Newest first. */
   weekOptions: WorkWeek[]
   rows: OverviewRows
-  /** CORs, NCRs, Inspection NCR pass rate, Welding NCR pass rate, DWNs. */
+  /** CORs, NCRs, Inspection NCR pass rate, Welding NCR pass rate, DWNs, Top root cause. */
   quality: OverviewQualityCards
   /** True when any source has a counted row. */
   hasData: boolean
@@ -231,6 +238,7 @@ export function buildOverviewIndex(split: CombinedSplit, columns: CombinedColumn
 
   return {
     currentWeek,
+    today,
     electrical,
     mechanical,
     welding,
@@ -266,6 +274,9 @@ const CHANGE_NA = 'Change n/a'
 const NO_WELDS_YET = 'No welds logged yet'
 const NO_ISSUES_YET = 'No issues opened yet'
 const GREEN_TAGS_MISSING = 'DWN rate n/a: add Green tags'
+const PAST_WINDOW_LABEL = 'Past normal close window'
+const TOP_CAUSE_LABEL = 'Top root cause'
+const ROOT_CAUSE_MISSING = 'Add Root Cause'
 
 const neutralTone: CountTone = () => 'neutral'
 const amberWhenUp: CountTone = (value, previous) => (value > previous ? 'warn' : 'neutral')
@@ -312,6 +323,11 @@ function weekCountCard(label: string, value: number, previous: number, previousL
     subLine: null,
     isValueBad: false,
   }
+}
+
+/** A card with no value to compare: a placeholder such as `n/a` or `None`, and why. */
+function noteCard(label: string, display: string, subLine: string): OverviewCard {
+  return { label, value: null, display, delta: null, deltaDisplay: null, trend: 'none', tone: 'neutral', subLine, isValueBad: false }
 }
 
 function countCard(label: string, counts: CountSeries, mode: CardMode, previousLabel: string, toneOf: CountTone): OverviewCard {
@@ -563,10 +579,42 @@ function remainingCard(opened: CountSeries, closed: CountSeries, previousLabel: 
   return weekCountCard('Remaining open', remaining, previous, previousLabel, riseIsBad(remaining - previous))
 }
 
-/** The Closure rate is always to date. */
-function closureRateCard(index: IssueIndex, positions: Positions, opened: CountSeries, closed: CountSeries, previousLabel: string): OverviewCard {
-  const subLine = opened.toDate === 0 ? NO_ISSUES_YET : `${formatCount(closed.toDate)} of ${formatCount(opened.toDate)} closed`
-  return rateCard('Closure rate', closureRateAt(index, positions.position), closureRateAt(index, positions.previousPosition), subLine, previousLabel)
+interface CachedBenchmarks {
+  weekKey: number
+  today: number
+  benchmarks: IssueBenchmarks
+}
+
+/** The last benchmarks built for each BIM index, so a card mode switch reuses them and only a new week rebuilds them. */
+const lastBenchmarks = new WeakMap<IssueIndex, CachedBenchmarks>()
+
+function benchmarksAt(index: IssueIndex, weekKey: number, today: Date): IssueBenchmarks {
+  const cached = lastBenchmarks.get(index)
+  if (cached !== undefined && cached.weekKey === weekKey && cached.today === today.getTime()) return cached.benchmarks
+  const benchmarks = buildIssueBenchmarks(index, weekKey, today)
+  lastBenchmarks.set(index, { weekKey, today: today.getTime(), benchmarks })
+  return benchmarks
+}
+
+/** Open issues as of W older than the normal close window, the same in both modes, like Remaining open. */
+function pastWindowCard(index: IssueIndex, positions: Positions, opened: CountSeries, weekKey: number, today: Date): OverviewCard {
+  // Before the first issue the benchmarks would fall back to the current week, so the card says so instead.
+  if (opened.toDate === 0) return noteCard(PAST_WINDOW_LABEL, 'n/a', NO_ISSUES_YET)
+  const { open, window, pastWindow, olderThanAny } = benchmarksAt(index, weekKey, today)
+  const openCount = formatCount(open.length)
+  if (window === null) return noteCard(PAST_WINDOW_LABEL, 'n/a', `${openCount} open · no closures yet`)
+  const closedRate = formatPercent(closureRateAt(index, positions.position))
+  return {
+    label: PAST_WINDOW_LABEL,
+    value: pastWindow,
+    display: formatCount(pastWindow),
+    delta: null,
+    deltaDisplay: null,
+    trend: 'none',
+    tone: pastWindow > 0 ? 'bad' : 'neutral',
+    subLine: `of ${openCount} open · ${formatCount(olderThanAny)} older than any closure · ${closedRate} closed`,
+    isValueBad: false,
+  }
 }
 
 function bimRow(context: RowContext, index: IssueIndex, key: number, previousKey: number): OverviewRow {
@@ -579,7 +627,7 @@ function bimRow(context: RowContext, index: IssueIndex, key: number, previousKey
     countCard('Opened', opened, mode, previousLabel, openedTone),
     countCard('Closed', closed, mode, previousLabel, closedTone),
     remainingCard(opened, closed, previousLabel),
-    closureRateCard(index, positions, opened, closed, previousLabel),
+    pastWindowCard(index, positions, opened, key, context.index.today),
   ]
   return connectedRow(context, cards, (weekKey) => {
     const position = positionIn(index, weekKey)
@@ -591,6 +639,104 @@ function bimRow(context: RowContext, index: IssueIndex, key: number, previousKey
 function dwnRateLine(dwnsToDate: number, greenTags: number | null): string {
   if (greenTags === null) return GREEN_TAGS_MISSING
   return `${formatPercent((dwnsToDate / greenTags) * 100)} of green tags (to date)`
+}
+
+interface RootCauseGroup {
+  /** The earliest-created spelling, as the root cause Pareto shows it. */
+  label: string
+  created: number
+  position: number
+}
+
+interface RootCauseGroups {
+  groups: RootCauseGroup[]
+  /** Parallel to the index's issues: the issue's group position, or −1 when no cause is recorded. */
+  groupOf: Int32Array
+  /** Parallel to the index's issues: the created week's key. */
+  createdKey: Int32Array
+}
+
+const rootCauseGroupsByIndex = new WeakMap<IssueIndex, RootCauseGroups>()
+
+/** Each issue's root cause group, worked out once per index so each card is one pass over typed arrays. */
+function rootCauseGroups(index: IssueIndex): RootCauseGroups {
+  const cached = rootCauseGroupsByIndex.get(index)
+  if (cached !== undefined) return cached
+  const groups: RootCauseGroup[] = []
+  const groupOfSpelling = createNameGrouper<RootCauseGroup>((_key, spelling) => {
+    const group: RootCauseGroup = { label: spelling, created: Number.POSITIVE_INFINITY, position: groups.length }
+    groups.push(group)
+    return group
+  })
+  const { issues } = index
+  const groupOf = new Int32Array(issues.length).fill(-1)
+  const createdKey = new Int32Array(issues.length)
+  // The issues are by ID descending, so walking them backwards keeps the lowest ID among same-day spellings.
+  for (let at = issues.length - 1; at >= 0; at -= 1) {
+    const issue = issues[at]
+    createdKey[at] = issue.createdWeek.key
+    if (issue.rootCause === '') continue
+    const group = groupOfSpelling(issue.rootCause)
+    groupOf[at] = group.position
+    const created = issue.createdOn.getTime()
+    if (created < group.created) {
+      group.created = created
+      group.label = issue.rootCause
+    }
+  }
+  const result: RootCauseGroups = { groups, groupOf, createdKey }
+  rootCauseGroupsByIndex.set(index, result)
+  return result
+}
+
+/** The most common root cause among issues created in W (This WW) or through W (To date); ties go to the first name. */
+function topRootCauseCard(index: IssueIndex, weekKey: number, mode: CardMode): OverviewCard {
+  if (!index.hasRootCause) return noteCard(TOP_CAUSE_LABEL, 'n/a', ROOT_CAUSE_MISSING)
+  const isWeek = mode === 'week'
+  const { groups, groupOf, createdKey } = rootCauseGroups(index)
+  const counts = new Int32Array(groups.length)
+  let total = 0
+  for (let at = 0; at < groupOf.length; at += 1) {
+    const key = createdKey[at]
+    if (isWeek ? key !== weekKey : key > weekKey) continue
+    total += 1
+    const group = groupOf[at]
+    if (group >= 0) counts[group] += 1
+  }
+  let best: RootCauseGroup | null = null
+  for (const group of groups) {
+    const count = counts[group.position]
+    if (count === 0) continue
+    if (best === null) {
+      best = group
+      continue
+    }
+    const bestCount = counts[best.position]
+    if (count > bestCount || (count === bestCount && NAME_COLLATOR.compare(group.label, best.label) < 0)) best = group
+  }
+
+  const totalText = formatCount(total)
+  if (total === 0) return noteCard(TOP_CAUSE_LABEL, 'None', isWeek ? 'None opened this WW' : 'No issues to date')
+  if (best === null) {
+    const scope = isWeek ? `${totalText} opened this WW` : `${totalText} ${pluralize(total, 'issue', 'issues')}`
+    return noteCard(TOP_CAUSE_LABEL, 'None', `${scope} · none recorded`)
+  }
+  const count = counts[best.position]
+  const share = Math.round((count / total) * 100)
+  return {
+    label: TOP_CAUSE_LABEL,
+    value: count,
+    display: best.label,
+    delta: null,
+    deltaDisplay: null,
+    trend: 'none',
+    tone: 'neutral',
+    subLine: isWeek
+      ? `${formatCount(count)} of ${totalText} opened this WW`
+      : `${formatCount(count)} of ${totalText} ${pluralize(total, 'issue', 'issues')} · ${share}%`,
+    isValueBad: false,
+    valueTitle: best.label,
+  }
 }
 
 function qualityCards(context: RowContext, electrical: InspectionCounts, mechanical: InspectionCounts, welds: WeldCounts): OverviewQualityCards {
@@ -605,6 +751,7 @@ function qualityCards(context: RowContext, electrical: InspectionCounts, mechani
     passRateCard('Inspection NCR pass rate', inspectionNcrs, sumSeries([electrical.finals, mechanical.finals]), mode, previousLabel, ncrsOfLine('final', 'finals')),
     passRateCard('Welding NCR pass rate', welds.ncrs, welds.welds, mode, previousLabel, ncrsOfLine('weld', 'welds')),
     { ...countCard('DWNs', dwns, mode, previousLabel, neutralTone), subLine: dwnRateLine(dwns.toDate, index.greenTags) },
+    topRootCauseCard(index.bim, index.weeks[selectedPosition].key, mode),
   ]
 }
 

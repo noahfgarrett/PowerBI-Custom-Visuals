@@ -1724,7 +1724,8 @@
 }
 
 // Compact rows with charts: the label and sparkline on one line, the cards two by two under them, so no detail is
-// cut short. Dense rows (cards-only tiles) keep their one-line layout.
+// cut short; a detail still too long for half the row (Past normal close window's) wraps. Dense rows (cards-only
+// tiles) keep their one-line layout.
 .qaqc-root.is-compact .qaqc-overview-rows:not(.is-dense) {
   display: flex;
   flex-direction: column;
@@ -1749,26 +1750,27 @@
   border-left: 0;
 }
 
+.qaqc-root.is-compact .qaqc-overview-row:not(.is-dense) .qaqc-kpi-detail {
+  white-space: normal;
+}
+
 .qaqc-root.is-compact .qaqc-overview-row:not(.is-dense) .qaqc-overview-row-message {
   grid-column: 1 / -1;
 }
 
-// Compact strip: two by two like the rows, with the DWN card across the last line.
+// Compact strip: two by two like the rows, its six cards on three lines.
 .qaqc-root.is-compact .qaqc-overview-quality .qaqc-kpi-group-body {
   grid-auto-flow: row;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px 8px;
 }
 
-.qaqc-root.is-compact .qaqc-overview-quality .qaqc-kpi:last-child:nth-child(odd) {
-  grid-column: 1 / -1;
-}
-
 // Dense layout (cards-only tiles below OVERVIEW_DENSE_HEIGHT, and narrow cards-only tiles): each row is its label,
-// four values and the sparkline on one 34 px line, and the strip is its label and five values. Each value's full
+// four values and the sparkline on one 34 px line, and the strip is its label and six values. Each value's full
 // detail is in its aria-label and title.
 .qaqc-overview-rows.is-dense {
-  grid-template-columns: 100px repeat(4, minmax(0, 1fr)) 100px;
+  // The fourth column holds the longest label, Past normal close window.
+  grid-template-columns: 100px repeat(3, minmax(0, 1fr)) minmax(0, 1.3fr) 100px;
   padding: 4px 12px 1px;
 }
 
@@ -1781,8 +1783,8 @@
 .qaqc-overview-quality-dense {
   display: grid;
   flex: 1 1 auto;
-  // The two pass-rate labels are the long ones.
-  grid-template-columns: 100px minmax(0, 0.8fr) minmax(0, 0.8fr) minmax(0, 1.3fr) minmax(0, 1.3fr) minmax(0, 0.8fr);
+  // The two pass-rate labels are the long ones; the top root cause's name is cut short, with the full text in its title.
+  grid-template-columns: 100px minmax(0, 0.7fr) minmax(0, 0.7fr) minmax(0, 1.6fr) minmax(0, 1.45fr) minmax(0, 0.7fr) minmax(0, 1.1fr);
   align-items: center;
   gap: 0 10px;
   min-height: 34px;

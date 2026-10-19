@@ -4,7 +4,7 @@ import type { CardMode, OverviewIndex, OverviewModel } from '../overview'
 import type { RangeMode, ViewState } from '../types'
 import { buildOverviewCards, buildOverviewModel, buildOverviewSeries } from '../overview'
 import { parseWorkWeek } from '../workWeeks'
-import { bim, cardsOf, inspection, overviewIndexOf, rowOf, times, weld } from './overviewRows'
+import { bim, cardsOf, inspection, overviewIndexOf, rowOf, times, UNBOUND_ROOT_CAUSE_COLUMNS, weld } from './overviewRows'
 
 function viewAt(label: string, range: RangeMode = 'recent'): ViewState {
   const week = parseWorkWeek(label)
@@ -204,16 +204,6 @@ describe('BIM Issues row', () => {
     }
   })
 
-  it('shows the to-date Closure rate in both modes', () => {
-    const week = cardsOf(modelAt(index, WW42, 'week'), 'bim')[3]
-    const toDate = cardsOf(modelAt(index, WW42, 'toDate'), 'bim')[3]
-    expect(week).toEqual(toDate)
-    expect(week.label).toBe('Closure rate')
-    expect(week.value).toBeCloseTo((2 / 6) * 100, 6)
-    expect(week.delta).toBeCloseTo((2 / 6 - 1 / 3) * 100, 6)
-    expect(week.subLine).toBe('2 of 6 closed')
-  })
-
   it('shows Opened in amber when it goes up', () => {
     expect(cardsOf(modelAt(index, WW42, 'week'), 'bim')[0].tone).toBe('warn')
   })
@@ -246,7 +236,7 @@ describe('BIM Issues row', () => {
     bim('#1', '10/6/2026'),
     bim('#2', '10/6/2026', { status: 'Closed', updatedOn: '10/13/2026' }),
   ])
-  /** One issue opened and closed in WW41 and another opened in WW42, so the Closure rate falls in WW42. */
+  /** One issue opened and closed in WW41 and another opened in WW42, so Remaining open rises in WW42. */
   const opening = overviewIndexOf([
     bim('#1', '10/6/2026', { status: 'Closed', updatedOn: '10/7/2026' }),
     bim('#2', '10/13/2026'),
@@ -258,14 +248,6 @@ describe('BIM Issues row', () => {
 
   it('shows Remaining open in green when it goes down', () => {
     expect(cardsOf(modelAt(closing, WW42, 'week'), 'bim')[2].tone).toBe('good')
-  })
-
-  it('shows the Closure rate in green when it goes up', () => {
-    expect(cardsOf(modelAt(closing, WW42, 'week'), 'bim')[3].tone).toBe('good')
-  })
-
-  it('shows the Closure rate in red when it goes down', () => {
-    expect(cardsOf(modelAt(opening, WW42, 'week'), 'bim')[3].tone).toBe('bad')
   })
 
   it('shows Opened to date in red when it goes up, as Total Opened does in BIM Issues', () => {
@@ -293,6 +275,128 @@ describe('BIM Issues row', () => {
   })
 })
 
+/** `count` issues created on 9/1/2026 and closed `days` later in September or October. */
+function closedIssues(prefix: string, count: number, updatedOn: string): unknown[][] {
+  return Array.from({ length: count }, (_, at) => bim(`${prefix}${at}`, '9/1/2026', { status: 'Closed', updatedOn }))
+}
+
+describe('BIM Issues past normal close window', () => {
+  // Nine issues close in 10 days and one in 30, so the window (90th percentile) is 10 days and the slowest is 30.
+  const CLOSURES = [...closedIssues('#c', 9, '9/11/2026'), ...closedIssues('#s', 1, '10/1/2026')]
+  // As of WW42 (capped at today, 10/15): 5, 14 and 45 days old.
+  const index = overviewIndexOf([...CLOSURES, bim('#o1', '10/10/2026'), bim('#o2', '10/1/2026'), bim('#o3', '8/31/2026')])
+
+  it('counts the open issues older than the window, with the open, older-than-any and closed counts', () => {
+    const past = cardsOf(modelAt(index, WW42, 'week'), 'bim')[3]
+    expect([past.label, past.value, past.display, past.subLine]).toEqual([
+      'Past normal close window',
+      2,
+      '2',
+      'of 3 open · 1 older than any closure · 76.9% closed',
+    ])
+    expect([past.delta, past.deltaDisplay, past.trend]).toEqual([null, null, 'none'])
+  })
+
+  it('shows the same card as of W in both modes', () => {
+    expect(cardsOf(modelAt(index, WW42, 'toDate'), 'bim')[3]).toEqual(cardsOf(modelAt(index, WW42, 'week'), 'bim')[3])
+  })
+
+  it('counts as of the selected week', () => {
+    // As of WW41 (10/11): 1, 10 and 41 days old, and an age equal to the window is not past it.
+    expect(cardsOf(modelAt(index, WW41, 'week'), 'bim')[3].subLine).toBe('of 3 open · 1 older than any closure · 76.9% closed')
+    expect(cardsOf(modelAt(index, WW41, 'week'), 'bim')[3].value).toBe(1)
+  })
+
+  it('shows the card in red when any issue is past the window', () => {
+    expect(cardsOf(modelAt(index, WW42, 'week'), 'bim')[3].tone).toBe('bad')
+  })
+
+  it('shows the card in neutral when no issue is past the window', () => {
+    const recent = overviewIndexOf([...CLOSURES, bim('#o1', '10/10/2026')])
+    const past = cardsOf(modelAt(recent, WW42, 'week'), 'bim')[3]
+    expect([past.value, past.display, past.tone]).toEqual([0, '0', 'neutral'])
+  })
+
+  it('shows n/a without closures as of W', () => {
+    const unclosed = overviewIndexOf([bim('#o1', '10/10/2026'), bim('#o2', '10/1/2026')])
+    const past = cardsOf(modelAt(unclosed, WW42, 'week'), 'bim')[3]
+    expect([past.value, past.display, past.subLine, past.tone]).toEqual([null, 'n/a', '2 open · no closures yet', 'neutral'])
+  })
+
+  it('says no issues were opened yet before the first issue', () => {
+    const later = overviewIndexOf([bim('#1', '10/13/2026'), inspection('Electrical', WW40, 'Final')])
+    const past = cardsOf(modelAt(later, WW40, 'week'), 'bim')[3]
+    expect([past.value, past.display, past.subLine]).toEqual([null, 'n/a', 'No issues opened yet'])
+  })
+})
+
+describe('Top root cause', () => {
+  const index = overviewIndexOf([
+    bim('#1', '10/6/2026', { rootCause: 'Installation' }), // WW41
+    bim('#2', '10/5/2026', { rootCause: ' installation ' }), // WW41, the earliest spelling
+    bim('#3', '10/6/2026', { rootCause: 'Coordination' }), // WW41
+    bim('#4', '10/13/2026', { rootCause: 'Trade Damage' }), // WW42
+    bim('#5', '10/14/2026', { rootCause: 'Bonding' }), // WW42
+    bim('#6', '10/13/2026'), // WW42, not recorded
+    inspection('Electrical', WW40, 'Final'), // so WW40 is in the data
+  ])
+
+  function topAt(at: OverviewIndex, label: string, mode: CardMode): OverviewModel['quality'][5] {
+    return modelAt(at, label, mode).quality[5]
+  }
+
+  it('is the sixth quality card', () => {
+    expect(modelAt(index, WW42, 'week').quality.map((card) => card.label))
+      .toEqual(['CORs', 'NCRs', 'Inspection NCR pass rate', 'Welding NCR pass rate', 'DWNs', 'Top root cause'])
+  })
+
+  it('shows the most common cause through W in To date, grouped by case and spacing under the earliest spelling', () => {
+    const top = topAt(index, WW42, 'toDate')
+    expect([top.value, top.display, top.subLine]).toEqual([2, 'installation', '2 of 6 issues · 33%'])
+  })
+
+  it('shows the most common cause among issues created in W in This WW, ties by name', () => {
+    const top = topAt(index, WW42, 'week')
+    expect([top.value, top.display, top.subLine]).toEqual([1, 'Bonding', '1 of 3 opened this WW'])
+  })
+
+  it('shows None when no issue was opened in W', () => {
+    const top = topAt(index, WW40, 'week')
+    expect([top.value, top.display, top.subLine]).toEqual([null, 'None', 'None opened this WW'])
+  })
+
+  it('shows None when no issue was opened through W', () => {
+    const top = topAt(index, WW40, 'toDate')
+    expect([top.value, top.display, top.subLine]).toEqual([null, 'None', 'No issues to date'])
+  })
+
+  it('shows None when no issue in scope has a cause recorded', () => {
+    const blank = overviewIndexOf([bim('#1', '10/13/2026'), bim('#2', '10/14/2026')])
+    expect([topAt(blank, WW42, 'week').display, topAt(blank, WW42, 'week').subLine]).toEqual(['None', '2 opened this WW · none recorded'])
+    expect([topAt(blank, WW42, 'toDate').display, topAt(blank, WW42, 'toDate').subLine]).toEqual(['None', '2 issues · none recorded'])
+  })
+
+  it('asks for Root Cause in both modes when the slot is unbound', () => {
+    const unbound = overviewIndexOf([bim('#1', '10/13/2026', { rootCause: 'Installation' })], undefined, UNBOUND_ROOT_CAUSE_COLUMNS)
+    for (const mode of ['week', 'toDate'] as const) {
+      const top = topAt(unbound, WW42, mode)
+      expect([top.value, top.display, top.subLine]).toEqual([null, 'n/a', 'Add Root Cause'])
+    }
+  })
+
+  it('shows no change line and a neutral tone', () => {
+    for (const mode of ['week', 'toDate'] as const) {
+      const top = topAt(index, WW42, mode)
+      expect([top.delta, top.deltaDisplay, top.trend, top.tone]).toEqual([null, null, 'none', 'neutral'])
+    }
+  })
+
+  it('gives a cause name its full text as a tooltip, since a long name is cut short', () => {
+    expect(topAt(index, WW42, 'toDate').valueTitle).toBe('installation')
+    expect(topAt(index, WW40, 'week').valueTitle).toBeUndefined()
+  })
+})
+
 describe('missing and early disciplines', () => {
   it('marks a source with no rows as not connected and says so', () => {
     const model = modelAt(overviewIndexOf([inspection('Electrical', WW42, 'Final')]), WW42, 'week')
@@ -317,7 +421,7 @@ describe('missing and early disciplines', () => {
     expect(cardsOf(week, 'welding')[2].subLine).toBe('No welds logged yet')
     expect(cardsOf(toDate, 'welding')[2].value).toBeNull()
     expect(cardsOf(week, 'bim').map((card) => card.value)).toEqual([0, 0, 0, null])
-    expect(week.quality.map((card) => card.value)).toEqual([0, 0, null, null, 0])
+    expect(week.quality.map((card) => card.value)).toEqual([0, 0, null, null, 0, null])
   })
 
   it('has no data when no source has a counted row', () => {

@@ -245,12 +245,19 @@ describe('OverviewDashboard discipline rows, This WW', () => {
     expect(shown(welding, 'NCRs')).toEqual(['0', "No change vs WW41'2026"])
   })
 
-  it('shows the WW42 BIM cards, with Remaining open and Closure rate to date', () => {
+  it('shows the WW42 BIM cards, with Remaining open and Past normal close window as of WW42', () => {
     view = draw()
     const issues = row(view.container, 'BIM Issues')
     expect(shown(issues, 'Opened')).toEqual(['0', "No change vs WW41'2026"])
     expect(shown(issues, 'Remaining open')).toEqual(['51', "No change vs WW41'2026"])
-    expect(shown(issues, 'Closure rate')).toEqual(['71.2%', "126 of 177 closed · No change vs WW41'2026"])
+    expect(shown(issues, 'Past normal close window')).toEqual(['51', 'of 51 open · 28 older than any closure · 71.2% closed'])
+  })
+
+  it('shows Past normal close window in red, with an hourglass', () => {
+    view = draw()
+    const issues = row(view.container, 'BIM Issues')
+    expect(tone(issues, 'Past normal close window')).toBe('is-bad')
+    expect(card(issues, 'Past normal close window').querySelector('.qaqc-kpi-icon svg.lucide-hourglass')).not.toBeNull()
   })
 
   it('colors the cards with the model tones', () => {
@@ -358,12 +365,13 @@ describe('OverviewDashboard discipline rows, To date', () => {
 })
 
 describe('OverviewDashboard quality strip', () => {
-  it('shows five cards in a group titled Quality', () => {
+  it('shows six cards in a group titled Quality', () => {
     view = draw()
     const strip = quality(view.container)
     expect(strip.querySelector('.qaqc-kpi-group-head span')?.textContent).toBe('Quality')
     expect([...strip.querySelectorAll('.qaqc-kpi-label')].map((node) => node.textContent))
-      .toEqual(['CORs', 'NCRs', 'Inspection NCR pass rate', 'Welding NCR pass rate', 'DWNs'])
+      .toEqual(['CORs', 'NCRs', 'Inspection NCR pass rate', 'Welding NCR pass rate', 'DWNs', 'Top root cause'])
+    expect(card(strip, 'Top root cause').querySelector('.qaqc-kpi-icon svg.lucide-chart-column-decreasing')).not.toBeNull()
   })
 
   it('shows the WW42 quality cards', () => {
@@ -374,6 +382,7 @@ describe('OverviewDashboard quality strip', () => {
     expect(shownLines(strip, 'Inspection NCR pass rate')).toEqual(['100.0%', '0 NCRs of 3 finals', "No change vs WW41'2026"])
     expect(shownLines(strip, 'Welding NCR pass rate')).toEqual(['n/a', '0 welds', 'Change n/a'])
     expect(shownLines(strip, 'DWNs')).toEqual(['0', 'DWN rate n/a: add Green tags', "No change vs WW41'2026"])
+    expect(shownLines(strip, 'Top root cause')).toEqual(['None', null, 'None opened this WW'])
   })
 
   it('shows the quality cards through WW42 in To date', () => {
@@ -384,6 +393,22 @@ describe('OverviewDashboard quality strip', () => {
     expect(shownLines(strip, 'NCRs')).toEqual(['14', 'E 2 · M 1 · W 11', '+0 this WW'])
     expect(shownLines(strip, 'Inspection NCR pass rate')).toEqual(['98.9%', '3 NCRs of 282 finals', "+0.01 pts vs WW41'2026"])
     expect(shownLines(strip, 'Welding NCR pass rate')).toEqual(['99.4%', '11 NCRs of 1,751 welds', "No change vs WW41'2026"])
+    expect(shownLines(strip, 'Top root cause')).toEqual(['Installation', null, '48 of 177 issues · 27%'])
+  })
+
+  it('gives the top root cause its full name as a tooltip, and cuts a long name short', () => {
+    view = draw()
+    showToDate(view.container)
+    const value = card(quality(view.container), 'Top root cause').querySelector('.qaqc-kpi-value')
+    expect(value?.getAttribute('title')).toBe('Installation')
+    expect(ruleBody('.qaqc-kpi-value')).toContain('text-overflow: ellipsis;')
+    expect(card(quality(view.container), 'CORs').querySelector('.qaqc-kpi-value')?.hasAttribute('title')).toBe(false)
+  })
+
+  it('asks for Root Cause on the top root cause card when the slot is unbound', () => {
+    const columns: CombinedColumns = { ...COLUMNS, rootCause: -1 }
+    view = draw({ index: buildOverviewIndex(splitCombinedRows(COMBINED_ROWS, columns.source), columns, TODAY) })
+    expect(shownLines(quality(view.container), 'Top root cause')).toEqual(['n/a', null, 'Add Root Cause'])
   })
 
   it('subtitles the strip with the cards\' week or range', () => {
@@ -468,7 +493,7 @@ describe('OverviewDashboard layout', () => {
     expect(view.container.querySelector('.qaqc-root.is-cards-only')).not.toBeNull()
     expect(view.container.querySelectorAll('.qaqc-panel')).toHaveLength(0)
     expect(view.container.querySelectorAll('.qaqc-overview-row.is-dense')).toHaveLength(0)
-    expect(view.container.querySelectorAll('article.qaqc-kpi')).toHaveLength(21)
+    expect(view.container.querySelectorAll('article.qaqc-kpi')).toHaveLength(22)
   })
 
   it('switches to the dense layout below the height the full cards need', () => {
@@ -497,7 +522,7 @@ describe('OverviewDashboard layout', () => {
     expect(view.container.querySelectorAll('.qaqc-panel')).toHaveLength(0)
     expect(view.container.querySelectorAll('.qaqc-overview-row.is-dense')).toHaveLength(4)
     expect(view.container.querySelectorAll('article.qaqc-kpi')).toHaveLength(0)
-    expect(view.container.querySelectorAll('article.qaqc-overview-value')).toHaveLength(21)
+    expect(view.container.querySelectorAll('article.qaqc-overview-value')).toHaveLength(22)
     expect(view.container.querySelector('.qaqc-overview-value .qaqc-kpi-detail')).toBeNull()
   })
 
@@ -526,11 +551,14 @@ describe('OverviewDashboard layout', () => {
     for (const name of ROW_NAMES) expect(row(view.container, name).querySelector('svg.qaqc-sparkline')).not.toBeNull()
   })
 
-  it('shows the quality strip as one line of five dense values', () => {
+  it('shows the quality strip as one line of six dense values', () => {
     view = draw({ viewport: { width: 800, height: 300 } })
     const strip = quality(view.container)
     expect([...strip.querySelectorAll('.qaqc-overview-value-label')].map((node) => node.textContent))
-      .toEqual(['CORs', 'NCRs', 'Inspection NCR pass rate', 'Welding NCR pass rate', 'DWNs'])
+      .toEqual(['CORs', 'NCRs', 'Inspection NCR pass rate', 'Welding NCR pass rate', 'DWNs', 'Top root cause'])
+    expect(denseValue(strip, 'Top root cause').getAttribute('title')).toBe('Top root cause: None. None opened this WW')
+    // A label column and one column per value.
+    expect(ruleBody('.qaqc-overview-quality-dense')).toMatch(/grid-template-columns: 100px( minmax\(0, [\d.]+fr\)){6};/)
     expect(denseValue(strip, 'DWNs').getAttribute('title')).toBe("DWNs: 0. DWN rate n/a: add Green tags · No change vs WW41'2026")
   })
 

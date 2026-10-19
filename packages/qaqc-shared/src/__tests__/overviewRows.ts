@@ -21,10 +21,10 @@ export const COLUMNS: CombinedColumns = {
   createdOn: 11,
   updatedOn: 12,
   createdBy: 13,
-  rootCause: -1,
+  rootCause: 15,
   greenTags: 14,
 }
-const WIDTH = 15
+const WIDTH = 16
 
 export const TODAY = new Date(2026, 9, 15) // WW42'2026
 
@@ -64,6 +64,7 @@ export interface BimOptions {
   type?: string
   updatedOn?: string
   createdBy?: string
+  rootCause?: string
 }
 
 export function bim(id: string, createdOn: string | null, options: BimOptions = {}): unknown[] {
@@ -74,6 +75,7 @@ export function bim(id: string, createdOn: string | null, options: BimOptions = 
   row[COLUMNS.createdOn] = createdOn
   row[COLUMNS.updatedOn] = options.updatedOn ?? null
   row[COLUMNS.createdBy] = options.createdBy ?? 'LotusWorks'
+  row[COLUMNS.rootCause] = options.rootCause ?? null
   return row
 }
 
@@ -81,12 +83,15 @@ export function times(count: number, make: () => unknown[]): unknown[][] {
   return Array.from({ length: count }, make)
 }
 
+/** The compact layout with the optional Root Cause slot unbound. */
+export const UNBOUND_ROOT_CAUSE_COLUMNS: CombinedColumns = { ...COLUMNS, rootCause: -1 }
+
 /** Indexes hand-built rows, with the Green tags measure (when given) on every row as Power BI repeats it. */
-export function overviewIndexOf(rows: unknown[][], greenTags?: unknown): OverviewIndex {
+export function overviewIndexOf(rows: unknown[][], greenTags?: unknown, columns: CombinedColumns = COLUMNS): OverviewIndex {
   if (greenTags !== undefined) {
     for (const row of rows) row[COLUMNS.greenTags] = greenTags
   }
-  return buildOverviewIndex(splitCombinedRows(rows, COLUMNS.source), COLUMNS, TODAY)
+  return buildOverviewIndex(splitCombinedRows(rows, columns.source), columns, TODAY)
 }
 
 /** A row the test expects to be connected; fails the test with the row's message when it isn't. */

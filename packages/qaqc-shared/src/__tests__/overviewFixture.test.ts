@@ -4,6 +4,7 @@ import type { CardMode, OverviewCard, OverviewModel } from '../overview'
 import type { CombinedColumns, ViewState } from '../types'
 import { inspectionColumnsOf, issueColumnsOf, splitCombinedRows, weldColumnsOf } from '../combined'
 import { buildInspectionIndex, buildInspectionModel } from '../inspections'
+import { buildIssueBenchmarks } from '../issueBenchmarks'
 import { buildIssueIndex, buildIssueModel } from '../issues'
 import { buildOverviewIndex, buildOverviewModel } from '../overview'
 import { buildWeldIndex, buildWeldModel } from '../welds'
@@ -252,13 +253,27 @@ describe('QAQC Overview on the October exports (today 2026-10-15)', () => {
   })
 
   it.each(CASES.map((item, caseIndex) => [item.name, item, caseIndex] as const))('BIM Issues row, %s', (_, item, caseIndex) => {
-    const [opened, closed, remaining, closure] = cardsOf(modelAt(item.key, item.mode), 'bim')
+    const [opened, closed, remaining] = cardsOf(modelAt(item.key, item.mode), 'bim')
     const expected = BIM[caseIndex]
     expectCount(opened, expected.opened)
     expectCount(closed, expected.closed)
     expectCount(remaining, [51, 0])
-    expect(closure.value).toBeCloseTo(71.19, 2)
-    expect(closure.delta).toBeCloseTo(0, 4)
+  })
+
+  it.each(['week', 'toDate'] as const)('shows 51 issues past the normal close window as of WW42 (%s)', (mode) => {
+    const past = cardsOf(modelAt(WW42, mode), 'bim')[3]
+    expect([past.label, past.value, past.display, past.subLine, past.tone])
+      .toEqual(['Past normal close window', 51, '51', 'of 51 open · 28 older than any closure · 71.2% closed', 'bad'])
+  })
+
+  it('shows Installation as the top root cause through WW42', () => {
+    const top = modelAt(WW42, 'toDate').quality[5]
+    expect([top.label, top.value, top.display, top.subLine]).toEqual(['Top root cause', 48, 'Installation', '48 of 177 issues · 27%'])
+  })
+
+  it('shows no top root cause in WW42, when no issue was opened', () => {
+    const top = modelAt(WW42, 'week').quality[5]
+    expect([top.label, top.value, top.display, top.subLine]).toEqual(['Top root cause', null, 'None', 'None opened this WW'])
   })
 
   it.each(CASES.map((item, caseIndex) => [item.name, item, caseIndex] as const))('quality strip, %s', (_, item, caseIndex) => {
@@ -362,13 +377,14 @@ describe('QAQC Overview on the October exports (today 2026-10-15)', () => {
     })
 
     it('matches the BIM Issues visual', () => {
-      const issues = buildIssueModel(buildIssueIndex(split.bim, issueColumnsOf(COLUMNS), TODAY), view)
+      const issueIndex = buildIssueIndex(split.bim, issueColumnsOf(COLUMNS), TODAY)
+      const issues = buildIssueModel(issueIndex, view)
       expect(cardsOf(week, 'bim').slice(0, 2).map((card) => card.value)).toEqual([issues.thisWeek.opened.value, issues.thisWeek.closed.value])
       expect(cardsOf(toDate, 'bim').map((card) => card.value)).toEqual([
         issues.toDate.opened.value,
         issues.toDate.closed.value,
         issues.toDate.remaining.value,
-        issues.toDate.closureRate.value,
+        buildIssueBenchmarks(issueIndex, view.selectedKey, TODAY).pastWindow,
       ])
     })
   })

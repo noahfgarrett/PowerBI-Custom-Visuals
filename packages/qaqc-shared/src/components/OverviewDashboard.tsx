@@ -1,5 +1,6 @@
 import {
   Activity,
+  ChartColumnDecreasing,
   CircleAlert,
   CircleCheck,
   CircleDot,
@@ -9,6 +10,7 @@ import {
   FileText,
   Flame,
   Gauge,
+  Hourglass,
   Layers,
   Percent,
   ShieldCheck,
@@ -82,14 +84,14 @@ const DISCIPLINES: readonly DisciplineConfig[] = [
   { key: 'electrical', name: 'Electrical', icon: Zap, metric: 'Finals + SORs', cardIcons: INSPECTION_CARD_ICONS },
   { key: 'mechanical', name: 'Mechanical', icon: Wrench, metric: 'Finals + SORs', cardIcons: INSPECTION_CARD_ICONS },
   { key: 'welding', name: 'Welding', icon: Flame, metric: 'Welds logged', cardIcons: [Layers, Signature, Percent, CircleAlert] },
-  { key: 'bim', name: 'BIM Issues', icon: CircleAlert, metric: 'Remaining open', cardIcons: [CirclePlus, CircleCheck, CircleDot, Gauge] },
+  { key: 'bim', name: 'BIM Issues', icon: CircleAlert, metric: 'Remaining open', cardIcons: [CirclePlus, CircleCheck, CircleDot, Hourglass] },
 ] as const
 
 /** One icon per quality card, in the strip's order. */
-type QualityIcons = readonly [LucideIcon, LucideIcon, LucideIcon, LucideIcon, LucideIcon]
+type QualityIcons = readonly [LucideIcon, LucideIcon, LucideIcon, LucideIcon, LucideIcon, LucideIcon]
 
-/** CORs, NCRs, Inspection NCR pass rate, Welding NCR pass rate, DWNs. */
-const QUALITY_ICONS: QualityIcons = [FilePen, CircleAlert, ClipboardCheck, Flame, FileText] as const
+/** CORs, NCRs, Inspection NCR pass rate, Welding NCR pass rate, DWNs, Top root cause. */
+const QUALITY_ICONS: QualityIcons = [FilePen, CircleAlert, ClipboardCheck, Flame, FileText, ChartColumnDecreasing] as const
 
 export interface OverviewDashboardProps extends DashboardChromeProps {
   index: OverviewIndex
