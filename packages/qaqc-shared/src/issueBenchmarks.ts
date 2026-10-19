@@ -115,6 +115,8 @@ interface IssueDays {
   created: Int32Array
   /** Parallel to `issues`: the closed day, never before the created day, or NOT_CLOSED. */
   closed: Float64Array
+  /** Parallel to `issues`: the issue's place in ID order, ascending and numeric-aware. */
+  idRank: Int32Array
   /** Parallel to `issues`: the quarter key of the closed day. Only set for closed issues. */
   closedQuarter: Int32Array
   /** Positions in `issues` of the issues with a closed day, by closed day ascending. */
@@ -208,9 +210,34 @@ function issueDays(index: IssueIndex): IssueDays {
   const byClosed = new Int32Array(closedWithDate)
   for (let at = 0; at < closedWithDate; at += 1) byClosed[at] = closedPositions[closedOrder[at]]
 
-  const days: IssueDays = { issues, created, closed, closedQuarter, byClosed, closedWithoutDate }
+  const days: IssueDays = { issues, created, closed, idRank: createdOrder, closedQuarter, byClosed, closedWithoutDate }
   issueDaysByIndex.set(index, days)
   return days
+}
+
+/** Included issues oldest first by Created On (ties by ID ascending) with their day numbers, computed once per index. */
+export interface IssueTimeline {
+  issues: readonly IssueRecord[]
+  /** Parallel to `issues`: the created day number. */
+  created: Int32Array
+  /** Parallel to `issues`: the closed day number, or Infinity when not closed or Closed without an Updated On. */
+  closed: Float64Array
+  /** Parallel to `issues`: the issue's place in ID order, ascending and numeric-aware. */
+  idRank: Int32Array
+}
+
+export function issueTimeline(index: IssueIndex): IssueTimeline {
+  return issueDays(index)
+}
+
+/** The day number of the end of the week, never later than today. Comparable with `IssueTimeline` days. */
+export function asOfDay(week: WorkWeek, today: Date): number {
+  return dayNumber(endOfWeek(week, today))
+}
+
+/** Whether the timeline's issue at `position` is open as of `day`: created by then and not closed by then. */
+export function isOpenOn(timeline: IssueTimeline, position: number, day: number): boolean {
+  return timeline.created[position] <= day && timeline.closed[position] > day
 }
 
 /** The week for a key, falling back to the last week like the issue model. */
@@ -229,10 +256,10 @@ function closuresThrough(days: IssueDays, day: number): number {
 export function buildIssueBenchmarks(index: IssueIndex, weekKey: number, today: Date): IssueBenchmarks {
   const days = issueDays(index)
   const asOf = weekAt(index, weekKey)
-  const asOfDay = dayNumber(endOfWeek(asOf, today))
-  const previousDay = dayNumber(endOfWeek(previousWorkWeek(asOf), today))
+  const endDay = asOfDay(asOf, today)
+  const previousDay = asOfDay(previousWorkWeek(asOf), today)
 
-  const closures = closuresThrough(days, asOfDay)
+  const closures = closuresThrough(days, endDay)
   const times = new Int32Array(closures)
   for (let at = 0; at < closures; at += 1) {
     const position = days.byClosed[at]
@@ -250,11 +277,10 @@ export function buildIssueBenchmarks(index: IssueIndex, weekKey: number, today: 
   for (let at = 0; at < days.issues.length; at += 1) {
     const created = days.created[at]
     // Issues are in created order, so every later one was created after W too.
-    if (created > asOfDay) break
-    const closed = days.closed[at]
-    if (created <= previousDay && closed > previousDay) openPrevious += 1
-    if (closed <= asOfDay) continue
-    const age = asOfDay - created
+    if (created > endDay) break
+    if (isOpenOn(days, at, previousDay)) openPrevious += 1
+    if (!isOpenOn(days, at, endDay)) continue
+    const age = endDay - created
     if (window !== null && age > window) pastWindow += 1
     if (slowest !== null && age > slowest) olderThanAny += 1
     open.push({ issue: days.issues[at], age, timesWindow: window === null || window === 0 ? null : age / window })
@@ -389,18 +415,18 @@ export function agingProfile(index: IssueIndex, view: ViewState, today: Date): P
 
   for (let position = start; position <= end; position += 1) {
     const week = index.weeks[position].week
-    const asOfDay = dayNumber(endOfWeek(week, today))
-    while (nextCreated < days.issues.length && days.created[nextCreated] <= asOfDay) tree.add(nextCreated++, 1)
+    const endDay = asOfDay(week, today)
+    while (nextCreated < days.issues.length && days.created[nextCreated] <= endDay) tree.add(nextCreated++, 1)
     // A closed day is never before its created day, so a closing issue has always been added already.
-    while (nextClosed < days.byClosed.length && days.closed[days.byClosed[nextClosed]] <= asOfDay) {
+    while (nextClosed < days.byClosed.length && days.closed[days.byClosed[nextClosed]] <= endDay) {
       tree.add(days.byClosed[nextClosed++], -1)
     }
     const open = tree.total
     let middle: number | null = null
     if (open > 0) {
       // Positions are in created order, so the middle position(s) give the median age.
-      const upper = asOfDay - days.created[tree.kth(Math.floor(open / 2) + 1)]
-      const lower = open % 2 === 1 ? upper : asOfDay - days.created[tree.kth(open / 2)]
+      const upper = endDay - days.created[tree.kth(Math.floor(open / 2) + 1)]
+      const lower = open % 2 === 1 ? upper : endDay - days.created[tree.kth(open / 2)]
       middle = (upper + lower) / 2
     }
     points.push({ week, median: middle, open })
@@ -419,12 +445,12 @@ function quarterLabel(key: number): string {
  */
 export function quarterMedians(index: IssueIndex, weekKey: number, today: Date): QuarterPoint[] {
   const days = issueDays(index)
-  const asOfDay = dayNumber(endOfWeek(weekAt(index, weekKey), today))
-  const closures = closuresThrough(days, asOfDay)
+  const endDay = asOfDay(weekAt(index, weekKey), today)
+  const closures = closuresThrough(days, endDay)
   if (closures === 0) return []
 
   const points: QuarterPoint[] = []
-  const lastQuarter = quarterKeyOfDay(asOfDay)
+  const lastQuarter = quarterKeyOfDay(endDay)
   let at = 0
   // byClosed is in closed-day order, so each quarter's closures are one consecutive run.
   for (let key = days.closedQuarter[days.byClosed[0]]; key <= lastQuarter; key += 1) {

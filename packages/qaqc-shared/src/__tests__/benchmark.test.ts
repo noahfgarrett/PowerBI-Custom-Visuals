@@ -10,6 +10,7 @@ import { agingProfile, buildIssueBenchmarks, quarterMedians } from '../issueBenc
 import { buildIssueDetail, buildIssueIndex, buildIssueModel } from '../issues'
 import type { OverviewIndex } from '../overview'
 import { buildOverviewIndex, buildOverviewModel } from '../overview'
+import { buildRootCausePareto, paretoIssues } from '../rootCauses'
 import type { CombinedColumns, IssueDetailRow, IssueTrendPoint } from '../types'
 import { buildWeldIndex, buildWeldModel } from '../welds'
 import { makeWorkWeek } from '../workWeeks'
@@ -129,6 +130,38 @@ describe('issue benchmark performance budgets', () => {
 
   it('builds the quarterly medians from a 200,000-row index within budget', () => {
     expect(elapsed(() => quarterMedians(index, lastKey, TODAY))).toBeLessThanOrEqual(50)
+  })
+})
+
+describe('root cause Pareto performance budgets', () => {
+  const CATEGORIES = ['Quality', 'Design', 'Safety', 'Coordination', null]
+  // 40 causes, every seventh blank and some in other spellings, so grouping, Other and Not recorded all do work.
+  const rows = syntheticIssueRows(200_000).map((row, at) => {
+    const cause = at % 7 === 0 ? null : `Cause ${(at * 13) % 40}`
+    return [...row, cause !== null && at % 5 === 0 ? ` ${cause.toUpperCase()} ` : cause, CATEGORIES[at % CATEGORIES.length]]
+  })
+  const index = buildIssueIndex(rows, ISSUE_COLUMNS, TODAY)
+  const all = { ...defaultViewState(index), range: 'all' as const }
+  const earlier = { ...all, selectedKey: index.weeks[index.weeks.length - 20].week.key }
+  // The first call groups every issue's cause and category once for the index.
+  buildRootCausePareto(index, all, 'all', TODAY)
+
+  it('builds the All-range All issues Pareto for a new week from a 200,000-row index within budget', () => {
+    expect(index.issues.length).toBeGreaterThan(150_000)
+    const model = buildRootCausePareto(index, earlier, 'all', TODAY)
+    expect(model.distinct).toBe(40)
+    expect(elapsed(() => buildRootCausePareto(index, earlier, 'all', TODAY))).toBeLessThanOrEqual(30)
+  })
+
+  it('builds the All-range Open only Pareto from a 200,000-row index within budget', () => {
+    expect(buildRootCausePareto(index, earlier, 'open', TODAY).total).toBeGreaterThan(0)
+    expect(elapsed(() => buildRootCausePareto(index, earlier, 'open', TODAY))).toBeLessThanOrEqual(30)
+  })
+
+  it('lists the Other bar issues from a 200,000-row index within budget', () => {
+    const other = buildRootCausePareto(index, all, 'all', TODAY).bars.find((bar) => bar.kind === 'other')
+    if (other === undefined) throw new Error('no Other bar')
+    expect(elapsed(() => paretoIssues(index, other, all, 'all', TODAY))).toBeLessThanOrEqual(30)
   })
 })
 
