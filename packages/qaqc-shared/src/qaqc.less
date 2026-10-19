@@ -1812,6 +1812,323 @@
   grid-row: auto;
 }
 
+// Root cause Pareto: the page opened from the BIM Issues header (RootCauseParetoPage, ParetoChart,
+// RootCauseCategoryPanel). The chart sits over the selected bar's issues, with the category panel down the right.
+// Short tiles scroll the page, so the chart and the table keep the minimum heights below.
+
+.qaqc-pareto {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(240px, 1fr) minmax(200px, 318px);
+  gap: 10px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.qaqc-pareto.has-side {
+  grid-template-columns: minmax(0, 1fr) 286px;
+}
+
+.qaqc-pareto-chart-panel {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.qaqc-pareto-side {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  overflow-y: auto;
+}
+
+.qaqc-pareto-table {
+  grid-column: 1;
+  grid-row: 2;
+  padding-bottom: 8px;
+}
+
+// The page sits on the solid overlay card, so its panels take a lighter shadow than the dashboard's.
+.qaqc-pareto .qaqc-panel {
+  box-shadow: 0 1px 2px rgba(27, 37, 48, 0.06);
+}
+
+.qaqc-pareto-chart-panel .qaqc-panel-title {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+
+.qaqc-pareto-chart-note {
+  margin-left: 4px;
+  color: var(--qaqc-ink-2);
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.qaqc-pareto-chart-note b {
+  color: var(--qaqc-ink);
+  font-weight: 700;
+}
+
+.qaqc-pareto-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.qaqc-pareto-chart-panel .qaqc-chart-fill {
+  position: absolute;
+  inset: 0;
+}
+
+// The chart draws its own keyboard ring around the focused bar.
+.qaqc-pareto-chart:focus {
+  outline: none;
+}
+
+.qaqc-pareto-chart .qaqc-selected-band {
+  opacity: 0.09;
+}
+
+.qaqc-pareto-value {
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.qaqc-pareto-axis-label,
+.qaqc-pareto-line,
+.qaqc-pareto-line-casing,
+.qaqc-pareto-dot,
+.qaqc-pareto-target,
+.qaqc-pareto-outline,
+.qaqc-pareto-divider {
+  pointer-events: none;
+}
+
+.qaqc-pareto-chip {
+  flex: 0 0 auto;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--qaqc-accent-soft);
+  color: var(--qaqc-accent);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.qaqc-pareto-table .qaqc-panel-title h3 {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qaqc-pareto-table-note {
+  min-width: 0;
+  margin-left: auto;
+  overflow: hidden;
+  color: var(--qaqc-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qaqc-pareto-table-wrap {
+  margin-top: 6px;
+  overflow: auto;
+}
+
+.qaqc-pareto-drill-table {
+  table-layout: fixed;
+}
+
+// No vertical padding: cells centre in the fixed TABLE_ROW_HEIGHT row, so the status pills never grow it.
+.qaqc-pareto-drill-table td,
+.qaqc-pareto-drill-table tbody th {
+  padding-top: 0;
+  padding-bottom: 0;
+  vertical-align: middle;
+}
+
+.qaqc-pareto-drill-table tbody tr:not(.qaqc-virtual-spacer):hover > * {
+  background: var(--qaqc-accent-soft);
+}
+
+.qaqc-pareto-days {
+  font-weight: 650;
+}
+
+.qaqc-pareto-days.is-closed {
+  color: var(--qaqc-muted);
+  font-weight: 500;
+}
+
+// Side panel: the category strip and rows, the causes inside Other, and the read-out at the foot.
+.qaqc-pareto-side-note {
+  margin: 4px 0 10px;
+  color: var(--qaqc-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.qaqc-pareto-strip {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 2px;
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+}
+
+.qaqc-pareto-strip i {
+  flex-basis: 0;
+  min-width: 3px;
+}
+
+.qaqc-pareto-categories,
+.qaqc-pareto-other ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.qaqc-pareto-categories {
+  margin-top: 10px;
+}
+
+.qaqc-pareto-categories li {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto 46px;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--qaqc-hairline);
+  color: var(--qaqc-ink-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.qaqc-pareto-categories i {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.qaqc-pareto-categories span,
+.qaqc-pareto-other span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qaqc-pareto-categories strong,
+.qaqc-pareto-other strong {
+  color: var(--qaqc-ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.qaqc-pareto-categories em {
+  color: var(--qaqc-muted);
+  font-size: 11px;
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.qaqc-pareto-other {
+  margin-top: 14px;
+}
+
+.qaqc-pareto-other h4,
+.qaqc-pareto-readout h4 {
+  margin: 0 0 2px;
+  color: var(--qaqc-ink-2);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.qaqc-pareto-other ul {
+  margin-top: 4px;
+}
+
+.qaqc-pareto-other li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 3px 0;
+  color: var(--qaqc-ink-2);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.qaqc-pareto-other li.is-more {
+  color: var(--qaqc-muted);
+}
+
+.qaqc-pareto-readout {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--qaqc-hairline);
+}
+
+.qaqc-pareto-readout p {
+  margin: 6px 0 0;
+  color: var(--qaqc-ink-2);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.qaqc-pareto-readout b {
+  color: var(--qaqc-ink);
+}
+
+// Without the category panel, the read-out is one line under the chart.
+.qaqc-pareto-readout.is-inline {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  column-gap: 6px;
+  margin-top: 4px;
+  padding-top: 6px;
+}
+
+.qaqc-pareto-readout.is-inline p {
+  margin: 0;
+}
+
+// Narrow overlays stack the chart, the category panel and the table in one scrolling column.
+.qaqc-expanded.is-compact .qaqc-pareto,
+.qaqc-expanded.is-compact .qaqc-pareto.has-side {
+  grid-template-columns: minmax(0, 1fr);
+  // max-content: an auto row would shrink the category panel to nothing in the overflowing column.
+  grid-template-rows: 340px max-content 320px;
+}
+
+.qaqc-expanded.is-compact .qaqc-pareto-side {
+  grid-column: 1;
+  grid-row: 2;
+  overflow: visible;
+}
+
+.qaqc-expanded.is-compact .qaqc-pareto-table {
+  grid-row: 3;
+}
+
+.qaqc-expanded.is-compact .qaqc-pareto:not(.has-side) {
+  grid-template-rows: 340px 320px;
+}
+
+.qaqc-expanded.is-compact .qaqc-pareto:not(.has-side) .qaqc-pareto-table {
+  grid-row: 2;
+}
+
 // Overview charts (OverviewLinesChart behind ActivityLinesChart and QualityRatesChart), their expanded week tables,
 // and the discipline row sparklines.
 

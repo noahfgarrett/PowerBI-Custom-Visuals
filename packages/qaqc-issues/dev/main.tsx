@@ -110,9 +110,14 @@ if (data === 'missing') {
 
 /**
  * Screenshot helpers: ?open=aging opens the Issue Aging page once the dashboard is drawn, and with it
- * &list=all|past|<bucket position> opens its issue list.
+ * &list=all|past|<bucket position> opens its issue list. ?open=pareto opens the Issues by Root Cause Pareto page,
+ * with &range=all for every week, &scope=open for Open only and &bar=<position> to select a bar.
  */
 function openRequestedPage(): void {
+  if (params.get('open') === 'pareto') {
+    openParetoPage()
+    return
+  }
   if (params.get('open') !== 'aging') return
   window.setTimeout(() => {
     document.querySelector<HTMLButtonElement>('button[aria-label="Open Issue Aging"]')?.click()
@@ -128,3 +133,24 @@ function openRequestedPage(): void {
     }, 400)
   }, 50)
 }
+
+function clickButton(scope: ParentNode, text: string): void {
+  const button = [...scope.querySelectorAll('button')].find((item) => item.textContent === text)
+  button?.click()
+}
+
+function openParetoPage(): void {
+  window.setTimeout(() => {
+    if (params.get('range') === 'all') clickButton(document.querySelector('.qaqc-header') ?? document, 'All')
+    document.querySelector<HTMLButtonElement>('button[aria-label="Open Issues by Root Cause Pareto"]')?.click()
+    window.setTimeout(() => {
+      if (params.get('scope') === 'open') clickButton(document, 'Open only')
+      const bar = params.get('bar')
+      if (bar === null) return
+      window.setTimeout(() => {
+        document.querySelectorAll('.qaqc-pareto-chart .qaqc-hit')[Number(bar)]?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+      }, 50)
+    }, 400)
+  }, 50)
+}
+

@@ -319,12 +319,16 @@ describe('IssuesDashboard layout', () => {
     expect(view.container.querySelector('.qaqc-title-icon svg.lucide-circle-alert')).not.toBeNull()
   })
 
-  it('puts the Issue Detail and Issue Aging buttons before the range toggle and week picker', () => {
+  it('puts Issue Detail, Issues by Root Cause Pareto and Issue Aging before the range toggle and week picker', () => {
     view = draw()
     const controls = view.container.querySelector('.qaqc-controls')
     const order = [...(controls?.children ?? [])].map((node) => node.className)
-    expect(order).toEqual(['qaqc-header-button', 'qaqc-header-button', 'qaqc-segmented', 'qaqc-week-picker'])
-    expect([...(controls?.querySelectorAll('.qaqc-header-button') ?? [])].map((node) => node.textContent)).toEqual(['Issue Detail', 'Issue Aging'])
+    expect(order).toEqual(['qaqc-header-button', 'qaqc-header-button', 'qaqc-header-button', 'qaqc-segmented', 'qaqc-week-picker'])
+    expect([...(controls?.querySelectorAll('.qaqc-header-button') ?? [])].map((node) => node.textContent)).toEqual([
+      'Issue Detail',
+      'Issues by Root Cause Pareto',
+      'Issue Aging',
+    ])
   })
 
   it('toggles the chart range', () => {
@@ -549,5 +553,102 @@ describe('IssuesDashboard Issue Detail', () => {
   it('keeps several table rows in view on a short tile by scrolling the page instead of squeezing the table', () => {
     expect(ruleBody('.qaqc-issue-detail')).toContain('overflow-y: auto;')
     expect(ruleBody('.qaqc-issue-detail .qaqc-table-wrap.qaqc-issue-detail-wrap')).toMatch(/min-height: \d+px;/)
+  })
+})
+
+const PARETO_ALL_TITLE = "Issues by Root Cause Pareto · WW46'2024 to WW42'2026"
+const PARETO_RECENT_TITLE = "Issues by Root Cause Pareto · WW13'2026 to WW42'2026"
+
+function paretoButton(container: HTMLElement): HTMLButtonElement | null {
+  return container.querySelector<HTMLButtonElement>('.qaqc-header button[aria-label="Open Issues by Root Cause Pareto"]')
+}
+
+function openPareto(container: HTMLElement, title = PARETO_RECENT_TITLE): HTMLElement {
+  const button = paretoButton(container)
+  if (!button) throw new Error('Pareto button missing')
+  click(button)
+  const open = dialog(container, title)
+  if (!open) throw new Error('Pareto dialog missing')
+  return open
+}
+
+describe('IssuesDashboard Issues by Root Cause Pareto', () => {
+  it('shows the Pareto button with the decreasing column chart icon', () => {
+    view = draw()
+    const button = paretoButton(view.container)
+    expect(button?.textContent).toBe('Issues by Root Cause Pareto')
+    expect(button?.querySelector('svg.lucide-chart-column-decreasing') ?? null).not.toBeNull()
+  })
+
+  it('opens the Pareto page over the 30 WW window to the selected week', () => {
+    stubSize()
+    view = draw()
+    const open = openPareto(view.container)
+    expect(open.querySelector('h3')?.textContent).toBe(PARETO_RECENT_TITLE)
+    expect(open.querySelector('.qaqc-pareto')).not.toBeNull()
+    expect(view.container.querySelector('.qaqc-root')?.hasAttribute('inert')).toBe(true)
+  })
+
+  it('shows Installation 48 and the read-out over every week', () => {
+    stubSize()
+    view = draw()
+    clickRange(view.container, 'All')
+    const open = openPareto(view.container, PARETO_ALL_TITLE)
+    const counts = [...open.querySelectorAll('.qaqc-pareto-value.qaqc-bar-value')].map((node) => node.textContent)
+    expect(counts[0]).toBe('48')
+    expect(open.querySelector('.qaqc-pareto-table h3')?.textContent).toBe('Installation')
+    expect(open.querySelector('.qaqc-pareto-readout')?.textContent).toContain('Installation is 48 of 177 (27.1%).')
+  })
+
+  it("changes the dashboard's range from the page, and the title follows", () => {
+    stubSize()
+    view = draw()
+    const open = openPareto(view.container)
+    const all = [...open.querySelectorAll('.qaqc-segmented button')].find((button) => button.textContent === 'All')
+    if (!all) throw new Error('All button missing')
+    click(all)
+    expect(dialog(view.container, PARETO_ALL_TITLE)).not.toBeNull()
+  })
+
+  it('builds the Pareto only while the page is open', () => {
+    stubSize()
+    const { index, walks } = countingIndex()
+    view = draw({ index })
+    expect(walks()).toBe(0)
+    openPareto(view.container)
+    expect(walks()).toBeGreaterThan(0)
+  })
+
+  it('closes with the back button and returns focus to the Pareto button', () => {
+    stubSize()
+    view = draw()
+    const open = openPareto(view.container)
+    const back = open.querySelector('.qaqc-back-button')
+    if (!back) throw new Error('back button missing')
+    click(back)
+    expect(dialog(view.container, PARETO_RECENT_TITLE)).toBeNull()
+    expect(document.activeElement).toBe(paretoButton(view.container))
+  })
+
+  it('closes on Esc and returns focus to the Pareto button', () => {
+    stubSize()
+    view = draw()
+    const open = openPareto(view.container)
+    act(() => {
+      open.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    })
+    expect(dialog(view.container, PARETO_RECENT_TITLE)).toBeNull()
+    expect(document.activeElement).toBe(paretoButton(view.container))
+  })
+
+  it('hides the Pareto button when Root Cause is not bound', () => {
+    view = draw({ index: buildIssueIndex(ISSUE_ROWS, { ...COLUMNS, rootCause: -1, rootCauseCategory: -1 }, TODAY) })
+    expect(paretoButton(view.container)).toBeNull()
+    expect(view.container.querySelector('.qaqc-header button[aria-label="Open Issue Detail"]')).not.toBeNull()
+  })
+
+  it('hides the Pareto button when interactions are not allowed', () => {
+    view = draw({ interactive: false })
+    expect(paretoButton(view.container)).toBeNull()
   })
 })

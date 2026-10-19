@@ -134,7 +134,7 @@ function causeIndex(index: IssueIndex): CauseIndex {
   return built
 }
 
-interface ParetoPeriod {
+export interface ParetoPeriod {
   firstWeek: WorkWeek
   lastWeek: WorkWeek
   /** End of W as a timeline day number. */
@@ -142,7 +142,7 @@ interface ParetoPeriod {
 }
 
 /** From the window's first week (or W, when W is earlier) through W, like the dashboard's 30 WW | All. */
-function paretoPeriod(index: IssueIndex, view: ViewState, today: Date): ParetoPeriod {
+export function paretoPeriod(index: IssueIndex, view: ViewState, today: Date): ParetoPeriod {
   const last = index.weeks.length - 1
   const selected = index.positionByKey.get(view.selectedKey) ?? last
   const end = index.positionByKey.get(view.windowEndKey) ?? last

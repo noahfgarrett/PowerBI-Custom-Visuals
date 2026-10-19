@@ -1,6 +1,7 @@
 import {
   ChartBarStacked,
   ChartColumnBig,
+  ChartColumnDecreasing,
   CheckCheck,
   CircleCheck,
   CircleDot,
@@ -30,6 +31,7 @@ import { KpiGroup } from './KpiGroup'
 import { LoadingBar } from './LoadingBar'
 import { OpenAgingChart } from './OpenAgingChart'
 import { OpenIssuesTable } from './OpenIssuesTable'
+import { paretoTitle, RootCauseParetoPage } from './RootCauseParetoPage'
 import { IssueWindowSummary } from './WindowSummary'
 import { formatCount, formatDelta, formatPercent, formatPointsDelta, formatSignedCount, pointsTrend, trendOf } from '../format'
 import { buildIssueModel } from '../issues'
@@ -40,7 +42,7 @@ const NO_ROWS_MESSAGE = 'No issues match the current filters'
 const NO_OPEN_MESSAGE = 'No open issues'
 
 type ChartId = 'trend' | 'openAging' | 'overallAging'
-type PanelId = ChartId | 'detail' | 'aging'
+type PanelId = ChartId | 'detail' | 'pareto' | 'aging'
 
 const CHART_IDS: readonly ChartId[] = ['trend', 'openAging', 'overallAging'] as const
 
@@ -168,6 +170,27 @@ export function IssuesDashboard({
       // Mounted only while the page is open, so the detail is built only then.
       renderExpanded: () => <IssueDetail index={index} selectedKey={model.selectedWeek.key} />,
     },
+    pareto: {
+      title: paretoTitle(index, view),
+      icon: ChartColumnDecreasing,
+      kind: 'page',
+      legend: [],
+      emptyMessage: null,
+      // Mounted only while the page is open, so the Pareto is built only then. It shares the dashboard's week
+      // window, so its own range toggle and week picker move the dashboard too.
+      renderExpanded: () => (
+        <RootCauseParetoPage
+          index={index}
+          view={view}
+          weekOptions={model.weekOptions}
+          colors={colors}
+          isHighContrast={theme.isHighContrast}
+          onPickWeek={pickWeek}
+          onRangeChange={changeRange}
+          onHover={onHover}
+        />
+      ),
+    },
     aging: {
       title: issueAgingTitle(model.selectedWeek),
       icon: Hourglass,
@@ -216,6 +239,14 @@ export function IssuesDashboard({
             onPickWeek={pickWeek}
           >
             <HeaderOverlayButton {...expandable('detail')} label="Issue Detail" ariaLabel="Open Issue Detail" icon={TableProperties} />
+            {index.hasRootCause && (
+              <HeaderOverlayButton
+                {...expandable('pareto')}
+                label="Issues by Root Cause Pareto"
+                ariaLabel="Open Issues by Root Cause Pareto"
+                icon={ChartColumnDecreasing}
+              />
+            )}
             <HeaderOverlayButton {...expandable('aging')} label="Issue Aging" ariaLabel="Open Issue Aging" icon={Hourglass} />
           </DashboardHeader>
 
