@@ -331,6 +331,39 @@ describe('QaqcOverviewVisual dashboard', () => {
     expect(cardValue(quality(element), 'NCRs')).toBe('14')
   })
 
+  it('shows Add Root Cause in the Top root cause card when Root Cause is unbound', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(COMBINED_ROWS)))
+    const topCause = card(quality(harness.element), 'Top root cause')
+    expect(topCause?.querySelector('.qaqc-kpi-value')?.textContent).toBe('n/a')
+    expect(topCause?.querySelector('.qaqc-kpi-detail')?.textContent).toBe('Add Root Cause')
+  })
+
+  it('names the top root cause to date when Root Cause is bound', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(COMBINED_ROWS, { roles: [...ALL_ROLES, 'rootCause'] })))
+    click(modeButton(harness.element, 'To date'))
+    const topCause = card(quality(harness.element), 'Top root cause')
+    expect(topCause?.querySelector('.qaqc-kpi-value')?.textContent).toBe('Installation')
+    expect(topCause?.querySelector('.qaqc-kpi-detail')?.textContent).toBe('48 of 177 issues · 27%')
+  })
+
+  it('shows None opened this WW in the Top root cause card for WW42 when Root Cause is bound', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(COMBINED_ROWS, { roles: [...ALL_ROLES, 'rootCause'] })))
+    const topCause = card(quality(harness.element), 'Top root cause')
+    expect(topCause?.querySelector('.qaqc-kpi-value')?.textContent).toBe('None')
+    expect(topCause?.querySelector('.qaqc-kpi-detail')?.textContent).toBe('None opened this WW')
+  })
+
+  it('shows the BIM issues past the normal close window in both modes', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(COMBINED_ROWS)))
+    expect(cardValue(row(harness.element, 'BIM Issues'), 'Past normal close window')).toBe('51')
+    click(modeButton(harness.element, 'To date'))
+    expect(cardValue(row(harness.element, 'BIM Issues'), 'Past normal close window')).toBe('51')
+  })
+
   it('divides the DWNs to date by a bound Green tags value', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(rowsWithDwns(2), { greenTags: 400 })))

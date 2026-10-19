@@ -3,7 +3,7 @@ import type powerbi from 'powerbi-visuals-api'
 import { COMBINED_COLUMNS } from '../../../qaqc-shared/src/__tests__/fixtures/combinedRows'
 import { OPTIONAL_COMBINED_ROLES, OVERVIEW_SLOTS, type CombinedSlotRole } from '../../../qaqc-shared/src/dataView'
 
-/** The Overview's required column roles. Green tags is a measure, bound with `TableOptions.greenTags` instead. */
+/** The Overview's column roles: the required ones and the optional Root Cause. Green tags is a measure, bound with `TableOptions.greenTags` instead. */
 export type SlotRole =
   | 'source'
   | 'rowId'
@@ -19,6 +19,7 @@ export type SlotRole =
   | 'createdOn'
   | 'updatedOn'
   | 'createdBy'
+  | 'rootCause'
 
 export type Cell = string | number | Date | null
 
@@ -47,6 +48,7 @@ const COLUMN_OF: Record<SlotRole, (typeof COMBINED_COLUMNS)[number]> = {
   createdOn: 'Created On',
   updatedOn: 'Updated On',
   createdBy: 'Created By',
+  rootCause: 'Root Cause',
 }
 
 function isSlotRole(role: CombinedSlotRole): role is SlotRole {

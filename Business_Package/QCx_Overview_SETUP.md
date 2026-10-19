@@ -2,10 +2,12 @@
 
 One page with Electrical, Mechanical, Welding and BIM Issues side by side, a quality strip, and two charts. Its numbers match the four discipline visuals for the same week.
 
+**Version 1.1.0:** the BIM Issues row's fourth card is now **Past normal close window**, with the closure rate in its sub-line. The quality strip gains a sixth card, **Top root cause**, fed by a new optional Root Cause slot.
+
 ## 1. Import the visual (once per report)
 
 1. In Power BI Desktop, open the Visualizations pane, select the three dots (…), then **Import a visual from a file**.
-2. Choose `qaqcOverview_AE84E1DA71E7.1.0.0.0.pbiviz`.
+2. Choose `qaqcOverview_AE84E1DA71E7.1.1.0.0.pbiviz`.
 3. To update later, import the newer file the same way. It replaces the old version in place and keeps your field bindings.
 
 ## 2. Add the QCx Combined table (once per report, required)
@@ -14,7 +16,7 @@ The visual reads one table that holds all four sheets. Follow [QCx_Combined_SETU
 
 ## 3. Bind the columns
 
-The 14 column slots are required. The visual shows its setup screen, listing the slots still empty, until every one is bound. Green tags is optional.
+The 14 column slots are required. The visual shows its setup screen, listing the slots still empty, until every one is bound. Root Cause and Green tags are optional.
 
 | Field slot | QCx Combined column |
 |---|---|
@@ -32,9 +34,14 @@ The 14 column slots are required. The visual shows its setup screen, listing the
 | Created On | Created On |
 | Updated On | Updated On |
 | Created By | Created By |
+| Root Cause (optional) | Root Cause |
 | Green tags (optional) | your Green tags measure (see below) |
 
 Set every column to **Don't summarize**. The visual is designed to fill a full report page.
+
+### Root Cause (optional)
+
+Bind the QCx Combined **Root Cause** column to show the most common root cause in the **Top root cause** card. Without it, the card reads `Add Root Cause`, and everything else works as before. The column comes from the BIM Issues Log; see [QCx_Combined_SETUP.md](QCx_Combined_SETUP.md).
 
 ### Green tags (optional)
 
@@ -77,7 +84,7 @@ Each row has the discipline's name, four cards, and a sparkline of the 30 weeks 
 | Electrical | Finals | SORs | NCRs | NCR pass rate | Finals + SORs per week |
 | Mechanical | Finals | SORs | NCRs | NCR pass rate | Finals + SORs per week |
 | Welding | Welds logged | Signed | Sign-off % | NCRs | Welds logged per week |
-| BIM Issues | Opened | Closed | Remaining open | Closure rate | Remaining open per week |
+| BIM Issues | Opened | Closed | Remaining open | Past normal close window | Remaining open per week |
 
 **This WW:**
 
@@ -96,13 +103,15 @@ Each row has the discipline's name, four cards, and a sparkline of the 30 weeks 
 **Always to date,** in both modes:
 
 - **BIM Remaining open:** opened minus closed through the selected week.
-- **BIM Closure rate:** closed ÷ opened through the selected week.
+- **BIM Past normal close window:** the BIM issues open as of the selected week that are older than the normal close window. The window is the 90% mark of your own close times: 90% of the BIM issues closed by the end of that week closed within it. It matches the Past the normal close window card on the QCx BIM Issues visual's Issue Aging page.
+  - The sub-line reads, for example, `of 51 open · 28 older than any closure · 71.2% closed`: the open issues, those older than the slowest close so far, and the closure rate (closed ÷ opened through the selected week).
+  - With no closures yet it shows `n/a`.
 
 **Colours** match the discipline visuals:
 
 - **Electrical and Mechanical:** NCRs amber when up. NCR pass rate green when up, red when down.
 - **Welding:** NCRs amber when up. Sign-off % in red below 10%.
-- **BIM Issues:** Opened amber when up in This WW, red when up in To date. Closed green in This WW when at least last week's count and above 0, and green in To date when it rose. Remaining open red when up, green when down. Closure rate green when up, red when down.
+- **BIM Issues:** Opened amber when up in This WW, red when up in To date. Closed green in This WW when at least last week's count and above 0, and green in To date when it rose. Remaining open red when up, green when down. Past normal close window red when above 0.
 
 ### Quality strip
 
@@ -113,10 +122,12 @@ Each row has the discipline's name, four cards, and a sparkline of the 30 weeks 
 | Inspection NCR pass rate | 1 − (Electrical + Mechanical NCRs ÷ Electrical + Mechanical finals), pooled across both | Green up, red down |
 | Welding NCR pass rate | 1 − (issue welds ÷ welds logged) | Green up, red down |
 | DWNs | BIM issues with Type `DWN`. The sub-line shows the DWN rate | Neutral |
+| Top root cause | The most common Root Cause among BIM issues created in the week (This WW) or through it (To date) | Neutral |
 
 - **CORs and DWNs** match Type ignoring case and extra spaces. Only counted BIM issues are included (see Counting rules), so void issues and issues not created by LotusWorks are left out.
 - **NCRs come from final walks only:** Electrical and Mechanical finals with an issue found, and welds with an issue. BIM issues typed `NCR` are **not** counted here.
 - **Pass rates** show `n/a` when there are no finals (or no welds) to divide by.
+- **Top root cause** shows the cause's name, with `n of N issues · p%` in To date and `n of N opened this WW` in This WW. A week with no new issues reads `None` with `None opened this WW`. Causes are grouped ignoring letter case and extra spaces, ties go to the name that sorts first, and a long name is cut short (hover it for the full name). Only counted BIM issues are included. Without the Root Cause slot the card reads `Add Root Cause`.
 - **DWN rate** is always to date: DWNs through the selected week ÷ Green tags, shown as, for example, `2.1% of green tags (to date)`. Without a Green tags value it reads `DWN rate n/a: add Green tags`.
 
 ### Charts
@@ -134,7 +145,7 @@ The charts follow `30 WW | All`.
 - **Narrow (under 900 px wide, 660 px tall and up):** each row's cards sit two by two, the two charts stack one above the other, and the page scrolls.
 - **Cards only (under 660 px tall):** the charts are hidden.
   - From 480 to 660 px tall, and at least 900 px wide: full cards, no charts.
-  - Under 480 px tall, or under 900 px wide: a dense one-line layout. Each discipline row is its name, four values with a coloured trend arrow, and the sparkline; the quality strip is one line of five values. Hover a value (or use a screen reader) for its full detail. An 800 × 300 tile fits without scrolling.
+  - Under 480 px tall, or under 900 px wide: a dense one-line layout. Each discipline row is its name, four values with a coloured trend arrow, and the sparkline; the quality strip is one line of six values. Hover a value (or use a screen reader) for its full detail. An 800 × 300 tile fits without scrolling.
 
 ## 7. Not connected and footnotes
 
