@@ -18,6 +18,7 @@ import { COMBINED_COLUMNS } from './fixtures/combinedRows'
 import { syntheticCombinedRows } from './fixtures/syntheticCombined'
 import { syntheticInspectionRows, syntheticIssueRows, syntheticWeldRows } from './fixtures/syntheticRows'
 import { render } from './render'
+import { bestOf, elapsed, TIMING_RUNS } from './timing'
 
 const COLUMNS = { workWeek: 0, phase: 1, issue: 2, building: 3 }
 const WELD_COLUMNS = { weldWeek: 0, signature: 1, signedWeek: 2, issue: 3, fluidCode: 4, pipeSpec: 5, tagNo: 6 }
@@ -36,30 +37,24 @@ const ISSUE_COLUMNS = {
 }
 const TODAY = new Date(2026, 9, 15)
 
-function elapsed(work: () => void): number {
-  const start = performance.now()
-  work()
-  return performance.now() - start
-}
-
 describe('performance budgets', () => {
   it('indexes 100,000 rows within budget', () => {
     const rows = syntheticInspectionRows(100_000)
     buildInspectionIndex(rows, COLUMNS, TODAY)
-    expect(elapsed(() => buildInspectionIndex(rows, COLUMNS, TODAY))).toBeLessThan(300)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => buildInspectionIndex(rows, COLUMNS, TODAY)))).toBeLessThan(300)
   })
 
   it('indexes 500,000 rows within budget', () => {
     const rows = syntheticInspectionRows(500_000)
     buildInspectionIndex(rows, COLUMNS, TODAY)
-    expect(elapsed(() => buildInspectionIndex(rows, COLUMNS, TODAY))).toBeLessThan(1500)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => buildInspectionIndex(rows, COLUMNS, TODAY)))).toBeLessThan(1500)
   })
 
   it('recomputes the All-range view model from a 500,000-row index within one frame', () => {
     const index = buildInspectionIndex(syntheticInspectionRows(500_000), COLUMNS, TODAY)
     const view = { ...defaultViewState(index), range: 'all' as const }
     buildInspectionModel(index, view)
-    expect(elapsed(() => buildInspectionModel(index, view))).toBeLessThan(16)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => buildInspectionModel(index, view)))).toBeLessThan(16)
   })
 })
 
@@ -67,14 +62,14 @@ describe('welding performance budgets', () => {
   it('indexes 500,000 weld rows within budget', () => {
     const rows = syntheticWeldRows(500_000)
     buildWeldIndex(rows, WELD_COLUMNS, TODAY)
-    expect(elapsed(() => buildWeldIndex(rows, WELD_COLUMNS, TODAY))).toBeLessThan(1500)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => buildWeldIndex(rows, WELD_COLUMNS, TODAY)))).toBeLessThan(1500)
   })
 
   it('recomputes the All-range weld model from a 500,000-row index within one frame', () => {
     const index = buildWeldIndex(syntheticWeldRows(500_000), WELD_COLUMNS, TODAY)
     const view = { ...defaultViewState(index), range: 'all' as const }
     buildWeldModel(index, view, 'AW', 10)
-    expect(elapsed(() => buildWeldModel(index, view, 'AW', 10))).toBeLessThan(16)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => buildWeldModel(index, view, 'AW', 10)))).toBeLessThan(16)
   })
 })
 
@@ -82,7 +77,7 @@ describe('issues performance budgets', () => {
   it('indexes 200,000 issue rows within budget', () => {
     const rows = syntheticIssueRows(200_000)
     buildIssueIndex(rows, ISSUE_COLUMNS, TODAY)
-    expect(elapsed(() => buildIssueIndex(rows, ISSUE_COLUMNS, TODAY))).toBeLessThan(1500)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => buildIssueIndex(rows, ISSUE_COLUMNS, TODAY)))).toBeLessThan(1500)
   })
 
   it('recomputes the All-range issue model from a 200,000-row index within one frame', () => {
@@ -90,13 +85,13 @@ describe('issues performance budgets', () => {
     expect(index.issues.length).toBeGreaterThan(150_000)
     const view = { ...defaultViewState(index), range: 'all' as const }
     buildIssueModel(index, view)
-    expect(elapsed(() => buildIssueModel(index, view))).toBeLessThan(16)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => buildIssueModel(index, view)))).toBeLessThan(16)
   })
 
   it('builds the Issue Detail for a 200,000-row index within budget', () => {
     const index = buildIssueIndex(syntheticIssueRows(200_000), ISSUE_COLUMNS, TODAY)
     buildIssueDetail(index, index.currentWeek.key)
-    expect(elapsed(() => buildIssueDetail(index, index.currentWeek.key))).toBeLessThan(30)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => buildIssueDetail(index, index.currentWeek.key)))).toBeLessThan(30)
   })
 })
 
@@ -108,28 +103,33 @@ describe('issue benchmark performance budgets', () => {
   buildIssueBenchmarks(index, lastKey, TODAY)
 
   it('builds the first benchmarks after indexing 200,000 rows, day numbers included, within budget', () => {
-    const fresh = buildIssueIndex(syntheticIssueRows(200_000), ISSUE_COLUMNS, TODAY)
-    expect(elapsed(() => buildIssueBenchmarks(fresh, fresh.currentWeek.key, TODAY))).toBeLessThanOrEqual(50)
+    const rows = syntheticIssueRows(200_000)
+    // A fresh index for every run, so each one is a first call that computes the day numbers.
+    const firstCallTime = (): number => {
+      const fresh = buildIssueIndex(rows, ISSUE_COLUMNS, TODAY)
+      return elapsed(() => buildIssueBenchmarks(fresh, fresh.currentWeek.key, TODAY))
+    }
+    expect(bestOf(TIMING_RUNS, firstCallTime)).toBeLessThanOrEqual(50)
   })
 
   it('builds the benchmarks for a new week from a 200,000-row index within budget', () => {
     expect(index.issues.length).toBeGreaterThan(150_000)
-    expect(elapsed(() => buildIssueBenchmarks(index, earlierKey, TODAY))).toBeLessThanOrEqual(50)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => buildIssueBenchmarks(index, earlierKey, TODAY)))).toBeLessThanOrEqual(50)
   })
 
   it('builds the 30-week aging profile from a 200,000-row index within budget', () => {
     const view = { ...defaultViewState(index), range: 'recent' as const }
-    expect(elapsed(() => agingProfile(index, view, TODAY))).toBeLessThanOrEqual(50)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => agingProfile(index, view, TODAY)))).toBeLessThanOrEqual(50)
   })
 
   it('builds the All-range aging profile from a 200,000-row index within budget', () => {
     expect(index.weeks.length).toBeGreaterThan(250)
     const view = { ...defaultViewState(index), range: 'all' as const }
-    expect(elapsed(() => agingProfile(index, view, TODAY))).toBeLessThanOrEqual(50)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => agingProfile(index, view, TODAY)))).toBeLessThanOrEqual(50)
   })
 
   it('builds the quarterly medians from a 200,000-row index within budget', () => {
-    expect(elapsed(() => quarterMedians(index, lastKey, TODAY))).toBeLessThanOrEqual(50)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => quarterMedians(index, lastKey, TODAY)))).toBeLessThanOrEqual(50)
   })
 })
 
@@ -150,18 +150,18 @@ describe('root cause Pareto performance budgets', () => {
     expect(index.issues.length).toBeGreaterThan(150_000)
     const model = buildRootCausePareto(index, earlier, 'all', TODAY)
     expect(model.distinct).toBe(40)
-    expect(elapsed(() => buildRootCausePareto(index, earlier, 'all', TODAY))).toBeLessThanOrEqual(30)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => buildRootCausePareto(index, earlier, 'all', TODAY)))).toBeLessThanOrEqual(30)
   })
 
   it('builds the All-range Open only Pareto from a 200,000-row index within budget', () => {
     expect(buildRootCausePareto(index, earlier, 'open', TODAY).total).toBeGreaterThan(0)
-    expect(elapsed(() => buildRootCausePareto(index, earlier, 'open', TODAY))).toBeLessThanOrEqual(30)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => buildRootCausePareto(index, earlier, 'open', TODAY)))).toBeLessThanOrEqual(30)
   })
 
   it('lists the Other bar issues from a 200,000-row index within budget', () => {
     const other = buildRootCausePareto(index, all, 'all', TODAY).bars.find((bar) => bar.kind === 'other')
     if (other === undefined) throw new Error('no Other bar')
-    expect(elapsed(() => paretoIssues(index, other, all, 'all', TODAY))).toBeLessThanOrEqual(30)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => paretoIssues(index, other, all, 'all', TODAY)))).toBeLessThanOrEqual(30)
   })
 })
 
@@ -197,21 +197,21 @@ describe('overview performance budgets', () => {
   const index = indexCombined(rows)
 
   it('splits and indexes 500,000 combined rows within budget', () => {
-    expect(elapsed(() => indexCombined(rows))).toBeLessThan(1500)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => indexCombined(rows)))).toBeLessThan(1500)
   })
 
   it('splits and indexes 500,000 combined rows with Green tags bound to a blank column within budget', () => {
     // A position past the last column reads as a blank cell in every row, so the Green tags scan visits them all.
     const columns: CombinedColumns = { ...COMBINED, greenTags: COMBINED_COLUMNS.length }
     expect(indexCombined(rows, columns).greenTags).toBeNull()
-    expect(elapsed(() => indexCombined(rows, columns))).toBeLessThan(1500)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => indexCombined(rows, columns)))).toBeLessThan(1500)
   })
 
   it.each(['week', 'toDate'] as const)('builds the All-range overview model (%s) from a 500,000-row index within one frame', (mode) => {
     expect(index.weeks.length).toBeGreaterThan(250)
     const view = { ...defaultViewState(index), range: 'all' as const }
     buildOverviewModel(index, view, mode)
-    expect(elapsed(() => buildOverviewModel(index, view, mode))).toBeLessThan(16)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => buildOverviewModel(index, view, mode)))).toBeLessThan(16)
   })
 })
 
@@ -237,7 +237,7 @@ describe('issue table performance budgets', () => {
     return index.issues.slice(0, DETAIL_ROWS).map((issue, position) => ({ ...issue.detail, title: titleFor(position) }))
   }
 
-  /** The time of the first click on a header: building that column's ranks and sorting every row. */
+  /** The time of the first click on a header, on a fresh table: building that column's ranks and sorting every row. */
   function firstSortTime(rows: IssueDetailRow[], column: string): number {
     const view = render(createElement(IssueDetailTable, { reportRows: [], discussionRows: rows, caption: 'Issues' }))
     const button = [...view.container.querySelectorAll('thead th button')].find((item) => item.textContent === column)
@@ -251,21 +251,15 @@ describe('issue table performance budgets', () => {
     return time
   }
 
-  // Best of three: the full suite runs files in parallel, so a single run can be slowed by CPU contention. The fastest
-  // run still catches a real regression (a return to sorting with the collator would take seconds).
-  function bestFirstSortTime(rows: IssueDetailRow[], column: string): number {
-    return Math.min(firstSortTime(rows, column), firstSortTime(rows, column), firstSortTime(rows, column))
-  }
-
   it('sorts 70,000 detail rows by Title on the first click within budget', () => {
     const rows = detailRows()
     expect(rows).toHaveLength(DETAIL_ROWS)
-    expect(bestFirstSortTime(rows, 'Title')).toBeLessThan(300)
+    expect(bestOf(TIMING_RUNS, () => firstSortTime(rows, 'Title'))).toBeLessThan(300)
   })
 
   it('sorts 70,000 detail rows by ID on the first click within budget', () => {
     const rows = detailRows()
-    expect(bestFirstSortTime(rows, 'ID')).toBeLessThan(150)
+    expect(bestOf(TIMING_RUNS, () => firstSortTime(rows, 'ID'))).toBeLessThan(150)
   })
 })
 
@@ -280,12 +274,12 @@ describe('issue chart performance budgets', () => {
 
   it('lays out the 520-week trend chart within one frame', () => {
     layoutChart(points, 1200, 520, false)
-    expect(elapsed(() => layoutChart(points, 1200, 520, false))).toBeLessThan(16)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => layoutChart(points, 1200, 520, false)))).toBeLessThan(16)
   })
 
   it('lays out the 520-week trend chart with every value shown within one frame', () => {
     layoutChart(points, 2400, 900, true)
-    expect(elapsed(() => layoutChart(points, 2400, 900, true))).toBeLessThan(16)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => layoutChart(points, 2400, 900, true)))).toBeLessThan(16)
   })
 })
 
@@ -300,11 +294,11 @@ describe('overview chart performance budgets', () => {
 
   it('lays out the 520-week overview lines within one frame', () => {
     layoutWeekLines(lines, 520, scale, 1200, 520, false, 260, false, formatValue)
-    expect(elapsed(() => layoutWeekLines(lines, 520, scale, 1200, 520, false, 260, false, formatValue))).toBeLessThanOrEqual(16)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => layoutWeekLines(lines, 520, scale, 1200, 520, false, 260, false, formatValue)))).toBeLessThanOrEqual(16)
   })
 
   it('lays out the 520-week overview lines with every value shown within one frame', () => {
     layoutWeekLines(lines, 520, scale, 2400, 900, false, 260, true, formatValue)
-    expect(elapsed(() => layoutWeekLines(lines, 520, scale, 2400, 900, false, 260, true, formatValue))).toBeLessThanOrEqual(16)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => layoutWeekLines(lines, 520, scale, 2400, 900, false, 260, true, formatValue)))).toBeLessThanOrEqual(16)
   })
 })
