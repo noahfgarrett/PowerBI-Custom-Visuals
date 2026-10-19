@@ -1,5 +1,5 @@
 import { ChevronRight, CircleDot, Hourglass, Timer, TimerOff, TrendingUp } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactElement } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactElement } from 'react'
 
 import type { ChartColors, TooltipHandler } from '../chartTypes'
 import { formatCount, formatDelta, pluralize, trendOf } from '../format'
@@ -81,6 +81,11 @@ export interface IssueAgingPageProps {
   onPickWeek: (key: number) => void
   onRangeChange: (mode: RangeMode) => void
   onHover: TooltipHandler
+  /**
+   * Hands the page overlay the page's Esc handler (null on unmount). The handler closes the issue list and returns
+   * true while the list is open; otherwise it returns false and Esc closes the page.
+   */
+  registerEscape: (handler: (() => boolean) | null) => void
 }
 
 /**
@@ -99,6 +104,7 @@ export function IssueAgingPage({
   onPickWeek,
   onRangeChange,
   onHover,
+  registerEscape,
 }: IssueAgingPageProps): ReactElement {
   const benchmarks = useMemo(() => buildIssueBenchmarks(index, view.selectedKey, index.today), [index, view.selectedKey])
   const buckets = useMemo(() => ageBuckets(benchmarks), [benchmarks])
@@ -141,13 +147,23 @@ export function IssueAgingPage({
     setListFilter(null)
   }
 
-  // Esc anywhere on the page closes the list first; with no list open it reaches the page overlay and closes it.
-  function onKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
-    if (event.key !== 'Escape' || listFilter === null) return
-    event.preventDefault()
-    event.stopPropagation()
+  // Esc anywhere in the page overlay, the dialog itself included, closes the list first; with no list open it
+  // closes the page. The overlay asks through the registered handler, which always reads the latest state.
+  function handleEscape(): boolean {
+    if (listFilter === null) return false
     closeList()
+    return true
   }
+
+  const escapeRef = useRef(handleEscape)
+  useLayoutEffect(() => {
+    escapeRef.current = handleEscape
+  })
+
+  useEffect(() => {
+    registerEscape(() => escapeRef.current())
+    return () => registerEscape(null)
+  }, [registerEscape])
 
   function onPastCardKey(event: KeyboardEvent<HTMLDivElement>): void {
     if (event.key !== 'Enter' && event.key !== ' ') return
@@ -170,7 +186,8 @@ export function IssueAgingPage({
   )
 
   return (
-    <div className="qaqc-aging-page" onKeyDown={onKeyDown}>
+    // tabIndex -1: a click on the cards or the list keeps focus inside the page rather than on the overlay.
+    <div className="qaqc-aging-page" tabIndex={-1}>
       <div className="qaqc-aging-top">
         <KpiGroup title={`As of ${asOf.label}`} subtitle={`${formatCount(closures)} ${pluralize(closures, 'issue', 'issues')} closed to date`} variant="week">
           <KpiCard

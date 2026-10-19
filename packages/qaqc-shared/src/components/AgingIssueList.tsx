@@ -127,7 +127,14 @@ export function AgingIssueList({ rows, filterLabel, windowDays, asOfLabel, anima
   }
 
   return (
-    <section className={animate ? 'qaqc-panel qaqc-aging-list is-animated' : 'qaqc-panel qaqc-aging-list'} role="dialog" aria-label={title} onKeyDown={onKeyDown}>
+    <section
+      className={animate ? 'qaqc-panel qaqc-aging-list is-animated' : 'qaqc-panel qaqc-aging-list'}
+      role="dialog"
+      aria-label={title}
+      // A click on a row keeps focus inside the list, so Esc reaches it.
+      tabIndex={-1}
+      onKeyDown={onKeyDown}
+    >
       <header className="qaqc-panel-title">
         <button ref={backRef} type="button" className="qaqc-back-button" aria-label="Back to the charts" onClick={onClose}>
           <ArrowLeft size={14} aria-hidden="true" />

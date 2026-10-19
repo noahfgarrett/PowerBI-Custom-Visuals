@@ -26,6 +26,8 @@ export interface ExpandablePanel {
   /** Legend for the expanded panel when it differs from the grid panel's. */
   expandedLegend?: LegendItem[]
   emptyMessage: string | null
+  /** Sees Esc before the overlay does; true means it was handled and the overlay stays open. */
+  onEscape?: () => boolean
   renderExpanded: (size: ElementSize) => ReactNode
 }
 
@@ -165,6 +167,7 @@ export function ChartExpansionFrame<Id extends string>({
           getRootBox={() => (frameRef.current ? frameBox(frameRef.current) : ZERO_BOX)}
           getOriginBox={() => (frameRef.current ? originBox(frameRef.current, panelRefs.current.get(expanded) ?? null) : null)}
           onClosed={() => closeExpanded(expanded)}
+          onEscape={panels[expanded].onEscape}
         >
           {panels[expanded].renderExpanded}
         </ExpandedPanel>

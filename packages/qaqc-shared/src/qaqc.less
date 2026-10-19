@@ -1515,6 +1515,12 @@
   overflow-y: auto;
 }
 
+// The page and the issue list take focus only from clicks (tabIndex -1), so Esc reaches them; they draw no ring.
+.qaqc-aging-page:focus,
+.qaqc-aging-list:focus {
+  outline: none;
+}
+
 .qaqc-aging-top {
   display: flex;
   flex: 0 0 auto;

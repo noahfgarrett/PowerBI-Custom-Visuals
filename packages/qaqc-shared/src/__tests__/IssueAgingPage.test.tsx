@@ -101,6 +101,19 @@ function focusAndClick(target: Element): void {
   click(target)
 }
 
+/** A mouse click as a browser does it: focus moves to the nearest focusable ancestor, then the click fires. */
+function browserClick(target: Element): void {
+  const focusable = target.closest<HTMLElement>('[tabindex], button, a[href], input, select, textarea')
+  if (focusable) act(() => focusable.focus())
+  click(target)
+}
+
+function firstListRow(root: ParentNode): Element {
+  const row = list(root)?.querySelector('tbody td.is-text')
+  if (!row) throw new Error('list row missing')
+  return row
+}
+
 describe('Issue Aging header button', () => {
   it('opens the Issue Aging page as of the selected week', () => {
     const page = openPage()
@@ -253,6 +266,48 @@ describe('Issue Aging list closing and focus', () => {
     focusAndClick(expand)
     pressKey(document.activeElement ?? page, 'Escape')
     expect(document.activeElement).toBe(page.querySelector('.qaqc-expand-button'))
+  })
+
+  it('closes only the list on Esc while the page dialog itself has focus', () => {
+    const page = openPage()
+    click(bucket(page, '12+ months'))
+    act(() => page.focus())
+    pressKey(page, 'Escape')
+    expect(list(page)).toBeNull()
+    expect(view?.container.querySelector('.qaqc-expanded')).not.toBeNull()
+  })
+
+  it('closes the page on a second Esc at the dialog', () => {
+    const page = openPage()
+    click(bucket(page, '12+ months'))
+    act(() => page.focus())
+    pressKey(page, 'Escape')
+    act(() => page.focus())
+    pressKey(page, 'Escape')
+    expect(view?.container.querySelector('.qaqc-expanded')).toBeNull()
+  })
+
+  it('keeps focus inside the list when a table row is clicked', () => {
+    const page = openPage()
+    click(bucket(page, '12+ months'))
+    browserClick(firstListRow(page))
+    expect(list(page)?.contains(document.activeElement)).toBe(true)
+  })
+
+  it('keeps focus inside the page when the cards area is clicked', () => {
+    const page = openPage()
+    browserClick(card(page, 'Open issues'))
+    const pageRoot = page.querySelector('.qaqc-aging-page')
+    expect(pageRoot?.contains(document.activeElement)).toBe(true)
+  })
+
+  it('closes only the list on Esc after a table row is clicked', () => {
+    const page = openPage()
+    click(bucket(page, '12+ months'))
+    browserClick(firstListRow(page))
+    pressKey(document.activeElement ?? page, 'Escape')
+    expect(list(page)).toBeNull()
+    expect(view?.container.querySelector('.qaqc-expanded')).not.toBeNull()
   })
 
   it('closes the list on Esc from the page controls too', () => {

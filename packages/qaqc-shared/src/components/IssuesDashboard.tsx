@@ -11,7 +11,7 @@ import {
   Layers,
   TableProperties,
 } from 'lucide-react'
-import { useMemo, type ReactElement } from 'react'
+import { useCallback, useMemo, useRef, type ReactElement } from 'react'
 
 import type { ElementSize } from '../hooks/useElementSize'
 import { useWeekWindow } from '../hooks/useWeekWindow'
@@ -75,6 +75,11 @@ export function IssuesDashboard({
   onHover,
 }: IssuesDashboardProps): ReactElement {
   const { view, range, selectWeek, pickWeek, changeRange } = useWeekWindow(index)
+  // The Issue Aging page's Esc handler: it closes the page's issue list before Esc closes the page.
+  const agingEscapeRef = useRef<(() => boolean) | null>(null)
+  const registerAgingEscape = useCallback((handler: (() => boolean) | null): void => {
+    agingEscapeRef.current = handler
+  }, [])
 
   const model = useMemo(() => buildIssueModel(index, view), [index, view])
   // Memoized so the charts' own memos see the same colors object until the theme changes.
@@ -197,6 +202,7 @@ export function IssuesDashboard({
       kind: 'page',
       legend: [],
       emptyMessage: null,
+      onEscape: () => agingEscapeRef.current?.() ?? false,
       // Mounted only while the page is open, so the benchmarks are built only then. It shares the dashboard's week
       // window, so its own range toggle and week picker move the dashboard too.
       renderExpanded: () => (
@@ -211,6 +217,7 @@ export function IssuesDashboard({
           onPickWeek={pickWeek}
           onRangeChange={changeRange}
           onHover={onHover}
+          registerEscape={registerAgingEscape}
         />
       ),
     },

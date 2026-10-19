@@ -189,6 +189,22 @@ describe('ExpandedPanel without the Web Animations API', () => {
     expect(onClosed).toHaveBeenCalledTimes(1)
   })
 
+  it('stays open when the onEscape interceptor handles Esc', () => {
+    const onClosed = vi.fn()
+    const onEscape = vi.fn(() => true)
+    view = render(panel({ onClosed, onEscape }))
+    pressEscape(view.container.querySelector('[role="dialog"]'))
+    expect(onEscape).toHaveBeenCalledTimes(1)
+    expect(onClosed).not.toHaveBeenCalled()
+  })
+
+  it('closes on Esc when the onEscape interceptor does not handle it', () => {
+    const onClosed = vi.fn()
+    view = render(panel({ onClosed, onEscape: () => false }))
+    pressEscape(view.container.querySelector('[role="dialog"]'))
+    expect(onClosed).toHaveBeenCalledTimes(1)
+  })
+
   it('closes instantly when animation is off', () => {
     const calls = stubAnimate()
     const onClosed = vi.fn()
