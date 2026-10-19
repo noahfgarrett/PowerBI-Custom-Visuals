@@ -29,6 +29,8 @@
     "Qaqc_role_updatedOn_description": "Date the BIM issue was last updated. A closed issue counts as closed on this date.",
     "Qaqc_role_createdBy": "Created By",
     "Qaqc_role_createdBy_description": "Who created the BIM issue. Only issues created by LotusWorks are counted.",
+    "Qaqc_role_rootCause": "Root Cause",
+    "Qaqc_role_rootCause_description": "Optional. The QCx Combined Root Cause column; adds the Top root cause card.",
     "Qaqc_role_greenTags": "Green tags",
     "Qaqc_role_greenTags_description": "Your green tag count measure. Wrap it in COALESCE(…, 0) so a blank count never hides the data. The DWN rate is DWNs to date divided by this value.",
     "Qaqc_colors": "Colors",

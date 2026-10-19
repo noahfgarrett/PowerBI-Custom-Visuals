@@ -113,6 +113,14 @@
       "descriptionKey": "Qaqc_role_createdBy_description"
     },
     {
+      "name": "rootCause",
+      "kind": "Grouping",
+      "displayName": "Root Cause",
+      "displayNameKey": "Qaqc_role_rootCause",
+      "description": "Optional. The QCx Combined Root Cause column; adds the Top root cause card.",
+      "descriptionKey": "Qaqc_role_rootCause_description"
+    },
+    {
       "name": "greenTags",
       "kind": "Measure",
       "displayName": "Green tags",
@@ -165,6 +173,9 @@
             "max": 1
           },
           "createdBy": {
+            "max": 1
+          },
+          "rootCause": {
             "max": 1
           },
           "greenTags": {
@@ -243,6 +254,11 @@
             {
               "for": {
                 "in": "createdBy"
+              }
+            },
+            {
+              "for": {
+                "in": "rootCause"
               }
             },
             {
