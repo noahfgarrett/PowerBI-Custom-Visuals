@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { IssueColumns, IssueIndex, ViewState } from '../types'
 import type { ParetoBar, ParetoModel } from '../rootCauses'
-import { buildRootCausePareto, paretoIssues } from '../rootCauses'
+import { buildRootCausePareto, paretoIssues, readoutText, topCauseCreated } from '../rootCauses'
 import { buildIssueIndex } from '../issues'
 
 const COLUMNS: IssueColumns = {
@@ -226,7 +226,7 @@ describe('buildRootCausePareto period and scope', () => {
     expect(model.distinct).toBe(0)
     expect(model.topNShare).toBeNull()
     expect(model.crossIndex).toBeNull()
-    expect(model.readout).toBe('')
+    expect(model.readout).toEqual([])
   })
 
   it('has no cumulative crossing when every cause is Not recorded', () => {
@@ -234,7 +234,7 @@ describe('buildRootCausePareto period and scope', () => {
     expect(labels(model)).toEqual(['Not recorded'])
     expect(model.crossIndex).toBeNull()
     expect(model.topNShare).toBeNull()
-    expect(model.readout).toBe('')
+    expect(model.readout).toEqual([])
   })
 })
 
@@ -265,22 +265,35 @@ describe('buildRootCausePareto categories', () => {
 })
 
 describe('buildRootCausePareto read-out', () => {
+  it('gives each line its subject apart from the rest of the sentence', () => {
+    const model = pareto([...many('A', 10, 'Alpha'), ...many('B', 4, 'Beta'), ...many('C', 3, 'Gamma'), ...many('D', 3, 'Delta')])
+    expect(model.readout).toEqual([
+      { lead: 'The top 3 causes', rest: ' cover 85.0%.' },
+      { lead: 'Alpha', rest: ' is 10 of 20 (50.0%).' },
+    ])
+  })
+
+  it('gives the Other line its subject too', () => {
+    const model = pareto(Array.from({ length: 12 }, (_, at) => many(`C${at}-`, 1, `Cause ${at}`)).flat())
+    expect(model.readout[0]).toEqual({ lead: 'The top 9 causes', rest: ' cover 75.0%; 80% is reached only inside Other.' })
+  })
+
   it('names how many top causes cover 80% when it is reached inside the top 9', () => {
     const model = pareto([...many('A', 10, 'Alpha'), ...many('B', 4, 'Beta'), ...many('C', 3, 'Gamma'), ...many('D', 3, 'Delta')])
-    expect(model.readout).toBe('The top 3 causes cover 85.0%. Alpha is 10 of 20 (50.0%).')
+    expect(readoutText(model.readout)).toBe('The top 3 causes cover 85.0%. Alpha is 10 of 20 (50.0%).')
   })
 
   it('reads the single top cause in the singular', () => {
-    expect(pareto([...many('A', 9, 'Alpha'), ...many('B', 1, 'Beta')]).readout).toBe('The top cause covers 90.0%. Alpha is 9 of 10 (90.0%).')
+    expect(readoutText(pareto([...many('A', 9, 'Alpha'), ...many('B', 1, 'Beta')]).readout)).toBe('The top cause covers 90.0%. Alpha is 9 of 10 (90.0%).')
   })
 
   it('says 80% is reached only inside Other when the top 9 fall short', () => {
     const model = pareto(Array.from({ length: 12 }, (_, at) => many(`C${at}-`, 1, `Cause ${at}`)).flat())
-    expect(model.readout).toBe('The top 9 causes cover 75.0%; 80% is reached only inside Other. Cause 0 is 1 of 12 (8.3%).')
+    expect(readoutText(model.readout)).toBe('The top 9 causes cover 75.0%; 80% is reached only inside Other. Cause 0 is 1 of 12 (8.3%).')
   })
 
   it('counts Not recorded issues in the top cause share', () => {
-    expect(pareto([...many('A', 3, 'Alpha'), ...many('N', 1, null)]).readout).toBe('The top cause covers 100.0%. Alpha is 3 of 4 (75.0%).')
+    expect(readoutText(pareto([...many('A', 3, 'Alpha'), ...many('N', 1, null)]).readout)).toBe('The top cause covers 100.0%. Alpha is 3 of 4 (75.0%).')
   })
 })
 
@@ -340,5 +353,44 @@ describe('paretoIssues', () => {
     const drill = paretoIssues(foldedIndex, other, ALL_TO_WW42, 'all', TODAY)
     expect(drill).toHaveLength(3)
     expect(new Set(drill.map((row) => row.issue.rootCause))).toEqual(new Set(['Cause 10', 'Cause 11']))
+  })
+})
+
+describe('topCauseCreated', () => {
+  const WW41 = 202641
+
+  it('counts issues created through W with their most common cause', () => {
+    const rows = [...many('A', 3, 'Alpha'), ...many('B', 2, 'Beta'), ...many('N', 1, null)]
+    expect(topCauseCreated(indexOf(rows), WW42, 'toDate')).toEqual({ total: 6, top: { label: 'Alpha', count: 3 } })
+  })
+
+  it('counts only the issues created in W for the week', () => {
+    const rows = [
+      issue('#1', '2026-10-06', 'Alpha'),
+      issue('#2', '2026-10-12', 'Beta'),
+      issue('#3', '2026-10-13', 'Beta'),
+      issue('#4', '2026-10-13', null),
+    ]
+    expect(topCauseCreated(indexOf(rows), WW42, 'week')).toEqual({ total: 3, top: { label: 'Beta', count: 2 } })
+    expect(topCauseCreated(indexOf(rows), WW41, 'week')).toEqual({ total: 1, top: { label: 'Alpha', count: 1 } })
+  })
+
+  it('leaves out issues created after W', () => {
+    const rows = [issue('#1', '2026-10-06', 'Alpha'), issue('#2', '2026-10-12', 'Beta'), issue('#3', '2026-10-13', 'Beta')]
+    expect(topCauseCreated(indexOf(rows), WW41, 'toDate')).toEqual({ total: 1, top: { label: 'Alpha', count: 1 } })
+  })
+
+  it('breaks a tie by name', () => {
+    const rows = [...many('Z', 2, 'Zeta'), ...many('B', 2, 'beta')]
+    expect(topCauseCreated(indexOf(rows), WW42, 'toDate').top).toEqual({ label: 'beta', count: 2 })
+  })
+
+  it('groups spellings under the earliest-created one, like the Pareto', () => {
+    const rows = [issue('#2', '2026-09-02', 'INSTALLATION'), issue('#1', '2026-09-01', 'Installation')]
+    expect(topCauseCreated(indexOf(rows), WW42, 'toDate').top).toEqual({ label: 'Installation', count: 2 })
+  })
+
+  it('has no top cause when none is recorded', () => {
+    expect(topCauseCreated(indexOf(many('N', 2, null)), WW42, 'toDate')).toEqual({ total: 2, top: null })
   })
 })

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { IssueColumns, ViewState } from '../types'
 import type { ParetoModel } from '../rootCauses'
-import { buildRootCausePareto, paretoIssues } from '../rootCauses'
+import { buildRootCausePareto, paretoIssues, readoutText } from '../rootCauses'
 import { buildIssueIndex } from '../issues'
 import { ISSUE_ROWS } from './fixtures/issueRows'
 
@@ -66,7 +66,7 @@ describe("root cause Pareto, All and All issues, as of WW42'2026 (October export
   })
 
   it('reads out the top 9 share and the top cause', () => {
-    expect(model.readout).toBe('The top 9 causes cover 79.1%; 80% is reached only inside Other. Installation is 48 of 177 (27.1%).')
+    expect(readoutText(model.readout)).toBe('The top 9 causes cover 79.1%; 80% is reached only inside Other. Installation is 48 of 177 (27.1%).')
   })
 
   it('splits the categories Quality 162 (91.5%), Design 10, Coordination 4, Safety 1', () => {
@@ -129,7 +129,7 @@ describe("root cause Pareto, All and Open only, as of WW42'2026", () => {
   })
 
   it('reads out the top 9 reaching 80%', () => {
-    expect(model.readout).toBe('The top 9 causes cover 82.4%. Installation is 18 of 51 (35.3%).')
+    expect(readoutText(model.readout)).toBe('The top 9 causes cover 82.4%. Installation is 18 of 51 (35.3%).')
   })
 
   it('splits the open categories Quality 46, Design 3, Coordination 2', () => {
@@ -178,7 +178,7 @@ describe("root cause Pareto, 30 WW (WW13 to WW42'2026) and All issues", () => {
   it('has the top 9 adding up to 73.0%, so 80% is reached only inside Other', () => {
     expect(model.topNShare?.toFixed(1)).toBe('73.0')
     expect(model.crossIndex).toBe(9)
-    expect(model.readout).toBe('The top 9 causes cover 73.0%; 80% is reached only inside Other. Bonding is 5 of 37 (13.5%).')
+    expect(readoutText(model.readout)).toBe('The top 9 causes cover 73.0%; 80% is reached only inside Other. Bonding is 5 of 37 (13.5%).')
   })
 
   it('folds ten single-issue causes into Other', () => {
@@ -222,6 +222,6 @@ describe("root cause Pareto, 30 WW and Open only", () => {
     expect(model.crossIndex).toBe(8)
     expect(model.bars[8]).toMatchObject({ label: 'Planning', cumulative: 80, vital: true })
     expect(model.bars[9]).toMatchObject({ label: 'Other (3 causes)', count: 3, vital: false })
-    expect(model.readout).toBe('The top 9 causes cover 80.0%. Bonding is 2 of 15 (13.3%).')
+    expect(readoutText(model.readout)).toBe('The top 9 causes cover 80.0%. Bonding is 2 of 15 (13.3%).')
   })
 })

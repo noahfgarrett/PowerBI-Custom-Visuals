@@ -3,40 +3,28 @@ import type { ReactElement } from 'react'
 
 import type { ChartColors } from '../chartTypes'
 import { formatCount, formatPercent } from '../format'
-import type { CategorySlice, CauseCount } from '../rootCauses'
+import type { CategorySlice, CauseCount, ReadoutLine } from '../rootCauses'
 import { paretoGrey } from './ParetoChart'
 
 /** Causes listed inside Other before the rest are summed into one "n more causes" row. */
 const OTHER_ROWS = 10
-const COVERAGE_LEAD = /^The top (?:cause|[\d,]+ causes)/
 
 export interface ParetoReadoutProps {
-  /** The model's read-out, or '' when no issue has a recorded cause. */
-  readout: string
-  /** The top bar's label, bolded where the read-out names it. */
-  topCause: string | null
+  /** The model's read-out; empty when no issue has a recorded cause. */
+  lines: readonly ReadoutLine[]
 }
 
-/**
- * The read-out as two lines, the coverage and the top cause, each with its subject in bold. A read-out it cannot
- * split shows as one plain line; an empty one renders nothing.
- */
-export function ParetoReadout({ readout, topCause }: ParetoReadoutProps): ReactElement | null {
-  if (readout === '') return null
-  const at = topCause === null ? -1 : readout.lastIndexOf(`${topCause} is `)
-  if (topCause === null || at <= 0 || readout[at - 1] !== ' ') return <p>{readout}</p>
-  const coverage = readout.slice(0, at).trimEnd()
-  const lead = COVERAGE_LEAD.exec(coverage)?.[0] ?? ''
+/** The read-out, one paragraph per line (the coverage, then the top cause), each with its subject in bold. */
+export function ParetoReadout({ lines }: ParetoReadoutProps): ReactElement | null {
+  if (lines.length === 0) return null
   return (
     <>
-      <p>
-        {lead !== '' && <b>{lead}</b>}
-        {coverage.slice(lead.length)}
-      </p>
-      <p>
-        <b>{topCause}</b>
-        {readout.slice(at + topCause.length)}
-      </p>
+      {lines.map((line) => (
+        <p key={line.lead}>
+          <b>{line.lead}</b>
+          {line.rest}
+        </p>
+      ))}
     </>
   )
 }
@@ -56,8 +44,7 @@ export interface RootCauseCategoryPanelProps {
   otherCauses: CauseCount[]
   /** The issue count and period under the title. */
   summary: string
-  readout: string
-  topCause: string | null
+  readout: ReadoutLine[]
   colors: ChartColors
   isHighContrast: boolean
 }
@@ -69,7 +56,6 @@ export function RootCauseCategoryPanel({
   otherCauses,
   summary,
   readout,
-  topCause,
   colors,
   isHighContrast,
 }: RootCauseCategoryPanelProps): ReactElement {
@@ -119,10 +105,10 @@ export function RootCauseCategoryPanel({
           </ul>
         </div>
       )}
-      {readout !== '' && (
+      {readout.length > 0 && (
         <div className="qaqc-pareto-readout">
           <h4>Read-out</h4>
-          <ParetoReadout readout={readout} topCause={topCause} />
+          <ParetoReadout lines={readout} />
         </div>
       )}
     </section>

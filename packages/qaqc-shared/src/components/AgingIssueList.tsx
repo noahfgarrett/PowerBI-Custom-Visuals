@@ -1,75 +1,25 @@
 import { ArrowLeft, ListFilter, X } from 'lucide-react'
-import { useEffect, useMemo, useRef, type KeyboardEvent, type ReactElement } from 'react'
+import { useEffect, useRef, type KeyboardEvent, type ReactElement } from 'react'
 
 import { formatCount } from '../format'
-import { directionSign, useTableSort, type SortState } from '../hooks/useTableSort'
-import { TABLE_ROW_HEIGHT, useVirtualRows } from '../hooks/useVirtualRows'
+import type { SortState } from '../hooks/useTableSort'
 import type { OpenIssueAge } from '../issueBenchmarks'
-import { compareNullLast, textRanks } from '../tableSort'
+import { useIssueTableSort, WindowedIssueTable, type IssueTableColumn } from './WindowedIssueTable'
 
-type TextKey = 'title' | 'contractor'
-type NumberKey = 'id' | 'created' | 'age' | 'versus'
-type SortKey = TextKey | NumberKey
+type SortKey = 'id' | 'title' | 'contractor' | 'created' | 'age' | 'versus'
 
-interface Column {
-  key: SortKey
-  label: string
-  isText: boolean
-  /** Width in px; null for Title, which takes the spare width. */
-  width: number | null
-}
-
-// Fixed widths (table-layout: fixed) keep the columns still while the windowed rows scroll past.
-const COLUMNS: readonly Column[] = [
-  { key: 'id', label: 'ID', isText: true, width: 80 },
-  { key: 'title', label: 'Title', isText: true, width: null },
-  { key: 'contractor', label: 'Contractor', isText: true, width: 220 },
-  { key: 'created', label: 'Created On', isText: false, width: 112 },
-  { key: 'age', label: 'Age', isText: false, width: 92 },
-  { key: 'versus', label: 'vs normal', isText: false, width: 210 },
+// ID and the text columns start A to Z; the dates and day counts start largest first.
+const COLUMNS: ReadonlyArray<IssueTableColumn<OpenIssueAge, SortKey>> = [
+  { key: 'id', label: 'ID', width: 80, isText: true, firstDirection: 'ascending', sortValue: { kind: 'number', valueOf: (row) => row.issue.detail.idRank } },
+  { key: 'title', label: 'Title', width: null, isText: true, firstDirection: 'ascending', sortValue: { kind: 'text', valueOf: (row) => row.issue.title } },
+  { key: 'contractor', label: 'Contractor', width: 220, isText: true, firstDirection: 'ascending', sortValue: { kind: 'text', valueOf: (row) => row.issue.contractor } },
+  { key: 'created', label: 'Created On', width: 112, isText: false, firstDirection: 'descending', sortValue: { kind: 'number', valueOf: (row) => row.issue.detail.createdOnTime } },
+  { key: 'age', label: 'Age', width: 92, isText: false, firstDirection: 'descending', sortValue: { kind: 'number', valueOf: (row) => row.age } },
+  { key: 'versus', label: 'vs normal', width: 210, isText: false, firstDirection: 'descending', sortValue: { kind: 'number', valueOf: (row) => row.timesWindow } },
 ] as const
 const TITLE_MIN_WIDTH = 220
-const TABLE_MIN_WIDTH = COLUMNS.reduce((sum, column) => sum + (column.width ?? 0), TITLE_MIN_WIDTH)
-/** ID and the text columns start A to Z; the dates and day counts start largest first. */
-const ASCENDING_FIRST: readonly SortKey[] = ['id', 'title', 'contractor']
+// The rows arrive oldest first (ties by ID ascending), so ties in any column keep that order.
 const DEFAULT_SORT: SortState<SortKey> = { key: 'age', direction: 'descending' }
-
-function isTextKey(key: SortKey): key is TextKey {
-  return key === 'title' || key === 'contractor'
-}
-
-function numberValue(row: OpenIssueAge, key: NumberKey): number | null {
-  switch (key) {
-    case 'id':
-      return row.issue.detail.idRank
-    case 'created':
-      return row.issue.detail.createdOnTime
-    case 'age':
-      return row.age
-    case 'versus':
-      return row.timesWindow
-    default: {
-      const unreachable: never = key
-      return unreachable
-    }
-  }
-}
-
-/**
- * Row positions in display order. The rows arrive oldest first (ties by ID ascending), so ties in any column keep
- * that order. Text columns sort on collator ranks, built only for the column being sorted.
- */
-function sortPositions(rows: readonly OpenIssueAge[], sort: SortState<SortKey>): number[] {
-  const positions = rows.map((_, position) => position)
-  const sign = directionSign(sort.direction)
-  const key = sort.key
-  if (isTextKey(key)) {
-    const ranks = textRanks(rows, (row) => row.issue[key])
-    return positions.sort((a, b) => (ranks[a] - ranks[b]) * sign || a - b)
-  }
-  const values = rows.map((row) => numberValue(row, key))
-  return positions.sort((a, b) => compareNullLast(values[a], values[b], sign) || a - b)
-}
 
 function versusText(row: OpenIssueAge, windowDays: number | null): string {
   if (row.timesWindow === null || windowDays === null) return 'n/a'
@@ -94,13 +44,7 @@ export interface AgingIssueListProps {
  * the page that opens it returns focus to whatever opened it.
  */
 export function AgingIssueList({ rows, filterLabel, windowDays, asOfLabel, animate, onClearFilter, onClose }: AgingIssueListProps): ReactElement {
-  const { sort, toggleSort } = useTableSort<SortKey>(DEFAULT_SORT, ASCENDING_FIRST)
-  const order = useMemo(() => sortPositions(rows, sort), [rows, sort])
-  const { containerRef, onScroll, start, end, paddingTop, paddingBottom } = useVirtualRows<HTMLDivElement>(
-    order.length,
-    TABLE_ROW_HEIGHT,
-    `${sort.key}:${sort.direction}`,
-  )
+  const table = useIssueTableSort(rows, COLUMNS, DEFAULT_SORT)
   const backRef = useRef<HTMLButtonElement | null>(null)
 
   useEffect(() => {
@@ -153,64 +97,30 @@ export function AgingIssueList({ rows, filterLabel, windowDays, asOfLabel, anima
           {windowDays === null ? 'no normal close window yet' : <>normal close window <b>{`${formatCount(windowDays)} days`}</b></>}
         </span>
       </header>
-      {/* The wrap is always drawn: the windowing measures it once, when the list opens. */}
-      <div className="qaqc-table-wrap is-flex-fill qaqc-aging-list-wrap" ref={containerRef} onScroll={onScroll}>
-        {count === 0 ? (
-          <p className="qaqc-chart-empty qaqc-aging-list-empty">No open issues match this filter</p>
-        ) : (
-          <table className="qaqc-table is-windowed qaqc-aging-list-table" aria-rowcount={count + 1} style={{ minWidth: TABLE_MIN_WIDTH }}>
-            <caption className="qaqc-visually-hidden">{`Open issues as of ${asOfLabel}, against the normal close window`}</caption>
-            <colgroup>
-              {COLUMNS.map((column) => (
-                <col key={column.key} style={column.width === null ? undefined : { width: column.width }} />
-              ))}
-            </colgroup>
-            <thead>
-              <tr aria-rowindex={1}>
-                {COLUMNS.map((column) => (
-                  <th
-                    key={column.key}
-                    scope="col"
-                    className={column.isText ? 'is-text' : undefined}
-                    aria-sort={sort.key === column.key ? sort.direction : undefined}
-                  >
-                    <button type="button" onClick={() => toggleSort(column.key)}>
-                      {column.label}
-                    </button>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {paddingTop > 0 && (
-                <tr className="qaqc-virtual-spacer" aria-hidden="true" style={{ height: paddingTop }}>
-                  <td colSpan={COLUMNS.length} />
-                </tr>
-              )}
-              {order.slice(start, end).map((position, offset) => {
-                const row = rows[position]
-                const isPast = windowDays !== null && row.age > windowDays
-                const tone = windowDays === null ? '' : isPast ? ' is-bad' : ' is-good'
-                return (
-                  <tr key={position} aria-rowindex={start + offset + 2} style={{ height: TABLE_ROW_HEIGHT }}>
-                    <th scope="row">{row.issue.id}</th>
-                    <td className="is-text" title={row.issue.title}>{row.issue.title}</td>
-                    <td className="is-text" title={row.issue.contractor}>{row.issue.contractor}</td>
-                    <td>{row.issue.detail.createdOn}</td>
-                    <td className={`qaqc-aging-days${isPast ? ' is-bad' : ''}`}>{`${formatCount(row.age)} d`}</td>
-                    <td className={`qaqc-aging-days${tone}`}>{versusText(row, windowDays)}</td>
-                  </tr>
-                )
-              })}
-              {paddingBottom > 0 && (
-                <tr className="qaqc-virtual-spacer" aria-hidden="true" style={{ height: paddingBottom }}>
-                  <td colSpan={COLUMNS.length} />
-                </tr>
-              )}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <WindowedIssueTable
+        rows={rows}
+        columns={COLUMNS}
+        table={table}
+        titleMinWidth={TITLE_MIN_WIDTH}
+        wrapClassName="qaqc-aging-list-wrap"
+        tableClassName="qaqc-aging-list-table"
+        caption={`Open issues as of ${asOfLabel}, against the normal close window`}
+        empty={<p className="qaqc-chart-empty qaqc-aging-list-empty">No open issues match this filter</p>}
+        renderCells={(row) => {
+          const isPast = windowDays !== null && row.age > windowDays
+          const tone = windowDays === null ? '' : isPast ? ' is-bad' : ' is-good'
+          return (
+            <>
+              <th scope="row">{row.issue.id}</th>
+              <td className="is-text" title={row.issue.title}>{row.issue.title}</td>
+              <td className="is-text" title={row.issue.contractor}>{row.issue.contractor}</td>
+              <td>{row.issue.detail.createdOn}</td>
+              <td className={`qaqc-aging-days${isPast ? ' is-bad' : ''}`}>{`${formatCount(row.age)} d`}</td>
+              <td className={`qaqc-aging-days${tone}`}>{versusText(row, windowDays)}</td>
+            </>
+          )
+        }}
+      />
     </section>
   )
 }

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import type { ChartColors } from '../chartTypes'
 import { ParetoReadout, RootCauseCategoryPanel, type RootCauseCategoryPanelProps } from '../components/RootCauseCategoryPanel'
-import type { CategorySlice, CauseCount } from '../rootCauses'
+import type { CategorySlice, CauseCount, ReadoutLine } from '../rootCauses'
 import { render, type Rendered } from './render'
 
 const COLORS: ChartColors = {
@@ -29,6 +29,11 @@ function causes(count: number): CauseCount[] {
   return Array.from({ length: count }, (_, at) => ({ label: `Cause ${at + 1}`, count: count - at }))
 }
 
+const FIXTURE_READOUT: ReadoutLine[] = [
+  { lead: 'The top 9 causes', rest: ' cover 79.1%; 80% is reached only inside Other.' },
+  { lead: 'Installation', rest: ' is 48 of 177 (27.1%).' },
+]
+
 let view: Rendered | null = null
 
 afterEach(() => {
@@ -43,8 +48,7 @@ function draw(overrides: Partial<RootCauseCategoryPanelProps> = {}): Rendered {
       otherLabel="Other (18 causes)"
       otherCauses={causes(18)}
       summary="177 issues · WW46'2024 to WW42'2026"
-      readout="The top 9 causes cover 79.1%; 80% is reached only inside Other. Installation is 48 of 177 (27.1%)."
-      topCause="Installation"
+      readout={FIXTURE_READOUT}
       colors={COLORS}
       isHighContrast={false}
       {...overrides}
@@ -124,13 +128,8 @@ describe('RootCauseCategoryPanel', () => {
 })
 
 describe('ParetoReadout', () => {
-  it('splits the read-out into the coverage and the top cause, each with its subject in bold', () => {
-    view = render(
-      <ParetoReadout
-        readout="The top 9 causes cover 79.1%; 80% is reached only inside Other. Installation is 48 of 177 (27.1%)."
-        topCause="Installation"
-      />,
-    )
+  it('draws one line per read-out line, each with its subject in bold', () => {
+    view = render(<ParetoReadout lines={FIXTURE_READOUT} />)
     const lines = [...view.container.querySelectorAll('p')]
     expect(lines.map((line) => line.textContent)).toEqual([
       'The top 9 causes cover 79.1%; 80% is reached only inside Other.',
@@ -140,17 +139,16 @@ describe('ParetoReadout', () => {
   })
 
   it('bolds a single top cause', () => {
-    view = render(<ParetoReadout readout="The top cause covers 85.0%. Bonding is 17 of 20 (85.0%)." topCause="Bonding" />)
+    const lines: ReadoutLine[] = [
+      { lead: 'The top cause', rest: ' covers 85.0%.' },
+      { lead: 'Bonding', rest: ' is 17 of 20 (85.0%).' },
+    ]
+    view = render(<ParetoReadout lines={lines} />)
     expect([...view.container.querySelectorAll('b')].map((node) => node.textContent)).toEqual(['The top cause', 'Bonding'])
   })
 
-  it('shows a read-out it cannot split as one plain line', () => {
-    view = render(<ParetoReadout readout="Something else entirely." topCause="Bonding" />)
-    expect([...view.container.querySelectorAll('p')].map((line) => line.textContent)).toEqual(['Something else entirely.'])
-  })
-
   it('renders nothing for an empty read-out', () => {
-    view = render(<ParetoReadout readout="" topCause={null} />)
+    view = render(<ParetoReadout lines={[]} />)
     expect(view.container.innerHTML).toBe('')
   })
 })

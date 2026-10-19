@@ -10,17 +10,16 @@ import {
   formatPointsDelta,
   formatSignedCount,
   formatSignoffRate,
-  NAME_COLLATOR,
   pluralize,
   pointsTone,
   pointsTrend,
   SIGNOFF_BAD_BELOW,
   trendOf,
 } from './format'
-import { createNameGrouper } from './grouping'
 import { buildInspectionIndex, passRateAt, recentWindowStart } from './inspections'
 import { buildIssueBenchmarks, type IssueBenchmarks } from './issueBenchmarks'
 import { buildIssueIndex, closureRateAt, riseIsBad } from './issues'
+import { topCauseCreated } from './rootCauses'
 import { buildWeldIndex, latestSignoff, overallRateAt } from './welds'
 import { enumerateWorkWeeks, previousWorkWeek } from './workWeeks'
 
@@ -641,92 +640,24 @@ function dwnRateLine(dwnsToDate: number, greenTags: number | null): string {
   return `${formatPercent((dwnsToDate / greenTags) * 100)} of green tags (to date)`
 }
 
-interface RootCauseGroup {
-  /** The earliest-created spelling, as the root cause Pareto shows it. */
-  label: string
-  created: number
-  position: number
-}
-
-interface RootCauseGroups {
-  groups: RootCauseGroup[]
-  /** Parallel to the index's issues: the issue's group position, or −1 when no cause is recorded. */
-  groupOf: Int32Array
-  /** Parallel to the index's issues: the created week's key. */
-  createdKey: Int32Array
-}
-
-const rootCauseGroupsByIndex = new WeakMap<IssueIndex, RootCauseGroups>()
-
-/** Each issue's root cause group, worked out once per index so each card is one pass over typed arrays. */
-function rootCauseGroups(index: IssueIndex): RootCauseGroups {
-  const cached = rootCauseGroupsByIndex.get(index)
-  if (cached !== undefined) return cached
-  const groups: RootCauseGroup[] = []
-  const groupOfSpelling = createNameGrouper<RootCauseGroup>((_key, spelling) => {
-    const group: RootCauseGroup = { label: spelling, created: Number.POSITIVE_INFINITY, position: groups.length }
-    groups.push(group)
-    return group
-  })
-  const { issues } = index
-  const groupOf = new Int32Array(issues.length).fill(-1)
-  const createdKey = new Int32Array(issues.length)
-  // The issues are by ID descending, so walking them backwards keeps the lowest ID among same-day spellings.
-  for (let at = issues.length - 1; at >= 0; at -= 1) {
-    const issue = issues[at]
-    createdKey[at] = issue.createdWeek.key
-    if (issue.rootCause === '') continue
-    const group = groupOfSpelling(issue.rootCause)
-    groupOf[at] = group.position
-    const created = issue.createdOn.getTime()
-    if (created < group.created) {
-      group.created = created
-      group.label = issue.rootCause
-    }
-  }
-  const result: RootCauseGroups = { groups, groupOf, createdKey }
-  rootCauseGroupsByIndex.set(index, result)
-  return result
-}
-
 /** The most common root cause among issues created in W (This WW) or through W (To date); ties go to the first name. */
 function topRootCauseCard(index: IssueIndex, weekKey: number, mode: CardMode): OverviewCard {
   if (!index.hasRootCause) return noteCard(TOP_CAUSE_LABEL, 'n/a', ROOT_CAUSE_MISSING)
   const isWeek = mode === 'week'
-  const { groups, groupOf, createdKey } = rootCauseGroups(index)
-  const counts = new Int32Array(groups.length)
-  let total = 0
-  for (let at = 0; at < groupOf.length; at += 1) {
-    const key = createdKey[at]
-    if (isWeek ? key !== weekKey : key > weekKey) continue
-    total += 1
-    const group = groupOf[at]
-    if (group >= 0) counts[group] += 1
-  }
-  let best: RootCauseGroup | null = null
-  for (const group of groups) {
-    const count = counts[group.position]
-    if (count === 0) continue
-    if (best === null) {
-      best = group
-      continue
-    }
-    const bestCount = counts[best.position]
-    if (count > bestCount || (count === bestCount && NAME_COLLATOR.compare(group.label, best.label) < 0)) best = group
-  }
+  const { total, top } = topCauseCreated(index, weekKey, isWeek ? 'week' : 'toDate')
 
   const totalText = formatCount(total)
   if (total === 0) return noteCard(TOP_CAUSE_LABEL, 'None', isWeek ? 'None opened this WW' : 'No issues to date')
-  if (best === null) {
+  if (top === null) {
     const scope = isWeek ? `${totalText} opened this WW` : `${totalText} ${pluralize(total, 'issue', 'issues')}`
     return noteCard(TOP_CAUSE_LABEL, 'None', `${scope} · none recorded`)
   }
-  const count = counts[best.position]
+  const { label, count } = top
   const share = Math.round((count / total) * 100)
   return {
     label: TOP_CAUSE_LABEL,
     value: count,
-    display: best.label,
+    display: label,
     delta: null,
     deltaDisplay: null,
     trend: 'none',
@@ -735,7 +666,7 @@ function topRootCauseCard(index: IssueIndex, weekKey: number, mode: CardMode): O
       ? `${formatCount(count)} of ${totalText} opened this WW`
       : `${formatCount(count)} of ${totalText} ${pluralize(total, 'issue', 'issues')} · ${share}%`,
     isValueBad: false,
-    valueTitle: best.label,
+    valueTitle: label,
   }
 }
 

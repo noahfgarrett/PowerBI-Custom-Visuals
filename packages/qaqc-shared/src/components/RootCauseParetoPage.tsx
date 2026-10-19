@@ -3,11 +3,8 @@ import { useMemo, useState, type ReactElement } from 'react'
 
 import type { ChartColors, TooltipHandler } from '../chartTypes'
 import { formatCount, pluralize } from '../format'
-import { directionSign, type SortState } from '../hooks/useTableSort'
-import { TABLE_ROW_HEIGHT, useVirtualRows } from '../hooks/useVirtualRows'
 import { RECENT_WEEK_COUNT } from '../inspections'
 import { buildRootCausePareto, paretoIssues, paretoPeriod, type ParetoBar, type ParetoIssueRow, type ParetoScope } from '../rootCauses'
-import { compareNullLast, textRanks } from '../tableSort'
 import type { IssueIndex, RangeMode, ViewState, WorkWeek } from '../types'
 import { ChartFill } from './ChartFill'
 import { LegendSwatch, type LegendItem } from './ChartPanel'
@@ -15,6 +12,7 @@ import { ParetoChart, paretoGrey } from './ParetoChart'
 import { RangeToggle } from './RangeToggle'
 import { ParetoReadout, RootCauseCategoryPanel } from './RootCauseCategoryPanel'
 import { SegmentedToggle, type SegmentedOption } from './SegmentedToggle'
+import { StatusPill, useIssueTableSort, WindowedIssueTable, type IssueTableColumn } from './WindowedIssueTable'
 import { WorkWeekPicker } from './WorkWeekPicker'
 
 const PAGE_TITLE = 'Issues by Root Cause Pareto'
@@ -43,75 +41,18 @@ function paretoLegend(colors: ChartColors, isHighContrast: boolean, hasNotRecord
 
 // ---------------------------------------------------------------- drill-down table
 
-type TextKey = 'title' | 'status' | 'contractor'
-type NumberKey = 'id' | 'created' | 'days'
-type SortKey = TextKey | NumberKey
+type SortKey = 'id' | 'title' | 'status' | 'contractor' | 'created' | 'days'
 
-interface Column {
-  key: SortKey
-  label: string
-  isText: boolean
-  /** Width in px; null for Title, which takes the spare width. */
-  width: number | null
-}
-
-// Fixed widths (table-layout: fixed) keep the columns still while the windowed rows scroll past.
-const COLUMNS: readonly Column[] = [
-  { key: 'id', label: 'ID', isText: true, width: 72 },
-  { key: 'title', label: 'Title', isText: true, width: null },
-  { key: 'status', label: 'Status', isText: true, width: 136 },
-  { key: 'contractor', label: 'Contractor', isText: true, width: 196 },
-  { key: 'created', label: 'Created On', isText: false, width: 108 },
-  { key: 'days', label: 'Age / To close', isText: false, width: 124 },
+// ID and the text columns start A to Z; the date and day counts start largest first.
+const COLUMNS: ReadonlyArray<IssueTableColumn<ParetoIssueRow, SortKey>> = [
+  { key: 'id', label: 'ID', width: 72, isText: true, firstDirection: 'ascending', sortValue: { kind: 'number', valueOf: (row) => row.issue.detail.idRank } },
+  { key: 'title', label: 'Title', width: null, isText: true, firstDirection: 'ascending', sortValue: { kind: 'text', valueOf: (row) => row.issue.detail.title } },
+  { key: 'status', label: 'Status', width: 136, isText: true, firstDirection: 'ascending', sortValue: { kind: 'text', valueOf: (row) => row.issue.detail.status } },
+  { key: 'contractor', label: 'Contractor', width: 196, isText: true, firstDirection: 'ascending', sortValue: { kind: 'text', valueOf: (row) => row.issue.detail.contractor } },
+  { key: 'created', label: 'Created On', width: 108, isText: false, firstDirection: 'descending', sortValue: { kind: 'number', valueOf: (row) => row.issue.detail.createdOnTime } },
+  { key: 'days', label: 'Age / To close', width: 124, isText: false, firstDirection: 'descending', sortValue: { kind: 'number', valueOf: (row) => row.days } },
 ] as const
 const TITLE_MIN_WIDTH = 180
-const TABLE_MIN_WIDTH = COLUMNS.reduce((sum, column) => sum + (column.width ?? 0), TITLE_MIN_WIDTH)
-
-type StatusPillKind = 'closed' | 'open' | 'other'
-
-function isTextKey(key: SortKey): key is TextKey {
-  return key === 'title' || key === 'status' || key === 'contractor'
-}
-
-/** ID and the text columns start A to Z; the date and day counts start largest first. */
-function firstDirection(key: SortKey): SortState<SortKey>['direction'] {
-  return key === 'id' || isTextKey(key) ? 'ascending' : 'descending'
-}
-
-function numberValue(row: ParetoIssueRow, key: NumberKey): number | null {
-  switch (key) {
-    case 'id':
-      return row.issue.detail.idRank
-    case 'created':
-      return row.issue.detail.createdOnTime
-    case 'days':
-      return row.days
-    default: {
-      const unreachable: never = key
-      return unreachable
-    }
-  }
-}
-
-/** Row positions in display order. With no sort, the model's order: open oldest first, then closed. Ties keep it. */
-function sortPositions(rows: readonly ParetoIssueRow[], sort: SortState<SortKey> | null): number[] {
-  const positions = rows.map((_, position) => position)
-  if (sort === null) return positions
-  const sign = directionSign(sort.direction)
-  const key = sort.key
-  if (isTextKey(key)) {
-    const ranks = textRanks(rows, (row) => row.issue.detail[key])
-    return positions.sort((a, b) => (ranks[a] - ranks[b]) * sign || a - b)
-  }
-  const values = rows.map((row) => numberValue(row, key))
-  return positions.sort((a, b) => compareNullLast(values[a], values[b], sign) || a - b)
-}
-
-function statusPillKind(row: ParetoIssueRow): StatusPillKind {
-  const { detail } = row.issue
-  if (detail.statusKind === 'closed') return 'closed'
-  return detail.status.trim().toLowerCase() === 'open' ? 'open' : 'other'
-}
 
 function daysText(row: ParetoIssueRow): string {
   return row.isOpen ? `${formatCount(row.days)} d old` : `${formatCount(row.days)} d to close`
@@ -123,26 +64,12 @@ interface ParetoIssueTableProps {
   period: string
 }
 
+/** The selected bar's issues. Until a header is clicked they keep the model order: open oldest first, then closed. */
 function ParetoIssueTable({ bar, rows, period }: ParetoIssueTableProps): ReactElement {
-  // Null until a header is clicked: the model order is not any one column's order.
-  const [sort, setSort] = useState<SortState<SortKey> | null>(null)
-  const order = useMemo(() => sortPositions(rows, sort), [rows, sort])
-  const { containerRef, onScroll, start, end, paddingTop, paddingBottom } = useVirtualRows<HTMLDivElement>(
-    order.length,
-    TABLE_ROW_HEIGHT,
-    sort === null ? '' : `${sort.key}:${sort.direction}`,
-  )
+  const table = useIssueTableSort(rows, COLUMNS, null)
+  const { sort } = table
   const openCount = useMemo(() => rows.reduce((sum, row) => sum + (row.isOpen ? 1 : 0), 0), [rows])
   const sortedLabel = sort === null ? null : COLUMNS.find((column) => column.key === sort.key)?.label ?? null
-
-  function toggleSort(key: SortKey): void {
-    setSort((current) => {
-      if (current !== null && current.key === key) {
-        return { key, direction: current.direction === 'ascending' ? 'descending' : 'ascending' }
-      }
-      return { key, direction: firstDirection(key) }
-    })
-  }
 
   return (
     <section className="qaqc-panel qaqc-pareto-table" aria-label={`${bar.label} issues`}>
@@ -156,61 +83,30 @@ function ParetoIssueTable({ bar, rows, period }: ParetoIssueTableProps): ReactEl
           } · click a bar to switch`}
         </span>
       </header>
-      <div className="qaqc-table-wrap is-flex-fill qaqc-pareto-table-wrap" ref={containerRef} onScroll={onScroll}>
-        <table className="qaqc-table is-windowed qaqc-pareto-drill-table" aria-rowcount={rows.length + 1} style={{ minWidth: TABLE_MIN_WIDTH }}>
-          <caption className="qaqc-visually-hidden">{`${bar.label}: issues created ${period}`}</caption>
-          <colgroup>
-            {COLUMNS.map((column) => (
-              <col key={column.key} style={column.width === null ? undefined : { width: column.width }} />
-            ))}
-          </colgroup>
-          <thead>
-            <tr aria-rowindex={1}>
-              {COLUMNS.map((column) => (
-                <th
-                  key={column.key}
-                  scope="col"
-                  className={column.isText ? 'is-text' : undefined}
-                  aria-sort={sort !== null && sort.key === column.key ? sort.direction : undefined}
-                >
-                  <button type="button" onClick={() => toggleSort(column.key)}>
-                    {column.label}
-                  </button>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {paddingTop > 0 && (
-              <tr className="qaqc-virtual-spacer" aria-hidden="true" style={{ height: paddingTop }}>
-                <td colSpan={COLUMNS.length} />
-              </tr>
-            )}
-            {order.slice(start, end).map((position, offset) => {
-              const row = rows[position]
-              const { detail } = row.issue
-              return (
-                // The position is the key: a blank or repeated ID must not collide.
-                <tr key={position} aria-rowindex={start + offset + 2} style={{ height: TABLE_ROW_HEIGHT }}>
-                  <th scope="row">{detail.id}</th>
-                  <td className="is-text" title={detail.title}>{detail.title}</td>
-                  <td className="is-text">
-                    <span className={`qaqc-status-pill is-${statusPillKind(row)}`} title={detail.status}>{detail.status}</span>
-                  </td>
-                  <td className="is-text" title={detail.contractor}>{detail.contractor}</td>
-                  <td>{detail.createdOn}</td>
-                  <td className={row.isOpen ? 'qaqc-pareto-days' : 'qaqc-pareto-days is-closed'}>{daysText(row)}</td>
-                </tr>
-              )
-            })}
-            {paddingBottom > 0 && (
-              <tr className="qaqc-virtual-spacer" aria-hidden="true" style={{ height: paddingBottom }}>
-                <td colSpan={COLUMNS.length} />
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <WindowedIssueTable
+        rows={rows}
+        columns={COLUMNS}
+        table={table}
+        titleMinWidth={TITLE_MIN_WIDTH}
+        wrapClassName="qaqc-pareto-table-wrap"
+        tableClassName="qaqc-pareto-drill-table"
+        caption={`${bar.label}: issues created ${period}`}
+        renderCells={(row) => {
+          const { detail } = row.issue
+          return (
+            <>
+              <th scope="row">{detail.id}</th>
+              <td className="is-text" title={detail.title}>{detail.title}</td>
+              <td className="is-text">
+                <StatusPill detail={detail} />
+              </td>
+              <td className="is-text" title={detail.contractor}>{detail.contractor}</td>
+              <td>{detail.createdOn}</td>
+              <td className={row.isOpen ? 'qaqc-pareto-days' : 'qaqc-pareto-days is-closed'}>{daysText(row)}</td>
+            </>
+          )
+        }}
+      />
     </section>
   )
 }
@@ -261,7 +157,6 @@ export function RootCauseParetoPage({
   const period = `${model.firstWeek.label} to ${model.lastWeek.label}`
   const hasNotRecorded = bars.some((bar) => bar.kind === 'notRecorded')
   const legend = paretoLegend(colors, isHighContrast, hasNotRecorded)
-  const topCause = bars.length > 0 && bars[0].kind === 'cause' ? bars[0].label : null
   const otherBar = bars.find((bar) => bar.kind === 'other') ?? null
   const hasSide = model.categories !== null
   const counted = scope === 'open' ? `open as of ${model.lastWeek.label}` : pluralize(total, 'issue', 'issues')
@@ -313,9 +208,9 @@ export function RootCauseParetoPage({
             </ChartFill>
           )}
         </div>
-        {!hasSide && model.readout !== '' && (
+        {!hasSide && model.readout.length > 0 && (
           <div className="qaqc-pareto-readout is-inline">
-            <ParetoReadout readout={model.readout} topCause={topCause} />
+            <ParetoReadout lines={model.readout} />
           </div>
         )}
       </section>
@@ -326,7 +221,6 @@ export function RootCauseParetoPage({
           otherCauses={model.otherCauses}
           summary={`${formatCount(total)} ${scope === 'open' ? 'open ' : ''}${pluralize(total, 'issue', 'issues')} · ${period}`}
           readout={model.readout}
-          topCause={topCause}
           colors={colors}
           isHighContrast={isHighContrast}
         />

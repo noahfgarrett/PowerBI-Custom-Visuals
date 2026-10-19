@@ -43,6 +43,12 @@ export interface CauseCount {
   count: number
 }
 
+/** One read-out line: its subject, shown in bold, then the rest of the sentence. */
+export interface ReadoutLine {
+  lead: string
+  rest: string
+}
+
 export interface ParetoModel {
   /** The window's first week and W, for the page title. */
   firstWeek: WorkWeek
@@ -61,8 +67,8 @@ export interface ParetoModel {
   categories: CategorySlice[] | null
   /** The causes folded into Other, largest first, ties by name. */
   otherCauses: CauseCount[]
-  /** The read-out line, or '' without a recorded cause. */
-  readout: string
+  /** The read-out: the coverage line, then the top cause line. Empty without a recorded cause. */
+  readout: ReadoutLine[]
 }
 
 export interface ParetoIssueRow {
@@ -188,16 +194,23 @@ function categorySlices(groups: NameGroups, counts: Int32Array, notRecorded: num
   return recorded
 }
 
-function readoutOf(bars: readonly ParetoBar[], crossIndex: number | null, topNShare: number | null, total: number): string {
-  if (crossIndex === null || topNShare === null) return ''
+/** The read-out as one sentence per line, joined with spaces. */
+export function readoutText(lines: readonly ReadoutLine[]): string {
+  return lines.map((line) => `${line.lead}${line.rest}`).join(' ')
+}
+
+function readoutOf(bars: readonly ParetoBar[], crossIndex: number | null, topNShare: number | null, total: number): ReadoutLine[] {
+  if (crossIndex === null || topNShare === null) return []
   const top = bars[0]
-  const topCause = `${top.label} is ${top.count} of ${total} (${formatPercent(top.share)}).`
+  const topCause: ReadoutLine = { lead: top.label, rest: ` is ${top.count} of ${total} (${formatPercent(top.share)}).` }
   if (bars[crossIndex].kind === 'other') {
-    return `The top ${TOP_CAUSES} causes cover ${formatPercent(topNShare)}; 80% is reached only inside Other. ${topCause}`
+    return [{ lead: `The top ${TOP_CAUSES} causes`, rest: ` cover ${formatPercent(topNShare)}; 80% is reached only inside Other.` }, topCause]
   }
   const covered = formatPercent(bars[crossIndex].cumulative)
-  const lead = crossIndex === 0 ? `The top cause covers ${covered}.` : `The top ${crossIndex + 1} causes cover ${covered}.`
-  return `${lead} ${topCause}`
+  const coverage: ReadoutLine = crossIndex === 0
+    ? { lead: 'The top cause', rest: ` covers ${covered}.` }
+    : { lead: `The top ${crossIndex + 1} causes`, rest: ` cover ${covered}.` }
+  return [coverage, topCause]
 }
 
 export function buildRootCausePareto(index: IssueIndex, view: ViewState, scope: ParetoScope, today: Date): ParetoModel {
@@ -287,6 +300,40 @@ export function buildRootCausePareto(index: IssueIndex, view: ViewState, scope: 
     otherCauses,
     readout: readoutOf(bars, crossIndex, topNShare, total),
   }
+}
+
+/** Issues created in W or through W, and the most common recorded cause among them. */
+export interface CauseTally {
+  /** Issues created in the span, Not recorded included. */
+  total: number
+  /** The most common recorded cause, ties by name; null when none is recorded. */
+  top: CauseCount | null
+}
+
+/**
+ * The most common root cause among issues created in week W (`week`) or through W (`toDate`), grouped as the Pareto
+ * groups them. One pass over the cause index.
+ */
+export function topCauseCreated(index: IssueIndex, weekKey: number, span: 'week' | 'toDate'): CauseTally {
+  const { createdKey, causes } = causeIndex(index)
+  const counts = new Int32Array(causes.labels.length)
+  let total = 0
+  for (let position = 0; position < createdKey.length; position += 1) {
+    const key = createdKey[position]
+    // The timeline is in created order, so every later issue was created after W too.
+    if (key > weekKey) break
+    if (span === 'week' && key !== weekKey) continue
+    total += 1
+    const cause = causes.groupAt[position]
+    if (cause !== NOT_RECORDED) counts[cause] += 1
+  }
+  let top: CauseCount | null = null
+  for (let id = 0; id < counts.length; id += 1) {
+    if (counts[id] === 0) continue
+    const candidate: CauseCount = { label: causes.labels[id], count: counts[id] }
+    if (top === null || byCountThenName(candidate, top) < 0) top = candidate
+  }
+  return { total, top }
 }
 
 /** The bar's issues in the period and scope: open issues oldest first, then closed issues longest to close first. */
