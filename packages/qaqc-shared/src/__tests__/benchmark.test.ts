@@ -6,6 +6,7 @@ import { layoutChart } from '../components/IssuesTrendChart'
 import { layoutWeekLines, type WeekLine } from '../components/OverviewLinesChart'
 import { splitCombinedRows } from '../combined'
 import { buildInspectionIndex, buildInspectionModel, defaultViewState } from '../inspections'
+import { agingProfile, buildIssueBenchmarks, quarterMedians } from '../issueBenchmarks'
 import { buildIssueDetail, buildIssueIndex, buildIssueModel } from '../issues'
 import type { OverviewIndex } from '../overview'
 import { buildOverviewIndex, buildOverviewModel } from '../overview'
@@ -95,6 +96,39 @@ describe('issues performance budgets', () => {
     const index = buildIssueIndex(syntheticIssueRows(200_000), ISSUE_COLUMNS, TODAY)
     buildIssueDetail(index, index.currentWeek.key)
     expect(elapsed(() => buildIssueDetail(index, index.currentWeek.key))).toBeLessThan(30)
+  })
+})
+
+describe('issue benchmark performance budgets', () => {
+  const index = buildIssueIndex(syntheticIssueRows(200_000), ISSUE_COLUMNS, TODAY)
+  const lastKey = index.currentWeek.key
+  const earlierKey = index.weeks[index.weeks.length - 20].week.key
+  // The first call computes each issue's day numbers once for the index.
+  buildIssueBenchmarks(index, lastKey, TODAY)
+
+  it('builds the first benchmarks after indexing 200,000 rows, day numbers included, within budget', () => {
+    const fresh = buildIssueIndex(syntheticIssueRows(200_000), ISSUE_COLUMNS, TODAY)
+    expect(elapsed(() => buildIssueBenchmarks(fresh, fresh.currentWeek.key, TODAY))).toBeLessThanOrEqual(50)
+  })
+
+  it('builds the benchmarks for a new week from a 200,000-row index within budget', () => {
+    expect(index.issues.length).toBeGreaterThan(150_000)
+    expect(elapsed(() => buildIssueBenchmarks(index, earlierKey, TODAY))).toBeLessThanOrEqual(50)
+  })
+
+  it('builds the 30-week aging profile from a 200,000-row index within budget', () => {
+    const view = { ...defaultViewState(index), range: 'recent' as const }
+    expect(elapsed(() => agingProfile(index, view, TODAY))).toBeLessThanOrEqual(50)
+  })
+
+  it('builds the All-range aging profile from a 200,000-row index within budget', () => {
+    expect(index.weeks.length).toBeGreaterThan(250)
+    const view = { ...defaultViewState(index), range: 'all' as const }
+    expect(elapsed(() => agingProfile(index, view, TODAY))).toBeLessThanOrEqual(50)
+  })
+
+  it('builds the quarterly medians from a 200,000-row index within budget', () => {
+    expect(elapsed(() => quarterMedians(index, lastKey, TODAY))).toBeLessThanOrEqual(50)
   })
 })
 
