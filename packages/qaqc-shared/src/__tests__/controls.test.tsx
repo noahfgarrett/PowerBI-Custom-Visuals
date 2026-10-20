@@ -49,4 +49,14 @@ describe('RangeToggle', () => {
     })
     expect(onChange).toHaveBeenCalledWith('all')
   })
+
+  it('names its group Chart range by default', () => {
+    view = render(<RangeToggle value="recent" recentCount={30} disabled={false} onChange={vi.fn()} />)
+    expect(view.container.querySelector('[role="group"]')?.getAttribute('aria-label')).toBe('Chart range')
+  })
+
+  it('names its group with the label it is given', () => {
+    view = render(<RangeToggle value="recent" recentCount={30} disabled={false} label="Ranking period" onChange={vi.fn()} />)
+    expect(view.container.querySelector('[role="group"]')?.getAttribute('aria-label')).toBe('Ranking period')
+  })
 })

@@ -35,18 +35,16 @@ import {
   formatSignoffRate,
   pointsTone,
   pointsTrend,
+  SIGNOFF_BAD_BELOW,
   signoffStatus,
   trendOf,
 } from '../format'
 import { chartColorsFromTheme } from '../theme'
 import type { WeldIndex } from '../types'
 import { buildWeldModel } from '../welds'
-import { shortWeekLabel } from '../workWeeks'
 
 const NO_ROWS_MESSAGE = 'No welds match the current filters'
 const EMPTY_RANGE_MESSAGE = 'No welds in this range'
-/** A week's sign-off below this percent misses the 10% baseline. */
-const SIGNOFF_BASELINE_PERCENT = 10
 
 type PanelId = 'signoff' | 'systems' | 'buildings'
 
@@ -88,7 +86,7 @@ export function WeldingDashboard({
   const colors = useMemo(() => chartColorsFromTheme(theme), [theme])
   const { thisWeek, toDate } = model
   const signoff = thisWeek.signoff
-  const previousLabel = shortWeekLabel(model.previousWeek)
+  const previousLabel = model.previousWeek.label
   const isCompact = viewport.width < COMPACT_WIDTH
   const isCardsOnly = viewport.height < CARDS_ONLY_HEIGHT
   const rangeMessage = model.hasData ? EMPTY_RANGE_MESSAGE : NO_ROWS_MESSAGE
@@ -241,7 +239,7 @@ export function WeldingDashboard({
                 detail={signoffDetail}
                 tone="neutral"
                 trend="none"
-                isValueBad={signoff !== null && signoff.rate < SIGNOFF_BASELINE_PERCENT}
+                isValueBad={signoff !== null && signoff.rate < SIGNOFF_BAD_BELOW}
               />
               <KpiCard
                 label="Issues Created"
@@ -252,7 +250,7 @@ export function WeldingDashboard({
                 trend={trendOf(thisWeek.issues.delta)}
               />
             </KpiGroup>
-            <KpiGroup title="Project to date" subtitle={`Through ${model.selectedWeek.label}`} variant="total">
+            <KpiGroup title="Project to date" subtitle={`Through ${model.selectedWeek.label}`} variant="toDate">
               <KpiCard
                 label="Total Welds"
                 icon={Layers}

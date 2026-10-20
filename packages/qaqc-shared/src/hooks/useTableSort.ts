@@ -14,7 +14,7 @@ export interface TableSort<Key extends string> {
 }
 
 /** +1 for ascending, −1 for descending, to multiply a comparison by. */
-export function directionSign(direction: SortDirection): number {
+export function directionSign(direction: SortDirection): 1 | -1 {
   return direction === 'ascending' ? 1 : -1
 }
 

@@ -6,6 +6,7 @@ import { createConstructorOptions } from '../../../core/src/__test-utils__'
 import { WELD_SLOTS } from '../../../qaqc-shared/src/dataView'
 import { WELDING_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/weldingRows'
 import capabilities from '../../capabilities.json'
+import pbiviz from '../../pbiviz.json'
 import { QaqcWeldingVisual } from '../visual'
 import { tableDataView } from './tableDataView'
 
@@ -86,7 +87,7 @@ function stubChartSize(): void {
 }
 
 function totalGroupLabel(element: HTMLElement): string | null {
-  return element.querySelector('.qaqc-kpi-group.is-total em')?.textContent ?? null
+  return element.querySelector('.qaqc-kpi-group.is-toDate em')?.textContent ?? null
 }
 
 function cardValue(element: HTMLElement, label: string): string | null {
@@ -124,10 +125,23 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
+describe('QaqcWeldingVisual name', () => {
+  it('heads the dashboard with its QCx title', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(WELDING_ROWS)))
+    expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QCx Welding Signoffs')
+  })
+
+  it('shows its QCx name in Power BI', () => {
+    expect(pbiviz.visual.displayName).toBe('QCx Welding Signoffs')
+    expect(pbiviz.visual.description).not.toContain('QAQC')
+  })
+})
+
 describe('QaqcWeldingVisual', () => {
   it('labels the visual for assistive technology', () => {
     harness = createHarness()
-    expect(harness.element.getAttribute('aria-label')).toBe('Welding signoffs dashboard')
+    expect(harness.element.getAttribute('aria-label')).toBe('QCx welding signoffs dashboard')
   })
 
   it('names each data role like its field slot', () => {
@@ -224,7 +238,7 @@ describe('QaqcWeldingVisual', () => {
     expect(() => applyOutsideAct(target, update(tableDataView(WELDING_ROWS)))).not.toThrow()
     expect(target.events.renderingFailed).toHaveBeenCalledWith(expect.anything(), 'render boom')
     expect(target.events.renderingFinished).not.toHaveBeenCalled()
-    expect(target.element.querySelector('.qaqc-status h2')?.textContent).toBe('Could not draw the Welding visual')
+    expect(target.element.querySelector('.qaqc-status h2')?.textContent).toBe('Could not draw the QCx Welding visual')
   })
 
   it('recovers on the next update after a render error', () => {

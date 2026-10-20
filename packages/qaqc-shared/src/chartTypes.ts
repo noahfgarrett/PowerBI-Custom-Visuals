@@ -1,6 +1,8 @@
 export interface ChartColors {
   series1: string
   series2: string
+  /** The second line of a two-line chart. High contrast gives it the series 1 colour, so it is also dashed there. */
+  series3: string
   /** Green for closed and other good outcomes. */
   good: string
   bad: string

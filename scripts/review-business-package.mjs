@@ -423,7 +423,11 @@ async function reviewPackage(packageDir) {
     );
   }
 
-  if (hasMeasureRole && !isFilterVisual && capabilities?.supportsHighlight !== true) {
+  // Highlights only exist for categorical and matrix mappings; a table mapping never receives them, so asking a
+  // table-only visual to enable supportsHighlight would just switch off its cross-filtering.
+  const mappings = Array.isArray(capabilities?.dataViewMappings) ? capabilities.dataViewMappings : [];
+  const canReceiveHighlights = mappings.some((mapping) => mapping?.categorical || mapping?.matrix);
+  if (hasMeasureRole && !isFilterVisual && canReceiveHighlights && capabilities?.supportsHighlight !== true) {
     pushIssue(
       issues,
       'warning',

@@ -6,8 +6,9 @@ import { createConstructorOptions } from '../../../core/src/__test-utils__'
 import { ISSUE_SLOTS } from '../../../qaqc-shared/src/dataView'
 import { ISSUE_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/issueRows'
 import capabilities from '../../capabilities.json'
+import pbiviz from '../../pbiviz.json'
 import { QaqcIssuesVisual } from '../visual'
-import { ALL_ROLES, tableDataView, type Cell } from './tableDataView'
+import { ALL_ROLES, ROOT_CAUSE_ROLES, tableDataView, type Cell } from './tableDataView'
 
 const dashboardControl = vi.hoisted(() => ({ shouldThrow: false }))
 
@@ -74,7 +75,7 @@ function apply(target: Harness, options: UpdateOptions): void {
 }
 
 function totalGroupLabel(element: HTMLElement): string | null {
-  return element.querySelector('.qaqc-kpi-group.is-total em')?.textContent ?? null
+  return element.querySelector('.qaqc-kpi-group.is-toDate em')?.textContent ?? null
 }
 
 function cardValue(element: HTMLElement, label: string): string | null {
@@ -95,6 +96,39 @@ function setupItems(element: HTMLElement): Array<string | null> {
 
 function detailButton(element: HTMLElement): HTMLButtonElement | null {
   return element.querySelector<HTMLButtonElement>('.qaqc-header button[aria-label="Open Issue Detail"]')
+}
+
+/** The header button that opens a page, found by its accessible name: `Open the <page> page`. */
+function headerButton(element: HTMLElement, label: string): HTMLButtonElement | null {
+  return element.querySelector<HTMLButtonElement>(`.qaqc-header button[aria-label="Open the ${label} page"]`)
+}
+
+/** Gives every element a measured size, so the page draws in jsdom; the host element sits at the origin. */
+function stubElementSize(width = 1280, height = 720): void {
+  vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+    x: 0,
+    y: 0,
+    top: 0,
+    left: 0,
+    right: width,
+    bottom: height,
+    width,
+    height,
+    toJSON: () => ({}),
+  })
+}
+
+/** Opens the Issues by Root Cause Pareto page from the header and returns the page. */
+function openPareto(element: HTMLElement): HTMLElement {
+  const button = headerButton(element, 'Issues by Root Cause Pareto')
+  if (button === null) throw new Error('Pareto button missing')
+  stubElementSize()
+  act(() => {
+    button.click()
+  })
+  const page = element.querySelector<HTMLElement>('.qaqc-pareto')
+  if (page === null) throw new Error('Pareto page missing')
+  return page
 }
 
 /** Power BI sends date columns as Date objects; the fixture holds M/D/YYYY text. */
@@ -135,10 +169,23 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
+describe('QaqcIssuesVisual name', () => {
+  it('heads the dashboard with its QCx title', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(ISSUE_ROWS)))
+    expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QCx BIM Issues')
+  })
+
+  it('shows its QCx name in Power BI', () => {
+    expect(pbiviz.visual.displayName).toBe('QCx BIM Issues')
+    expect(pbiviz.visual.description).not.toContain('QAQC')
+  })
+})
+
 describe('QaqcIssuesVisual', () => {
   it('labels the visual for assistive technology', () => {
     harness = createHarness()
-    expect(harness.element.getAttribute('aria-label')).toBe('BIM issues dashboard')
+    expect(harness.element.getAttribute('aria-label')).toBe('QCx BIM issues dashboard')
   })
 
   it('names each data role like its field slot', () => {
@@ -170,10 +217,10 @@ describe('QaqcIssuesVisual', () => {
     expect(cardValue(harness.element, 'Total Opened')).toBeNull()
   })
 
-  it('renders the BIM Issues header', () => {
+  it('renders the QCx BIM Issues header', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(ISSUE_ROWS)))
-    expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('BIM Issues')
+    expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QCx BIM Issues')
   })
 
   it('renders the WW42 project-to-date cards from bound columns', () => {
@@ -217,6 +264,47 @@ describe('QaqcIssuesVisual', () => {
     apply(harness, update(tableDataView(ISSUE_ROWS)))
     expect(cardValue(harness.element, 'Total Opened')).toBe('177')
     expect(detailButton(harness.element)).toBeNull()
+  })
+
+  it('hides the Issues by Root Cause Pareto button and keeps Issue Aging when Root Cause is unbound', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(ISSUE_ROWS)))
+    expect(harness.element.querySelector('.qaqc-status')).toBeNull()
+    expect(headerButton(harness.element, 'Issues by Root Cause Pareto')).toBeNull()
+    expect(headerButton(harness.element, 'Issue Aging')?.textContent).toBe('Issue Aging')
+  })
+
+  it('shows the Issues by Root Cause Pareto button when Root Cause is bound', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(ISSUE_ROWS, { roles: [...ALL_ROLES, 'rootCause'] })))
+    expect(headerButton(harness.element, 'Issues by Root Cause Pareto')?.textContent).toBe('Issues by Root Cause Pareto')
+    expect(toDateCardValues(harness.element)).toEqual(['177', '126', '51', '71.2%'])
+  })
+
+  it('opens the Pareto without the category panel when Root Cause Category is unbound', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(ISSUE_ROWS, { roles: [...ALL_ROLES, 'rootCause'] })))
+    const page = openPareto(harness.element)
+    // The page opens on the dashboard's 30 WW window, where Bonding leads.
+    expect(page.querySelector('.qaqc-pareto-table h3')?.textContent).toBe('Bonding')
+    expect(page.querySelector('section.qaqc-pareto-side')).toBeNull()
+    expect(page.querySelector('.qaqc-pareto-readout.is-inline')?.textContent).toContain('Bonding is 5 of 37 (13.5%).')
+  })
+
+  it('opens the Pareto with the category panel when both Root Cause slots are bound', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(ISSUE_ROWS, { roles: [...ALL_ROLES, ...ROOT_CAUSE_ROLES] })))
+    const page = openPareto(harness.element)
+    const categories = [...page.querySelectorAll('.qaqc-pareto-categories li span')].map((node) => node.textContent)
+    expect(categories[0]).toBe('Quality')
+  })
+
+  it('hides the Issues by Root Cause Pareto and Issue Aging buttons when interactions are not allowed', () => {
+    harness = createHarness({ hostCapabilities: { allowInteractions: false } })
+    apply(harness, update(tableDataView(ISSUE_ROWS, { roles: [...ALL_ROLES, ...ROOT_CAUSE_ROLES] })))
+    expect(cardValue(harness.element, 'Total Opened')).toBe('177')
+    expect(headerButton(harness.element, 'Issues by Root Cause Pareto')).toBeNull()
+    expect(headerButton(harness.element, 'Issue Aging')).toBeNull()
   })
 
   it('applies the preset colors as CSS variables', () => {
@@ -276,7 +364,7 @@ describe('QaqcIssuesVisual', () => {
     expect(() => applyOutsideAct(target, update(tableDataView(ISSUE_ROWS)))).not.toThrow()
     expect(target.events.renderingFailed).toHaveBeenCalledWith(expect.anything(), 'render boom')
     expect(target.events.renderingFinished).not.toHaveBeenCalled()
-    expect(target.element.querySelector('.qaqc-status h2')?.textContent).toBe('Could not draw the BIM Issues visual')
+    expect(target.element.querySelector('.qaqc-status h2')?.textContent).toBe('Could not draw the QCx BIM Issues visual')
   })
 
   it('recovers on the next update after a render error', () => {

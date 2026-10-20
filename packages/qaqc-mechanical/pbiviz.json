@@ -1,10 +1,10 @@
 {
   "visual": {
     "name": "qaqcMechanical",
-    "displayName": "QAQC Mechanical / Process Inspections",
+    "displayName": "QCx Mechanical / Process Inspections",
     "guid": "qaqcMechanical_7064EE749149",
     "visualClassName": "QaqcMechanicalVisual",
-    "version": "1.0.0.0",
+    "version": "1.0.1.0",
     "description": "Weekly Mechanical / Process inspection Finals, SORs, NCR pass rate, and building breakdown from the Smartsheet Mechanical / Process Inspection Log.",
     "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
     "gitHubUrl": "https://github.com/noahgarrett/PowerBI"

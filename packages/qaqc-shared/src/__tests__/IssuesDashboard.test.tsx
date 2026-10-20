@@ -20,6 +20,8 @@ const COLUMNS: IssueColumns = {
   updatedOn: 6,
   dueDate: 7,
   createdBy: 8,
+  rootCause: 9,
+  rootCauseCategory: 10,
 }
 const TODAY = new Date(2026, 9, 15) // WW42'2026
 const INDEX = buildIssueIndex(ISSUE_ROWS, COLUMNS, TODAY)
@@ -27,7 +29,7 @@ const THEME = resolveTheme({ preset: 'qaqc', backgroundColor: '', backgroundOpac
 const TREND_TITLE = 'Issues by Work Week'
 const OPEN_AGING_TITLE = 'Open Issue Aging'
 const OVERALL_AGING_TITLE = 'Overall Issue Aging'
-const DETAIL_TITLE = 'BIM Issues Detail'
+const DETAIL_TITLE = 'QCx BIM Issues Detail'
 
 let view: Rendered | null = null
 
@@ -40,7 +42,7 @@ afterEach(() => {
 function dashboardElement(overrides: Partial<IssuesDashboardProps> = {}): ReactElement {
   return (
     <IssuesDashboard
-      title="BIM Issues"
+      title="QCx BIM Issues"
       icon={CircleAlert}
       index={INDEX}
       theme={THEME}
@@ -111,7 +113,7 @@ function pickWeekInDropdown(container: HTMLElement, key: string): void {
 }
 
 function clickRange(container: HTMLElement, label: string): void {
-  const button = [...container.querySelectorAll('.qaqc-range-toggle button')].find((item) => item.textContent === label)
+  const button = [...container.querySelectorAll('.qaqc-segmented button')].find((item) => item.textContent === label)
   if (!button) throw new Error(`${label} button missing`)
   click(button)
 }
@@ -199,6 +201,22 @@ function stubSize(width = 800, height = 400): void {
   })
 }
 
+
+/** The shading class of the card group with this title: is-week, is-period or is-toDate. */
+function groupShading(scope: Element | null | undefined, title: string): string[] {
+  const group = [...(scope?.querySelectorAll('section.qaqc-kpi-group') ?? [])].find((node) => node.getAttribute('aria-label') === title)
+  if (!group) throw new Error(`${title} group missing`)
+  return [...group.classList].filter((name) => name.startsWith('is-'))
+}
+
+describe('IssuesDashboard card shading', () => {
+  it('draws This WW on the lighter card and the project to date on the darker one', () => {
+    view = draw()
+    expect(groupShading(view.container, 'This WW')).toEqual(['is-week'])
+    expect(groupShading(view.container, 'Project to date')).toEqual(['is-toDate'])
+  })
+})
+
 describe('IssuesDashboard cards', () => {
   it('opens on the current week with the two this-week cards', () => {
     view = draw()
@@ -206,15 +224,15 @@ describe('IssuesDashboard cards', () => {
     expect(container.querySelector('.qaqc-kpi-group.is-week span')?.textContent).toBe('This WW')
     expect(weekSubtitle(container)).toBe("WW42'2026")
     expect(cardValue(container, 'Issues Opened')).toBe('0')
-    expect(cardDetail(container, 'Issues Opened')).toBe('No change vs WW41')
+    expect(cardDetail(container, 'Issues Opened')).toBe("No change vs WW41'2026")
     expect(cardValue(container, 'Issues Closed')).toBe('0')
-    expect(cardDetail(container, 'Issues Closed')).toBe('No change vs WW41')
+    expect(cardDetail(container, 'Issues Closed')).toBe("No change vs WW41'2026")
   })
 
   it('opens with the four project-to-date cards through the current week', () => {
     view = draw()
     const { container } = view
-    expect(container.querySelector('.qaqc-kpi-group.is-total em')?.textContent).toBe("Through WW42'2026")
+    expect(container.querySelector('.qaqc-kpi-group.is-toDate em')?.textContent).toBe("Through WW42'2026")
     expect(cardValue(container, 'Total Opened')).toBe('177')
     expect(cardDetail(container, 'Total Opened')).toBe('+0 this WW')
     expect(cardValue(container, 'Total Closed')).toBe('126')
@@ -222,7 +240,7 @@ describe('IssuesDashboard cards', () => {
     expect(cardValue(container, 'Remaining Open')).toBe('51')
     expect(cardDetail(container, 'Remaining Open')).toBe('+0 this WW')
     expect(cardValue(container, 'Closure Rate')).toBe('71.2%')
-    expect(cardDetail(container, 'Closure Rate')).toBe('No change vs WW41')
+    expect(cardDetail(container, 'Closure Rate')).toBe("No change vs WW41'2026")
   })
 
   it('shows the WW31 activity when WW31 is picked', () => {
@@ -231,9 +249,9 @@ describe('IssuesDashboard cards', () => {
     const { container } = view
     expect(weekSubtitle(container)).toBe("WW31'2026")
     expect(cardValue(container, 'Issues Opened')).toBe('2')
-    expect(cardDetail(container, 'Issues Opened')).toBe('+1 vs WW30')
+    expect(cardDetail(container, 'Issues Opened')).toBe("+1 vs WW30'2026")
     expect(cardValue(container, 'Issues Closed')).toBe('1')
-    expect(cardDetail(container, 'Issues Closed')).toBe('No change vs WW30')
+    expect(cardDetail(container, 'Issues Closed')).toBe("No change vs WW30'2026")
   })
 
   it('shows the project-to-date change in the picked week', () => {
@@ -243,7 +261,7 @@ describe('IssuesDashboard cards', () => {
     expect(cardDetail(container, 'Total Opened')).toBe('+2 this WW')
     expect(cardDetail(container, 'Total Closed')).toBe('+1 this WW')
     expect(cardDetail(container, 'Remaining Open')).toBe('+1 this WW')
-    expect(cardDetail(container, 'Closure Rate')).toBe('−0.2 pts vs WW30')
+    expect(cardDetail(container, 'Closure Rate')).toBe("−0.2 pts vs WW30'2026")
   })
 
   it('colors each card with the model tone', () => {
@@ -297,22 +315,26 @@ describe('IssuesDashboard cards', () => {
 describe('IssuesDashboard layout', () => {
   it('shows the title and icon it is given', () => {
     view = draw()
-    expect(view.container.querySelector('h2')?.textContent).toBe('BIM Issues')
+    expect(view.container.querySelector('h2')?.textContent).toBe('QCx BIM Issues')
     expect(view.container.querySelector('.qaqc-title-icon svg.lucide-circle-alert')).not.toBeNull()
   })
 
-  it('puts the Issue Detail button before the range toggle and week picker', () => {
+  it('puts Issue Detail, Issues by Root Cause Pareto and Issue Aging before the range toggle and week picker', () => {
     view = draw()
     const controls = view.container.querySelector('.qaqc-controls')
     const order = [...(controls?.children ?? [])].map((node) => node.className)
-    expect(order).toEqual(['qaqc-header-button', 'qaqc-range-toggle', 'qaqc-week-picker'])
-    expect(detailButton(view.container)?.textContent).toBe('Issue Detail')
+    expect(order).toEqual(['qaqc-header-button', 'qaqc-header-button', 'qaqc-header-button', 'qaqc-segmented', 'qaqc-week-picker'])
+    expect([...(controls?.querySelectorAll('.qaqc-header-button') ?? [])].map((node) => node.textContent)).toEqual([
+      'Issue Detail',
+      'Issues by Root Cause Pareto',
+      'Issue Aging',
+    ])
   })
 
   it('toggles the chart range', () => {
     view = draw()
     clickRange(view.container, 'All')
-    const all = [...view.container.querySelectorAll('.qaqc-range-toggle button')].find((button) => button.textContent === 'All')
+    const all = [...view.container.querySelectorAll('.qaqc-segmented button')].find((button) => button.textContent === 'All')
     expect(all?.getAttribute('aria-pressed')).toBe('true')
   })
 
@@ -531,5 +553,111 @@ describe('IssuesDashboard Issue Detail', () => {
   it('keeps several table rows in view on a short tile by scrolling the page instead of squeezing the table', () => {
     expect(ruleBody('.qaqc-issue-detail')).toContain('overflow-y: auto;')
     expect(ruleBody('.qaqc-issue-detail .qaqc-table-wrap.qaqc-issue-detail-wrap')).toMatch(/min-height: \d+px;/)
+  })
+})
+
+const PARETO_ALL_TITLE = "Issues by Root Cause Pareto · WW46'2024 to WW42'2026"
+const PARETO_RECENT_TITLE = "Issues by Root Cause Pareto · WW13'2026 to WW42'2026"
+
+function paretoButton(container: HTMLElement): HTMLButtonElement | null {
+  return container.querySelector<HTMLButtonElement>('.qaqc-header button[aria-label="Open the Issues by Root Cause Pareto page"]')
+}
+
+function openPareto(container: HTMLElement, title = PARETO_RECENT_TITLE): HTMLElement {
+  const button = paretoButton(container)
+  if (!button) throw new Error('Pareto button missing')
+  click(button)
+  const open = dialog(container, title)
+  if (!open) throw new Error('Pareto dialog missing')
+  return open
+}
+
+describe('IssuesDashboard Issues by Root Cause Pareto', () => {
+  it('names the page buttons apart from every chart panel', () => {
+    stubSize()
+    view = draw()
+    const names = [...view.container.querySelectorAll('[aria-label]')].map((node) => node.getAttribute('aria-label'))
+    for (const name of ['Open the Issue Aging page', 'Open the Issues by Root Cause Pareto page', OPEN_AGING_TITLE]) {
+      expect(names.filter((candidate) => candidate === name)).toHaveLength(1)
+    }
+  })
+
+  it('shows the Pareto button with the decreasing column chart icon', () => {
+    view = draw()
+    const button = paretoButton(view.container)
+    expect(button?.textContent).toBe('Issues by Root Cause Pareto')
+    expect(button?.querySelector('svg.lucide-chart-column-decreasing') ?? null).not.toBeNull()
+  })
+
+  it('opens the Pareto page over the 30 WW window to the selected week', () => {
+    stubSize()
+    view = draw()
+    const open = openPareto(view.container)
+    expect(open.querySelector('h3')?.textContent).toBe(PARETO_RECENT_TITLE)
+    expect(open.querySelector('.qaqc-pareto')).not.toBeNull()
+    expect(view.container.querySelector('.qaqc-root')?.hasAttribute('inert')).toBe(true)
+  })
+
+  it('shows Installation 48 and the read-out over every week', () => {
+    stubSize()
+    view = draw()
+    clickRange(view.container, 'All')
+    const open = openPareto(view.container, PARETO_ALL_TITLE)
+    const counts = [...open.querySelectorAll('.qaqc-pareto-value.qaqc-bar-value')].map((node) => node.textContent)
+    expect(counts[0]).toBe('48')
+    expect(open.querySelector('.qaqc-pareto-table h3')?.textContent).toBe('Installation')
+    expect(open.querySelector('.qaqc-pareto-readout')?.textContent).toContain('Installation is 48 of 177 (27.1%).')
+  })
+
+  it("changes the dashboard's range from the page, and the title follows", () => {
+    stubSize()
+    view = draw()
+    const open = openPareto(view.container)
+    const all = [...open.querySelectorAll('.qaqc-segmented button')].find((button) => button.textContent === 'All')
+    if (!all) throw new Error('All button missing')
+    click(all)
+    expect(dialog(view.container, PARETO_ALL_TITLE)).not.toBeNull()
+  })
+
+  it('builds the Pareto only while the page is open', () => {
+    stubSize()
+    const { index, walks } = countingIndex()
+    view = draw({ index })
+    expect(walks()).toBe(0)
+    openPareto(view.container)
+    expect(walks()).toBeGreaterThan(0)
+  })
+
+  it('closes with the back button and returns focus to the Pareto button', () => {
+    stubSize()
+    view = draw()
+    const open = openPareto(view.container)
+    const back = open.querySelector('.qaqc-back-button')
+    if (!back) throw new Error('back button missing')
+    click(back)
+    expect(dialog(view.container, PARETO_RECENT_TITLE)).toBeNull()
+    expect(document.activeElement).toBe(paretoButton(view.container))
+  })
+
+  it('closes on Esc and returns focus to the Pareto button', () => {
+    stubSize()
+    view = draw()
+    const open = openPareto(view.container)
+    act(() => {
+      open.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    })
+    expect(dialog(view.container, PARETO_RECENT_TITLE)).toBeNull()
+    expect(document.activeElement).toBe(paretoButton(view.container))
+  })
+
+  it('hides the Pareto button when Root Cause is not bound', () => {
+    view = draw({ index: buildIssueIndex(ISSUE_ROWS, { ...COLUMNS, rootCause: -1, rootCauseCategory: -1 }, TODAY) })
+    expect(paretoButton(view.container)).toBeNull()
+    expect(view.container.querySelector('.qaqc-header button[aria-label="Open Issue Detail"]')).not.toBeNull()
+  })
+
+  it('hides the Pareto button when interactions are not allowed', () => {
+    view = draw({ interactive: false })
+    expect(paretoButton(view.container)).toBeNull()
   })
 })

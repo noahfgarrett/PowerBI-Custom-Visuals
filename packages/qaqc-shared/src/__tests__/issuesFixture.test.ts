@@ -15,6 +15,8 @@ const COLUMNS: IssueColumns = {
   updatedOn: 6,
   dueDate: 7,
   createdBy: 8,
+  rootCause: 9,
+  rootCauseCategory: 10,
 }
 const TODAY = new Date(2026, 9, 15) // WW42'2026
 const index = buildIssueIndex(ISSUE_ROWS, COLUMNS, TODAY)
@@ -127,4 +129,31 @@ describe('BIM Issues Log export (2026-10-14)', () => {
       'Ready to inspect': 1,
     })
   })
+
+  it('records a Root Cause and a Root Cause Category for every included issue', () => {
+    expect(index.hasRootCause).toBe(true)
+    expect(index.hasRootCauseCategory).toBe(true)
+    expect(index.issues.filter((issue) => issue.rootCause === '' || issue.rootCauseCategory === '')).toEqual([])
+  })
+
+  it('counts 48 Installation issues across 27 root causes among the 177 included issues', () => {
+    const causes = tally(index.issues.map((issue) => issue.rootCause))
+    expect(causes.get('Installation')).toBe(48)
+    expect(causes.size).toBe(27)
+  })
+
+  it('splits the included issues by Root Cause Category', () => {
+    expect(Object.fromEntries(tally(index.issues.map((issue) => issue.rootCauseCategory)))).toEqual({
+      Quality: 162,
+      Design: 10,
+      Coordination: 4,
+      Safety: 1,
+    })
+  })
 })
+
+function tally(values: string[]): Map<string, number> {
+  const counts = new Map<string, number>()
+  for (const value of values) counts.set(value, (counts.get(value) ?? 0) + 1)
+  return counts
+}

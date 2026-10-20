@@ -285,6 +285,9 @@ export function buildIssueIndex(rows: InspectionRows, columns: IssueColumns, tod
       createdOn: created.date,
       updatedOn: updated?.date ?? null,
       dueDate,
+      // An unbound slot is −1, and row[-1] is undefined, which reads as ''.
+      rootCause: cellText(row[columns.rootCause]),
+      rootCauseCategory: cellText(row[columns.rootCauseCategory]),
       createdWeek: created.week,
       closedWeek,
       detail,
@@ -318,6 +321,7 @@ export function buildIssueIndex(rows: InspectionRows, columns: IssueColumns, tod
 
   return {
     currentWeek,
+    today: todayNoon,
     issues,
     weeks,
     cumulativeOpened,
@@ -330,11 +334,13 @@ export function buildIssueIndex(rows: InspectionRows, columns: IssueColumns, tod
     skippedRows,
     futureRows,
     excludedRows,
+    hasRootCause: columns.rootCause >= 0,
+    hasRootCauseCategory: columns.rootCauseCategory >= 0,
   }
 }
 
 /** Bad when the count rises, good when it falls. */
-function riseIsBad(delta: number): DeltaTone {
+export function riseIsBad(delta: number): DeltaTone {
   if (delta > 0) return 'bad'
   if (delta < 0) return 'good'
   return 'neutral'
@@ -344,7 +350,7 @@ function countCard(value: number, previous: number, tone: DeltaTone): IssueCount
   return { value, delta: value - previous, tone }
 }
 
-function closureRateAt(index: IssueIndex, position: number): number | null {
+export function closureRateAt(index: IssueIndex, position: number): number | null {
   if (position < 0) return null
   const opened = index.cumulativeOpened[position]
   return opened === 0 ? null : (index.cumulativeClosed[position] / opened) * 100

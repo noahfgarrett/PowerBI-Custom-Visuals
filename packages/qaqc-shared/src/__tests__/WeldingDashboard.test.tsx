@@ -90,7 +90,7 @@ function pickWeekInDropdown(container: HTMLElement, key: string): void {
 }
 
 function clickRange(container: HTMLElement, label: string): void {
-  const button = [...container.querySelectorAll('.qaqc-range-toggle button')].find((item) => item.textContent === label)
+  const button = [...container.querySelectorAll('.qaqc-segmented button')].find((item) => item.textContent === label)
   if (!button) throw new Error(`${label} button missing`)
   act(() => {
     button.dispatchEvent(new MouseEvent('click', { bubbles: true }))
@@ -164,31 +164,47 @@ function stubSize(width = 800, height = 400): void {
   })
 }
 
+
+/** The shading class of the card group with this title: is-week, is-period or is-toDate. */
+function groupShading(scope: Element | null | undefined, title: string): string[] {
+  const group = [...(scope?.querySelectorAll('section.qaqc-kpi-group') ?? [])].find((node) => node.getAttribute('aria-label') === title)
+  if (!group) throw new Error(`${title} group missing`)
+  return [...group.classList].filter((name) => name.startsWith('is-'))
+}
+
+describe('WeldingDashboard card shading', () => {
+  it('draws the week on the lighter card and the project to date on the darker one', () => {
+    view = draw()
+    expect(groupShading(view.container, "WW42'2026")).toEqual(['is-week'])
+    expect(groupShading(view.container, 'Project to date')).toEqual(['is-toDate'])
+  })
+})
+
 describe('WeldingDashboard cards', () => {
   it('opens on the current week with the four this-week cards', () => {
     view = draw()
     const { container } = view
     expect(weekTitle(container)).toBe("WW42'2026")
     expect(cardValue(container, 'Welds Logged')).toBe('0')
-    expect(cardDetail(container, 'Welds Logged')).toBe('−84 vs WW41')
+    expect(cardDetail(container, 'Welds Logged')).toBe("−84 vs WW41'2026")
     expect(cardValue(container, 'Signed This Week')).toBe('70')
-    expect(cardDetail(container, 'Signed This Week')).toBe('+24 vs WW41')
+    expect(cardDetail(container, 'Signed This Week')).toBe("+24 vs WW41'2026")
     expect(cardValue(container, 'Sign-off %')).toBe('80%')
     expect(cardDetail(container, 'Sign-off %')).toBe("67 of 84 · WW41'2026")
     expect(cardValue(container, 'Issues Created')).toBe('0')
-    expect(cardDetail(container, 'Issues Created')).toBe('No change vs WW41')
+    expect(cardDetail(container, 'Issues Created')).toBe("No change vs WW41'2026")
   })
 
   it('opens with the three project-to-date cards through the current week', () => {
     view = draw()
     const { container } = view
-    expect(container.querySelector('.qaqc-kpi-group.is-total em')?.textContent).toBe("Through WW42'2026")
+    expect(container.querySelector('.qaqc-kpi-group.is-toDate em')?.textContent).toBe("Through WW42'2026")
     expect(cardValue(container, 'Total Welds')).toBe('1,751')
     expect(cardDetail(container, 'Total Welds')).toBe('+0 this WW')
     expect(cardValue(container, 'Welds Signed')).toBe('1,054')
     expect(cardDetail(container, 'Welds Signed')).toBe('+70 signed this WW')
     expect(cardValue(container, 'Overall Sign-off %')).toBe('60.2%')
-    expect(cardDetail(container, 'Overall Sign-off %')).toBe('No change vs WW41')
+    expect(cardDetail(container, 'Overall Sign-off %')).toBe("No change vs WW41'2026")
   })
 
   it('marks Overall Sign-off % on track at 60%', () => {
@@ -203,11 +219,11 @@ describe('WeldingDashboard cards', () => {
     pickWeekInDropdown(view.container, '202641')
     const { container } = view
     expect(weekTitle(container)).toBe("WW41'2026")
-    expect(container.querySelector('.qaqc-kpi-group.is-total em')?.textContent).toBe("Through WW41'2026")
+    expect(container.querySelector('.qaqc-kpi-group.is-toDate em')?.textContent).toBe("Through WW41'2026")
     expect(cardValue(container, 'Welds Logged')).toBe('84')
-    expect(cardDetail(container, 'Welds Logged')).toBe('−42 vs WW40')
+    expect(cardDetail(container, 'Welds Logged')).toBe("−42 vs WW40'2026")
     expect(cardValue(container, 'Signed This Week')).toBe('46')
-    expect(cardDetail(container, 'Signed This Week')).toBe('−21 vs WW40')
+    expect(cardDetail(container, 'Signed This Week')).toBe("−21 vs WW40'2026")
     expect(cardDetail(container, 'Sign-off %')).toBe("67 of 84 · WW41'2026")
     expect(cardDetail(container, 'Total Welds')).toBe('+84 this WW')
     expect(cardDetail(container, 'Welds Signed')).toBe('+46 signed this WW')
@@ -232,7 +248,7 @@ describe('WeldingDashboard cards', () => {
   it('warns when Issues Created goes up', () => {
     view = draw()
     pickWeekInDropdown(view.container, '202617')
-    expect(cardDetail(view.container, 'Issues Created')).toBe('+2 vs WW16')
+    expect(cardDetail(view.container, 'Issues Created')).toBe("+2 vs WW16'2026")
     expect(card(view.container, 'Issues Created')?.querySelector('.qaqc-kpi-detail.is-warn')).not.toBeNull()
   })
 
@@ -273,7 +289,7 @@ describe('WeldingDashboard layout', () => {
   it('toggles the chart range', () => {
     view = draw()
     clickRange(view.container, 'All')
-    const all = [...view.container.querySelectorAll('.qaqc-range-toggle button')].find((button) => button.textContent === 'All')
+    const all = [...view.container.querySelectorAll('.qaqc-segmented button')].find((button) => button.textContent === 'All')
     expect(all?.getAttribute('aria-pressed')).toBe('true')
   })
 

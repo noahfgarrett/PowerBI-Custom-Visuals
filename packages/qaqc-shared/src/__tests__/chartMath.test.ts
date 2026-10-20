@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { alignedScale, labelIndices, niceScale, ordinalOpacity, round, passRateDomain, roundedRightBarPath, roundedTopBarPath, truncateLabel } from '../chartMath'
+import { alignedScale, labelIndices, niceScale, ordinalOpacity, round, passRateDomain, roundedRightBarPath, roundedTopBarPath, smoothPath, truncateLabel, yearMarkers } from '../chartMath'
 
 describe('niceScale', () => {
   it('rounds the max up to a nice step with integer ticks', () => {
@@ -97,5 +97,48 @@ describe('alignedScale', () => {
 
   it('takes at least one step', () => {
     expect(alignedScale(5, 0)).toEqual({ max: 5, ticks: [0, 5] })
+  })
+})
+
+describe('yearMarkers', () => {
+  const years = (...list: number[]): Array<{ year: number }> => list.map((year) => ({ year }))
+
+  it('marks only the first labelled index inside one year', () => {
+    expect(yearMarkers(new Set([1, 3, 5]), years(2026, 2026, 2026, 2026, 2026, 2026))).toEqual(new Set([1]))
+  })
+
+  it('marks the first labelled index of each new year', () => {
+    expect(yearMarkers(new Set([0, 2, 4, 6]), years(2025, 2025, 2025, 2026, 2026, 2026, 2026))).toEqual(new Set([0, 4]))
+  })
+
+  it('accepts labelled indices in any order', () => {
+    expect(yearMarkers(new Set([6, 0, 4, 2]), years(2025, 2025, 2025, 2026, 2026, 2026, 2026))).toEqual(new Set([0, 4]))
+  })
+
+  it('skips a year that has no labelled index', () => {
+    expect(yearMarkers(new Set([0, 5]), years(2024, 2024, 2025, 2025, 2026, 2026))).toEqual(new Set([0, 5]))
+  })
+
+  it('is empty when nothing is labelled', () => {
+    expect(yearMarkers(new Set(), years(2026, 2026)).size).toBe(0)
+  })
+
+  it('ignores labelled indices outside the weeks', () => {
+    expect(yearMarkers(new Set([-1, 1, 9]), years(2026, 2026))).toEqual(new Set([1]))
+  })
+})
+
+describe('smoothPath', () => {
+  it('curves each segment with control points a third of the way along, level with its ends', () => {
+    expect(smoothPath([{ x: 0, y: 10 }, { x: 30, y: 40 }, { x: 60, y: 10 }])).toBe('M0,10 C10,10 20,40 30,40 C40,40 50,10 60,10')
+  })
+
+  it('rounds coordinates to hundredths', () => {
+    expect(smoothPath([{ x: 0.123, y: 1.006 }, { x: 1, y: 2.3333 }])).toBe('M0.12,1.01 C0.42,1.01 0.71,2.33 1,2.33')
+  })
+
+  it('is a single move for one point and empty for none', () => {
+    expect(smoothPath([{ x: 5, y: 6 }])).toBe('M5,6')
+    expect(smoothPath([])).toBe('')
   })
 })

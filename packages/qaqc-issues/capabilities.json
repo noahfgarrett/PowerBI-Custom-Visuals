@@ -71,6 +71,22 @@
       "displayNameKey": "Qaqc_role_createdBy",
       "description": "Who created the issue. Only issues created by LotusWorks are counted.",
       "descriptionKey": "Qaqc_role_createdBy_description"
+    },
+    {
+      "name": "rootCause",
+      "kind": "Grouping",
+      "displayName": "Root Cause",
+      "displayNameKey": "Qaqc_role_rootCause",
+      "description": "Optional. The BIM Issues Log Root Cause column; adds the Issues by Root Cause Pareto.",
+      "descriptionKey": "Qaqc_role_rootCause_description"
+    },
+    {
+      "name": "rootCauseCategory",
+      "kind": "Grouping",
+      "displayName": "Root Cause Category",
+      "displayNameKey": "Qaqc_role_rootCauseCategory",
+      "description": "Optional. The BIM Issues Log Root Cause Category column; adds the category panel to the Issues by Root Cause Pareto.",
+      "descriptionKey": "Qaqc_role_rootCauseCategory_description"
     }
   ],
   "dataViewMappings": [
@@ -102,6 +118,12 @@
             "max": 1
           },
           "createdBy": {
+            "max": 1
+          },
+          "rootCause": {
+            "max": 1
+          },
+          "rootCauseCategory": {
             "max": 1
           }
         }
@@ -153,6 +175,16 @@
               "for": {
                 "in": "createdBy"
               }
+            },
+            {
+              "for": {
+                "in": "rootCause"
+              }
+            },
+            {
+              "for": {
+                "in": "rootCauseCategory"
+              }
             }
           ],
           "dataReductionAlgorithm": {
@@ -176,7 +208,7 @@
             "enumeration": [
               {
                 "value": "qaqc",
-                "displayName": "QAQC",
+                "displayName": "QCx",
                 "displayNameKey": "Qaqc_preset_qaqc"
               },
               {

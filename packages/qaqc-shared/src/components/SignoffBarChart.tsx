@@ -1,20 +1,19 @@
 import { useEffect, useMemo, useState, type MouseEvent, type ReactElement } from 'react'
 
-import { labelIndices, niceScale, round, roundedTopBarPath } from '../chartMath'
+import { labelIndices, niceScale, roundedTopBarPath, smoothPath, WEEK_AXIS_HEIGHT, yearMarkers } from '../chartMath'
 import type { ChartColors, TooltipHandler } from '../chartTypes'
 import { formatCount, formatSignoffRate, pluralize } from '../format'
 import { useWeekFocus } from '../hooks/useWeekFocus'
 import type { WeldWeekCounts } from '../types'
-import { shortWeekLabel, shortWeekLabelWithYear } from '../workWeeks'
+import { WeekAxisTick } from './WeekAxisTick'
 
 // Matches the HTML app's Welding chart: counts on the left axis, sign-off % on a fixed 0–100% right axis.
-const MARGIN = { top: 34, right: 48, bottom: 24, left: 44 } as const
+const MARGIN = { top: 34, right: 48, bottom: WEEK_AXIS_HEIGHT, left: 44 } as const
 const BAR_RATIO = 0.56
 const MAX_BAR_WIDTH = 24
 const MIN_BAR_WIDTH = 2
 const BADGE_RADIUS = 8
 const CORNER_RADIUS = 3
-const YEAR_LABEL_WIDTH = 54
 const RATE_TICKS = [0, 25, 50, 75, 100] as const
 /** Sign-off below this percent misses the baseline. */
 const BASELINE_PERCENT = 10
@@ -77,18 +76,6 @@ function describeWeek(item: WeldWeekCounts): string {
   return `${item.week.label}: ${signedOfTotal(item)} welds signed (${formatSignoffRate(signoffRate(item))}), ${issues}`
 }
 
-/** The app's smooth line: each segment's control points sit a third of the way along, level with its ends. */
-function smoothPath(points: RatePoint[]): string {
-  return points
-    .map((point, index) => {
-      if (index === 0) return `M${round(point.x)},${round(point.y)}`
-      const previous = points[index - 1]
-      const control = (point.x - previous.x) / 3
-      return `C${round(previous.x + control)},${round(previous.y)} ${round(point.x - control)},${round(point.y)} ${round(point.x)},${round(point.y)}`
-    })
-    .join(' ')
-}
-
 export function SignoffBarChart({
   weeks,
   selectedKey,
@@ -123,13 +110,8 @@ export function SignoffBarChart({
   const band = weeks.length > 0 ? plotWidth / weeks.length : plotWidth
   const barWidth = Math.min(MAX_BAR_WIDTH, Math.max(MIN_BAR_WIDTH, band * BAR_RATIO))
   const scale = useMemo(() => niceScale(weeks.reduce((max, item) => Math.max(max, item.logged), 0)), [weeks])
-  const spansYears = weeks.length > 0 && weeks[0].week.year !== weeks[weeks.length - 1].week.year
-  const labels = useMemo(
-    () => (spansYears
-      ? labelIndices(weeks.length, plotWidth, selectedIndex, YEAR_LABEL_WIDTH)
-      : labelIndices(weeks.length, plotWidth, selectedIndex)),
-    [weeks.length, plotWidth, selectedIndex, spansYears],
-  )
+  const labels = useMemo(() => labelIndices(weeks.length, plotWidth, selectedIndex), [weeks.length, plotWidth, selectedIndex])
+  const years = useMemo(() => yearMarkers(labels, weeks.map((item) => item.week)), [labels, weeks])
   const y = (value: number): number => plotBottom - (value / scale.max) * plotHeight
   const rateY = (rate: number): number => plotBottom - (rate / 100) * plotHeight
   const bandX = (index: number): number => MARGIN.left + index * band
@@ -275,15 +257,7 @@ export function SignoffBarChart({
                 </text>
               )}
               {labels.has(index) && (
-                <text
-                  className={isSelected ? 'qaqc-axis-text is-selected' : 'qaqc-axis-text'}
-                  x={center}
-                  y={height - 8}
-                  textAnchor="middle"
-                  fill={isSelected ? colors.ink : colors.axisText}
-                >
-                  {spansYears ? shortWeekLabelWithYear(item.week) : shortWeekLabel(item.week)}
-                </text>
+                <WeekAxisTick week={item.week} x={center} plotBottom={plotBottom} isSelected={isSelected} hasYear={years.has(index)} colors={colors} />
               )}
             </g>
           )

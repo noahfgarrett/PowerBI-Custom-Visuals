@@ -8,7 +8,7 @@ import { makeWorkWeek } from '../workWeeks'
 import { render, type Rendered } from './render'
 
 const COLORS: ChartColors = {
-  series1: '#2E5AAC', series2: '#86B6EF', good: '#0A7A0A', bad: '#D03B3B', warn: '#B45309', card: '#FDFEFF',
+  series1: '#2E5AAC', series2: '#86B6EF', series3: '#1A9C7B', good: '#0A7A0A', bad: '#D03B3B', warn: '#B45309', card: '#FDFEFF',
   grid: '#EBEEF3', axisText: '#6A7583', ink: '#1B2530', accent: '#2E5AAC',
 }
 
@@ -134,14 +134,14 @@ describe('StackedBarChart', () => {
     expect(svg.getAttribute('aria-label')).toBe("Finals and SORs by work week, WW40'2026 to WW42'2026")
   })
 
-  it('adds the year to axis labels when the window spans years', () => {
+  it('keeps short week ticks when the window spans years', () => {
     const spanning: WeekCounts[] = [
       { week: makeWorkWeek(2025, 52), finals: 2, sors: 1, issuesFound: 0 },
       { week: makeWorkWeek(2026, 1), finals: 3, sors: 1, issuesFound: 0 },
       { week: makeWorkWeek(2026, 2), finals: 4, sors: 2, issuesFound: 0 },
     ]
     view = draw({ weeks: spanning, selectedKey: spanning[2].week.key })
-    expect(view.container.querySelector('.qaqc-axis-text.is-selected')?.textContent).toBe("WW02'26")
+    expect(view.container.querySelector('.qaqc-axis-text.is-selected')?.textContent).toBe('WW02')
   })
 
   it('skips issue badges when bar slots are too narrow', () => {

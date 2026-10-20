@@ -81,7 +81,7 @@ if (data === 'missing') {
   document.title = `index ${Math.round(performance.now() - started)} ms`
   root.render(
     <WeldingDashboard
-      title="Welding Signoffs"
+      title="QCx Welding Signoffs"
       icon={Flame}
       index={index}
       minWelds={minWelds}

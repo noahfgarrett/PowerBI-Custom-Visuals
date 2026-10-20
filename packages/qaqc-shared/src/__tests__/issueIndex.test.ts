@@ -14,6 +14,8 @@ const COLUMNS: IssueColumns = {
   updatedOn: 6,
   dueDate: 7,
   createdBy: 8,
+  rootCause: 9,
+  rootCauseCategory: 10,
 }
 const TODAY = new Date(2026, 9, 15) // Thursday of WW42'2026
 const LW = 'LotusWorks'
@@ -27,6 +29,8 @@ interface IssueOptions {
   type?: Cell
   title?: Cell
   dueDate?: Cell
+  rootCause?: Cell
+  rootCauseCategory?: Cell
 }
 
 function issue(id: string, createdOn: Cell, options: IssueOptions = {}): Cell[] {
@@ -40,6 +44,8 @@ function issue(id: string, createdOn: Cell, options: IssueOptions = {}): Cell[] 
     options.updatedOn ?? null,
     options.dueDate ?? null,
     options.createdBy === undefined ? LW : options.createdBy,
+    options.rootCause ?? null,
+    options.rootCauseCategory ?? null,
   ]
 }
 
@@ -258,6 +264,40 @@ describe('buildIssueIndex', () => {
     expect(second.detail.status).toBe('Open')
   })
 
+  it('trims Root Cause and Root Cause Category, keeping blanks empty', () => {
+    const index = buildIssueIndex(
+      [
+        issue('#3', '10/5/2026', { rootCause: '  Installation ', rootCauseCategory: ' Quality\t' }),
+        issue('#2', '10/5/2026', { rootCause: '   ', rootCauseCategory: '' }),
+        issue('#1', '10/5/2026'),
+      ],
+      COLUMNS,
+      TODAY,
+    )
+    expect(index.issues.map((record) => [record.id, record.rootCause, record.rootCauseCategory])).toEqual([
+      ['#3', 'Installation', 'Quality'],
+      ['#2', '', ''],
+      ['#1', '', ''],
+    ])
+  })
+
+  it('flags Root Cause and Root Cause Category as bound when their slots are, even if every value is blank', () => {
+    const index = buildIssueIndex([issue('#1', '10/5/2026')], COLUMNS, TODAY)
+    expect(index.hasRootCause).toBe(true)
+    expect(index.hasRootCauseCategory).toBe(true)
+  })
+
+  it('reads empty root causes and flags both unbound when the slots are −1', () => {
+    const index = buildIssueIndex(
+      [issue('#1', '10/5/2026', { rootCause: 'Installation', rootCauseCategory: 'Quality' })],
+      { ...COLUMNS, rootCause: -1, rootCauseCategory: -1 },
+      TODAY,
+    )
+    expect(index.hasRootCause).toBe(false)
+    expect(index.hasRootCauseCategory).toBe(false)
+    expect(index.issues[0]).toMatchObject({ rootCause: '', rootCauseCategory: '' })
+  })
+
   it('accepts Date objects and Excel serials as dates', () => {
     const index = buildIssueIndex(
       [issue('#1', new Date(2026, 9, 5, 0, 0), { status: 'Closed', updatedOn: 46309 })],
@@ -366,5 +406,12 @@ describe('buildIssueIndex', () => {
       ageDays: 44,
       status: 'Open',
     })
+  })
+})
+
+describe('buildIssueIndex today', () => {
+  it('keeps the noon of the day it was built for, so as-of-week ages use the same today', () => {
+    const index = buildIssueIndex([issue('#1', '10/5/2026')], COLUMNS, new Date(2026, 9, 15, 8, 30))
+    expect(index.today).toEqual(new Date(2026, 9, 15, 12))
   })
 })

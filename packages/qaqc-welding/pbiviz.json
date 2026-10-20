@@ -1,10 +1,10 @@
 {
   "visual": {
     "name": "qaqcWelding",
-    "displayName": "QAQC Welding Signoffs",
+    "displayName": "QCx Welding Signoffs",
     "guid": "qaqcWelding_8A4CE54C5018",
     "visualClassName": "QaqcWeldingVisual",
-    "version": "1.0.0.0",
+    "version": "1.0.1.0",
     "description": "Weekly welding sign-off rate, issues created, system and pipe-spec breakdown, and building issue hotspots from the Smartsheet Welding Inspections / Signoffs log.",
     "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
     "gitHubUrl": "https://github.com/noahgarrett/PowerBI"

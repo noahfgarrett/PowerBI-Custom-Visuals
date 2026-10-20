@@ -47,12 +47,12 @@ describe('DashboardHeader', () => {
   it('puts leading controls before the range toggle and the week picker', () => {
     view = render(header({ children: <button type="button" className="leading">Detail</button> }))
     const order = [...(view.container.querySelector('.qaqc-controls')?.children ?? [])].map((node) => node.className)
-    expect(order).toEqual(['leading', 'qaqc-range-toggle', 'qaqc-week-picker'])
+    expect(order).toEqual(['leading', 'qaqc-segmented', 'qaqc-week-picker'])
   })
 
   it('shows the range and the selected week', () => {
     view = render(header({ range: 'all', selectedKey: 202641 }))
-    const all = [...view.container.querySelectorAll('.qaqc-range-toggle button')].find((button) => button.textContent === 'All')
+    const all = [...view.container.querySelectorAll('.qaqc-segmented button')].find((button) => button.textContent === 'All')
     expect(all?.getAttribute('aria-pressed')).toBe('true')
     expect(view.container.querySelector('select')?.value).toBe('202641')
   })
@@ -60,7 +60,7 @@ describe('DashboardHeader', () => {
   it('reports a range change', () => {
     const onRangeChange = vi.fn()
     view = render(header({ onRangeChange }))
-    const all = [...view.container.querySelectorAll('.qaqc-range-toggle button')].find((button) => button.textContent === 'All')
+    const all = [...view.container.querySelectorAll('.qaqc-segmented button')].find((button) => button.textContent === 'All')
     if (!all) throw new Error('All button missing')
     click(all)
     expect(onRangeChange).toHaveBeenCalledWith('all')
@@ -81,6 +81,6 @@ describe('DashboardHeader', () => {
   it('disables the range toggle and the week picker when interactions are not allowed', () => {
     view = render(header({ interactive: false }))
     expect(view.container.querySelector('select')?.disabled).toBe(true)
-    expect([...view.container.querySelectorAll<HTMLButtonElement>('.qaqc-range-toggle button')].every((button) => button.disabled)).toBe(true)
+    expect([...view.container.querySelectorAll<HTMLButtonElement>('.qaqc-segmented button')].every((button) => button.disabled)).toBe(true)
   })
 })

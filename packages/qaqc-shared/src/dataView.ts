@@ -1,4 +1,4 @@
-import type { InspectionColumns, InspectionRows, IssueColumns, WeldColumns } from './types'
+import type { CombinedColumns, InspectionColumns, InspectionRows, IssueColumns, WeldColumns } from './types'
 
 export interface FieldSlot<Role extends string = keyof InspectionColumns | 'rowId'> {
   role: Role
@@ -114,7 +114,12 @@ export const ISSUE_SLOTS: readonly IssueFieldSlot[] = [
   { role: 'updatedOn', slot: 'Updated On', column: 'Updated On' },
   { role: 'dueDate', slot: 'Due Date', column: 'Due Date' },
   { role: 'createdBy', slot: 'Created By', column: 'Created By' },
+  { role: 'rootCause', slot: 'Root Cause', column: 'Root Cause' },
+  { role: 'rootCauseCategory', slot: 'Root Cause Category', column: 'Root Cause Category' },
 ]
+
+/** Root Cause and its category only feed the Pareto, so reports without them keep working. */
+export const OPTIONAL_ISSUE_ROLES: ReadonlySet<IssueSlotRole> = new Set<IssueSlotRole>(['rootCause', 'rootCauseCategory'])
 
 export type IssueTableReadResult =
   | { kind: 'missing'; missing: IssueFieldSlot[] }
@@ -122,7 +127,8 @@ export type IssueTableReadResult =
 
 /** Cells pass through untouched: the issue index parses strings, numbers and the Date objects Power BI may send. */
 export function readIssueTable(table: InspectionTableSource | undefined): IssueTableReadResult {
-  if (!table) return { kind: 'missing', missing: [...ISSUE_SLOTS] }
+  const required = ISSUE_SLOTS.filter((slot) => !OPTIONAL_ISSUE_ROLES.has(slot.role))
+  if (!table) return { kind: 'missing', missing: required }
 
   const positionOf = (role: string): number => table.columns.findIndex((column) => column.roles?.[role] === true)
   const columns: IssueColumns = {
@@ -135,9 +141,113 @@ export function readIssueTable(table: InspectionTableSource | undefined): IssueT
     updatedOn: positionOf('updatedOn'),
     dueDate: positionOf('dueDate'),
     createdBy: positionOf('createdBy'),
+    rootCause: positionOf('rootCause'),
+    rootCauseCategory: positionOf('rootCauseCategory'),
   }
-  const missing = ISSUE_SLOTS.filter((slot) => columns[slot.role] < 0)
+  const missing = required.filter((slot) => columns[slot.role] < 0)
   if (missing.length > 0) return { kind: 'missing', missing }
 
   return { kind: 'ready', rows: table.rows ?? [], columns }
+}
+
+export type CombinedSlotRole = keyof CombinedColumns | 'rowId'
+export type CombinedFieldSlot = FieldSlot<CombinedSlotRole>
+
+// The two visuals bind the same QCx Combined table but declare only the slots they use.
+export const OVERVIEW_SLOTS: readonly CombinedFieldSlot[] = [
+  { role: 'source', slot: 'Source', column: 'Source' },
+  { role: 'rowId', slot: 'Row ID', column: 'Row ID' },
+  { role: 'workWeek', slot: 'Work Week', column: 'Work Week' },
+  { role: 'phase', slot: 'Inspection Phase', column: 'Inspection Phase' },
+  { role: 'issue', slot: 'Issue', column: 'Issue' },
+  { role: 'building', slot: 'Building', column: 'Building' },
+  { role: 'signature', slot: 'Signature', column: 'Signature' },
+  { role: 'signedWeek', slot: 'Work Week Signed', column: 'Work Week Signed' },
+  { role: 'id', slot: 'ID', column: 'ID' },
+  { role: 'status', slot: 'Status', column: 'Status' },
+  { role: 'type', slot: 'Type', column: 'Type' },
+  { role: 'createdOn', slot: 'Created On', column: 'Created On' },
+  { role: 'updatedOn', slot: 'Updated On', column: 'Updated On' },
+  { role: 'createdBy', slot: 'Created By', column: 'Created By' },
+  { role: 'rootCause', slot: 'Root Cause', column: 'Root Cause' },
+  { role: 'greenTags', slot: 'Green tags', column: 'Green tags measure' },
+]
+
+export const PERFORMANCE_SLOTS: readonly CombinedFieldSlot[] = [
+  { role: 'source', slot: 'Source', column: 'Source' },
+  { role: 'rowId', slot: 'Row ID', column: 'Row ID' },
+  { role: 'workWeek', slot: 'Work Week', column: 'Work Week' },
+  { role: 'phase', slot: 'Inspection Phase', column: 'Inspection Phase' },
+  { role: 'issue', slot: 'Issue', column: 'Issue' },
+  { role: 'building', slot: 'Building', column: 'Building' },
+  { role: 'qcr', slot: 'QCR/FE', column: 'QCR/FE' },
+  { role: 'welder', slot: 'Welder', column: 'Welder' },
+  { role: 'tagNo', slot: 'Tag No', column: 'Tag No' },
+]
+
+/**
+ * Green tags is a measure the user may leave out; without it the DWN rate shows n/a.
+ * Root Cause only feeds the Top root cause card, which asks for it when unbound.
+ */
+export const OPTIONAL_COMBINED_ROLES: ReadonlySet<CombinedSlotRole> = new Set<CombinedSlotRole>(['rootCause', 'greenTags'])
+
+export type CombinedTableReadResult =
+  | { kind: 'missing'; missing: CombinedFieldSlot[] }
+  | { kind: 'ready'; rows: InspectionRows; columns: CombinedColumns }
+
+/** Roles outside the visual's slot list are never bound, so their positions come back as −1. */
+export function readCombinedTable(
+  table: InspectionTableSource | undefined,
+  slots: readonly CombinedFieldSlot[],
+): CombinedTableReadResult {
+  const required = slots.filter((slot) => !OPTIONAL_COMBINED_ROLES.has(slot.role))
+  if (!table) return { kind: 'missing', missing: required }
+
+  const positionOf = (role: string): number => table.columns.findIndex((column) => column.roles?.[role] === true)
+  const columns: CombinedColumns = {
+    source: positionOf('source'),
+    workWeek: positionOf('workWeek'),
+    phase: positionOf('phase'),
+    issue: positionOf('issue'),
+    building: positionOf('building'),
+    qcr: positionOf('qcr'),
+    welder: positionOf('welder'),
+    tagNo: positionOf('tagNo'),
+    signature: positionOf('signature'),
+    signedWeek: positionOf('signedWeek'),
+    id: positionOf('id'),
+    status: positionOf('status'),
+    type: positionOf('type'),
+    createdOn: positionOf('createdOn'),
+    updatedOn: positionOf('updatedOn'),
+    createdBy: positionOf('createdBy'),
+    rootCause: positionOf('rootCause'),
+    greenTags: positionOf('greenTags'),
+  }
+  const positions: Record<CombinedSlotRole, number> = { ...columns, rowId: positionOf('rowId') }
+  const missing = required.filter((slot) => positions[slot.role] < 0)
+  if (missing.length > 0) return { kind: 'missing', missing }
+
+  return { kind: 'ready', rows: table.rows ?? [], columns }
+}
+
+/**
+ * The Green tags measure isn't related to the combined table, so it repeats the same total on every row.
+ * Returns the first finite number in the column (numbers or numeric text), or null when there is none.
+ */
+export function readGreenTags(rows: InspectionRows, column: number): number | null {
+  if (column < 0) return null
+  for (const row of rows) {
+    const value = row[column]
+    if (typeof value === 'number') {
+      if (Number.isFinite(value)) return value
+      continue
+    }
+    if (typeof value !== 'string') continue
+    const text = value.trim()
+    if (!text) continue
+    const parsed = Number(text)
+    if (Number.isFinite(parsed)) return parsed
+  }
+  return null
 }

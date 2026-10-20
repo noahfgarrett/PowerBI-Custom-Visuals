@@ -51,9 +51,49 @@ export function labelIndices(count: number, plotWidth: number, selectedIndex: nu
   return result
 }
 
+/** Baseline of a week tick label, in px below the plot. */
+export const WEEK_TICK_OFFSET = 16
+/** Baseline of a year marker, in px below the plot: one 9 px line under the 10.5 px tick label. */
+export const YEAR_MARKER_OFFSET = 27
+/** Room under the plot for a week tick label and a year marker. */
+export const WEEK_AXIS_HEIGHT = 31
+
+/** Which labelled indices get a year marker: the first labelled index, plus the first labelled index of each new year. */
+export function yearMarkers(labelledIndices: ReadonlySet<number>, weeks: ReadonlyArray<{ year: number }>): Set<number> {
+  const result = new Set<number>()
+  const sorted = [...labelledIndices].filter((index) => index >= 0 && index < weeks.length).sort((a, b) => a - b)
+  let previousYear: number | null = null
+  for (const index of sorted) {
+    const year = weeks[index].year
+    if (year !== previousYear) result.add(index)
+    previousYear = year
+  }
+  return result
+}
+
+/** The dash of a dashed series line and of its legend key. */
+export const LINE_DASH = '5 4'
+
 /** Rounds to hundredths, enough precision for SVG coordinates. */
 export function round(value: number): number {
   return Math.round(value * 100) / 100
+}
+
+export interface PlotPoint {
+  x: number
+  y: number
+}
+
+/** The app's smooth line: each segment's control points sit a third of the way along, level with its ends. */
+export function smoothPath(points: ReadonlyArray<PlotPoint>): string {
+  return points
+    .map((point, index) => {
+      if (index === 0) return `M${round(point.x)},${round(point.y)}`
+      const previous = points[index - 1]
+      const control = (point.x - previous.x) / 3
+      return `C${round(previous.x + control)},${round(previous.y)} ${round(point.x - control)},${round(point.y)} ${round(point.x)},${round(point.y)}`
+    })
+    .join(' ')
 }
 
 /** Vertical bar with rounded top corners and a square baseline (DESIGN.md mark spec). */

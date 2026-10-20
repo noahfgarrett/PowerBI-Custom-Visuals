@@ -47,12 +47,12 @@ export class QaqcWeldingVisual implements powerbi.extensibility.visual.IVisual {
   private viewport: powerbi.IViewport = { width: 0, height: 0 }
 
   constructor(options?: VisualConstructorOptions) {
-    if (!options) throw new Error('QAQC Welding Signoffs requires a Power BI visual host.')
+    if (!options) throw new Error('QCx Welding Signoffs requires a Power BI visual host.')
     this.host = options.host
     this.element = options.element
     this.element.classList.add('qaqc-host')
     this.element.setAttribute('role', 'region')
-    this.element.setAttribute('aria-label', 'Welding signoffs dashboard')
+    this.element.setAttribute('aria-label', 'QCx welding signoffs dashboard')
     this.selectionManager = this.host.createSelectionManager()
     this.formattingSettingsService = new FormattingSettingsService(this.host.createLocalizationManager())
     // React 19 reports render errors here instead of re-throwing from flushSync; commit() re-throws them.
@@ -135,7 +135,7 @@ export class QaqcWeldingVisual implements powerbi.extensibility.visual.IVisual {
       this.commit(
         createElement(StatusPanel, {
           icon: TriangleAlert,
-          title: 'Could not draw the Welding visual',
+          title: 'Could not draw the QCx Welding visual',
           message: 'Check the bound columns, then refresh the report.',
           items: [],
         }),
@@ -165,7 +165,7 @@ export class QaqcWeldingVisual implements powerbi.extensibility.visual.IVisual {
     const footnotes = buildFootnotes(index, this.rowLimitReached)
     this.commit(
       createElement(WeldingDashboard, {
-        title: 'Welding Signoffs',
+        title: 'QCx Welding Signoffs',
         icon: Flame,
         index,
         minWelds: display.minWelds,

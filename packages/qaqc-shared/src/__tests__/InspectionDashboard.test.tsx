@@ -42,6 +42,32 @@ function cardValue(container: HTMLElement, label: string): string | null {
   return container.querySelector(`[aria-label^="${label}:"] .qaqc-kpi-value`)?.textContent ?? null
 }
 
+function cardDetail(container: HTMLElement, label: string): string | null {
+  return container.querySelector(`[aria-label^="${label}:"] .qaqc-kpi-detail`)?.textContent ?? null
+}
+
+
+/** The shading class of the card group with this title: is-week, is-period or is-toDate. */
+function groupShading(scope: Element | null | undefined, title: string): string[] {
+  const group = [...(scope?.querySelectorAll('section.qaqc-kpi-group') ?? [])].find((node) => node.getAttribute('aria-label') === title)
+  if (!group) throw new Error(`${title} group missing`)
+  return [...group.classList].filter((name) => name.startsWith('is-'))
+}
+
+describe('InspectionDashboard card shading', () => {
+  it('draws the week on the lighter card and the project to date on the darker one', () => {
+    view = draw()
+    expect(groupShading(view.container, "WW42'2026")).toEqual(['is-week'])
+    expect(groupShading(view.container, 'Project to date')).toEqual(['is-toDate'])
+  })
+
+  it('shades Mechanical the same way', () => {
+    view = draw({ title: 'Mechanical / Process Inspections', icon: Cog })
+    expect(groupShading(view.container, "WW42'2026")).toEqual(['is-week'])
+    expect(groupShading(view.container, 'Project to date')).toEqual(['is-toDate'])
+  })
+})
+
 describe('InspectionDashboard', () => {
   it('opens on the current week with the six cards', () => {
     view = draw()
@@ -54,6 +80,14 @@ describe('InspectionDashboard', () => {
     expect(cardValue(container, 'Finals to Date')).toBe('238')
     expect(cardValue(container, 'SORs to Date')).toBe('48')
     expect(cardValue(container, 'NCR Pass Rate')).toBe('99.2%')
+  })
+
+  it('compares the week cards against the previous week by its full label', () => {
+    view = draw()
+    const { container } = view
+    expect(cardDetail(container, 'Final Inspections')).toBe("−3 vs WW41'2026")
+    expect(cardDetail(container, 'SORs')).toMatch(/ vs WW41'2026$/)
+    expect(cardDetail(container, 'Issues Found')).toMatch(/ vs WW41'2026$/)
   })
 
   it('shows the title and icon it is given', () => {
@@ -72,12 +106,12 @@ describe('InspectionDashboard', () => {
       select.dispatchEvent(new Event('change', { bubbles: true }))
     })
     expect(cardValue(view.container, 'Final Inspections')).toBe('6')
-    expect(view.container.querySelector('.qaqc-kpi-group.is-total em')?.textContent).toBe("Through WW41'2026")
+    expect(view.container.querySelector('.qaqc-kpi-group.is-toDate em')?.textContent).toBe("Through WW41'2026")
   })
 
   it('toggles the chart range', () => {
     view = draw()
-    const all = Array.from(view.container.querySelectorAll('.qaqc-range-toggle button')).find((button) => button.textContent === 'All')
+    const all = Array.from(view.container.querySelectorAll('.qaqc-segmented button')).find((button) => button.textContent === 'All')
     if (!all) throw new Error('All button missing')
     act(() => {
       all.dispatchEvent(new MouseEvent('click', { bubbles: true }))
@@ -161,7 +195,7 @@ function pickWeekInDropdown(container: HTMLElement, key: string): void {
 }
 
 function clickRange(container: HTMLElement, label: string): void {
-  const button = Array.from(container.querySelectorAll('.qaqc-range-toggle button')).find((item) => item.textContent === label)
+  const button = Array.from(container.querySelectorAll('.qaqc-segmented button')).find((item) => item.textContent === label)
   if (!button) throw new Error(`${label} button missing`)
   act(() => {
     button.dispatchEvent(new MouseEvent('click', { bubbles: true }))

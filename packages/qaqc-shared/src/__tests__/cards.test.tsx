@@ -29,6 +29,21 @@ describe('KpiCard', () => {
     expect(view.container.querySelector('.qaqc-kpi-detail.is-warn')).not.toBeNull()
   })
 
+  it('puts an optional context line above the detail and reads it before the change', () => {
+    view = render(
+      <KpiCard label="Pass rate" value="98.9%" context="3 NCRs of 282 finals" detail="+0.01 pts" tone="good" trend="up" icon={ClipboardCheck} />,
+    )
+    const card = view.container.querySelector('article')
+    expect(card?.querySelector('.qaqc-kpi-context')?.textContent).toBe('3 NCRs of 282 finals')
+    expect(card?.querySelector('.qaqc-kpi-context + .qaqc-kpi-detail')?.textContent).toBe('+0.01 pts')
+    expect(card?.getAttribute('aria-label')).toBe('Pass rate: 98.9%. 3 NCRs of 282 finals. +0.01 pts')
+  })
+
+  it('has no context line by default', () => {
+    view = render(<KpiCard label="Finals" value="3" detail="+3 this WW" tone="neutral" trend="none" icon={ClipboardCheck} />)
+    expect(view.container.querySelector('.qaqc-kpi-context')).toBeNull()
+  })
+
   it('omits the trend icon when trend is none', () => {
     view = render(<KpiCard label="Finals to Date" value="238" detail="+3 this WW" tone="neutral" trend="none" icon={ClipboardCheck} />)
     expect(view.container.querySelector('.qaqc-kpi-detail svg')).toBeNull()
@@ -81,13 +96,39 @@ describe('KpiCard status', () => {
 describe('KpiGroup', () => {
   it('renders a titled group with an optional subtitle', () => {
     view = render(
-      <KpiGroup title="Project to date" subtitle="Through WW42'2026" variant="total">
+      <KpiGroup title="Project to date" subtitle="Through WW42'2026" variant="toDate">
         <span className="child" />
       </KpiGroup>,
     )
-    const group = view.container.querySelector('section.qaqc-kpi-group.is-total')
+    const group = view.container.querySelector('section.qaqc-kpi-group.is-toDate')
     expect(group?.querySelector('em')?.textContent).toBe("Through WW42'2026")
     expect(group?.querySelector('.child')).not.toBeNull()
+  })
+})
+
+describe('KpiGroup shading', () => {
+  it.each(['week', 'period', 'toDate'] as const)('marks a %s group with its variant class', (variant) => {
+    view = render(
+      <KpiGroup title="Group" variant={variant}>
+        <span />
+      </KpiGroup>,
+    )
+    expect(view.container.querySelector('section.qaqc-kpi-group')?.className).toBe(`qaqc-kpi-group is-${variant}`)
+  })
+
+  it('draws every group on the plain card', () => {
+    expect(ruleBody('.qaqc-kpi-group')).toContain('background: var(--qaqc-card);')
+  })
+
+  it('gives only project-to-date groups the darker tint', () => {
+    expect(ruleBody('.qaqc-kpi-group.is-toDate')).toContain('background: var(--qaqc-to-date-card);')
+    expect(() => ruleBody('.qaqc-kpi-group.is-week')).toThrow('missing')
+    expect(() => ruleBody('.qaqc-kpi-group.is-period')).toThrow('missing')
+  })
+
+  it('keeps the expanded chart totals and the Performance disclosure row on the plain card', () => {
+    expect(ruleBody('.qaqc-summary div')).toContain('background: var(--qaqc-card-solid);')
+    expect(ruleBody('.qaqc-table tbody .qaqc-perf-disclosure-row > td')).toContain('background: var(--qaqc-card-solid);')
   })
 })
 

@@ -13,7 +13,7 @@
       "kind": "Grouping",
       "displayName": "Signature",
       "displayNameKey": "Qaqc_role_signature",
-      "description": "QAQC signature. Blank means the weld is not signed off yet.",
+      "description": "QCx signature. Blank means the weld is not signed off yet.",
       "descriptionKey": "Qaqc_role_signature_description"
     },
     {
@@ -160,7 +160,7 @@
             "enumeration": [
               {
                 "value": "qaqc",
-                "displayName": "QAQC",
+                "displayName": "QCx",
                 "displayNameKey": "Qaqc_preset_qaqc"
               },
               {

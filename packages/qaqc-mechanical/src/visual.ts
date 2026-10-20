@@ -47,12 +47,12 @@ export class QaqcMechanicalVisual implements powerbi.extensibility.visual.IVisua
   private viewport: powerbi.IViewport = { width: 0, height: 0 }
 
   constructor(options?: VisualConstructorOptions) {
-    if (!options) throw new Error('QAQC Mechanical / Process requires a Power BI visual host.')
+    if (!options) throw new Error('QCx Mechanical / Process requires a Power BI visual host.')
     this.host = options.host
     this.element = options.element
     this.element.classList.add('qaqc-host')
     this.element.setAttribute('role', 'region')
-    this.element.setAttribute('aria-label', 'Mechanical / Process inspections dashboard')
+    this.element.setAttribute('aria-label', 'QCx mechanical / process inspections dashboard')
     this.selectionManager = this.host.createSelectionManager()
     this.formattingSettingsService = new FormattingSettingsService(this.host.createLocalizationManager())
     // React 19 reports render errors here instead of re-throwing from flushSync; commit() re-throws them.
@@ -135,7 +135,7 @@ export class QaqcMechanicalVisual implements powerbi.extensibility.visual.IVisua
       this.commit(
         createElement(StatusPanel, {
           icon: TriangleAlert,
-          title: 'Could not draw the Mechanical / Process visual',
+          title: 'Could not draw the QCx Mechanical / Process visual',
           message: 'Check the bound columns, then refresh the report.',
           items: [],
         }),
@@ -165,7 +165,7 @@ export class QaqcMechanicalVisual implements powerbi.extensibility.visual.IVisua
     const footnotes = buildFootnotes(index, this.rowLimitReached)
     this.commit(
       createElement(InspectionDashboard, {
-        title: 'Mechanical / Process Inspections',
+        title: 'QCx Mechanical / Process Inspections',
         icon: Cog,
         index,
         theme,

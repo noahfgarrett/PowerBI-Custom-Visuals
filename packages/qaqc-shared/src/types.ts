@@ -274,7 +274,7 @@ export interface WeldModel {
   hasData: boolean
 }
 
-/** Column positions of each BIM issue field slot inside a table row. */
+/** Column positions of each BIM issue field slot inside a table row. The Root Cause slots are optional: −1 when unbound. */
 export interface IssueColumns {
   id: number
   title: number
@@ -285,6 +285,30 @@ export interface IssueColumns {
   updatedOn: number
   dueDate: number
   createdBy: number
+  rootCause: number
+  rootCauseCategory: number
+}
+
+/** Column positions of each QCx Combined field slot inside a table row, or −1 when the slot isn't bound. */
+export interface CombinedColumns {
+  source: number
+  workWeek: number
+  phase: number
+  issue: number
+  building: number
+  qcr: number
+  welder: number
+  tagNo: number
+  signature: number
+  signedWeek: number
+  id: number
+  status: number
+  type: number
+  createdOn: number
+  updatedOn: number
+  createdBy: number
+  rootCause: number
+  greenTags: number
 }
 
 export type IssueStatusKind = 'open' | 'pending' | 'closed' | 'void'
@@ -328,6 +352,10 @@ export interface IssueRecord {
   /** Updated On, or null when blank or unreadable. */
   updatedOn: Date | null
   dueDate: Date | null
+  /** Trimmed Root Cause, '' when blank or unbound. */
+  rootCause: string
+  /** Trimmed Root Cause Category, '' when blank or unbound. */
+  rootCauseCategory: string
   createdWeek: WorkWeek
   /** ISO week of Updated On for closed issues that have one, otherwise null. */
   closedWeek: WorkWeek | null
@@ -369,6 +397,8 @@ export interface OpenIssueRow {
 
 export interface IssueIndex {
   currentWeek: WorkWeek
+  /** Noon of the day the index was built for; ages and as-of-week benchmarks are measured to it. */
+  today: Date
   /** Included issues created through the current week, sorted by ID descending (numeric-aware). */
   issues: IssueRecord[]
   /** Continuous weeks from the first created or closed week through the current week. Always holds at least one week, the current week. */
@@ -390,6 +420,10 @@ export interface IssueIndex {
   futureRows: number
   /** Rows whose Created By is not a LotusWorks creator. */
   excludedRows: number
+  /** Whether the optional Root Cause slot is bound. */
+  hasRootCause: boolean
+  /** Whether the optional Root Cause Category slot is bound. */
+  hasRootCauseCategory: boolean
 }
 
 export interface IssueCountCard {

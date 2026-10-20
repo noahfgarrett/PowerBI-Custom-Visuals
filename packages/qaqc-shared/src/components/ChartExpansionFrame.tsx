@@ -26,6 +26,8 @@ export interface ExpandablePanel {
   /** Legend for the expanded panel when it differs from the grid panel's. */
   expandedLegend?: LegendItem[]
   emptyMessage: string | null
+  /** Sees Esc before the overlay does; true means it was handled and the overlay stays open. */
+  onEscape?: () => boolean
   renderExpanded: (size: ElementSize) => ReactNode
 }
 
@@ -41,6 +43,13 @@ export interface ExpandableProps {
   onExpand: (() => void) | undefined
 }
 
+/**
+ * Opens a page from any element, such as a table row: the page grows from `source`, and focus returns to
+ * `focusTarget` when it closes (or to the frame when that element is gone by then). Does nothing when interactions
+ * are not allowed.
+ */
+export type OpenPage<Id extends string> = (id: Id, source: HTMLElement, focusTarget: HTMLElement) => void
+
 export interface ChartExpansionFrameProps<Id extends string> {
   panels: Record<Id, ExpandablePanel>
   interactive: boolean
@@ -49,8 +58,8 @@ export interface ChartExpansionFrameProps<Id extends string> {
   /** Cards-only tiles have no charts, so no chart overlay is drawn; it comes back if the tile grows again. Pages are still drawn. */
   isCardsOnly: boolean
   onHover: TooltipHandler
-  /** The dashboard's root content; call `expandable(id)` for each grid ChartPanel. */
-  children: (expandable: (id: Id) => ExpandableProps) => ReactNode
+  /** The dashboard's root content; call `expandable(id)` for each grid ChartPanel, or `openPage` from a row. */
+  children: (expandable: (id: Id) => ExpandableProps, openPage: OpenPage<Id>) => ReactNode
 }
 
 /** The whole frame. The frame never scrolls, so no scroll offset is involved. */
@@ -58,9 +67,9 @@ function frameBox(frame: HTMLElement): PanelBox {
   return { top: 0, left: 0, width: frame.clientWidth, height: frame.clientHeight }
 }
 
-/** The grid panel's box relative to the frame (the root may be scrolled inside it). */
+/** The grid panel's box relative to the frame (the root may be scrolled inside it); null once it has left the page. */
 function originBox(frame: HTMLElement, panel: HTMLElement | null): PanelBox | null {
-  if (!panel) return null
+  if (!panel || !panel.isConnected) return null
   const frameRect = frame.getBoundingClientRect()
   const rect = panel.getBoundingClientRect()
   return { top: rect.top - frameRect.top, left: rect.left - frameRect.left, width: rect.width, height: rect.height }
@@ -83,16 +92,23 @@ export function ChartExpansionFrame<Id extends string>({
   const frameRef = useRef<HTMLDivElement | null>(null)
   const panelRefs = useRef(new Map<Id, HTMLElement | null>())
   const restoreFocusRef = useRef<Id | null>(null)
+  // Set by openPage: the element focus returns to, in place of the panel's expand button.
+  const focusTargets = useRef(new Map<Id, HTMLElement>())
 
   // Return focus once the overlay is gone and the dashboard is no longer inert: to the expand button, or to the
   // panel when the button is gone (the panel became empty or interactions were turned off), or to the frame.
-  // A page registers its header button as the "panel", so focus returns to that button.
+  // A page registers its header button as the "panel", so focus returns to that button. A page opened with openPage
+  // returns focus to the element it was given while that element is still on the page.
   useEffect(() => {
     const id = restoreFocusRef.current
     if (expanded !== null || id === null) return
     restoreFocusRef.current = null
+    const focusTarget = focusTargets.current.get(id)
+    focusTargets.current.delete(id)
     const panel = panelRefs.current.get(id) ?? null
-    const target = panel?.querySelector<HTMLButtonElement>('.qaqc-expand-button') ?? panel ?? frameRef.current
+    const target = focusTarget !== undefined
+      ? (focusTarget.isConnected ? focusTarget : frameRef.current)
+      : panel?.querySelector<HTMLButtonElement>('.qaqc-expand-button') ?? panel ?? frameRef.current
     target?.focus({ preventScroll: true })
   }, [expanded])
 
@@ -113,6 +129,13 @@ export function ChartExpansionFrame<Id extends string>({
     }
   }
 
+  function openPage(id: Id, source: HTMLElement, focusTarget: HTMLElement): void {
+    if (!interactive) return
+    panelRefs.current.set(id, source)
+    focusTargets.current.set(id, focusTarget)
+    setExpanded(id)
+  }
+
   function closeExpanded(id: Id): void {
     restoreFocusRef.current = id
     setExpanded(null)
@@ -128,7 +151,7 @@ export function ChartExpansionFrame<Id extends string>({
   return (
     <div ref={frameRef} className="qaqc-frame" tabIndex={-1}>
       <div className={rootClass} inert={isOverlayShown}>
-        {children(expandable)}
+        {children(expandable, openPage)}
       </div>
 
       {isOverlayShown && (
@@ -144,6 +167,7 @@ export function ChartExpansionFrame<Id extends string>({
           getRootBox={() => (frameRef.current ? frameBox(frameRef.current) : ZERO_BOX)}
           getOriginBox={() => (frameRef.current ? originBox(frameRef.current, panelRefs.current.get(expanded) ?? null) : null)}
           onClosed={() => closeExpanded(expanded)}
+          onEscape={panels[expanded].onEscape}
         >
           {panels[expanded].renderExpanded}
         </ExpandedPanel>

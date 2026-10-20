@@ -9,7 +9,7 @@ import { makeWorkWeek } from '../workWeeks'
 import { render, type Rendered } from './render'
 
 const COLORS: ChartColors = {
-  series1: '#2E5AAC', series2: '#86B6EF', good: '#0A7A0A', bad: '#D03B3B', warn: '#B45309', card: '#FDFEFF',
+  series1: '#2E5AAC', series2: '#86B6EF', series3: '#1A9C7B', good: '#0A7A0A', bad: '#D03B3B', warn: '#B45309', card: '#FDFEFF',
   grid: '#EBEEF3', axisText: '#6A7583', ink: '#1B2530', accent: '#2E5AAC',
 }
 
@@ -148,7 +148,7 @@ describe('LineChart', () => {
     expect(weekLabels.map((node) => node.classList.contains('is-selected'))).toEqual([false, true])
   })
 
-  it('adds the year to week labels when the window spans two years', () => {
+  it('keeps short week ticks when the window spans two years', () => {
     view = render(
       <LineChart
         points={[{ ...point(52, 99.1), week: makeWorkWeek(2025, 52) }, point(1, 99.16)]}
@@ -162,7 +162,17 @@ describe('LineChart', () => {
       />,
     )
     const weekLabels = [...view.container.querySelectorAll('.qaqc-axis-text')].filter((node) => node.textContent?.startsWith('WW'))
-    expect(weekLabels.map((node) => node.textContent)).toEqual(["WW52'25", "WW01'26"])
+    expect(weekLabels.map((node) => node.textContent)).toEqual(['WW52', 'WW01'])
+  })
+
+  it('gives the week axis the shared axis height in place of the bottom margin', () => {
+    view = render(
+      <LineChart points={[point(41, 99.1), point(42, 99.16)]} selectedKey={202642} width={300} height={160} colors={COLORS} describe showWeekAxis onHover={vi.fn()} />,
+    )
+    // 160 px tall, 14 px top margin and a 31 px week axis: the plot spans y 14–129.
+    expect(view.container.querySelector('.qaqc-hit')?.getAttribute('height')).toBe('115')
+    const weekLabel = [...view.container.querySelectorAll('.qaqc-axis-text')].find((node) => node.textContent === 'WW42')
+    expect(weekLabel?.getAttribute('y')).toBe('145')
   })
 
   it('thins week labels so they do not collide', () => {

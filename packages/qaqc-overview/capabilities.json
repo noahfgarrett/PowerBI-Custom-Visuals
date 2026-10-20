@@ -1,0 +1,381 @@
+{
+  "dataRoles": [
+    {
+      "name": "source",
+      "kind": "Grouping",
+      "displayName": "Source",
+      "displayNameKey": "Qaqc_role_source",
+      "description": "Electrical, Mechanical, Welding or BIM: which sheet the row came from. Other values are skipped.",
+      "descriptionKey": "Qaqc_role_source_description"
+    },
+    {
+      "name": "rowId",
+      "kind": "Grouping",
+      "displayName": "Row ID",
+      "displayNameKey": "Qaqc_role_rowId",
+      "description": "Required unique row number (the QCx Combined Row ID index column). Keeps identical rows separate.",
+      "descriptionKey": "Qaqc_role_rowId_description"
+    },
+    {
+      "name": "workWeek",
+      "kind": "Grouping",
+      "displayName": "Work Week",
+      "displayNameKey": "Qaqc_role_workWeek",
+      "description": "Work Week Observed for inspections, Weld Work Week for welds, for example WW42'2026.",
+      "descriptionKey": "Qaqc_role_workWeek_description"
+    },
+    {
+      "name": "phase",
+      "kind": "Grouping",
+      "displayName": "Inspection Phase",
+      "displayNameKey": "Qaqc_role_phase",
+      "description": "Final, SOR, or another inspection phase. Only finals and SORs are counted.",
+      "descriptionKey": "Qaqc_role_phase_description"
+    },
+    {
+      "name": "issue",
+      "kind": "Grouping",
+      "displayName": "Issue",
+      "displayNameKey": "Qaqc_role_issue",
+      "description": "No Issue Found, or the issue raised on the inspection; for welds, the BIM number when an issue was created.",
+      "descriptionKey": "Qaqc_role_issue_description"
+    },
+    {
+      "name": "building",
+      "kind": "Grouping",
+      "displayName": "Building",
+      "displayNameKey": "Qaqc_role_building",
+      "description": "Building or area inspected.",
+      "descriptionKey": "Qaqc_role_building_description"
+    },
+    {
+      "name": "signature",
+      "kind": "Grouping",
+      "displayName": "Signature",
+      "displayNameKey": "Qaqc_role_signature",
+      "description": "Weld QCx signature. Blank means the weld is not signed off yet.",
+      "descriptionKey": "Qaqc_role_signature_description"
+    },
+    {
+      "name": "signedWeek",
+      "kind": "Grouping",
+      "displayName": "Work Week Signed",
+      "displayNameKey": "Qaqc_role_signedWeek",
+      "description": "Work Week the weld was signed, for example WW42'2026.",
+      "descriptionKey": "Qaqc_role_signedWeek_description"
+    },
+    {
+      "name": "id",
+      "kind": "Grouping",
+      "displayName": "ID",
+      "displayNameKey": "Qaqc_role_id",
+      "description": "BIM issue ID, for example #1024.",
+      "descriptionKey": "Qaqc_role_id_description"
+    },
+    {
+      "name": "status",
+      "kind": "Grouping",
+      "displayName": "Status",
+      "displayNameKey": "Qaqc_role_status",
+      "description": "BIM issue status, for example Open, Closed or Void. Void issues are excluded.",
+      "descriptionKey": "Qaqc_role_status_description"
+    },
+    {
+      "name": "type",
+      "kind": "Grouping",
+      "displayName": "Type",
+      "displayNameKey": "Qaqc_role_type",
+      "description": "BIM issue type, for example COR, NCR or DWN. CORs and DWNs are counted in the quality strip.",
+      "descriptionKey": "Qaqc_role_type_description"
+    },
+    {
+      "name": "createdOn",
+      "kind": "Grouping",
+      "displayName": "Created On",
+      "displayNameKey": "Qaqc_role_createdOn",
+      "description": "Date the BIM issue was created. Sets the work week it was opened.",
+      "descriptionKey": "Qaqc_role_createdOn_description"
+    },
+    {
+      "name": "updatedOn",
+      "kind": "Grouping",
+      "displayName": "Updated On",
+      "displayNameKey": "Qaqc_role_updatedOn",
+      "description": "Date the BIM issue was last updated. A closed issue counts as closed on this date.",
+      "descriptionKey": "Qaqc_role_updatedOn_description"
+    },
+    {
+      "name": "createdBy",
+      "kind": "Grouping",
+      "displayName": "Created By",
+      "displayNameKey": "Qaqc_role_createdBy",
+      "description": "Who created the BIM issue. Only issues created by LotusWorks are counted.",
+      "descriptionKey": "Qaqc_role_createdBy_description"
+    },
+    {
+      "name": "rootCause",
+      "kind": "Grouping",
+      "displayName": "Root Cause",
+      "displayNameKey": "Qaqc_role_rootCause",
+      "description": "Optional. The QCx Combined Root Cause column; adds the Top root cause card.",
+      "descriptionKey": "Qaqc_role_rootCause_description"
+    },
+    {
+      "name": "greenTags",
+      "kind": "Measure",
+      "displayName": "Green tags",
+      "displayNameKey": "Qaqc_role_greenTags",
+      "description": "Your green tag count measure. Wrap it in COALESCE(…, 0) so a blank count never hides the data. The DWN rate is DWNs to date divided by this value.",
+      "descriptionKey": "Qaqc_role_greenTags_description"
+    }
+  ],
+  "dataViewMappings": [
+    {
+      "conditions": [
+        {
+          "source": {
+            "max": 1
+          },
+          "rowId": {
+            "max": 1
+          },
+          "workWeek": {
+            "max": 1
+          },
+          "phase": {
+            "max": 1
+          },
+          "issue": {
+            "max": 1
+          },
+          "building": {
+            "max": 1
+          },
+          "signature": {
+            "max": 1
+          },
+          "signedWeek": {
+            "max": 1
+          },
+          "id": {
+            "max": 1
+          },
+          "status": {
+            "max": 1
+          },
+          "type": {
+            "max": 1
+          },
+          "createdOn": {
+            "max": 1
+          },
+          "updatedOn": {
+            "max": 1
+          },
+          "createdBy": {
+            "max": 1
+          },
+          "rootCause": {
+            "max": 1
+          },
+          "greenTags": {
+            "max": 1
+          }
+        }
+      ],
+      "table": {
+        "rows": {
+          "select": [
+            {
+              "for": {
+                "in": "source"
+              }
+            },
+            {
+              "for": {
+                "in": "rowId"
+              }
+            },
+            {
+              "for": {
+                "in": "workWeek"
+              }
+            },
+            {
+              "for": {
+                "in": "phase"
+              }
+            },
+            {
+              "for": {
+                "in": "issue"
+              }
+            },
+            {
+              "for": {
+                "in": "building"
+              }
+            },
+            {
+              "for": {
+                "in": "signature"
+              }
+            },
+            {
+              "for": {
+                "in": "signedWeek"
+              }
+            },
+            {
+              "for": {
+                "in": "id"
+              }
+            },
+            {
+              "for": {
+                "in": "status"
+              }
+            },
+            {
+              "for": {
+                "in": "type"
+              }
+            },
+            {
+              "for": {
+                "in": "createdOn"
+              }
+            },
+            {
+              "for": {
+                "in": "updatedOn"
+              }
+            },
+            {
+              "for": {
+                "in": "createdBy"
+              }
+            },
+            {
+              "for": {
+                "in": "rootCause"
+              }
+            },
+            {
+              "for": {
+                "in": "greenTags"
+              }
+            }
+          ],
+          "dataReductionAlgorithm": {
+            "window": {
+              "count": 30000
+            }
+          }
+        }
+      }
+    }
+  ],
+  "objects": {
+    "colors": {
+      "displayName": "Colors",
+      "displayNameKey": "Qaqc_colors",
+      "properties": {
+        "preset": {
+          "displayName": "Preset",
+          "displayNameKey": "Qaqc_colors_preset",
+          "type": {
+            "enumeration": [
+              {
+                "value": "qaqc",
+                "displayName": "QCx",
+                "displayNameKey": "Qaqc_preset_qaqc"
+              },
+              {
+                "value": "blue",
+                "displayName": "Blue",
+                "displayNameKey": "Qaqc_preset_blue"
+              },
+              {
+                "value": "lotusworks",
+                "displayName": "LotusWorks",
+                "displayNameKey": "Qaqc_preset_lotusworks"
+              },
+              {
+                "value": "grayscale",
+                "displayName": "Grayscale",
+                "displayNameKey": "Qaqc_preset_grayscale"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "cardSettings": {
+      "displayName": "Background",
+      "displayNameKey": "Qaqc_background",
+      "properties": {
+        "backgroundColor": {
+          "displayName": "Background color",
+          "displayNameKey": "Qaqc_background_color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "backgroundOpacity": {
+          "displayName": "Background opacity",
+          "displayNameKey": "Qaqc_background_opacity",
+          "type": {
+            "numeric": true
+          }
+        },
+        "cardOpacity": {
+          "displayName": "Card opacity",
+          "displayNameKey": "Qaqc_card_opacity",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "animationSettings": {
+      "displayName": "Animation",
+      "displayNameKey": "Qaqc_animation",
+      "properties": {
+        "enabled": {
+          "displayName": "Transitions",
+          "displayNameKey": "Qaqc_animation_enabled",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "accessibility": {
+      "displayName": "Accessibility",
+      "displayNameKey": "Qaqc_accessibility",
+      "properties": {
+        "chartSummaries": {
+          "displayName": "Screen reader chart summaries",
+          "displayNameKey": "Qaqc_accessibility_summaries",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    }
+  },
+  "tooltips": {
+    "supportedTypes": {
+      "default": true
+    },
+    "supportEnhancedTooltips": true
+  },
+  "supportsEmptyDataView": true,
+  "supportsKeyboardFocus": true,
+  "privileges": []
+}

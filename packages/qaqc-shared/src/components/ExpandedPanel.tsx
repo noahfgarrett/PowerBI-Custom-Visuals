@@ -47,6 +47,11 @@ export interface ExpandedPanelProps {
   getOriginBox: () => PanelBox | null
   /** Called exactly once, when the collapse has finished. */
   onClosed: () => void
+  /**
+   * Sees Esc first, wherever it was pressed inside the dialog. Returns true when it handled the key (for example by
+   * closing something inside the page), so the panel stays open; false lets Esc close the panel.
+   */
+  onEscape?: () => boolean
   children: (size: ElementSize) => ReactNode
 }
 
@@ -89,6 +94,7 @@ export function ExpandedPanel({
   getRootBox,
   getOriginBox,
   onClosed,
+  onEscape,
   children,
 }: ExpandedPanelProps): ReactElement {
   const boxRef = useRef<HTMLDivElement | null>(null)
@@ -180,11 +186,11 @@ export function ExpandedPanel({
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
-    if (event.key === 'Escape') {
-      event.preventDefault()
-      event.stopPropagation()
-      collapse()
-    }
+    if (event.key !== 'Escape') return
+    event.preventDefault()
+    event.stopPropagation()
+    if (onEscape?.() === true) return
+    collapse()
   }
 
   // The open box fills the frame (top/left 0, 100% size); px keyframes apply only while animating, so resizes are followed.

@@ -1,6 +1,7 @@
 import {
   ChartBarStacked,
   ChartColumnBig,
+  ChartColumnDecreasing,
   CheckCheck,
   CircleCheck,
   CircleDot,
@@ -10,7 +11,7 @@ import {
   Layers,
   TableProperties,
 } from 'lucide-react'
-import { useMemo, type ReactElement } from 'react'
+import { useCallback, useMemo, useRef, type ReactElement } from 'react'
 
 import type { ElementSize } from '../hooks/useElementSize'
 import { useWeekWindow } from '../hooks/useWeekWindow'
@@ -22,6 +23,7 @@ import { ChartPanel } from './ChartPanel'
 import { DashboardHeader, type DashboardChromeProps } from './DashboardHeader'
 import { Footnotes } from './Footnotes'
 import { HeaderOverlayButton } from './HeaderOverlayButton'
+import { IssueAgingPage, issueAgingTitle } from './IssueAgingPage'
 import { IssueDetail } from './IssueDetail'
 import { issueTrendLegend, IssuesTrendChart } from './IssuesTrendChart'
 import { KpiCard } from './KpiCard'
@@ -29,18 +31,18 @@ import { KpiGroup } from './KpiGroup'
 import { LoadingBar } from './LoadingBar'
 import { OpenAgingChart } from './OpenAgingChart'
 import { OpenIssuesTable } from './OpenIssuesTable'
+import { paretoTitle, RootCauseParetoPage } from './RootCauseParetoPage'
 import { IssueWindowSummary } from './WindowSummary'
 import { formatCount, formatDelta, formatPercent, formatPointsDelta, formatSignedCount, pointsTrend, trendOf } from '../format'
 import { buildIssueModel } from '../issues'
 import { chartColorsFromTheme } from '../theme'
 import type { ClosureRateCard, IssueIndex } from '../types'
-import { shortWeekLabel } from '../workWeeks'
 
 const NO_ROWS_MESSAGE = 'No issues match the current filters'
 const NO_OPEN_MESSAGE = 'No open issues'
 
 type ChartId = 'trend' | 'openAging' | 'overallAging'
-type PanelId = ChartId | 'detail'
+type PanelId = ChartId | 'detail' | 'pareto' | 'aging'
 
 const CHART_IDS: readonly ChartId[] = ['trend', 'openAging', 'overallAging'] as const
 
@@ -73,12 +75,17 @@ export function IssuesDashboard({
   onHover,
 }: IssuesDashboardProps): ReactElement {
   const { view, range, selectWeek, pickWeek, changeRange } = useWeekWindow(index)
+  // The Issue Aging page's Esc handler: it closes the page's issue list before Esc closes the page.
+  const agingEscapeRef = useRef<(() => boolean) | null>(null)
+  const registerAgingEscape = useCallback((handler: (() => boolean) | null): void => {
+    agingEscapeRef.current = handler
+  }, [])
 
   const model = useMemo(() => buildIssueModel(index, view), [index, view])
   // Memoized so the charts' own memos see the same colors object until the theme changes.
   const colors = useMemo(() => chartColorsFromTheme(theme), [theme])
   const { thisWeek, toDate } = model
-  const previousLabel = shortWeekLabel(model.previousWeek)
+  const previousLabel = model.previousWeek.label
   const isCompact = viewport.width < COMPACT_WIDTH
   const isCardsOnly = viewport.height < CARDS_ONLY_HEIGHT
   const openCount = model.openAging.reduce((sum, bucket) => sum + bucket.count, 0)
@@ -160,13 +167,59 @@ export function IssuesDashboard({
   const panels: Record<PanelId, ExpandablePanel> = {
     ...charts,
     detail: {
-      title: 'BIM Issues Detail',
+      title: 'QCx BIM Issues Detail',
       icon: TableProperties,
       kind: 'page',
       legend: [],
       emptyMessage: null,
       // Mounted only while the page is open, so the detail is built only then.
       renderExpanded: () => <IssueDetail index={index} selectedKey={model.selectedWeek.key} />,
+    },
+    pareto: {
+      title: paretoTitle(index, view),
+      icon: ChartColumnDecreasing,
+      kind: 'page',
+      legend: [],
+      emptyMessage: null,
+      // Mounted only while the page is open, so the Pareto is built only then. It shares the dashboard's week
+      // window, so its own range toggle and week picker move the dashboard too.
+      renderExpanded: () => (
+        <RootCauseParetoPage
+          index={index}
+          view={view}
+          weekOptions={model.weekOptions}
+          colors={colors}
+          isHighContrast={theme.isHighContrast}
+          onPickWeek={pickWeek}
+          onRangeChange={changeRange}
+          onHover={onHover}
+        />
+      ),
+    },
+    aging: {
+      title: issueAgingTitle(model.selectedWeek),
+      icon: Hourglass,
+      kind: 'page',
+      legend: [],
+      emptyMessage: null,
+      onEscape: () => agingEscapeRef.current?.() ?? false,
+      // Mounted only while the page is open, so the benchmarks are built only then. It shares the dashboard's week
+      // window, so its own range toggle and week picker move the dashboard too.
+      renderExpanded: () => (
+        <IssueAgingPage
+          index={index}
+          view={view}
+          weekOptions={model.weekOptions}
+          colors={colors}
+          animate={animate}
+          footnotes={footnotes}
+          onSelectWeek={selectWeek}
+          onPickWeek={pickWeek}
+          onRangeChange={changeRange}
+          onHover={onHover}
+          registerEscape={registerAgingEscape}
+        />
+      ),
     },
   }
 
@@ -193,6 +246,15 @@ export function IssuesDashboard({
             onPickWeek={pickWeek}
           >
             <HeaderOverlayButton {...expandable('detail')} label="Issue Detail" ariaLabel="Open Issue Detail" icon={TableProperties} />
+            {index.hasRootCause && (
+              <HeaderOverlayButton
+                {...expandable('pareto')}
+                label="Issues by Root Cause Pareto"
+                ariaLabel="Open the Issues by Root Cause Pareto page"
+                icon={ChartColumnDecreasing}
+              />
+            )}
+            <HeaderOverlayButton {...expandable('aging')} label="Issue Aging" ariaLabel="Open the Issue Aging page" icon={Hourglass} />
           </DashboardHeader>
 
           <div className="qaqc-kpi-row">
@@ -214,7 +276,7 @@ export function IssuesDashboard({
                 trend={trendOf(thisWeek.closed.delta)}
               />
             </KpiGroup>
-            <KpiGroup title="Project to date" subtitle={`Through ${model.selectedWeek.label}`} variant="total">
+            <KpiGroup title="Project to date" subtitle={`Through ${model.selectedWeek.label}`} variant="toDate">
               <KpiCard
                 label="Total Opened"
                 icon={Layers}

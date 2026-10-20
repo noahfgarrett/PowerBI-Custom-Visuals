@@ -1,6 +1,7 @@
 import { act } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { LABEL_METRICS } from '../chartLabels'
 import type { ChartColors } from '../chartTypes'
 import { IssuesTrendChart, issueTrendLegend, type IssuesTrendChartProps } from '../components/IssuesTrendChart'
 import type { IssueTrendPoint } from '../types'
@@ -8,23 +9,21 @@ import { makeWorkWeek } from '../workWeeks'
 import { render, type Rendered } from './render'
 
 const COLORS: ChartColors = {
-  series1: '#2E5AAC', series2: '#86B6EF', good: '#0A7A0A', bad: '#D03B3B', warn: '#B45309', card: '#FDFEFF',
+  series1: '#2E5AAC', series2: '#86B6EF', series3: '#1A9C7B', good: '#0A7A0A', bad: '#D03B3B', warn: '#B45309', card: '#FDFEFF',
   grid: '#EBEEF3', axisText: '#6A7583', ink: '#1B2530', accent: '#2E5AAC',
 }
 
-// Geometry at 632 × 300: the plot spans x 44–584 (540 px) and y 26–276 (250 px tall).
+// Geometry at 632 × 307: the plot spans x 44–584 (540 px) and y 26–276 (250 px tall).
 // Three weeks get 180 px bands centred at x 134, 314 and 494. Each band holds a 35 px pair: a 16 px Opened bar,
 // a 3 px gap, and a 16 px Closed bar, so the first band's bars start at x 116.5 and 135.5.
 const WIDTH = 632
-const HEIGHT = 300
+const HEIGHT = 307
 const PLOT_TOP = 26
 const PLOT_BOTTOM = 276
 const PLOT_HEIGHT = 250
 
 // Label metrics shared with the chart: 9.5 px bold digits are about 5.6 px wide, 7 px above the baseline and 2 below.
-const CHAR_WIDTH = 5.6
-const ASCENT = 7
-const DESCENT = 2
+const { charWidth: CHAR_WIDTH, ascent: ASCENT, descent: DESCENT } = LABEL_METRICS
 
 function point(week: number, opened: number, closed: number, remainingOpen: number, year = 2026): IssueTrendPoint {
   return { week: makeWorkWeek(year, week), opened, closed, remainingOpen }
@@ -396,7 +395,7 @@ describe('IssuesTrendChart at the All range', () => {
 
   it('thins the week axis labels', () => {
     view = draw({ points, selectedKey: points[319].week.key })
-    expect(all(view.container, '.qaqc-week-axis-text').length).toBeLessThanOrEqual(Math.floor(540 / 54) + 1)
+    expect(all(view.container, '.qaqc-week-axis-text').length).toBeLessThanOrEqual(Math.floor(540 / 44) + 1)
   })
 })
 
@@ -432,10 +431,10 @@ describe('IssuesTrendChart selection and interaction', () => {
     expect(view.container.querySelector('.qaqc-week-axis-text.is-selected')?.textContent).toBe('WW42')
   })
 
-  it('adds the year to week labels when the window spans years', () => {
+  it('keeps short week ticks when the window spans years', () => {
     const points = [point(52, 1, 0, 1, 2025), point(1, 1, 0, 2), point(2, 1, 0, 3)]
     view = draw({ points, selectedKey: points[2].week.key })
-    expect(view.container.querySelector('.qaqc-week-axis-text.is-selected')?.textContent).toBe("WW02'26")
+    expect(view.container.querySelector('.qaqc-week-axis-text.is-selected')?.textContent).toBe('WW02')
   })
 
   it('selects a week on click when interactive', () => {

@@ -1,6 +1,7 @@
 import { Maximize2, type LucideIcon } from 'lucide-react'
 import type { ReactElement, ReactNode } from 'react'
 
+import { LINE_DASH } from '../chartMath'
 import { useElementSize, type ElementSize } from '../hooks/useElementSize'
 
 export interface LegendItem {
@@ -14,7 +15,7 @@ export function LegendSwatch({ item }: { item: LegendItem }): ReactElement {
   if (item.shape === 'dashed') {
     return (
       <svg className="qaqc-legend-swatch is-dashed" width={16} height={4} aria-hidden="true">
-        <line x1={0} x2={16} y1={2} y2={2} stroke={item.color} strokeWidth={1.5} strokeDasharray="5 4" />
+        <line x1={0} x2={16} y1={2} y2={2} stroke={item.color} strokeWidth={1.5} strokeDasharray={LINE_DASH} />
       </svg>
     )
   }

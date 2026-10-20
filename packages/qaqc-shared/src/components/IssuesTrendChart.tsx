@@ -1,16 +1,28 @@
 import { useEffect, useId, useMemo, useState, type MouseEvent, type ReactElement } from 'react'
 
-import { alignedScale, labelIndices, niceScale, round, roundedTopBarPath, type NiceScale } from '../chartMath'
+import { createLabelPlacer, LABEL_GAP, labelTextWidth } from '../chartLabels'
+import {
+  alignedScale,
+  labelIndices,
+  niceScale,
+  round,
+  roundedTopBarPath,
+  smoothPath,
+  WEEK_AXIS_HEIGHT,
+  yearMarkers,
+  type NiceScale,
+  type PlotPoint,
+} from '../chartMath'
 import type { ChartColors, TooltipHandler } from '../chartTypes'
 import { formatCount } from '../format'
 import { useWeekFocus } from '../hooks/useWeekFocus'
 import type { IssueTrendPoint } from '../types'
-import { shortWeekLabel, shortWeekLabelWithYear } from '../workWeeks'
 import type { LegendItem } from './ChartPanel'
+import { WeekAxisTick } from './WeekAxisTick'
 
 // Matches the HTML app's RangeChart: Opened and Closed bars on the left axis, Remaining Open as a smooth line with
 // an area fill on its own right axis.
-const MARGIN = { top: 26, right: 48, bottom: 24, left: 44 } as const
+const MARGIN = { top: 26, right: 48, bottom: WEEK_AXIS_HEIGHT, left: 44 } as const
 /** The Opened + Closed pair fills this share of its week's band. */
 const PAIR_RATIO = 0.7
 const PAIR_GAP_RATIO = 0.08
@@ -20,7 +32,6 @@ const MIN_PAIR_GAP_BAND = 10
 const MAX_BAR_WIDTH = 16
 const MIN_BAR_WIDTH = 1
 const CORNER_RADIUS = 2.5
-const YEAR_LABEL_WIDTH = 54
 const AXIS_TITLE_INSET = 10
 const DOT_RADIUS = 3
 const HOVERED_DOT_RADIUS = 4.5
@@ -38,12 +49,6 @@ const LINE_LABEL_EVERY = 3
 const MIN_LINE_LABEL_SPACING = 28
 const LINE_LABEL_ABOVE = 7
 const LINE_LABEL_BELOW = 14
-// Label metrics for 9.5 px bold digits.
-const CHAR_WIDTH = 5.6
-const TEXT_ASCENT = 7
-const TEXT_DESCENT = 2
-/** Placed labels keep at least this much space between them. */
-const LABEL_GAP = 1
 const TITLE = 'Issues opened and closed by work week'
 
 export interface IssuesTrendChartProps {
@@ -63,11 +68,6 @@ export interface IssuesTrendChartProps {
 
 type Series = 'opened' | 'closed' | 'remaining'
 
-interface PlotPoint {
-  x: number
-  y: number
-}
-
 interface BarMark {
   key: string
   series: 'opened' | 'closed'
@@ -83,13 +83,6 @@ interface TrendLabel {
   x: number
   y: number
   isInside: boolean
-}
-
-interface Box {
-  left: number
-  right: number
-  top: number
-  bottom: number
 }
 
 export interface Layout {
@@ -118,36 +111,11 @@ export function issueTrendLegend(colors: ChartColors): LegendItem[] {
   ]
 }
 
-/** The app's smooth line: each segment's control points sit a third of the way along, level with its ends. */
-function smoothPath(points: PlotPoint[]): string {
-  return points
-    .map((point, index) => {
-      if (index === 0) return `M${round(point.x)},${round(point.y)}`
-      const previous = points[index - 1]
-      const control = (point.x - previous.x) / 3
-      return `C${round(previous.x + control)},${round(previous.y)} ${round(point.x - control)},${round(point.y)} ${round(point.x)},${round(point.y)}`
-    })
-    .join(' ')
-}
-
 function areaPath(points: PlotPoint[], baseline: number): string {
   if (points.length === 0) return ''
   const first = points[0]
   const last = points[points.length - 1]
   return `${smoothPath(points)} L${round(last.x)},${round(baseline)} L${round(first.x)},${round(baseline)} Z`
-}
-
-function textWidth(text: string): number {
-  return text.length * CHAR_WIDTH
-}
-
-function labelBox(text: string, x: number, y: number): Box {
-  const half = textWidth(text) / 2 + LABEL_GAP / 2
-  return { left: x - half, right: x + half, top: y - TEXT_ASCENT - LABEL_GAP / 2, bottom: y + TEXT_DESCENT + LABEL_GAP / 2 }
-}
-
-function overlaps(a: Box, b: Box): boolean {
-  return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom
 }
 
 /**
@@ -210,19 +178,11 @@ export function layoutChart(points: IssueTrendPoint[], width: number, height: nu
   // Labels are placed in priority order, each at its first position that stays inside the plot and clear of every
   // label already placed; a label with no such position is left out. The last line point comes first, so only a
   // plot too small to hold it can drop it; then the bar counts (newest week first), then the other line points.
-  const placedBoxes: Box[] = []
+  const placer = createLabelPlacer({ bounds: { left: 0, right: width, top: 0, bottom: plotBottom } })
   const placed: TrendLabel[] = []
-  const isClear = (box: Box): boolean => box.left >= 0 && box.right <= width && box.top >= 0 && box.bottom <= plotBottom
-    && placedBoxes.every((other) => !overlaps(box, other))
   function place(label: Omit<TrendLabel, 'x' | 'y'>, candidates: PlotPoint[]): void {
-    for (const candidate of candidates) {
-      const box = labelBox(label.text, candidate.x, candidate.y)
-      if (isClear(box)) {
-        placedBoxes.push(box)
-        placed.push({ ...label, x: candidate.x, y: candidate.y })
-        return
-      }
-    }
+    const spot = placer.place(label.text, candidates)
+    if (spot !== null) placed.push({ ...label, x: spot.x, y: spot.y })
   }
   function lineCandidates(index: number): PlotPoint[] {
     const { x, y } = linePoints[index]
@@ -238,7 +198,7 @@ export function layoutChart(points: IssueTrendPoint[], width: number, height: nu
     const text = formatCount(count)
     const center = (series === 'opened' ? openedX(index) : closedX(index)) + barWidth / 2
     const barHeight = countHeight(count)
-    const isInside = barHeight >= MIN_INSIDE_LABEL_HEIGHT && textWidth(text) <= barWidth
+    const isInside = barHeight >= MIN_INSIDE_LABEL_HEIGHT && labelTextWidth(text) <= barWidth
     const label = { key: `${series === 'opened' ? 'o' : 'c'}${index}`, index, series, text, isInside }
     if (isInside) {
       place(label, [{ x: center, y: plotBottom - INSIDE_LABEL_INSET }])
@@ -246,7 +206,7 @@ export function layoutChart(points: IssueTrendPoint[], width: number, height: nu
     }
     // When the centred spot is taken, the label slides off its bar's outer edge: Opened to the left, Closed to the right.
     const y = plotBottom - barHeight - OUTSIDE_LABEL_GAP
-    const outward = (series === 'opened' ? -1 : 1) * (textWidth(text) / 2 + LABEL_GAP)
+    const outward = (series === 'opened' ? -1 : 1) * (labelTextWidth(text) / 2 + LABEL_GAP)
     place(label, [{ x: center, y }, { x: center + outward, y }])
   }
 
@@ -418,24 +378,21 @@ export function IssuesTrendChart({
   }, [layout, colors])
 
   const weekAxis = useMemo(() => {
-    const spansYears = points.length > 0 && points[0].week.year !== points[points.length - 1].week.year
-    const shown = labelIndices(points.length, layout.plotWidth, selectedIndex, spansYears ? YEAR_LABEL_WIDTH : undefined)
-    return [...shown].sort((a, b) => a - b).map((index) => {
-      const isSelected = index === selectedIndex
-      return (
-        <text
-          key={points[index].week.key}
-          className={isSelected ? 'qaqc-axis-text qaqc-week-axis-text is-selected' : 'qaqc-axis-text qaqc-week-axis-text'}
-          x={layout.linePoints[index].x}
-          y={height - 8}
-          textAnchor="middle"
-          fill={isSelected ? colors.ink : colors.axisText}
-        >
-          {spansYears ? shortWeekLabelWithYear(points[index].week) : shortWeekLabel(points[index].week)}
-        </text>
-      )
-    })
-  }, [points, layout, selectedIndex, height, colors])
+    const shown = labelIndices(points.length, layout.plotWidth, selectedIndex)
+    const years = yearMarkers(shown, points.map((point) => point.week))
+    return [...shown].sort((a, b) => a - b).map((index) => (
+      <WeekAxisTick
+        key={points[index].week.key}
+        week={points[index].week}
+        x={layout.linePoints[index].x}
+        plotBottom={layout.plotBottom}
+        isSelected={index === selectedIndex}
+        hasYear={years.has(index)}
+        colors={colors}
+        className="qaqc-week-axis-text"
+      />
+    ))
+  }, [points, layout, selectedIndex, colors])
 
   const hitAreas = useMemo(() => {
     function showTooltip(index: number, event: MouseEvent<SVGRectElement>): void {

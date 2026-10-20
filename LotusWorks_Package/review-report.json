@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-15T17:50:24.180Z",
+  "generatedAt": "2026-10-19T17:52:21.280Z",
   "summary": {
-    "packageCount": 37,
+    "packageCount": 39,
     "warningCount": 7,
     "errorCount": 0
   },
@@ -278,6 +278,30 @@
         "capabilities": "packages/qaqc-mechanical/capabilities.json",
         "visual": "packages/qaqc-mechanical/src/visual.ts",
         "settings": "packages/qaqc-mechanical/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "qaqc-overview",
+      "files": {
+        "package": "packages/qaqc-overview/package.json",
+        "pbiviz": "packages/qaqc-overview/pbiviz.json",
+        "capabilities": "packages/qaqc-overview/capabilities.json",
+        "visual": "packages/qaqc-overview/src/visual.ts",
+        "settings": "packages/qaqc-overview/src/settings.ts"
+      },
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "package": "qaqc-performance",
+      "files": {
+        "package": "packages/qaqc-performance/package.json",
+        "pbiviz": "packages/qaqc-performance/pbiviz.json",
+        "capabilities": "packages/qaqc-performance/capabilities.json",
+        "visual": "packages/qaqc-performance/src/visual.ts",
+        "settings": "packages/qaqc-performance/src/settings.ts"
       },
       "issueCount": 0,
       "issues": []

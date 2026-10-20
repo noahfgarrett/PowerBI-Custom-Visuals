@@ -69,7 +69,7 @@
   gap: 8px;
 }
 
-.qaqc-range-toggle {
+.qaqc-segmented {
   display: inline-flex;
   padding: 2px;
   border: 1px solid var(--qaqc-border);
@@ -77,7 +77,7 @@
   background: var(--qaqc-card-solid);
 }
 
-.qaqc-range-toggle button {
+.qaqc-segmented button {
   padding: 4px 10px;
   border: 0;
   border-radius: 7px;
@@ -90,22 +90,22 @@
   transition: background-color 150ms ease-out, color 150ms ease-out;
 }
 
-.qaqc-range-toggle button:hover:not(:disabled) {
+.qaqc-segmented button:hover:not(:disabled) {
   color: var(--qaqc-ink);
 }
 
-.qaqc-range-toggle button.is-active {
+.qaqc-segmented button.is-active {
   background: var(--qaqc-accent);
   color: var(--qaqc-on-accent);
 }
 
-.qaqc-range-toggle button:disabled,
+.qaqc-segmented button:disabled,
 .qaqc-week-picker select:disabled {
   cursor: not-allowed;
   opacity: 0.5;
 }
 
-.qaqc-range-toggle button:focus-visible,
+.qaqc-segmented button:focus-visible,
 .qaqc-chart:focus-visible {
   outline: 2px solid var(--qaqc-accent);
   outline-offset: 2px;
@@ -175,8 +175,9 @@
   box-shadow: 0 1px 2px rgba(27, 37, 48, 0.06);
 }
 
-.qaqc-kpi-group.is-week {
-  background: var(--qaqc-week-card);
+// Week and period groups keep the lighter card; project-to-date numbers always sit on the slightly darker tint.
+.qaqc-kpi-group.is-toDate {
+  background: var(--qaqc-to-date-card);
 }
 
 .qaqc-kpi-group-head {
@@ -441,6 +442,13 @@
   font-weight: 700;
 }
 
+// The year under the first week tick and the first tick of each new year. Its fill is the muted axis colour, which
+// high contrast replaces with the foreground colour.
+.qaqc-axis-year {
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+
 .qaqc-value-text {
   font-size: 10.5px;
   font-weight: 600;
@@ -457,6 +465,7 @@
 .qaqc-signed-label:not(.is-inside),
 .qaqc-baseline-label,
 .qaqc-trend-label:not(.is-inside),
+.qaqc-overview-label,
 .qaqc-open-aging-value:not(.is-inside) {
   paint-order: stroke;
   stroke: var(--qaqc-card-solid);
@@ -732,7 +741,7 @@
   padding: 6px 10px;
   border: 1px solid var(--qaqc-border);
   border-radius: 10px;
-  background: var(--qaqc-week-card);
+  background: var(--qaqc-card-solid);
 }
 
 .qaqc-summary dt {
@@ -1036,6 +1045,7 @@
 
 // Issue charts, ported from the HTML app's RangeChart, OpenAgingChart and AgingChart.
 
+// LABEL_METRICS in chartLabels.ts measures these 9.5 px bold digits for label placement; change both together.
 .qaqc-trend-label {
   font-size: 9.5px;
   font-weight: 700;
@@ -1363,32 +1373,44 @@
 // The header and at least four rows stay in view however short the tile: 164px = about 36px for the sticky header row
 // and the wrap's border + 4 × TABLE_ROW_HEIGHT (32px, hooks/useVirtualRows.ts). Three classes, so it outranks
 // .qaqc-table-wrap.is-flex-fill's min-height: 0 by specificity, not by source order.
-.qaqc-issue-detail .qaqc-table-wrap.qaqc-issue-detail-wrap {
+.qaqc-issue-detail .qaqc-table-wrap.qaqc-issue-detail-wrap,
+.qaqc-perf-person .qaqc-table-wrap.qaqc-perf-ncr-wrap {
   min-height: 164px;
 }
 
-.qaqc-issue-detail-wrap {
+.qaqc-issue-detail-wrap,
+.qaqc-perf-wrap,
+.qaqc-perf-ncr-wrap {
   overflow: auto;
   border: 1px solid var(--qaqc-border);
   border-radius: 12px;
   background: var(--qaqc-card-solid);
 }
 
-// Fixed layout: column widths and the minimum width come from IssueDetailTable's COLUMNS, so they do not shift as
-// windowed rows scroll past; narrow overlays scroll sideways rather than squeezing the title.
-.qaqc-issue-detail-table {
+// Fixed layout: column widths and the minimum width come from each table's column list (IssueDetailTable,
+// PerformanceTable, PersonDetail), so they do not shift as windowed rows scroll past; narrow overlays scroll sideways
+// rather than squeezing the flexible column.
+.qaqc-issue-detail-table,
+.qaqc-perf-table,
+.qaqc-perf-ncr-table {
   table-layout: fixed;
 }
 
-// No vertical padding: cells centre in the fixed TABLE_ROW_HEIGHT row, so the status pill never grows the row.
+// No vertical padding: cells centre in the fixed TABLE_ROW_HEIGHT row, so status pills, tag chips and trend strips
+// never grow the row.
 .qaqc-issue-detail-table td,
-.qaqc-issue-detail-table tbody th {
+.qaqc-issue-detail-table tbody th,
+.qaqc-perf-table td,
+.qaqc-perf-table tbody th,
+.qaqc-perf-ncr-table td {
   padding-top: 0;
   padding-bottom: 0;
   vertical-align: middle;
 }
 
-.qaqc-issue-detail-table tbody tr:not(.qaqc-virtual-spacer):hover > * {
+.qaqc-issue-detail-table tbody tr:not(.qaqc-virtual-spacer):hover > *,
+.qaqc-perf-row:not(.is-not-recorded):hover > *,
+.qaqc-perf-ncr-table tbody tr:not(.qaqc-virtual-spacer):hover > * {
   background: var(--qaqc-accent-soft);
 }
 
@@ -1479,6 +1501,1268 @@
 .qaqc-issue-detail-empty span {
   max-width: 46ch;
   font-size: 12px;
+}
+
+// Issue aging: the page opened from the BIM Issues header (IssueAgingPage, AgeBucketsChart, BacklogAgeChart,
+// QuarterCloseChart, AgingIssueList). The issue list slides up over the charts; the cards and controls stay above it.
+
+.qaqc-aging-page {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  // On a short tile the page scrolls, so the charts keep the minimum height below.
+  overflow-y: auto;
+}
+
+// The page and the issue list take focus only from clicks (tabIndex -1), so Esc reaches them; they draw no ring.
+.qaqc-aging-page:focus,
+.qaqc-aging-list:focus {
+  outline: none;
+}
+
+.qaqc-aging-top {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.qaqc-aging-top .qaqc-kpi-group {
+  flex: 1 1 auto;
+}
+
+.qaqc-aging-controls {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 8px;
+}
+
+.qaqc-aging-body {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  // Enough for the two small charts beside the large one; shorter tiles scroll the page.
+  min-height: 420px;
+}
+
+.qaqc-aging-charts {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+// The page sits on the solid overlay card, so its panels take a lighter shadow than the dashboard's.
+.qaqc-aging-page .qaqc-panel {
+  box-shadow: 0 1px 2px rgba(27, 37, 48, 0.06);
+}
+
+.qaqc-aging-caption {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--qaqc-ink-2);
+  font-size: 12px;
+  font-weight: 650;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qaqc-aging-caption.is-bad {
+  color: var(--qaqc-bad);
+}
+
+.qaqc-aging-caption-hint {
+  color: var(--qaqc-muted);
+  font-weight: 500;
+}
+
+.qaqc-aging-count {
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.qaqc-aging-bucket-label {
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.qaqc-aging-bucket-range {
+  font-size: 9.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.qaqc-aging-band-label {
+  font-size: 10.5px;
+  font-weight: 500;
+}
+
+.qaqc-aging-band-label.is-title {
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+// LABEL_METRICS in chartLabels.ts measures these 9.5 px bold labels for placement; change both together.
+.qaqc-aging-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+// A card-coloured halo keeps the labels readable over the lines, bars and band.
+.qaqc-aging-label,
+.qaqc-aging-count,
+.qaqc-aging-band-label {
+  paint-order: stroke;
+  stroke: var(--qaqc-card-solid);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.qaqc-aging-bucket.is-clickable {
+  cursor: pointer;
+}
+
+// A bucket draws its own outline while hovered or focused.
+.qaqc-aging-bucket:focus {
+  outline: none;
+}
+
+// The past-window card is a button that opens its issues; the hint sits at its top right.
+.qaqc-aging-card-button {
+  position: relative;
+  min-width: 0;
+  margin: -3px -6px;
+  padding: 3px 6px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 150ms ease-out;
+}
+
+.qaqc-aging-card-button:hover {
+  background: color-mix(in srgb, var(--qaqc-bad) 6%, transparent);
+}
+
+.qaqc-aging-card-button:focus-visible,
+.qaqc-aging-chip:focus-visible {
+  outline: 2px solid var(--qaqc-accent);
+  outline-offset: 1px;
+}
+
+.qaqc-aging-card-button:focus:not(:focus-visible) {
+  outline: none;
+}
+
+// The label stops short of the hint and ends in an ellipsis on narrow overlays.
+.qaqc-aging-card-button .qaqc-kpi-label {
+  padding-right: 80px;
+}
+
+.qaqc-aging-card-hint {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--qaqc-bad);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.qaqc-aging-list {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+}
+
+// Two classes, so it outranks the page's lighter panel shadow: the list floats over the charts.
+.qaqc-aging-page .qaqc-aging-list {
+  box-shadow: 0 12px 34px rgba(27, 37, 48, 0.16);
+}
+
+.qaqc-aging-list.is-animated {
+  animation: qaqc-aging-slide-up 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes qaqc-aging-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qaqc-aging-list.is-animated {
+    animation: none;
+  }
+}
+
+// On a narrow tile the chip and the note wrap onto further lines, so the title keeps its whole width.
+.qaqc-aging-list .qaqc-panel-title {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+
+.qaqc-aging-list .qaqc-panel-title h3 {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qaqc-aging-chip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  margin-left: 4px;
+  padding: 2px 8px 2px 10px;
+  border: 1px solid color-mix(in srgb, var(--qaqc-bad) 35%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--qaqc-bad) 8%, transparent);
+  color: var(--qaqc-bad);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.qaqc-aging-chip:hover {
+  background: color-mix(in srgb, var(--qaqc-bad) 14%, transparent);
+}
+
+.qaqc-panel-title .qaqc-aging-chip svg {
+  color: inherit;
+}
+
+.qaqc-aging-list-note {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-left: auto;
+  overflow: hidden;
+  color: var(--qaqc-ink-2);
+  font-size: 11.5px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qaqc-aging-list-note b {
+  color: var(--qaqc-ink);
+  font-weight: 700;
+}
+
+.qaqc-aging-list-wrap {
+  margin-top: 8px;
+}
+
+.qaqc-aging-list-table {
+  table-layout: fixed;
+}
+
+// No vertical padding: cells centre in the fixed TABLE_ROW_HEIGHT row.
+.qaqc-aging-list-table td,
+.qaqc-aging-list-table tbody th {
+  padding-top: 0;
+  padding-bottom: 0;
+  vertical-align: middle;
+}
+
+.qaqc-aging-list-table tbody tr:not(.qaqc-virtual-spacer):hover > * {
+  background: var(--qaqc-accent-soft);
+}
+
+.qaqc-aging-days {
+  font-weight: 650;
+}
+
+.qaqc-aging-days.is-bad {
+  color: var(--qaqc-bad);
+}
+
+.qaqc-aging-days.is-good {
+  color: var(--qaqc-good);
+}
+
+.qaqc-aging-list-empty {
+  height: auto;
+  padding: 24px;
+}
+
+// Narrow overlays stack the cards over the controls and the charts in one column.
+.qaqc-expanded.is-compact .qaqc-aging-top {
+  flex-direction: column;
+}
+
+.qaqc-expanded.is-compact .qaqc-aging-controls {
+  flex-direction: row;
+  justify-content: flex-start;
+}
+
+.qaqc-expanded.is-compact .qaqc-aging-body {
+  flex: 0 0 auto;
+}
+
+.qaqc-expanded.is-compact .qaqc-aging-charts {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 340px 220px 220px;
+}
+
+.qaqc-expanded.is-compact .qaqc-aging-charts .qaqc-panel-main {
+  grid-row: auto;
+}
+
+// Root cause Pareto: the page opened from the BIM Issues header (RootCauseParetoPage, ParetoChart,
+// RootCauseCategoryPanel). The chart sits over the selected bar's issues, with the category panel down the right.
+// Short tiles scroll the page, so the chart and the table keep the minimum heights below.
+
+.qaqc-pareto {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(240px, 1fr) minmax(200px, 318px);
+  gap: 10px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.qaqc-pareto.has-side {
+  grid-template-columns: minmax(0, 1fr) 286px;
+}
+
+.qaqc-pareto-chart-panel {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.qaqc-pareto-side {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  overflow-y: auto;
+}
+
+.qaqc-pareto-table {
+  grid-column: 1;
+  grid-row: 2;
+  padding-bottom: 8px;
+}
+
+// The page sits on the solid overlay card, so its panels take a lighter shadow than the dashboard's.
+.qaqc-pareto .qaqc-panel {
+  box-shadow: 0 1px 2px rgba(27, 37, 48, 0.06);
+}
+
+.qaqc-pareto-chart-panel .qaqc-panel-title {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+
+.qaqc-pareto-chart-note {
+  margin-left: 4px;
+  color: var(--qaqc-ink-2);
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.qaqc-pareto-chart-note b {
+  color: var(--qaqc-ink);
+  font-weight: 700;
+}
+
+.qaqc-pareto-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.qaqc-pareto-chart-panel .qaqc-chart-fill {
+  position: absolute;
+  inset: 0;
+}
+
+// The chart draws its own keyboard ring around the focused bar.
+.qaqc-pareto-chart:focus {
+  outline: none;
+}
+
+.qaqc-pareto-chart .qaqc-selected-band {
+  opacity: 0.09;
+}
+
+.qaqc-pareto-value {
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.qaqc-pareto-axis-label,
+.qaqc-pareto-line,
+.qaqc-pareto-line-casing,
+.qaqc-pareto-dot,
+.qaqc-pareto-target,
+.qaqc-pareto-outline,
+.qaqc-pareto-divider {
+  pointer-events: none;
+}
+
+.qaqc-pareto-chip {
+  flex: 0 0 auto;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--qaqc-accent-soft);
+  color: var(--qaqc-accent);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.qaqc-pareto-table .qaqc-panel-title h3 {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qaqc-pareto-table-note {
+  min-width: 0;
+  margin-left: auto;
+  overflow: hidden;
+  color: var(--qaqc-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qaqc-pareto-table-wrap {
+  margin-top: 6px;
+  overflow: auto;
+}
+
+.qaqc-pareto-drill-table {
+  table-layout: fixed;
+}
+
+// No vertical padding: cells centre in the fixed TABLE_ROW_HEIGHT row, so the status pills never grow it.
+.qaqc-pareto-drill-table td,
+.qaqc-pareto-drill-table tbody th {
+  padding-top: 0;
+  padding-bottom: 0;
+  vertical-align: middle;
+}
+
+.qaqc-pareto-drill-table tbody tr:not(.qaqc-virtual-spacer):hover > * {
+  background: var(--qaqc-accent-soft);
+}
+
+.qaqc-pareto-days {
+  font-weight: 650;
+}
+
+.qaqc-pareto-days.is-closed {
+  color: var(--qaqc-muted);
+  font-weight: 500;
+}
+
+// Side panel: the category strip and rows, the causes inside Other, and the read-out at the foot.
+.qaqc-pareto-side-note {
+  margin: 4px 0 10px;
+  color: var(--qaqc-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.qaqc-pareto-strip {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 2px;
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+}
+
+.qaqc-pareto-strip i {
+  flex-basis: 0;
+  min-width: 3px;
+}
+
+.qaqc-pareto-categories,
+.qaqc-pareto-other ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.qaqc-pareto-categories {
+  margin-top: 10px;
+}
+
+.qaqc-pareto-categories li {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto 46px;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--qaqc-hairline);
+  color: var(--qaqc-ink-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.qaqc-pareto-categories i {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.qaqc-pareto-categories span,
+.qaqc-pareto-other span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qaqc-pareto-categories strong,
+.qaqc-pareto-other strong {
+  color: var(--qaqc-ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.qaqc-pareto-categories em {
+  color: var(--qaqc-muted);
+  font-size: 11px;
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.qaqc-pareto-other {
+  margin-top: 14px;
+}
+
+.qaqc-pareto-other h4,
+.qaqc-pareto-readout h4 {
+  margin: 0 0 2px;
+  color: var(--qaqc-ink-2);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.qaqc-pareto-other ul {
+  margin-top: 4px;
+}
+
+.qaqc-pareto-other li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 3px 0;
+  color: var(--qaqc-ink-2);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.qaqc-pareto-other li.is-more {
+  color: var(--qaqc-muted);
+}
+
+.qaqc-pareto-readout {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--qaqc-hairline);
+}
+
+.qaqc-pareto-readout p {
+  margin: 6px 0 0;
+  color: var(--qaqc-ink-2);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.qaqc-pareto-readout b {
+  color: var(--qaqc-ink);
+}
+
+// Without the category panel, the read-out is one line under the chart.
+.qaqc-pareto-readout.is-inline {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  column-gap: 6px;
+  margin-top: 4px;
+  padding-top: 6px;
+}
+
+.qaqc-pareto-readout.is-inline p {
+  margin: 0;
+}
+
+// Narrow overlays stack the chart, the category panel and the table in one scrolling column.
+.qaqc-expanded.is-compact .qaqc-pareto,
+.qaqc-expanded.is-compact .qaqc-pareto.has-side {
+  grid-template-columns: minmax(0, 1fr);
+  // max-content: an auto row would shrink the category panel to nothing in the overflowing column.
+  grid-template-rows: 340px max-content 320px;
+}
+
+.qaqc-expanded.is-compact .qaqc-pareto-side {
+  grid-column: 1;
+  grid-row: 2;
+  overflow: visible;
+}
+
+.qaqc-expanded.is-compact .qaqc-pareto-table {
+  grid-row: 3;
+}
+
+.qaqc-expanded.is-compact .qaqc-pareto:not(.has-side) {
+  grid-template-rows: 340px 320px;
+}
+
+.qaqc-expanded.is-compact .qaqc-pareto:not(.has-side) .qaqc-pareto-table {
+  grid-row: 2;
+}
+
+// Overview charts (OverviewLinesChart behind ActivityLinesChart and QualityRatesChart), their expanded week tables,
+// and the discipline row sparklines.
+
+.qaqc-overview-line {
+  stroke-width: 2px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+// Round caps would grow each dash into its gap; the high-contrast dash keeps the legend key's 5 / 4 rhythm.
+.qaqc-overview-line[stroke-dasharray] {
+  stroke-linecap: butt;
+}
+
+.qaqc-overview-dot {
+  stroke-width: 2px;
+  pointer-events: none;
+}
+
+// LABEL_METRICS in chartLabels.ts measures these 9.5 px bold digits for label placement; change both together.
+.qaqc-overview-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.qaqc-overview-hover-guide {
+  stroke-width: 1px;
+  stroke-opacity: 0.35;
+  pointer-events: none;
+}
+
+.qaqc-sparkline {
+  display: block;
+  flex: 0 0 auto;
+  overflow: visible;
+}
+
+.qaqc-sparkline polyline {
+  stroke-width: 1.5px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+// Overview dashboard (OverviewDashboard, OverviewDisciplineRow): the discipline rows, the quality
+// strip and the two charts. Tiles at least OVERVIEW_CARDS_ONLY_HEIGHT (660 px) tall fit everything without a scroll:
+// the rows and the strip keep their natural height and the charts take the rest. Shorter tiles drop the charts, and
+// below OVERVIEW_DENSE_HEIGHT (480 px), or on narrow tiles, they switch to the dense one-line layout.
+
+// Scrolls only as a safety net, so nothing ever paints over the footnotes; the 2 px inset keeps focus rings inside.
+.qaqc-overview-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  margin: -2px;
+  padding: 2px;
+  overflow-y: auto;
+}
+
+// The compact root scrolls itself, so the body takes its content's height.
+.qaqc-root.is-compact .qaqc-overview-body {
+  flex: 0 0 auto;
+  overflow-y: visible;
+}
+
+// The rows section is a .qaqc-kpi-group (card, mode shading and head styles) laid out as one grid for all four rows: each
+// row is a subgrid, so the card columns line up and keep their widths when the mode changes. Cards 3 and 4 hold the
+// long rate details (Sign-off % and the pass and closure rates), so they are wider. At 1280 px the split leaves about
+// 13 px spare in a short column ("No change vs WW41'2026") and 15 px in a long one ("12,345 of 23,456 signed · ...").
+.qaqc-overview-rows {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: 100px minmax(0, 0.75fr) minmax(0, 0.75fr) minmax(0, 1.25fr) minmax(0, 1.25fr) 100px;
+  gap: 0 10px;
+  padding: 6px 12px 2px;
+}
+
+.qaqc-overview-rows-head {
+  grid-column: 1 / -1;
+  padding-bottom: 2px;
+}
+
+// Label, four cards, sparkline. Connected and disconnected rows share a minimum height.
+.qaqc-overview-row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: center;
+  min-height: 54px;
+  padding: 4px 0;
+  border-top: 1px solid var(--qaqc-hairline);
+}
+
+.qaqc-overview-rows-head + .qaqc-overview-row {
+  border-top: 0;
+}
+
+.qaqc-overview-row-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.qaqc-overview-row-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: var(--qaqc-accent-soft);
+  color: var(--qaqc-accent);
+}
+
+.qaqc-overview-row-name {
+  overflow: hidden;
+  color: var(--qaqc-ink);
+  font-size: 12px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// The cards sit straight in the row's subgrid.
+.qaqc-overview-row-cards {
+  display: contents;
+}
+
+// Hairlines between the cards read the row as one table line.
+.qaqc-overview-row-cards .qaqc-kpi {
+  gap: 1px;
+  padding: 1px 8px;
+  border-left: 1px solid var(--qaqc-hairline);
+}
+
+.qaqc-overview-row .qaqc-kpi-head {
+  gap: 6px;
+}
+
+.qaqc-overview-row .qaqc-kpi-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+}
+
+.qaqc-overview-body .qaqc-kpi-detail {
+  font-size: 10.5px;
+}
+
+// The counts line KpiCard draws above the change when it is given a context (the quality strip's two-line details).
+.qaqc-kpi-context {
+  overflow: hidden;
+  color: var(--qaqc-muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qaqc-overview-row-trend {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  min-width: 0;
+}
+
+.qaqc-overview-row-metric {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--qaqc-muted);
+  font-size: 10px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qaqc-overview-row-message {
+  grid-column: 2 / -1;
+  margin: 0;
+  color: var(--qaqc-muted);
+  font-size: 12px;
+  font-style: italic;
+}
+
+// The strip is one KpiGroup; this wrapper stops the group's card-count flex from growing it down the column.
+.qaqc-overview-quality {
+  display: flex;
+  flex: 0 0 auto;
+}
+
+// Smaller values than the discipline visuals so the rows and the strip leave the charts room.
+.qaqc-root .qaqc-overview-row .qaqc-kpi-value {
+  font-size: 17px;
+}
+
+.qaqc-root .qaqc-overview-quality .qaqc-kpi-value {
+  font-size: 18px;
+}
+
+// Two panels side by side in one grid row: Activity in the wider column, Quality rates in the narrower one. The
+// 180 px minimum is part of OVERVIEW_CARDS_ONLY_HEIGHT.
+.qaqc-overview-charts {
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 180px;
+}
+
+.qaqc-overview-charts .qaqc-panel-main {
+  grid-row: auto;
+}
+
+.qaqc-root.is-compact .qaqc-overview-charts {
+  grid-template-rows: 300px 240px;
+}
+
+// Compact rows with charts: the label and sparkline on one line, the cards two by two under them, so no detail is
+// cut short; a detail still too long for half the row (Past normal close window's) wraps. Dense rows (cards-only
+// tiles) keep their one-line layout.
+.qaqc-root.is-compact .qaqc-overview-rows:not(.is-dense) {
+  display: flex;
+  flex-direction: column;
+}
+
+.qaqc-root.is-compact .qaqc-overview-row:not(.is-dense) {
+  grid-template-columns: minmax(0, 1fr) auto;
+  row-gap: 6px;
+  padding: 6px 0;
+}
+
+.qaqc-root.is-compact .qaqc-overview-row:not(.is-dense) .qaqc-overview-row-cards {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-row: 2;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  row-gap: 6px;
+}
+
+.qaqc-root.is-compact .qaqc-overview-row:not(.is-dense) .qaqc-kpi:nth-child(odd) {
+  padding-left: 2px;
+  border-left: 0;
+}
+
+.qaqc-root.is-compact .qaqc-overview-row:not(.is-dense) .qaqc-kpi-detail {
+  white-space: normal;
+}
+
+.qaqc-root.is-compact .qaqc-overview-row:not(.is-dense) .qaqc-overview-row-message {
+  grid-column: 1 / -1;
+}
+
+// Compact strip: two by two like the rows, its six cards on three lines.
+.qaqc-root.is-compact .qaqc-overview-quality .qaqc-kpi-group-body {
+  grid-auto-flow: row;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 8px;
+}
+
+// Dense layout (cards-only tiles below OVERVIEW_DENSE_HEIGHT, and narrow cards-only tiles): each row is its label,
+// four values and the sparkline on one 34 px line, and the strip is its label and six values. Each value's full
+// detail is in its aria-label and title.
+.qaqc-overview-rows.is-dense {
+  // The fourth column holds the longest label, Past normal close window.
+  grid-template-columns: 100px repeat(3, minmax(0, 1fr)) minmax(0, 1.3fr) 100px;
+  padding: 4px 12px 1px;
+}
+
+.qaqc-overview-row.is-dense {
+  min-height: 34px;
+  padding: 2px 0;
+}
+
+// Also a .qaqc-kpi-group, for the card and its mode shading.
+.qaqc-overview-quality-dense {
+  display: grid;
+  flex: 1 1 auto;
+  // The two pass-rate labels are the long ones; the top root cause's name is cut short, with the full text in its title.
+  grid-template-columns: 100px minmax(0, 0.7fr) minmax(0, 0.7fr) minmax(0, 1.6fr) minmax(0, 1.45fr) minmax(0, 0.7fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: 0 10px;
+  min-height: 34px;
+  padding: 3px 12px;
+}
+
+.qaqc-overview-value {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  padding: 0 8px;
+  border-left: 1px solid var(--qaqc-hairline);
+}
+
+.qaqc-overview-value-label {
+  overflow: hidden;
+  color: var(--qaqc-muted);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qaqc-overview-value-line {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+
+.qaqc-overview-value-number {
+  overflow: hidden;
+  color: var(--qaqc-ink);
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qaqc-overview-value-number.is-bad {
+  color: var(--qaqc-bad);
+}
+
+.qaqc-overview-value-trend {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: var(--qaqc-muted);
+}
+
+.qaqc-overview-value-trend.is-good {
+  color: var(--qaqc-good);
+}
+
+.qaqc-overview-value-trend.is-warn {
+  color: var(--qaqc-warn);
+}
+
+.qaqc-overview-value-trend.is-bad {
+  color: var(--qaqc-bad);
+}
+
+// Expanded charts: the chart over its sortable week table.
+.qaqc-overview-expanded {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+}
+
+.qaqc-overview-expanded > .qaqc-chart-fill {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.qaqc-overview-expanded > .qaqc-overview-table-wrap {
+  flex: 0 0 auto;
+  height: 38%;
+  min-height: 132px;
+}
+
+// Performance: the ranking table (PerformanceTable, TrendStrip) and the person page (PersonDetail, PersonWeekChart).
+
+// The wrap, fixed layout, cell padding and row hover share the Issue Detail table rules above.
+
+.qaqc-perf-row:not(.is-not-recorded) {
+  cursor: pointer;
+}
+
+// The name button is each row's tab stop. The ring hugs the name, inside the cell padding the windowed cell clips to.
+.qaqc-perf-name:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid var(--qaqc-accent);
+  outline-offset: 1px;
+}
+
+.qaqc-perf-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.qaqc-perf-name {
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  color: var(--qaqc-ink);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qaqc-perf-row:hover .qaqc-perf-name {
+  color: var(--qaqc-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.qaqc-perf-tags {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 3px;
+}
+
+// A hairline border keeps the chip's edge in high contrast, where the soft fill becomes the background.
+.qaqc-perf-tag {
+  display: inline-grid;
+  place-items: center;
+  min-width: 17px;
+  height: 16px;
+  padding: 0 4px;
+  border: 1px solid var(--qaqc-hairline);
+  border-radius: 4px;
+  background: var(--qaqc-accent-soft);
+  color: var(--qaqc-accent);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1;
+}
+
+// The hovered row takes the chip's soft fill, so the chip switches to the card colour to keep its shape.
+.qaqc-perf-row:hover .qaqc-perf-tag {
+  background: var(--qaqc-card-solid);
+}
+
+.qaqc-perf-ncrs.is-nonzero {
+  color: var(--qaqc-bad);
+  font-weight: 650;
+}
+
+.qaqc-perf-rate {
+  font-weight: 600;
+}
+
+.qaqc-perf-rate.is-zero {
+  color: var(--qaqc-ink-2);
+  font-weight: 500;
+}
+
+.qaqc-perf-trend {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.qaqc-table .qaqc-perf-trend-head,
+.qaqc-table .qaqc-perf-trend-cell {
+  text-align: center;
+}
+
+.qaqc-table tbody .qaqc-perf-row.is-below > * {
+  color: var(--qaqc-ink-2);
+}
+
+// The indent sits on the cell, not the button, so the button's focus ring hugs the name.
+.qaqc-perf-row.is-below .qaqc-perf-name-cell {
+  padding-left: 18px;
+}
+
+.qaqc-perf-row.is-below .qaqc-perf-name {
+  color: var(--qaqc-ink-2);
+  font-weight: 500;
+}
+
+.qaqc-table tbody .qaqc-perf-disclosure-row > td {
+  border-top: 1px solid var(--qaqc-border);
+  background: var(--qaqc-card-solid);
+  color: var(--qaqc-ink-2);
+  font-size: 11.5px;
+  font-weight: 650;
+}
+
+.qaqc-perf-disclosure-row .qaqc-disclosure {
+  height: 22px;
+}
+
+// Not recorded is never ranked: a rule above it, and its name in muted italics.
+.qaqc-table tbody .qaqc-perf-row.is-not-recorded > * {
+  border-top: 1px solid var(--qaqc-border);
+  color: var(--qaqc-ink-2);
+}
+
+.qaqc-perf-not-recorded-name {
+  overflow: hidden;
+  color: var(--qaqc-muted);
+  font-style: italic;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qaqc-table td.qaqc-perf-empty {
+  padding: 28px 10px;
+  color: var(--qaqc-muted);
+  text-align: center;
+  white-space: normal;
+}
+
+.qaqc-perf-person {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  // On a short tile the page scrolls, so the chart and the table keep their minimum heights below.
+  overflow-y: auto;
+}
+
+// Two groups of three cards; they stack when the overlay is too narrow for both.
+.qaqc-perf-person-cards {
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+}
+
+.qaqc-perf-person-cards .qaqc-kpi-group {
+  min-width: 320px;
+}
+
+.qaqc-perf-person-chart {
+  flex: 0 0 auto;
+  height: 280px;
+}
+
+.qaqc-perf-source {
+  color: var(--qaqc-ink-2);
+  font-weight: 600;
+}
+
+.qaqc-perf-person-empty {
+  min-height: 140px;
+}
+
+.qaqc-perf-person-missing {
+  margin: auto;
+  color: var(--qaqc-muted);
+  font-size: 13px;
+}
+
+// LABEL_METRICS in chartLabels.ts measures these 9.5 px bold digits for label placement; change both together.
+.qaqc-perf-chart-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  paint-order: stroke;
+  stroke: var(--qaqc-card-solid);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.qaqc-perf-rate-line {
+  stroke-width: 2px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.qaqc-perf-rate-dot {
+  stroke-width: 1.5px;
+  pointer-events: none;
+}
+
+.qaqc-perf-chart-hover {
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+// Performance dashboard (PerformanceDashboard): the summary strip over the ranking table, and the static table rows
+// drawn when interactions are not allowed.
+
+// Static rows open nothing, so they drop the pointer and the hover link look; the span keeps the button's type.
+.qaqc-perf-row.is-static {
+  cursor: default;
+}
+
+.qaqc-perf-row.is-static:hover .qaqc-perf-name {
+  color: var(--qaqc-ink);
+  text-decoration: none;
+}
+
+.qaqc-perf-row.is-below.is-static:hover .qaqc-perf-name {
+  color: var(--qaqc-ink-2);
+}
+
+span.qaqc-perf-name {
+  cursor: default;
+}
+
+// The strip keeps its natural height and the table takes the rest of the tile, scrolling its own windowed rows.
+.qaqc-perf-summary .qaqc-kpi-group {
+  flex: 1 1 auto;
+}
+
+// A compact root scrolls, so the table keeps a usable height of its own instead of shrinking to its header. Its basis
+// stays 0: an auto basis would grow the wrap to every windowed row and stop the windowing.
+.qaqc-root.is-compact .qaqc-perf-wrap {
+  flex: 1 1 0;
+  min-height: 300px;
+}
+
+.qaqc-perf-empty-state {
+  min-height: 140px;
+}
+
+// Compact strip: two by two, as on the Overview, so the labels and details keep their words on narrow tiles.
+.qaqc-root.is-compact .qaqc-perf-summary .qaqc-kpi-group-body {
+  grid-auto-flow: row;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 8px;
 }
 
 // Forced colors (Windows high contrast) drop backgrounds and box shadows, so the discussion marker becomes a real

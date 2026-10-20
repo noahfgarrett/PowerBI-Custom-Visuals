@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createConstructorOptions } from '../../../core/src/__test-utils__'
 import { ELECTRICAL_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/electricalRows'
+import pbiviz from '../../pbiviz.json'
 import { QaqcElectricalVisual } from '../visual'
 import { tableDataView } from './tableDataView'
 
@@ -96,10 +97,23 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
+describe('QaqcElectricalVisual name', () => {
+  it('heads the dashboard with its QCx title', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(ELECTRICAL_ROWS)))
+    expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QCx Electrical Inspections')
+  })
+
+  it('shows its QCx name in Power BI', () => {
+    expect(pbiviz.visual.displayName).toBe('QCx Electrical Inspections')
+    expect(pbiviz.visual.description).not.toContain('QAQC')
+  })
+})
+
 describe('QaqcElectricalVisual', () => {
   it('labels the visual for assistive technology', () => {
     harness = createHarness()
-    expect(harness.element.getAttribute('aria-label')).toBe('Electrical inspections dashboard')
+    expect(harness.element.getAttribute('aria-label')).toBe('QCx electrical inspections dashboard')
   })
 
   it('lists the missing field slots before data is bound', () => {
@@ -187,7 +201,7 @@ describe('QaqcElectricalVisual', () => {
     expect(() => applyOutsideAct(target, update(tableDataView(ELECTRICAL_ROWS)))).not.toThrow()
     expect(target.events.renderingFailed).toHaveBeenCalledWith(expect.anything(), 'render boom')
     expect(target.events.renderingFinished).not.toHaveBeenCalled()
-    expect(target.element.querySelector('.qaqc-status h2')?.textContent).toBe('Could not draw the Electrical visual')
+    expect(target.element.querySelector('.qaqc-status h2')?.textContent).toBe('Could not draw the QCx Electrical visual')
   })
 
   it('recovers on the next update after a render error', () => {

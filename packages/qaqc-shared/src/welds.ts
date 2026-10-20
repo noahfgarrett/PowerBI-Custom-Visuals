@@ -20,8 +20,9 @@ import type {
   WorkWeek,
 } from './types'
 import { NAME_COLLATOR } from './format'
+import { createNameGrouper, createWeekReader, firstSpelling, groupKey } from './grouping'
 import { cellText, recentWindowStart } from './inspections'
-import { enumerateWorkWeeks, parseWorkWeek, previousWorkWeek, toIsoWorkWeek } from './workWeeks'
+import { enumerateWorkWeeks, previousWorkWeek, toIsoWorkWeek } from './workWeeks'
 
 export const SITE_GENERAL = 'Site General'
 export const UNSPECIFIED_WELD_VALUE = 'Unspecified'
@@ -62,60 +63,22 @@ interface WeekBucket {
   buildings: Map<string, WeldBuildingTally>
 }
 
-// Names that differ only by case or spacing share one tally, shown under the first spelling seen.
-interface NameGroups {
-  /** Exact spelling → display name. Few distinct spellings repeat across all rows, so most lookups end here. */
-  bySpelling: Map<string, string>
-  /** Case- and whitespace-insensitive key → display name. */
-  byKey: Map<string, string>
-}
-
-function newNameGroups(): NameGroups {
-  return { bySpelling: new Map(), byKey: new Map() }
-}
-
-/** The case- and whitespace-insensitive key that names are grouped by. */
-function groupKey(name: string): string {
-  return name.toLowerCase().replace(/\s+/g, ' ')
-}
-
-function groupName(spelling: string, groups: NameGroups): string {
-  const known = groups.bySpelling.get(spelling)
-  if (known !== undefined) return known
-  const key = groupKey(spelling)
-  const name = groups.byKey.get(key) ?? spelling
-  groups.byKey.set(key, name)
-  groups.bySpelling.set(spelling, name)
-  return name
-}
-
-// Work-week text repeats heavily (a few hundred distinct values across hundreds of thousands of rows),
-// so parsing is cached by the raw text.
-function readWeek(value: unknown, cache: Map<string, WorkWeek | null>): WorkWeek | null {
-  if (typeof value !== 'string' && typeof value !== 'number') return parseWorkWeek(value)
-  const text = String(value)
-  const cached = cache.get(text)
-  if (cached !== undefined) return cached
-  const parsed = parseWorkWeek(text)
-  cache.set(text, parsed)
-  return parsed
-}
-
 export function buildWeldIndex(rows: InspectionRows, columns: WeldColumns, today: Date): WeldIndex {
   const currentWeek = toIsoWorkWeek(today)
-  const weekCache = new Map<string, WorkWeek | null>()
+  const readWeek = createWeekReader()
   const buckets = new Map<number, WeekBucket>()
   // Signed welds counted by the week QAQC signed them. Weeks outside the index range are never read back.
   const signedByWeek = new Map<number, number>()
-  const systemNames = newNameGroups()
-  const specNames = newNameGroups()
-  const buildingNames = newNameGroups()
+  // Names that differ only by case or spacing share one tally, shown under the first spelling seen.
+  const systemName = createNameGrouper(firstSpelling)
+  const specName = createNameGrouper(firstSpelling)
+  const buildingName = createNameGrouper(firstSpelling)
   let skippedRows = 0
   let futureRows = 0
   let firstWeek: WorkWeek | null = null
 
   for (const row of rows) {
-    const week = readWeek(row[columns.weldWeek], weekCache)
+    const week = readWeek(row[columns.weldWeek])
     if (!week) {
       skippedRows += 1
       continue
@@ -134,9 +97,9 @@ export function buildWeldIndex(rows: InspectionRows, columns: WeldColumns, today
     }
 
     const isSigned = isWeldSigned(row[columns.signature])
-    const system = groupName(normalizeSystem(row[columns.fluidCode]), systemNames)
-    const spec = groupName(normalizePipeSpec(row[columns.pipeSpec]), specNames)
-    const building = groupName(weldBuilding(row[columns.tagNo]), buildingNames)
+    const system = systemName(normalizeSystem(row[columns.fluidCode]))
+    const spec = specName(normalizePipeSpec(row[columns.pipeSpec]))
+    const building = buildingName(weldBuilding(row[columns.tagNo]))
 
     let systemTally = bucket.systems.get(system)
     if (!systemTally) {
@@ -167,7 +130,7 @@ export function buildWeldIndex(rows: InspectionRows, columns: WeldColumns, today
       systemTally.signed += 1
       specTally.signed += 1
       // A signed weld whose signed week is unreadable or in the future still counts as signed, just not in a week.
-      const signedWeek = readWeek(row[columns.signedWeek], weekCache)
+      const signedWeek = readWeek(row[columns.signedWeek])
       if (signedWeek && signedWeek.key <= currentWeek.key) {
         signedByWeek.set(signedWeek.key, (signedByWeek.get(signedWeek.key) ?? 0) + 1)
       }
@@ -225,14 +188,14 @@ function deltaMetric(value: number, previous: number): DeltaMetric {
   return { value, delta: value - previous }
 }
 
-function overallRateAt(index: WeldIndex, position: number): number | null {
+export function overallRateAt(index: WeldIndex, position: number): number | null {
   if (position < 0) return null
   const logged = index.cumulativeLogged[position]
   return logged === 0 ? null : (index.cumulativeSigned[position] / logged) * 100
 }
 
-/** Sign-off for the latest weld week at or before the position that has welds. */
-function latestSignoff(index: WeldIndex, position: number): SignoffSummary | null {
+/** Sign-off for the latest weld week at or before the position that has welds, or null when none does (or the position is −1). */
+export function latestSignoff(index: WeldIndex, position: number): SignoffSummary | null {
   for (let cursor = position; cursor >= 0; cursor -= 1) {
     const counts = index.weeks[cursor]
     if (counts.logged > 0) {

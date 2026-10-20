@@ -1,10 +1,10 @@
 {
   "visual": {
     "name": "qaqcIssues",
-    "displayName": "QAQC BIM Issues",
+    "displayName": "QCx BIM Issues",
     "guid": "qaqcIssues_1999F247C7D6",
     "visualClassName": "QaqcIssuesVisual",
-    "version": "1.0.0.0",
+    "version": "1.1.0.0",
     "description": "BIM Issues Log: opened vs closed by work week, open and overall issue aging, and an Issue Detail table.",
     "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
     "gitHubUrl": "https://github.com/noahgarrett/PowerBI"

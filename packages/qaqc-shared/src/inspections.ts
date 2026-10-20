@@ -14,7 +14,8 @@ import type {
   WorkWeek,
 } from './types'
 import { NAME_COLLATOR } from './format'
-import { enumerateWorkWeeks, parseWorkWeek, previousWorkWeek, toIsoWorkWeek } from './workWeeks'
+import { createNameGrouper, createWeekReader, firstSpelling } from './grouping'
+import { enumerateWorkWeeks, previousWorkWeek, toIsoWorkWeek } from './workWeeks'
 
 export const UNSPECIFIED_BUILDING = 'Unspecified'
 const NO_ISSUE = 'no issue found'
@@ -59,19 +60,8 @@ interface WeekBucket {
   buildings: Map<string, BuildingTally>
 }
 
-// Work-week and phase text repeat heavily (a few hundred distinct values across
-// hundreds of thousands of rows), so parsing is cached by the raw text.
-function readWeek(value: unknown, cache: Map<string, WorkWeek | null>): WorkWeek | null {
-  if (typeof value !== 'string' && typeof value !== 'number') return parseWorkWeek(value)
-  const text = String(value)
-  const cached = cache.get(text)
-  if (cached !== undefined) return cached
-  const parsed = parseWorkWeek(text)
-  cache.set(text, parsed)
-  return parsed
-}
-
-function readPhase(value: unknown, cache: Map<string, InspectionPhase>): InspectionPhase {
+/** `classifyPhase`, cached by the raw text: phase text repeats heavily across hundreds of thousands of rows. */
+export function readPhase(value: unknown, cache: Map<string, InspectionPhase>): InspectionPhase {
   if (typeof value !== 'string') return classifyPhase(value)
   const cached = cache.get(value)
   if (cached !== undefined) return cached
@@ -86,11 +76,11 @@ export function buildInspectionIndex(
   today: Date,
 ): InspectionIndex {
   const currentWeek = toIsoWorkWeek(today)
-  const weekCache = new Map<string, WorkWeek | null>()
+  const readWeek = createWeekReader()
   const phaseCache = new Map<string, InspectionPhase>()
   const buckets = new Map<number, WeekBucket>()
   // Buildings that differ only by case or spacing share one tally, shown under the first spelling seen.
-  const buildingNames = new Map<string, string>()
+  const buildingName = createNameGrouper(firstSpelling)
   let skippedRows = 0
   let futureRows = 0
   let firstWeek: WorkWeek | null = null
@@ -99,7 +89,7 @@ export function buildInspectionIndex(
     const phase = readPhase(row[columns.phase], phaseCache)
     if (phase === 'other') continue
 
-    const week = readWeek(row[columns.workWeek], weekCache)
+    const week = readWeek(row[columns.workWeek])
     if (!week) {
       skippedRows += 1
       continue
@@ -116,10 +106,7 @@ export function buildInspectionIndex(
       bucket = { finals: 0, sors: 0, issuesFound: 0, buildings: new Map() }
       buckets.set(week.key, bucket)
     }
-    const spelling = normalizeBuilding(row[columns.building])
-    const buildingKey = spelling.toLowerCase().replace(/\s+/g, ' ')
-    const building = buildingNames.get(buildingKey) ?? spelling
-    buildingNames.set(buildingKey, building)
+    const building = buildingName(normalizeBuilding(row[columns.building]))
     let tally = bucket.buildings.get(building)
     if (!tally) {
       tally = { finals: 0, sors: 0 }
@@ -186,7 +173,7 @@ function deltaMetric(value: number, previous: number): DeltaMetric {
   return { value, delta: value - previous }
 }
 
-function passRateAt(index: InspectionIndex, position: number): number | null {
+export function passRateAt(index: InspectionIndex, position: number): number | null {
   if (position < 0) return null
   const finals = index.cumulativeFinals[position]
   if (finals === 0) return null
