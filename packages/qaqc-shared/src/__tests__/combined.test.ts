@@ -94,7 +94,16 @@ describe('column mapping helpers', () => {
       createdBy: 15,
       rootCause: 16,
       rootCauseCategory: -1,
+      bim360CreatedBy: -1,
+      bim360CreatedOn: -1,
+      bim360ClosedOn: -1,
+      closedAt: -1,
     })
+  })
+
+  it('maps the enrichment columns when the Overview binds them', () => {
+    const columns = issueColumnsOf({ ...COLUMNS, bim360CreatedBy: 18, bim360CreatedOn: 19, bim360ClosedOn: 20, closedAt: 21 })
+    expect([columns.bim360CreatedBy, columns.bim360CreatedOn, columns.bim360ClosedOn, columns.closedAt]).toEqual([18, 19, 20, 21])
   })
 
   it('leaves Root Cause unbound when the Overview has no Root Cause slot', () => {
@@ -102,7 +111,10 @@ describe('column mapping helpers', () => {
   })
 })
 
-const ROLES: ReadonlyArray<keyof CombinedColumns> = [
+/** The combined columns every row carries; the optional enrichment columns are left out. */
+type CombinedRole = Exclude<keyof CombinedColumns, 'bim360CreatedBy' | 'bim360CreatedOn' | 'bim360ClosedOn' | 'closedAt'>
+
+const ROLES: ReadonlyArray<CombinedRole> = [
   'source',
   'workWeek',
   'phase',
@@ -123,7 +135,7 @@ const ROLES: ReadonlyArray<keyof CombinedColumns> = [
   'greenTags',
 ]
 
-function combinedRow(values: Partial<Record<keyof CombinedColumns, string>>): Array<string | null> {
+function combinedRow(values: Partial<Record<CombinedRole, string>>): Array<string | null> {
   const row = new Array<string | null>(ROLES.length).fill(null)
   for (const role of ROLES) {
     const value = values[role]
@@ -175,5 +187,66 @@ describe('builders read absent columns (−1) as blank cells', () => {
       ['#1019', 'Installation', ''],
       ['#1018', '', ''],
     ])
+  })
+})
+
+describe('BIM rows from the enriched Autodesk export', () => {
+  // The combined columns with the four enrichment columns appended after Green tags.
+  const BIM360_CREATED_BY = 18
+  const BIM360_CREATED_ON = 19
+  const BIM360_CLOSED_ON = 20
+  const CLOSED_AT = 21
+  const ENRICHED: CombinedColumns = {
+    ...COLUMNS,
+    bim360CreatedBy: BIM360_CREATED_BY,
+    bim360CreatedOn: BIM360_CREATED_ON,
+    bim360ClosedOn: BIM360_CLOSED_ON,
+    closedAt: CLOSED_AT,
+  }
+
+  interface Legacy {
+    createdBy: string
+    createdOn: string
+    closedOn: string
+  }
+
+  function bimRow(id: string, status: string, createdBy: string, legacy: Legacy | null, closedAt: string | null): Array<string | null> {
+    const row = new Array<string | null>(CLOSED_AT + 1).fill(null)
+    row[ENRICHED.source] = 'BIM'
+    row[ENRICHED.id] = id
+    row[ENRICHED.status] = status
+    row[ENRICHED.type] = 'COR'
+    // Autodesk's migration date on every migrated issue.
+    row[ENRICHED.createdOn] = '7/27/2026'
+    row[ENRICHED.updatedOn] = '7/27/2026'
+    row[ENRICHED.createdBy] = createdBy
+    row[BIM360_CREATED_BY] = legacy?.createdBy ?? null
+    row[BIM360_CREATED_ON] = legacy?.createdOn ?? null
+    row[BIM360_CLOSED_ON] = legacy?.closedOn ?? null
+    row[CLOSED_AT] = closedAt
+    return row
+  }
+
+  const rows = [
+    bimRow('#1', 'Closed', 'Migration / Autodesk', { createdBy: 'LotusWorks', createdOn: '10/15/22 3:45 PM', closedOn: '11/2/22 9:10 AM' }, '7/27/2026'),
+    bimRow('#2', 'Closed', 'Migration / Autodesk', { createdBy: 'Other', createdOn: '10/20/22 8:00 AM', closedOn: '11/3/22 1:00 PM' }, '7/27/2026'),
+    bimRow('#3', 'Closed', 'LotusWorks', null, '10/6/2026'),
+    bimRow('#4', 'Open', 'Other', null, null),
+  ]
+  const split = splitCombinedRows(rows, ENRICHED.source)
+  const index = buildIssueIndex(split.bim, issueColumnsOf(ENRICHED), TODAY)
+
+  it('includes migrated issues by their BIM360 creator and native ones by Created By', () => {
+    expect(index.issues.map((issue) => issue.id).sort()).toEqual(['#1', '#3'])
+    expect(index.excludedRows).toBe(2)
+  })
+
+  it('dates a migrated issue by its BIM360 dates, not the migration date', () => {
+    const migrated = index.issues.find((issue) => issue.id === '#1')
+    expect([migrated?.createdWeek.label, migrated?.closedWeek?.label]).toEqual(["WW41'2022", "WW44'2022"])
+  })
+
+  it('closes a native issue on its Closed At date', () => {
+    expect(index.issues.find((issue) => issue.id === '#3')?.closedWeek?.label).toBe("WW41'2026")
   })
 })

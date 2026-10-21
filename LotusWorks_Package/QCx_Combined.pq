@@ -4,7 +4,7 @@ let
     ElectricalSource = #"Electrical_Inspection_Log",
     MechanicalSource = #"Mechanical_Process_Inspection_Log",
     WeldingSource = #"Welding_Inspections_Signoffs",
-    BimSource = #"BIM Issues Log",
+    BimSource = #"Issues",
 
     // ---- Electrical ----
     ElectricalSelected = Table.SelectColumns(
@@ -49,21 +49,36 @@ let
     ),
     Welding = Table.AddColumn(WeldingRenamed, "Source", each "Welding", type text),
 
-    // ---- BIM Issues ----
+    // ---- BIM Issues (the enriched Autodesk export) ----
+    // Names are spelled exactly as the export spells them; Power Query matches column names case-sensitively.
     // The required columns: the refresh fails here if one of them is missing.
     BimRequired = Table.SelectColumns(
         BimSource,
-        {"ID", "Status", "Type", "Created On", "Updated On", "Created By"},
+        {"ID", "Status", "Type", "Created on", "Updated on", "Created by"},
         MissingField.Error
     ),
-    // Root Cause is optional: a sheet without it still loads, with Root Cause empty (null) on its rows.
+    // Root cause and the four enrichment columns are optional: a source without one still loads,
+    // with that column empty (null) on its rows.
     BimSelected = Table.SelectColumns(
         BimSource,
-        Table.ColumnNames(BimRequired) & {"Root Cause"},
+        Table.ColumnNames(BimRequired)
+            & {"Root cause", "BIM360_Created By", "BIM360_Created On", "BIM360_Closed On", "Closed at"},
         MissingField.UseNull
     ),
-    // The BIM column names already match the combined table, so there is nothing to rename.
-    Bim = Table.AddColumn(BimSelected, "Source", each "BIM", type text),
+    BimRenamed = Table.RenameColumns(
+        BimSelected,
+        {
+            {"Created on", "Created On"},
+            {"Updated on", "Updated On"},
+            {"Created by", "Created By"},
+            {"Root cause", "Root Cause"},
+            {"BIM360_Created By", "BIM360 Created By"},
+            {"BIM360_Created On", "BIM360 Created On"},
+            {"BIM360_Closed On", "BIM360 Closed On"},
+            {"Closed at", "Closed At"}
+        }
+    ),
+    Bim = Table.AddColumn(BimRenamed, "Source", each "BIM", type text),
 
     // ---- Append the four. Columns a source doesn't have are null on its rows. ----
     Combined = Table.Combine({Electrical, Mechanical, Welding, Bim}),
@@ -87,7 +102,12 @@ let
             {"Created On", type date},
             {"Updated On", type date},
             {"Created By", type text},
-            {"Root Cause", type text}
+            {"Root Cause", type text},
+            // The BIM360 dates stay text, such as 10/15/22 3:45 PM; the visuals read the date part.
+            {"BIM360 Created By", type text},
+            {"BIM360 Created On", type text},
+            {"BIM360 Closed On", type text},
+            {"Closed At", type date}
         }
     ),
 
@@ -114,7 +134,11 @@ let
             "Created On",
             "Updated On",
             "Created By",
-            "Root Cause"
+            "Root Cause",
+            "BIM360 Created By",
+            "BIM360 Created On",
+            "BIM360 Closed On",
+            "Closed At"
         }
     )
 in

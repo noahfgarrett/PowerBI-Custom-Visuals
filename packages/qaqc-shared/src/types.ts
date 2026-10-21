@@ -300,7 +300,10 @@ export interface IssueColumns {
   closedAt?: number
 }
 
-/** Column positions of each QCx Combined field slot inside a table row, or −1 when the slot isn't bound. */
+/**
+ * Column positions of each QCx Combined field slot inside a table row, or −1 when the slot isn't bound. The four
+ * enrichment columns carry the enriched Autodesk export's BIM360 values and Closed At; each is −1, or absent, when unbound.
+ */
 export interface CombinedColumns {
   source: number
   workWeek: number
@@ -320,6 +323,10 @@ export interface CombinedColumns {
   createdBy: number
   rootCause: number
   greenTags: number
+  bim360CreatedBy?: number
+  bim360CreatedOn?: number
+  bim360ClosedOn?: number
+  closedAt?: number
 }
 
 export type IssueStatusKind = 'open' | 'pending' | 'closed' | 'void'

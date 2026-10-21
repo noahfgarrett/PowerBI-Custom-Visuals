@@ -71,10 +71,15 @@ describe('QAQC Combined fixture (2026-10-14 exports)', () => {
     )
   })
 
-  it('appends Root Cause as the last column, carrying the BIM Root Cause', () => {
-    expect(COMBINED_COLUMNS[COMBINED_COLUMNS.length - 1]).toBe('Root Cause')
+  it('carries the BIM Root Cause in its Root Cause column', () => {
     expect(COMBINED_ROWS.every((row) => row.length === COMBINED_COLUMNS.length)).toBe(true)
     expect(pick(split.bim, [COLUMNS.rootCause])).toEqual(pick(ISSUE_ROWS, [9]))
+  })
+
+  it('ends with the four enrichment columns, null on every row since the BIM rows come from the Smartsheet log', () => {
+    expect(COMBINED_COLUMNS.slice(-5)).toEqual(['Root Cause', 'BIM360 Created By', 'BIM360 Created On', 'BIM360 Closed On', 'Closed At'])
+    const enrichment = COMBINED_COLUMNS.length - 4
+    expect(COMBINED_ROWS.every((row) => row.slice(enrichment).every((cell) => cell === null))).toBe(true)
   })
 
   it('holds only pseudonyms or Not recorded values in QCR/FE', () => {

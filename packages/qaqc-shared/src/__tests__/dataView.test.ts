@@ -312,6 +312,10 @@ type CombinedRole =
   | 'updatedOn'
   | 'createdBy'
   | 'rootCause'
+  | 'bim360CreatedBy'
+  | 'bim360CreatedOn'
+  | 'bim360ClosedOn'
+  | 'closedAt'
   | 'greenTags'
 
 const OVERVIEW_ROLES: CombinedRole[] = [
@@ -330,9 +334,13 @@ const OVERVIEW_ROLES: CombinedRole[] = [
   'updatedOn',
   'createdBy',
   'rootCause',
+  'bim360CreatedBy',
+  'bim360CreatedOn',
+  'bim360ClosedOn',
+  'closedAt',
   'greenTags',
 ]
-const OPTIONAL_OVERVIEW_ROLES: CombinedRole[] = ['rootCause', 'greenTags']
+const OPTIONAL_OVERVIEW_ROLES: CombinedRole[] = ['rootCause', 'bim360CreatedBy', 'bim360CreatedOn', 'bim360ClosedOn', 'closedAt', 'greenTags']
 const PERFORMANCE_ROLES: CombinedRole[] = ['source', 'rowId', 'workWeek', 'phase', 'issue', 'building', 'qcr', 'welder', 'tagNo']
 
 function combinedTable(roles: CombinedRole[]): InspectionTableSource {
@@ -360,6 +368,10 @@ describe('OVERVIEW_SLOTS and PERFORMANCE_SLOTS', () => {
       ['updatedOn', 'Updated On', 'Updated On'],
       ['createdBy', 'Created By', 'Created By'],
       ['rootCause', 'Root Cause', 'Root Cause'],
+      ['bim360CreatedBy', 'BIM360 Created By', 'BIM360 Created By'],
+      ['bim360CreatedOn', 'BIM360 Created On', 'BIM360 Created On'],
+      ['bim360ClosedOn', 'BIM360 Closed On', 'BIM360 Closed On'],
+      ['closedAt', 'Closed At', 'Closed At'],
       ['greenTags', 'Green tags', 'Green tags measure'],
     ])
   })
@@ -380,7 +392,7 @@ describe('OVERVIEW_SLOTS and PERFORMANCE_SLOTS', () => {
 })
 
 describe('readCombinedTable', () => {
-  it('reports every required Overview slot, but not Root Cause or Green tags, when there is no data view', () => {
+  it('reports every required Overview slot, but not Root Cause, the enrichment slots or Green tags, when there is no data view', () => {
     const result = readCombinedTable(undefined, OVERVIEW_SLOTS)
     expect(result.kind).toBe('missing')
     if (result.kind === 'missing') {
@@ -421,23 +433,27 @@ describe('readCombinedTable', () => {
     expect(result.kind).toBe('ready')
     if (result.kind === 'ready') {
       expect(result.columns).toEqual({
-        source: 15,
-        workWeek: 13,
-        phase: 12,
-        issue: 11,
-        building: 10,
+        source: 19,
+        workWeek: 17,
+        phase: 16,
+        issue: 15,
+        building: 14,
         qcr: -1,
         welder: -1,
         tagNo: -1,
-        signature: 9,
-        signedWeek: 8,
-        id: 7,
-        status: 6,
-        type: 5,
-        createdOn: 4,
-        updatedOn: 3,
-        createdBy: 2,
-        rootCause: 1,
+        signature: 13,
+        signedWeek: 12,
+        id: 11,
+        status: 10,
+        type: 9,
+        createdOn: 8,
+        updatedOn: 7,
+        createdBy: 6,
+        rootCause: 5,
+        bim360CreatedBy: 4,
+        bim360CreatedOn: 3,
+        bim360ClosedOn: 2,
+        closedAt: 1,
         greenTags: 0,
       })
       expect(result.rows[0][result.columns.source]).toBe('source')
@@ -466,6 +482,10 @@ describe('readCombinedTable', () => {
         updatedOn: -1,
         createdBy: -1,
         rootCause: -1,
+        bim360CreatedBy: -1,
+        bim360CreatedOn: -1,
+        bim360ClosedOn: -1,
+        closedAt: -1,
         greenTags: -1,
       })
     }
@@ -475,6 +495,16 @@ describe('readCombinedTable', () => {
     const result = readCombinedTable(combinedTable(OVERVIEW_ROLES.filter((role) => role !== 'rootCause')), OVERVIEW_SLOTS)
     expect(result.kind).toBe('ready')
     if (result.kind === 'ready') expect(result.columns.rootCause).toBe(-1)
+  })
+
+  it('is ready without the optional enrichment slots and reports them at −1', () => {
+    const enrichment: CombinedRole[] = ['bim360CreatedBy', 'bim360CreatedOn', 'bim360ClosedOn', 'closedAt']
+    const result = readCombinedTable(combinedTable(OVERVIEW_ROLES.filter((role) => !enrichment.includes(role))), OVERVIEW_SLOTS)
+    expect(result.kind).toBe('ready')
+    if (result.kind === 'ready') {
+      const { bim360CreatedBy, bim360CreatedOn, bim360ClosedOn, closedAt } = result.columns
+      expect([bim360CreatedBy, bim360CreatedOn, bim360ClosedOn, closedAt]).toEqual([-1, -1, -1, -1])
+    }
   })
 
   it('is ready without the optional Green tags slot and reports it at −1', () => {

@@ -188,6 +188,10 @@ export const OVERVIEW_SLOTS: readonly CombinedFieldSlot[] = [
   { role: 'updatedOn', slot: 'Updated On', column: 'Updated On' },
   { role: 'createdBy', slot: 'Created By', column: 'Created By' },
   { role: 'rootCause', slot: 'Root Cause', column: 'Root Cause' },
+  { role: 'bim360CreatedBy', slot: 'BIM360 Created By', column: 'BIM360 Created By' },
+  { role: 'bim360CreatedOn', slot: 'BIM360 Created On', column: 'BIM360 Created On' },
+  { role: 'bim360ClosedOn', slot: 'BIM360 Closed On', column: 'BIM360 Closed On' },
+  { role: 'closedAt', slot: 'Closed At', column: 'Closed At' },
   { role: 'greenTags', slot: 'Green tags', column: 'Green tags measure' },
 ]
 
@@ -206,8 +210,17 @@ export const PERFORMANCE_SLOTS: readonly CombinedFieldSlot[] = [
 /**
  * Green tags is a measure the user may leave out; without it the DWN rate shows n/a.
  * Root Cause only feeds the Top root cause card, which asks for it when unbound.
+ * The enrichment columns only matter for issues migrated from BIM 360; without them every issue reads its standard
+ * Created By and dates.
  */
-export const OPTIONAL_COMBINED_ROLES: ReadonlySet<CombinedSlotRole> = new Set<CombinedSlotRole>(['rootCause', 'greenTags'])
+export const OPTIONAL_COMBINED_ROLES: ReadonlySet<CombinedSlotRole> = new Set<CombinedSlotRole>([
+  'rootCause',
+  'bim360CreatedBy',
+  'bim360CreatedOn',
+  'bim360ClosedOn',
+  'closedAt',
+  'greenTags',
+])
 
 export type CombinedTableReadResult =
   | { kind: 'missing'; missing: CombinedFieldSlot[] }
@@ -222,7 +235,7 @@ export function readCombinedTable(
   if (!table) return { kind: 'missing', missing: required }
 
   const positionOf = (role: string): number => table.columns.findIndex((column) => column.roles?.[role] === true)
-  const columns: CombinedColumns = {
+  const columns: Required<CombinedColumns> = {
     source: positionOf('source'),
     workWeek: positionOf('workWeek'),
     phase: positionOf('phase'),
@@ -241,6 +254,10 @@ export function readCombinedTable(
     createdBy: positionOf('createdBy'),
     rootCause: positionOf('rootCause'),
     greenTags: positionOf('greenTags'),
+    bim360CreatedBy: positionOf('bim360CreatedBy'),
+    bim360CreatedOn: positionOf('bim360CreatedOn'),
+    bim360ClosedOn: positionOf('bim360ClosedOn'),
+    closedAt: positionOf('closedAt'),
   }
   const positions: Record<CombinedSlotRole, number> = { ...columns, rowId: positionOf('rowId') }
   const missing = required.filter((slot) => positions[slot.role] < 0)
