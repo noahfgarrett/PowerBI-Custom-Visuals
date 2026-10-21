@@ -123,13 +123,20 @@ type IssueRole =
   | 'createdBy'
   | 'rootCause'
   | 'rootCauseCategory'
+  | 'bim360CreatedBy'
+  | 'bim360CreatedOn'
+  | 'bim360ClosedOn'
+  | 'closedAt'
 const REQUIRED_ISSUE_ROLES: IssueRole[] = ['id', 'title', 'status', 'type', 'contractor', 'createdOn', 'updatedOn', 'dueDate', 'createdBy']
 const ALL_ISSUE_ROLES: IssueRole[] = [...REQUIRED_ISSUE_ROLES, 'rootCause', 'rootCauseCategory']
+const ENRICHMENT_ISSUE_ROLES: IssueRole[] = ['bim360CreatedBy', 'bim360CreatedOn', 'bim360ClosedOn', 'closedAt']
+/** Each ISSUE_ROW cell's role. */
+const ISSUE_ROW_ROLES: IssueRole[] = [...ALL_ISSUE_ROLES, ...ENRICHMENT_ISSUE_ROLES]
 
 function issueTable(rows: ReadonlyArray<ReadonlyArray<unknown>>, roles: IssueRole[] = ALL_ISSUE_ROLES): InspectionTableSource {
   return {
     columns: roles.map((role) => ({ roles: { [role]: true } })),
-    rows: rows.map((row) => roles.map((role) => row[ALL_ISSUE_ROLES.indexOf(role)])),
+    rows: rows.map((row) => roles.map((role) => row[ISSUE_ROW_ROLES.indexOf(role)])),
   }
 }
 
@@ -145,10 +152,14 @@ const ISSUE_ROW = [
   'LotusWorks',
   'Installation',
   'Quality',
+  'LotusWorks',
+  '7/24/26 4:27 PM',
+  '7/27/26 5:10 PM',
+  null,
 ]
 
 describe('ISSUE_SLOTS', () => {
-  it('ends with the optional Root Cause and Root Cause Category slots, after the required ones', () => {
+  it('follows the required slots with the optional Root Cause slots, then the optional enrichment slots', () => {
     expect(ISSUE_SLOTS.map((slot) => [slot.role, slot.slot, slot.column])).toEqual([
       ['id', 'ID', 'ID'],
       ['title', 'Title', 'Title'],
@@ -161,6 +172,10 @@ describe('ISSUE_SLOTS', () => {
       ['createdBy', 'Created By', 'Created By'],
       ['rootCause', 'Root Cause', 'Root Cause'],
       ['rootCauseCategory', 'Root Cause Category', 'Root Cause Category'],
+      ['bim360CreatedBy', 'BIM360 Created By', 'BIM360_Created By'],
+      ['bim360CreatedOn', 'BIM360 Created On', 'BIM360_Created On'],
+      ['bim360ClosedOn', 'BIM360 Closed On', 'BIM360_Closed On'],
+      ['closedAt', 'Closed At', 'Closed at'],
     ])
   })
 })
@@ -212,6 +227,10 @@ describe('readIssueTable', () => {
         createdBy: 2,
         rootCause: 1,
         rootCauseCategory: 0,
+        bim360CreatedBy: -1,
+        bim360CreatedOn: -1,
+        bim360ClosedOn: -1,
+        closedAt: -1,
       })
       expect(result.rows[0][result.columns.id]).toBe('#1020')
       expect(result.rows[0][result.columns.rootCause]).toBe('Installation')
@@ -233,6 +252,22 @@ describe('readIssueTable', () => {
     if (result.kind === 'missing') {
       expect(result.missing.map((slot) => slot.role)).toEqual(['status', 'type', 'contractor', 'createdOn', 'updatedOn', 'dueDate', 'createdBy'])
     }
+  })
+
+  it('reads the enrichment slots when they are bound', () => {
+    const result = readIssueTable(issueTable([ISSUE_ROW], [...REQUIRED_ISSUE_ROLES, ...ENRICHMENT_ISSUE_ROLES]))
+    expect(result.kind).toBe('ready')
+    if (result.kind === 'ready') {
+      expect([result.columns.bim360CreatedBy, result.columns.bim360CreatedOn, result.columns.bim360ClosedOn, result.columns.closedAt])
+        .toEqual([9, 10, 11, 12])
+      expect(result.rows[0][result.columns.bim360CreatedOn ?? -1]).toBe('7/24/26 4:27 PM')
+    }
+  })
+
+  it('never names the enrichment slots as missing', () => {
+    const result = readIssueTable(issueTable([ISSUE_ROW], REQUIRED_ISSUE_ROLES.filter((role) => role !== 'id')))
+    expect(result.kind).toBe('missing')
+    if (result.kind === 'missing') expect(result.missing.map((slot) => slot.role)).toEqual(['id'])
   })
 
   it('reads Root Cause without Root Cause Category', () => {
