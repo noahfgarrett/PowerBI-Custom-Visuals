@@ -274,7 +274,10 @@ export interface WeldModel {
   hasData: boolean
 }
 
-/** Column positions of each BIM issue field slot inside a table row. The Root Cause slots are optional: −1 when unbound. */
+/**
+ * Column positions of each BIM issue field slot inside a table row. The Root Cause slots are optional: −1 when unbound.
+ * The four enrichment slots carry the enriched Autodesk export's migration columns; each is −1, or absent, when unbound.
+ */
 export interface IssueColumns {
   id: number
   title: number
@@ -287,9 +290,20 @@ export interface IssueColumns {
   createdBy: number
   rootCause: number
   rootCauseCategory: number
+  /** BIM360_Created By: the real creator of an issue migrated from BIM 360. */
+  bim360CreatedBy?: number
+  /** BIM360_Created On: the real created date of a migrated issue. */
+  bim360CreatedOn?: number
+  /** BIM360_Closed On: the real closed date of a migrated issue. */
+  bim360ClosedOn?: number
+  /** Closed at: Autodesk's own closed date, used before Updated on. */
+  closedAt?: number
 }
 
-/** Column positions of each QCx Combined field slot inside a table row, or −1 when the slot isn't bound. */
+/**
+ * Column positions of each QCx Combined field slot inside a table row, or −1 when the slot isn't bound. The four
+ * enrichment columns carry the enriched Autodesk export's BIM360 values and Closed At; each is −1, or absent, when unbound.
+ */
 export interface CombinedColumns {
   source: number
   workWeek: number
@@ -309,6 +323,10 @@ export interface CombinedColumns {
   createdBy: number
   rootCause: number
   greenTags: number
+  bim360CreatedBy?: number
+  bim360CreatedOn?: number
+  bim360ClosedOn?: number
+  closedAt?: number
 }
 
 export type IssueStatusKind = 'open' | 'pending' | 'closed' | 'void'

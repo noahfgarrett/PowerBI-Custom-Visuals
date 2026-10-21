@@ -2,21 +2,23 @@
 
 One page with Electrical, Mechanical, Welding and BIM Issues side by side, a quality strip, and two charts. Its numbers match the four discipline visuals for the same week.
 
+**Version 1.2.0:** the BIM issues come from the **enriched Autodesk export** through QCx Combined. Four new optional slots, BIM360 Created By, BIM360 Created On, BIM360 Closed On and Closed At, carry the real creator and dates of the issues migrated from BIM 360.
+
 **Version 1.1.0:** the BIM Issues row's fourth card is now **Past normal close window**, with the closure rate in its sub-line. The quality strip gains a sixth card, **Top root cause**, fed by a new optional Root Cause slot.
 
 ## 1. Import the visual (once per report)
 
 1. In Power BI Desktop, open the Visualizations pane, select the three dots (…), then **Import a visual from a file**.
-2. Choose `qaqcOverview_AE84E1DA71E7.1.1.0.0.pbiviz`.
+2. Choose `qaqcOverview_AE84E1DA71E7.1.2.0.0.pbiviz`.
 3. To update later, import the newer file the same way. It replaces the old version in place and keeps your field bindings.
 
 ## 2. Add the QCx Combined table (once per report, required)
 
-The visual reads one table that holds all four sheets. Follow [QCx_Combined_SETUP.md](QCx_Combined_SETUP.md) to add the **QCx Combined** query. It already includes the Row ID, so you don't need to add an index column for this visual.
+The visual reads one table that holds all four sources: the Electrical, Mechanical and Welding sheets and the enriched Autodesk issues export. Follow [QCx_Combined_SETUP.md](QCx_Combined_SETUP.md) to add the **QCx Combined** query. It already includes the Row ID, so you don't need to add an index column for this visual.
 
 ## 3. Bind the columns
 
-The 14 column slots are required. The visual shows its setup screen, listing the slots still empty, until every one is bound. Root Cause and Green tags are optional.
+The first 14 column slots are required. The visual shows its setup screen, listing the slots still empty, until every one is bound. Root Cause, the four BIM360 and Closed At slots, and Green tags are optional.
 
 | Field slot | QCx Combined column |
 |---|---|
@@ -35,13 +37,28 @@ The 14 column slots are required. The visual shows its setup screen, listing the
 | Updated On | Updated On |
 | Created By | Created By |
 | Root Cause (optional) | Root Cause |
+| BIM360 Created By (optional) | BIM360 Created By |
+| BIM360 Created On (optional) | BIM360 Created On |
+| BIM360 Closed On (optional) | BIM360 Closed On |
+| Closed At (optional) | Closed At |
 | Green tags (optional) | your Green tags measure (see below) |
 
 Set every column to **Don't summarize**. The visual is designed to fill a full report page.
 
 ### Root Cause (optional)
 
-Bind the QCx Combined **Root Cause** column to show the most common root cause in the **Top root cause** card. Without it, the card reads `Add Root Cause`, and everything else works as before. The column comes from the BIM Issues Log; see [QCx_Combined_SETUP.md](QCx_Combined_SETUP.md).
+Bind the QCx Combined **Root Cause** column to show the most common root cause in the **Top root cause** card. Without it, the card reads `Add Root Cause`, and everything else works as before. The column comes from the enriched export's Root cause column; see [QCx_Combined_SETUP.md](QCx_Combined_SETUP.md).
+
+### BIM360 and Closed At (optional, but bind them for the enriched export)
+
+About 1,000 issues in the enriched export were migrated from BIM 360. Autodesk stamped each with its migration account as the creator and the late-July 2026 migration date as the created date. The real creator and dates are in the export's BIM360 columns, which QCx Combined carries as **BIM360 Created By**, **BIM360 Created On** and **BIM360 Closed On**. Without these slots, every migrated issue is excluded from the BIM Issues row and the quality strip, because its creator is not LotusWorks. Its dates would also land in WW30–WW31.
+
+- **BIM360 Created By:** for a migrated issue, decides whether LotusWorks created it, in place of Created By.
+- **BIM360 Created On:** a migrated issue is opened on this date, in place of Created On.
+- **BIM360 Closed On:** a migrated closed issue is closed on this date, in place of Closed At and Updated On.
+- **Closed At:** a closed issue is closed on this date, in place of Updated On.
+
+These are the same rules as the QCx BIM Issues visual; see its guide's Counting rules.
 
 ### Green tags (optional)
 
@@ -156,7 +173,7 @@ The footnotes at the bottom report, per source:
 - rows skipped because the work week can't be read
 - rows dated after the current work week, which aren't counted
 - BIM issues not created by LotusWorks, which are excluded
-- BIM issues with a blank or unreadable Created On, which are skipped
+- BIM issues with a blank or unreadable created date (BIM360 Created On, or Created On), which are skipped
 
 They also report rows with an unknown Source (see the QCx Combined guide), and `Showing the first n rows (Power BI data limit)` if Power BI stopped sending rows.
 
@@ -169,6 +186,7 @@ The Overview uses the same rules as the discipline visuals.
 - **Weld:** a Welding row whose Work Week can be read as a work week.
 - **Signed weld:** Signature is filled in.
 - **Weld NCR (issue weld):** Issue is filled in and is not "no", "n/a", "na", "none" or "-".
-- **Counted BIM issues:** Created By contains "LotusWorks" (any letter case, as one word), or is a removed-user record for Samuel Leach or Aaron Harwood. Issues with Status Void are excluded everywhere.
-- **BIM week:** an issue opens in the week of its Created On. A Closed issue closes in the week of its Updated On.
+- **LotusWorks creator:** the creator contains "LotusWorks" (any letter case, as one word), or is a removed-user record for Samuel Leach or Aaron Harwood.
+- **Counted BIM issues:** an issue with any of BIM360 Created By, BIM360 Created On or BIM360 Closed On filled in counts when BIM360 Created By is a LotusWorks creator. Any other issue counts when Created By is one. Issues with Status Void are excluded everywhere.
+- **BIM week:** an issue opens in the week of BIM360 Created On, or of Created On when that is blank. A Closed issue closes in the week of the first filled-in value of BIM360 Closed On, Closed At and Updated On.
 - **Future weeks:** rows dated after the current work week aren't counted.

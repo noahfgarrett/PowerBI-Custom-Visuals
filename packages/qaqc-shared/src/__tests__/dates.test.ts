@@ -50,6 +50,32 @@ describe('parseDate', () => {
     expect(parts(parseDate('12-31-50'))).toEqual([1950, 12, 31, 12])
   })
 
+  it('reads the enriched export M/D/YY h:mm AM/PM text as the date at local noon', () => {
+    expect(parts(parseDate('10/15/22 3:45 PM'))).toEqual([2022, 10, 15, 12])
+    expect(parts(parseDate(' 7/1/26 5:10 PM '))).toEqual([2026, 7, 1, 12])
+    expect(parts(parseDate('12/31/26 11:59 PM'))).toEqual([2026, 12, 31, 12])
+  })
+
+  it('keeps the date of a time just after midnight', () => {
+    expect(parts(parseDate('1/5/26 12:05 AM'))).toEqual([2026, 1, 5, 12])
+  })
+
+  it('reads M/D/YYYY h:mm AM/PM text, with or without seconds', () => {
+    expect(parts(parseDate('10/15/2022 3:45 PM'))).toEqual([2022, 10, 15, 12])
+    // Power Query writes a date-time converted to text with seconds.
+    expect(parts(parseDate('8/3/2026 4:00:00 PM'))).toEqual([2026, 8, 3, 12])
+  })
+
+  it('reads two-digit years with a time the same way as without one', () => {
+    expect(parts(parseDate('3/4/49 9:00 AM'))).toEqual([2049, 3, 4, 12])
+    expect(parts(parseDate('1/1/99 1:00 PM'))).toEqual([1999, 1, 1, 12])
+  })
+
+  it('reads AM/PM in any case and without a space before it, without relying on Date parsing', () => {
+    expect(parts(parseDate('10/15/22 3:45pm'))).toEqual([2022, 10, 15, 12])
+    expect(parts(parseDate('10/15/22 3:45AM'))).toEqual([2022, 10, 15, 12])
+  })
+
   it('reads Excel serial numbers, as numbers or numeric text', () => {
     // 46309 is 2026-10-14 in the 1900 date system.
     expect(parts(parseDate(46309))).toEqual([2026, 10, 14, 12])

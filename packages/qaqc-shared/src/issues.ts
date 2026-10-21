@@ -111,6 +111,47 @@ function isIncludedCreator(value: unknown, cache: Map<string, boolean>): boolean
   return isIncluded
 }
 
+/** A cell the HTML app would read as non-blank text: a Date always is, other values when their text is not blank. */
+function isPresent(value: unknown): boolean {
+  return value instanceof Date || cellText(value) !== ''
+}
+
+/** The enrichment slots' positions, −1 when a slot is unbound or the columns don't carry it. */
+interface EnrichmentColumns {
+  bim360CreatedBy: number
+  bim360CreatedOn: number
+  bim360ClosedOn: number
+  closedAt: number
+}
+
+function enrichmentColumns(columns: IssueColumns): EnrichmentColumns {
+  return {
+    bim360CreatedBy: columns.bim360CreatedBy ?? -1,
+    bim360CreatedOn: columns.bim360CreatedOn ?? -1,
+    bim360ClosedOn: columns.bim360ClosedOn ?? -1,
+    closedAt: columns.closedAt ?? -1,
+  }
+}
+
+/**
+ * The HTML app's shouldIncludeIssue. An issue migrated from BIM 360 has legacy data (any BIM360 value present), and its
+ * BIM360 creator decides. Otherwise Created By decides, and every issue counts when the Created By slot is unbound.
+ */
+function isIncludedIssue(
+  row: ReadonlyArray<unknown>,
+  columns: IssueColumns,
+  enrichment: EnrichmentColumns,
+  cache: Map<string, boolean>,
+): boolean {
+  const legacyCreatedBy = row[enrichment.bim360CreatedBy]
+  const hasLegacyData = isPresent(legacyCreatedBy)
+    || isPresent(row[enrichment.bim360CreatedOn])
+    || isPresent(row[enrichment.bim360ClosedOn])
+  if (hasLegacyData) return isIncludedCreator(legacyCreatedBy, cache)
+  if (columns.createdBy < 0) return true
+  return isIncludedCreator(row[columns.createdBy], cache)
+}
+
 interface SortableIssue {
   issue: IssueRecord
   /** The ID before its trailing digits. */
@@ -211,6 +252,7 @@ export function buildIssueIndex(rows: InspectionRows, columns: IssueColumns, tod
   const currentWeek = toIsoWorkWeek(todayNoon)
   const caches: DateCaches = { byText: new Map(), weekByTime: new Map() }
   const creatorCache = new Map<string, boolean>()
+  const enrichment = enrichmentColumns(columns)
   const buckets = new Map<number, IssueWeekCounts>()
   const issues: IssueRecord[] = []
   let excludedRows = 0
@@ -228,14 +270,17 @@ export function buildIssueIndex(rows: InspectionRows, columns: IssueColumns, tod
   }
 
   for (const row of rows) {
-    if (!isIncludedCreator(row[columns.createdBy], creatorCache)) {
+    if (!isIncludedIssue(row, columns, enrichment, creatorCache)) {
       excludedRows += 1
       continue
     }
     const statusKind = issueStatusKind(row[columns.status])
     if (statusKind === 'void') continue
 
-    const created = readDate(row[columns.createdOn], caches)
+    // The first present of BIM360_Created On and Created On. A present BIM360 value wins even when it doesn't parse,
+    // as in the app: the issue is then skipped, not dated.
+    const legacyCreatedOn = row[enrichment.bim360CreatedOn]
+    const created = readDate(isPresent(legacyCreatedOn) ? legacyCreatedOn : row[columns.createdOn], caches)
     if (created === null) {
       skippedRows += 1
       continue
@@ -246,7 +291,11 @@ export function buildIssueIndex(rows: InspectionRows, columns: IssueColumns, tod
     }
     if (!firstWeek || created.week.key < firstWeek.key) firstWeek = created.week
 
-    const updated = readDate(row[columns.updatedOn], caches)
+    // The closed date: the first present of BIM360_Closed On, Closed At and Updated On.
+    const legacyClosedOn = row[enrichment.bim360ClosedOn]
+    const closedAt = row[enrichment.closedAt]
+    const closedCell = isPresent(legacyClosedOn) ? legacyClosedOn : isPresent(closedAt) ? closedAt : row[columns.updatedOn]
+    const updated = readDate(closedCell, caches)
     const closedWeek = statusKind === 'closed' && updated !== null ? updated.week : null
     // A closed week after the current week is not counted in any week.
     const countedClosedWeek = closedWeek !== null && closedWeek.key <= currentWeek.key ? closedWeek : null

@@ -67,7 +67,7 @@ export function weldColumnsOf(columns: CombinedColumns): WeldColumns {
 
 /**
  * The combined table has no Title, Contractor, Due Date or Root Cause Category, so issues take the builder's defaults
- * for those. Root Cause stays −1 when the visual has no Root Cause slot bound.
+ * for those. Root Cause and the enrichment columns stay −1 when the visual has no slot bound for them.
  */
 export function issueColumnsOf(columns: CombinedColumns): IssueColumns {
   return {
@@ -82,5 +82,9 @@ export function issueColumnsOf(columns: CombinedColumns): IssueColumns {
     createdBy: columns.createdBy,
     rootCause: columns.rootCause,
     rootCauseCategory: ABSENT_COLUMN,
+    bim360CreatedBy: columns.bim360CreatedBy ?? ABSENT_COLUMN,
+    bim360CreatedOn: columns.bim360CreatedOn ?? ABSENT_COLUMN,
+    bim360ClosedOn: columns.bim360ClosedOn ?? ABSENT_COLUMN,
+    closedAt: columns.closedAt ?? ABSENT_COLUMN,
   }
 }

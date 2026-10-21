@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client'
 
 import '../style/visual.less'
 
+import { ENRICHED_ISSUE_COLUMNS, ENRICHED_ISSUE_ROWS } from '../../qaqc-shared/src/__tests__/fixtures/enrichedIssueRows'
 import { ISSUE_ROWS } from '../../qaqc-shared/src/__tests__/fixtures/issueRows'
 import { syntheticIssueRows } from '../../qaqc-shared/src/__tests__/fixtures/syntheticRows'
 import type { TooltipRequest } from '../../qaqc-shared/src/chartTypes'
@@ -13,7 +14,7 @@ import { ISSUE_SLOTS, OPTIONAL_ISSUE_ROLES } from '../../qaqc-shared/src/dataVie
 import { buildIssueFootnotes } from '../../qaqc-shared/src/footnotes'
 import { buildIssueIndex } from '../../qaqc-shared/src/issues'
 import { isPresetName, resolveTheme } from '../../qaqc-shared/src/theme'
-import type { IssueColumns } from '../../qaqc-shared/src/types'
+import type { InspectionRows, IssueColumns } from '../../qaqc-shared/src/types'
 
 const params = new URLSearchParams(window.location.search)
 const width = Number(params.get('w') ?? 1280)
@@ -73,6 +74,42 @@ const columns: IssueColumns = {
   rootCauseCategory: 10,
 }
 
+function enrichedPosition(name: (typeof ENRICHED_ISSUE_COLUMNS)[number]): number {
+  return ENRICHED_ISSUE_COLUMNS.indexOf(name)
+}
+
+/** ?data=enriched: the enriched Autodesk export in its own column order, every enrichment slot bound. */
+const enrichedColumns: IssueColumns = {
+  id: enrichedPosition('ID'),
+  title: enrichedPosition('Title'),
+  status: enrichedPosition('Status'),
+  type: enrichedPosition('Type'),
+  contractor: enrichedPosition('Contractor'),
+  createdOn: enrichedPosition('Created on'),
+  updatedOn: enrichedPosition('Updated on'),
+  dueDate: enrichedPosition('Due date'),
+  createdBy: enrichedPosition('Created by'),
+  rootCause: enrichedPosition('Root cause'),
+  rootCauseCategory: -1,
+  bim360CreatedBy: enrichedPosition('BIM360_Created By'),
+  bim360CreatedOn: enrichedPosition('BIM360_Created On'),
+  bim360ClosedOn: enrichedPosition('BIM360_Closed On'),
+  closedAt: enrichedPosition('Closed at'),
+}
+
+interface HarnessData {
+  rows: InspectionRows
+  columns: IssueColumns
+}
+
+/** ?data=synthetic|empty|enriched; anything else is the Smartsheet fixture. */
+function harnessData(): HarnessData {
+  if (data === 'synthetic') return { rows: syntheticIssueRows(Number(params.get('rows') ?? 200_000)), columns }
+  if (data === 'empty') return { rows: [], columns }
+  if (data === 'enriched') return { rows: ENRICHED_ISSUE_ROWS, columns: enrichedColumns }
+  return { rows: ISSUE_ROWS, columns }
+}
+
 if (data === 'missing') {
   root.render(
     <StatusPanel
@@ -85,11 +122,9 @@ if (data === 'missing') {
 } else if (data === 'loading') {
   root.render(<StatusPanel icon={LoaderCircle} title="Loading issues" message="Power BI is sending the rows in batches." items={[]} />)
 } else {
-  const rows = data === 'synthetic'
-    ? syntheticIssueRows(Number(params.get('rows') ?? 200_000))
-    : data === 'empty' ? [] : ISSUE_ROWS
+  const { rows, columns: boundColumns } = harnessData()
   const started = performance.now()
-  const index = buildIssueIndex(rows, columns, today)
+  const index = buildIssueIndex(rows, boundColumns, today)
   document.title = `index ${Math.round(performance.now() - started)} ms`
   root.render(
     <Harness>

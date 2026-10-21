@@ -2,6 +2,7 @@ import { LayoutDashboard, ListChecks, LoaderCircle } from 'lucide-react'
 import { createRoot } from 'react-dom/client'
 
 import { COMBINED_COLUMNS, COMBINED_ROWS } from '../../qaqc-shared/src/__tests__/fixtures/combinedRows'
+import { ENRICHED_COMBINED_ROWS } from '../../qaqc-shared/src/__tests__/fixtures/enrichedCombinedRows'
 import { syntheticCombinedRows } from '../../qaqc-shared/src/__tests__/fixtures/syntheticCombined'
 import type { TooltipRequest } from '../../qaqc-shared/src/chartTypes'
 import { splitCombinedRows } from '../../qaqc-shared/src/combined'
@@ -86,12 +87,24 @@ const columns: CombinedColumns = {
   updatedOn: position('Updated On'),
   createdBy: position('Created By'),
   rootCause: position('Root Cause'),
+  bim360CreatedBy: position('BIM360 Created By'),
+  bim360CreatedOn: position('BIM360 Created On'),
+  bim360ClosedOn: position('BIM360 Closed On'),
+  closedAt: position('Closed At'),
   greenTags: greenTagsParam === null ? -1 : COMBINED_COLUMNS.length,
 }
 
 function withGreenTags(rows: ReadonlyArray<ReadonlyArray<unknown>>): ReadonlyArray<ReadonlyArray<unknown>> {
   if (greenTagsParam === null) return rows
   return rows.map((row) => [...row, greenTagsParam])
+}
+
+/** ?data=synthetic|empty|enriched; anything else is the combined fixture. Enriched swaps in the Autodesk BIM rows. */
+function sourceRows(): ReadonlyArray<ReadonlyArray<unknown>> {
+  if (data === 'synthetic') return syntheticCombinedRows(Number(params.get('rows') ?? 500_000))
+  if (data === 'empty') return []
+  if (data === 'enriched') return ENRICHED_COMBINED_ROWS
+  return COMBINED_ROWS
 }
 
 const root = createRoot(frame)
@@ -108,10 +121,7 @@ if (data === 'missing') {
 } else if (data === 'loading') {
   root.render(<StatusPanel icon={LoaderCircle} title="Loading rows" message="Power BI is sending the rows in batches." items={[]} />)
 } else {
-  const source = data === 'synthetic'
-    ? syntheticCombinedRows(Number(params.get('rows') ?? 500_000))
-    : data === 'empty' ? [] : COMBINED_ROWS
-  const rows = withGreenTags(source)
+  const rows = withGreenTags(sourceRows())
   const started = performance.now()
   const index = buildOverviewIndex(splitCombinedRows(rows, columns.source), columns, today)
   document.title = `index ${Math.round(performance.now() - started)} ms`

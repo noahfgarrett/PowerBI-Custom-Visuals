@@ -9,7 +9,9 @@ const EXCEL_EPOCH_UTC = Date.UTC(1899, 11, 30)
 const MAX_EXCEL_SERIAL = 1_000_000
 const NUMERIC_TEXT = /^\d+(?:\.\d+)?$/
 const ISO_DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/
-const MONTH_DAY_YEAR = /^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/
+// M/D/YY or M/D/YYYY, optionally followed by a 12-hour time (`3:45 PM`, `4:00:00 PM`), as in the enriched
+// Autodesk export's BIM360 columns. The time of day is ignored.
+const MONTH_DAY_YEAR = /^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})(?:\s+(?:0?[1-9]|1[0-2]):[0-5]\d(?::[0-5]\d)?\s*[AP]M)?$/i
 
 function localNoon(year: number, monthIndex: number, day: number): Date | null {
   const date = new Date(year, monthIndex, day, 12, 0, 0, 0)
@@ -33,7 +35,10 @@ function fromNumber(value: number): Date | null {
   return toLocalNoon(new Date(value))
 }
 
-/** Reads a Date, an Excel serial, epoch milliseconds, an ISO string or M/D/YYYY text as a local-noon date. */
+/**
+ * Reads a Date, an Excel serial, epoch milliseconds, an ISO string, or M/D/YYYY text with an optional 12-hour time,
+ * as a local-noon date.
+ */
 export function parseDate(value: unknown): Date | null {
   if (value instanceof Date) return toLocalNoon(value)
   if (typeof value === 'number') return fromNumber(value)

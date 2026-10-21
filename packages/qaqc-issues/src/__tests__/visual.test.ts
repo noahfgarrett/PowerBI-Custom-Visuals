@@ -4,11 +4,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createConstructorOptions } from '../../../core/src/__test-utils__'
 import { ISSUE_SLOTS } from '../../../qaqc-shared/src/dataView'
+import { ENRICHED_ISSUE_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/enrichedIssueRows'
 import { ISSUE_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/issueRows'
 import capabilities from '../../capabilities.json'
 import pbiviz from '../../pbiviz.json'
 import { QaqcIssuesVisual } from '../visual'
-import { ALL_ROLES, ROOT_CAUSE_ROLES, tableDataView, type Cell } from './tableDataView'
+import { ALL_ROLES, ENRICHMENT_ROLES, ROOT_CAUSE_ROLES, tableDataView, type Cell } from './tableDataView'
 
 const dashboardControl = vi.hoisted(() => ({ shouldThrow: false }))
 
@@ -466,5 +467,34 @@ describe('QaqcIssuesVisual', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(ISSUE_ROWS)))
     expect(harness.visual.getFormattingModel().cards).toHaveLength(4)
+  })
+})
+
+/**
+ * The enriched export's rows in the table builder's order: its fixture holds no Root Cause Category column, so a blank
+ * one goes in before the enrichment columns.
+ */
+const ENRICHED_ROWS: Cell[][] = ENRICHED_ISSUE_ROWS.map((cells) => [...cells.slice(0, 10), null, ...cells.slice(10)])
+const ENRICHED_ROLES = [...ALL_ROLES, 'rootCause', ...ENRICHMENT_ROLES] as const
+
+describe('QaqcIssuesVisual with the enriched Autodesk export', () => {
+  it('shows the WW42 week cards with the enrichment slots bound', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(ENRICHED_ROWS, { roles: [...ENRICHED_ROLES] })))
+    expect([cardValue(harness.element, 'Issues Opened'), cardValue(harness.element, 'Issues Closed')]).toEqual(['2', '1'])
+  })
+
+  it('shows the WW42 project-to-date cards with the enrichment slots bound, counting the migrated issues', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(ENRICHED_ROWS, { roles: [...ENRICHED_ROLES] })))
+    expect(toDateCardValues(harness.element)).toEqual(['231', '174', '57', '75.3%'])
+    expect(footnotes(harness.element)).toEqual(['846 issues not created by LotusWorks are excluded'])
+  })
+
+  it('counts only the native Autodesk issues with the enrichment slots unbound, since migrated ones carry the migration account', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(ENRICHED_ROWS, { roles: [...ALL_ROLES, 'rootCause'] })))
+    expect(toDateCardValues(harness.element)).toEqual(['29', '16', '13', '55.2%'])
+    expect(footnotes(harness.element)).toEqual(['1,048 issues not created by LotusWorks are excluded'])
   })
 })

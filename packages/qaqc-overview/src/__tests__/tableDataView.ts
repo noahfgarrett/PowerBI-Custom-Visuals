@@ -3,7 +3,10 @@ import type powerbi from 'powerbi-visuals-api'
 import { COMBINED_COLUMNS } from '../../../qaqc-shared/src/__tests__/fixtures/combinedRows'
 import { OPTIONAL_COMBINED_ROLES, OVERVIEW_SLOTS, type CombinedSlotRole } from '../../../qaqc-shared/src/dataView'
 
-/** The Overview's column roles: the required ones and the optional Root Cause. Green tags is a measure, bound with `TableOptions.greenTags` instead. */
+/**
+ * The Overview's column roles: the required ones, the optional Root Cause and the optional enrichment columns. Green
+ * tags is a measure, bound with `TableOptions.greenTags` instead.
+ */
 export type SlotRole =
   | 'source'
   | 'rowId'
@@ -20,6 +23,10 @@ export type SlotRole =
   | 'updatedOn'
   | 'createdBy'
   | 'rootCause'
+  | 'bim360CreatedBy'
+  | 'bim360CreatedOn'
+  | 'bim360ClosedOn'
+  | 'closedAt'
 
 export type Cell = string | number | Date | null
 
@@ -49,7 +56,14 @@ const COLUMN_OF: Record<SlotRole, (typeof COMBINED_COLUMNS)[number]> = {
   updatedOn: 'Updated On',
   createdBy: 'Created By',
   rootCause: 'Root Cause',
+  bim360CreatedBy: 'BIM360 Created By',
+  bim360CreatedOn: 'BIM360 Created On',
+  bim360ClosedOn: 'BIM360 Closed On',
+  closedAt: 'Closed At',
 }
+
+/** The optional enrichment roles, for binding the enriched Autodesk export's BIM360 and Closed At columns. */
+export const ENRICHMENT_ROLES: SlotRole[] = ['bim360CreatedBy', 'bim360CreatedOn', 'bim360ClosedOn', 'closedAt']
 
 function isSlotRole(role: CombinedSlotRole): role is SlotRole {
   return role in COLUMN_OF
