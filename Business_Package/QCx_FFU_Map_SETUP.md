@@ -26,7 +26,7 @@ The CSV columns are:
 | Line | The traced line id (`L001`, `L002`, …), stable for the same PDF |
 | Line Order | Position along the line, starting at 1 for the home run |
 | Line Colour | The line's colour as `#RRGGBB` |
-| Home Run, Finish | TRUE on the line's first and last FFU |
+| Home Run, Finish | TRUE where the drawing marks the home run (green outline) or the finish (blue outline) |
 | Grid Column, Grid Row | The grid bay, read from the tag |
 
 An FFU on no line keeps its X and Y; its Line, Line Order and Line Colour are blank.
@@ -107,7 +107,7 @@ The summary strip and panels also use these terms:
 **Header:**
 
 - **Search tag:** type part of a tag to list up to 8 matches. Choose one (click, or arrow keys and Enter) to zoom to that FFU and select it.
-- **Zone, Group, RIO Panel, Energized:** in-visual filters. FFUs and lines that don't match turn light grey but stay in place, and the summary strip counts only the matching FFUs. Group matches the FFU's own group, or its line's group when it has none.
+- **Zone, Group, RIO Panel, Energized:** in-visual filters. FFUs that don't match turn light grey but stay in place; a line segment stays coloured only between two matching FFUs. The summary strip counts only the matching FFUs. Group matches the FFU's own group, or its line's group when it has none.
 
 **Summary strip:** Total FFUs, Energized (with % energized), De-energized, No tracker row, Groups (lines with a matching FFU), Group mismatches and, when above 0, Not placed.
 
