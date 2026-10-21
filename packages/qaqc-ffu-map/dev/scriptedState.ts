@@ -23,7 +23,7 @@ const WHEEL_DELTA_PX = -100
 /** The zoom and hover states zoom until a node square is this many times the label threshold. */
 const LABEL_MARGIN = 1.15
 const HOVER_NODE_PX = 18
-/** Long enough to narrow the list to one bay of a real tag, for example `FFU123-AB12-`. */
+/** Long enough to narrow the list to one bay of a synthetic tag, for example `FFU900-ZZ01-`. */
 const SEARCH_PREFIX_LENGTH = 12
 const ZONE_VALUE = 'SZ-3'
 const TIMING_WARMUP = 3
