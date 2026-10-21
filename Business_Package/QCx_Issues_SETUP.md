@@ -1,5 +1,7 @@
 # QCx BIM Issues visual: setup
 
+**Version 1.2.0:** the visual reads the **enriched Autodesk export** in place of the Smartsheet BIM Issues Log. Four new optional slots, BIM360 Created By, BIM360 Created On, BIM360 Closed On and Closed At, carry the real creator and dates of the issues migrated from BIM 360. A report still bound to the Smartsheet log keeps working unchanged.
+
 **Version 1.1.0:** two new pages, **Issues by Root Cause Pareto** and **Issue Aging**, open from the header. Two optional slots, Root Cause and Root Cause Category, feed the Pareto. Reports that don't bind them keep working.
 
 **Version 1.0.1:** week labels now include the year (`WW41'2026`). Chart axes keep `WW41` ticks and show the year under the first labelled week and under the first labelled week of each new year.
@@ -12,23 +14,42 @@
 
 ## 2. Bind the columns
 
-The first nine slots are required. The visual shows its setup screen until every one is bound. Root Cause and Root Cause Category are optional.
+The visual reads the **enriched Autodesk export**, for example `Automated Issue Summary-…-Enriched-….xlsx`, sheet **Issues**. Load that sheet as a query, then bind its columns.
 
-| Field slot | BIM Issues Log column |
+The first nine slots are required. The visual shows its setup screen until every one is bound. The other slots are optional.
+
+| Field slot | Enriched export column |
 |---|---|
 | ID | ID |
 | Title | Title |
 | Status | Status |
 | Type | Type |
 | Contractor | Contractor |
-| Created On | Created On |
-| Updated On | Updated On |
-| Due Date | Due Date |
-| Created By | Created By |
-| Root Cause (optional) | Root Cause |
-| Root Cause Category (optional) | Root Cause Category |
+| Created On | Created on |
+| Updated On | Updated on |
+| Due Date | Due date |
+| Created By | Created by |
+| Root Cause (optional) | Root cause |
+| Root Cause Category (optional) | leave empty: the export has no such column |
+| BIM360 Created By (optional) | BIM360_Created By |
+| BIM360 Created On (optional) | BIM360_Created On |
+| BIM360 Closed On (optional) | BIM360_Closed On |
+| Closed At (optional) | Closed at |
 
 Set every field to **Don't summarize**. The visual is designed to fill a full report page.
+
+The slot names are unchanged. A report still bound to the Smartsheet BIM Issues Log, with the same nine required slots and its Root Cause columns, keeps working: leave the four new slots empty.
+
+### BIM360 and Closed At slots (optional, but bind them for the enriched export)
+
+About 1,000 issues in the export were migrated from BIM 360. Autodesk stamped each with its migration account in **Created by** and the late-July 2026 migration date in **Created on**. The real creator and dates are in the export's BIM360 columns. Without these slots, every migrated issue is excluded, because its Created by is not LotusWorks. Its dates would also land in WW30–WW31.
+
+- **BIM360 Created By:** for a migrated issue, decides whether LotusWorks created it, in place of Created By.
+- **BIM360 Created On:** a migrated issue is opened on this date, in place of Created On.
+- **BIM360 Closed On:** a migrated closed issue is closed on this date, in place of Closed At and Updated On.
+- **Closed At:** a closed issue is closed on this date, in place of Updated On.
+
+The BIM360 dates are text such as `10/15/22 3:45 PM`. The visual reads the date and ignores the time. Two-digit years 00–49 are 20xx, and 50–99 are 19xx. The full rules are under Counting rules.
 
 ### Root Cause slots (optional)
 
@@ -116,14 +137,14 @@ Select **Issue Aging** in the header (the last button) to open the page. Its tit
 
 The page has its own `30 WW | All` and week picker, because the dashboard header is behind it. They change the dashboard's selection too.
 
-**What the benchmarks mean.** Each closed issue's **time to close** is Updated On minus Created On, in whole days.
+**What the benchmarks mean.** Each closed issue's **time to close** is its closed date minus its created date, in whole days (see Counting rules).
 
 - **Typical** ("Most issues close within") is the median time to close: half of the closed issues closed faster.
 - The **normal close window** is the 90% mark: 90% of closed issues closed within this many days.
 - Both are worked out from **your own closed issues as of the selected week**: only issues closed by the end of that week count. Pick an earlier week and they are recalculated as they stood then.
 - The end of a week is its Sunday, or today for the current week.
-- An issue is **open as of the week** when it was created by the end of the week and not closed by then. Its **age** is the end of the week minus Created On.
-- Closed issues with no Updated On are left out of close times, and a footnote gives how many.
+- An issue is **open as of the week** when it was created by the end of the week and not closed by then. Its **age** is the end of the week minus its created date.
+- Closed issues with no closed date are left out of close times, and a footnote gives how many.
 
 **Cards,** under `As of WWnn`:
 
@@ -167,10 +188,14 @@ Past the normal close window is red when it is above 0. Then it shows `View issu
 
 ## Counting rules
 
-- **Counted issues:** Created By contains "LotusWorks" in any letter case, ignoring punctuation (it must be one word, so "Lotus Works" is not counted), or is a removed-user record for Samuel Leach or Aaron Harwood. Anything else, including a blank Created By, is excluded and noted in a footnote.
+- **LotusWorks creator:** the creator contains "LotusWorks" in any letter case, ignoring punctuation. It must be one word, so "Lotus Works" is not counted. A removed-user record for Samuel Leach or Aaron Harwood also counts.
+- **Counted issues:** an issue **has BIM360 data** when any of BIM360 Created By, BIM360 Created On or BIM360 Closed On is filled in.
+  - With BIM360 data, the issue counts when **BIM360 Created By** is a LotusWorks creator. Created By is not used, and a blank BIM360 Created By is excluded.
+  - Without BIM360 data, the issue counts when **Created By** is a LotusWorks creator.
+  - Excluded issues, including those with a blank creator, are noted in a footnote.
 - **Void:** issues with Status Void are excluded everywhere.
-- **Work week:** an issue's work week is the week of its Created On. Issues with a blank or unreadable Created On are skipped and noted in a footnote.
-- **Closed:** an issue is closed when its Status is Closed. Its closed week is the week of Updated On. A closed issue with no Updated On counts as opened but is not counted as closed in any week.
+- **Created date and work week:** the created date is BIM360 Created On when it is filled in, otherwise Created On. An issue's work week is the week of its created date. Issues whose created date is blank or unreadable are skipped and noted in a footnote. That includes a filled-in BIM360 Created On that is not a date: the visual does not fall back to Created On.
+- **Closed:** an issue is closed when its Status is Closed. Its closed date is the first filled-in value of BIM360 Closed On, Closed At and Updated On, and its closed week is the week of that date. A closed issue with no closed date counts as opened but is not counted as closed in any week.
 - **Open:** every other status (blank, Open, Pending, Not approved, Ready to Inspect).
 - **Contractor:** a blank Contractor shows as Bayside when the ID's number is 1021, otherwise Unassigned.
 - **Subtype and Title:** a blank Type shows as Uncategorized and a blank Title as Untitled issue.

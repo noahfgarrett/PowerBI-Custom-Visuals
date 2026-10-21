@@ -5,10 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createConstructorOptions } from '../../../core/src/__test-utils__'
 import { OVERVIEW_SLOTS } from '../../../qaqc-shared/src/dataView'
 import { COMBINED_COLUMNS, COMBINED_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/combinedRows'
+import { ENRICHED_COMBINED_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/enrichedCombinedRows'
 import capabilities from '../../capabilities.json'
 import pbiviz from '../../pbiviz.json'
 import { QaqcOverviewVisual } from '../visual'
-import { ALL_ROLES, tableDataView } from './tableDataView'
+import { ALL_ROLES, ENRICHMENT_ROLES, tableDataView } from './tableDataView'
 
 const dashboardControl = vi.hoisted(() => ({ shouldThrow: false }))
 const indexBuilds = vi.hoisted(() => ({ count: 0 }))
@@ -585,5 +586,37 @@ describe('QaqcOverviewVisual host integration', () => {
       'animationSettings-card',
       'accessibility-card',
     ])
+  })
+})
+
+describe('QaqcOverviewVisual with the enriched Autodesk export as the BIM source', () => {
+  const enrichedRoles = [...ALL_ROLES, 'rootCause', ...ENRICHMENT_ROLES] as const
+
+  it('shows the WW42 This WW BIM cards with the enrichment slots bound', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(ENRICHED_COMBINED_ROWS, { roles: [...enrichedRoles] })))
+    const bim = row(harness.element, 'BIM Issues')
+    expect(['Opened', 'Closed', 'Remaining open'].map((label) => cardValue(bim, label))).toEqual(['2', '1', '57'])
+    expect(footnotes(harness.element)).toEqual(['BIM Issues: 846 issues not created by LotusWorks are excluded'])
+  })
+
+  it('shows the WW42 To date BIM cards and top root cause with the enrichment slots bound', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(ENRICHED_COMBINED_ROWS, { roles: [...enrichedRoles] })))
+    click(modeButton(harness.element, 'To date'))
+    const bim = row(harness.element, 'BIM Issues')
+    expect([cardValue(bim, 'Opened'), cardValue(bim, 'Closed')]).toEqual(['231', '174'])
+    const topCause = card(quality(harness.element), 'Top root cause')
+    expect(topCause?.querySelector('.qaqc-kpi-value')?.textContent).toBe('Installation')
+    expect(topCause?.querySelector('.qaqc-kpi-detail')?.textContent).toBe('54 of 231 issues · 23%')
+  })
+
+  it('counts only the native Autodesk issues with the enrichment slots unbound', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(ENRICHED_COMBINED_ROWS, { roles: [...ALL_ROLES, 'rootCause'] })))
+    click(modeButton(harness.element, 'To date'))
+    const bim = row(harness.element, 'BIM Issues')
+    expect([cardValue(bim, 'Opened'), cardValue(bim, 'Closed'), cardValue(bim, 'Remaining open')]).toEqual(['29', '16', '13'])
+    expect(footnotes(harness.element)).toEqual(['BIM Issues: 1,048 issues not created by LotusWorks are excluded'])
   })
 })

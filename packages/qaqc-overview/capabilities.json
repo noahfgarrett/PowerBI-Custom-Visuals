@@ -121,6 +121,38 @@
       "descriptionKey": "Qaqc_role_rootCause_description"
     },
     {
+      "name": "bim360CreatedBy",
+      "kind": "Grouping",
+      "displayName": "BIM360 Created By",
+      "displayNameKey": "Qaqc_role_bim360CreatedBy",
+      "description": "Optional. The QCx Combined BIM360 Created By column. For an issue migrated from BIM 360, it decides whether LotusWorks created the issue.",
+      "descriptionKey": "Qaqc_role_bim360CreatedBy_description"
+    },
+    {
+      "name": "bim360CreatedOn",
+      "kind": "Grouping",
+      "displayName": "BIM360 Created On",
+      "displayNameKey": "Qaqc_role_bim360CreatedOn",
+      "description": "Optional. The QCx Combined BIM360 Created On column. A migrated issue counts as opened on this date instead of Created On.",
+      "descriptionKey": "Qaqc_role_bim360CreatedOn_description"
+    },
+    {
+      "name": "bim360ClosedOn",
+      "kind": "Grouping",
+      "displayName": "BIM360 Closed On",
+      "displayNameKey": "Qaqc_role_bim360ClosedOn",
+      "description": "Optional. The QCx Combined BIM360 Closed On column. A migrated closed issue counts as closed on this date instead of Closed At or Updated On.",
+      "descriptionKey": "Qaqc_role_bim360ClosedOn_description"
+    },
+    {
+      "name": "closedAt",
+      "kind": "Grouping",
+      "displayName": "Closed At",
+      "displayNameKey": "Qaqc_role_closedAt",
+      "description": "Optional. The QCx Combined Closed At column. A closed issue counts as closed on this date instead of Updated On.",
+      "descriptionKey": "Qaqc_role_closedAt_description"
+    },
+    {
       "name": "greenTags",
       "kind": "Measure",
       "displayName": "Green tags",
@@ -176,6 +208,18 @@
             "max": 1
           },
           "rootCause": {
+            "max": 1
+          },
+          "bim360CreatedBy": {
+            "max": 1
+          },
+          "bim360CreatedOn": {
+            "max": 1
+          },
+          "bim360ClosedOn": {
+            "max": 1
+          },
+          "closedAt": {
             "max": 1
           },
           "greenTags": {
@@ -259,6 +303,26 @@
             {
               "for": {
                 "in": "rootCause"
+              }
+            },
+            {
+              "for": {
+                "in": "bim360CreatedBy"
+              }
+            },
+            {
+              "for": {
+                "in": "bim360CreatedOn"
+              }
+            },
+            {
+              "for": {
+                "in": "bim360ClosedOn"
+              }
+            },
+            {
+              "for": {
+                "in": "closedAt"
               }
             },
             {
