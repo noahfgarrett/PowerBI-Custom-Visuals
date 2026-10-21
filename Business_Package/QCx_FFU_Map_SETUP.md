@@ -6,16 +6,16 @@ The visual is a generic renderer. It ships with no drawing data: you build the l
 
 ## 1. Build the layout file from the PDF
 
-The layout script reads the FFU MAP PDF and writes `ffu_layout.csv`: one row per FFU with its position, its line and its grid bay. It is in the repo at `scripts/ffu-layout/extract_ffu_layout.py` and needs Python 3 and PyMuPDF:
+The layout script reads the FFU MAP PDF and writes `ffu_layout.csv`: one row per FFU with its position, its line and its grid bay. It ships in this package's `ffu-layout/` folder (`extract_ffu_layout.py`, with a `README.md`) and needs Python 3 and PyMuPDF. From the package folder:
 
 ```bash
 python3 -m pip install pymupdf
-python3 scripts/ffu-layout/extract_ffu_layout.py "<path to your FFU MAP.pdf>" -o "<folder outside the repo>/ffu_layout.csv"
+python3 ffu-layout/extract_ffu_layout.py "<path to your FFU MAP.pdf>" -o "<folder outside this package>/ffu_layout.csv"
 ```
 
 The script prints a short report: tags found, duplicate tags, lines traced, FFUs on no line, and lines without a home run or finish. Check it before you load the file.
 
-**The drawing is client intellectual property.** Keep the PDF and `ffu_layout.csv` on your own machine or in the project's controlled storage. Never commit them, attach them to a ticket, or add them to a release zip. The repo ignores `*.pdf` and `ffu_layout*.csv` under the script folder as a guardrail, but write the CSV outside the repo anyway.
+**The drawing is client intellectual property.** Keep the PDF and `ffu_layout.csv` on your own machine or in the project's controlled storage. Never commit them, attach them to a ticket, or add them to a release zip. Write the CSV outside this package folder and outside any source repository.
 
 The CSV columns are:
 
