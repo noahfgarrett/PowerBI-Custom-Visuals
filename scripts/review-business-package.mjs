@@ -11,6 +11,20 @@ const packagesRoot = path.join(workspaceRoot, 'packages');
 const reportPath = path.join(workspaceRoot, 'Business_Package', 'review-report.json');
 const lotusReportPath = path.join(workspaceRoot, 'LotusWorks_Package', 'review-report.json');
 
+// Checks a visual is exempt from, keyed by package dir, then by issue code, with the reason. An exempt check is
+// recorded in the report as "exempt: <reason>" instead of a warning. Every entry needs a reason a reviewer can audit.
+const FFU_MAP_NO_ANIMATION =
+  'the map has no chart transitions to turn off (it redraws its canvas directly); an animation card would be a phantom setting';
+const FFU_MAP_NO_ACCESSIBILITY_CARD =
+  'the map has no screen reader chart summaries for an accessibility card to toggle; its ARIA labels and high-contrast drawing are always on';
+const REVIEW_EXEMPTIONS = {
+  'qaqc-ffu-map': {
+    'capabilities.animationSettings': FFU_MAP_NO_ANIMATION,
+    'settings.animationSettingsModel': FFU_MAP_NO_ANIMATION,
+    'capabilities.accessibilityFormatting': FFU_MAP_NO_ACCESSIBILITY_CARD,
+  },
+};
+
 const placeholderSupportUrls = new Set([
   '',
   'https://github.com',
@@ -523,6 +537,15 @@ async function reviewPackage(packageDir) {
     );
   }
 
+  const exemptReasons = REVIEW_EXEMPTIONS[packageName] ?? {};
+  const isExempt = (issue) => issue.severity === 'warning' && typeof exemptReasons[issue.code] === 'string';
+  const activeIssues = issues.filter((issue) => !isExempt(issue));
+  const exemptions = issues.filter(isExempt).map((issue) => ({
+    code: issue.code,
+    note: `exempt: ${exemptReasons[issue.code]}`,
+    file: path.relative(workspaceRoot, issue.file),
+  }));
+
   return {
     package: packageName,
     files: {
@@ -532,11 +555,12 @@ async function reviewPackage(packageDir) {
       visual: path.relative(workspaceRoot, visualTsPath),
       settings: path.relative(workspaceRoot, settingsTsPath),
     },
-    issueCount: issues.length,
-    issues: issues.map((issue) => ({
+    issueCount: activeIssues.length,
+    issues: activeIssues.map((issue) => ({
       ...issue,
       file: path.relative(workspaceRoot, issue.file),
     })),
+    exemptions,
   };
 }
 
@@ -556,6 +580,7 @@ async function main() {
     (sum, result) => sum + result.issues.filter((issue) => issue.severity === 'error').length,
     0
   );
+  const exemptCount = results.reduce((sum, result) => sum + result.exemptions.length, 0);
 
   const report = {
     generatedAt: new Date().toISOString(),
@@ -563,6 +588,7 @@ async function main() {
       packageCount: results.length,
       warningCount,
       errorCount,
+      exemptCount,
     },
     packages: results,
   };
@@ -576,7 +602,7 @@ async function main() {
   ]);
 
   console.log(`[review] Checked ${results.length} visual packages.`);
-  console.log(`[review] warnings=${warningCount}, errors=${errorCount}`);
+  console.log(`[review] warnings=${warningCount}, errors=${errorCount}, exempt=${exemptCount}`);
   console.log(`[review] Wrote ${path.relative(workspaceRoot, reportPath)}`);
   console.log(`[review] Wrote ${path.relative(workspaceRoot, lotusReportPath)}`);
 
@@ -587,6 +613,12 @@ async function main() {
 
   for (const finding of topFindings) {
     console.log(`[review] ${finding.package}: ${finding.issueCount} issue(s)`);
+  }
+
+  for (const result of results) {
+    for (const exemption of result.exemptions) {
+      console.log(`[review] ${result.package}: ${exemption.code} ${exemption.note}`);
+    }
   }
 
   if (errorCount > 0) {
