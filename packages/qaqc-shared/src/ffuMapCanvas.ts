@@ -1,6 +1,6 @@
 import type { FfuIndex, FfuNode, GridAxis } from './ffuMap'
 import { NODE_SIZE_OF_SPACING, type Size, type View } from './ffuGeometry'
-import { compositeOver, contrastRatio, type ResolvedTheme } from './theme'
+import { compositeOver, contrastRatio, relativeLuminanceOf, type ResolvedTheme } from './theme'
 
 export interface FfuMapColors {
   good: string
@@ -13,9 +13,14 @@ export interface FfuMapColors {
   grid: string
   card: string
   palette: readonly string[]
+  /**
+   * Power BI high contrast: every line is drawn in `ink`, and nodes outside the in-visual filters are ink outlines
+   * instead of filled squares, because the host's few colours cannot tell status, group and dimming apart.
+   */
+  isHighContrast: boolean
 }
 
-/** Line colours below this contrast against the card are darkened until they reach it. */
+/** Line colours below this contrast against the card are darkened (or lightened on a dark card) until they reach it. */
 export const LINE_MIN_CONTRAST = 2.5
 /** Tag labels are drawn when nodeSize × scale reaches this many CSS pixels. */
 export const LABEL_MIN_NODE_PX = 36
@@ -82,7 +87,10 @@ export interface DrawState {
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/i
 const BLACK = '#000000'
-const DARKEN_STEPS = 10
+const WHITE = '#FFFFFF'
+const MIX_STEPS = 10
+/** Cards below this relative luminance are dark: line colours mix toward white on them instead of toward black. */
+const DARK_CARD_LUMINANCE = 0.5
 
 /** Group lines are this fraction of the node square wide, within MIN and MAX, so they read at fit and zoomed in. */
 const LINE_WIDTH_OF_NODE = 0.18
@@ -94,6 +102,8 @@ const DIVIDER_WIDTH_PX = 1
 const MARKER_SIZE_OF_NODE = 1.6
 const MARKER_WIDTH_PX = 1.5
 const RING_WIDTH_PX = 2
+/** Outline width of a node outside the in-visual filters in high contrast. */
+const DIM_OUTLINE_WIDTH_PX = 1
 /** The ring's stroke sits this far outside the node square, so it never covers the status fill. */
 const RING_GAP_PX = RING_WIDTH_PX / 2
 /** Width of the card-coloured halo just outside the ring's stroke. */
@@ -137,26 +147,34 @@ export function ffuMapColorsFromTheme(theme: ResolvedTheme): FfuMapColors {
     grid: colors.hairline,
     card: colors.card,
     palette: LINE_PALETTE,
+    isHighContrast: theme.isHighContrast,
   }
 }
 
 /**
- * Mixes `color` toward black in 10% steps until it reaches LINE_MIN_CONTRAST against `background`, at most 10 steps.
- * A colour that already reaches it, or a colour or background that is not #RRGGBB, is returned unchanged.
+ * Mixes `color` in 10% steps until it reaches LINE_MIN_CONTRAST against `background`, at most 10 steps: toward white
+ * on a dark background (relative luminance below DARK_CARD_LUMINANCE), toward black otherwise. A colour that already
+ * reaches it, or a colour or background that is not #RRGGBB, is returned unchanged.
  */
 export function readableLineColor(color: string, background: string): string {
   if (!HEX_COLOR.test(color) || !HEX_COLOR.test(background)) return color
   if (contrastRatio(color, background) >= LINE_MIN_CONTRAST) return color
+  const isDarkBackground = (relativeLuminanceOf(background) ?? 1) < DARK_CARD_LUMINANCE
+  const target = isDarkBackground ? WHITE : BLACK
   let mixed = color
-  for (let step = 1; step <= DARKEN_STEPS; step += 1) {
-    mixed = compositeOver(color, 1 - step / DARKEN_STEPS, BLACK)
+  for (let step = 1; step <= MIX_STEPS; step += 1) {
+    mixed = compositeOver(color, 1 - step / MIX_STEPS, target)
     if (contrastRatio(mixed, background) >= LINE_MIN_CONTRAST) return mixed
   }
   return mixed
 }
 
-/** The readable form of the line's colour against the card, or palette[line % palette length] when it has none. */
+/**
+ * The readable form of the line's colour against the card, or palette[line % palette length] when it has none; `ink`
+ * in high contrast.
+ */
 export function lineColorOf(index: FfuIndex, line: number, colors: FfuMapColors): string {
+  if (colors.isHighContrast) return colors.ink
   const color = index.lines[line]?.color ?? ''
   if (color !== '') return readableLineColor(color, colors.card)
   const { palette } = colors
@@ -379,15 +397,24 @@ function visibleNodes(index: FfuIndex, view: View, viewport: Viewport): number[]
   return visible
 }
 
-/** One path and one fill per fill colour. */
+/**
+ * One path and one fill per fill colour. In high contrast, nodes outside the in-visual filters are stroked in `ink`
+ * instead, so filtering stays visible when every status colour is the host foreground.
+ */
 function drawNodes(ctx: FfuCanvasContext, index: FfuIndex, state: DrawState, visible: readonly number[], nodePx: number): void {
   const { view, mask, colors } = state
   const half = nodePx / 2
   const byColor = new Map<string, number[]>()
+  const outlined: number[] = []
   for (const at of visible) {
     const node = index.nodes[at]
     if (!node) continue
-    const color = nodeFillOf(node, isMatch(mask, at), colors)
+    const isMatched = isMatch(mask, at)
+    if (colors.isHighContrast && !isMatched) {
+      outlined.push(at)
+      continue
+    }
+    const color = nodeFillOf(node, isMatched, colors)
     const bucket = byColor.get(color)
     if (bucket) bucket.push(at)
     else byColor.set(color, [at])
@@ -402,6 +429,9 @@ function drawNodes(ctx: FfuCanvasContext, index: FfuIndex, state: DrawState, vis
     ctx.fillStyle = color
     ctx.fill()
   }
+  // Inset by half the stroke, so the outline stays inside the node's square.
+  const outlinePx = Math.max(nodePx - DIM_OUTLINE_WIDTH_PX, DIM_OUTLINE_WIDTH_PX)
+  strokeSquares(ctx, index, view, outlined, outlinePx, colors.ink, DIM_OUTLINE_WIDTH_PX)
 }
 
 /** Strokes a square of `sidePx` centred on each node, as one path. */

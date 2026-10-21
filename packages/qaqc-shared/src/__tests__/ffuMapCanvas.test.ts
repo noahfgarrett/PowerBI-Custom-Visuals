@@ -15,7 +15,7 @@ import {
   type FfuCanvasContext,
   type FfuMapColors,
 } from '../ffuMapCanvas'
-import { contrastRatio, resolveTheme } from '../theme'
+import { contrastRatio, relativeLuminanceOf, resolveTheme } from '../theme'
 
 type FfuRecord = Partial<Record<FfuRole, unknown>>
 
@@ -46,7 +46,11 @@ const COLORS: FfuMapColors = {
   grid: '#EEEEEE',
   card: '#FFFFFF',
   palette: LINE_PALETTE,
+  isHighContrast: false,
 }
+
+/** Power BI's high-contrast black theme. */
+const HIGH_CONTRAST_BLACK = { background: '#000000', foreground: '#FFFFFF', foregroundSelected: '#FFFF00' }
 
 interface RecordedRect {
   x: number
@@ -176,6 +180,13 @@ describe('readableLineColor', () => {
     expect(readableLineColor('#1F3A93', '#FFFFFF')).toBe('#1F3A93')
   })
 
+  it('lightens a navy line on a black card to contrast ≥ 2.5', () => {
+    const navy = '#1F3A93'
+    const lightened = readableLineColor(navy, '#000000')
+    expect(relativeLuminanceOf(lightened) ?? 0).toBeGreaterThan(relativeLuminanceOf(navy) ?? 1)
+    expect(contrastRatio(lightened, '#000000')).toBeGreaterThanOrEqual(LINE_MIN_CONTRAST)
+  })
+
   it('returns an invalid colour unchanged', () => {
     expect(readableLineColor('lime', '#FFFFFF')).toBe('lime')
   })
@@ -203,7 +214,19 @@ describe('ffuMapColorsFromTheme', () => {
       grid: theme.colors.hairline,
       card: theme.colors.card,
       palette: LINE_PALETTE,
+      isHighContrast: false,
     })
+  })
+
+  it('flags high contrast from the theme', () => {
+    const theme = resolveTheme({
+      preset: 'qaqc',
+      backgroundColor: '',
+      backgroundOpacity: 100,
+      cardOpacity: 100,
+      highContrast: HIGH_CONTRAST_BLACK,
+    })
+    expect(ffuMapColorsFromTheme(theme).isHighContrast).toBe(true)
   })
 })
 
@@ -492,5 +515,41 @@ describe('drawFfuMap', () => {
     const ctx = draw(index, { mask: Uint8Array.from([0]) })
     const fills = nodeFills(ctx, 10).sort((a, b) => a.x - b.x)
     expect(fills.map((rect) => rect.style)).toEqual([COLORS.dim, COLORS.good])
+  })
+
+  describe('in high contrast', () => {
+    const HC_COLORS = ffuMapColorsFromTheme(
+      resolveTheme({ preset: 'qaqc', backgroundColor: '', backgroundOpacity: 100, cardOpacity: 100, highContrast: HIGH_CONTRAST_BLACK }),
+    )
+
+    it('draws every line in ink, ignoring the line colour and the palette', () => {
+      const index = indexOf([
+        { tag: 'FFU900-ZZ01-F01-A', x: 0, y: 0, line: 'L1', lineOrder: 1, lineColor: '#BFFF00' },
+        { tag: 'FFU900-ZZ01-F02-A', x: 1, y: 0, line: 'L1', lineOrder: 2, lineColor: '#BFFF00' },
+        { tag: 'FFU900-ZZ02-F01-A', x: 0, y: 1, line: 'L2', lineOrder: 1 },
+        { tag: 'FFU900-ZZ02-F02-A', x: 1, y: 1, line: 'L2', lineOrder: 2 },
+        { tag: 'FFU900-ZZ02-F03-A', x: 2, y: 1, line: 'L2', lineOrder: 3 },
+      ])
+      const ctx = draw(index, { colors: HC_COLORS, mask: Uint8Array.from([1, 1, 1, 1, 0]), hoverLine: 1 })
+      const strokes = lineStrokesOf(ctx)
+      expect(strokes.length).toBeGreaterThan(0)
+      expect(new Set(strokes.map((stroke) => stroke.style))).toEqual(new Set([HC_COLORS.ink]))
+    })
+
+    it('outlines filtered-out nodes in ink instead of filling them', () => {
+      const index = indexOf([
+        { tag: 'FFU900-ZZ01-F01-A', x: 0, y: 0, group: 'G1', energized: 'true' },
+        { tag: 'FFU900-ZZ01-F02-A', x: 1, y: 0, group: 'G1', energized: 'false' },
+      ])
+      const ctx = draw(index, { colors: HC_COLORS, mask: Uint8Array.from([1, 0]) })
+      expect(nodeFills(ctx, 10).map((rect) => rect.x)).toEqual([0])
+      expect(ctx.strokes.filter((stroke) => stroke.style === HC_COLORS.ink && stroke.rects === 1)).toHaveLength(1)
+    })
+
+    it('keeps the de-energized fill when the node matches', () => {
+      const index = indexOf([{ tag: 'FFU900-ZZ01-F01-A', x: 0, y: 0, group: 'G1', energized: 'false' }])
+      const ctx = draw(index, { colors: HC_COLORS })
+      expect(nodeFills(ctx, 10).map((rect) => rect.style)).toEqual([HIGH_CONTRAST_BLACK.foregroundSelected])
+    })
   })
 })
