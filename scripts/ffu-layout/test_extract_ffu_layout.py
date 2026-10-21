@@ -126,6 +126,13 @@ class ExtractFfuLayoutTest(unittest.TestCase):
     def test_cli_exits_0(self):
         self.assertEqual(self.cli.returncode, 0, self.cli.stderr)
 
+    def test_cli_prints_stats_report(self):
+        report = self.cli.stdout.splitlines()
+        self.assertIn(f'FFU tags found:         {len(TAG)}', report)
+        self.assertIn('Lines traced:           2', report)
+        self.assertIn('FFUs on no line:        1', report)
+        self.assertIn(f'  {TAG[5]}', report)
+
     def test_writes_header_in_order(self):
         self.assertEqual(self.header, EXPECTED_HEADER)
 
