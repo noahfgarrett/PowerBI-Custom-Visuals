@@ -1,7 +1,11 @@
 import { defineConfig } from 'vitest/config';
 
 /** The test files that assert timing budgets. They run in their own project, after every other project. */
-export const TIMING_TESTS = ['src/__tests__/benchmark.test.ts', 'src/__tests__/performanceBenchmark.test.ts'];
+export const TIMING_TESTS = [
+  'src/__tests__/benchmark.test.ts',
+  'src/__tests__/performanceBenchmark.test.ts',
+  'src/__tests__/ffuMapBenchmark.test.ts',
+];
 
 /**
  * Timing budgets, run once the rest of the suite has finished (`groupOrder: 1`; every other project is in group 0).

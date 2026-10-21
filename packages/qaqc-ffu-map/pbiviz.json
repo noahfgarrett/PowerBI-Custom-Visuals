@@ -1,0 +1,25 @@
+{
+  "visual": {
+    "name": "qaqcFfuMap",
+    "displayName": "QCx FFU Map",
+    "guid": "qaqcFfuMap_A99D48C1F994",
+    "visualClassName": "QaqcFfuMapVisual",
+    "version": "1.0.0.0",
+    "description": "FFU floor map from the layout and the Master FFU Tracker: energized status by node, lines and groups, with search, filters and cross-filtering.",
+    "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
+    "gitHubUrl": "https://github.com/noahgarrett/PowerBI"
+  },
+  "apiVersion": "5.3.0",
+  "author": {
+    "name": "LotusWorks",
+    "email": "contact@visualizebuild.com"
+  },
+  "assets": {
+    "icon": "assets/icon.png"
+  },
+  "style": "style/visual.less",
+  "capabilities": "capabilities.json",
+  "stringResources": [
+    "stringResources/en-US/resources.resjson"
+  ]
+}

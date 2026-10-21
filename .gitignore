@@ -6,3 +6,6 @@ dist/
 .playwright-mcp/
 .superpowers/
 releases/
+# Client drawings and FFU layouts are client IP and never get committed.
+*.pdf
+ffu_layout*.csv

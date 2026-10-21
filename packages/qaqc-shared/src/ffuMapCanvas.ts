@@ -1,0 +1,726 @@
+import type { FfuIndex, FfuNode, GridAxis } from './ffuMap'
+import { NODE_SIZE_OF_SPACING, type Size, type View } from './ffuGeometry'
+import { compositeOver, contrastRatio, relativeLuminanceOf, type ResolvedTheme } from './theme'
+
+export interface FfuMapColors {
+  good: string
+  bad: string
+  unknown: string
+  dim: string
+  ink: string
+  muted: string
+  accent: string
+  grid: string
+  card: string
+  palette: readonly string[]
+  /**
+   * Power BI high contrast: every line is drawn in `ink`, and nodes outside the in-visual filters are ink outlines
+   * instead of filled squares, because the host's few colours cannot tell status, group and dimming apart.
+   */
+  isHighContrast: boolean
+}
+
+/** Line colours below this contrast against the card are darkened (or lightened on a dark card) until they reach it. */
+export const LINE_MIN_CONTRAST = 2.5
+/** Tag labels are drawn when nodeSize × scale reaches this many CSS pixels. */
+export const LABEL_MIN_NODE_PX = 36
+
+/** Twelve mid-saturation hues for lines with no Line Colour, each at contrast ≥ LINE_MIN_CONTRAST on white. */
+export const LINE_PALETTE: readonly string[] = [
+  '#2F6FB3',
+  '#D9731A',
+  '#3A9A5B',
+  '#B3478F',
+  '#7A5CC0',
+  '#1C8C99',
+  '#B8862B',
+  '#C2504A',
+  '#5A7D2E',
+  '#3E58C6',
+  '#9C6644',
+  '#7C7F8A',
+]
+
+/**
+ * The structural subset of CanvasRenderingContext2D the renderer uses, so tests can pass a recording fake. A real
+ * 2D context satisfies it.
+ */
+export interface FfuCanvasContext
+  extends Pick<
+    CanvasRenderingContext2D,
+    | 'fillStyle'
+    | 'strokeStyle'
+    | 'lineWidth'
+    | 'lineCap'
+    | 'lineJoin'
+    | 'font'
+    | 'textAlign'
+    | 'textBaseline'
+    | 'clearRect'
+    | 'beginPath'
+    | 'moveTo'
+    | 'lineTo'
+    | 'rect'
+    | 'fill'
+    | 'stroke'
+    | 'fillText'
+  > {
+  measureText(text: string): { width: number }
+}
+
+export interface DrawState {
+  /** Screen = world × scale + offset, in CSS pixels; the caller sets the device-pixel-ratio transform. */
+  view: View
+  size: Size
+  /** World units. */
+  nodeSize: number
+  /** One byte per node; 0 dims the node. A node beyond the end of the mask counts as matching. */
+  mask: Uint8Array
+  /** Line index, or -1 when none. */
+  hoverLine: number
+  /** Node indices. */
+  selected: ReadonlySet<number>
+  /** Line index, or -1 when none. */
+  selectedLine: number
+  colors: FfuMapColors
+}
+
+const HEX_COLOR = /^#[0-9a-f]{6}$/i
+const BLACK = '#000000'
+const WHITE = '#FFFFFF'
+const MIX_STEPS = 10
+/** Cards below this relative luminance are dark: line colours mix toward white on them instead of toward black. */
+const DARK_CARD_LUMINANCE = 0.5
+
+/** Group lines are this fraction of the node square wide, within MIN and MAX, so they read at fit and zoomed in. */
+const LINE_WIDTH_OF_NODE = 0.18
+const LINE_MIN_WIDTH_PX = 1.5
+const LINE_MAX_WIDTH_PX = 4
+/** The hovered and selected lines are twice the base width, up to this. */
+const EMPHASIS_LINE_MAX_WIDTH_PX = 6
+const DIVIDER_WIDTH_PX = 1
+const MARKER_SIZE_OF_NODE = 1.6
+const MARKER_WIDTH_PX = 1.5
+const RING_WIDTH_PX = 2
+/** Outline width of a node outside the in-visual filters in high contrast. */
+const DIM_OUTLINE_WIDTH_PX = 1
+/** The ring's stroke sits this far outside the node square, so it never covers the status fill. */
+const RING_GAP_PX = RING_WIDTH_PX / 2
+/** Width of the card-coloured halo just outside the ring's stroke. */
+const RING_HALO_PX = 1.5
+/** Squares never shrink below one CSS pixel, so a fitted drawing of tens of thousands of nodes stays visible. */
+const MIN_NODE_PX = 1
+
+const FONT_FAMILY = 'Inter, "Segoe UI", system-ui, -apple-system, sans-serif'
+const TAG_FONT_MIN_PX = 9
+const TAG_FONT_MAX_PX = 12
+const TAG_GAP_PX = 2
+/** Clear space kept on each side of a tag, so neighbouring tags in a row never read as one run of text. */
+const TAG_SPACING_PX = 4
+/** Side padding of the card backing behind a selected node's tag. */
+const TAG_BACKING_PAD_PX = 2
+/** Cell size of the screen grid that keeps tag labels apart. */
+const LABEL_CELL_PX = 64
+/** Cells per row in the label grid's keys; far more than any canvas is wide. */
+const LABEL_CELL_KEY_SPAN = 1 << 16
+/** Node pitch over node size, the inverse of nodeSizeOf's factor. */
+const NODE_PITCH_OF_SIZE = 1 / NODE_SIZE_OF_SPACING
+/** A rough average glyph width, in ems, for sizing tags to the node pitch without measuring each one. */
+const CHAR_WIDTH_EM = 0.6
+
+const GRID_FONT_PX = 11
+const GRID_LABEL_INSET_PX = 2
+const GRID_LABEL_PAD_X_PX = 3
+const GRID_LABEL_PAD_Y_PX = 2
+const GRID_LABEL_HEIGHT_PX = GRID_FONT_PX + GRID_LABEL_PAD_Y_PX * 2
+
+export function ffuMapColorsFromTheme(theme: ResolvedTheme): FfuMapColors {
+  const { colors } = theme
+  return {
+    good: colors.good,
+    bad: colors.bad,
+    unknown: colors.faint,
+    dim: colors.border,
+    ink: colors.ink,
+    muted: colors.muted,
+    accent: colors.accent,
+    grid: colors.hairline,
+    card: colors.card,
+    palette: LINE_PALETTE,
+    isHighContrast: theme.isHighContrast,
+  }
+}
+
+/**
+ * Mixes `color` in 10% steps until it reaches LINE_MIN_CONTRAST against `background`, at most 10 steps: toward white
+ * on a dark background (relative luminance below DARK_CARD_LUMINANCE), toward black otherwise. A colour that already
+ * reaches it, or a colour or background that is not #RRGGBB, is returned unchanged.
+ */
+export function readableLineColor(color: string, background: string): string {
+  if (!HEX_COLOR.test(color) || !HEX_COLOR.test(background)) return color
+  if (contrastRatio(color, background) >= LINE_MIN_CONTRAST) return color
+  const isDarkBackground = (relativeLuminanceOf(background) ?? 1) < DARK_CARD_LUMINANCE
+  const target = isDarkBackground ? WHITE : BLACK
+  let mixed = color
+  for (let step = 1; step <= MIX_STEPS; step += 1) {
+    mixed = compositeOver(color, 1 - step / MIX_STEPS, target)
+    if (contrastRatio(mixed, background) >= LINE_MIN_CONTRAST) return mixed
+  }
+  return mixed
+}
+
+/**
+ * The readable form of the line's colour against the card, or palette[line % palette length] when it has none; `ink`
+ * in high contrast.
+ */
+export function lineColorOf(index: FfuIndex, line: number, colors: FfuMapColors): string {
+  if (colors.isHighContrast) return colors.ink
+  const color = index.lines[line]?.color ?? ''
+  if (color !== '') return readableLineColor(color, colors.card)
+  const { palette } = colors
+  if (palette.length === 0) return colors.muted
+  return palette[Math.abs(line) % palette.length] ?? colors.muted
+}
+
+/** The screen box nodes and segments must touch to be drawn: the viewport plus a one-node margin. */
+interface Viewport {
+  minX: number
+  minY: number
+  maxX: number
+  maxY: number
+}
+
+function isMatch(mask: Uint8Array, node: number): boolean {
+  return mask[node] !== 0
+}
+
+function screenX(view: View, x: number): number {
+  return x * view.scale + view.offsetX
+}
+
+function screenY(view: View, y: number): number {
+  return y * view.scale + view.offsetY
+}
+
+function isPointVisible(viewport: Viewport, sx: number, sy: number): boolean {
+  return sx >= viewport.minX && sx <= viewport.maxX && sy >= viewport.minY && sy <= viewport.maxY
+}
+
+function isSegmentVisible(viewport: Viewport, ax: number, ay: number, bx: number, by: number): boolean {
+  return (
+    Math.max(ax, bx) >= viewport.minX &&
+    Math.min(ax, bx) <= viewport.maxX &&
+    Math.max(ay, by) >= viewport.minY &&
+    Math.min(ay, by) <= viewport.maxY
+  )
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max)
+}
+
+/** Half a CSS pixel off the integer grid, so a 1 px hairline covers one pixel column instead of two half pixels. */
+function crisp(value: number): number {
+  return Math.round(value) + 0.5
+}
+
+function drawDividers(ctx: FfuCanvasContext, state: DrawState, columns: GridAxis | null, rows: GridAxis | null): void {
+  const { view, size } = state
+  ctx.beginPath()
+  let count = 0
+  for (const divider of columns?.dividers ?? []) {
+    const sx = screenX(view, divider)
+    if (sx < 0 || sx > size.width) continue
+    ctx.moveTo(crisp(sx), 0)
+    ctx.lineTo(crisp(sx), size.height)
+    count += 1
+  }
+  for (const divider of rows?.dividers ?? []) {
+    const sy = screenY(view, divider)
+    if (sy < 0 || sy > size.height) continue
+    ctx.moveTo(0, crisp(sy))
+    ctx.lineTo(size.width, crisp(sy))
+    count += 1
+  }
+  if (count === 0) return
+  ctx.strokeStyle = state.colors.grid
+  ctx.lineWidth = DIVIDER_WIDTH_PX
+  ctx.stroke()
+}
+
+/** Line widths in CSS pixels for a node square of `nodePx`. */
+export interface LineWidths {
+  base: number
+  emphasis: number
+}
+
+/**
+ * Base width = clamp(LINE_WIDTH_OF_NODE × nodePx, LINE_MIN_WIDTH_PX, LINE_MAX_WIDTH_PX); the hovered and selected lines
+ * are twice that, capped at EMPHASIS_LINE_MAX_WIDTH_PX. A size that is not a positive number gives the minimum.
+ */
+export function lineWidthsOf(nodePx: number): LineWidths {
+  const scaled = Number.isFinite(nodePx) && nodePx > 0 ? nodePx * LINE_WIDTH_OF_NODE : 0
+  const base = clamp(scaled, LINE_MIN_WIDTH_PX, LINE_MAX_WIDTH_PX)
+  return { base, emphasis: Math.min(base * 2, EMPHASIS_LINE_MAX_WIDTH_PX) }
+}
+
+/** Which segments of a line to trace, by their two node indices. */
+type SegmentFilter = (a: number, b: number) => boolean
+
+/** Adds the visible segments of each line that pass `include` to the current path; true when any was added. */
+function traceLines(
+  ctx: FfuCanvasContext,
+  index: FfuIndex,
+  view: View,
+  viewport: Viewport,
+  lines: readonly number[],
+  include: SegmentFilter,
+): boolean {
+  let traced = false
+  for (const lineIndex of lines) {
+    const line = index.lines[lineIndex]
+    if (!line) continue
+    let isPenDown = false
+    for (let at = 1; at < line.nodes.length; at += 1) {
+      const from = line.nodes[at - 1] ?? -1
+      const to = line.nodes[at] ?? -1
+      const a = index.nodes[from]
+      const b = index.nodes[to]
+      if (!a || !b || !include(from, to)) {
+        isPenDown = false
+        continue
+      }
+      const ax = screenX(view, a.x)
+      const ay = screenY(view, a.y)
+      const bx = screenX(view, b.x)
+      const by = screenY(view, b.y)
+      if (!isSegmentVisible(viewport, ax, ay, bx, by)) {
+        isPenDown = false
+        continue
+      }
+      if (!isPenDown) ctx.moveTo(ax, ay)
+      ctx.lineTo(bx, by)
+      isPenDown = true
+      traced = true
+    }
+  }
+  return traced
+}
+
+interface LineStroke {
+  lines: readonly number[]
+  include: SegmentFilter
+  color: string
+  width: number
+}
+
+function strokeLines(ctx: FfuCanvasContext, index: FfuIndex, view: View, viewport: Viewport, stroke: LineStroke): void {
+  if (stroke.lines.length === 0) return
+  ctx.beginPath()
+  if (!traceLines(ctx, index, view, viewport, stroke.lines, stroke.include)) return
+  ctx.strokeStyle = stroke.color
+  ctx.lineWidth = stroke.width
+  ctx.stroke()
+}
+
+/** A segment is in colour only when both of its nodes pass the in-visual filters; otherwise it is dim. */
+function segmentFilters(mask: Uint8Array): { matched: SegmentFilter; dimmed: SegmentFilter } {
+  const matched = (a: number, b: number): boolean => isMatch(mask, a) && isMatch(mask, b)
+  return { matched, dimmed: (a, b) => !matched(a, b) }
+}
+
+/** -1 (no line, or nothing hovered or selected) never counts. */
+function isEmphasized(state: DrawState, line: number): boolean {
+  return line >= 0 && (line === state.hoverLine || line === state.selectedLine)
+}
+
+/**
+ * Every dimmed segment in one path, then the matched segments batched by line colour. The hovered and selected lines
+ * are left for drawEmphasis.
+ */
+function drawLines(ctx: FfuCanvasContext, index: FfuIndex, state: DrawState, viewport: Viewport, width: number): void {
+  const { view, mask, colors } = state
+  const filters = segmentFilters(mask)
+  const plain: number[] = []
+  const byColor = new Map<string, number[]>()
+  for (let line = 0; line < index.lines.length; line += 1) {
+    if (isEmphasized(state, line)) continue
+    plain.push(line)
+    const color = lineColorOf(index, line, colors)
+    const bucket = byColor.get(color)
+    if (bucket) bucket.push(line)
+    else byColor.set(color, [line])
+  }
+
+  strokeLines(ctx, index, view, viewport, { lines: plain, include: filters.dimmed, color: colors.dim, width })
+  for (const [color, lines] of byColor) {
+    strokeLines(ctx, index, view, viewport, { lines, include: filters.matched, color, width })
+  }
+}
+
+/** The whole of each selected and hovered line at `width`: matched segments in its colour, the rest dim. */
+function drawEmphasis(ctx: FfuCanvasContext, index: FfuIndex, state: DrawState, viewport: Viewport, width: number): void {
+  const { view, mask, colors } = state
+  const filters = segmentFilters(mask)
+  const emphasized = [state.selectedLine, state.hoverLine].filter(
+    (line, at, all) => line >= 0 && line < index.lines.length && all.indexOf(line) === at,
+  )
+  for (const line of emphasized) {
+    strokeLines(ctx, index, view, viewport, { lines: [line], include: filters.dimmed, color: colors.dim, width })
+    const color = lineColorOf(index, line, colors)
+    strokeLines(ctx, index, view, viewport, { lines: [line], include: filters.matched, color, width })
+  }
+}
+
+function nodeFillOf(node: FfuNode, isMatched: boolean, colors: FfuMapColors): string {
+  if (!isMatched) return colors.dim
+  switch (node.energized) {
+    case 'on':
+      return colors.good
+    case 'off':
+      return colors.bad
+    case 'unknown':
+      return colors.unknown
+    default: {
+      const unreachable: never = node.energized
+      return unreachable
+    }
+  }
+}
+
+/** Node indices whose centres fall inside the viewport. */
+function visibleNodes(index: FfuIndex, view: View, viewport: Viewport): number[] {
+  const visible: number[] = []
+  index.nodes.forEach((node, at) => {
+    if (isPointVisible(viewport, screenX(view, node.x), screenY(view, node.y))) visible.push(at)
+  })
+  return visible
+}
+
+/**
+ * One path and one fill per fill colour. In high contrast, nodes outside the in-visual filters are stroked in `ink`
+ * instead, so filtering stays visible when every status colour is the host foreground.
+ */
+function drawNodes(ctx: FfuCanvasContext, index: FfuIndex, state: DrawState, visible: readonly number[], nodePx: number): void {
+  const { view, mask, colors } = state
+  const half = nodePx / 2
+  const byColor = new Map<string, number[]>()
+  const outlined: number[] = []
+  for (const at of visible) {
+    const node = index.nodes[at]
+    if (!node) continue
+    const isMatched = isMatch(mask, at)
+    if (colors.isHighContrast && !isMatched) {
+      outlined.push(at)
+      continue
+    }
+    const color = nodeFillOf(node, isMatched, colors)
+    const bucket = byColor.get(color)
+    if (bucket) bucket.push(at)
+    else byColor.set(color, [at])
+  }
+  for (const [color, nodes] of byColor) {
+    ctx.beginPath()
+    for (const at of nodes) {
+      const node = index.nodes[at]
+      if (!node) continue
+      ctx.rect(screenX(view, node.x) - half, screenY(view, node.y) - half, nodePx, nodePx)
+    }
+    ctx.fillStyle = color
+    ctx.fill()
+  }
+  // Inset by half the stroke, so the outline stays inside the node's square.
+  const outlinePx = Math.max(nodePx - DIM_OUTLINE_WIDTH_PX, DIM_OUTLINE_WIDTH_PX)
+  strokeSquares(ctx, index, view, outlined, outlinePx, colors.ink, DIM_OUTLINE_WIDTH_PX)
+}
+
+/** Strokes a square of `sidePx` centred on each node, as one path. */
+function strokeSquares(
+  ctx: FfuCanvasContext,
+  index: FfuIndex,
+  view: View,
+  nodes: readonly number[],
+  sidePx: number,
+  color: string,
+  width: number,
+): void {
+  if (nodes.length === 0) return
+  const half = sidePx / 2
+  ctx.beginPath()
+  for (const at of nodes) {
+    const node = index.nodes[at]
+    if (!node) continue
+    ctx.rect(screenX(view, node.x) - half, screenY(view, node.y) - half, sidePx, sidePx)
+  }
+  ctx.strokeStyle = color
+  ctx.lineWidth = width
+  ctx.stroke()
+}
+
+interface Box {
+  left: number
+  top: number
+  right: number
+  bottom: number
+}
+
+/** Screen boxes bucketed into square cells, so a label checks only the boxes near it. */
+class BoxGrid {
+  private readonly cells = new Map<number, Box[]>()
+
+  private keysOf(box: Box): number[] {
+    const keys: number[] = []
+    const fromX = Math.floor(box.left / LABEL_CELL_PX)
+    const toX = Math.floor(box.right / LABEL_CELL_PX)
+    const fromY = Math.floor(box.top / LABEL_CELL_PX)
+    const toY = Math.floor(box.bottom / LABEL_CELL_PX)
+    for (let cy = fromY; cy <= toY; cy += 1) {
+      for (let cx = fromX; cx <= toX; cx += 1) keys.push(cy * LABEL_CELL_KEY_SPAN + cx)
+    }
+    return keys
+  }
+
+  add(box: Box): void {
+    for (const key of this.keysOf(box)) {
+      const cell = this.cells.get(key)
+      if (cell) cell.push(box)
+      else this.cells.set(key, [box])
+    }
+  }
+
+  /** True when `box` overlaps any box in the grid other than `except`. */
+  overlaps(box: Box, except: Box | null = null): boolean {
+    for (const key of this.keysOf(box)) {
+      for (const other of this.cells.get(key) ?? []) {
+        if (other === except) continue
+        if (box.left < other.right && other.left < box.right && box.top < other.bottom && other.top < box.bottom) return true
+      }
+    }
+    return false
+  }
+}
+
+/**
+ * Tags centred under their nodes, never overprinting one another or the pinned grid labels. Selected nodes are
+ * labelled first, on a card backing, wherever they clear the labels already placed; every other label also has to
+ * clear the visible squares and end markers.
+ */
+function drawTags(
+  ctx: FfuCanvasContext,
+  index: FfuIndex,
+  state: DrawState,
+  visible: readonly number[],
+  nodePx: number,
+  pinned: readonly Box[],
+): void {
+  if (visible.length === 0) return
+  const { view, colors } = state
+  let longest = 1
+  for (const at of visible) longest = Math.max(longest, index.nodes[at]?.tag.length ?? 0)
+  const fontPx = Math.round(clamp((nodePx * NODE_PITCH_OF_SIZE) / (CHAR_WIDTH_EM * longest), TAG_FONT_MIN_PX, TAG_FONT_MAX_PX))
+  ctx.font = `${fontPx}px ${FONT_FAMILY}`
+  // A home-run or finish node is as big as its marker, and its tag starts below the marker's outline.
+  const halfOf = (node: FfuNode): number => ((node.homeRun || node.finish ? MARKER_SIZE_OF_NODE : 1) * nodePx) / 2
+  const belowOf = (node: FfuNode): number => halfOf(node) + TAG_GAP_PX
+
+  const squares = new BoxGrid()
+  const ownSquares = new Map<number, Box>()
+  for (const at of visible) {
+    const node = index.nodes[at]
+    if (!node) continue
+    const sx = screenX(view, node.x)
+    const sy = screenY(view, node.y)
+    const half = halfOf(node)
+    const square = { left: sx - half, top: sy - half, right: sx + half, bottom: sy + half }
+    squares.add(square)
+    ownSquares.set(at, square)
+  }
+  // The pinned grid labels are drawn last, over everything, so no tag starts under one.
+  const labels = new BoxGrid()
+  for (const box of pinned) labels.add(box)
+
+  const boxOf = (sx: number, top: number, tag: string): Box => {
+    const half = ctx.measureText(tag).width / 2 + TAG_SPACING_PX
+    return { left: sx - half, top, right: sx + half, bottom: top + fontPx }
+  }
+  const priority = visible.filter((at) => state.selected.has(at))
+  const placed: { tag: string; x: number; y: number }[] = []
+  const backings: Box[] = []
+  for (const at of priority) {
+    const node = index.nodes[at]
+    if (!node) continue
+    const sx = screenX(view, node.x)
+    const top = screenY(view, node.y) + belowOf(node)
+    const box = boxOf(sx, top, node.tag)
+    if (labels.overlaps(box)) continue
+    backings.push(box)
+    labels.add(box)
+    placed.push({ tag: node.tag, x: sx, y: top })
+  }
+  for (const at of visible) {
+    const node = index.nodes[at]
+    if (!node || state.selected.has(at)) continue
+    const sx = screenX(view, node.x)
+    const top = screenY(view, node.y) + belowOf(node)
+    const box = boxOf(sx, top, node.tag)
+    // The node's own square or marker never blocks its tag.
+    if (labels.overlaps(box) || squares.overlaps(box, ownSquares.get(at) ?? null)) continue
+    labels.add(box)
+    placed.push({ tag: node.tag, x: sx, y: top })
+  }
+
+  if (backings.length > 0) {
+    ctx.beginPath()
+    for (const box of backings) {
+      const inset = TAG_SPACING_PX - TAG_BACKING_PAD_PX
+      ctx.rect(box.left + inset, box.top, box.right - box.left - inset * 2, box.bottom - box.top)
+    }
+    ctx.fillStyle = colors.card
+    ctx.fill()
+  }
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'top'
+  ctx.fillStyle = colors.ink
+  for (const label of placed) ctx.fillText(label.tag, label.x, label.y)
+}
+
+interface GridLabel {
+  text: string
+  /** Where the text is anchored: centre-top for a column, left-middle for a row. */
+  x: number
+  y: number
+  /** The card backing. */
+  left: number
+  top: number
+  width: number
+}
+
+function columnLabels(ctx: FfuCanvasContext, axis: GridAxis | null, state: DrawState): GridLabel[] {
+  const labels: GridLabel[] = []
+  for (const { label, at } of axis?.labels ?? []) {
+    const sx = screenX(state.view, at)
+    const width = ctx.measureText(label).width + GRID_LABEL_PAD_X_PX * 2
+    if (sx + width / 2 < 0 || sx - width / 2 > state.size.width) continue
+    labels.push({
+      text: label,
+      x: sx,
+      y: GRID_LABEL_INSET_PX + GRID_LABEL_PAD_Y_PX,
+      left: sx - width / 2,
+      top: GRID_LABEL_INSET_PX,
+      width,
+    })
+  }
+  return labels
+}
+
+/** Row labels under the column-label band are skipped, so the two edges never overlap in the corner. */
+function rowLabels(ctx: FfuCanvasContext, axis: GridAxis | null, state: DrawState, topBand: number): GridLabel[] {
+  const labels: GridLabel[] = []
+  for (const { label, at } of axis?.labels ?? []) {
+    const sy = screenY(state.view, at)
+    const top = sy - GRID_LABEL_HEIGHT_PX / 2
+    if (top < topBand || top > state.size.height) continue
+    const width = ctx.measureText(label).width + GRID_LABEL_PAD_X_PX * 2
+    labels.push({ text: label, x: GRID_LABEL_INSET_PX + GRID_LABEL_PAD_X_PX, y: sy, left: GRID_LABEL_INSET_PX, top, width })
+  }
+  return labels
+}
+
+function fillLabels(ctx: FfuCanvasContext, labels: readonly GridLabel[], colors: FfuMapColors): void {
+  ctx.beginPath()
+  for (const label of labels) ctx.rect(label.left, label.top, label.width, GRID_LABEL_HEIGHT_PX)
+  ctx.fillStyle = colors.card
+  ctx.fill()
+  ctx.fillStyle = colors.muted
+  for (const label of labels) ctx.fillText(label.text, label.x, label.y)
+}
+
+interface GridLabels {
+  columns: GridLabel[]
+  rows: GridLabel[]
+}
+
+/** Lays out the pinned grid labels; measuring sets the grid font. */
+function layoutGridLabels(ctx: FfuCanvasContext, index: FfuIndex, state: DrawState): GridLabels {
+  ctx.font = `600 ${GRID_FONT_PX}px ${FONT_FAMILY}`
+  const columns = columnLabels(ctx, index.gridColumns, state)
+  const topBand = columns.length > 0 ? GRID_LABEL_INSET_PX + GRID_LABEL_HEIGHT_PX : 0
+  return { columns, rows: rowLabels(ctx, index.gridRows, state, topBand) }
+}
+
+function gridLabelBoxes(labels: GridLabels): Box[] {
+  return [...labels.columns, ...labels.rows].map((label) => ({
+    left: label.left,
+    top: label.top,
+    right: label.left + label.width,
+    bottom: label.top + GRID_LABEL_HEIGHT_PX,
+  }))
+}
+
+function drawGridLabels(ctx: FfuCanvasContext, labels: GridLabels, colors: FfuMapColors): void {
+  ctx.font = `600 ${GRID_FONT_PX}px ${FONT_FAMILY}`
+  if (labels.columns.length > 0) {
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'top'
+    fillLabels(ctx, labels.columns, colors)
+  }
+  if (labels.rows.length > 0) {
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'middle'
+    fillLabels(ctx, labels.rows, colors)
+  }
+}
+
+/**
+ * Clears and draws the whole map in CSS pixels: grid dividers, lines, nodes, the hovered and selected lines over them,
+ * home-run and finish markers, selection rings, tag labels when zoomed in, and the pinned grid labels. Nodes and
+ * segments outside the viewport plus a one-node margin are skipped. A viewport with no area or a view that is not
+ * finite draws nothing.
+ */
+export function drawFfuMap(ctx: FfuCanvasContext, index: FfuIndex, state: DrawState): void {
+  const { view, size, colors } = state
+  if (!(size.width > 0) || !(size.height > 0)) return
+  ctx.clearRect(0, 0, size.width, size.height)
+  const isViewFinite = Number.isFinite(view.scale) && Number.isFinite(view.offsetX) && Number.isFinite(view.offsetY)
+  if (!isViewFinite || !(view.scale > 0)) return
+
+  const scaledNodePx = Number.isFinite(state.nodeSize) && state.nodeSize > 0 ? state.nodeSize * view.scale : 0
+  const nodePx = Math.max(scaledNodePx, MIN_NODE_PX)
+  const viewport: Viewport = { minX: -nodePx, minY: -nodePx, maxX: size.width + nodePx, maxY: size.height + nodePx }
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+
+  const widths = lineWidthsOf(scaledNodePx)
+  drawDividers(ctx, state, index.gridColumns, index.gridRows)
+  drawLines(ctx, index, state, viewport, widths.base)
+
+  const visible = visibleNodes(index, view, viewport)
+  drawNodes(ctx, index, state, visible, nodePx)
+  // The hovered and selected lines go over the nodes at the emphasis width, so the route stays traceable where squares
+  // sit close enough to cover a line beneath them. Their own squares then go back on top, so their status still
+  // reads, and the line is drawn once more at the base width through their centres.
+  drawEmphasis(ctx, index, state, viewport, widths.emphasis)
+  drawNodes(ctx, index, state, visible.filter((at) => isEmphasized(state, index.nodes[at]?.line ?? -1)), nodePx)
+  drawEmphasis(ctx, index, state, viewport, widths.base)
+
+  // Ends outside the in-visual filters dim with their nodes.
+  const ends = visible.filter((at) => index.nodes[at]?.homeRun === true || index.nodes[at]?.finish === true)
+  const markerPx = nodePx * MARKER_SIZE_OF_NODE
+  strokeSquares(ctx, index, view, ends.filter((at) => isMatch(state.mask, at)), markerPx, colors.ink, MARKER_WIDTH_PX)
+  strokeSquares(ctx, index, view, ends.filter((at) => !isMatch(state.mask, at)), markerPx, colors.dim, MARKER_WIDTH_PX)
+
+  const rings: number[] = []
+  for (const at of state.selected) {
+    const node = index.nodes[at]
+    if (node && isPointVisible(viewport, screenX(view, node.x), screenY(view, node.y))) rings.push(at)
+  }
+  // A card-coloured halo just outside the accent ring keeps it apart from a green or red square beside it, without
+  // covering the selected node's own fill.
+  const ringPx = nodePx + RING_GAP_PX * 2
+  strokeSquares(ctx, index, view, rings, ringPx + RING_WIDTH_PX + RING_HALO_PX, colors.card, RING_HALO_PX)
+  strokeSquares(ctx, index, view, rings, ringPx, colors.accent, RING_WIDTH_PX)
+
+  const gridLabels = layoutGridLabels(ctx, index, state)
+  if (scaledNodePx >= LABEL_MIN_NODE_PX) drawTags(ctx, index, state, visible, nodePx, gridLabelBoxes(gridLabels))
+  drawGridLabels(ctx, gridLabels, colors)
+}

@@ -98,6 +98,7 @@ describe.each(GUIDE_FOLDERS)('%s guides', (folder) => {
       'QCx_Combined.pq',
       'QCx_Combined_SETUP.md',
       'QCx_Electrical_SETUP.md',
+      'QCx_FFU_Map_SETUP.md',
       'QCx_Issues_SETUP.md',
       'QCx_Mechanical_SETUP.md',
       'QCx_Overview_SETUP.md',

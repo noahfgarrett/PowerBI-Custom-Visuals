@@ -125,6 +125,12 @@ function relativeLuminance(channels: [number, number, number]): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b
 }
 
+/** WCAG relative luminance (0 for black to 1 for white) of a hex colour; null when it is not hex. */
+export function relativeLuminanceOf(hex: string): number | null {
+  const channels = hexChannels(hex)
+  return channels === null ? null : relativeLuminance(channels)
+}
+
 /** WCAG contrast ratio (1–21) between two hex colours; 1 when either is not hex. */
 export function contrastRatio(a: string, b: string): number {
   const first = hexChannels(a)

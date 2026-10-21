@@ -18,7 +18,7 @@ Operational runbook for validating, packaging, and troubleshooting Business Pack
 
 ## Blocker Conditions (do not release)
 - Any TypeScript compile failure.
-- Any review report warnings or errors.
+- Any review report warnings or errors. Exempt checks are not warnings: they are listed under `exemptions` with their reason, set in `REVIEW_EXEMPTIONS` in `scripts/review-business-package.mjs` (qaqc-ffu-map: animation settings and accessibility card, which the map has nothing to toggle).
 - Tooltip regressions (missing, static, or native-title fallback).
 - Selection or context menu regressions.
 - High contrast mode rendering illegible labels/marks.
