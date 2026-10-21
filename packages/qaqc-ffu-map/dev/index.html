@@ -16,6 +16,17 @@
         overflow: hidden;
         outline: 1px dashed #9aa4b2;
       }
+      #note {
+        position: absolute;
+        top: 5px;
+        left: 24px;
+        right: 24px;
+        overflow: hidden;
+        color: #45505f;
+        font-size: 11px;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
       #tooltip {
         position: fixed;
         z-index: 10;
@@ -30,6 +41,7 @@
     </style>
   </head>
   <body>
+    <div id="note"></div>
     <div id="frame"></div>
     <div id="tooltip"></div>
     <script type="module" src="./main.tsx"></script>

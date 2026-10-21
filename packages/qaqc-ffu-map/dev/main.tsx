@@ -5,16 +5,25 @@ import '../style/visual.less'
 
 import { syntheticFfuTable } from '../../qaqc-shared/src/__tests__/fixtures/syntheticFfu'
 import type { TooltipRequest } from '../../qaqc-shared/src/chartTypes'
+import type { InspectionTableSource } from '../../qaqc-shared/src/dataView'
 import { FfuMapDashboard } from '../../qaqc-shared/src/components/FfuMapDashboard'
 import { StatusPanel } from '../../qaqc-shared/src/components/StatusPanel'
 import { buildFfuIndex, FFU_SLOTS, readFfuTable, REQUIRED_FFU_ROLES } from '../../qaqc-shared/src/ffuMap'
 import { isPresetName, resolveTheme } from '../../qaqc-shared/src/theme'
+import { layoutTableOf } from './layoutTable'
+import { measureDraw, runScriptedState, scriptedStateOf } from './scriptedState'
+
+/** Served by the dev server from FFU_LAYOUT_CSV (see vite.config.ts). */
+const LAYOUT_URL = '/__ffu-layout.csv'
 
 const params = new URLSearchParams(window.location.search)
 const width = Number(params.get('w') ?? 1280)
 const height = Number(params.get('h') ?? 720)
 const presetParam = params.get('preset') ?? 'qaqc'
 const data = params.get('data') ?? 'synthetic'
+const isLayoutFile = params.get('file') === '1'
+const isDebug = params.get('debug') === '1'
+const state = scriptedStateOf(params.get('state'))
 
 const frame = document.getElementById('frame')
 const tooltip = document.getElementById('tooltip')
@@ -69,12 +78,32 @@ if (data === 'missing') {
     />,
   )
 } else {
-  // Made-up rows only: the harness never loads a real layout.
-  const table = readFfuTable(syntheticFfuTable(Number(params.get('n') ?? 6000)))
-  if (table.kind !== 'ready') throw new Error('the synthetic table binds every slot')
+  void renderMap().catch((error: unknown) => {
+    showNote(`Could not load the map: ${error instanceof Error ? error.message : String(error)}`)
+  })
+}
+
+/** A line of text above the frame: the data source, the debug timing, or a load error. */
+function showNote(text: string): void {
+  const note = document.getElementById('note')
+  if (note) note.textContent = text
+}
+
+/** Made-up rows, or with `?file=1` the local layout CSV the dev server serves, with made-up tracker fields. */
+async function tableOf(): Promise<InspectionTableSource> {
+  if (!isLayoutFile) return syntheticFfuTable(Number(params.get('n') ?? 6000))
+  const response = await fetch(LAYOUT_URL, { cache: 'no-store' })
+  if (!response.ok) throw new Error(await response.text())
+  return layoutTableOf(await response.text())
+}
+
+async function renderMap(): Promise<void> {
+  const table = readFfuTable(await tableOf())
+  if (table.kind !== 'ready') throw new Error('the table does not bind FFU Tag, X and Y')
   const started = performance.now()
   const index = buildFfuIndex(table.rows, table.columns)
   document.title = `index ${Math.round(performance.now() - started)} ms`
+  showNote(isLayoutFile ? 'Local layout file · sample tracker data' : 'Synthetic data')
   root.render(
     <FfuMapDashboard
       title="QCx FFU Map"
@@ -89,4 +118,11 @@ if (data === 'missing') {
       onHover={showTooltip}
     />,
   )
+  if (isDebug) {
+    const ratio = params.get('ratio')
+    const timing = await measureDraw(index, theme, ratio === null ? null : Number(ratio))
+    showNote(`${isLayoutFile ? 'Local layout file · sample tracker data' : 'Synthetic data'} · ${timing}`)
+  }
+  await runScriptedState(state, index)
+  document.body.setAttribute('data-ready', state)
 }
