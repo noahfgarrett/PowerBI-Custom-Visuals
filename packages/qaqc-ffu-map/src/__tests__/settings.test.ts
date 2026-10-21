@@ -37,7 +37,7 @@ describe('FfuMapSettingsModel', () => {
   it('builds the Format pane cards with the object names capabilities.json declares', () => {
     const formattingModel = new FormattingSettingsService().buildFormattingModel(new FfuMapSettingsModel())
     const names = formattingModel.cards.map((card) => ('uid' in card ? card.uid : '').replace(/-card$/, ''))
-    expect(names).toEqual(['colors', 'cardSettings', 'animationSettings'])
+    expect(names).toEqual(['colors', 'cardSettings'])
     expect(Object.keys(capabilities.objects)).toEqual(names)
   })
 })

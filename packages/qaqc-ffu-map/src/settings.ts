@@ -66,26 +66,10 @@ class CardStyleSettings extends formattingSettings.SimpleCard {
   slices = [this.backgroundColor, this.backgroundOpacity, this.cardOpacity]
 }
 
-/** The same Animation card as the other QCx visuals, so their Format panes match; the map has no transitions to switch. */
-class AnimationSettingsCard extends formattingSettings.SimpleCard {
-  enabled = new formattingSettings.ToggleSwitch({
-    name: 'enabled',
-    displayName: 'Transitions',
-    displayNameKey: 'Qaqc_animation_enabled',
-    value: true,
-  })
-
-  name = 'animationSettings'
-  displayName = 'Animation'
-  displayNameKey = 'Qaqc_animation'
-  slices = [this.enabled]
-}
-
 export class FfuMapSettingsModel extends formattingSettings.Model {
   colors = new ColorsCard()
   cardSettings = new CardStyleSettings()
-  animationSettings = new AnimationSettingsCard()
-  cards = [this.colors, this.cardSettings, this.animationSettings]
+  cards = [this.colors, this.cardSettings]
 }
 
 export interface DisplaySettings {

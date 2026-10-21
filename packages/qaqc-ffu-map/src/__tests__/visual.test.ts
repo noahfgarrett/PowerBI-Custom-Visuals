@@ -11,7 +11,10 @@ import pbiviz from '../../pbiviz.json'
 import { QaqcFfuMapVisual } from '../visual'
 import { tableDataView } from './tableDataView'
 
-const dashboard = vi.hoisted(() => ({ shouldThrow: false, props: [] as FfuMapDashboardProps[] }))
+const dashboard = vi.hoisted(() => {
+  const props: FfuMapDashboardProps[] = []
+  return { shouldThrow: false, props }
+})
 const indexBuilds = vi.hoisted(() => ({ count: 0 }))
 
 // Passes through to the real index builder, counting calls, so tests can show when the visual re-indexes.
@@ -438,10 +441,10 @@ describe('QaqcFfuMapVisual', () => {
     expect(harness.showContextMenu).not.toHaveBeenCalled()
   })
 
-  it('returns a Format pane model with the colors, background and animation cards', () => {
+  it('returns a Format pane model with the colors and background cards', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(ROWS)))
     const cards = harness.visual.getFormattingModel().cards
-    expect(cards.map((card) => ('uid' in card ? card.uid : ''))).toEqual(['colors-card', 'cardSettings-card', 'animationSettings-card'])
+    expect(cards.map((card) => ('uid' in card ? card.uid : ''))).toEqual(['colors-card', 'cardSettings-card'])
   })
 })

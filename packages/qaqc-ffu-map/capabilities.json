@@ -389,19 +389,6 @@
           }
         }
       }
-    },
-    "animationSettings": {
-      "displayName": "Animation",
-      "displayNameKey": "Qaqc_animation",
-      "properties": {
-        "enabled": {
-          "displayName": "Transitions",
-          "displayNameKey": "Qaqc_animation_enabled",
-          "type": {
-            "bool": true
-          }
-        }
-      }
     }
   },
   "tooltips": {

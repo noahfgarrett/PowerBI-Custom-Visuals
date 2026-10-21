@@ -48,8 +48,6 @@
     "Qaqc_background": "Background",
     "Qaqc_background_color": "Background color",
     "Qaqc_background_opacity": "Background opacity",
-    "Qaqc_card_opacity": "Card opacity",
-    "Qaqc_animation": "Animation",
-    "Qaqc_animation_enabled": "Transitions"
+    "Qaqc_card_opacity": "Card opacity"
   }
 }
