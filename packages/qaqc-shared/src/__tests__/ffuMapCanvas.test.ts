@@ -9,6 +9,7 @@ import {
   drawFfuMap,
   ffuMapColorsFromTheme,
   lineColorOf,
+  lineWidthsOf,
   readableLineColor,
   type DrawState,
   type FfuCanvasContext,
@@ -154,6 +155,13 @@ function draw(index: FfuIndex, overrides: Partial<DrawState>): RecordingContext 
   return ctx
 }
 
+/** Stroked line paths, with widths rounded to 0.01 px so products like 0.18 × 10 compare exactly. */
+function lineStrokesOf(ctx: RecordingContext): RecordedStroke[] {
+  return ctx.strokes
+    .filter((stroke) => stroke.segments > 0)
+    .map((stroke) => ({ ...stroke, width: Math.round(stroke.width * 100) / 100 }))
+}
+
 /** Rects filled at the node size: the node squares. */
 function nodeFills(ctx: RecordingContext, nodePx: number): RecordedRect[] {
   return ctx.filledRects.filter((rect) => rect.width === nodePx && rect.height === nodePx)
@@ -220,6 +228,22 @@ describe('lineColorOf', () => {
   })
 })
 
+describe('lineWidthsOf', () => {
+  it('is 0.18 × the node square, at least 1.5 px, with emphasis at twice that', () => {
+    expect(lineWidthsOf(2)).toEqual({ base: 1.5, emphasis: 3 })
+    expect(lineWidthsOf(0)).toEqual({ base: 1.5, emphasis: 3 })
+    expect(lineWidthsOf(Number.NaN)).toEqual({ base: 1.5, emphasis: 3 })
+    expect(lineWidthsOf(10).base).toBeCloseTo(1.8)
+    expect(lineWidthsOf(10).emphasis).toBeCloseTo(3.6)
+  })
+
+  it('caps the base at 4 px and the emphasis at 6 px', () => {
+    expect(lineWidthsOf(20).base).toBeCloseTo(3.6)
+    expect(lineWidthsOf(20).emphasis).toBe(6)
+    expect(lineWidthsOf(100)).toEqual({ base: 4, emphasis: 6 })
+  })
+})
+
 describe('drawFfuMap', () => {
   it('fills masked-out nodes with the dim colour and matching nodes with good, bad or unknown', () => {
     const index = indexOf([
@@ -263,6 +287,16 @@ describe('drawFfuMap', () => {
       { tag: 'FFU900-ZZ01-F02-A', x: 2, y: 0 },
     ])
     const ctx = draw(index, { view: { scale: LABEL_MIN_NODE_PX, offsetX: 50, offsetY: 50 } })
+    expect(ctx.texts.map((text) => text.text)).toEqual(['FFU900-ZZ01-F01-A'])
+  })
+
+  it('keeps clear space between neighbouring tag labels', () => {
+    // Tags are 102 px wide; centres 105 px apart leave 3 px, under the 4 px kept on each side.
+    const index = indexOf([
+      { tag: 'FFU900-ZZ01-F01-A', x: 0, y: 0 },
+      { tag: 'FFU900-ZZ01-F02-A', x: 105 / LABEL_MIN_NODE_PX, y: 0 },
+    ])
+    const ctx = draw(index, { view: { scale: LABEL_MIN_NODE_PX, offsetX: 60, offsetY: 50 } })
     expect(ctx.texts.map((text) => text.text)).toEqual(['FFU900-ZZ01-F01-A'])
   })
 
@@ -313,8 +347,49 @@ describe('drawFfuMap', () => {
       { tag: 'FFU900-ZZ01-F02-A', x: 1, y: 0, line: 'L1', lineOrder: 2, lineColor: '#1F3A93' },
     ])
     const ctx = draw(index, { mask: Uint8Array.from([0, 0]) })
-    const lineStrokes = ctx.strokes.filter((stroke) => stroke.segments > 0)
-    expect(lineStrokes).toEqual([{ style: COLORS.dim, width: 1.5, rects: 0, segments: 1 }])
+    const lineStrokes = lineStrokesOf(ctx)
+    expect(lineStrokes).toEqual([{ style: COLORS.dim, width: 1.8, rects: 0, segments: 1 }])
+  })
+
+  it('colours a segment only when both of its nodes match and dims the rest of the line', () => {
+    const index = indexOf([
+      { tag: 'FFU900-ZZ01-F01-A', x: 0, y: 0, line: 'L1', lineOrder: 1, lineColor: '#1F3A93' },
+      { tag: 'FFU900-ZZ01-F02-A', x: 1, y: 0, line: 'L1', lineOrder: 2, lineColor: '#1F3A93' },
+      { tag: 'FFU900-ZZ01-F03-A', x: 2, y: 0, line: 'L1', lineOrder: 3, lineColor: '#1F3A93' },
+      { tag: 'FFU900-ZZ01-F04-A', x: 3, y: 0, line: 'L1', lineOrder: 4, lineColor: '#1F3A93' },
+    ])
+    const ctx = draw(index, { mask: Uint8Array.from([1, 1, 0, 0]) })
+    const lineStrokes = lineStrokesOf(ctx)
+    expect(lineStrokes).toEqual([
+      { style: COLORS.dim, width: 1.8, rects: 0, segments: 2 },
+      { style: '#1F3A93', width: 1.8, rects: 0, segments: 1 },
+    ])
+  })
+
+  it('emphasizes the whole hovered line, dimming its filtered-out segments', () => {
+    const index = indexOf([
+      { tag: 'FFU900-ZZ01-F01-A', x: 0, y: 0, line: 'L1', lineOrder: 1, lineColor: '#1F3A93' },
+      { tag: 'FFU900-ZZ01-F02-A', x: 1, y: 0, line: 'L1', lineOrder: 2, lineColor: '#1F3A93' },
+      { tag: 'FFU900-ZZ01-F03-A', x: 2, y: 0, line: 'L1', lineOrder: 3, lineColor: '#1F3A93' },
+    ])
+    const ctx = draw(index, { hoverLine: 0, mask: Uint8Array.from([1, 1, 0]) })
+    const wide = lineStrokesOf(ctx).filter((stroke) => stroke.width === 3.6)
+    expect(wide).toEqual([
+      { style: COLORS.dim, width: 3.6, rects: 0, segments: 1 },
+      { style: '#1F3A93', width: 3.6, rects: 0, segments: 1 },
+    ])
+  })
+
+  it('scales line widths with the node size on screen', () => {
+    // nodeSize 1 at scale 15 is a 15 px square: base 0.18 × 15 = 2.7, emphasis 5.4.
+    const index = indexOf([
+      { tag: 'FFU900-ZZ01-F01-A', x: 0, y: 0, line: 'L1', lineOrder: 1, lineColor: '#1F3A93' },
+      { tag: 'FFU900-ZZ01-F02-A', x: 1, y: 0, line: 'L1', lineOrder: 2, lineColor: '#1F3A93' },
+    ])
+    const widthsAt = (scale: number, hoverLine: number): number[] =>
+      lineStrokesOf(draw(index, { view: { scale, offsetX: 5, offsetY: 5 }, hoverLine })).map((stroke) => stroke.width)
+    expect(widthsAt(15, -1)).toEqual([2.7])
+    expect(widthsAt(15, 0)).toEqual([5.4, 2.7])
   })
 
   it('strokes the hovered line in its colour at twice the base width, then at the base width over its squares', () => {
@@ -324,10 +399,10 @@ describe('drawFfuMap', () => {
       { tag: 'FFU900-ZZ01-F03-A', x: 2, y: 0, line: 'L1', lineOrder: 3, lineColor: '#1F3A93' },
     ])
     const ctx = draw(index, { hoverLine: 0 })
-    const lineStrokes = ctx.strokes.filter((stroke) => stroke.segments > 0)
+    const lineStrokes = lineStrokesOf(ctx)
     expect(lineStrokes).toEqual([
-      { style: '#1F3A93', width: 3, rects: 0, segments: 2 },
-      { style: '#1F3A93', width: 1.5, rects: 0, segments: 2 },
+      { style: '#1F3A93', width: 3.6, rects: 0, segments: 2 },
+      { style: '#1F3A93', width: 1.8, rects: 0, segments: 2 },
     ])
   })
 

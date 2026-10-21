@@ -130,12 +130,12 @@ describe('zoomAt and toWorld', () => {
 })
 
 describe('nodeSizeOf', () => {
-  it('is 0.7 × median nearest-neighbour distance', () => {
-    expect(nodeSizeOf(indexOf(rowOf(20, 10)))).toBeCloseTo(7)
+  it('is 0.45 × median nearest-neighbour distance', () => {
+    expect(nodeSizeOf(indexOf(rowOf(20, 10)))).toBeCloseTo(4.5)
   })
 
   it('takes the median, so one far outlier does not move it', () => {
-    expect(nodeSizeOf(indexOf([...rowOf(4, 10), { tag: 'far', x: 1000, y: 0 }]))).toBeCloseTo(7)
+    expect(nodeSizeOf(indexOf([...rowOf(4, 10), { tag: 'far', x: 1000, y: 0 }]))).toBeCloseTo(4.5)
   })
 
   it('finds nearest neighbours in two dimensions', () => {
@@ -143,7 +143,7 @@ describe('nodeSizeOf', () => {
     for (let row = 0; row < 30; row += 1) {
       for (let column = 0; column < 30; column += 1) grid.push({ tag: `G${row}-${column}`, x: column * 20, y: row * 20 })
     }
-    expect(nodeSizeOf(indexOf(grid))).toBeCloseTo(14)
+    expect(nodeSizeOf(indexOf(grid))).toBeCloseTo(9)
   })
 
   it('is 10 with fewer than 2 nodes', () => {
@@ -259,7 +259,7 @@ describe('a far outlier', () => {
   const grid = buildHitGrid(index, nodeSizeOf(index))
 
   it('does not move the node size', () => {
-    expect(nodeSizeOf(index)).toBeCloseTo(7)
+    expect(nodeSizeOf(index)).toBeCloseTo(4.5)
   })
 
   it('is still found by nodeAt and lineAt', () => {

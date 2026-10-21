@@ -22,7 +22,8 @@ export const MIN_SCALE_FACTOR = 0.5
 /** Node size when there are too few nodes to measure spacing. */
 const DEFAULT_NODE_SIZE = 10
 const MIN_NODE_SIZE = 1
-const NODE_SIZE_OF_SPACING = 0.7
+/** Node size over the median nearest-neighbour distance: small enough that the group lines show between squares. */
+export const NODE_SIZE_OF_SPACING = 0.45
 /** Caps the hit grid at this many cells per axis, so a tiny node size on a huge drawing cannot exhaust memory. */
 const MAX_GRID_CELLS_PER_AXIS = 1024
 /**
@@ -237,7 +238,7 @@ function nearestDistance(index: FfuIndex, buckets: Buckets, self: number): numbe
   return Number.isFinite(best) ? best : 0
 }
 
-/** 0.7 × the median nearest-neighbour distance, at least 1; 10 when there are fewer than 2 nodes. */
+/** NODE_SIZE_OF_SPACING × the median nearest-neighbour distance, at least 1; 10 when there are fewer than 2 nodes. */
 export function nodeSizeOf(index: FfuIndex): number {
   const count = index.nodes.length
   if (count < 2) return DEFAULT_NODE_SIZE

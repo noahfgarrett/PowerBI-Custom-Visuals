@@ -1,5 +1,5 @@
 import type { FfuIndex, FfuNode, GridAxis } from './ffuMap'
-import type { Size, View } from './ffuGeometry'
+import { NODE_SIZE_OF_SPACING, type Size, type View } from './ffuGeometry'
 import { compositeOver, contrastRatio, type ResolvedTheme } from './theme'
 
 export interface FfuMapColors {
@@ -84,8 +84,12 @@ const HEX_COLOR = /^#[0-9a-f]{6}$/i
 const BLACK = '#000000'
 const DARKEN_STEPS = 10
 
-const LINE_WIDTH_PX = 1.5
-const EMPHASIS_LINE_WIDTH_PX = LINE_WIDTH_PX * 2
+/** Group lines are this fraction of the node square wide, within MIN and MAX, so they read at fit and zoomed in. */
+const LINE_WIDTH_OF_NODE = 0.18
+const LINE_MIN_WIDTH_PX = 1.5
+const LINE_MAX_WIDTH_PX = 4
+/** The hovered and selected lines are twice the base width, up to this. */
+const EMPHASIS_LINE_MAX_WIDTH_PX = 6
 const DIVIDER_WIDTH_PX = 1
 const MARKER_SIZE_OF_NODE = 1.6
 const MARKER_WIDTH_PX = 1.5
@@ -101,14 +105,16 @@ const FONT_FAMILY = 'Inter, "Segoe UI", system-ui, -apple-system, sans-serif'
 const TAG_FONT_MIN_PX = 9
 const TAG_FONT_MAX_PX = 12
 const TAG_GAP_PX = 2
+/** Clear space kept on each side of a tag, so neighbouring tags in a row never read as one run of text. */
+const TAG_SPACING_PX = 4
 /** Side padding of the card backing behind a selected node's tag. */
 const TAG_BACKING_PAD_PX = 2
 /** Cell size of the screen grid that keeps tag labels apart. */
 const LABEL_CELL_PX = 64
 /** Cells per row in the label grid's keys; far more than any canvas is wide. */
 const LABEL_CELL_KEY_SPAN = 1 << 16
-/** Node pitch over node size: nodeSizeOf takes 0.7 × the median nearest-neighbour distance. */
-const NODE_PITCH_OF_SIZE = 1 / 0.7
+/** Node pitch over node size, the inverse of nodeSizeOf's factor. */
+const NODE_PITCH_OF_SIZE = 1 / NODE_SIZE_OF_SPACING
 /** A rough average glyph width, in ems, for sizing tags to the node pitch without measuring each one. */
 const CHAR_WIDTH_EM = 0.6
 
@@ -224,17 +230,45 @@ function drawDividers(ctx: FfuCanvasContext, state: DrawState, columns: GridAxis
   ctx.stroke()
 }
 
-/** Adds the visible segments of each line to the current path; true when any was added. */
-function traceLines(ctx: FfuCanvasContext, index: FfuIndex, view: View, viewport: Viewport, lines: readonly number[]): boolean {
+/** Line widths in CSS pixels for a node square of `nodePx`. */
+export interface LineWidths {
+  base: number
+  emphasis: number
+}
+
+/**
+ * Base width = clamp(LINE_WIDTH_OF_NODE × nodePx, LINE_MIN_WIDTH_PX, LINE_MAX_WIDTH_PX); the hovered and selected lines
+ * are twice that, capped at EMPHASIS_LINE_MAX_WIDTH_PX. A size that is not a positive number gives the minimum.
+ */
+export function lineWidthsOf(nodePx: number): LineWidths {
+  const scaled = Number.isFinite(nodePx) && nodePx > 0 ? nodePx * LINE_WIDTH_OF_NODE : 0
+  const base = clamp(scaled, LINE_MIN_WIDTH_PX, LINE_MAX_WIDTH_PX)
+  return { base, emphasis: Math.min(base * 2, EMPHASIS_LINE_MAX_WIDTH_PX) }
+}
+
+/** Which segments of a line to trace, by their two node indices. */
+type SegmentFilter = (a: number, b: number) => boolean
+
+/** Adds the visible segments of each line that pass `include` to the current path; true when any was added. */
+function traceLines(
+  ctx: FfuCanvasContext,
+  index: FfuIndex,
+  view: View,
+  viewport: Viewport,
+  lines: readonly number[],
+  include: SegmentFilter,
+): boolean {
   let traced = false
   for (const lineIndex of lines) {
     const line = index.lines[lineIndex]
     if (!line) continue
     let isPenDown = false
     for (let at = 1; at < line.nodes.length; at += 1) {
-      const a = index.nodes[line.nodes[at - 1] ?? -1]
-      const b = index.nodes[line.nodes[at] ?? -1]
-      if (!a || !b) {
+      const from = line.nodes[at - 1] ?? -1
+      const to = line.nodes[at] ?? -1
+      const a = index.nodes[from]
+      const b = index.nodes[to]
+      if (!a || !b || !include(from, to)) {
         isPenDown = false
         continue
       }
@@ -255,25 +289,26 @@ function traceLines(ctx: FfuCanvasContext, index: FfuIndex, view: View, viewport
   return traced
 }
 
-function strokeLines(
-  ctx: FfuCanvasContext,
-  index: FfuIndex,
-  view: View,
-  viewport: Viewport,
-  lines: readonly number[],
-  color: string,
-  width: number,
-): void {
-  if (lines.length === 0) return
+interface LineStroke {
+  lines: readonly number[]
+  include: SegmentFilter
+  color: string
+  width: number
+}
+
+function strokeLines(ctx: FfuCanvasContext, index: FfuIndex, view: View, viewport: Viewport, stroke: LineStroke): void {
+  if (stroke.lines.length === 0) return
   ctx.beginPath()
-  if (!traceLines(ctx, index, view, viewport, lines)) return
-  ctx.strokeStyle = color
-  ctx.lineWidth = width
+  if (!traceLines(ctx, index, view, viewport, stroke.lines, stroke.include)) return
+  ctx.strokeStyle = stroke.color
+  ctx.lineWidth = stroke.width
   ctx.stroke()
 }
 
-function isLineMatched(index: FfuIndex, line: number, mask: Uint8Array): boolean {
-  return index.lines[line]?.nodes.some((node) => isMatch(mask, node)) ?? false
+/** A segment is in colour only when both of its nodes pass the in-visual filters; otherwise it is dim. */
+function segmentFilters(mask: Uint8Array): { matched: SegmentFilter; dimmed: SegmentFilter } {
+  const matched = (a: number, b: number): boolean => isMatch(mask, a) && isMatch(mask, b)
+  return { matched, dimmed: (a, b) => !matched(a, b) }
 }
 
 /** -1 (no line, or nothing hovered or selected) never counts. */
@@ -281,37 +316,41 @@ function isEmphasized(state: DrawState, line: number): boolean {
   return line >= 0 && (line === state.hoverLine || line === state.selectedLine)
 }
 
-/** Dimmed lines, then lines in colour batched by colour. The hovered and selected lines are left for drawEmphasis. */
-function drawLines(ctx: FfuCanvasContext, index: FfuIndex, state: DrawState, viewport: Viewport): void {
+/**
+ * Every dimmed segment in one path, then the matched segments batched by line colour. The hovered and selected lines
+ * are left for drawEmphasis.
+ */
+function drawLines(ctx: FfuCanvasContext, index: FfuIndex, state: DrawState, viewport: Viewport, width: number): void {
   const { view, mask, colors } = state
-
-  const dimmed: number[] = []
+  const filters = segmentFilters(mask)
+  const plain: number[] = []
   const byColor = new Map<string, number[]>()
   for (let line = 0; line < index.lines.length; line += 1) {
     if (isEmphasized(state, line)) continue
-    if (!isLineMatched(index, line, mask)) {
-      dimmed.push(line)
-      continue
-    }
+    plain.push(line)
     const color = lineColorOf(index, line, colors)
     const bucket = byColor.get(color)
     if (bucket) bucket.push(line)
     else byColor.set(color, [line])
   }
 
-  strokeLines(ctx, index, view, viewport, dimmed, colors.dim, LINE_WIDTH_PX)
-  for (const [color, lines] of byColor) strokeLines(ctx, index, view, viewport, lines, color, LINE_WIDTH_PX)
+  strokeLines(ctx, index, view, viewport, { lines: plain, include: filters.dimmed, color: colors.dim, width })
+  for (const [color, lines] of byColor) {
+    strokeLines(ctx, index, view, viewport, { lines, include: filters.matched, color, width })
+  }
 }
 
-/** The selected and hovered lines, in their colour (or dim when no node on them matches), at `width`. */
+/** The whole of each selected and hovered line at `width`: matched segments in its colour, the rest dim. */
 function drawEmphasis(ctx: FfuCanvasContext, index: FfuIndex, state: DrawState, viewport: Viewport, width: number): void {
   const { view, mask, colors } = state
+  const filters = segmentFilters(mask)
   const emphasized = [state.selectedLine, state.hoverLine].filter(
     (line, at, all) => line >= 0 && line < index.lines.length && all.indexOf(line) === at,
   )
   for (const line of emphasized) {
-    const color = isLineMatched(index, line, mask) ? lineColorOf(index, line, colors) : colors.dim
-    strokeLines(ctx, index, view, viewport, [line], color, width)
+    strokeLines(ctx, index, view, viewport, { lines: [line], include: filters.dimmed, color: colors.dim, width })
+    const color = lineColorOf(index, line, colors)
+    strokeLines(ctx, index, view, viewport, { lines: [line], include: filters.matched, color, width })
   }
 }
 
@@ -466,7 +505,8 @@ function drawTags(
 
   const boxOf = (sx: number, sy: number, tag: string): Box => {
     const width = ctx.measureText(tag).width
-    return { left: sx - width / 2, top: sy + below, right: sx + width / 2, bottom: sy + below + fontPx }
+    const half = width / 2 + TAG_SPACING_PX
+    return { left: sx - half, top: sy + below, right: sx + half, bottom: sy + below + fontPx }
   }
   const priority = visible.filter((at) => state.selected.has(at))
   const placed: { tag: string; x: number; y: number }[] = []
@@ -496,7 +536,8 @@ function drawTags(
   if (backings.length > 0) {
     ctx.beginPath()
     for (const box of backings) {
-      ctx.rect(box.left - TAG_BACKING_PAD_PX, box.top, box.right - box.left + TAG_BACKING_PAD_PX * 2, box.bottom - box.top)
+      const inset = TAG_SPACING_PX - TAG_BACKING_PAD_PX
+      ctx.rect(box.left + inset, box.top, box.right - box.left - inset * 2, box.bottom - box.top)
     }
     ctx.fillStyle = colors.card
     ctx.fill()
@@ -613,17 +654,18 @@ export function drawFfuMap(ctx: FfuCanvasContext, index: FfuIndex, state: DrawSt
   ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
 
+  const widths = lineWidthsOf(scaledNodePx)
   drawDividers(ctx, state, index.gridColumns, index.gridRows)
-  drawLines(ctx, index, state, viewport)
+  drawLines(ctx, index, state, viewport, widths.base)
 
   const visible = visibleNodes(index, view, viewport)
   drawNodes(ctx, index, state, visible, nodePx)
-  // The hovered and selected lines go over the nodes at twice the width, so the route stays traceable where squares
+  // The hovered and selected lines go over the nodes at the emphasis width, so the route stays traceable where squares
   // sit close enough to cover a line beneath them. Their own squares then go back on top, so their status still
   // reads, and the line is drawn once more at the base width through their centres.
-  drawEmphasis(ctx, index, state, viewport, EMPHASIS_LINE_WIDTH_PX)
+  drawEmphasis(ctx, index, state, viewport, widths.emphasis)
   drawNodes(ctx, index, state, visible.filter((at) => isEmphasized(state, index.nodes[at]?.line ?? -1)), nodePx)
-  drawEmphasis(ctx, index, state, viewport, LINE_WIDTH_PX)
+  drawEmphasis(ctx, index, state, viewport, widths.base)
 
   // Ends outside the in-visual filters dim with their nodes.
   const ends = visible.filter((at) => index.nodes[at]?.homeRun === true || index.nodes[at]?.finish === true)
