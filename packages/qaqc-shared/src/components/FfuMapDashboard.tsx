@@ -201,6 +201,7 @@ export function FfuMapDashboard(props: FfuMapDashboardProps): ReactElement {
   if (index.nodes.length > 0) return <FfuMapView {...props} />
 
   const isUnplaceable = index.notPlaced > 0
+  const unplacedRows = index.notPlaced === 1 ? '1 row has' : `${formatCount(index.notPlaced)} rows have`
   return (
     <div className="qaqc-root qaqc-ffu-root">
       <LoadingBar active={loading} />
@@ -209,7 +210,7 @@ export function FfuMapDashboard(props: FfuMapDashboardProps): ReactElement {
           icon={MapPinOff}
           title="No FFUs could be placed"
           message="Every row needs an FFU Tag and a numeric X and Y."
-          items={[`${index.notPlaced} rows have a blank tag or a missing X or Y`]}
+          items={[`${unplacedRows} a blank tag or a missing X or Y`]}
         />
       ) : (
         <StatusPanel icon={Inbox} title="No FFUs to show" message="The bound table has no rows." items={[]} />

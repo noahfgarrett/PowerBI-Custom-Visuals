@@ -544,6 +544,15 @@ describe('FfuMapDashboard', () => {
       '3 rows have a blank tag or a missing X or Y',
     ])
   })
+
+  it('says "1 row has" when a single row could not be placed', () => {
+    const { rows, columns } = readyTable(1)
+    const blankTag = rows.map((row) => row.map((cell, column) => (column === columns.tag ? '' : cell)))
+    const unplaceable = mount(handlers(), { index: buildFfuIndex(blankTag, columns) })
+    expect([...unplaceable.container.querySelectorAll('[role="status"] li')].map((item) => item.textContent)).toEqual([
+      '1 row has a blank tag or a missing X or Y',
+    ])
+  })
 })
 
 describe('FfuMapDashboard stylesheet', () => {
