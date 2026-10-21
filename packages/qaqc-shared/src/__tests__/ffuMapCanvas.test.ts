@@ -87,6 +87,8 @@ class RecordingContext implements FfuCanvasContext {
   readonly filledRects: RecordedRect[] = []
   readonly strokes: RecordedStroke[] = []
   readonly texts: RecordedText[] = []
+  /** Every fill and stroke in call order, as `fill <style>` or `stroke <style>`. */
+  readonly order: string[] = []
   private pathRects: Omit<RecordedRect, 'style'>[] = []
   private pathSegments = 0
 
@@ -110,6 +112,7 @@ class RecordingContext implements FfuCanvasContext {
   fill(): void {
     const style = styleOf(this.fillStyle)
     for (const rect of this.pathRects) this.filledRects.push({ ...rect, style })
+    this.order.push(`fill ${style}`)
   }
 
   stroke(): void {
@@ -119,6 +122,7 @@ class RecordingContext implements FfuCanvasContext {
       rects: this.pathRects.length,
       segments: this.pathSegments,
     })
+    this.order.push(`stroke ${styleOf(this.strokeStyle)}`)
   }
 
   fillText(text: string, x: number, y: number): void {
@@ -240,7 +244,7 @@ describe('drawFfuMap', () => {
   it('draws tag labels only at or above LABEL_MIN_NODE_PX', () => {
     const index = indexOf([
       { tag: 'FFU900-ZZ01-F01-A', x: 0, y: 0 },
-      { tag: 'FFU900-ZZ01-F02-A', x: 2, y: 0 },
+      { tag: 'FFU900-ZZ01-F02-A', x: 4, y: 0 },
     ])
     const tags = new Set(index.nodes.map((node) => node.tag))
     const labelsAt = (scale: number): number =>
@@ -250,6 +254,57 @@ describe('drawFfuMap', () => {
 
     expect(labelsAt(LABEL_MIN_NODE_PX - 0.1)).toBe(0)
     expect(labelsAt(LABEL_MIN_NODE_PX)).toBe(2)
+  })
+
+  it('drops a tag label that would overprint a placed label', () => {
+    // At scale 36 the nodes are 72 px apart and each 17-character tag is 102 px wide.
+    const index = indexOf([
+      { tag: 'FFU900-ZZ01-F01-A', x: 0, y: 0 },
+      { tag: 'FFU900-ZZ01-F02-A', x: 2, y: 0 },
+    ])
+    const ctx = draw(index, { view: { scale: LABEL_MIN_NODE_PX, offsetX: 50, offsetY: 50 } })
+    expect(ctx.texts.map((text) => text.text)).toEqual(['FFU900-ZZ01-F01-A'])
+  })
+
+  it('drops a tag label that would cover another node square', () => {
+    const index = indexOf([
+      { tag: 'FFU900-ZZ01-F01-A', x: 0, y: 0 },
+      { tag: 'FFU900-ZZ01-F02-A', x: 0, y: 1.2 },
+    ])
+    const ctx = draw(index, { view: { scale: LABEL_MIN_NODE_PX, offsetX: 100, offsetY: 50 } })
+    expect(ctx.texts.map((text) => text.text)).toEqual(['FFU900-ZZ01-F02-A'])
+  })
+
+  it('drops a tag label that would start under a pinned grid label', () => {
+    // The tag's top sits at -10 + 18 + 2 = 10 px, inside the 17 px column-label band.
+    const index = indexOf([{ tag: 'FFU900-ZZ01-F01-A', x: 0, y: 0, gridColumn: 'C1' }])
+    const ctx = draw(index, { view: { scale: LABEL_MIN_NODE_PX, offsetX: 100, offsetY: -10 } })
+    expect(ctx.texts.map((text) => text.text)).toEqual(['C1'])
+  })
+
+  it('labels a selected node first, on a card backing', () => {
+    const index = indexOf([
+      { tag: 'FFU900-ZZ01-F01-A', x: 0, y: 0 },
+      { tag: 'FFU900-ZZ01-F02-A', x: 2, y: 0 },
+    ])
+    const ctx = draw(index, { view: { scale: LABEL_MIN_NODE_PX, offsetX: 50, offsetY: 50 }, selected: new Set([1]) })
+    expect(ctx.texts.map((text) => text.text)).toEqual(['FFU900-ZZ01-F02-A'])
+    expect(ctx.filledRects.filter((rect) => rect.style === COLORS.card)).toHaveLength(1)
+  })
+
+  it('strokes the hovered line over other lines\' squares, refills its own squares, then threads it through them', () => {
+    const index = indexOf([
+      { tag: 'FFU900-ZZ01-F01-A', x: 0, y: 0, line: 'L1', lineOrder: 1, lineColor: '#1F3A93', energized: 'true' },
+      { tag: 'FFU900-ZZ01-F02-A', x: 1, y: 0, line: 'L1', lineOrder: 2, lineColor: '#1F3A93', energized: 'true' },
+      { tag: 'FFU900-ZZ01-F03-A', x: 0, y: 1, line: 'L2', lineOrder: 1, lineColor: '#7A1F93', energized: 'false' },
+      { tag: 'FFU900-ZZ01-F04-A', x: 1, y: 1, line: 'L2', lineOrder: 2, lineColor: '#7A1F93', energized: 'false' },
+    ])
+    const ctx = draw(index, { hoverLine: 0 })
+    const hovered = ctx.order.indexOf('stroke #1F3A93')
+    expect(hovered).toBeGreaterThan(ctx.order.indexOf(`fill ${COLORS.bad}`))
+    expect(ctx.order.lastIndexOf(`fill ${COLORS.good}`)).toBeGreaterThan(hovered)
+    expect(ctx.order.lastIndexOf(`fill ${COLORS.bad}`)).toBeLessThan(hovered)
+    expect(ctx.order.lastIndexOf('stroke #1F3A93')).toBeGreaterThan(ctx.order.lastIndexOf(`fill ${COLORS.good}`))
   })
 
   it('strokes a line with no matching node in the dim colour', () => {
@@ -262,7 +317,7 @@ describe('drawFfuMap', () => {
     expect(lineStrokes).toEqual([{ style: COLORS.dim, width: 1.5, rects: 0, segments: 1 }])
   })
 
-  it('strokes the hovered line in its colour at twice the base width', () => {
+  it('strokes the hovered line in its colour at twice the base width, then at the base width over its squares', () => {
     const index = indexOf([
       { tag: 'FFU900-ZZ01-F01-A', x: 0, y: 0, line: 'L1', lineOrder: 1, lineColor: '#1F3A93' },
       { tag: 'FFU900-ZZ01-F02-A', x: 1, y: 0, line: 'L1', lineOrder: 2, lineColor: '#1F3A93' },
@@ -270,10 +325,13 @@ describe('drawFfuMap', () => {
     ])
     const ctx = draw(index, { hoverLine: 0 })
     const lineStrokes = ctx.strokes.filter((stroke) => stroke.segments > 0)
-    expect(lineStrokes).toEqual([{ style: '#1F3A93', width: 3, rects: 0, segments: 2 }])
+    expect(lineStrokes).toEqual([
+      { style: '#1F3A93', width: 3, rects: 0, segments: 2 },
+      { style: '#1F3A93', width: 1.5, rects: 0, segments: 2 },
+    ])
   })
 
-  it('outlines home-run and finish nodes in ink and rings selected nodes in accent', () => {
+  it('outlines home-run and finish nodes in ink and rings selected nodes in accent on a card halo', () => {
     const index = indexOf([
       { tag: 'FFU900-ZZ01-F01-A', x: 0, y: 0, line: 'L1', lineOrder: 1, homeRun: 'TRUE' },
       { tag: 'FFU900-ZZ01-F02-A', x: 1, y: 0, line: 'L1', lineOrder: 2 },
@@ -283,7 +341,21 @@ describe('drawFfuMap', () => {
     const rectStrokes = ctx.strokes.filter((stroke) => stroke.rects > 0)
     expect(rectStrokes).toEqual([
       { style: COLORS.ink, width: 1.5, rects: 2, segments: 0 },
+      { style: COLORS.card, width: 1.5, rects: 1, segments: 0 },
       { style: COLORS.accent, width: 2, rects: 1, segments: 0 },
+    ])
+  })
+
+  it('outlines the home run of a filtered-out node in the dim colour', () => {
+    const index = indexOf([
+      { tag: 'FFU900-ZZ01-F01-A', x: 0, y: 0, line: 'L1', lineOrder: 1, homeRun: 'TRUE' },
+      { tag: 'FFU900-ZZ01-F02-A', x: 1, y: 0, line: 'L1', lineOrder: 2, finish: 'TRUE' },
+    ])
+    const ctx = draw(index, { mask: Uint8Array.from([0, 1]) })
+    const rectStrokes = ctx.strokes.filter((stroke) => stroke.rects > 0)
+    expect(rectStrokes).toEqual([
+      { style: COLORS.ink, width: 1.5, rects: 1, segments: 0 },
+      { style: COLORS.dim, width: 1.5, rects: 1, segments: 0 },
     ])
   })
 
