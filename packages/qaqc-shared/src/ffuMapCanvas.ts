@@ -458,9 +458,11 @@ class BoxGrid {
     }
   }
 
-  overlaps(box: Box): boolean {
+  /** True when `box` overlaps any box in the grid other than `except`. */
+  overlaps(box: Box, except: Box | null = null): boolean {
     for (const key of this.keysOf(box)) {
       for (const other of this.cells.get(key) ?? []) {
+        if (other === except) continue
         if (box.left < other.right && other.left < box.right && box.top < other.bottom && other.top < box.bottom) return true
       }
     }
@@ -486,27 +488,30 @@ function drawTags(
   let longest = 1
   for (const at of visible) longest = Math.max(longest, index.nodes[at]?.tag.length ?? 0)
   const fontPx = Math.round(clamp((nodePx * NODE_PITCH_OF_SIZE) / (CHAR_WIDTH_EM * longest), TAG_FONT_MIN_PX, TAG_FONT_MAX_PX))
-  const below = nodePx / 2 + TAG_GAP_PX
   ctx.font = `${fontPx}px ${FONT_FAMILY}`
+  // A home-run or finish node is as big as its marker, and its tag starts below the marker's outline.
+  const halfOf = (node: FfuNode): number => ((node.homeRun || node.finish ? MARKER_SIZE_OF_NODE : 1) * nodePx) / 2
+  const belowOf = (node: FfuNode): number => halfOf(node) + TAG_GAP_PX
 
-  // A home-run or finish node is as big as its marker.
   const squares = new BoxGrid()
+  const ownSquares = new Map<number, Box>()
   for (const at of visible) {
     const node = index.nodes[at]
     if (!node) continue
     const sx = screenX(view, node.x)
     const sy = screenY(view, node.y)
-    const half = ((node.homeRun || node.finish ? MARKER_SIZE_OF_NODE : 1) * nodePx) / 2
-    squares.add({ left: sx - half, top: sy - half, right: sx + half, bottom: sy + half })
+    const half = halfOf(node)
+    const square = { left: sx - half, top: sy - half, right: sx + half, bottom: sy + half }
+    squares.add(square)
+    ownSquares.set(at, square)
   }
   // The pinned grid labels are drawn last, over everything, so no tag starts under one.
   const labels = new BoxGrid()
   for (const box of pinned) labels.add(box)
 
-  const boxOf = (sx: number, sy: number, tag: string): Box => {
-    const width = ctx.measureText(tag).width
-    const half = width / 2 + TAG_SPACING_PX
-    return { left: sx - half, top: sy + below, right: sx + half, bottom: sy + below + fontPx }
+  const boxOf = (sx: number, top: number, tag: string): Box => {
+    const half = ctx.measureText(tag).width / 2 + TAG_SPACING_PX
+    return { left: sx - half, top, right: sx + half, bottom: top + fontPx }
   }
   const priority = visible.filter((at) => state.selected.has(at))
   const placed: { tag: string; x: number; y: number }[] = []
@@ -515,22 +520,23 @@ function drawTags(
     const node = index.nodes[at]
     if (!node) continue
     const sx = screenX(view, node.x)
-    const sy = screenY(view, node.y)
-    const box = boxOf(sx, sy, node.tag)
+    const top = screenY(view, node.y) + belowOf(node)
+    const box = boxOf(sx, top, node.tag)
     if (labels.overlaps(box)) continue
     backings.push(box)
     labels.add(box)
-    placed.push({ tag: node.tag, x: sx, y: sy + below })
+    placed.push({ tag: node.tag, x: sx, y: top })
   }
   for (const at of visible) {
     const node = index.nodes[at]
     if (!node || state.selected.has(at)) continue
     const sx = screenX(view, node.x)
-    const sy = screenY(view, node.y)
-    const box = boxOf(sx, sy, node.tag)
-    if (labels.overlaps(box) || squares.overlaps(box)) continue
+    const top = screenY(view, node.y) + belowOf(node)
+    const box = boxOf(sx, top, node.tag)
+    // The node's own square or marker never blocks its tag.
+    if (labels.overlaps(box) || squares.overlaps(box, ownSquares.get(at) ?? null)) continue
     labels.add(box)
-    placed.push({ tag: node.tag, x: sx, y: sy + below })
+    placed.push({ tag: node.tag, x: sx, y: top })
   }
 
   if (backings.length > 0) {

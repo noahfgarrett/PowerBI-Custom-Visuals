@@ -300,6 +300,24 @@ describe('drawFfuMap', () => {
     expect(ctx.texts.map((text) => text.text)).toEqual(['FFU900-ZZ01-F01-A'])
   })
 
+  it('labels home-run and finish FFUs at the label threshold, below their markers', () => {
+    const index = indexOf([
+      { tag: 'FFU900-ZZ01-F01-A', x: 0, y: 0, line: 'L1', lineOrder: 1, homeRun: 'TRUE' },
+      { tag: 'FFU900-ZZ01-F02-A', x: 10, y: 0, line: 'L1', lineOrder: 2 },
+      { tag: 'FFU900-ZZ01-F03-A', x: 20, y: 0, line: 'L1', lineOrder: 3, finish: 'TRUE' },
+    ])
+    const ctx = draw(index, {
+      view: { scale: LABEL_MIN_NODE_PX, offsetX: 60, offsetY: 50 },
+      size: { width: 900, height: 300 },
+    })
+    // Node centres sit at y = 50: plain squares are 36 px (tag at 50 + 18 + 2), markers 1.6 × 36 (tag at 50 + 28.8 + 2).
+    expect(ctx.texts.map((text) => [text.text, text.y])).toEqual([
+      ['FFU900-ZZ01-F01-A', 80.8],
+      ['FFU900-ZZ01-F02-A', 70],
+      ['FFU900-ZZ01-F03-A', 80.8],
+    ])
+  })
+
   it('drops a tag label that would cover another node square', () => {
     const index = indexOf([
       { tag: 'FFU900-ZZ01-F01-A', x: 0, y: 0 },
