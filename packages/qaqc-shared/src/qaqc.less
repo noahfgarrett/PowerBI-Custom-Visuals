@@ -2765,6 +2765,364 @@ span.qaqc-perf-name {
   gap: 6px 8px;
 }
 
+// FFU map (FfuMapDashboard, FfuDetailPanel): a wrapping header, a one-line summary strip, and the canvas map filling the
+// rest of the tile, with the zoom controls bottom-left and the detail panel overlaid on the right.
+
+.qaqc-ffu-root:focus {
+  outline: none;
+}
+
+.qaqc-ffu-root:focus-visible {
+  outline: 2px solid var(--qaqc-accent);
+  outline-offset: -2px;
+}
+
+.qaqc-ffu-header {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+.qaqc-ffu-controls {
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.qaqc-ffu-search,
+.qaqc-ffu-filter {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  border: 1px solid var(--qaqc-border);
+  border-radius: 9px;
+  background: var(--qaqc-card-solid);
+  color: var(--qaqc-ink);
+}
+
+.qaqc-ffu-search {
+  width: 180px;
+  padding: 0 10px;
+}
+
+.qaqc-ffu-search svg {
+  flex: 0 0 auto;
+  color: var(--qaqc-muted);
+}
+
+.qaqc-ffu-search input {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12.5px;
+}
+
+.qaqc-ffu-search input::placeholder {
+  color: var(--qaqc-muted);
+}
+
+.qaqc-ffu-search:focus-within,
+.qaqc-ffu-filter:focus-within {
+  outline: 2px solid var(--qaqc-accent);
+  outline-offset: 2px;
+}
+
+.qaqc-ffu-search input:disabled,
+.qaqc-ffu-filter select:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.qaqc-ffu-listbox {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 5;
+  min-width: 100%;
+  max-height: 240px;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  border: 1px solid var(--qaqc-border);
+  border-radius: 10px;
+  background: var(--qaqc-card-solid);
+  box-shadow: 0 4px 14px rgba(27, 37, 48, 0.08);
+  list-style: none;
+}
+
+.qaqc-ffu-listbox li {
+  padding: 5px 8px;
+  border-radius: 6px;
+  color: var(--qaqc-ink);
+  cursor: pointer;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.qaqc-ffu-listbox li:hover,
+.qaqc-ffu-listbox li.is-active {
+  background: var(--qaqc-accent-soft);
+}
+
+.qaqc-ffu-filter {
+  padding: 0 6px 0 10px;
+}
+
+.qaqc-ffu-filter span {
+  color: var(--qaqc-muted);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.qaqc-ffu-filter select {
+  max-width: 120px;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.qaqc-ffu-summary {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin: 0;
+  padding: 6px 12px;
+  border: 1px solid var(--qaqc-border);
+  border-radius: 12px;
+  background: var(--qaqc-card);
+  box-shadow: 0 1px 2px rgba(27, 37, 48, 0.06);
+}
+
+.qaqc-ffu-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.qaqc-ffu-stat dt {
+  color: var(--qaqc-muted);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.qaqc-ffu-stat dd {
+  margin: 0;
+  color: var(--qaqc-ink);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+// The map takes whatever height the header and strip leave; its canvas is sized from this box, never from content.
+.qaqc-ffu-body {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 120px;
+  overflow: hidden;
+  border: 1px solid var(--qaqc-border);
+  border-radius: 14px;
+  background: var(--qaqc-card);
+}
+
+.qaqc-ffu-map {
+  position: absolute;
+  inset: 0;
+}
+
+.qaqc-ffu-map canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+}
+
+.qaqc-ffu-map canvas:active {
+  cursor: grabbing;
+}
+
+// Bottom-left in a row (28 px tall, 92 px wide), so short tiles keep their map and the right-hand panel never covers them.
+.qaqc-ffu-zoom {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  z-index: 2;
+  display: flex;
+  gap: 4px;
+}
+
+.qaqc-ffu-icon-button {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--qaqc-border);
+  border-radius: 8px;
+  background: var(--qaqc-card-solid);
+  color: var(--qaqc-ink-2);
+  cursor: pointer;
+  transition: color 150ms ease-out, border-color 150ms ease-out;
+}
+
+.qaqc-ffu-icon-button:hover {
+  border-color: var(--qaqc-faint);
+  color: var(--qaqc-ink);
+}
+
+.qaqc-ffu-icon-button:focus-visible,
+.qaqc-ffu-tag-list button:focus-visible {
+  outline: 2px solid var(--qaqc-accent);
+  outline-offset: 2px;
+}
+
+// At most 300 px, and always clear of the zoom row: 8 px inset + 92 px of buttons + 16 px gap + its own 8 px inset.
+.qaqc-ffu-panel {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  bottom: 8px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  max-width: calc(100% - 124px);
+  overflow: hidden;
+  border: 1px solid var(--qaqc-border);
+  border-radius: 12px;
+  background: var(--qaqc-card-solid);
+  box-shadow: 0 4px 14px rgba(27, 37, 48, 0.08);
+}
+
+.qaqc-ffu-panel-head {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 10px 8px 12px;
+  border-bottom: 1px solid var(--qaqc-hairline);
+}
+
+.qaqc-ffu-panel-title {
+  min-width: 0;
+}
+
+.qaqc-ffu-panel-title span,
+.qaqc-ffu-list-title {
+  color: var(--qaqc-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.qaqc-ffu-panel-title h3 {
+  margin: 2px 0 0;
+  color: var(--qaqc-ink);
+  font-size: 14px;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.qaqc-ffu-panel-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 8px 12px 12px;
+  overflow-y: auto;
+}
+
+.qaqc-ffu-fields {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 12px;
+  margin: 0;
+  font-size: 12px;
+}
+
+.qaqc-ffu-fields div {
+  display: contents;
+}
+
+.qaqc-ffu-fields dt {
+  color: var(--qaqc-muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.qaqc-ffu-fields dd {
+  margin: 0;
+  color: var(--qaqc-ink);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.qaqc-ffu-note {
+  margin: 0 0 8px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: var(--qaqc-accent-soft);
+  color: var(--qaqc-ink-2);
+  font-size: 12px;
+}
+
+.qaqc-ffu-note.is-warn {
+  color: var(--qaqc-warn);
+}
+
+.qaqc-ffu-list-title {
+  margin: 12px 0 4px;
+}
+
+.qaqc-ffu-tag-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.qaqc-ffu-tag-list button {
+  width: 100%;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--qaqc-ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+}
+
+.qaqc-ffu-tag-list button:hover {
+  background: var(--qaqc-accent-soft);
+}
+
 // Forced colors (Windows high contrast) drop backgrounds and box shadows, so the discussion marker becomes a real
 // border, and the legend swatches keep their outlines.
 @media (forced-colors: active) {
