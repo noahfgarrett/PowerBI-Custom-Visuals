@@ -19,7 +19,15 @@ import { drawFfuMap, ffuMapColorsFromTheme, LABEL_MIN_NODE_PX, type FfuCanvasCon
 import { formatCount, formatPercent } from '../format'
 import { useElementSize } from '../hooks/useElementSize'
 import type { ResolvedTheme } from '../theme'
-import { energizedLabel, FfuDetailPanel, linePosition, orBlank, type FfuPanelTarget } from './FfuDetailPanel'
+import {
+  energizedLabel,
+  FFU_PANEL_INSET_PX,
+  FfuDetailPanel,
+  ffuPanelLeft,
+  linePosition,
+  orBlank,
+  type FfuPanelTarget,
+} from './FfuDetailPanel'
 import { LoadingBar } from './LoadingBar'
 import { StatusPanel } from './StatusPanel'
 
@@ -107,6 +115,16 @@ function wheelNotches(event: WheelEvent): number {
   if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) return event.deltaY / WHEEL_LINES_PER_NOTCH
   if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE) return event.deltaY
   return event.deltaY / WHEEL_PIXELS_PER_NOTCH
+}
+
+/**
+ * Where a searched FFU is centred across the map. The map's centre, unless the node panel it opens would cover the
+ * node there; then the centre of the strip left of the panel, less the panel's gap.
+ */
+function searchCentreX(mapWidth: number): number {
+  const visibleRight = ffuPanelLeft(mapWidth) - FFU_PANEL_INSET_PX
+  if (mapWidth / 2 + SEARCH_NODE_PX / 2 <= visibleRight) return mapWidth / 2
+  return Math.max(visibleRight, 0) / 2
 }
 
 function backingSize(cssPixels: number, ratio: number): number {
@@ -406,7 +424,7 @@ function FfuMapView({
     const node = index.nodes[nodeIndex]
     if (!node) return
     const scale = Math.min(Math.max(SEARCH_NODE_PX / nodeSize, fitted.scale * MIN_SCALE_FACTOR), fitted.scale * MAX_SCALE_FACTOR)
-    setView({ scale, offsetX: size.width / 2 - node.x * scale, offsetY: size.height / 2 - node.y * scale })
+    setView({ scale, offsetX: searchCentreX(size.width) - node.x * scale, offsetY: size.height / 2 - node.y * scale })
     setSearch({ query: node.tag, isOpen: false, active: -1 })
     select([nodeIndex], -1, { kind: 'node', node: nodeIndex }, false)
   }

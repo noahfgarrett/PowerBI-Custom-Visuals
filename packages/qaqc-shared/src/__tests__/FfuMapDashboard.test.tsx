@@ -3,6 +3,7 @@ import { act, type ReactElement } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { TooltipRequest } from '../chartTypes'
+import { FFU_PANEL_INSET_PX, FFU_PANEL_MAP_CLEARANCE_PX, FFU_PANEL_WIDTH_PX, ffuPanelLeft } from '../components/FfuDetailPanel'
 import { FfuMapDashboard, type FfuMapDashboardProps } from '../components/FfuMapDashboard'
 import { buildFfuIndex, readFfuTable, type FfuColumns, type FfuIndex, type FfuNode } from '../ffuMap'
 import { fitView, nodeSizeOf, zoomAt, type View } from '../ffuGeometry'
@@ -409,6 +410,25 @@ describe('FfuMapDashboard', () => {
     expect(centre.y).toBeCloseTo(HEIGHT / 2)
   })
 
+  it('search keeps the chosen FFU clear of the panel on a narrow tile', () => {
+    const narrow = { width: 480, height: 320 }
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, narrow.width, narrow.height))
+    const rendered = mount(handlers())
+    typeInto(searchBox(rendered), 'ffu9')
+    const option = rendered.container.querySelectorAll('[role="option"]')[0]
+    const target = INDEX.nodes.findIndex((node) => node.tag === option?.textContent)
+    press(option ?? document.body)
+
+    expect(panelOf(rendered)).not.toBeNull()
+    const state = lastState()
+    const node = nodeAt(INDEX, target)
+    const centre = screenOf(state.view, node.x, node.y)
+    const halfNode = (state.nodeSize * state.view.scale) / 2
+    expect(centre.x + halfNode).toBeLessThan(ffuPanelLeft(narrow.width))
+    expect(centre.x - halfNode).toBeGreaterThan(0)
+    expect(centre.y).toBeCloseTo(narrow.height / 2)
+  })
+
   it('search picks a match with the arrow keys and Enter', () => {
     const spies = handlers()
     const rendered = mount(spies)
@@ -534,10 +554,12 @@ describe('FfuMapDashboard stylesheet', () => {
   })
 
   it('keeps the panel at most 300 px wide and clear of the bottom-left zoom controls', () => {
+    // The dashboard places searched FFUs from these constants, so they must match the stylesheet.
     const panel = ruleBody('.qaqc-ffu-panel')
-    expect(panel).toContain('right: 8px;')
-    expect(panel).toContain('width: 300px;')
-    expect(panel).toContain('max-width: calc(100% - 124px);')
+    expect(panel).toContain(`right: ${FFU_PANEL_INSET_PX}px;`)
+    expect(panel).toContain(`width: ${FFU_PANEL_WIDTH_PX}px;`)
+    expect(panel).toContain(`max-width: calc(100% - ${FFU_PANEL_MAP_CLEARANCE_PX}px);`)
+    expect(FFU_PANEL_WIDTH_PX).toBe(300)
     const zoom = ruleBody('.qaqc-ffu-zoom')
     expect(zoom).toContain('left: 8px;')
     expect(zoom).toContain('bottom: 8px;')

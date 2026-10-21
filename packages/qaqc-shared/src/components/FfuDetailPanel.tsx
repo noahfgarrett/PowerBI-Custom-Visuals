@@ -15,6 +15,21 @@ export interface FfuDetailPanelProps {
   onPickNode: (node: number) => void
 }
 
+/**
+ * The panel's box over the map, mirroring the `.qaqc-ffu-panel` rule in qaqc.less (`right`, `width` and
+ * `max-width: calc(100% - …)`); a stylesheet test keeps the two in step. The clearance keeps the panel off the
+ * bottom-left zoom row: its 8 px inset, 3 × 28 px buttons with two 4 px gaps, a 16 px gap and the panel's own inset.
+ */
+export const FFU_PANEL_INSET_PX = 8
+export const FFU_PANEL_WIDTH_PX = 300
+export const FFU_PANEL_MAP_CLEARANCE_PX = 124
+
+/** The panel's left edge, in map pixels, for a map this wide. */
+export function ffuPanelLeft(mapWidth: number): number {
+  const width = Math.min(FFU_PANEL_WIDTH_PX, Math.max(mapWidth - FFU_PANEL_MAP_CLEARANCE_PX, 0))
+  return mapWidth - FFU_PANEL_INSET_PX - width
+}
+
 /** Shown for a blank field. */
 export const BLANK_VALUE = '—'
 
