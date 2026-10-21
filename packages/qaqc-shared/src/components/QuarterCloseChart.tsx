@@ -1,6 +1,6 @@
 import { useMemo, useState, type MouseEvent, type ReactElement } from 'react'
 
-import { createLabelPlacer } from '../chartLabels'
+import { createLabelPlacer, labelHalfWidth } from '../chartLabels'
 import { labelIndices, LINE_DASH, niceScale, roundedTopBarPath } from '../chartMath'
 import type { ChartColors, TooltipHandler, TooltipRow } from '../chartTypes'
 import { formatCount } from '../format'
@@ -97,14 +97,18 @@ function layoutQuarters(points: readonly QuarterPoint[], typical: number | null,
   const y = (value: number): number => plotBottom - (value / scale.max) * (plotBottom - plotTop)
   const labelled = labelIndices(points.length, plotRight - plotLeft, points.length - 1, MIN_QUARTER_LABEL_WIDTH)
 
-  // The newest quarter is labelled first, then the older ones; a label that would collide is left out.
+  // The newest quarter is labelled first, then the older ones; a label that would collide is left out. A label wider
+  // than its slot at either end of the plot shifts inward so it ends at the plot edge instead of being dropped.
   const placer = createLabelPlacer({ bounds: { left: plotLeft, right: plotRight, top: 0, bottom: plotBottom }, padX: LABEL_PAD_X })
   const medianLabels = new Map<number, { x: number; y: number }>()
   for (let index = points.length - 1; index >= 0; index -= 1) {
     const median = points[index].median
     if (median === null) continue
-    const x = plotLeft + slot * (index + 0.5)
-    const spot = placer.place(formatQuarterDays(median), [{ x, y: y(median) - MEDIAN_GAP }])
+    const text = formatQuarterDays(median)
+    const half = labelHalfWidth(text, LABEL_PAD_X)
+    const center = plotLeft + slot * (index + 0.5)
+    const x = Math.min(Math.max(center, plotLeft + half), plotRight - half)
+    const spot = placer.place(text, [{ x, y: y(median) - MEDIAN_GAP }])
     if (spot !== null) medianLabels.set(index, spot)
   }
 

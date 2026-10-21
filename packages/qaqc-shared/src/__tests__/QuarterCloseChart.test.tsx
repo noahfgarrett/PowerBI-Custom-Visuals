@@ -1,8 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { labelBox } from '../chartLabels'
 import { QuarterCloseChart, quarterLegend, type QuarterCloseChartProps } from '../components/QuarterCloseChart'
-import { quarterMedians, type QuarterPoint } from '../issueBenchmarks'
-import { AGING_COLORS, agingIndex, all, fire, textCollisions, texts, WW42 } from './agingFixture'
+import { buildIssueBenchmarks, quarterMedians, type QuarterPoint } from '../issueBenchmarks'
+import { buildIssueIndex } from '../issues'
+import type { IssueColumns } from '../types'
+import { AGING_COLORS, AGING_TODAY, agingIndex, all, fire, textBox, textCollisions, texts, WW42 } from './agingFixture'
+import { ENRICHED_ISSUE_COLUMNS, ENRICHED_ISSUE_ROWS } from './fixtures/enrichedIssueRows'
 import { render, type Rendered } from './render'
 
 const INDEX = agingIndex()
@@ -44,6 +48,19 @@ describe('QuarterCloseChart', () => {
   it("labels each quarter's median days to close", () => {
     view = draw()
     expect(texts(view.container, '.qaqc-aging-label.is-median')).toEqual(['30 d', '19 d', '14 d', '22.5 d', '59 d', '13.5 d', '16 d', '32 d'])
+  })
+
+  it("keeps the newest quarter's median label inside the right edge of a narrow chart", () => {
+    // The 382 px side panel at 1280 × 720: the newest bar's centred "41.5 d" would run past the plot's right edge.
+    const width = 382
+    const points = QUARTERS.map((point, index) => (index === QUARTERS.length - 1 ? { ...point, median: 41.5, closed: 6, slowest: 70 } : point))
+    view = draw({ points, typical: 28.5, width, height: 190 })
+    const labels = all(view.container, '.qaqc-aging-label.is-median')
+    const newest = labels[labels.length - 1]
+    expect(newest?.textContent).toBe('41.5 d')
+    const box = labelBox('41.5 d', Number(newest?.getAttribute('x')), Number(newest?.getAttribute('y')))
+    expect(box.right).toBeLessThanOrEqual(width - 8)
+    expect(textCollisions(view.container)).toEqual([])
   })
 
   it('names every quarter under the axis, with its closed count', () => {
@@ -156,6 +173,47 @@ describe('QuarterCloseChart', () => {
   it('keys the legend to typical', () => {
     expect(quarterLegend(AGING_COLORS, 32).map((item) => item.label)).toEqual(['At or under typical', 'Slower than typical', 'Typical 32 d'])
     expect(quarterLegend(AGING_COLORS, 22.5).map((item) => item.label)[2]).toBe('Typical 22.5 d')
+  })
+
+  describe('with the enriched export, whose newest quarter is tall and sits at the right edge', () => {
+    const position = (name: (typeof ENRICHED_ISSUE_COLUMNS)[number]): number => ENRICHED_ISSUE_COLUMNS.indexOf(name)
+    const columns: IssueColumns = {
+      id: position('ID'),
+      title: position('Title'),
+      status: position('Status'),
+      type: position('Type'),
+      contractor: position('Contractor'),
+      createdOn: position('Created on'),
+      updatedOn: position('Updated on'),
+      dueDate: position('Due date'),
+      createdBy: position('Created by'),
+      rootCause: position('Root cause'),
+      rootCauseCategory: -1,
+      bim360CreatedBy: position('BIM360_Created By'),
+      bim360CreatedOn: position('BIM360_Created On'),
+      bim360ClosedOn: position('BIM360_Closed On'),
+      closedAt: position('Closed at'),
+    }
+    const index = buildIssueIndex(ENRICHED_ISSUE_ROWS, columns, AGING_TODAY)
+    const points = quarterMedians(index, WW42, AGING_TODAY)
+    const typical = buildIssueBenchmarks(index, WW42, AGING_TODAY).typical
+
+    // The newest label, 41.5 d, is wider than its slot below about 394 px; from about 349 px every neighbouring pair of
+    // labels fits side by side, so between them each bar can keep its label. The sizes: a narrower panel, the 370 px
+    // side panel, and the chart as drawn on the 1280 × 720 dashboard's Issue Aging page.
+    for (const [width, height] of [[355, 220], [370, 290], [382, 190]] as const) {
+      it(`labels every bar, the newest included, inside the plot at ${width} × ${height}`, () => {
+        view = draw({ points, typical, width, height })
+        const grid = view.container.querySelector('.qaqc-grid-line')
+        const plotLeft = Number(grid?.getAttribute('x1'))
+        const plotRight = Number(grid?.getAttribute('x2'))
+        const labels = all(view.container, '.qaqc-aging-label.is-median').map(textBox)
+        expect(labels).toHaveLength(points.filter((point) => point.median !== null).length)
+        const outside = labels.filter((box) => box.left < plotLeft || box.right > plotRight).map((box) => box.text)
+        expect(outside).toEqual([])
+        expect(textCollisions(view.container)).toEqual([])
+      })
+    }
   })
 
   // 30 weeks span 8 or 9 quarters; 520 weeks span 40.
