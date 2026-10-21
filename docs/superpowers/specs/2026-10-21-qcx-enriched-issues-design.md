@@ -97,6 +97,60 @@ These are derived independently in Python from the enriched xlsx, porting `repor
 
 **Acceptance:** every week from WW31 to WW42 shows real opened and closed activity, and nothing lumps into WW30.
 
+### Derived values
+
+`enrichedIssuesFixture.test.ts` asserts every value below against the fixture.
+
+**Rows.** 1,077 rows. 1,024 carry legacy data. 846 are excluded by the include rule, none are void, none lack a created date, none are created after W. **231 issues are included**, from WW46'2024 through WW43'2026.
+
+**Opened and closed per week:**
+
+| Week | Opened | Closed |
+|---|---|---|
+| WW30'2026 | 1 | 1 |
+| WW31'2026 | 3 | 2 |
+| WW32'2026 | 7 | 2 |
+| WW33'2026 | 2 | 0 |
+| WW34'2026 | 2 | 2 |
+| WW35'2026 | 2 | 1 |
+| WW36'2026 | 2 | 2 |
+| WW37'2026 | 2 | 0 |
+| WW38'2026 | 2 | 3 |
+| WW39'2026 | 1 | 1 |
+| WW40'2026 | 2 | 5 |
+| WW41'2026 | 2 | 4 |
+| WW42'2026 | 2 | 1 |
+| WW43'2026 | 0 | 1 |
+
+**Totals.**
+
+| Through | Opened | Closed | Remaining open | Closure rate |
+|---|---|---|---|---|
+| WW43'2026 (W) | 231 | 175 | 56 | 75.76% |
+| WW42'2026 | 231 | 174 | 57 | 75.32% |
+
+**Benchmarks as of W** (end of W = today, 2026-10-20):
+- 175 closures, none closed without a date.
+- Typical close (median) 28 days; 28.5 days as of WW42.
+- Normal close window (nearest-rank 90th percentile) 80 days.
+- Slowest close 314 days.
+- 56 open, a median open age of 349 days, 44 past the window and 33 older than any closure.
+
+**Pareto, All weeks and All issues.** 231 issues and 30 recorded causes. The bars:
+- Installation 54
+- Coordination 28
+- Casting/Pouring/Erection 24
+- Incomplete Work 24
+- Housekeeping 15
+- Trade Damage 13
+- Quality 10
+- Bonding 7
+- Workmanship 6
+- Other (21 causes) 49
+- Not recorded 1
+
+No cause differs from another only by case or spacing, and no included issue closes before it was created. The Power BI grouping and close-time clamp therefore agree with the Python port.
+
 ## Testing
 
 - **Unit tests** for the include rule (legacy creator wins, standard creator used only when there is no legacy data, an unbound Created By includes the issue) and for the date fallbacks.
