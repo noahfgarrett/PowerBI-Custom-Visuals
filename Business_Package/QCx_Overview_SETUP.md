@@ -58,7 +58,7 @@ About 1,000 issues in the enriched export were migrated from BIM 360. Autodesk s
 - **BIM360 Closed On:** a migrated closed issue is closed on this date, in place of Closed At and Updated On.
 - **Closed At:** a closed issue is closed on this date, in place of Updated On.
 
-These are the same rules as the QCx BIM Issues visual; see its guide's Counting rules.
+These are the same rules as the QCx Issues visual; see its guide's Counting rules.
 
 ### Green tags (optional)
 
@@ -120,7 +120,7 @@ Each row has the discipline's name, four cards, and a sparkline of the 30 weeks 
 **Always to date,** in both modes:
 
 - **BIM Remaining open:** opened minus closed through the selected week.
-- **BIM Past normal close window:** the BIM issues open as of the selected week that are older than the normal close window. The window is the 90% mark of your own close times: 90% of the BIM issues closed by the end of that week closed within it. It matches the Past the normal close window card on the QCx BIM Issues visual's Issue Aging page.
+- **BIM Past normal close window:** the BIM issues open as of the selected week that are older than the normal close window. The window is the 90% mark of your own close times: 90% of the BIM issues closed by the end of that week closed within it. It matches the Past the normal close window card on the QCx Issues visual's Issue Aging page.
   - The sub-line reads, for example, `of 51 open · 28 older than any closure · 71.2% closed`: the open issues, those older than the slowest close so far, and the closure rate (closed ÷ opened through the selected week).
   - With no closures yet it shows `n/a`.
 

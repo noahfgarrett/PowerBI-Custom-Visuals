@@ -174,11 +174,11 @@ describe('QaqcIssuesVisual name', () => {
   it('heads the dashboard with its QCx title', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(ISSUE_ROWS)))
-    expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QCx BIM Issues')
+    expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QCx Issues')
   })
 
   it('shows its QCx name in Power BI', () => {
-    expect(pbiviz.visual.displayName).toBe('QCx BIM Issues')
+    expect(pbiviz.visual.displayName).toBe('QCx Issues')
     expect(pbiviz.visual.description).not.toContain('QAQC')
   })
 })
@@ -186,7 +186,7 @@ describe('QaqcIssuesVisual name', () => {
 describe('QaqcIssuesVisual', () => {
   it('labels the visual for assistive technology', () => {
     harness = createHarness()
-    expect(harness.element.getAttribute('aria-label')).toBe('QCx BIM issues dashboard')
+    expect(harness.element.getAttribute('aria-label')).toBe('QCx Issues dashboard')
   })
 
   it('names each data role like its field slot', () => {
@@ -197,7 +197,10 @@ describe('QaqcIssuesVisual', () => {
   it('lists every field slot before data is bound', () => {
     harness = createHarness()
     apply(harness, update(undefined))
-    expect(harness.element.querySelector('.qaqc-status h2')?.textContent).toBe('Add the BIM Issues Log columns')
+    expect(harness.element.querySelector('.qaqc-status h2')?.textContent).toBe('Add the Issues export columns')
+    expect(harness.element.querySelector('.qaqc-status p')?.textContent).toBe(
+      'Drag these columns from the Issues sheet of your enriched Autodesk export into the matching field slots.',
+    )
     expect(setupItems(harness.element)).toEqual([
       'ID → ID',
       'Title → Title',
@@ -218,10 +221,10 @@ describe('QaqcIssuesVisual', () => {
     expect(cardValue(harness.element, 'Total Opened')).toBeNull()
   })
 
-  it('renders the QCx BIM Issues header', () => {
+  it('renders the QCx Issues header', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(ISSUE_ROWS)))
-    expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QCx BIM Issues')
+    expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QCx Issues')
   })
 
   it('renders the WW42 project-to-date cards from bound columns', () => {
@@ -365,7 +368,7 @@ describe('QaqcIssuesVisual', () => {
     expect(() => applyOutsideAct(target, update(tableDataView(ISSUE_ROWS)))).not.toThrow()
     expect(target.events.renderingFailed).toHaveBeenCalledWith(expect.anything(), 'render boom')
     expect(target.events.renderingFinished).not.toHaveBeenCalled()
-    expect(target.element.querySelector('.qaqc-status h2')?.textContent).toBe('Could not draw the QCx BIM Issues visual')
+    expect(target.element.querySelector('.qaqc-status h2')?.textContent).toBe('Could not draw the QCx Issues visual')
   })
 
   it('recovers on the next update after a render error', () => {

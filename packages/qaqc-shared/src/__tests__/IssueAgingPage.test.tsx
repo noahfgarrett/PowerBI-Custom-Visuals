@@ -32,7 +32,7 @@ afterEach(() => {
 function dashboard(overrides: Partial<IssuesDashboardProps> = {}): ReactElement {
   return (
     <IssuesDashboard
-      title="QCx BIM Issues"
+      title="QCx Issues"
       icon={CircleAlert}
       index={INDEX}
       theme={THEME}

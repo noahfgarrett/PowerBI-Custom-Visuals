@@ -1,4 +1,6 @@
-# QCx BIM Issues visual: setup
+# QCx Issues visual: setup
+
+**Version 1.2.1:** the visual is renamed **QCx Issues** (it was QCx BIM Issues). Nothing else changes. Its identity is unchanged, so importing the new file updates existing reports in place and keeps your field bindings.
 
 **Version 1.2.0:** the visual reads the **enriched Autodesk export** in place of the Smartsheet BIM Issues Log. Four new optional slots, BIM360 Created By, BIM360 Created On, BIM360 Closed On and Closed At, carry the real creator and dates of the issues migrated from BIM 360. A report still bound to the Smartsheet log keeps working unchanged.
 
@@ -97,7 +99,7 @@ There is no Row ID slot: issue IDs are unique, so Power BI cannot merge two diff
 
 ### Issue Detail
 
-Select **Issue Detail** in the header to open the QCx BIM Issues Detail view for the selected week. Esc or the back button returns. The button is hidden when interactions are off (read-only views).
+Select **Issue Detail** in the header to open the QCx Issues Detail view for the selected week. Esc or the back button returns. The button is hidden when interactions are off (read-only views).
 
 - Cards: Opened This Week, Closed This Week, Opened Last Week, Closed Last Week.
 - Table, in two blocks:

@@ -279,11 +279,11 @@ const ROOT_CAUSE_MISSING = 'Add Root Cause'
 
 const neutralTone: CountTone = () => 'neutral'
 const amberWhenUp: CountTone = (value, previous) => (value > previous ? 'warn' : 'neutral')
-/** This WW: amber when up. To date: red when up, as Total Opened is in the BIM Issues visual. */
+/** This WW: amber when up. To date: red when up, as Total Opened is in the QCx Issues visual. */
 const openedTone: CountTone = (value, previous, mode) => (mode === 'toDate' ? riseIsBad(value - previous) : amberWhenUp(value, previous, mode))
 /**
  * This WW: green when at least as many closed as the week before, but a week with nothing closed is never green.
- * To date: green when the total rose, as in the BIM Issues visual.
+ * To date: green when the total rose, as in the QCx Issues visual.
  */
 const closedTone: CountTone = (value, previous, mode) => {
   if (mode === 'toDate') return value > previous ? 'good' : 'neutral'
