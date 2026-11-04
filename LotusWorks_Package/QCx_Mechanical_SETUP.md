@@ -45,6 +45,8 @@ Set every field to **Don't summarize**. The visual is designed to fill a full re
 
 **Date fields:** bind Date Observed as the plain date, not Power BI's Date Hierarchy. In the field well, use the drop-down on the field and choose the field name.
 
+**Row limit:** if the footnote `Showing the first n rows (Power BI data limit)` appears, Power BI stopped sending rows. Unbind **Notes** first: it's the longest column, so it takes up the most of what Power BI will send.
+
 ## 4. Use it
 
 - The week dropdown opens on the current work week every time the report opens.

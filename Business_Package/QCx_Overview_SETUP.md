@@ -260,7 +260,7 @@ The footnotes at the bottom report, per source:
 - BIM issues not created by LotusWorks, which are excluded
 - BIM issues with a blank or unreadable created date (BIM360 Created On, or Created On), which are skipped
 
-They also report rows with an unknown Source (see the QCx Combined guide), and `Showing the first n rows (Power BI data limit)` if Power BI stopped sending rows.
+They also report rows with an unknown Source (see the QCx Combined guide), and `Showing the first n rows (Power BI data limit)` if Power BI stopped sending rows. If that one appears, unbind **Notes** first: it's the longest column, so it takes up the most of what Power BI will send.
 
 ## Counting rules
 
