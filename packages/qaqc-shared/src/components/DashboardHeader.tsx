@@ -70,7 +70,7 @@ export function DashboardHeader({
         {children}
         {filterMenu !== undefined && <FilterMenu {...filterMenu} disabled={!interactive} />}
         <RangeToggle
-          value={range}
+          value={isRangeDisabled ? null : range}
           recentCount={RECENT_WEEK_COUNT}
           disabled={!interactive || isRangeDisabled}
           label={rangeLabel}

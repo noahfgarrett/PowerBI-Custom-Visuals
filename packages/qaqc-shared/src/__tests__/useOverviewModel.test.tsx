@@ -8,7 +8,7 @@ import { inspection, overviewIndexOf, weld } from './overviewRows'
 import { render, type Rendered } from './render'
 
 const INDEX = overviewIndexOf([inspection('Electrical', "WW41'2026", 'Final'), weld("WW42'2026")])
-const VIEW: ViewState = { selectedKey: 202642, windowEndKey: 202642, range: 'recent' }
+const VIEW: ViewState = { selectedKey: 202642, windowEndKey: 202642, range: 'recent', dateRange: null }
 
 let view: Rendered | null = null
 const seen: OverviewParts[] = []

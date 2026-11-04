@@ -37,6 +37,11 @@ export interface DashboardFiltersOptions {
   weeks: readonly RangeWeek[]
   currentKey: number
   notes?: readonly FilterSourceNote[]
+  /**
+   * A row's week key, or null when it has none. With it, "Showing X of Y" counts only rows in the date range, while a
+   * range is set. Must keep its identity between renders.
+   */
+  rowWeekKey?: (row: Row) => number | null
 }
 
 export interface DashboardFilters {
@@ -70,12 +75,22 @@ function chipText(labels: readonly string[]): string {
   return labels.length > CHIP_VALUE_LIMIT ? `${shown} +${labels.length - CHIP_VALUE_LIMIT}` : shown
 }
 
+/** A row with no week is in no range. */
+function countRowsInRange(rows: ReadonlyArray<Row>, range: WeekRange, rowWeekKey: (row: Row) => number | null): number {
+  let count = 0
+  for (const row of rows) {
+    const key = rowWeekKey(row)
+    if (key !== null && key >= range.fromKey && key <= range.toKey) count += 1
+  }
+  return count
+}
+
 /**
  * A dashboard's filter state: the ticked values and date range the menu and chips edit, and the rows they leave.
  * `selection` and `dateRange` are read through the current data on every render and never written back, so during a
  * partial load a ticked value still to arrive isn't lost, and a field a dashboard stops offering keeps its values.
  */
-export function useDashboardFilters({ rows, fields, weeks, currentKey, notes = NO_NOTES }: DashboardFiltersOptions): DashboardFilters {
+export function useDashboardFilters({ rows, fields, weeks, currentKey, notes = NO_NOTES, rowWeekKey }: DashboardFiltersOptions): DashboardFilters {
   const [ticked, setTicked] = useState<FilterSelection>(NO_SELECTION)
   const [pickedRange, setPickedRange] = useState<WeekRange | null>(null)
   const filterButtonRef = useRef<HTMLButtonElement | null>(null)
@@ -90,10 +105,11 @@ export function useDashboardFilters({ rows, fields, weeks, currentKey, notes = N
   const isDateRangeActive = dateRange !== null
 
   // A default limits what the dashboard shows without being a filter, so the count can't read `filteredRows` then.
-  const shownRows = useMemo(
-    () => (isFieldFilterActive ? filteredRows.length : matchEffectiveRows(rows, catalog, selection).length),
-    [isFieldFilterActive, filteredRows, rows, catalog, selection],
-  )
+  const shownRows = useMemo(() => {
+    const shown = isFieldFilterActive ? filteredRows : matchEffectiveRows(rows, catalog, selection)
+    if (dateRange === null || rowWeekKey === undefined) return shown.length
+    return countRowsInRange(shown, dateRange, rowWeekKey)
+  }, [isFieldFilterActive, filteredRows, rows, catalog, selection, dateRange, rowWeekKey])
 
   function setFieldKeys(fieldId: string, keys: ReadonlySet<string>): void {
     setTicked((current) => {

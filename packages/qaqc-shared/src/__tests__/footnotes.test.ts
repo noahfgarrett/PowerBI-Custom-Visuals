@@ -186,7 +186,7 @@ function performanceIndexOf(rows: PerformanceRow[]): PerformanceIndex {
 function performanceNotes(rows: PerformanceRow[], group: PerformanceGroup, rowLimitReached = false, range: 'recent' | 'all' = 'recent'): string[] {
   const index = performanceIndexOf(rows)
   const key = index.currentWeek.key
-  const model = buildPerformanceModel(index, { selectedKey: key, windowEndKey: key, range }, group, 1)
+  const model = buildPerformanceModel(index, { selectedKey: key, windowEndKey: key, range, dateRange: null }, group, 1)
   return buildPerformanceFootnotes(index, group, model, rowLimitReached)
 }
 

@@ -194,11 +194,11 @@ export interface PersonDetailProps {
  * Mount it only while the overlay is open: the detail is built from the index on mount.
  */
 export function PersonDetail({ index, group, personKey, view, colors, animate, describe, onHover }: PersonDetailProps): ReactElement {
-  const { selectedKey, windowEndKey, range } = view
+  const { selectedKey, windowEndKey, range, dateRange } = view
   // Keyed on the view's values, not its object, so a dashboard re-render with an equal view does not rebuild.
   const detail = useMemo(
-    () => buildPersonDetail(index, group, personKey, { selectedKey, windowEndKey, range }),
-    [index, group, personKey, selectedKey, windowEndKey, range],
+    () => buildPersonDetail(index, group, personKey, { selectedKey, windowEndKey, range, dateRange }),
+    [index, group, personKey, selectedKey, windowEndKey, range, dateRange],
   )
   const words = CARD_WORDS[group]
 

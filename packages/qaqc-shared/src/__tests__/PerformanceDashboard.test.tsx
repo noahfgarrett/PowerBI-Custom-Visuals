@@ -271,7 +271,7 @@ describe('PerformanceDashboard ranking', () => {
   })
 
   it('ranks fewer welders with a higher minimum welds', () => {
-    const expected = buildPerformanceModel(INDEX, { selectedKey: CURRENT, windowEndKey: CURRENT, range: 'recent' }, 'welders', 100)
+    const expected = buildPerformanceModel(INDEX, { selectedKey: CURRENT, windowEndKey: CURRENT, range: 'recent', dateRange: null }, 'welders', 100)
     view = draw({ minimumWelds: 100 })
     showGroup(view.container, 'Welders')
     expect(expected.ranked.length).toBeLessThan(38)

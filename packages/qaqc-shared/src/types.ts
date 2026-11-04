@@ -1,4 +1,5 @@
 import type { DeltaTone } from './format'
+import type { WeekRange } from './weekRange'
 
 export interface WorkWeek {
   week: number
@@ -17,6 +18,22 @@ export interface InspectionColumns {
   phase: number
   issue: number
   building: number
+}
+
+/** Column positions of the optional inspection slots, or −1 when the slot isn't bound. */
+export interface InspectionOptionalColumns {
+  generalContractor: number
+  tradeSupplier: number
+  discipline: number
+  inspectionCategory: number
+  status: number
+  inspectionId: number
+  equipmentTag: number
+  issueId: number
+  findingType: number
+  dateObserved: number
+  qcr: number
+  notes: number
 }
 
 export type InspectionRows = ReadonlyArray<ReadonlyArray<unknown>>
@@ -56,6 +73,8 @@ export interface ViewState {
   selectedKey: number
   windowEndKey: number
   range: RangeMode
+  /** Replaces the `range` window while set. */
+  dateRange: WeekRange | null
 }
 
 export interface DeltaMetric {
@@ -119,6 +138,9 @@ export interface InspectionModel {
   allBuildings: BuildingBar[]
   otherBuildings: OtherBuildings | null
   windowTotals: WindowTotals
+  /** `WW10'2026 to WW30'2026` while a date range is set: the to-date cards and the window then cover it. */
+  rangeLabel: string | null
+  /** Whether any Final or SOR is in the data, or in the date range when one is set. */
   hasData: boolean
 }
 

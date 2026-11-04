@@ -535,3 +535,56 @@ describe('useDashboardFilters', () => {
     expect(showing(container)).toBe('Showing 0 of 0 rows')
   })
 })
+
+describe('useDashboardFilters with rowWeekKey', () => {
+  /** Column 3 holds the week key; a row without one has no readable week. */
+  const WEEK_ROWS: readonly Row[] = [
+    ['LotusWorks', 'F63.1', 'Open', 202632],
+    ['LotusWorks', 'F63.2', 'Closed', 202640],
+    ['Greyfox', 'F63.1', 'Open', 202640],
+    ['Bayside', 'F63.1', 'Closed', null],
+  ]
+  const rowWeekKey = (row: Row): number | null => (typeof row[3] === 'number' ? row[3] : null)
+
+  it('counts rows with no readable week while no range is set', () => {
+    const container = mount({ rows: WEEK_ROWS, rowWeekKey })
+    openMenu(container)
+    expect(showing(container)).toBe('Showing 4 of 4 rows')
+  })
+
+  it('narrows Showing to rows in the range, keeping every row in the total', () => {
+    const container = mount({ rows: WEEK_ROWS, rowWeekKey })
+    openMenu(container)
+    choose(fromSelect(container), 202635)
+    expect(showing(container)).toBe('Showing 2 of 4 rows')
+  })
+
+  it('applies the range on top of the field filters', () => {
+    const container = mount({ rows: WEEK_ROWS, rowWeekKey })
+    openMenu(container)
+    click(checkbox(container, 'F63.1'))
+    expect(showing(container)).toBe('Showing 3 of 4 rows')
+    choose(fromSelect(container), 202635)
+    expect(showing(container)).toBe('Showing 1 of 4 rows')
+  })
+
+  it('leaves Showing alone in a range when no reader is given', () => {
+    const container = mount({ rows: WEEK_ROWS })
+    openMenu(container)
+    choose(fromSelect(container), 202635)
+    expect(showing(container)).toBe('Showing 4 of 4 rows')
+  })
+})
+
+describe('FilterChips when interactions are not allowed', () => {
+  it('disables each remove button and Clear all', () => {
+    const container = mount({ fields: PLAIN_FIELDS })
+    openMenu(container)
+    click(checkbox(container, 'F63.1'))
+    view?.rerender(harness({ fields: PLAIN_FIELDS, interactive: false }))
+    const buttons = [...container.querySelectorAll<HTMLButtonElement>('.qaqc-filter-chips button')]
+    expect(buttons.map((button) => button.disabled)).toEqual([true, true])
+    click(buttons[0])
+    expect(chipTexts(container)).toEqual(['Building: F63.1'])
+  })
+})

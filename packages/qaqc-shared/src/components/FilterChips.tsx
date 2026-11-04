@@ -18,10 +18,11 @@ export interface FilterChipsProps {
   onClearAll: () => void
   /** Called when the control that held focus is gone, so focus can go to the Filter button rather than `body`. */
   onFocusLost: () => void
+  disabled?: boolean
 }
 
 /** The active filters under a dashboard's header: one removable chip per group, Clear all, and any notes. */
-export function FilterChips({ chips, notes, onClearAll, onFocusLost }: FilterChipsProps): ReactElement | null {
+export function FilterChips({ chips, notes, onClearAll, onFocusLost, disabled = false }: FilterChipsProps): ReactElement | null {
   const containerRef = useRef<HTMLDivElement | null>(null)
   // Set by a remove button: the position focus moves to once the chip has gone.
   const pendingFocusRef = useRef<number | null>(null)
@@ -52,6 +53,7 @@ export function FilterChips({ chips, notes, onClearAll, onFocusLost }: FilterChi
           <button
             type="button"
             aria-label={`Remove ${chip.label} filter`}
+            disabled={disabled}
             onClick={() => {
               pendingFocusRef.current = position
               chip.onRemove()
@@ -61,7 +63,7 @@ export function FilterChips({ chips, notes, onClearAll, onFocusLost }: FilterChi
           </button>
         </span>
       ))}
-      <button type="button" className="qaqc-filter-link" onClick={clearAll}>
+      <button type="button" className="qaqc-filter-link" disabled={disabled} onClick={clearAll}>
         Clear all
       </button>
       {notes.map((note) => (

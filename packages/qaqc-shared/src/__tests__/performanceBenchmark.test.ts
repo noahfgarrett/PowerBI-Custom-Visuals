@@ -85,7 +85,7 @@ function manyPeopleRows(count: number): unknown[][] {
 describe('performance visual budgets', () => {
   const split = splitCombinedRows(syntheticCombinedRows(500_000, 7), COLUMNS.source)
   const index = buildPerformanceIndex(split, COLUMNS, TODAY)
-  const view = { selectedKey: CURRENT, windowEndKey: CURRENT, range: 'all' as const }
+  const view = { selectedKey: CURRENT, windowEndKey: CURRENT, range: 'all' as const, dateRange: null }
 
   it('indexes 500,000 combined rows within budget', () => {
     expect(bestOf(TIMING_RUNS, () => elapsed(() => buildPerformanceIndex(split, COLUMNS, TODAY)))).toBeLessThan(INDEX_BUDGET_MS)
@@ -108,7 +108,7 @@ describe('performance visual budgets', () => {
 describe('performance visual budgets with 2,000 people', () => {
   const split = splitCombinedRows(manyPeopleRows(500_000), COLUMNS.source)
   const index = buildPerformanceIndex(split, COLUMNS, TODAY)
-  const view = { selectedKey: CURRENT, windowEndKey: CURRENT, range: 'all' as const }
+  const view = { selectedKey: CURRENT, windowEndKey: CURRENT, range: 'all' as const, dateRange: null }
 
   it('holds about 1,000 people in each group', () => {
     expect(index.qcr.length).toBeGreaterThan(990)

@@ -43,7 +43,7 @@ const index = buildPerformanceIndex(split, COLUMNS, TODAY)
 
 function model(group: 'qcr' | 'welders', range: RangeMode): PerformanceModel {
   const minimum = group === 'qcr' ? QCR_MINIMUM : WELDER_MINIMUM
-  return buildPerformanceModel(index, { selectedKey: CURRENT, windowEndKey: CURRENT, range }, group, minimum)
+  return buildPerformanceModel(index, { selectedKey: CURRENT, windowEndKey: CURRENT, range, dateRange: null }, group, minimum)
 }
 
 function percent(value: number | null): string {

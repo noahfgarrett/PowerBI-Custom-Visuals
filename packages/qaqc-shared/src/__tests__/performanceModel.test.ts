@@ -69,7 +69,7 @@ function index(rows: Row[]): PerformanceIndex {
 }
 
 function view(range: RangeMode, endKey = CURRENT): ViewState {
-  return { selectedKey: endKey, windowEndKey: endKey, range }
+  return { selectedKey: endKey, windowEndKey: endKey, range, dateRange: null }
 }
 
 function names(rows: PerformanceRow[]): string[] {

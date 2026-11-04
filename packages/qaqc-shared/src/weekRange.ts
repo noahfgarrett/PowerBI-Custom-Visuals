@@ -1,3 +1,5 @@
+import { makeWorkWeek } from './workWeeks'
+
 export interface WeekRange {
   fromKey: number
   toKey: number
@@ -41,6 +43,15 @@ export function presetRange(preset: RangePreset, weeks: readonly RangeWeek[], cu
       return unreachable
     }
   }
+}
+
+function keyLabel(key: number): string {
+  return makeWorkWeek(Math.floor(key / 100), key % 100).label
+}
+
+/** `WW10'2026 to WW30'2026` */
+export function formatWeekRange(range: WeekRange): string {
+  return `${keyLabel(range.fromKey)} to ${keyLabel(range.toKey)}`
 }
 
 /**

@@ -351,11 +351,17 @@ export function FilterMenu({
     function handleFocusIn(event: Event): void {
       if (!isInside(event.target)) closeMenu(false)
     }
+    // A press outside the visual's iframe fires no pointerdown here, only this.
+    function handleWindowBlur(): void {
+      closeMenu(false)
+    }
     document.addEventListener('pointerdown', handlePointerDown, true)
     document.addEventListener('focusin', handleFocusIn)
+    window.addEventListener('blur', handleWindowBlur)
     return () => {
       document.removeEventListener('pointerdown', handlePointerDown, true)
       document.removeEventListener('focusin', handleFocusIn)
+      window.removeEventListener('blur', handleWindowBlur)
     }
   }, [isOpen])
 

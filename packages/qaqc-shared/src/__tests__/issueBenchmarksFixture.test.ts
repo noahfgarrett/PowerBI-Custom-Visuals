@@ -71,7 +71,7 @@ describe("issue benchmarks as of WW42'2026 (October export)", () => {
   })
 
   it('ends the backlog age line at 351 days with 51 open', () => {
-    const profile = agingProfile(index, { selectedKey: WW42, windowEndKey: WW42, range: 'recent' }, TODAY)
+    const profile = agingProfile(index, { selectedKey: WW42, windowEndKey: WW42, range: 'recent', dateRange: null }, TODAY)
     expect(profile).toHaveLength(30)
     expect(profile[29]).toMatchObject({ median: 351, open: 51 })
   })

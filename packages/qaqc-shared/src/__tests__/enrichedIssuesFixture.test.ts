@@ -38,7 +38,7 @@ const WW42 = 202642
 const index = buildIssueIndex(ENRICHED_ISSUE_ROWS, COLUMNS, TODAY)
 
 function viewAt(key: number, range: ViewState['range'] = 'recent'): ViewState {
-  return { selectedKey: key, windowEndKey: key, range }
+  return { selectedKey: key, windowEndKey: key, range, dateRange: null }
 }
 
 /** Opened and closed per week, WW30–WW43'2026. */

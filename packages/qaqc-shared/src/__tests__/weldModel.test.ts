@@ -46,7 +46,7 @@ const ROWS: Cell[][] = [
 const index = buildWeldIndex(ROWS, COLUMNS, TODAY)
 
 function viewAt(key: number): ViewState {
-  return { selectedKey: key, windowEndKey: key, range: 'recent' }
+  return { selectedKey: key, windowEndKey: key, range: 'recent', dateRange: null }
 }
 
 describe('buildWeldModel cards', () => {
@@ -109,7 +109,7 @@ describe('buildWeldModel cards', () => {
   })
 
   it('falls back to the current week for unknown view keys', () => {
-    const model = buildWeldModel(index, { selectedKey: 199901, windowEndKey: 199901, range: 'recent' }, null, 1)
+    const model = buildWeldModel(index, { selectedKey: 199901, windowEndKey: 199901, range: 'recent', dateRange: null }, null, 1)
     expect(model.selectedWeek.label).toBe(WW42)
   })
 
@@ -155,7 +155,7 @@ describe('buildWeldModel window', () => {
   it('moves the window with the window end while the selection stays', () => {
     const model = buildWeldModel(
       longIndex,
-      { selectedKey: 202642, windowEndKey: 202625, range: 'recent' },
+      { selectedKey: 202642, windowEndKey: 202625, range: 'recent', dateRange: null },
       null,
       1,
     )

@@ -74,7 +74,7 @@ export function FilterHarness({ interactive = true, isRangeDisabled, leading, on
       >
         {leading}
       </DashboardHeader>
-      <FilterChips {...filters.chips} />
+      <FilterChips {...filters.chips} disabled={!interactive} />
     </div>
   )
 }

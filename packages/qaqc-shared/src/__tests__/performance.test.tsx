@@ -1084,7 +1084,7 @@ function fixtureIndex(): PerformanceIndex {
 const FIXTURE_INDEX = fixtureIndex()
 
 function fixtureView(range: RangeMode): ViewState {
-  return { selectedKey: FIXTURE_WEEK, windowEndKey: FIXTURE_WEEK, range }
+  return { selectedKey: FIXTURE_WEEK, windowEndKey: FIXTURE_WEEK, range, dateRange: null }
 }
 
 function drawDetail(overrides: Partial<PersonDetailProps> = {}): Rendered {

@@ -3,13 +3,19 @@ import { act, type ReactElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { InspectionDashboard, type InspectionDashboardProps } from '../components/InspectionDashboard'
-import { buildInspectionIndex } from '../inspections'
+import { buildFootnotes } from '../footnotes'
+import { buildInspectionIndex, buildInspectionModel, defaultViewState } from '../inspections'
 import { resolveTheme } from '../theme'
+import type { InspectionRows } from '../types'
 import { parseWorkWeek } from '../workWeeks'
+import { buttonNamed, checkbox, checkboxLabels, chipTexts, choose, click, filterButton, openMenu, pick, showing, toggleSection } from './filterHarness'
 import { ELECTRICAL_ROWS } from './fixtures/electricalRows'
+import { filterSourceFor, PLACEHOLDER_OPTIONAL, UNBOUND_OPTIONAL, withPlaceholderColumns } from './inspectionFilterFixture'
 import { render, type Rendered } from './render'
 
 const INDEX = buildInspectionIndex(ELECTRICAL_ROWS, { workWeek: 0, phase: 1, issue: 2, building: 3 }, new Date(2026, 9, 15))
+const TODAY = new Date(2026, 9, 15)
+const FILTER_SOURCE = filterSourceFor(ELECTRICAL_ROWS, TODAY)
 const THEME = resolveTheme({ preset: 'qaqc', backgroundColor: '', backgroundOpacity: 100, cardOpacity: 100, highContrast: null })
 
 let view: Rendered | null = null
@@ -25,6 +31,7 @@ function draw(overrides: Partial<InspectionDashboardProps> = {}): Rendered {
       title="Electrical Inspections"
       icon={Zap}
       index={INDEX}
+      filterSource={FILTER_SOURCE}
       theme={THEME}
       interactive
       animate={false}
@@ -127,6 +134,7 @@ describe('InspectionDashboard', () => {
         title="Electrical Inspections"
         icon={Zap}
         index={INDEX}
+        filterSource={FILTER_SOURCE}
         theme={THEME}
         interactive
         animate={false}
@@ -233,6 +241,7 @@ function dashboardElement(
       title="Electrical Inspections"
       icon={Zap}
       index={index}
+      filterSource={FILTER_SOURCE}
       theme={THEME}
       interactive={interactive}
       animate={false}
@@ -462,6 +471,7 @@ describe('InspectionDashboard with measured charts', () => {
           title="Electrical Inspections"
           icon={Zap}
           index={INDEX}
+          filterSource={FILTER_SOURCE}
           theme={THEME}
           interactive
           animate
@@ -534,5 +544,346 @@ describe('InspectionDashboard empty states and landmarks', () => {
   it('does not render the top bar as a banner landmark', () => {
     view = draw()
     expect(view.container.querySelector('.qaqc-header')?.tagName).toBe('DIV')
+  })
+})
+
+describe('InspectionDashboard filters', () => {
+  const PLACEHOLDER_ROWS = withPlaceholderColumns(ELECTRICAL_ROWS)
+
+  function drawFiltered(
+    rows: InspectionRows = PLACEHOLDER_ROWS,
+    optional: InspectionDashboardProps['filterSource']['optional'] = PLACEHOLDER_OPTIONAL,
+    overrides: Partial<InspectionDashboardProps> = {},
+  ): HTMLElement {
+    const index = buildInspectionIndex(rows, { workWeek: 0, phase: 1, issue: 2, building: 3 }, TODAY)
+    view = draw({ index, filterSource: filterSourceFor(rows, TODAY, optional), footnotes: buildFootnotes(index, false), ...overrides })
+    return view.container
+  }
+
+  function sectionTitles(container: HTMLElement): string[] {
+    return [...container.querySelectorAll('.qaqc-filter-section-toggle span:first-of-type')].map((node) => node.textContent ?? '')
+  }
+
+  function setRange(container: HTMLElement, fromKey: number, toKey: number): void {
+    const [from, to] = container.querySelectorAll<HTMLSelectElement>('.qaqc-filter-date select')
+    choose(from, fromKey)
+    choose(to, toKey)
+  }
+
+  function weekPicker(container: HTMLElement): HTMLSelectElement {
+    return pick(container, '.qaqc-week-picker select', HTMLSelectElement)
+  }
+
+  function groupSubtitle(container: HTMLElement): string | null {
+    return container.querySelector('.qaqc-kpi-group.is-toDate em')?.textContent ?? null
+  }
+
+  function stubChartSize(): void {
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+      x: 0,
+      y: 0,
+      top: 0,
+      left: 0,
+      right: 800,
+      bottom: 400,
+      width: 800,
+      height: 400,
+      toJSON: () => ({}),
+    })
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('shows the Filter button with only the bound fields', () => {
+    const container = drawFiltered(ELECTRICAL_ROWS, UNBOUND_OPTIONAL)
+    expect(filterButton(container).textContent).toBe('Filter')
+    openMenu(container)
+    expect(sectionTitles(container)).toEqual(['Building'])
+    expect(container.querySelector('.qaqc-filter-date')).not.toBeNull()
+  })
+
+  it('lists the bound fields in the menu order, with Building between them', () => {
+    const container = drawFiltered()
+    openMenu(container)
+    expect(sectionTitles(container)).toEqual(['General Contractor', 'Trade Supplier', 'Building', 'Discipline', 'Inspection Category', 'Status'])
+  })
+
+  it('lists a blank Building last as Unspecified, and matches the chart\'s count', () => {
+    const container = drawFiltered(ELECTRICAL_ROWS, UNBOUND_OPTIONAL)
+    openMenu(container)
+    const labels = checkboxLabels(container)
+    expect(labels[labels.length - 1]).toBe('Unspecified')
+    expect(labels).not.toContain('Not recorded')
+    click(checkbox(container, 'Unspecified'))
+    const blank = ELECTRICAL_ROWS.filter((row) => row[3] === null)
+    expect(showing(container)).toBe(`Showing ${blank.length} of ${ELECTRICAL_ROWS.length} rows`)
+  })
+
+  it('a field filter recalculates cards and charts', () => {
+    stubChartSize()
+    const container = drawFiltered(ELECTRICAL_ROWS, UNBOUND_OPTIONAL)
+    openMenu(container)
+    click(checkbox(container, 'BK1'))
+
+    const rows = ELECTRICAL_ROWS.filter((row) => row[3] === 'BK1')
+    const index = buildInspectionIndex(rows, { workWeek: 0, phase: 1, issue: 2, building: 3 }, TODAY)
+    const model = buildInspectionModel(index, defaultViewState(index))
+    expect(model.toDate.finals).toBeLessThan(238)
+    expect(cardValue(container, 'Finals to Date')).toBe(String(model.toDate.finals))
+    expect(cardValue(container, 'SORs to Date')).toBe(String(model.toDate.sors))
+    expect(chipTexts(container)).toEqual(['Building: BK1'])
+
+    expandPanel(container, 'Inspections by Building')
+    expect(dialog(container, 'Inspections by Building')?.querySelectorAll('tbody tr')).toHaveLength(1)
+  })
+
+  it('shows the visual\'s own notes and the base cards while no field is active', () => {
+    const index = buildInspectionIndex(ELECTRICAL_ROWS, { workWeek: 0, phase: 1, issue: 2, building: 3 }, TODAY)
+    const footnotes = ['from the visual']
+    const container = drawFiltered(ELECTRICAL_ROWS, UNBOUND_OPTIONAL, { index, footnotes })
+    expect(container.querySelector('.qaqc-footnotes')?.textContent).toContain('from the visual')
+    expect(cardValue(container, 'Finals to Date')).toBe('238')
+    expect(container.querySelector('.qaqc-filter-chips')).toBeNull()
+  })
+
+  it('In range retitles the group, with "WW.. to WW.." and "Finals in Range"', () => {
+    const container = drawFiltered(ELECTRICAL_ROWS, UNBOUND_OPTIONAL)
+    openMenu(container)
+    setRange(container, 202610, 202630)
+    expect(groupShading(container, 'In range')).toEqual(['is-toDate'])
+    expect(groupSubtitle(container)).toBe("WW10'2026 to WW30'2026")
+    expect(cardValue(container, 'Finals in Range')).toBe('117')
+    expect(cardValue(container, 'SORs in Range')).toBe('12')
+    expect(cardValue(container, 'NCR Pass Rate')).toBe('98.3%')
+    expect(cardDetail(container, 'NCR Pass Rate')).toBe('115 / 117 Finals')
+    expect(cardValue(container, 'Finals to Date')).toBeNull()
+    expect(chipTexts(container)).toEqual(["Date range: WW10'2026 to WW30'2026"])
+  })
+
+  it('clamps the selected week into the range, and This WW cards follow it', () => {
+    const container = drawFiltered(ELECTRICAL_ROWS, UNBOUND_OPTIONAL)
+    openMenu(container)
+    setRange(container, 202610, 202630)
+    expect(weekTitle(container)).toBe("WW30'2026")
+    expect(cardValue(container, 'Final Inspections')).toBe('7')
+    expect(cardDetail(container, 'Finals in Range')).toBe('+7 this WW')
+  })
+
+  it('the 30 WW | All toggle is disabled during a range', () => {
+    const container = drawFiltered(ELECTRICAL_ROWS, UNBOUND_OPTIONAL)
+    const toggles = (): HTMLButtonElement[] => [...container.querySelectorAll<HTMLButtonElement>('.qaqc-segmented button')]
+    expect(toggles().every((button) => !button.disabled)).toBe(true)
+    openMenu(container)
+    click(buttonNamed(container, 'Last 4 WW'))
+    expect(toggles().every((button) => button.disabled)).toBe(true)
+    expect(toggles().map((button) => button.getAttribute('aria-pressed'))).toEqual(['false', 'false'])
+    click(buttonNamed(container, 'Last 4 WW'))
+    expect(toggles().every((button) => !button.disabled)).toBe(true)
+    expect(toggles().map((button) => button.getAttribute('aria-pressed'))).toEqual(['true', 'false'])
+  })
+
+  it('the week picker lists only the range\'s weeks', () => {
+    const container = drawFiltered(ELECTRICAL_ROWS, UNBOUND_OPTIONAL)
+    expect(weekPicker(container).options).toHaveLength(44)
+    openMenu(container)
+    setRange(container, 202610, 202630)
+    const options = [...weekPicker(container).options].map((option) => option.value)
+    expect(options).toHaveLength(21)
+    expect(options[0]).toBe('202630')
+    expect(options[20]).toBe('202610')
+  })
+
+  it('no matching rows shows the empty state with Clear filters', () => {
+    const rows: InspectionRows = [
+      ["WW40'2026", 'Final', 'No Issue Found', 'F63.1', 'Greyfox'],
+      ["WW41'2026", 'Final', 'No Issue Found', 'F63.2', 'Bayside'],
+    ]
+    const container = drawFiltered(rows, { ...UNBOUND_OPTIONAL, generalContractor: 4 })
+    openMenu(container)
+    click(checkbox(container, 'Greyfox'))
+    toggleSection(container, 'Building')
+    click(checkbox(container, 'F63.2'))
+
+    expect(container.querySelector('.qaqc-filter-empty h3')?.textContent).toBe('No rows match these filters')
+    expect(container.querySelector('.qaqc-filter-empty')?.getAttribute('role')).toBe('status')
+    expect(container.querySelector('.qaqc-kpi-row')).toBeNull()
+    expect(container.querySelector('.qaqc-charts')).toBeNull()
+    expect(filterButton(container)).not.toBeNull()
+    expect(container.querySelector('.qaqc-filter-chips')).not.toBeNull()
+
+    const clear = buttonNamed(container, 'Clear filters')
+    clear.focus()
+    click(clear)
+    expect(container.querySelector('.qaqc-filter-empty')).toBeNull()
+    expect(cardValue(container, 'Finals to Date')).toBe('2')
+    expect(document.activeElement).toBe(filterButton(container))
+  })
+
+  it('says the date range is part of it when a range holds no rows', () => {
+    const rows: InspectionRows = [["WW30'2026", 'Final', 'No Issue Found', 'A'], ["WW40'2026", 'Final', 'No Issue Found', 'A']]
+    const container = drawFiltered(rows, UNBOUND_OPTIONAL)
+    openMenu(container)
+    setRange(container, 202632, 202635)
+    expect(container.querySelector('.qaqc-filter-empty p')?.textContent).toContain('no Finals or SORs in this date range')
+    expect(container.querySelector('.qaqc-kpi-row')).toBeNull()
+  })
+
+  it('shows no empty state for an empty report with no filters', () => {
+    const container = drawFiltered([], UNBOUND_OPTIONAL)
+    expect(container.querySelector('.qaqc-filter-empty')).toBeNull()
+    expect(cardValue(container, 'Finals to Date')).toBe('0')
+  })
+
+  it('disables Clear filters when interactions are not allowed', () => {
+    const rows: InspectionRows = [["WW40'2026", 'Final', 'No Issue Found', 'A'], ["WW30'2026", 'SOR', '', 'B']]
+    const index = buildInspectionIndex(rows, { workWeek: 0, phase: 1, issue: 2, building: 3 }, TODAY)
+    const container = drawFiltered(rows, UNBOUND_OPTIONAL, { index })
+    openMenu(container)
+    setRange(container, 202632, 202635)
+    view?.rerender(
+      <InspectionDashboard
+        title="Electrical Inspections"
+        icon={Zap}
+        index={index}
+        filterSource={filterSourceFor(rows, TODAY)}
+        theme={THEME}
+        interactive={false}
+        animate={false}
+        describeCharts
+        loading={false}
+        footnotes={[]}
+        viewport={{ width: 1280, height: 720 }}
+        onHover={vi.fn()}
+      />,
+    )
+    expect(buttonNamed(container, 'Clear filters').disabled).toBe(true)
+    expect(filterButton(container).disabled).toBe(true)
+  })
+
+  it('says a filter\'s rows are outside the recent window instead of drawing an empty chart', () => {
+    const rows: InspectionRows = [["WW01'2026", 'Final', 'No Issue Found', 'Old'], ["WW42'2026", 'Final', 'No Issue Found', 'New']]
+    const container = drawFiltered(rows, UNBOUND_OPTIONAL)
+    openMenu(container)
+    click(checkbox(container, 'Old'))
+    const trend = container.querySelector('.qaqc-panel-main')
+    expect(trend?.textContent).toContain('outside the last 30 WW')
+    expect(cardValue(container, 'Finals to Date')).toBe('1')
+    clickRange(container, 'All')
+    expect(container.querySelector('.qaqc-panel-main')?.textContent).not.toContain('outside the last 30 WW')
+  })
+
+  it('From/To keep listing every week after a filter shortens the axis', () => {
+    const rows: InspectionRows = [
+      ["WW10'2026", 'Final', 'No Issue Found', 'Early'],
+      ["WW38'2026", 'Final', 'No Issue Found', 'Late'],
+      ["WW42'2026", 'Final', 'No Issue Found', 'Early'],
+    ]
+    const container = drawFiltered(rows, UNBOUND_OPTIONAL)
+    expect(weekPicker(container).options).toHaveLength(33)
+    pickWeekInDropdown(container, '202612')
+    openMenu(container)
+    click(checkbox(container, 'Late'))
+
+    // The axis now starts at WW38, so the picked WW12 fell back to the current week.
+    expect(weekPicker(container).options).toHaveLength(5)
+    expect(weekTitle(container)).toBe("WW42'2026")
+    const [from, to] = container.querySelectorAll<HTMLSelectElement>('.qaqc-filter-date select')
+    expect(from.options).toHaveLength(33)
+    expect(to.options).toHaveLength(33)
+
+    click(checkbox(container, 'Late'))
+    expect(weekTitle(container)).toBe("WW12'2026")
+  })
+
+  it('combines a filter that shortens the axis with a range reaching before it', () => {
+    const rows: InspectionRows = [
+      ["WW10'2026", 'Final', 'No Issue Found', 'Early'],
+      ["WW38'2026", 'Final', 'NCR', 'Late'],
+      ["WW42'2026", 'Final', 'No Issue Found', 'Early'],
+    ]
+    const container = drawFiltered(rows, UNBOUND_OPTIONAL)
+    openMenu(container)
+    click(checkbox(container, 'Late'))
+    setRange(container, 202630, 202640)
+    expect(groupSubtitle(container)).toBe("WW30'2026 to WW40'2026")
+    expect(cardValue(container, 'Finals in Range')).toBe('1')
+    expect(weekTitle(container)).toBe("WW40'2026")
+    expect(weekPicker(container).options).toHaveLength(3)
+
+    // Moving the range entirely before the filtered axis empties the dashboard without throwing.
+    setRange(container, 202630, 202635)
+    expect(container.querySelector('.qaqc-filter-empty')).not.toBeNull()
+  })
+
+  it('skipped and future footnotes describe the filtered rows, and Showing X of Y counts every bound row consistently', () => {
+    const rows: InspectionRows = [
+      ["WW40'2026", 'Final', 'No Issue Found', 'A'],
+      ['not a week', 'Final', 'No Issue Found', 'A'],
+      ["WW50'2026", 'Final', 'No Issue Found', 'A'],
+      ["WW41'2026", 'Other phase', '', 'A'],
+      ["WW41'2026", 'Final', 'No Issue Found', 'B'],
+      ['also not a week', 'Final', 'No Issue Found', 'B'],
+      ['still not a week', 'SOR', '', 'B'],
+    ]
+    const container = drawFiltered(rows, UNBOUND_OPTIONAL)
+    const notes = (): string => container.querySelector('.qaqc-footnotes')?.textContent ?? ''
+    expect(notes()).toContain('3 rows skipped: unreadable work week')
+    expect(notes()).toContain("1 row dated after WW42'2026 not counted")
+
+    openMenu(container)
+    expect(showing(container)).toBe('Showing 7 of 7 rows')
+
+    click(checkbox(container, 'B'))
+    expect(showing(container)).toBe('Showing 3 of 7 rows')
+    expect(notes()).toContain('2 rows skipped: unreadable work week')
+    expect(notes()).not.toContain('dated after')
+
+    click(checkbox(container, 'B'))
+    click(checkbox(container, 'A'))
+    expect(showing(container)).toBe('Showing 4 of 7 rows')
+    expect(notes()).toContain('1 row skipped: unreadable work week')
+    expect(notes()).toContain("1 row dated after WW42'2026 not counted")
+
+    // A range keeps only rows with a readable week inside it; the notes still describe the filtered rows.
+    setRange(container, 202641, 202642)
+    expect(showing(container)).toBe('Showing 1 of 7 rows')
+    expect(notes()).toContain('1 row skipped: unreadable work week')
+  })
+
+  it('keeps the row-limit note while a filter restates the other notes', () => {
+    const rows: InspectionRows = [["WW40'2026", 'Final', 'No Issue Found', 'A'], ['not a week', 'Final', 'No Issue Found', 'B']]
+    const index = buildInspectionIndex(rows, { workWeek: 0, phase: 1, issue: 2, building: 3 }, TODAY)
+    const container = drawFiltered(rows, UNBOUND_OPTIONAL, { index, footnotes: buildFootnotes(index, true) })
+    openMenu(container)
+    click(checkbox(container, 'A'))
+    const notes = container.querySelector('.qaqc-footnotes')?.textContent ?? ''
+    expect(notes).toContain('Showing the first 2 rows (Power BI data limit)')
+    expect(notes).not.toContain('skipped')
+  })
+
+  it('counts a Showing total of rows in the range with no field filter', () => {
+    const rows: InspectionRows = [
+      ["WW40'2026", 'Final', 'No Issue Found', 'A'],
+      ["WW41'2026", 'Other phase', '', 'A'],
+      ['not a week', 'Final', 'No Issue Found', 'A'],
+      ["WW30'2026", 'SOR', '', 'B'],
+    ]
+    const container = drawFiltered(rows, UNBOUND_OPTIONAL)
+    openMenu(container)
+    setRange(container, 202640, 202641)
+    expect(showing(container)).toBe('Showing 2 of 4 rows')
+  })
+
+  it('disables the chips with the rest of the controls when interactions are not allowed', () => {
+    const index = buildInspectionIndex(ELECTRICAL_ROWS, { workWeek: 0, phase: 1, issue: 2, building: 3 }, TODAY)
+    const container = drawFiltered(ELECTRICAL_ROWS, UNBOUND_OPTIONAL, { index })
+    openMenu(container)
+    click(checkbox(container, 'BK1'))
+    view?.rerender(dashboardElement(index, { width: 1280, height: 720 }, false))
+    const buttons = [...container.querySelectorAll<HTMLButtonElement>('.qaqc-filter-chips button')]
+    expect(buttons.length).toBeGreaterThan(1)
+    expect(buttons.every((button) => button.disabled)).toBe(true)
   })
 })

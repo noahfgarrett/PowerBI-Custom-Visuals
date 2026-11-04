@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  INSPECTION_OPTIONAL_SLOTS,
   ISSUE_SLOTS,
   OVERVIEW_SLOTS,
   PERFORMANCE_SLOTS,
@@ -50,6 +51,55 @@ describe('readInspectionTable', () => {
     const result = readInspectionTable(table([ROW], ['workWeek', 'phase', 'issue', 'building']))
     expect(result.kind).toBe('missing')
     if (result.kind === 'missing') expect(result.missing.map((slot) => slot.column)).toEqual(['Index'])
+  })
+})
+
+describe('readInspectionTable optional columns', () => {
+  it('gives every optional column −1 when none are bound', () => {
+    const result = readInspectionTable(table([ROW]))
+    if (result.kind !== 'ready') throw new Error('expected ready')
+    expect(Object.keys(result.optional)).toEqual(INSPECTION_OPTIONAL_SLOTS.map((slot) => slot.role))
+    expect(Object.values(result.optional).every((position) => position === -1)).toBe(true)
+  })
+
+  it('finds a bound optional column by role, without requiring the others', () => {
+    const result = readInspectionTable({
+      columns: [
+        ...ALL_ROLES.map((role) => ({ roles: { [role]: true } })),
+        { roles: { qcr: true } },
+        { roles: { generalContractor: true } },
+      ],
+      rows: [[...ROW, 1, 'QC 1', 'Greyfox']],
+    })
+    if (result.kind !== 'ready') throw new Error('expected ready')
+    expect(result.optional.generalContractor).toBe(6)
+    expect(result.optional.qcr).toBe(5)
+    expect(result.optional.status).toBe(-1)
+    expect(result.columns).toEqual({ workWeek: 0, phase: 1, issue: 2, building: 3 })
+  })
+
+  it('never lists an optional slot as missing', () => {
+    const result = readInspectionTable(undefined)
+    if (result.kind !== 'missing') throw new Error('expected missing')
+    const optionalRoles: readonly string[] = INSPECTION_OPTIONAL_SLOTS.map((slot) => slot.role)
+    expect(result.missing.some((slot) => optionalRoles.includes(slot.role))).toBe(false)
+  })
+
+  it('names the optional slots with the sheet\'s headers', () => {
+    expect(INSPECTION_OPTIONAL_SLOTS.map((slot) => slot.column)).toEqual([
+      'General Contractor',
+      'Trade Supplier',
+      'Discipline',
+      'Inspection Category',
+      'Status',
+      'Inspection ID',
+      'Equipment ID / Tag Number',
+      'Issue ID',
+      'Finding Type',
+      'Date Observed',
+      'QCR/FE',
+      'Notes',
+    ])
   })
 })
 

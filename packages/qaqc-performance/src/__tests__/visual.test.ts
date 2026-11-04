@@ -106,7 +106,7 @@ function fixtureQcrModel(minimum: number): ReturnType<typeof buildPerformanceMod
   }
   const index = buildPerformanceIndex(splitCombinedRows(COMBINED_ROWS, SOURCE), columns, new Date(2026, 9, 15))
   const key = index.currentWeek.key
-  return buildPerformanceModel(index, { selectedKey: key, windowEndKey: key, range: 'recent' }, 'qcr', minimum)
+  return buildPerformanceModel(index, { selectedKey: key, windowEndKey: key, range: 'recent', dateRange: null }, 'qcr', minimum)
 }
 
 function update(dataView: powerbi.DataView | undefined, viewport = { width: 1280, height: 720 }, operationKind = 0, type = 2): UpdateOptions {

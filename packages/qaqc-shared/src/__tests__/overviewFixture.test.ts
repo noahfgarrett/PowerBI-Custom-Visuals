@@ -45,7 +45,7 @@ const split = splitCombinedRows(COMBINED_ROWS, COLUMNS.source)
 const index = buildOverviewIndex(split, COLUMNS, TODAY)
 
 function viewAt(key: number, range: ViewState['range'] = 'recent'): ViewState {
-  return { selectedKey: key, windowEndKey: key, range }
+  return { selectedKey: key, windowEndKey: key, range, dateRange: null }
 }
 
 function modelAt(key: number, mode: CardMode): OverviewModel {

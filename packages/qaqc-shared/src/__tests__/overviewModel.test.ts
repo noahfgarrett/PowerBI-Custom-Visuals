@@ -9,7 +9,7 @@ import { bim, cardsOf, inspection, overviewIndexOf, rowOf, times, UNBOUND_ROOT_C
 function viewAt(label: string, range: RangeMode = 'recent'): ViewState {
   const week = parseWorkWeek(label)
   if (week === null) throw new Error(`bad week ${label}`)
-  return { selectedKey: week.key, windowEndKey: week.key, range }
+  return { selectedKey: week.key, windowEndKey: week.key, range, dateRange: null }
 }
 
 function modelAt(index: OverviewIndex, label: string, mode: CardMode, range: RangeMode = 'recent'): OverviewModel {

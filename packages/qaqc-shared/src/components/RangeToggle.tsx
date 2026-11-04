@@ -4,7 +4,8 @@ import type { RangeMode } from '../types'
 import { SegmentedToggle } from './SegmentedToggle'
 
 export interface RangeToggleProps {
-  value: RangeMode
+  /** Null when neither option applies: a date range has replaced the window. */
+  value: RangeMode | null
   recentCount: number
   disabled: boolean
   /** The group's accessible name: what the range sets. Defaults to "Chart range". */

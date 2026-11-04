@@ -1,4 +1,4 @@
-import type { CombinedColumns, InspectionColumns, InspectionRows, IssueColumns, WeldColumns } from './types'
+import type { CombinedColumns, InspectionColumns, InspectionOptionalColumns, InspectionRows, IssueColumns, WeldColumns } from './types'
 
 export interface FieldSlot<Role extends string = keyof InspectionColumns | 'rowId'> {
   role: Role
@@ -16,9 +16,28 @@ export const REQUIRED_SLOTS: readonly FieldSlot[] = [
   { role: 'rowId', slot: 'Row ID', column: 'Index' },
 ]
 
+/**
+ * The filter menu's fields and the drill-down's columns. A report without them keeps working. A visual declares the
+ * ones its sheet has, in this order, under the sheet's spelling: Mechanical has no Inspection ID, and writes `QCR / FE`.
+ */
+export const INSPECTION_OPTIONAL_SLOTS: readonly FieldSlot<keyof InspectionOptionalColumns>[] = [
+  { role: 'generalContractor', slot: 'General Contractor', column: 'General Contractor' },
+  { role: 'tradeSupplier', slot: 'Trade Supplier', column: 'Trade Supplier' },
+  { role: 'discipline', slot: 'Discipline', column: 'Discipline' },
+  { role: 'inspectionCategory', slot: 'Inspection Category', column: 'Inspection Category' },
+  { role: 'status', slot: 'Status', column: 'Status' },
+  { role: 'inspectionId', slot: 'Inspection ID', column: 'Inspection ID' },
+  { role: 'equipmentTag', slot: 'Equipment ID / Tag Number', column: 'Equipment ID / Tag Number' },
+  { role: 'issueId', slot: 'Issue ID', column: 'Issue ID' },
+  { role: 'findingType', slot: 'Finding Type', column: 'Finding Type' },
+  { role: 'dateObserved', slot: 'Date Observed', column: 'Date Observed' },
+  { role: 'qcr', slot: 'QCR/FE', column: 'QCR/FE' },
+  { role: 'notes', slot: 'Notes', column: 'Notes' },
+]
+
 export type TableReadResult =
   | { kind: 'missing'; missing: FieldSlot[] }
-  | { kind: 'ready'; rows: InspectionRows; columns: InspectionColumns }
+  | { kind: 'ready'; rows: InspectionRows; columns: InspectionColumns; optional: InspectionOptionalColumns }
 
 export interface TableColumnLike {
   roles?: { [role: string]: boolean }
@@ -47,6 +66,20 @@ export function readInspectionTable(table: InspectionTableSource | undefined): T
     kind: 'ready',
     rows: table.rows ?? [],
     columns: { workWeek, phase, issue, building },
+    optional: {
+      generalContractor: positionOf('generalContractor'),
+      tradeSupplier: positionOf('tradeSupplier'),
+      discipline: positionOf('discipline'),
+      inspectionCategory: positionOf('inspectionCategory'),
+      status: positionOf('status'),
+      inspectionId: positionOf('inspectionId'),
+      equipmentTag: positionOf('equipmentTag'),
+      issueId: positionOf('issueId'),
+      findingType: positionOf('findingType'),
+      dateObserved: positionOf('dateObserved'),
+      qcr: positionOf('qcr'),
+      notes: positionOf('notes'),
+    },
   }
 }
 

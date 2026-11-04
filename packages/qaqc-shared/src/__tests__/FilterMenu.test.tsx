@@ -34,6 +34,26 @@ function requirePopover(container: Element): HTMLElement {
 
 describe('FilterMenu', () => {
   describe('opening and closing', () => {
+    it('closes on window blur, since a press outside the Power BI iframe fires no pointerdown', () => {
+      view = render(<FilterHarness />)
+      openMenu(view.container)
+      expect(popover(view.container)).not.toBeNull()
+      act(() => {
+        window.dispatchEvent(new Event('blur'))
+      })
+      expect(popover(view.container)).toBeNull()
+      expect(filterButton(view.container).getAttribute('aria-expanded')).toBe('false')
+    })
+
+    it('stops listening for window blur once closed', () => {
+      const removed = vi.spyOn(window, 'removeEventListener')
+      view = render(<FilterHarness />)
+      openMenu(view.container)
+      pressEscape(filterButton(view.container))
+      expect(removed.mock.calls.some(([type]) => type === 'blur')).toBe(true)
+      removed.mockRestore()
+    })
+
     it('opens on click and moves focus into the popover', () => {
       view = render(<FilterHarness />)
       expect(popover(view.container)).toBeNull()

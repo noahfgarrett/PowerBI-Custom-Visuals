@@ -43,7 +43,7 @@ const ROWS: Cell[][] = [
 const index = buildIssueIndex(ROWS, COLUMNS, TODAY)
 
 function viewAt(selectedKey: number, range: ViewState['range'] = 'all', windowEndKey = WW42): ViewState {
-  return { selectedKey, windowEndKey, range }
+  return { selectedKey, windowEndKey, range, dateRange: null }
 }
 
 describe('buildIssueModel cards', () => {

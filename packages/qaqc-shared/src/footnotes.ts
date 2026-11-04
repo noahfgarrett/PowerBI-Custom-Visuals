@@ -28,6 +28,15 @@ export function buildFootnotes(index: FootnoteSource, rowLimitReached: boolean):
   return notes
 }
 
+/**
+ * A dashboard's notes while a field filter is on. `notes` came from the visual and describe every row: their skipped
+ * and future notes give way to the filtered rows' own. Anything else, such as the row limit, stays first.
+ */
+export function restateFootnotes(notes: readonly string[], allRows: FootnoteSource, filteredRows: FootnoteSource): string[] {
+  const allRowNotes = new Set(buildFootnotes(allRows, false))
+  return [...notes.filter((note) => !allRowNotes.has(note)), ...buildFootnotes(filteredRows, false)]
+}
+
 /** Issues are dated by Created On, not a work week column, and only LotusWorks-created issues are included. */
 export function buildIssueFootnotes(index: FootnoteSource & Pick<IssueIndex, 'excludedRows'>, rowLimitReached: boolean): string[] {
   const notes: string[] = []

@@ -18,8 +18,8 @@ const TODAY = new Date(2026, 9, 15) // WW42'2026
 const MIN_WELDS = 10
 const index = buildWeldIndex(WELDING_ROWS, COLUMNS, TODAY)
 
-function viewAt(key: number): { selectedKey: number; windowEndKey: number; range: 'recent' } {
-  return { selectedKey: key, windowEndKey: 202642, range: 'recent' }
+function viewAt(key: number): { selectedKey: number; windowEndKey: number; range: 'recent', dateRange: null } {
+  return { selectedKey: key, windowEndKey: 202642, range: 'recent', dateRange: null }
 }
 
 describe('Welding export (2026-10-14)', () => {

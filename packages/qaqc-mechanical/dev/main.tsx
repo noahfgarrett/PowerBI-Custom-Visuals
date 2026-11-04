@@ -5,6 +5,7 @@ import '../style/visual.less'
 
 import { MECHANICAL_ROWS } from '../../qaqc-shared/src/__tests__/fixtures/mechanicalRows'
 import { syntheticInspectionRows } from '../../qaqc-shared/src/__tests__/fixtures/syntheticRows'
+import { filterSourceFor, PLACEHOLDER_OPTIONAL, UNBOUND_OPTIONAL, withPlaceholderColumns } from '../../qaqc-shared/src/__tests__/inspectionFilterFixture'
 import type { TooltipRequest } from '../../qaqc-shared/src/chartTypes'
 import { InspectionDashboard } from '../../qaqc-shared/src/components/InspectionDashboard'
 import { StatusPanel } from '../../qaqc-shared/src/components/StatusPanel'
@@ -71,9 +72,10 @@ if (data === 'missing') {
 } else if (data === 'loading') {
   root.render(<StatusPanel icon={LoaderCircle} title="Loading inspections" message="Power BI is sending the rows in batches." items={[]} />)
 } else {
+  // The fixture has only the required columns, so made-up ones fill the filter menu here.
   const rows = data === 'synthetic'
     ? syntheticInspectionRows(Number(params.get('rows') ?? 500_000))
-    : data === 'empty' ? [] : MECHANICAL_ROWS
+    : data === 'empty' ? [] : withPlaceholderColumns(MECHANICAL_ROWS)
   const started = performance.now()
   const index = buildInspectionIndex(rows, columns, today)
   document.title = `index ${Math.round(performance.now() - started)} ms`
@@ -82,6 +84,7 @@ if (data === 'missing') {
       title="QCx Mechanical / Process Inspections"
       icon={Cog}
       index={index}
+      filterSource={filterSourceFor(rows, today, data === 'synthetic' ? UNBOUND_OPTIONAL : PLACEHOLDER_OPTIONAL)}
       theme={theme}
       interactive={params.get('interactive') !== '0'}
       animate
