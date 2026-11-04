@@ -16,7 +16,7 @@ import type {
 import { NAME_COLLATOR } from './format'
 import { createNameGrouper, createWeekReader, firstSpelling } from './grouping'
 import { formatWeekRange, type WeekRange } from './weekRange'
-import { enumerateWorkWeeks, previousWorkWeek, toIsoWorkWeek } from './workWeeks'
+import { enumerateWorkWeeks, previousWorkWeek, toIsoWorkWeek, workWeekFromKey } from './workWeeks'
 
 export const UNSPECIFIED_BUILDING = 'Unspecified'
 const NO_ISSUE = 'no issue found'
@@ -71,10 +71,16 @@ export function readPhase(value: unknown, cache: Map<string, InspectionPhase>): 
   return phase
 }
 
+export interface InspectionIndexOptions {
+  /** The axis starts here when that is before the first data week, so a filtered index keeps the full data's weeks. */
+  axisFromKey?: number
+}
+
 export function buildInspectionIndex(
   rows: InspectionRows,
   columns: InspectionColumns,
   today: Date,
+  options: InspectionIndexOptions = {},
 ): InspectionIndex {
   const currentWeek = toIsoWorkWeek(today)
   const readWeek = createWeekReader()
@@ -133,7 +139,11 @@ export function buildInspectionIndex(
   let sors = 0
   let issues = 0
 
-  for (const week of enumerateWorkWeeks(firstWeek ?? currentWeek, currentWeek)) {
+  const dataStart = firstWeek ?? currentWeek
+  const { axisFromKey } = options
+  const axisStart = axisFromKey !== undefined && axisFromKey < dataStart.key ? workWeekFromKey(axisFromKey) : dataStart
+
+  for (const week of enumerateWorkWeeks(axisStart, currentWeek)) {
     const bucket = buckets.get(week.key)
     const counts: WeekCounts = {
       week,
@@ -185,16 +195,18 @@ export function passRateAt(index: InspectionIndex, position: number): number | n
   return passRateOf(index.cumulativeFinals[position], index.cumulativeIssues[position])
 }
 
-/** A running total's growth over positions `start` to `end`; 0 when `end` is before `start`. */
+/** A running total's growth over positions `start` to `end`. */
 function totalBetween(cumulative: number[], start: number, end: number): number {
-  if (end < start) return 0
   return cumulative[end] - (start > 0 ? cumulative[start - 1] : 0)
 }
 
-/** The first and last positions inside a date range, or null when the index has no week in it. */
-function rangePositions(index: InspectionIndex, range: WeekRange): { start: number; end: number } | null {
-  const start = index.weeks.findIndex((item) => item.week.key >= range.fromKey)
-  if (start === -1 || index.weeks[start].week.key > range.toKey) return null
+/**
+ * The first and last positions of a date range's weeks. The axis has them all, filtered or not; a range past either
+ * end of an axis pulls to its nearest week.
+ */
+function rangePositions(index: InspectionIndex, range: WeekRange): { start: number; end: number } {
+  const first = index.weeks.findIndex((item) => item.week.key >= range.fromKey)
+  const start = first === -1 ? index.weeks.length - 1 : first
   let end = start
   while (end + 1 < index.weeks.length && index.weeks[end + 1].week.key <= range.toKey) end += 1
   return { start, end }
@@ -233,12 +245,11 @@ function summarizeBuildings(
 
 export function buildInspectionModel(index: InspectionIndex, view: ViewState): InspectionModel {
   const lastPosition = index.weeks.length - 1
-  const isInRange = view.dateRange !== null
-  // In a date range the window is the range's weeks; an index with none of them leaves it empty (start past end).
+  // In a date range the window is the range's weeks.
   const span = view.dateRange === null ? null : rangePositions(index, view.dateRange)
-  const windowEnd = index.positionByKey.get(view.windowEndKey) ?? lastPosition
-  const endPosition = isInRange ? span?.end ?? -1 : windowEnd
-  const startPosition = isInRange ? span?.start ?? 0 : view.range === 'all' ? 0 : recentWindowStart(endPosition)
+  const isInRange = span !== null
+  const endPosition = span?.end ?? index.positionByKey.get(view.windowEndKey) ?? lastPosition
+  const startPosition = span?.start ?? (view.range === 'all' ? 0 : recentWindowStart(endPosition))
   const knownSelected = index.positionByKey.get(view.selectedKey) ?? lastPosition
   const selectedPosition = span === null ? knownSelected : Math.min(Math.max(knownSelected, span.start), span.end)
   const selected = index.weeks[selectedPosition]
@@ -263,9 +274,7 @@ export function buildInspectionModel(index: InspectionIndex, view: ViewState): I
   return {
     selectedWeek: selected.week,
     previousWeek: previousWorkWeek(selected.week),
-    weekOptions: isInRange
-      ? (window.length > 0 ? window.map((item) => item.week).reverse() : [selected.week])
-      : index.weeks.map((item) => item.week).reverse(),
+    weekOptions: (isInRange ? window : index.weeks).map((item) => item.week).reverse(),
     thisWeek: {
       finals: deltaMetric(selected.finals, previous?.finals ?? 0),
       sors: deltaMetric(selected.sors, previous?.sors ?? 0),

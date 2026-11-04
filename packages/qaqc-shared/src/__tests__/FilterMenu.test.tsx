@@ -45,6 +45,33 @@ describe('FilterMenu', () => {
       expect(filterButton(view.container).getAttribute('aria-expanded')).toBe('false')
     })
 
+    it('stays open on window blur while a select in the menu has focus, since a native dropdown may fire it', () => {
+      view = render(<FilterHarness />)
+      openMenu(view.container)
+      const select = pick(view.container, '.qaqc-filter-date select', HTMLSelectElement)
+      act(() => {
+        select.focus()
+      })
+      expect(document.activeElement).toBe(select)
+      act(() => {
+        window.dispatchEvent(new Event('blur'))
+      })
+      expect(popover(view.container)).not.toBeNull()
+    })
+
+    it('closes on window blur when focus is on anything else in the menu', () => {
+      view = render(<FilterHarness />)
+      openMenu(view.container)
+      const box = pick(view.container, '.qaqc-filter-popover input[type="checkbox"]', HTMLInputElement)
+      act(() => {
+        box.focus()
+      })
+      act(() => {
+        window.dispatchEvent(new Event('blur'))
+      })
+      expect(popover(view.container)).toBeNull()
+    })
+
     it('stops listening for window blur once closed', () => {
       const removed = vi.spyOn(window, 'removeEventListener')
       view = render(<FilterHarness />)

@@ -274,24 +274,23 @@ describe('buildInspectionModel in a date range', () => {
     expect(model.passRateTrend.every((point) => point.rate === null)).toBe(true)
   })
 
-  it('stays usable when a filtered axis has no week in the range', () => {
-    const index = buildInspectionIndex([["WW30'2026", 'Final', 'No Issue Found', 'A']], COLUMNS, TODAY)
-    const model = buildInspectionModel(index, view(index, { dateRange: RANGE }))
-    expect(model.hasData).toBe(false)
-    expect(model.window).toEqual([])
-    expect(model.toDate.finals).toBe(0)
-    expect(model.buildings).toEqual([])
-    expect(model.weekOptions).toEqual([model.selectedWeek])
-    expect(model.selectedWeek.key).toBe(202642)
+  it('shows every week of the range on a filtered index that keeps the full axis', () => {
+    const index = buildInspectionIndex([["WW15'2026", 'Final', 'NCR', 'A']], COLUMNS, TODAY, { axisFromKey: 202601 })
+    const model = buildInspectionModel(index, view(index, { dateRange: RANGE, selectedKey: 202612 }))
+    expect(model.window.map((item) => item.week.key)).toEqual([202610, 202611, 202612, 202613, 202614, 202615, 202616, 202617, 202618, 202619, 202620])
+    expect(model.weekOptions).toHaveLength(11)
+    expect(model.selectedWeek.key).toBe(202612)
+    expect(model.toDate.finals).toBe(1)
+    expect(model.passRateTrend[0].rate).toBeNull()
+    expect(model.passRateTrend[5].rate).toBe(0)
   })
 
-  it('shows the part of the range on a filtered axis that starts inside it', () => {
-    const index = buildInspectionIndex([["WW15'2026", 'Final', 'NCR', 'A']], COLUMNS, TODAY)
-    const model = buildInspectionModel(index, view(index, { dateRange: RANGE, selectedKey: 202615 }))
-    expect(model.window[0].week.key).toBe(202615)
-    expect(model.window[model.window.length - 1].week.key).toBe(202620)
-    expect(model.toDate.finals).toBe(1)
-    expect(model.rangeLabel).toBe("WW10'2026 to WW20'2026")
+  it('pulls a range past the axis to its nearest week rather than throwing', () => {
+    const index = buildInspectionIndex([["WW30'2026", 'Final', 'No Issue Found', 'A']], COLUMNS, TODAY)
+    const model = buildInspectionModel(index, view(index, { dateRange: RANGE }))
+    expect(model.window.map((item) => item.week.key)).toEqual([202630])
+    expect(model.weekOptions.map((week) => week.key)).toEqual([202630])
+    expect(model.selectedWeek.key).toBe(202630)
   })
 
   it('no range equals the existing output exactly', () => {

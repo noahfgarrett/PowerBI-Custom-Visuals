@@ -774,7 +774,7 @@ describe('InspectionDashboard filters', () => {
     expect(container.querySelector('.qaqc-panel-main')?.textContent).not.toContain('outside the last 30 WW')
   })
 
-  it('From/To keep listing every week after a filter shortens the axis', () => {
+  it('the existing selection and From/To stay valid', () => {
     const rows: InspectionRows = [
       ["WW10'2026", 'Final', 'No Issue Found', 'Early'],
       ["WW38'2026", 'Final', 'No Issue Found', 'Late'],
@@ -786,9 +786,10 @@ describe('InspectionDashboard filters', () => {
     openMenu(container)
     click(checkbox(container, 'Late'))
 
-    // The axis now starts at WW38, so the picked WW12 fell back to the current week.
-    expect(weekPicker(container).options).toHaveLength(5)
-    expect(weekTitle(container)).toBe("WW42'2026")
+    // The filter's first match is WW38, and the picked WW12 still exists on the axis.
+    expect(weekPicker(container).options).toHaveLength(33)
+    expect(weekTitle(container)).toBe("WW12'2026")
+    expect(cardValue(container, 'Final Inspections')).toBe('0')
     const [from, to] = container.querySelectorAll<HTMLSelectElement>('.qaqc-filter-date select')
     expect(from.options).toHaveLength(33)
     expect(to.options).toHaveLength(33)
@@ -797,7 +798,34 @@ describe('InspectionDashboard filters', () => {
     expect(weekTitle(container)).toBe("WW12'2026")
   })
 
-  it('combines a filter that shortens the axis with a range reaching before it', () => {
+  it('a filter whose first match is WW20 still shows WW10 to WW30 in a WW10–WW30 range', () => {
+    stubChartSize()
+    const rows: InspectionRows = [
+      ["WW05'2026", 'Final', 'No Issue Found', 'Early'],
+      ["WW20'2026", 'Final', 'NCR', 'Late'],
+      ["WW25'2026", 'Final', 'No Issue Found', 'Late'],
+      ["WW42'2026", 'Final', 'No Issue Found', 'Early'],
+    ]
+    const container = drawFiltered(rows, UNBOUND_OPTIONAL)
+    openMenu(container)
+    click(checkbox(container, 'Late'))
+    setRange(container, 202610, 202630)
+
+    const weeks = mainHitWeeks(container)
+    expect(weeks).toHaveLength(21)
+    expect(weeks[0]).toBe('202610')
+    expect(weeks[20]).toBe('202630')
+    expect(weekPicker(container).options).toHaveLength(21)
+    expect(groupSubtitle(container)).toBe("WW10'2026 to WW30'2026")
+    expect(cardValue(container, 'Finals in Range')).toBe('2')
+    expect(cardValue(container, 'NCR Pass Rate')).toBe('50.0%')
+
+    // A week before the filter's first match can be selected like any other.
+    clickHit(container, '202612')
+    expect(weekTitle(container)).toBe("WW12'2026")
+  })
+
+  it('empties the dashboard, keeping the range\'s weeks in the picker, when the range holds none of the filter\'s rows', () => {
     const rows: InspectionRows = [
       ["WW10'2026", 'Final', 'No Issue Found', 'Early'],
       ["WW38'2026", 'Final', 'NCR', 'Late'],
@@ -806,15 +834,73 @@ describe('InspectionDashboard filters', () => {
     const container = drawFiltered(rows, UNBOUND_OPTIONAL)
     openMenu(container)
     click(checkbox(container, 'Late'))
-    setRange(container, 202630, 202640)
-    expect(groupSubtitle(container)).toBe("WW30'2026 to WW40'2026")
-    expect(cardValue(container, 'Finals in Range')).toBe('1')
-    expect(weekTitle(container)).toBe("WW40'2026")
-    expect(weekPicker(container).options).toHaveLength(3)
-
-    // Moving the range entirely before the filtered axis empties the dashboard without throwing.
     setRange(container, 202630, 202635)
     expect(container.querySelector('.qaqc-filter-empty')).not.toBeNull()
+    const options = [...weekPicker(container).options].map((option) => option.value)
+    expect(options).toEqual(['202635', '202634', '202633', '202632', '202631', '202630'])
+    expect(weekPicker(container).value).toBe('202635')
+  })
+
+  it('keeps a bar-selected week in view after the date range is removed', () => {
+    stubChartSize()
+    const container = drawFiltered(ELECTRICAL_ROWS, UNBOUND_OPTIONAL)
+    openMenu(container)
+    // WW08 is outside the 30 WW window that ends on the current week.
+    setRange(container, 202605, 202612)
+    clickHit(container, '202608')
+    click(buttonNamed(container, 'Clear all'))
+    expect(weekTitle(container)).toBe("WW08'2026")
+    expect(mainHitWeeks(container)).toContain('202608')
+  })
+
+  it('does not point to All when All is already showing', () => {
+    const rows: InspectionRows = [
+      ["WW01'2026", 'Final', 'No Issue Found', 'Early'],
+      ["WW20'2026", 'Final', 'No Issue Found', 'Late'],
+      ["WW42'2026", 'Final', 'No Issue Found', 'Early'],
+    ]
+    const container = drawFiltered(rows, UNBOUND_OPTIONAL)
+    clickRange(container, 'All')
+    pickWeekInDropdown(container, '202605')
+    openMenu(container)
+    click(checkbox(container, 'Late'))
+    expect(container.querySelector('.qaqc-panel-main')?.textContent).not.toContain('switch to All')
+  })
+
+  it('keeps an N/A building its own choice, as it is on the chart', () => {
+    const rows: InspectionRows = [
+      ["WW40'2026", 'Final', 'No Issue Found', 'N/A'],
+      ["WW40'2026", 'Final', 'No Issue Found', 'N/A'],
+      ["WW40'2026", 'Final', 'No Issue Found', null],
+      ["WW40'2026", 'Final', 'No Issue Found', 'A'],
+    ]
+    const container = drawFiltered(rows, UNBOUND_OPTIONAL)
+    openMenu(container)
+    expect(checkboxLabels(container)).toEqual(['N/A', 'A', 'Unspecified'])
+    click(checkbox(container, 'N/A'))
+    expect(showing(container)).toBe('Showing 2 of 4 rows')
+    expect(cardValue(container, 'Finals to Date')).toBe('2')
+    click(checkbox(container, 'N/A'))
+    click(checkbox(container, 'Unspecified'))
+    expect(showing(container)).toBe('Showing 1 of 4 rows')
+  })
+
+  it('groups Building spellings the way the chart does: case and interior spaces, with blank as Unspecified', () => {
+    const rows: InspectionRows = [
+      ["WW40'2026", 'Final', 'No Issue Found', 'Pump  House'],
+      ["WW40'2026", 'Final', 'No Issue Found', 'pump house'],
+      ["WW40'2026", 'Final', 'No Issue Found', 'Pump House'],
+      ["WW40'2026", 'Final', 'No Issue Found', 'UNSPECIFIED'],
+      ["WW40'2026", 'Final', 'No Issue Found', '  '],
+    ]
+    const container = drawFiltered(rows, UNBOUND_OPTIONAL)
+    openMenu(container)
+    expect(checkboxLabels(container)).toHaveLength(2)
+    expect(checkboxLabels(container)[1]).toBe('Unspecified')
+    const counts = [...container.querySelectorAll('.qaqc-filter-option-count')].map((node) => node.textContent)
+    expect(counts).toEqual(['3', '2'])
+    click(checkbox(container, 'Unspecified'))
+    expect(cardValue(container, 'Finals to Date')).toBe('2')
   })
 
   it('skipped and future footnotes describe the filtered rows, and Showing X of Y counts every bound row consistently', () => {

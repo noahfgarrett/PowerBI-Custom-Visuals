@@ -15,6 +15,45 @@ const ROWS = [
   [null, 'SOR', '', ''],
 ]
 
+describe('buildInspectionIndex axisFromKey', () => {
+  const WEEK_40 = [["WW40'2026", 'Final', 'NCR', 'A']]
+
+  it('starts the axis at axisFromKey when it is before the first data week, with those weeks at zero', () => {
+    const index = buildInspectionIndex(WEEK_40, COLUMNS, TODAY, { axisFromKey: 202638 })
+    expect(index.weeks.map((item) => item.week.key)).toEqual([202638, 202639, 202640, 202641, 202642])
+    expect(index.weeks[0]).toMatchObject({ finals: 0, sors: 0, issuesFound: 0 })
+    expect(index.cumulativeFinals).toEqual([0, 0, 1, 1, 1])
+    expect(index.cumulativeIssues).toEqual([0, 0, 1, 1, 1])
+    expect(index.buildingsByWeek[0].size).toBe(0)
+    expect(index.positionByKey.get(202638)).toBe(0)
+  })
+
+  it('starts at the first data week when axisFromKey is later', () => {
+    const index = buildInspectionIndex(WEEK_40, COLUMNS, TODAY, { axisFromKey: 202641 })
+    expect(index.weeks[0].week.key).toBe(202640)
+  })
+
+  it('crosses a year on the way to the first data week', () => {
+    const index = buildInspectionIndex([["WW02'2026", 'SOR', '', 'A']], COLUMNS, new Date(2026, 0, 15), { axisFromKey: 202552 })
+    expect(index.weeks.map((item) => item.week.label)).toEqual(["WW52'2025", "WW01'2026", "WW02'2026", "WW03'2026"])
+  })
+
+  it('holds the axis with no rows at all', () => {
+    const index = buildInspectionIndex([], COLUMNS, TODAY, { axisFromKey: 202640 })
+    expect(index.weeks.map((item) => item.week.key)).toEqual([202640, 202641, 202642])
+  })
+
+  it('never starts after the current week', () => {
+    const index = buildInspectionIndex([], COLUMNS, TODAY, { axisFromKey: 202650 })
+    expect(index.weeks.map((item) => item.week.key)).toEqual([202642])
+  })
+
+  it('without the option the output is unchanged', () => {
+    expect(buildInspectionIndex(ROWS, COLUMNS, TODAY, {})).toEqual(buildInspectionIndex(ROWS, COLUMNS, TODAY))
+    expect(buildInspectionIndex(ROWS, COLUMNS, TODAY).weeks[0].week.key).toBe(202640)
+  })
+})
+
 describe('buildInspectionIndex', () => {
   it('builds continuous weeks from the first data week through the current week', () => {
     const index = buildInspectionIndex(ROWS, COLUMNS, TODAY)

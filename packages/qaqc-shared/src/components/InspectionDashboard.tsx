@@ -66,12 +66,15 @@ export function InspectionDashboard({
   const { rows, columns, optional, today } = filterSource
   const fields = useMemo(() => inspectionFilterFields(columns, optional), [columns, optional])
   const rowWeekKey = useMemo(() => inspectionRowWeekKey(columns), [columns])
-  // The full data's weeks: a filter that shortens the axis must not shorten From and To.
   const dataWeeks = useMemo(() => baseIndex.weeks.map((item) => item.week), [baseIndex])
   const filters = useDashboardFilters({ rows, fields, weeks: dataWeeks, currentKey: baseIndex.currentWeek.key, rowWeekKey })
   const { filteredRows, isFieldFilterActive, dateRange } = filters
   const index = useMemo(
-    () => (isFieldFilterActive ? buildInspectionIndex(filteredRows, columns, today) : baseIndex),
+    () => (
+      isFieldFilterActive
+        ? buildInspectionIndex(filteredRows, columns, today, { axisFromKey: baseIndex.weeks[0].week.key })
+        : baseIndex
+    ),
     [isFieldFilterActive, filteredRows, columns, today, baseIndex],
   )
   const { view, range, selectWeek, pickWeek, changeRange } = useWeekWindow(index, dateRange)
@@ -86,7 +89,7 @@ export function InspectionDashboard({
   const hasFinalsInWindow = model.passRateTrend.some((point) => point.rate !== null)
   const isInRange = model.rangeLabel !== null
   const hasNoMatch = filters.isAnyActive && !model.hasData
-  const isWindowEmpty = model.windowTotals.finals + model.windowTotals.sors === 0
+  const areRowsOutsideWindow = isFieldFilterActive && range === 'recent' && model.windowTotals.finals + model.windowTotals.sors === 0
   const notes = isFieldFilterActive ? restateFootnotes(footnotes, baseIndex, index) : footnotes
 
   const finalsSorsLegend: LegendItem[] = [
@@ -139,7 +142,7 @@ export function InspectionDashboard({
       title: 'Finals + SORs by Work Week',
       icon: ChartColumnStacked,
       legend: [...finalsSorsLegend, { label: 'Issue found', color: colors.bad, shape: 'dot' }],
-      emptyMessage: !model.hasData ? NO_ROWS_MESSAGE : isFieldFilterActive && isWindowEmpty ? OUTSIDE_WINDOW_MESSAGE : null,
+      emptyMessage: !model.hasData ? NO_ROWS_MESSAGE : areRowsOutsideWindow ? OUTSIDE_WINDOW_MESSAGE : null,
       className: 'qaqc-panel-main',
       renderChart: (size) => renderTrend(size, false),
       renderExpanded: () => (

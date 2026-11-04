@@ -2,7 +2,7 @@ import { act, type ReactElement } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { useWeekWindow, type WeekWindow, type WeekWindowIndex } from '../hooks/useWeekWindow'
-import { RECENT_WEEK_COUNT } from '../inspections'
+import { RECENT_WEEK_COUNT, recentWindowStart } from '../inspections'
 import type { ViewState } from '../types'
 import type { WeekRange } from '../weekRange'
 import { render, type Rendered } from './render'
@@ -173,19 +173,39 @@ describe('useWeekWindow', () => {
   it('a selected week missing from a filtered index falls back without throwing', () => {
     mount(weeksIndex(100))
     run((state) => state.pickWeek(10))
-    // A field filter leaves an axis that starts later: the week is gone, not the range.
-    const filtered = sparseIndex([50, 60, 100])
-    view?.rerender(<Probe index={filtered} />)
+    view?.rerender(<Probe index={sparseIndex([50, 60, 100])} />)
     expect(current().view.selectedKey).toBe(100)
+  })
 
-    view?.rerender(<Probe index={filtered} dateRange={{ fromKey: 5, toKey: 55 }} />)
+  it('a bar click inside a date range moves the window with it, so clearing the range leaves the week in the window', () => {
+    const index = weeksIndex(100)
+    mount(index)
+    view?.rerender(<Probe index={index} dateRange={{ fromKey: 40, toKey: 60 }} />)
+    run((state) => state.selectWeek(50))
     expect(current().view.selectedKey).toBe(50)
-    expect(current().view.windowEndKey).toBe(50)
 
-    // Nothing on the filtered axis is in the range: still a valid key, and the dashboard shows its empty state.
-    view?.rerender(<Probe index={filtered} dateRange={{ fromKey: 5, toKey: 20 }} />)
-    expect(current().view.selectedKey).toBe(100)
-    expect(current().view.windowEndKey).toBe(100)
+    view?.rerender(<Probe index={index} dateRange={null} />)
+    const { selectedKey, windowEndKey } = current().view
+    expect(selectedKey).toBe(50)
+    expect(selectedKey).toBeLessThanOrEqual(windowEndKey)
+    expect(selectedKey).toBeGreaterThanOrEqual(recentWindowStart(windowEndKey))
+  })
+
+  it('leaves the window end alone when a bar is clicked with no date range', () => {
+    const index = weeksIndex(100)
+    mount(index)
+    view?.rerender(<Probe index={index} dateRange={{ fromKey: 40, toKey: 60 }} />)
+    view?.rerender(<Probe index={index} dateRange={null} />)
+    run((state) => state.selectWeek(90))
+    expect(current().view).toEqual({ selectedKey: 90, windowEndKey: 100, range: 'recent', dateRange: null })
+  })
+
+  it('keeps selectWeek the same function between renders while the date range stays the same', () => {
+    const index = weeksIndex(100)
+    mount(index)
+    const before = current().selectWeek
+    view?.rerender(<Probe index={index} />)
+    expect(current().selectWeek).toBe(before)
   })
 
   it('keeps the same view object while the date range stays the same', () => {

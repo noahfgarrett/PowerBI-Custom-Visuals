@@ -262,3 +262,40 @@ describe('matchEffectiveRows', () => {
     expect(matchEffectiveRows(rows, catalog, NO_SELECTION)).toBe(rows)
   })
 })
+
+describe('groupBy', () => {
+  /** Keeps every spelling apart except by case, so no blank spelling merges. */
+  const BY_CASE: FilterFieldDef = {
+    id: 'building',
+    label: 'Building',
+    read: (row) => cellDisplayText(row[0]),
+    blankLabel: 'Unspecified',
+    groupBy: (text) => text.toLowerCase(),
+  }
+  const ROWS: Row[] = [['N/A'], ['n/a'], ['None'], [''], ['A']]
+
+  it('groups the catalog with the field\'s own key', () => {
+    const catalog = buildFilterCatalog(ROWS, [BY_CASE])
+    expect(optionsOf(catalog, 'building')).toEqual([
+      { label: 'N/A', count: 2 },
+      { label: 'A', count: 1 },
+      { label: 'None', count: 1 },
+      { label: 'Unspecified', count: 1 },
+    ])
+  })
+
+  it('matches rows with the field\'s own key', () => {
+    const catalog = buildFilterCatalog(ROWS, [BY_CASE])
+    expect(matchRows(ROWS, catalog, selectionOf({ building: ['n/a'] }))).toEqual([['N/A'], ['n/a']])
+  })
+
+  it('leaves other fields on the default key in the same catalog', () => {
+    const plain: FilterFieldDef = { id: 'plain', label: 'Plain', read: (row) => cellDisplayText(row[0]) }
+    const catalog = buildFilterCatalog(ROWS, [BY_CASE, plain])
+    expect(optionsOf(catalog, 'plain')).toEqual([
+      { label: 'A', count: 1 },
+      { label: NOT_RECORDED_LABEL, count: 4 },
+    ])
+    expect(matchRows(ROWS, catalog, selectionOf({ plain: [''] }))).toEqual([['N/A'], ['n/a'], ['None'], ['']])
+  })
+})

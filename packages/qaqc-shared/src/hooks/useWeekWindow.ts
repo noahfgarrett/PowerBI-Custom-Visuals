@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 import { recentWindowStart } from '../inspections'
 import type { RangeMode, ViewState } from '../types'
@@ -14,24 +14,14 @@ export interface WeekWindow {
   /** The selected week, the window's last week, and the range, for the dashboard's model. */
   view: ViewState
   range: RangeMode
-  /** A bar click or chart keyboard selection: selects the week and leaves the window where it is. */
+  /**
+   * A bar click or chart keyboard selection: selects the week and leaves the window where it is. In a date range the
+   * window ends on the week too, so the week is still inside the window once the range is cleared.
+   */
   selectWeek: (key: number) => void
   /** The week picker: selects the week and moves the window to end on it. */
   pickWeek: (key: number) => void
   changeRange: (mode: RangeMode) => void
-}
-
-/**
- * `key` if the index has it inside the range, else the closest earlier week the index has there, else the first the
- * index has there. Null when the index has no week in the range. `positions` lists weeks oldest first.
- */
-function nearestWeekInRange(key: number, range: WeekRange, positions: WeekWindowIndex['positionByKey']): number | null {
-  let nearest: number | null = null
-  for (const candidate of positions.keys()) {
-    if (candidate < range.fromKey || candidate > range.toKey) continue
-    if (nearest === null || candidate <= key) nearest = candidate
-  }
-  return nearest
 }
 
 /**
@@ -47,10 +37,9 @@ export function useWeekWindow(index: WeekWindowIndex, dateRange: WeekRange | nul
   const isSelectionInData = index.positionByKey.has(selectedKey)
   const availableSelected = isSelectionInData ? selectedKey : index.currentWeek.key
   const availableEnd = isSelectionInData && index.positionByKey.has(windowEndKey) ? windowEndKey : index.currentWeek.key
+  // The axis has every week of a range, filtered or not, so either limit is a week the index has.
   function intoRange(key: number): number {
-    if (dateRange === null) return key
-    // A filtered index can have no week in the range. The key stays valid, and the dashboard shows its empty state.
-    return nearestWeekInRange(key, dateRange, index.positionByKey) ?? index.currentWeek.key
+    return dateRange === null ? key : Math.min(Math.max(key, dateRange.fromKey), dateRange.toKey)
   }
   const effectiveSelected = intoRange(availableSelected)
   const effectiveEnd = intoRange(availableEnd)
@@ -71,10 +60,19 @@ export function useWeekWindow(index: WeekWindowIndex, dateRange: WeekRange | nul
     }
   }
 
+  const isInRange = dateRange !== null
+  const selectWeek = useCallback(
+    (key: number): void => {
+      setSelectedKey(key)
+      if (isInRange) setWindowEndKey(key)
+    },
+    [isInRange],
+  )
+
   function pickWeek(key: number): void {
     setSelectedKey(key)
     setWindowEndKey(key)
   }
 
-  return { view, range, selectWeek: setSelectedKey, pickWeek, changeRange }
+  return { view, range, selectWeek, pickWeek, changeRange }
 }

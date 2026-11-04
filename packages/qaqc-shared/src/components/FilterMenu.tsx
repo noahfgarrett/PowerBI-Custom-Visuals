@@ -351,8 +351,11 @@ export function FilterMenu({
     function handleFocusIn(event: Event): void {
       if (!isInside(event.target)) closeMenu(false)
     }
-    // A press outside the visual's iframe fires no pointerdown here, only this.
+    // A press outside the visual's iframe fires no pointerdown here, only this. So can a select's native popup, which
+    // must not close the menu it belongs to.
     function handleWindowBlur(): void {
+      const active = document.activeElement
+      if (active instanceof HTMLSelectElement && isInside(active)) return
       closeMenu(false)
     }
     document.addEventListener('pointerdown', handlePointerDown, true)

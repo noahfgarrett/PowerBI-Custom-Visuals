@@ -1,4 +1,4 @@
-import { createWeekReader } from './grouping'
+import { createWeekReader, groupKey as chartGroupKey } from './grouping'
 import { normalizeBuilding, UNSPECIFIED_BUILDING } from './inspections'
 import { cellDisplayText, type FilterFieldDef, type Row } from './rowFilters'
 import type { InspectionColumns, InspectionOptionalColumns, InspectionRows } from './types'
@@ -11,6 +11,8 @@ export interface InspectionFilterSource {
   today: Date
 }
 
+const UNSPECIFIED_KEY = chartGroupKey(UNSPECIFIED_BUILDING)
+
 /** A field for an optional slot: none when it isn't bound. */
 function optionalField(id: string, label: string, position: number): FilterFieldDef[] {
   if (position < 0) return []
@@ -22,11 +24,13 @@ export function inspectionFilterFields(columns: InspectionColumns, optional: Ins
   const building: FilterFieldDef = {
     id: 'building',
     label: 'Building',
-    // The charts' value. A blank reads as '' so it groups as the blank value: labelled Unspecified and listed last.
+    // The chart's value and key, so the two can't disagree: `N/A` is a building of its own, as it is on the chart.
+    // What the chart shows as Unspecified reads as '', the blank value, so it's labelled that and listed last.
     read: (row) => {
       const name = normalizeBuilding(row[columns.building])
-      return name === UNSPECIFIED_BUILDING ? '' : name
+      return chartGroupKey(name) === UNSPECIFIED_KEY ? '' : name
     },
+    groupBy: chartGroupKey,
     blankLabel: UNSPECIFIED_BUILDING,
   }
   return [

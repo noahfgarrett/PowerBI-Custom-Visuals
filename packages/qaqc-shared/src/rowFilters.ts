@@ -18,6 +18,8 @@ export interface FilterFieldDef {
   blankLabel?: string
   /** A row this returns false for is not filtered by this field, and adds nothing to its counts. */
   appliesTo?: (row: Row) => boolean
+  /** The key a value groups and matches under, for a field that must group as a chart does. Defaults to `groupKey`. */
+  groupBy?: (text: string) => string
   /** Group keys ticked when nothing else is. A selection equal to this isn't an active filter. */
   defaultKeys?: readonly string[]
   hasSelectAll?: boolean
@@ -66,13 +68,14 @@ export function cellDisplayText(value: unknown): string {
   return `${value.getFullYear()}-${month}-${day}`
 }
 
-/** `groupKey` remembered by raw text: a column repeats a few dozen values across all of its rows. */
-function createKeyReader(): (text: string) => string {
+/** A field's key remembered by raw text: a column repeats a few dozen values across all of its rows. */
+function createKeyReader(def: FilterFieldDef): (text: string) => string {
+  const keyOfText = def.groupBy ?? groupKey
   const cache = new Map<string, string>()
   return (text: string): string => {
     const cached = cache.get(text)
     if (cached !== undefined) return cached
-    const key = groupKey(text)
+    const key = keyOfText(text)
     cache.set(text, key)
     return key
   }
@@ -123,12 +126,12 @@ function valuesOf(read: string | readonly string[]): readonly string[] {
 }
 
 /**
- * Each field's values over all `rows`, grouped as `groupKey` does and listed by count descending with the
+ * Each field's values over all `rows`, grouped by its `groupBy` or `groupKey` and listed by count descending with the
  * Not recorded group last. A row with several values counts once under each distinct group.
  */
 export function buildFilterCatalog(rows: ReadonlyArray<Row>, fields: readonly FilterFieldDef[]): FilterCatalog {
-  const keyOf = createKeyReader()
   const catalogFields = fields.map((def): CatalogField => {
+    const keyOf = createKeyReader(def)
     const tallies = new Map<string, OptionTally>()
     for (const row of rows) {
       if (def.appliesTo !== undefined && !def.appliesTo(row)) continue
@@ -183,10 +186,11 @@ export function activeFieldCount(catalog: FilterCatalog, selection: FilterSelect
 interface ActiveFilter {
   def: FilterFieldDef
   keys: ReadonlySet<string>
+  keyOf: (text: string) => string
 }
 
-function matchesFilter(row: Row, filter: ActiveFilter, keyOf: (text: string) => string): boolean {
-  const { def, keys } = filter
+function matchesFilter(row: Row, filter: ActiveFilter): boolean {
+  const { def, keys, keyOf } = filter
   if (def.appliesTo !== undefined && !def.appliesTo(row)) return true
   const read = def.read(row)
   if (typeof read === 'string') return keys.has(keyOf(read))
@@ -209,11 +213,10 @@ export function matchEffectiveRows(rows: ReadonlyArray<Row>, catalog: FilterCata
   const filters: ActiveFilter[] = []
   for (const field of catalog.fields) {
     const keys = effectiveKeys(field, selection)
-    if (keys.size > 0) filters.push({ def: field.def, keys })
+    if (keys.size > 0) filters.push({ def: field.def, keys, keyOf: createKeyReader(field.def) })
   }
   if (filters.length === 0) return rows
-  const keyOf = createKeyReader()
-  return rows.filter((row) => filters.every((filter) => matchesFilter(row, filter, keyOf)))
+  return rows.filter((row) => filters.every((filter) => matchesFilter(row, filter)))
 }
 
 /**
