@@ -1,6 +1,6 @@
 # Business Package Smoke Test Checklist
 
-Updated: 2026-02-23
+Updated: 2026-11-04
 
 Use this checklist before every package handoff.
 
@@ -51,6 +51,19 @@ Use this checklist before every package handoff.
 - [ ] `sunburst-chart`
 - [ ] `timeline-milestone`
 
-## 6. Release Decision
+## 6. QCx Filter Menu and Drill-down Gates (run in Power BI Desktop, then in the Service)
+- [ ] Filter menu opens on a tile that wasn't selected.
+- [ ] From and To native dropdowns stay open and select a week.
+- [ ] Esc closes the Filter menu first, then a page opened under it.
+- [ ] Date Observed bound as the plain date (field well drop-down, field name), not the Date Hierarchy: the week's list shows `MM/DD/YY`.
+- [ ] Click a week with issues: the week is selected and its list opens.
+- [ ] Click a week without issues: the week is selected and no list opens.
+- [ ] QCx Overview with all fields bound:
+  - [ ] Query time is acceptable after a refresh and after a filter change.
+  - [ ] If `Showing the first n rows (Power BI data limit)` appears, unbinding Notes first clears or eases it.
+- [ ] QCx Issues rebound to QCx Combined shows NCR Pass Rate.
+- [ ] Re-paste the 39-column QCx Combined script: the preview shows 39 columns and existing bindings keep working.
+
+## 7. Release Decision
 - [ ] PASS: all sections complete with no blocker defects.
 - [ ] HOLD: any blocker in interaction, accessibility, or host compliance.
