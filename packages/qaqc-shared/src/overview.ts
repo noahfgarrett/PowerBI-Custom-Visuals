@@ -729,17 +729,25 @@ function dwnRateLine(dwnsToDate: number, greenTags: number | null): string {
   return `${formatPercent((dwnsToDate / greenTags) * 100)} of green tags (to date)`
 }
 
-/** The most common root cause among issues created in W (This WW) or through W (To date); ties go to the first name. */
-function topRootCauseCard(index: IssueIndex, weekKey: number, mode: CardMode): OverviewCard {
+/**
+ * The most common root cause among issues created in W (This WW) or through W (To date); ties go to the first name.
+ * In a range it's still read from the start of the data through the range's end, so `throughLabel` says how far: on the
+ * change's line, because with the counts on one line it would be cut short on these narrow cards.
+ */
+function topRootCauseCard(index: IssueIndex, weekKey: number, mode: CardMode, throughLabel: string | null): OverviewCard {
   if (!index.hasRootCause) return noteCard(TOP_CAUSE_LABEL, 'n/a', ROOT_CAUSE_MISSING)
   const isWeek = mode === 'week'
   const { total, top } = topCauseCreated(index, weekKey, isWeek ? 'week' : 'toDate')
+  const through = throughLabel === null ? null : `through ${throughLabel}`
 
   const totalText = formatCount(total)
-  if (total === 0) return noteCard(TOP_CAUSE_LABEL, 'None', isWeek ? 'None opened this WW' : 'No issues to date')
+  if (total === 0) {
+    if (isWeek) return noteCard(TOP_CAUSE_LABEL, 'None', 'None opened this WW')
+    return noteCard(TOP_CAUSE_LABEL, 'None', through === null ? 'No issues to date' : `No issues ${through}`)
+  }
   if (top === null) {
     const scope = isWeek ? `${totalText} opened this WW` : `${totalText} ${pluralize(total, 'issue', 'issues')}`
-    return noteCard(TOP_CAUSE_LABEL, 'None', `${scope} · none recorded`)
+    return { ...noteCard(TOP_CAUSE_LABEL, 'None', `${scope} · none recorded`), deltaDisplay: through }
   }
   const { label, count } = top
   const share = Math.round((count / total) * 100)
@@ -748,7 +756,7 @@ function topRootCauseCard(index: IssueIndex, weekKey: number, mode: CardMode): O
     value: count,
     display: label,
     delta: null,
-    deltaDisplay: null,
+    deltaDisplay: through,
     trend: 'none',
     tone: 'neutral',
     subLine: isWeek
@@ -780,7 +788,9 @@ function qualityCards(context: RowContext, electrical: InspectionCounts, mechani
       ? { ...countCard('DWNs', dwns, mode, previousLabel, neutralTone), subLine: DWN_RATE_NA, delta: null, deltaDisplay: DWN_RATE_FILTERED, trend: 'none' }
       : { ...countCard('DWNs', dwns, mode, previousLabel, neutralTone), subLine: dwnRateLine(dwns.toDate, index.greenTags) },
     // To date it's a reading at a moment, like Remaining open, so a range reads it at its end. This WW follows the week.
-    topRootCauseCard(index.bim, mode === 'toDate' && range !== null ? range.endKey : selectedKey, mode),
+    mode === 'toDate' && range !== null
+      ? topRootCauseCard(index.bim, range.endKey, mode, workWeekFromKey(range.endKey).label)
+      : topRootCauseCard(index.bim, selectedKey, mode, null),
   ]
 }
 

@@ -990,6 +990,14 @@ describe('OverviewDashboard filters', () => {
       expect(options).toEqual(['202642', '202641'])
     })
 
+    it('names the range end on Top root cause, on its own line under the counts', () => {
+      const container = drawFiltered()
+      showToDate(container)
+      openMenu(container)
+      setRange(container, 202641, 202642)
+      expect(shownLines(quality(container), 'Top root cause')).toEqual(['None', '2 issues · none recorded', "through WW42'2026"])
+    })
+
     it('disables the range toggle while a range is set', () => {
       const container = drawFiltered()
       openMenu(container)

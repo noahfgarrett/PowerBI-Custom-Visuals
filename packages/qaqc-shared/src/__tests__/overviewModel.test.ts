@@ -790,8 +790,46 @@ describe('in a date range', () => {
   })
 
   it('reads Top root cause through the range end when in range, and the selected week in This WW', () => {
-    expect(ranged('toDate').quality[5]).toEqual(modelAt(index, WW41, 'toDate').quality[5])
+    expect(ranged('toDate').quality[5]).toEqual({ ...modelAt(index, WW41, 'toDate').quality[5], deltaDisplay: `through ${WW41}` })
     expect(ranged('week').quality[5]).toEqual(modelAt(index, WW40, 'week').quality[5])
+  })
+
+  describe('Top root cause says how far it counts', () => {
+    function topInRange(at: OverviewIndex, mode: CardMode): OverviewModel['quality'][5] {
+      return buildOverviewModel(at, rangedView, mode).quality[5]
+    }
+
+    it('names the range end under the counts when in range', () => {
+      const causes = overviewIndexOf([
+        bim('#1', '9/15/2026', { rootCause: 'Installation' }), // WW38, before the range
+        bim('#2', '10/6/2026', { rootCause: 'Installation' }), // WW41
+        bim('#3', '10/6/2026', { rootCause: 'Bonding' }), // WW41
+        bim('#4', '10/13/2026', { rootCause: 'Bonding' }), // WW42, after the range
+        inspection('Electrical', WW42, 'Final'),
+      ])
+      const top = topInRange(causes, 'toDate')
+      expect([top.display, top.subLine, top.deltaDisplay]).toEqual(['Installation', '2 of 3 issues · 67%', `through ${WW41}`])
+    })
+
+    it('names the range end when no issue through it has a cause', () => {
+      const blank = overviewIndexOf([bim('#1', '10/6/2026'), inspection('Electrical', WW42, 'Final')])
+      const top = topInRange(blank, 'toDate')
+      expect([top.display, top.subLine, top.deltaDisplay]).toEqual(['None', '1 issue · none recorded', `through ${WW41}`])
+    })
+
+    it('names the range end when no issue reaches it', () => {
+      const late = overviewIndexOf([bim('#1', '10/13/2026', { rootCause: 'Bonding' }), inspection('Electrical', WW40, 'Final')])
+      const top = topInRange(late, 'toDate')
+      expect([top.display, top.subLine, top.deltaDisplay]).toEqual(['None', `No issues through ${WW41}`, null])
+    })
+
+    it('keeps its wording in This WW, which reads the selected week', () => {
+      expect(topInRange(index, 'week').deltaDisplay).toBeNull()
+    })
+
+    it('keeps its wording in To date with no range', () => {
+      expect(modelAt(index, WW41, 'toDate').quality[5].deltaDisplay).toBeNull()
+    })
   })
 
   it('restates the quality strip to the range', () => {

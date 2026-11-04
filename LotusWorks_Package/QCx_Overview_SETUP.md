@@ -154,7 +154,7 @@ Setting a date range changes the page to read that range:
 - `30 WW | All` is disabled, and the charts show exactly the weeks in the range.
 - `This WW | To date` becomes `This WW | In range`. **In range** counts over the range, with the subtitle `WW.. to WW..`. **This WW** follows the selected week.
 - The week dropdown offers only the weeks in the range, and the selected week stays inside it.
-- **BIM Remaining open** and **Past normal close window** read at the end of the range in In range, because they're readings at a moment. So does **Top root cause**, which still counts from the start of the data.
+- **BIM Remaining open** and **Past normal close window** read at the end of the range in In range, because they're readings at a moment. So does **Top root cause**, which still counts from the start of the data, so in range it adds a line such as `through WW42'2026`.
 - A range from the first week of the data to the current week is the same as no range, so it isn't counted as a filter.
 
 ### See a week's NCRs
@@ -220,7 +220,7 @@ Each row has the discipline's name, four cards, and a sparkline of the 30 weeks 
 - **CORs and DWNs** match Type ignoring case and extra spaces. Only counted BIM issues are included (see Counting rules), so void issues and issues not created by LotusWorks are left out.
 - **NCRs come from final walks only:** Electrical and Mechanical finals with an issue found, and welds with an issue. BIM issues typed `NCR` are **not** counted here.
 - **Pass rates** show `n/a` when there are no finals (or no welds) to divide by.
-- **Top root cause** shows the cause's name, with `n of N issues · p%` in To date and `n of N opened this WW` in This WW. A week with no new issues reads `None` with `None opened this WW`, and To date before the first issue reads `None` with `No issues to date`. When none of the counted issues has a Root Cause, the card reads `None` with `n issues · none recorded` (To date) or `n opened this WW · none recorded` (This WW). Causes are grouped ignoring letter case and extra spaces, ties go to the name that sorts first, and a long name is cut short (hover it for the full name). Only counted BIM issues are included. Without the Root Cause slot the card reads `Add Root Cause`.
+- **Top root cause** shows the cause's name, with `n of N issues · p%` in To date and `n of N opened this WW` in This WW. A week with no new issues reads `None` with `None opened this WW`, and To date before the first issue reads `None` with `No issues to date`. When none of the counted issues has a Root Cause, the card reads `None` with `n issues · none recorded` (To date) or `n opened this WW · none recorded` (This WW). In range, it still counts from the start of the data: it adds `through WW..` under the counts, for the range's end, and with no issues by then it reads `No issues through WW..`. Causes are grouped ignoring letter case and extra spaces, ties go to the name that sorts first, and a long name is cut short (hover it for the full name). Only counted BIM issues are included. Without the Root Cause slot the card reads `Add Root Cause`.
 - **DWN rate** is always to date: DWNs through the selected week ÷ Green tags, shown as, for example, `2.1% of green tags (to date)`. Without a Green tags value it reads `DWN rate n/a: add Green tags`. While any filter is active it shows `n/a` with `Not available with filters`, because Green tags is one number the filters can't reach. The DWNs count itself still follows the filters.
 
 ### Charts
