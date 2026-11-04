@@ -4,7 +4,7 @@
 
 Report users want more ways to see what they want without building slicers: filter any QCx dashboard by contractor, date range, building and similar fields, and click a week on a chart to see the issues behind its number. The owner also wants QCx Issues to show other companies' issues on demand, since it shows only LotusWorks-created issues today, and to carry the NCR Pass Rate.
 
-The approved reference is the clickable mockup (`filter-mockup.html`, session scratchpad; not committed). This document is authoritative where the two differ.
+The approved reference is the clickable mockup, `/private/tmp/claude-501/-Users-noahgarrett-Codebase-QAQC-Weekly-Report/758b0a9f-4c45-496f-be89-b387c5cbd742/scratchpad/filter-mockup/filter-mockup.html` (not committed; it holds real rows). This document is authoritative where the two differ.
 
 ## Goals
 
@@ -43,7 +43,9 @@ Changes apply immediately; there's no Apply button.
 
 **Matching.** Within a field values are OR; across fields AND. Selecting nothing in a field means no filter on it.
 
-**Value grouping.** Values group trimmed and case-insensitively, shown in their most common spelling. Blank, `N/A`, `n/a`, `NA`, `None` and `-` group into one **Not recorded** value, always listed last. Dropdown filtering uses the groups, so ticking "Electrical" also matches `ELECTRICAL`.
+**Value grouping.** Values group trimmed and case-insensitively, shown in their most common spelling. Blank, `N/A`, `n/a`, `NA`, `None` and `-` group into one **Not recorded** value, always listed last. Filtering uses the groups, so ticking "Electrical" also matches `ELECTRICAL`.
+
+**Same value as the charts.** A filter must never disagree with what the dashboard shows. A field a chart already labels uses the chart's value, through the same reader: blank Building is "Unspecified", blank Contractor is "Unassigned", and the existing Contractor defaults (`issues.ts:57-61`) apply. For these fields that label replaces "Not recorded" and is still listed last. Status is the exception: it lists the sheet's values grouped as above, so Pending can be picked apart from Open even though both count as open on the cards.
 
 **Unbound fields.** A field whose slot isn't bound doesn't appear in the menu. A dashboard with no optional filter slots bound still shows Date range. All new slots are optional, so existing reports keep working and only gain the fields once bound.
 
@@ -58,12 +60,12 @@ Changes apply immediately; there's no Apply button.
 | Dashboard | Fields, in menu order |
 |---|---|
 | Electrical, Mechanical | General Contractor, Trade Supplier, Building, Discipline, Inspection Category, Status |
-| Welding | Pipe Spec, Fluid Code, Welder, Work Package |
+| Welding | Building, Pipe Spec, Fluid Code, Welder, Work Package |
 | Issues | Created By (Company), Contractor, Status, Type, Discipline, Root Cause |
 | Overview | Contractor, Building, Discipline |
 | Performance | Contractor, Building, Discipline (Pipe Spec and Fluid Code on the Welders group) |
 
-Welder is comma-separated. Split it the way Performance does, so a weld listing several IDs matches any of them and is counted once per weld in the "Showing" count.
+Welding Building is the value the visual already derives from Tag No (`welds.ts`). Welder is comma-separated. Split it the way Performance does, so a weld listing several IDs matches any of them and is counted once per weld in the "Showing" count.
 
 **Performance group.** Performance shows only the fields that apply to the group on screen. Filters on a field of the other group stay set but don't apply.
 
@@ -76,25 +78,34 @@ Welder is comma-separated. Split it the way Performance does, so a weld listing 
 - A range whose From is the first data week and To is the current week is equal to no range and isn't active.
 - Presets end at the current work week. Last 4 WW covers 4 weeks including the current one. This year starts at the first work week of the current year.
 
+### Charts in a date range
+
+- **Cumulative rates restart at From:** NCR Pass Rate Trend's last point equals the In Range card. Lines already showing a rate per week don't change.
+- **Remaining Open line:** stays the true open count each week, so its last point equals the Remaining Open card.
+- **Not restated by date range:** Issue Aging, Open Aging, the Pareto and building tables that carry their own period. They do follow field filters. Issue Detail follows the selected week as today.
+- **Building charts and tables** that read the 30 WW window read the range instead.
+
 ### Issue cards in a date range
 
 - **Total Opened:** opened in range.
 - **Total Closed:** closed in range.
 - **Remaining Open:** the open count at the end of the range. It's not restated to the range, because that could go negative.
-- **Closure Rate:** the share of issues opened in the range that are now closed. Closed ÷ opened could pass 100%.
+- **Closure Rate:** the share of issues opened in the range that are now closed. Closed ÷ opened could pass 100%. This can't come from the opened and closed series: the index needs a count of currently closed issues per created week.
 
 With no range set, all four behave as they do today.
 
 ### Sources without a field (Overview, Performance)
 
-Welding rows have no Contractor, Building or Discipline. Those filters leave welding numbers unfiltered, and a small note on the affected dashboard says so ("Welding isn't filtered by Building"). The note appears only while such a filter is active. Issues have no Building: the same rule and note apply to BIM rows.
+Welding rows have no Contractor or Discipline, and BIM rows have no Building. Those filters leave that source's numbers unfiltered, and a small note on the affected dashboard says so ("Welding isn't filtered by Contractor"). The note appears only while such a filter is active. Building does filter welding rows, through the derived Building.
 
-**Overview's Contractor** applies to General Contractor on inspection rows and Contractor on BIM rows, merged into one list.
+**DWN rate.** Green tags is a single unfiltered measure, so a filtered or in-range DWN rate would mislead. While any filter is active on the Overview, the DWN rate shows `n/a` with "Not available with filters".
+
+**Overview's Contractor** is one menu field reading two slots, General Contractor on inspection rows and Contractor on BIM rows, merged into one list.
 
 ## Created By (Company) on QCx Issues
 
 Per issue:
-- If the existing include rule (`legacyIssueValue` / `isLotusWorksIssueCreator` logic in `issues.ts`) says LotusWorks-created, the value is **LotusWorks**.
+- If the existing include rule (`isIncludedIssue` in `issues.ts`) says LotusWorks-created, the value is **LotusWorks**.
 - Otherwise it's the trimmed `Created By (Company)` value, and blank is Not recorded.
 
 Behaviour:
@@ -108,7 +119,7 @@ Behaviour:
 
 ## Week drill-down
 
-**Trigger.** Clicking a week on a chart that shows issues selects the week, as it does today. If that week has issues, it also opens the drill-down. Clicking a week with none only selects it. Keyboard selection (Enter on the focused week) behaves the same.
+**Trigger.** Clicking a week on a chart that shows issues selects the week, as most charts do today. If that week has issues, it also opens the drill-down. Clicking a week with none only selects it. Keyboard selection (Enter on the focused week) behaves the same. `LineChart` (NCR Pass Rate Trend) has no click or keyboard selection today, so it gains both.
 
 **Where.**
 
@@ -117,7 +128,7 @@ Behaviour:
 | Electrical, Mechanical | Finals + SORs by Work Week; NCR Pass Rate Trend | The rows behind that week's "Issue found" count |
 | Welding | Weekly charts that show issues | Welds with an issue that week |
 | Issues | Issues by Work Week | Opened that week and closed that week, as two labelled groups |
-| Overview | Weekly lines that show NCRs or issues | Rows behind the clicked series, labelled by source |
+| Overview | The weekly activity charts (a click hits the whole week, not one line) | That week's NCRs from Electrical, Mechanical and Welding, labelled by source. BIM rows aren't listed, because the Overview doesn't count BIM NCRs |
 
 Performance's person page already lists NCRs below its chart, so it doesn't change. Charts inside Issue Aging and the Pareto don't change.
 
@@ -150,15 +161,16 @@ All new roles are optional, added to `capabilities.json`, `settings` where neede
 |---|---|
 | Electrical, Mechanical | General Contractor, Trade Supplier, Discipline, Inspection Category, Status, Inspection ID, Equipment ID / Tag Number, Issue ID, Finding Type, Date Observed, QCR/FE, Notes |
 | Welding | Welder, Work Package (Pipe Spec, Fluid Code and Tag No are already required) |
-| Issues | Created By (Company), Discipline, Source, Work Week, Inspection Phase, Issue |
-| Overview | Contractor, Discipline, plus the drill-down columns above |
+| Issues | Created By (Company), Discipline, Source, Row ID, Work Week, Inspection Phase, Issue |
+| Overview | General Contractor, Contractor, Discipline, Tag No, Welder, Pipe Spec, Fluid Code, plus the inspection drill-down columns above |
 | Performance | Contractor, Discipline, Pipe Spec, Fluid Code |
 
 **QCx Combined** grows. Each new column uses `MissingField.UseNull`, so older sources still load:
-- From Electrical and Mechanical: `General Contractor`, `Trade Supplier`, `Discipline`, `Inspection Category`, `Status`, `Inspection ID`, `Equipment ID / Tag Number`, `Issue ID`, `Finding Type`, `Date Observed`, `Notes`. `Status` shares the BIM status column; the row's Source tells them apart.
-- From Welding: `PIPE SPEC`, `FLUID CODE`, `WORK PKG`.
+- From Electrical and Mechanical, spelled exactly as the sheets spell them: `General Contractor`, `Trade Supplier`, `Discipline`, `Inspection Category`, `Status`, `Equipment ID / Tag Number`, `Issue ID`, `Finding Type`, `Date Observed`, `Notes`. `Inspection ID` exists only on Electrical, so it's null on Mechanical rows. `Status` shares the BIM status column; the row's Source tells them apart.
+- From Welding: `PIPE SPEC`, `FLUID CODE`, `WORK PKG` (headers as the sheet spells them, renamed `Pipe Spec`, `Fluid Code`, `Work Package`). `combined.ts`, which hardcodes Pipe Spec and Fluid Code as absent, changes to read them.
 - From the enriched export: `Title`, `Contractor`, `Due date`, `Discipline`, `Created By (Company)`.
 - `General Contractor` (inspections) and `Contractor` (BIM) stay separate columns; the Overview merges them.
+- Root Cause Category isn't added: the enriched export has no such column, so nothing is lost.
 - The existing 22 columns keep their names and order; new ones go after them. The owner re-pastes the script and edits the same four source names at the top.
 
 ## Architecture
@@ -172,15 +184,16 @@ All new roles are optional, added to `capabilities.json`, `settings` where neede
 
 ## Performance
 
-The user priority is unchanged: handle massive data. A filter change, on 100,000 rows, must rebuild the index and redraw within 200 ms, measured in the `qaqc-shared-timing` project with `bestOf`. Existing budgets must keep passing. Opening a drill-down for a week must not scan all rows.
+The user priority is unchanged: handle massive data. Budgets, in the `qaqc-shared-timing` project with `bestOf`, at 100,000 rows: matching rows against filters under 50 ms, and a filter change's index rebuild within the existing 300 ms index budget (`benchmark.test.ts`) for a single-source visual. Existing budgets must keep passing. The Overview rebuilds only the sources a filter touches. Opening a drill-down for a week must not scan all rows.
 
 ## Testing
 
 - Unit tests for grouping (case, trim, Not recorded), matching (OR within, AND across), comma-separated Welder, and date range clamping and presets.
 - **Numbers don't move:** with no filters set, every dashboard's existing fixture tests pass unchanged. That includes the enriched fixture's 231 issues, 175 closed, 56 remaining.
-- **Created By (Company)** fixture test with the real distribution using anonymised data: LotusWorks 231, Ivory - QA 515, Ivory - Ops 256, Ivory 23, Greyfox 17, Bayside 21, Larch 4, Not recorded 10 (total 1,077). LotusWorks + Greyfox + Bayside gives 269 opened, 211 closed, 58 remaining, 78.4%, matching the mockup at the same `today`.
+- **Created By (Company)** fixture test, adding the company column to the enriched fixture (company names aren't personal data; creator names stay reduced to LotusWorks/Other). The real distribution: LotusWorks 231, Ivory - QA 515, Ivory - Ops 256, Ivory 23, Greyfox 17, Bayside 21, Larch 4, Not recorded 10 (total 1,077). LotusWorks + Greyfox + Bayside gives 269 opened, 211 closed, 58 remaining, 78.4%, matching the mockup at the same `today`.
 - In-range cards, including Closure Rate and Remaining Open.
 - Drill-down row count equals the chart's count for every dashboard, with and without filters.
+- QCx Issues bound to QCx Combined needs Row ID so identical inspection rows aren't merged; a test pins the finals count.
 - Keyboard and accessibility: popover focus, Esc order, chips, aria for checkboxes.
 - Visual check of the menu, chips, in-range state, empty state and drill-down, in each dashboard, at normal and compact sizes.
 
