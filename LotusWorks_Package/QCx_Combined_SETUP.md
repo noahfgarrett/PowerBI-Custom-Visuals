@@ -6,7 +6,7 @@ The QCx Overview and QCx Performance visuals read one table, **QCx Combined**. T
 
 A custom visual sees only one table. The Electrical, Mechanical and Welding sheets and the BIM issues are four separate tables with no relationship between them, so a visual can't read all four at once.
 
-QCx Combined appends the four into one table with fixed column names. Each row keeps a **Source** column that says which table it came from. Your four existing queries stay as they are, and the Electrical, Mechanical, Welding and BIM Issues visuals keep using them.
+QCx Combined appends the four into one table with fixed column names. Each row keeps a **Source** column that says which table it came from. Your four existing queries stay as they are, and the Electrical, Mechanical, Welding and Issues visuals keep using them.
 
 The BIM issues come from the **enriched Autodesk export**, for example `Automated Issue Summary-…-Enriched-….xlsx`, sheet **Issues**. They no longer come from the Smartsheet BIM Issues Log. The export's BIM360 columns hold the real creator and dates of the issues migrated from BIM 360, so those issues count in the weeks they were really opened and closed.
 
