@@ -20,6 +20,8 @@ const POPOVER_GAP = 6
 const TILE_MARGIN = 10
 /** However short the tile, the popover stays tall enough to scroll through. */
 const POPOVER_MIN_HEIGHT = 120
+/** A host taking focus on an unselected tile blurs the window just as the menu opens, which mustn't close it. */
+const OPENING_BLUR_GRACE_MS = 300
 
 const NO_SEARCHES: ReadonlyMap<string, string> = new Map()
 const NO_FIELD_IDS: ReadonlySet<string> = new Set()
@@ -351,9 +353,14 @@ export function FilterMenu({
     function handleFocusIn(event: Event): void {
       if (!isInside(event.target)) closeMenu(false)
     }
+    let isOpening = true
+    const openingTimer = window.setTimeout(() => {
+      isOpening = false
+    }, OPENING_BLUR_GRACE_MS)
     // A press outside the visual's iframe fires no pointerdown here, only this. So can a select's native popup, which
     // must not close the menu it belongs to.
     function handleWindowBlur(): void {
+      if (isOpening) return
       const active = document.activeElement
       if (active instanceof HTMLSelectElement && isInside(active)) return
       closeMenu(false)
@@ -362,6 +369,7 @@ export function FilterMenu({
     document.addEventListener('focusin', handleFocusIn)
     window.addEventListener('blur', handleWindowBlur)
     return () => {
+      window.clearTimeout(openingTimer)
       document.removeEventListener('pointerdown', handlePointerDown, true)
       document.removeEventListener('focusin', handleFocusIn)
       window.removeEventListener('blur', handleWindowBlur)

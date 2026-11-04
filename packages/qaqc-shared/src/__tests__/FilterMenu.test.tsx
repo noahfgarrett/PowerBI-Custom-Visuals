@@ -1,5 +1,5 @@
 import { act } from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   badge,
@@ -34,42 +34,91 @@ function requirePopover(container: Element): HTMLElement {
 
 describe('FilterMenu', () => {
   describe('opening and closing', () => {
-    it('closes on window blur, since a press outside the Power BI iframe fires no pointerdown', () => {
-      view = render(<FilterHarness />)
-      openMenu(view.container)
-      expect(popover(view.container)).not.toBeNull()
-      act(() => {
-        window.dispatchEvent(new Event('blur'))
+    describe('window blur', () => {
+      beforeEach(() => {
+        vi.useFakeTimers()
       })
-      expect(popover(view.container)).toBeNull()
-      expect(filterButton(view.container).getAttribute('aria-expanded')).toBe('false')
-    })
 
-    it('stays open on window blur while a select in the menu has focus, since a native dropdown may fire it', () => {
-      view = render(<FilterHarness />)
-      openMenu(view.container)
-      const select = pick(view.container, '.qaqc-filter-date select', HTMLSelectElement)
-      act(() => {
-        select.focus()
+      afterEach(() => {
+        vi.useRealTimers()
       })
-      expect(document.activeElement).toBe(select)
-      act(() => {
-        window.dispatchEvent(new Event('blur'))
-      })
-      expect(popover(view.container)).not.toBeNull()
-    })
 
-    it('closes on window blur when focus is on anything else in the menu', () => {
-      view = render(<FilterHarness />)
-      openMenu(view.container)
-      const box = pick(view.container, '.qaqc-filter-popover input[type="checkbox"]', HTMLInputElement)
-      act(() => {
-        box.focus()
+      function blurWindow(): void {
+        act(() => {
+          window.dispatchEvent(new Event('blur'))
+        })
+      }
+
+      function openAndSettle(container: Element): void {
+        openMenu(container)
+        act(() => {
+          vi.advanceTimersByTime(300)
+        })
+      }
+
+      it('closes, since a press outside the Power BI iframe fires no pointerdown', () => {
+        view = render(<FilterHarness />)
+        openAndSettle(view.container)
+        expect(popover(view.container)).not.toBeNull()
+        blurWindow()
+        expect(popover(view.container)).toBeNull()
+        expect(filterButton(view.container).getAttribute('aria-expanded')).toBe('false')
       })
-      act(() => {
-        window.dispatchEvent(new Event('blur'))
+
+      it('stays open for 300 ms after opening, since a host taking focus on an unselected tile fires it', () => {
+        view = render(<FilterHarness />)
+        openMenu(view.container)
+        blurWindow()
+        act(() => {
+          vi.advanceTimersByTime(299)
+        })
+        blurWindow()
+        expect(popover(view.container)).not.toBeNull()
+        act(() => {
+          vi.advanceTimersByTime(1)
+        })
+        expect(popover(view.container)).not.toBeNull()
+        blurWindow()
+        expect(popover(view.container)).toBeNull()
       })
-      expect(popover(view.container)).toBeNull()
+
+      it('gives each opening its own 300 ms', () => {
+        view = render(<FilterHarness />)
+        openMenu(view.container)
+        act(() => {
+          vi.advanceTimersByTime(200)
+        })
+        pressEscape(filterButton(view.container))
+        openMenu(view.container)
+        act(() => {
+          vi.advanceTimersByTime(200)
+        })
+        blurWindow()
+        expect(popover(view.container)).not.toBeNull()
+      })
+
+      it('stays open while a select in the menu has focus, since a native dropdown may fire it', () => {
+        view = render(<FilterHarness />)
+        openAndSettle(view.container)
+        const select = pick(view.container, '.qaqc-filter-date select', HTMLSelectElement)
+        act(() => {
+          select.focus()
+        })
+        expect(document.activeElement).toBe(select)
+        blurWindow()
+        expect(popover(view.container)).not.toBeNull()
+      })
+
+      it('closes when focus is on anything else in the menu', () => {
+        view = render(<FilterHarness />)
+        openAndSettle(view.container)
+        const box = pick(view.container, '.qaqc-filter-popover input[type="checkbox"]', HTMLInputElement)
+        act(() => {
+          box.focus()
+        })
+        blurWindow()
+        expect(popover(view.container)).toBeNull()
+      })
     })
 
     it('stops listening for window blur once closed', () => {
