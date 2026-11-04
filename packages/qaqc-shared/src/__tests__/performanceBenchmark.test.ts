@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { splitCombinedRows } from '../combined'
-import { buildPerformanceIndex, buildPerformanceModel } from '../performance'
+import { buildPerformanceIndex, buildPerformanceModel, filterPerformanceIndex, performanceFilterRows, type PerformanceGroup } from '../performance'
 import type { CombinedColumns } from '../types'
 import { COMBINED_COLUMNS } from './fixtures/combinedRows'
 import { syntheticCombinedRows } from './fixtures/syntheticCombined'
@@ -102,6 +102,27 @@ describe('performance visual budgets', () => {
   it('re-ranks for a new period within one frame, since ranking reads week buckets rather than rows', () => {
     buildPerformanceModel(index, view, 'welders', 10)
     expect(bestOf(TIMING_RUNS, () => elapsed(() => buildPerformanceModel(index, { ...view, range: 'recent' }, 'welders', 10)))).toBeLessThan(FRAME_BUDGET_MS)
+  })
+})
+
+describe('rebuilding for a field filter, leaving 100,000 rows', () => {
+  // The existing index budgets don't cover this shape, so it's one 300 ms single-source build per source the group reads:
+  // Electrical and Mechanical for QCR / FE, Welding for Welders.
+  const SINGLE_SOURCE_BUDGET_MS = 300
+  const KEPT_ROWS = 100_000
+  const budgets: ReadonlyArray<readonly [PerformanceGroup, string, number]> = [
+    ['qcr', 'QCR / FE, 2 × 300 ms', 2 * SINGLE_SOURCE_BUDGET_MS],
+    ['welders', 'Welders, 1 × 300 ms', SINGLE_SOURCE_BUDGET_MS],
+  ]
+  // Inspections are about 18% of these rows, so this leaves more than 100,000 for either group.
+  const split = splitCombinedRows(syntheticCombinedRows(600_000, 7), COLUMNS.source)
+  const index = buildPerformanceIndex(split, COLUMNS, TODAY)
+
+  it.each(budgets)('rebuilds the %s group (%s) within budget', (group, _name, budget) => {
+    const kept = performanceFilterRows(index, group).slice(0, KEPT_ROWS)
+    expect(kept).toHaveLength(KEPT_ROWS)
+    expect(filterPerformanceIndex(index, kept).weeks).toEqual(index.weeks)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => filterPerformanceIndex(index, kept)))).toBeLessThan(budget)
   })
 })
 

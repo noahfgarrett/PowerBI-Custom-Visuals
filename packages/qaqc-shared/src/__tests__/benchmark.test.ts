@@ -10,6 +10,7 @@ import { agingProfile, buildIssueBenchmarks, quarterMedians } from '../issueBenc
 import { buildIssueDetail, buildIssueIndex, buildIssueModel, issueDataWeeks } from '../issues'
 import type { OverviewIndex } from '../overview'
 import { buildOverviewIndex, buildOverviewModel } from '../overview'
+import { filterOverviewIndex, overviewFilterRows } from '../overviewFilters'
 import { buildRootCausePareto, paretoIssues } from '../rootCauses'
 import type { CombinedColumns, IssueDetailRow, IssueTrendPoint, ViewState } from '../types'
 import { buildWeldIndex, buildWeldModel } from '../welds'
@@ -226,6 +227,35 @@ describe('overview performance budgets', () => {
 
   const rows = syntheticCombinedRows(500_000)
   const index = indexCombined(rows)
+
+  describe('rebuilding for a field filter, leaving 100,000 rows', () => {
+    // One build per source a filter changes: a filter touching one source stays inside the 300 ms single-source budget,
+    // and one touching all four inside 4 × 300 ms.
+    const SINGLE_SOURCE_BUDGET_MS = 300
+    const ALL_SOURCES_BUDGET_MS = 4 * SINGLE_SOURCE_BUDGET_MS
+    const KEPT_ROWS = 100_000
+
+    const baseSplit = splitCombinedRows(syntheticCombinedRows(KEPT_ROWS + 1_000), COMBINED.source)
+    const baseIndex = buildOverviewIndex(baseSplit, COMBINED, TODAY)
+    const allRows = overviewFilterRows(baseSplit, COMBINED)
+
+    it('rebuilds every source within 4 × the single-source budget, 1,200 ms', () => {
+      // Dropping every 200th row takes rows from all four sources, so none can reuse its index.
+      const kept = allRows.filter((_, position) => position % 200 !== 0).slice(0, KEPT_ROWS)
+      const { index } = filterOverviewIndex(baseIndex, baseSplit, kept, COMBINED)
+      for (const source of ['electrical', 'mechanical', 'welding', 'bim'] as const) expect(index[source]).not.toBe(baseIndex[source])
+      expect(kept).toHaveLength(KEPT_ROWS)
+      expect(bestOf(TIMING_RUNS, () => elapsed(() => filterOverviewIndex(baseIndex, baseSplit, kept, COMBINED)))).toBeLessThan(ALL_SOURCES_BUDGET_MS)
+    })
+
+    it('rebuilds one source within the single-source budget, reusing the rest', () => {
+      const kept = allRows.slice(1)
+      const { index } = filterOverviewIndex(baseIndex, baseSplit, kept, COMBINED)
+      expect(index.electrical).not.toBe(baseIndex.electrical)
+      for (const source of ['mechanical', 'welding', 'bim'] as const) expect(index[source]).toBe(baseIndex[source])
+      expect(bestOf(TIMING_RUNS, () => elapsed(() => filterOverviewIndex(baseIndex, baseSplit, kept, COMBINED)))).toBeLessThan(SINGLE_SOURCE_BUDGET_MS)
+    })
+  })
 
   it('splits and indexes 500,000 combined rows within budget', () => {
     expect(bestOf(TIMING_RUNS, () => elapsed(() => indexCombined(rows)))).toBeLessThan(1500)
