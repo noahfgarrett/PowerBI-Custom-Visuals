@@ -118,6 +118,21 @@ export function buildPerformanceFootnotes(
 }
 
 /**
+ * QCx Issues' notes when bound to QCx Combined: the rows whose Source matched none of the four, then the slots
+ * NCR Pass Rate still needs.
+ */
+export function buildCombinedIssueFootnotes(unknownSource: number, missingSlots: readonly string[]): string[] {
+  const notes: string[] = []
+  if (unknownSource > 0) {
+    notes.push(`${formatCount(unknownSource)} ${pluralize(unknownSource, 'row', 'rows')} with an unknown Source`)
+  }
+  if (missingSlots.length > 0) {
+    notes.push(`NCR Pass Rate hidden: add ${missingSlots.join(', ')}`)
+  }
+  return notes
+}
+
+/**
  * The Issues notes while a field filter is on. Skipped and future counts restate to the filtered rows, and anything
  * else from the visual, such as the row limit, stays first. `otherCompanyRows` is the rows left out by a Created By
  * (Company) selection, or null when no such selection is set: the LotusWorks limit, and its note, then still hold.

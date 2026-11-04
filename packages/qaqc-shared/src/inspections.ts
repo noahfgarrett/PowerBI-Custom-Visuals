@@ -205,6 +205,22 @@ export function passRateAt(index: InspectionIndex, position: number): number | n
   return passRateOf(index.cumulativeFinals[position], index.cumulativeIssues[position])
 }
 
+/**
+ * The pass rate over a span of work weeks, from `fromKey` (the first week, when null) through `toKey`, for a dashboard
+ * whose own weeks aren't this index's. A week outside this index holds no finals; null with no finals in the span.
+ */
+export function passRateInWeeks(index: InspectionIndex, fromKey: number | null, toKey: number): number | null {
+  let finals = 0
+  let issues = 0
+  for (const { week, finals: weekFinals, issuesFound } of index.weeks) {
+    if (week.key > toKey) break
+    if (fromKey !== null && week.key < fromKey) continue
+    finals += weekFinals
+    issues += issuesFound
+  }
+  return passRateOf(finals, issues)
+}
+
 /** A running total's growth over positions `start` to `end`. */
 function totalBetween(cumulative: number[], start: number, end: number): number {
   return cumulative[end] - (start > 0 ? cumulative[start - 1] : 0)

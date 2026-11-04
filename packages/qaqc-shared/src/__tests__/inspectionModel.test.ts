@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildInspectionIndex, buildInspectionModel, defaultViewState, passRateAt, RECENT_WEEK_COUNT, recentWindowStart } from '../inspections'
+import { buildInspectionIndex, buildInspectionModel, defaultViewState, passRateAt, passRateInWeeks, RECENT_WEEK_COUNT, recentWindowStart } from '../inspections'
 import type { InspectionIndex, ViewState } from '../types'
 
 const COLUMNS = { workWeek: 0, phase: 1, issue: 2, building: 3 }
@@ -320,5 +320,38 @@ describe('buildInspectionModel in a date range', () => {
       })
     })
     expect(model.hasData).toBe(true)
+  })
+})
+
+describe('passRateInWeeks', () => {
+  const rows = [
+    ["WW10'2026", 'Final', 'NCR', 'F63.1'],
+    ["WW10'2026", 'Final', 'No Issue Found', 'F63.1'],
+    ["WW12'2026", 'Final', 'No Issue Found', 'F63.1'],
+    ["WW12'2026", 'SOR', 'NCR', 'F63.1'],
+    ["WW14'2026", 'Final', 'NCR', 'F63.1'],
+  ]
+  const index = buildInspectionIndex(rows, COLUMNS, TODAY)
+
+  it('counts every final through the last week with no first week', () => {
+    expect(passRateInWeeks(index, null, 202642)).toBe(50)
+    expect(passRateInWeeks(index, null, 202612)).toBeCloseTo(66.67, 2)
+    expect(passRateInWeeks(index, null, 202612)).toBe(passRateAt(index, index.positionByKey.get(202612) ?? -1))
+  })
+
+  it('counts only the finals inside the weeks', () => {
+    expect(passRateInWeeks(index, 202611, 202613)).toBe(100)
+    expect(passRateInWeeks(index, 202612, 202614)).toBe(50)
+  })
+
+  it('counts weeks past either end of the index as having no finals', () => {
+    expect(passRateInWeeks(index, null, 202609)).toBeNull()
+    expect(passRateInWeeks(index, 202601, 202609)).toBeNull()
+    expect(passRateInWeeks(index, 202601, 202610)).toBe(50)
+    expect(passRateInWeeks(index, 202614, 202701)).toBe(0)
+  })
+
+  it('is null with no finals in the weeks', () => {
+    expect(passRateInWeeks(index, 202615, 202642)).toBeNull()
   })
 })

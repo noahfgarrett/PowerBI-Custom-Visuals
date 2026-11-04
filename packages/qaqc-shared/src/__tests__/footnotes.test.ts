@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { splitCombinedRows } from '../combined'
-import { buildFootnotes, buildIssueFootnotes, buildOverviewFootnotes, buildPerformanceFootnotes } from '../footnotes'
+import { buildCombinedIssueFootnotes, buildFootnotes, buildIssueFootnotes, buildOverviewFootnotes, buildPerformanceFootnotes } from '../footnotes'
 import { buildInspectionIndex } from '../inspections'
 import { buildIssueIndex } from '../issues'
 import { buildPerformanceIndex, buildPerformanceModel, type PerformanceGroup, type PerformanceIndex } from '../performance'
@@ -269,5 +269,16 @@ describe('buildPerformanceFootnotes', () => {
     const rows = [qcrRow("WW42'2026", 'Final', 'QCR 01'), weldRow("WW42'2026", 'Welder 001'), bimRow, bimRow]
     expect(performanceNotes(rows, 'qcr', true)).toEqual(['Showing the first 4 rows (Power BI data limit)'])
     expect(performanceNotes(rows, 'welders', true)).toEqual(['Showing the first 4 rows (Power BI data limit)'])
+  })
+})
+
+describe('buildCombinedIssueFootnotes', () => {
+  it('has nothing to say with every Source known and every slot bound', () => {
+    expect(buildCombinedIssueFootnotes(0, [])).toEqual([])
+  })
+
+  it('notes rows with an unknown Source, in the Overview\'s wording, then the slots NCR Pass Rate needs', () => {
+    expect(buildCombinedIssueFootnotes(1, ['Inspection Phase'])).toEqual(['1 row with an unknown Source', 'NCR Pass Rate hidden: add Inspection Phase'])
+    expect(buildCombinedIssueFootnotes(1_200, ['Work Week', 'Issue'])).toEqual(['1,200 rows with an unknown Source', 'NCR Pass Rate hidden: add Work Week, Issue'])
   })
 })

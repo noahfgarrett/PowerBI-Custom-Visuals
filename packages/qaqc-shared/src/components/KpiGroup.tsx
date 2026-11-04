@@ -12,7 +12,7 @@ export interface KpiGroupProps {
 type KpiGroupStyle = CSSProperties & Record<'--qaqc-kpi-cards', number>
 
 export function KpiGroup({ title, subtitle, variant, children }: KpiGroupProps): ReactElement {
-  const style: KpiGroupStyle = { '--qaqc-kpi-cards': Children.count(children) }
+  const style: KpiGroupStyle = { '--qaqc-kpi-cards': Children.toArray(children).length }
   return (
     <section className={`qaqc-kpi-group is-${variant}`} aria-label={title} style={style}>
       <header className="qaqc-kpi-group-head">

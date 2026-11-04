@@ -336,6 +336,16 @@ export interface IssueColumns {
   createdByCompany?: number
   /** Discipline: a Filter menu field. */
   discipline?: number
+  /** Source: bound, the table is QCx Combined, so only BIM rows are issues and Electrical and Mechanical rows feed NCR Pass Rate. */
+  source?: number
+  /** Row ID: read by nothing. Bound only so Power BI keeps identical inspection rows apart. */
+  rowId?: number
+  /** Work Week: the inspection rows' week, for NCR Pass Rate. */
+  workWeek?: number
+  /** Inspection Phase: the inspection rows' phase, for NCR Pass Rate. */
+  phase?: number
+  /** Issue: the inspection rows' Issue column, for NCR Pass Rate. Not an issue record. */
+  issue?: number
 }
 
 /**

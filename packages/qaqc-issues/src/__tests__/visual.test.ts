@@ -4,14 +4,32 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createConstructorOptions } from '../../../core/src/__test-utils__'
 import { ISSUE_SLOTS } from '../../../qaqc-shared/src/dataView'
+import { splitCombinedRows } from '../../../qaqc-shared/src/combined'
+import { COMBINED_COLUMNS } from '../../../qaqc-shared/src/__tests__/fixtures/combinedRows'
+import { ENRICHED_COMBINED_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/enrichedCombinedRows'
+import { buildOverviewIndex, buildOverviewModel } from '../../../qaqc-shared/src/overview'
+import type { ViewState } from '../../../qaqc-shared/src/types'
 import { ENRICHED_ISSUE_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/enrichedIssueRows'
 import { ISSUE_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/issueRows'
 import capabilities from '../../capabilities.json'
 import pbiviz from '../../pbiviz.json'
 import { QaqcIssuesVisual } from '../visual'
-import { ALL_ROLES, ENRICHMENT_ROLES, ROOT_CAUSE_ROLES, tableDataView, type Cell } from './tableDataView'
+import { ALL_ROLES, combinedIssueRows, COMBINED_ROLES, ENRICHMENT_ROLES, ROOT_CAUSE_ROLES, tableDataView, type Cell, type SlotRole } from './tableDataView'
 
 const dashboardControl = vi.hoisted(() => ({ shouldThrow: false }))
+const inspectionIndexBuilds = vi.hoisted(() => ({ count: 0 }))
+
+// Passes through to the real index builder, counting calls, so tests can show when the visual re-indexes.
+vi.mock('../../../qaqc-shared/src/inspections', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../qaqc-shared/src/inspections')>()
+  return {
+    ...actual,
+    buildInspectionIndex: (...args: Parameters<typeof actual.buildInspectionIndex>) => {
+      inspectionIndexBuilds.count += 1
+      return actual.buildInspectionIndex(...args)
+    },
+  }
+})
 
 // Passes through to the real dashboard; throws during React render when the flag is set.
 vi.mock('../../../qaqc-shared/src/components/IssuesDashboard', async (importOriginal) => {
@@ -531,5 +549,232 @@ describe('QaqcIssuesVisual filters', () => {
     openFilterMenu(harness.element)
     const sections = [...harness.element.querySelectorAll('.qaqc-filter-section-toggle span:first-of-type')].map((node) => node.textContent)
     expect(sections).toEqual(['Contractor', 'Status', 'Type', 'Root Cause'])
+  })
+})
+
+describe('QaqcIssuesVisual bound to QCx Combined', () => {
+  const COMBINED_TABLE = combinedIssueRows()
+  const ISSUE_TABLE_ROLES: SlotRole[] = [...ALL_ROLES, 'rootCause', ...ENRICHMENT_ROLES, 'createdByCompany']
+  const BOUND_ROLES: SlotRole[] = [...ISSUE_TABLE_ROLES, ...COMBINED_ROLES]
+  const WW42 = 202642
+  const CARD = 'NCR Pass Rate'
+  const CELL_SOURCE = cellOf('source')
+  const CELL_WORK_WEEK = cellOf('workWeek')
+  const CELL_PHASE = cellOf('phase')
+  const CELL_ISSUE = cellOf('issue')
+  const CELL_ROW_ID = cellOf('rowId')
+
+  /** A cell's position in `tableDataView`'s row order. */
+  function cellOf(role: SlotRole): number {
+    return [...ALL_ROLES, ...ROOT_CAUSE_ROLES, ...ENRICHMENT_ROLES, 'createdByCompany', 'discipline', ...COMBINED_ROLES].indexOf(role)
+  }
+
+  function combinedView(roles: SlotRole[] = BOUND_ROLES, rows: ReadonlyArray<ReadonlyArray<Cell>> = COMBINED_TABLE): powerbi.DataView {
+    return tableDataView(rows, { roles })
+  }
+
+  /** The Overview's Inspection NCR pass rate card on the same fixture and today. */
+  function overviewPassRate(key: number): string {
+    const position = (name: (typeof COMBINED_COLUMNS)[number]): number => COMBINED_COLUMNS.indexOf(name)
+    const columns = {
+      source: position('Source'),
+      workWeek: position('Work Week'),
+      phase: position('Inspection Phase'),
+      issue: position('Issue'),
+      building: position('Building'),
+      qcr: position('QCR/FE'),
+      welder: position('Welder'),
+      tagNo: position('Tag No'),
+      signature: position('Signature'),
+      signedWeek: position('Work Week Signed'),
+      id: position('ID'),
+      status: position('Status'),
+      type: position('Type'),
+      createdOn: position('Created On'),
+      updatedOn: position('Updated On'),
+      createdBy: position('Created By'),
+      rootCause: position('Root Cause'),
+      greenTags: -1,
+    }
+    const index = buildOverviewIndex(splitCombinedRows(ENRICHED_COMBINED_ROWS, columns.source), columns, new Date())
+    const view: ViewState = { selectedKey: key, windowEndKey: key, range: 'recent', dateRange: null }
+    const card = buildOverviewModel(index, view, 'toDate').quality.find((item) => item.label === 'Inspection NCR pass rate')
+    if (card === undefined) throw new Error('Overview card missing')
+    return card.display
+  }
+
+  function pickWeek(element: HTMLElement, key: number): void {
+    const select = element.querySelector<HTMLSelectElement>('.qaqc-week-picker select')
+    if (select === null) throw new Error('week picker missing')
+    act(() => {
+      select.value = String(key)
+      select.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+  }
+
+  function openFilterMenu(element: HTMLElement): void {
+    act(() => {
+      element.querySelector('.qaqc-filter-button')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+  }
+
+  /** Power BI groups a table by its bound columns, so rows identical across them arrive as one. */
+  function mergedLikePowerBi(rows: ReadonlyArray<ReadonlyArray<Cell>>, cells: readonly number[]): Cell[][] {
+    const merged = new Map<string, Cell[]>()
+    for (const row of rows) {
+      const key = JSON.stringify(cells.map((cell) => row[cell]))
+      if (!merged.has(key)) merged.set(key, [...row])
+    }
+    return [...merged.values()]
+  }
+
+  function inspectionRow(rowId: number, week: string, phase: string, issue: string, source = 'Electrical'): Cell[] {
+    const cells = new Array<Cell>(COMBINED_TABLE[0].length).fill(null)
+    cells[CELL_SOURCE] = source
+    cells[CELL_ROW_ID] = rowId
+    cells[CELL_WORK_WEEK] = week
+    cells[CELL_PHASE] = phase
+    cells[CELL_ISSUE] = issue
+    return cells
+  }
+
+  it('shows the Overview\'s Inspection NCR pass rate through the selected week', () => {
+    harness = createHarness()
+    apply(harness, update(combinedView()))
+    expect(cardValue(harness.element, CARD)).toBe(overviewPassRate(WW42))
+    expect(cardValue(harness.element, CARD)).toBe('98.9%')
+    pickWeek(harness.element, 202630)
+    expect(cardValue(harness.element, CARD)).toBe(overviewPassRate(202630))
+    expect(cardValue(harness.element, CARD)).toBe('98.5%')
+  })
+
+  it('takes the dashboard\'s issues from the BIM rows alone', () => {
+    harness = createHarness()
+    apply(harness, update(combinedView()))
+    expect(toDateCardValues(harness.element)).toEqual(['231', '174', '57', '75.3%'])
+    expect(footnotes(harness.element)).toEqual(['846 issues not created by LotusWorks are excluded'])
+    openFilterMenu(harness.element)
+    expect(harness.element.querySelector('.qaqc-filter-showing')?.textContent).toBe('Showing 231 of 1,077 rows')
+  })
+
+  it('lists only BIM rows in a week\'s drill-down', () => {
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({ x: 0, y: 0, top: 0, left: 0, right: 1280, bottom: 720, width: 1280, height: 720, toJSON: () => ({}) })
+    harness = createHarness()
+    apply(harness, update(combinedView()))
+    const hit = harness.element.querySelector(`.qaqc-panel-main .qaqc-hit[data-week="${WW42}"]`)
+    if (hit === null) throw new Error('week 42 missing')
+    act(() => {
+      hit.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+    const page = [...harness.element.querySelectorAll('[role="dialog"]')].find((node) => node.getAttribute('aria-label')?.startsWith('Issues · '))
+    // WW42 on the enriched cards: 2 opened and 1 closed, whatever inspection or welding rows share the week.
+    expect([...(page?.querySelectorAll('.qaqc-week-issues-group h4') ?? [])].map((node) => node.textContent)).toEqual(['Opened (2)', 'Closed (1)'])
+  })
+
+  it('ignores Welding rows, in the issues and in the card', () => {
+    const withoutWelding = COMBINED_TABLE.filter((row) => row[CELL_SOURCE] !== 'Welding')
+    harness = createHarness()
+    apply(harness, update(combinedView(BOUND_ROLES, withoutWelding)))
+    expect(cardValue(harness.element, CARD)).toBe(overviewPassRate(WW42))
+    expect(toDateCardValues(harness.element)).toEqual(['231', '174', '57', '75.3%'])
+  })
+
+  it('notes rows with an unknown Source and counts them nowhere, as the Overview does', () => {
+    const rows = [...COMBINED_TABLE, inspectionRow(90001, "WW42'2026", 'Final', 'NCR', 'Civil'), inspectionRow(90002, "WW42'2026", 'Final', 'NCR', '')]
+    harness = createHarness()
+    apply(harness, update(combinedView(BOUND_ROLES, rows)))
+    expect(cardValue(harness.element, CARD)).toBe(overviewPassRate(WW42))
+    expect(footnotes(harness.element)).toEqual(['846 issues not created by LotusWorks are excluded', '2 rows with an unknown Source'])
+  })
+
+  it('counts every table row in the row limit note, not only the BIM rows', () => {
+    const fetchMoreData = vi.fn(() => false)
+    harness = createHarness({ fetchMoreData })
+    const dataView = combinedView()
+    dataView.metadata.segment = {}
+    apply(harness, update(dataView))
+    expect(footnotes(harness.element)[0]).toBe(`Showing the first ${COMBINED_TABLE.length.toLocaleString('en-US')} rows (Power BI data limit)`)
+  })
+
+  it('with the Source slot unbound, treats every row as an issue, as today, and hides the card', () => {
+    const roles = BOUND_ROLES.filter((role) => role !== 'source')
+    const rowCount = COMBINED_TABLE.length
+    harness = createHarness()
+    apply(harness, update(combinedView(roles)))
+    expect(cardValue(harness.element, CARD)).toBeNull()
+    expect(toDateCardValues(harness.element)).toEqual(['231', '174', '57', '75.3%'])
+    // Every inspection row has no creator, so it reads as another company's issue.
+    expect(footnotes(harness.element)).toEqual([`${(rowCount - 231).toLocaleString('en-US')} issues not created by LotusWorks are excluded`])
+    openFilterMenu(harness.element)
+    expect(harness.element.querySelector('.qaqc-filter-showing')?.textContent).toBe(`Showing 231 of ${rowCount.toLocaleString('en-US')} rows`)
+  })
+
+  it('with Source bound but an inspection slot not, hides the card, keeps the BIM split and names the missing slots', () => {
+    harness = createHarness()
+    apply(harness, update(combinedView(BOUND_ROLES.filter((role) => role !== 'workWeek' && role !== 'issue'))))
+    expect(cardValue(harness.element, CARD)).toBeNull()
+    expect(toDateCardValues(harness.element)).toEqual(['231', '174', '57', '75.3%'])
+    expect(footnotes(harness.element)).toEqual([
+      '846 issues not created by LotusWorks are excluded',
+      'NCR Pass Rate hidden: add Work Week, Issue',
+    ])
+  })
+
+  it('shows n/a with no Electrical or Mechanical finals', () => {
+    const rows = COMBINED_TABLE.filter((row) => row[CELL_SOURCE] === 'BIM')
+    harness = createHarness()
+    apply(harness, update(combinedView(BOUND_ROLES, rows)))
+    expect(cardValue(harness.element, CARD)).toBe('n/a')
+  })
+
+  it('declares Row ID as a Grouping role in the table, which is what stops Power BI merging identical rows', () => {
+    const role = capabilities.dataRoles.find((item) => item.name === 'rowId')
+    expect(role?.kind).toBe('Grouping')
+    const selected = capabilities.dataViewMappings[0].table.rows.select.map((item) => item.for.in)
+    expect(selected).toEqual(expect.arrayContaining(['source', 'rowId', 'workWeek', 'phase', 'issue']))
+  })
+
+  it('identical inspection rows aren\'t merged when Row ID is bound: the finals count matches', () => {
+    // Three identical clean finals and one NCR: 75% when all four arrive, 50% if the three merge into one.
+    const rows = [
+      inspectionRow(1, "WW42'2026", 'Final', 'No Issue Found'),
+      inspectionRow(2, "WW42'2026", 'Final', 'No Issue Found'),
+      inspectionRow(3, "WW42'2026", 'Final', 'No Issue Found'),
+      inspectionRow(4, "WW42'2026", 'Final', 'NCR'),
+    ]
+    const boundCells = (roles: SlotRole[]): number[] => roles.map(cellOf)
+
+    harness = createHarness()
+    apply(harness, update(combinedView(BOUND_ROLES, mergedLikePowerBi(rows, boundCells(BOUND_ROLES)))))
+    expect(cardValue(harness.element, CARD)).toBe('75.0%')
+
+    const withoutRowId = BOUND_ROLES.filter((role) => role !== 'rowId')
+    apply(harness, update(combinedView(withoutRowId, mergedLikePowerBi(rows, boundCells(withoutRowId)))))
+    expect(cardValue(harness.element, CARD)).toBe('50.0%')
+  })
+
+  it('builds the inspection index once per data update, not on a resize or a filter change', () => {
+    harness = createHarness()
+    inspectionIndexBuilds.count = 0
+    apply(harness, update(combinedView()))
+    expect(inspectionIndexBuilds.count).toBe(1)
+    apply(harness, update(combinedView(), { width: 900, height: 700 }, 0, RESIZE_UPDATE))
+    expect(inspectionIndexBuilds.count).toBe(1)
+    openFilterMenu(harness.element)
+    const tick = harness.element.querySelector<HTMLInputElement>('.qaqc-filter-popover input[aria-label^="Greyfox,"]')
+    if (tick === null) throw new Error('company checkbox missing')
+    act(() => {
+      tick.click()
+    })
+    expect(inspectionIndexBuilds.count).toBe(1)
+    apply(harness, update(combinedView()))
+    expect(inspectionIndexBuilds.count).toBe(2)
+  })
+
+  it('builds no inspection index with the Source slot unbound', () => {
+    harness = createHarness()
+    inspectionIndexBuilds.count = 0
+    apply(harness, update(combinedView(BOUND_ROLES.filter((role) => role !== 'source'))))
+    expect(inspectionIndexBuilds.count).toBe(0)
   })
 })

@@ -3,11 +3,16 @@ import { act, type ReactElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { IssuesDashboard, type IssuesDashboardProps } from '../components/IssuesDashboard'
+import { inspectionColumnsOf, splitCombinedRows } from '../combined'
 import { buildIssueFootnotes } from '../footnotes'
+import { buildInspectionIndex } from '../inspections'
 import { buildIssueIndex, issueRowWeekKey } from '../issues'
+import { buildOverviewIndex, buildOverviewModel } from '../overview'
 import { resolveTheme } from '../theme'
-import type { IssueColumns, IssueIndex } from '../types'
+import type { CombinedColumns, IssueColumns, IssueIndex } from '../types'
 import { badge, buttonNamed, checkbox, chipTexts, choose, filterButton, openMenu, pick, pressEscape, showing, toggleSection } from './filterHarness'
+import { COMBINED_COLUMNS } from './fixtures/combinedRows'
+import { ENRICHED_COMBINED_ROWS } from './fixtures/enrichedCombinedRows'
 import { ENRICHED_ISSUE_ROWS } from './fixtures/enrichedIssueRows'
 import { ISSUE_ROWS } from './fixtures/issueRows'
 import { ENRICHED_COLUMNS } from './issueFilterFixture'
@@ -1280,4 +1285,168 @@ describe('IssuesDashboard week drill-down', () => {
     pressEscape(open)
     expect(container.querySelector('[role="dialog"]')).toBeNull()
   })
+})
+
+describe('IssuesDashboard NCR Pass Rate', () => {
+  const CARD = 'NCR Pass Rate'
+  const CARD_TODAY = new Date(2026, 10, 4) // WW45'2026, after the export of 20 Oct
+  const position = (name: (typeof COMBINED_COLUMNS)[number]): number => COMBINED_COLUMNS.indexOf(name)
+  const COMBINED: CombinedColumns = {
+    source: position('Source'),
+    workWeek: position('Work Week'),
+    phase: position('Inspection Phase'),
+    issue: position('Issue'),
+    building: position('Building'),
+    qcr: position('QCR/FE'),
+    welder: position('Welder'),
+    tagNo: position('Tag No'),
+    signature: position('Signature'),
+    signedWeek: position('Work Week Signed'),
+    id: position('ID'),
+    status: position('Status'),
+    type: position('Type'),
+    createdOn: position('Created On'),
+    updatedOn: position('Updated On'),
+    createdBy: position('Created By'),
+    rootCause: position('Root Cause'),
+    greenTags: -1,
+  }
+  const SPLIT = splitCombinedRows(ENRICHED_COMBINED_ROWS, COMBINED.source)
+  const INSPECTION_ROWS = [...SPLIT.electrical, ...SPLIT.mechanical]
+  const INSPECTIONS = buildInspectionIndex(INSPECTION_ROWS, inspectionColumnsOf(COMBINED), CARD_TODAY)
+  const OVERVIEW = buildOverviewIndex(SPLIT, COMBINED, CARD_TODAY)
+  const WW45 = 202645
+  const WW30 = 202630
+
+  function drawCard(overrides: Partial<IssuesDashboardProps> = {}): HTMLElement {
+    stubSize()
+    const index = buildIssueIndex(ENRICHED_ISSUE_ROWS, ENRICHED_COLUMNS, CARD_TODAY)
+    view = draw({
+      index,
+      filterSource: { rows: ENRICHED_ISSUE_ROWS, columns: ENRICHED_COLUMNS, today: CARD_TODAY },
+      inspections: { index: INSPECTIONS },
+      ...overrides,
+    })
+    return view.container
+  }
+
+  function overviewCard(key: number): string {
+    const model = buildOverviewModel(OVERVIEW, { selectedKey: key, windowEndKey: key, range: 'recent', dateRange: null }, 'toDate')
+    const found = model.quality.find((item) => item.label === 'Inspection NCR pass rate')
+    if (found === undefined) throw new Error('Overview card missing')
+    return found.display
+  }
+
+  /** 100% − (NCRs ÷ Finals), counted straight from the fixture's rows through the index's weeks. */
+  function countedRate(fromKey: number, toKey: number): string {
+    let finals = 0
+    let ncrs = 0
+    for (const week of INSPECTIONS.weeks) {
+      if (week.week.key < fromKey || week.week.key > toKey) continue
+      finals += week.finals
+      ncrs += week.issuesFound
+    }
+    return `${(((finals - ncrs) / finals) * 100).toFixed(1)}%`
+  }
+
+  function setRange(container: HTMLElement, fromKey: number, toKey: number): void {
+    const [from, to] = container.querySelectorAll<HTMLSelectElement>('.qaqc-filter-date select')
+    choose(from, fromKey)
+    choose(to, toKey)
+  }
+
+  /** The rendered markup, with React's generated ids, which differ between mounts, blanked. */
+  function markupOf(container: HTMLElement): string {
+    return container.innerHTML.replace(/«r[^»]*»|:r[^:]*:|_r_[^_"]*_/g, 'id')
+  }
+
+  function noteOf(container: HTMLElement): string | null {
+    return card(container, CARD)?.querySelector('.qaqc-kpi-context')?.textContent ?? null
+  }
+
+  it('matches the Overview\'s Inspection NCR pass rate through the selected week', () => {
+    const container = drawCard()
+    expect(cardValue(container, CARD)).toBe(overviewCard(WW45))
+    expect(cardValue(container, CARD)).toBe(countedRate(0, WW45))
+    pickWeekInDropdown(container, String(WW30))
+    expect(cardValue(container, CARD)).toBe(overviewCard(WW30))
+    expect(cardValue(container, CARD)).not.toBe(overviewCard(WW45))
+  })
+
+  it('sits after Closure Rate in the Project to date group', () => {
+    const container = drawCard()
+    const group = container.querySelector('.qaqc-kpi-group.is-toDate')
+    expect(group?.querySelector('span')?.textContent).toBe('Project to date')
+    const labels = [...(group?.querySelectorAll('.qaqc-kpi-label') ?? [])].map((node) => node.textContent)
+    expect(labels).toEqual(['Total Opened', 'Total Closed', 'Remaining Open', 'Closure Rate', CARD])
+  })
+
+  it('in range the card restates to the range', () => {
+    const container = drawCard()
+    openMenu(container)
+    setRange(container, 202620, 202630)
+    expect(container.querySelector('.qaqc-kpi-group.is-toDate span')?.textContent).toBe('In range')
+    expect(cardValue(container, CARD)).toBe(countedRate(202620, 202630))
+    // The whole range, wherever the selected week is inside it.
+    choose(pick(container, '.qaqc-week-picker select', HTMLSelectElement), 202625)
+    expect(weekSubtitle(container)).toBe("WW25'2026")
+    expect(cardValue(container, CARD)).toBe(countedRate(202620, 202630))
+  })
+
+  it('unbound, the card is hidden and output is identical', () => {
+    const container = drawCard({ inspections: undefined })
+    expect(cardValue(container, CARD)).toBeNull()
+    expect(container.querySelector<HTMLElement>('.qaqc-kpi-group.is-toDate')?.style.getPropertyValue('--qaqc-kpi-cards')).toBe('4')
+    const unbound = markupOf(container)
+    view?.unmount()
+    expect(markupOf(drawCard({ inspections: { index: null } }))).toBe(unbound)
+  })
+
+  it('a card has no small print', () => {
+    const element = card(drawCard(), CARD)
+    expect(element?.querySelector('.qaqc-kpi-label')?.textContent).toBe(CARD)
+    expect(element?.querySelector('.qaqc-kpi-detail')).toBeNull()
+    expect(element?.querySelector('.qaqc-kpi-context')).toBeNull()
+  })
+
+  it('shows n/a with no finals', () => {
+    const empty = buildInspectionIndex([], inspectionColumnsOf(COMBINED), CARD_TODAY)
+    expect(cardValue(drawCard({ inspections: { index: empty } }), CARD)).toBe('n/a')
+  })
+
+  it('an issue field filter leaves the card unfiltered and shows the note All inspections', () => {
+    const container = drawCard()
+    const value = cardValue(container, CARD)
+    expect(noteOf(container)).toBeNull()
+    openMenu(container)
+    toggleSection(container, 'Status')
+    click(checkbox(container, 'Closed'))
+    expect(toDateCardValuesOf(container)).not.toEqual(['231', '175', '56', '75.8%'])
+    expect(cardValue(container, CARD)).toBe(value)
+    expect(noteOf(container)).toBe('All inspections')
+    click(checkbox(container, 'Closed'))
+    expect(noteOf(container)).toBeNull()
+  })
+
+  it('a non-default company counts as an issue field filter, and the default company doesn\'t', () => {
+    const container = drawCard()
+    const value = cardValue(container, CARD)
+    openMenu(container)
+    expect(checkbox(container, 'LotusWorks').checked).toBe(true)
+    expect(noteOf(container)).toBeNull()
+    click(checkbox(container, 'Greyfox'))
+    expect(cardValue(container, CARD)).toBe(value)
+    expect(noteOf(container)).toBe('All inspections')
+  })
+
+  it('a date range alone shows no note', () => {
+    const container = drawCard()
+    openMenu(container)
+    setRange(container, 202620, 202630)
+    expect(noteOf(container)).toBeNull()
+  })
+
+  function toDateCardValuesOf(container: HTMLElement): Array<string | null> {
+    return ['Total Opened', 'Total Closed', 'Remaining Open', 'Closure Rate'].map((label) => cardValue(container, label))
+  }
 })

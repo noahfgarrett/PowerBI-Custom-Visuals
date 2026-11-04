@@ -165,12 +165,18 @@ export const ISSUE_SLOTS: readonly IssueFieldSlot[] = [
   { role: 'closedAt', slot: 'Closed At', column: 'Closed at' },
   { role: 'createdByCompany', slot: 'Created By (Company)', column: 'Created By (Company)' },
   { role: 'discipline', slot: 'Discipline', column: 'Discipline' },
+  { role: 'source', slot: 'Source', column: 'Source' },
+  { role: 'rowId', slot: 'Row ID', column: 'Row ID' },
+  { role: 'workWeek', slot: 'Work Week', column: 'Work Week' },
+  { role: 'phase', slot: 'Inspection Phase', column: 'Inspection Phase' },
+  { role: 'issue', slot: 'Issue', column: 'Issue' },
 ]
 
 /**
  * Root Cause and its category only feed the Pareto, so reports without them keep working. The enrichment slots only
  * exist in the enriched Autodesk export; without them every issue reads its standard Created By and dates. Created By
- * (Company) and Discipline only add Filter menu fields.
+ * (Company) and Discipline only add Filter menu fields. Source and the slots after it only matter when the visual is
+ * bound to QCx Combined.
  */
 export const OPTIONAL_ISSUE_ROLES: ReadonlySet<IssueSlotRole> = new Set<IssueSlotRole>([
   'rootCause',
@@ -181,6 +187,11 @@ export const OPTIONAL_ISSUE_ROLES: ReadonlySet<IssueSlotRole> = new Set<IssueSlo
   'closedAt',
   'createdByCompany',
   'discipline',
+  'source',
+  'rowId',
+  'workWeek',
+  'phase',
+  'issue',
 ])
 
 export type IssueTableReadResult =
@@ -211,11 +222,35 @@ export function readIssueTable(table: InspectionTableSource | undefined): IssueT
     closedAt: positionOf('closedAt'),
     createdByCompany: positionOf('createdByCompany'),
     discipline: positionOf('discipline'),
+    source: positionOf('source'),
+    rowId: positionOf('rowId'),
+    workWeek: positionOf('workWeek'),
+    phase: positionOf('phase'),
+    issue: positionOf('issue'),
   }
   const missing = required.filter((slot) => columns[slot.role] < 0)
   if (missing.length > 0) return { kind: 'missing', missing }
 
   return { kind: 'ready', rows: table.rows ?? [], columns }
+}
+
+const INSPECTION_CARD_ROLES: readonly IssueSlotRole[] = ['workWeek', 'phase', 'issue']
+
+export type IssueInspectionColumnsResult =
+  | { kind: 'missing'; missing: IssueFieldSlot[] }
+  | { kind: 'ready'; columns: InspectionColumns }
+
+/**
+ * The inspection columns NCR Pass Rate reads from an issues table bound to QCx Combined. The card has no use for
+ * Building and the visual has no slot for it: `row[-1]` is undefined, which the index reads as a blank cell.
+ */
+export function readIssueInspectionColumns(columns: IssueColumns): IssueInspectionColumnsResult {
+  const missing = ISSUE_SLOTS.filter((slot) => INSPECTION_CARD_ROLES.includes(slot.role) && (columns[slot.role] ?? -1) < 0)
+  if (missing.length > 0) return { kind: 'missing', missing }
+  return {
+    kind: 'ready',
+    columns: { workWeek: columns.workWeek ?? -1, phase: columns.phase ?? -1, issue: columns.issue ?? -1, building: -1 },
+  }
 }
 
 export type CombinedSlotRole = keyof CombinedColumns | 'rowId'

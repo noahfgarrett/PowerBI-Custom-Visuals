@@ -7,6 +7,7 @@ import {
   CircleDot,
   CircleAlert,
   CirclePlus,
+  ClipboardCheck,
   Gauge,
   Hourglass,
   Layers,
@@ -41,7 +42,7 @@ import { IssueWindowSummary } from './WindowSummary'
 import { issueDrillColumns, weekRows, type DrillGroup } from '../drilldown'
 import { restateIssueFootnotes } from '../footnotes'
 import { formatCount, formatDelta, formatPercent, formatPointsDelta, formatSignedCount, pointsTrend, trendOf } from '../format'
-import { RECENT_WEEK_COUNT } from '../inspections'
+import { passRateInWeeks, RECENT_WEEK_COUNT } from '../inspections'
 import {
   buildIssueIndex,
   buildIssueModel,
@@ -53,7 +54,7 @@ import {
 } from '../issues'
 import { effectiveKeys, isFieldActive, type FilterCatalog, type FilterSelection } from '../rowFilters'
 import { chartColorsFromTheme } from '../theme'
-import type { ClosureRateCard, IssueIndex, RangeClosure } from '../types'
+import type { ClosureRateCard, InspectionIndex, IssueIndex, RangeClosure } from '../types'
 
 const NO_ROWS_MESSAGE = 'No issues match the current filters'
 const NO_OPEN_MESSAGE = 'No open issues'
@@ -69,6 +70,8 @@ export interface IssuesDashboardProps extends DashboardChromeProps {
   /** Built over all of `filterSource.rows`, once per data update: the LotusWorks-only view. */
   index: IssueIndex
   filterSource: IssueFilterSource
+  /** Feeds the NCR Pass Rate card, built over the Electrical and Mechanical rows once per data update. No index, no card. */
+  inspections?: { index: InspectionIndex | null }
 }
 
 /** A project-to-date count's change in the selected week, in the other dashboards' "+N this WW" style. */
@@ -100,6 +103,7 @@ export function IssuesDashboard({
   icon,
   index: baseIndex,
   filterSource,
+  inspections,
   theme,
   interactive,
   animate,
@@ -149,6 +153,12 @@ export function IssuesDashboard({
   )
 
   const selectedKey = model.selectedWeek.key
+  const inspectionIndex = inspections?.index ?? null
+  // Issue filters don't reach the inspection rows; only the date range and the selected week do.
+  const ncrPassRate = useMemo(() => {
+    if (inspectionIndex === null) return null
+    return dateRange === null ? passRateInWeeks(inspectionIndex, null, selectedKey) : passRateInWeeks(inspectionIndex, dateRange.fromKey, dateRange.toKey)
+  }, [inspectionIndex, dateRange, selectedKey])
   const drillColumns = useMemo(() => issueDrillColumns(columns), [columns])
   const drillGroups = useMemo((): DrillGroup[] => {
     const opened = weekRows(index.positionByKey, index.openedRowsByWeek, indexRows, selectedKey)
@@ -432,6 +442,16 @@ export function IssuesDashboard({
                     tone={closureRate.tone}
                     trend={pointsTrend(closureRate.deltaPoints)}
                   />
+                  {inspectionIndex !== null && (
+                    <KpiCard
+                      label="NCR Pass Rate"
+                      icon={ClipboardCheck}
+                      value={formatPercent(ncrPassRate)}
+                      context={isFieldFilterActive ? 'All inspections' : undefined}
+                      tone="neutral"
+                      trend="none"
+                    />
+                  )}
                 </KpiGroup>
               </div>
 

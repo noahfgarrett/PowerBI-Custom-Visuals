@@ -6,13 +6,15 @@ import { flushSync } from 'react-dom'
 import { createRoot, type Root } from 'react-dom/client'
 
 import type { TooltipRequest } from '../../qaqc-shared/src/chartTypes'
+import { splitCombinedRows } from '../../qaqc-shared/src/combined'
 import { StatusPanel } from '../../qaqc-shared/src/components/StatusPanel'
 import { IssuesDashboard } from '../../qaqc-shared/src/components/IssuesDashboard'
-import { readIssueTable, type IssueFieldSlot, type IssueTableReadResult } from '../../qaqc-shared/src/dataView'
-import { buildIssueFootnotes } from '../../qaqc-shared/src/footnotes'
+import { readIssueInspectionColumns, readIssueTable, type IssueFieldSlot, type IssueTableReadResult } from '../../qaqc-shared/src/dataView'
+import { buildCombinedIssueFootnotes, buildIssueFootnotes } from '../../qaqc-shared/src/footnotes'
+import { buildInspectionIndex } from '../../qaqc-shared/src/inspections'
 import { buildIssueIndex, type IssueFilterSource } from '../../qaqc-shared/src/issues'
 import { resolveTheme, type HighContrastColors, type ResolvedTheme } from '../../qaqc-shared/src/theme'
-import type { IssueIndex } from '../../qaqc-shared/src/types'
+import type { InspectionIndex, InspectionRows, IssueColumns, IssueIndex } from '../../qaqc-shared/src/types'
 import { IssuesSettingsModel, readDisplaySettings } from './settings'
 
 import '../style/visual.less'
@@ -42,6 +44,8 @@ export class QaqcIssuesVisual implements powerbi.extensibility.visual.IVisual {
   private table: IssueTableReadResult | null = null
   private index: IssueIndex | null = null
   private filterSource: IssueFilterSource | null = null
+  private inspectionIndex: InspectionIndex | null = null
+  private combinedNotes: string[] = []
   private loading = false
   private rowLimitReached = false
   private renderError: unknown = null
@@ -115,6 +119,8 @@ export class QaqcIssuesVisual implements powerbi.extensibility.visual.IVisual {
 
   private readTable(dataView: powerbi.DataView | undefined): void {
     this.table = readIssueTable(dataView?.table)
+    this.inspectionIndex = null
+    this.combinedNotes = []
     if (this.table.kind !== 'ready') {
       this.index = null
       this.filterSource = null
@@ -122,8 +128,23 @@ export class QaqcIssuesVisual implements powerbi.extensibility.visual.IVisual {
     }
     const { rows, columns } = this.table
     const today = new Date()
-    this.index = buildIssueIndex(rows, columns, today)
-    this.filterSource = { rows, columns, today }
+    const issueRows = columns.source !== undefined && columns.source >= 0 ? this.splitCombinedTable(rows, columns, columns.source, today) : rows
+    this.index = buildIssueIndex(issueRows, columns, today)
+    this.filterSource = { rows: issueRows, columns, today }
+  }
+
+  /**
+   * With Source bound the table is QCx Combined. Returns its BIM rows, the only ones that are issues; Electrical and
+   * Mechanical rows feed NCR Pass Rate, and Welding rows aren't read.
+   */
+  private splitCombinedTable(rows: InspectionRows, columns: IssueColumns, sourceColumn: number, today: Date): InspectionRows {
+    const split = splitCombinedRows(rows, sourceColumn)
+    const inspection = readIssueInspectionColumns(columns)
+    if (inspection.kind === 'ready') {
+      this.inspectionIndex = buildInspectionIndex([...split.electrical, ...split.mechanical], inspection.columns, today)
+    }
+    this.combinedNotes = buildCombinedIssueFootnotes(split.unknownSource, inspection.kind === 'missing' ? inspection.missing.map((slot) => slot.slot) : [])
+    return split.bim
   }
 
   /** flushSync does not re-throw React 19 render errors, so surface the one captured by onUncaughtError. */
@@ -169,13 +190,15 @@ export class QaqcIssuesVisual implements powerbi.extensibility.visual.IVisual {
     }
 
     const index = this.index
-    const footnotes = buildIssueFootnotes(index, this.rowLimitReached)
+    // The row limit is on the table's rows, which with Source bound are more than the issues.
+    const footnotes = [...buildIssueFootnotes({ ...index, totalRows: this.table.rows.length }, this.rowLimitReached), ...this.combinedNotes]
     this.commit(
       createElement(IssuesDashboard, {
         title: 'QCx Issues',
         icon: CircleAlert,
         index,
         filterSource: this.filterSource,
+        inspections: { index: this.inspectionIndex },
         theme,
         interactive: this.interactionsAllowed(),
         animate: display.animate && !prefersReducedMotion(),

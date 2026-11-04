@@ -8,6 +8,7 @@ import {
   readCombinedTable,
   readGreenTags,
   readInspectionTable,
+  readIssueInspectionColumns,
   readIssueTable,
   readWeldTable,
   WELD_OPTIONAL_SLOTS,
@@ -251,6 +252,11 @@ describe('ISSUE_SLOTS', () => {
       ['closedAt', 'Closed At', 'Closed at'],
       ['createdByCompany', 'Created By (Company)', 'Created By (Company)'],
       ['discipline', 'Discipline', 'Discipline'],
+      ['source', 'Source', 'Source'],
+      ['rowId', 'Row ID', 'Row ID'],
+      ['workWeek', 'Work Week', 'Work Week'],
+      ['phase', 'Inspection Phase', 'Inspection Phase'],
+      ['issue', 'Issue', 'Issue'],
     ])
   })
 })
@@ -308,6 +314,11 @@ describe('readIssueTable', () => {
         closedAt: -1,
         createdByCompany: -1,
         discipline: -1,
+        source: -1,
+        rowId: -1,
+        workWeek: -1,
+        phase: -1,
+        issue: -1,
       })
       expect(result.rows[0][result.columns.id]).toBe('#1020')
       expect(result.rows[0][result.columns.rootCause]).toBe('Installation')
@@ -324,6 +335,19 @@ describe('readIssueTable', () => {
     if (result.kind === 'ready') {
       expect(result.columns.createdByCompany).toBe(9)
       expect(result.columns.discipline).toBe(10)
+    }
+  })
+
+  it('reads the QCx Combined slots, which are optional', () => {
+    const table: InspectionTableSource = {
+      columns: [...REQUIRED_ISSUE_ROLES, 'source', 'rowId', 'workWeek', 'phase', 'issue'].map((role) => ({ roles: { [role]: true } })),
+      rows: [],
+    }
+    const result = readIssueTable(table)
+    expect(result.kind).toBe('ready')
+    if (result.kind === 'ready') {
+      const { source, rowId, workWeek, phase, issue } = result.columns
+      expect([source, rowId, workWeek, phase, issue]).toEqual([9, 10, 11, 12, 13])
     }
   })
 
@@ -637,5 +661,22 @@ describe('readGreenTags', () => {
 
   it('returns null when there are no rows', () => {
     expect(readGreenTags([], 1)).toBeNull()
+  })
+})
+
+describe('readIssueInspectionColumns', () => {
+  const BASE = { id: 0, title: 1, status: 2, type: 3, contractor: 4, createdOn: 5, updatedOn: 6, dueDate: 7, createdBy: 8, rootCause: -1, rootCauseCategory: -1 }
+
+  it('reads the inspection columns, with no Building to read', () => {
+    expect(readIssueInspectionColumns({ ...BASE, workWeek: 9, phase: 10, issue: 11 })).toEqual({
+      kind: 'ready',
+      columns: { workWeek: 9, phase: 10, issue: 11, building: -1 },
+    })
+  })
+
+  it('names the slots still empty, unbound or absent, in slot order', () => {
+    const result = readIssueInspectionColumns({ ...BASE, workWeek: -1, phase: 10 })
+    expect(result.kind).toBe('missing')
+    if (result.kind === 'missing') expect(result.missing.map((slot) => slot.slot)).toEqual(['Work Week', 'Issue'])
   })
 })
