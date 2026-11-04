@@ -44,6 +44,8 @@ The first nine slots are required. The visual shows its setup screen until every
 
 Set every field to **Don't summarize**. The visual is designed to fill a full report page.
 
+**Date fields:** bind Created On, Updated On, Due Date and Closed At as the plain date, not Power BI's Date Hierarchy. In the field well, use the drop-down on the field and choose the field name.
+
 The slot names are unchanged. A report still bound to the Smartsheet BIM Issues Log, with the same nine required slots and its Root Cause columns, keeps working: leave the new slots empty.
 
 Five more optional slots, Source, Row ID, Work Week, Inspection Phase and Issue, only matter when the visual is bound to QCx Combined. Leave them empty for the Issues table.

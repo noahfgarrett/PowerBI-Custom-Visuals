@@ -61,6 +61,8 @@ The first 14 column slots are required. The visual shows its setup screen, listi
 
 Set every column to **Don't summarize**. The visual is designed to fill a full report page.
 
+**Date fields:** bind Created On, Updated On, Closed At and Date Observed as the plain date, not Power BI's Date Hierarchy. In the field well, use the drop-down on the field and choose the field name.
+
 ### Root Cause (optional)
 
 Bind the QCx Combined **Root Cause** column to show the most common root cause in the **Top root cause** card. Without it, the card reads `Add Root Cause`, and everything else works as before. The column comes from the enriched export's Root cause column; see [QCx_Combined_SETUP.md](QCx_Combined_SETUP.md).

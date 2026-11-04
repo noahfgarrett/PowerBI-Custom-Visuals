@@ -44,6 +44,8 @@ The first five slots are required. The optional ones add fields to the Filter me
 
 Set every field to **Don't summarize**. The visual is designed to fill a full report page.
 
+**Date fields:** bind Date Observed as the plain date, not Power BI's Date Hierarchy. In the field well, use the drop-down on the field and choose the field name.
+
 ## 4. Use it
 
 - The week dropdown opens on the current work week every time the report opens.
