@@ -1,4 +1,4 @@
-import { useMemo, type KeyboardEvent, type ReactElement } from 'react'
+import { useMemo, type ReactElement } from 'react'
 
 import type { DrillColumn, DrillGroup } from '../drilldown'
 import { formatCount } from '../format'
@@ -72,20 +72,14 @@ function DrillTable({ group, caption }: DrillTableProps): ReactElement {
 export interface WeekIssuesPageProps {
   weekLabel: string
   groups: DrillGroup[]
-  /** Sees Esc pressed inside the page before the overlay does; true means it was handled and the overlay stays open. */
-  onEscape?: () => boolean
 }
 
 /** A week's issue rows, drawn inside a `kind: 'page'` panel titled with the week. */
-export function WeekIssuesPage({ weekLabel, groups, onEscape }: WeekIssuesPageProps): ReactElement {
+export function WeekIssuesPage({ weekLabel, groups }: WeekIssuesPageProps): ReactElement {
   const count = groups.reduce((sum, group) => sum + group.rows.length, 0)
 
-  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
-    if (event.key === 'Escape' && onEscape?.() === true) event.stopPropagation()
-  }
-
   return (
-    <div className="qaqc-week-issues" onKeyDown={handleKeyDown}>
+    <div className="qaqc-week-issues">
       <p className="qaqc-week-issues-count">
         <strong>{formatCount(count)}</strong> {count === 1 ? 'issue' : 'issues'} in {weekLabel}
       </p>

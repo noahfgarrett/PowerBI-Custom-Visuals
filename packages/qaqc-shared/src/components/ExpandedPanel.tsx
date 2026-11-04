@@ -39,6 +39,8 @@ export interface ExpandedPanelProps {
   legend: LegendItem[]
   emptyMessage: string | null
   animate: boolean
+  /** Takes the place of another panel that fills the frame, so there's nothing to grow from. Read when it mounts. */
+  opensInPlace?: boolean
   /** Extra class for the dialog, e.g. is-compact on narrow tiles. */
   className?: string
   /** The whole frame (the box to expand into). */
@@ -90,6 +92,7 @@ export function ExpandedPanel({
   legend,
   emptyMessage,
   animate,
+  opensInPlace = false,
   className,
   getRootBox,
   getOriginBox,
@@ -114,7 +117,7 @@ export function ExpandedPanel({
   useLayoutEffect(() => {
     const element = boxRef.current
     const origin = getOriginBox()
-    if (!element || !animate || !origin || !canAnimate(element)) {
+    if (!element || !animate || opensInPlace || !origin || !canAnimate(element)) {
       setPhase('open')
       return undefined
     }

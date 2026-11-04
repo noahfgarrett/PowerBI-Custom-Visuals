@@ -101,6 +101,8 @@ export function ChartExpansionFrame<Id extends string>({
   children,
 }: ChartExpansionFrameProps<Id>): ReactElement {
   const [expanded, setExpanded] = useState<Id | null>(null)
+  // A page opened from an expanded chart replaces it where it is, rather than shrinking to the grid and growing back.
+  const [isSwappedIn, setIsSwappedIn] = useState(false)
   const frameRef = useRef<HTMLDivElement | null>(null)
   const panelRefs = useRef(new Map<Id, HTMLElement | null>())
   const restoreFocusRef = useRef<Id | null>(null)
@@ -143,8 +145,11 @@ export function ChartExpansionFrame<Id extends string>({
 
   function openPage(id: Id, source: HTMLElement, focusTarget: HTMLElement): void {
     if (!interactive) return
+    // A chart swapped for the page, or a pointer that stays still under it, never reports leaving the chart.
+    onHover(null)
     panelRefs.current.set(id, source)
     focusTargets.current.set(id, focusTarget)
+    setIsSwappedIn(isOverlayShown)
     setExpanded(id)
   }
 
@@ -158,6 +163,7 @@ export function ChartExpansionFrame<Id extends string>({
 
   function closeExpanded(id: Id): void {
     restoreFocusRef.current = id
+    setIsSwappedIn(false)
     setExpanded(null)
   }
 
@@ -183,6 +189,7 @@ export function ChartExpansionFrame<Id extends string>({
           legend={panels[expanded].expandedLegend ?? panels[expanded].legend}
           emptyMessage={panels[expanded].emptyMessage}
           animate={animate}
+          opensInPlace={isSwappedIn}
           className={isCompact ? 'is-compact' : undefined}
           getRootBox={() => (frameRef.current ? frameBox(frameRef.current) : ZERO_BOX)}
           getOriginBox={() => (frameRef.current ? originBox(frameRef.current, panelRefs.current.get(expanded) ?? null) : null)}

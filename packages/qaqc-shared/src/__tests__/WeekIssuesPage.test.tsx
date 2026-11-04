@@ -1,5 +1,4 @@
-import { act } from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import { WeekIssuesPage } from '../components/WeekIssuesPage'
 import type { DrillColumn, DrillGroup } from '../drilldown'
@@ -125,26 +124,5 @@ describe('WeekIssuesPage', () => {
 
   it('draws no heading for an untitled group', () => {
     expect(draw().querySelector('.qaqc-week-issues-group h4')).toBeNull()
-  })
-
-  it('offers Esc to its owner first, and lets it through when the owner has not handled it', () => {
-    const onOuterKey = vi.fn()
-    const onEscape = vi.fn().mockReturnValueOnce(true).mockReturnValueOnce(false)
-    view = render(
-      <div onKeyDown={onOuterKey}>
-        <WeekIssuesPage weekLabel="WW23'2026" groups={[GROUP]} onEscape={onEscape} />
-      </div>,
-    )
-    const { container } = view
-    const cell = pick(container, 'tbody td', HTMLTableCellElement)
-    const press = (): void => {
-      act(() => {
-        cell.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
-      })
-    }
-    press()
-    expect(onOuterKey).not.toHaveBeenCalled()
-    press()
-    expect(onOuterKey).toHaveBeenCalledTimes(1)
   })
 })

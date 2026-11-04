@@ -1,6 +1,6 @@
 import { Cog, Zap } from 'lucide-react'
 import { act, type ReactElement } from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { InspectionDashboard, type InspectionDashboardProps } from '../components/InspectionDashboard'
 import { buildFootnotes } from '../footnotes'
@@ -1118,6 +1118,19 @@ describe('InspectionDashboard week drill-down', () => {
     expect(dialog(container, ISSUE_TITLE)).not.toBeNull()
   })
 
+  it('clears the tooltip when the page opens under a pointer that stays still on the grid chart', () => {
+    const onHover = vi.fn()
+    const container = drawDrill(PLACEHOLDER_ROWS, PLACEHOLDER_OPTIONAL, { onHover })
+    const rect = hit(container, 'Finals + SORs by Work Week', ISSUE_WEEK)
+    act(() => {
+      rect.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 5, clientY: 6 }))
+    })
+    expect(onHover).toHaveBeenLastCalledWith(expect.objectContaining({ title: "WW23'2026" }))
+    click(rect)
+    expect(dialog(container, ISSUE_TITLE)).not.toBeNull()
+    expect(onHover).toHaveBeenLastCalledWith(null)
+  })
+
   it('selects without opening on the pass-rate chart for a week with none', () => {
     const container = drawDrill()
     click(hit(container, 'NCR Pass Rate Trend', 202635))
@@ -1125,18 +1138,90 @@ describe('InspectionDashboard week drill-down', () => {
     expect(container.querySelector('[role="dialog"]')).toBeNull()
   })
 
-  it('opens from an expanded chart and goes back to the dashboard with focus on the grid chart', () => {
-    const container = drawDrill()
+  it('opens from an expanded chart, clearing its tooltip, and goes back to the dashboard with focus on the grid chart', () => {
+    const onHover = vi.fn()
+    const container = drawDrill(PLACEHOLDER_ROWS, PLACEHOLDER_OPTIONAL, { onHover })
     const panel = 'NCR Pass Rate Trend'
     expandPanel(container, panel)
     const rect = dialog(container, panel)?.querySelector(`.qaqc-hit[data-week="${ISSUE_WEEK}"]`)
     if (!rect) throw new Error('expanded hit missing')
+    act(() => {
+      rect.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 5, clientY: 6 }))
+    })
+    expect(onHover).toHaveBeenLastCalledWith(expect.objectContaining({ title: "WW23'2026" }))
     click(rect)
     expect(dialog(container, panel)).toBeNull()
     expect(dialog(container, ISSUE_TITLE)).not.toBeNull()
+    expect(onHover).toHaveBeenLastCalledWith(null)
     click(backButton(container))
     expect(container.querySelector('[role="dialog"]')).toBeNull()
     expect(document.activeElement).toBe(chartOf(container, panel))
+  })
+
+  describe('opening animation', () => {
+    const animateBox = vi.fn((): Pick<Animation, 'cancel' | 'playState'> & { finished: Promise<void> } => ({
+      finished: Promise.resolve(),
+      cancel: (): void => undefined,
+      playState: 'finished',
+    }))
+
+    beforeEach(() => {
+      animateBox.mockClear()
+      Object.defineProperty(HTMLElement.prototype, 'animate', { value: animateBox, configurable: true, writable: true })
+    })
+
+    afterEach(() => {
+      view?.unmount()
+      view = null
+      Reflect.deleteProperty(HTMLElement.prototype, 'animate')
+    })
+
+    it('grows the page from the chart\'s panel on the grid', () => {
+      const container = drawDrill(PLACEHOLDER_ROWS, PLACEHOLDER_OPTIONAL, { animate: true })
+      click(hit(container, 'Finals + SORs by Work Week', ISSUE_WEEK))
+      expect(dialog(container, ISSUE_TITLE)).not.toBeNull()
+      expect(animateBox).toHaveBeenCalledTimes(1)
+    })
+
+    it('swaps an expanded chart for the page in place, with no shrink to the panel and regrowth', async () => {
+      const container = drawDrill(PLACEHOLDER_ROWS, PLACEHOLDER_OPTIONAL, { animate: true })
+      const panel = 'NCR Pass Rate Trend'
+      expandPanel(container, panel)
+      expect(animateBox).toHaveBeenCalledTimes(1)
+      await act(async () => {
+        await Promise.resolve()
+      })
+      const rect = dialog(container, panel)?.querySelector(`.qaqc-hit[data-week="${ISSUE_WEEK}"]`)
+      if (!rect) throw new Error('expanded hit missing')
+      click(rect)
+      expect(dialog(container, ISSUE_TITLE)).not.toBeNull()
+      expect(animateBox).toHaveBeenCalledTimes(1)
+      expect(pageRows(container)).toHaveLength(1)
+    })
+
+    it('grows from the panel again after a page that was swapped in has closed', async () => {
+      const container = drawDrill(PLACEHOLDER_ROWS, PLACEHOLDER_OPTIONAL, { animate: true })
+      const panel = 'NCR Pass Rate Trend'
+      expandPanel(container, panel)
+      await act(async () => {
+        await Promise.resolve()
+      })
+      const rect = dialog(container, panel)?.querySelector(`.qaqc-hit[data-week="${ISSUE_WEEK}"]`)
+      if (!rect) throw new Error('expanded hit missing')
+      click(rect)
+      expect(animateBox).toHaveBeenCalledTimes(1)
+      // Back: a fade, then the shrink, so this waits out the fade.
+      click(backButton(container))
+      await act(async () => {
+        await new Promise((resolve) => {
+          setTimeout(resolve, 150)
+        })
+      })
+      expect(page(container)).toBeNull()
+      expect(animateBox).toHaveBeenCalledTimes(2)
+      expandPanel(container, panel)
+      expect(animateBox).toHaveBeenCalledTimes(3)
+    })
   })
 
   it('with interactions off, a click neither selects nor opens', () => {
