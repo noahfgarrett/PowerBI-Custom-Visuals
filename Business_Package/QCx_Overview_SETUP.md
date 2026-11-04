@@ -142,6 +142,9 @@ Not every source has every field. A filter leaves a source without that field un
 | Contractor | `Welding isn't filtered by Contractor` |
 | Discipline | `Welding isn't filtered by Discipline` |
 | Building | `BIM issues aren't filtered by Building` |
+| Building, with Tag No unbound | `Welding isn't filtered by Building` |
+| Contractor, with the Contractor slot unbound | `BIM issues aren't filtered by Contractor` |
+| Contractor, with General Contractor unbound | `Inspections aren't filtered by Contractor` |
 
 If a filter leaves one source with no rows while others still have some, that row reads `No Electrical rows match these filters` (or Mechanical, Welding, BIM Issues).
 
@@ -163,6 +166,8 @@ Click a week on either chart, or focus a chart, move with the arrow keys and pre
 
 - The title names the week, for example `Issues · WW23'2026`, and the line under it gives the count.
 - The list holds that week's NCRs from **Electrical**, **Mechanical** and **Welding**, labelled by source, under the active filters. BIM rows aren't listed, because the Overview doesn't count BIM NCRs.
+- Electrical and Mechanical columns: Building, Phase, Issue, Inspection ID, Equipment ID / Tag Number, Issue ID, Finding Type, Status, Date Observed, QCR/FE and Notes. Inspection ID is blank on Mechanical rows, because that log has no such column.
+- Welding columns: Tag No, Welder, Pipe Spec, Fluid Code, Issue Created and Signature.
 - A column whose slot isn't bound is hidden. Click a column header to sort. Long text is cut short; hover it for the full value.
 - Press Esc or **Back** to return, with the focus back on the chart.
 
