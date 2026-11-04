@@ -3,16 +3,20 @@ import { act, type ReactElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { WeldingDashboard, type WeldingDashboardProps } from '../components/WeldingDashboard'
+import { buildFootnotes } from '../footnotes'
 import { resolveTheme } from '../theme'
-import type { WeldColumns, WeldIndex } from '../types'
-import { buildWeldIndex } from '../welds'
+import type { InspectionRows, WeldColumns, WeldIndex } from '../types'
+import { buildWeldIndex, weldBuilding } from '../welds'
 import { parseWorkWeek } from '../workWeeks'
+import { buttonNamed, checkbox, checkboxLabels, chipTexts, choose, filterButton, openMenu, pick, pressEscape, showing, toggleSection } from './filterHarness'
 import { WELDING_ROWS } from './fixtures/weldingRows'
 import { render, type Rendered } from './render'
+import { PLACEHOLDER_WELD_OPTIONAL, UNBOUND_WELD_OPTIONAL, weldFilterSourceFor, withPlaceholderWeldColumns } from './weldFilterFixture'
 
 const COLUMNS: WeldColumns = { weldWeek: 0, signature: 1, signedWeek: 2, issue: 3, fluidCode: 4, pipeSpec: 5, tagNo: 6 }
 const TODAY = new Date(2026, 9, 15) // WW42'2026
 const INDEX = buildWeldIndex(WELDING_ROWS, COLUMNS, TODAY)
+const FILTER_SOURCE = weldFilterSourceFor(WELDING_ROWS, TODAY)
 const THEME = resolveTheme({ preset: 'qaqc', backgroundColor: '', backgroundOpacity: 100, cardOpacity: 100, highContrast: null })
 const MAIN_TITLE = 'Signoffs by Work Week'
 const SYSTEMS_TITLE = 'Sign-off by System'
@@ -32,6 +36,7 @@ function dashboardElement(overrides: Partial<WeldingDashboardProps> = {}): React
       title="Welding Signoffs"
       icon={Flame}
       index={INDEX}
+      filterSource={FILTER_SOURCE}
       minWelds={10}
       theme={THEME}
       interactive
@@ -523,5 +528,564 @@ describe('WeldingDashboard expanded charts', () => {
     })
     expect(view.container.querySelector('[role="dialog"]')).toBeNull()
     expect(document.activeElement).toBe(expandButton(view.container, SYSTEMS_TITLE))
+  })
+})
+
+describe('WeldingDashboard filters', () => {
+  const PLACEHOLDER_ROWS = withPlaceholderWeldColumns(WELDING_ROWS)
+
+  function drawFiltered(
+    rows: InspectionRows = PLACEHOLDER_ROWS,
+    optional: WeldingDashboardProps['filterSource']['optional'] = PLACEHOLDER_WELD_OPTIONAL,
+    overrides: Partial<WeldingDashboardProps> = {},
+  ): HTMLElement {
+    const index = buildWeldIndex(rows, COLUMNS, TODAY)
+    view = draw({ index, filterSource: weldFilterSourceFor(rows, TODAY, optional), footnotes: buildFootnotes(index, false), ...overrides })
+    return view.container
+  }
+
+  function sectionTitles(container: HTMLElement): string[] {
+    return [...container.querySelectorAll('.qaqc-filter-section-toggle span:first-of-type')].map((node) => node.textContent ?? '')
+  }
+
+  function setRange(container: HTMLElement, fromKey: number, toKey: number): void {
+    const [from, to] = container.querySelectorAll<HTMLSelectElement>('.qaqc-filter-date select')
+    choose(from, fromKey)
+    choose(to, toKey)
+  }
+
+  function weekPicker(container: HTMLElement): HTMLSelectElement {
+    return pick(container, '.qaqc-week-picker select', HTMLSelectElement)
+  }
+
+  function groupSubtitle(container: HTMLElement): string | null {
+    return container.querySelector('.qaqc-kpi-group.is-toDate em')?.textContent ?? null
+  }
+
+  it('shows the Filter button with only the bound fields', () => {
+    const container = drawFiltered(WELDING_ROWS, UNBOUND_WELD_OPTIONAL)
+    openMenu(container)
+    expect(sectionTitles(container)).toEqual(['Building', 'Pipe Spec', 'Fluid Code'])
+  })
+
+  it('lists the fields in the menu order when all are bound', () => {
+    const container = drawFiltered()
+    openMenu(container)
+    expect(sectionTitles(container)).toEqual(['Building', 'Pipe Spec', 'Fluid Code', 'Welder', 'Work Package'])
+  })
+
+  it('no filter leaves existing output identical', () => {
+    const container = drawFiltered(WELDING_ROWS, UNBOUND_WELD_OPTIONAL)
+    expect(cardValue(container, 'Total Welds')).toBe('1,751')
+    expect(cardValue(container, 'Overall Sign-off %')).toBe('60.2%')
+    expect(chipTexts(container)).toEqual([])
+    const before = container.querySelector('.qaqc-kpi-row')?.innerHTML
+    openMenu(container)
+    click(checkbox(container, 'F632'))
+    expect(container.querySelector('.qaqc-kpi-row')?.innerHTML).not.toBe(before)
+    click(checkbox(container, 'F632'))
+    expect(container.querySelector('.qaqc-kpi-row')?.innerHTML).toBe(before)
+    expect(chipTexts(container)).toEqual([])
+  })
+
+  it('Building filters through the Tag No derivation, and agrees with the chart', () => {
+    stubSize()
+    const container = drawFiltered(WELDING_ROWS, UNBOUND_WELD_OPTIONAL, { minWelds: 1 })
+    // A building with issues, or the chart has no bars to compare.
+    const building = weldBuilding(WELDING_ROWS[INDEX.issueRowsByWeek.flat()[0]][COLUMNS.tagNo])
+    const expected = WELDING_ROWS.filter((row) => weldBuilding(row[COLUMNS.tagNo]) === building)
+    expect(expected.length).toBeGreaterThan(0)
+    expect(expected.length).toBeLessThan(WELDING_ROWS.length)
+    openMenu(container)
+    click(checkbox(container, building))
+    expect(chipTexts(container)).toEqual([`Building: ${building}`])
+    expect(cardValue(container, 'Total Welds')).toBe(expected.length.toLocaleString('en-US'))
+    click(filterButton(container))
+    clickRange(container, 'All')
+    const labels = [...(panel(container, BUILDINGS_TITLE)?.querySelectorAll('.qaqc-row-label') ?? [])].map((node) => node.textContent)
+    expect(labels).toEqual([building])
+  })
+
+  it('offers the chart\'s Site General as a Building, and filters to it', () => {
+    const rows: InspectionRows = [
+      ["WW40'2026", null, null, null, 'AW', 'PCH', 'BATCH-PLANT-FW-1'],
+      ["WW40'2026", null, null, null, 'AW', 'PCH', 'BATCH-PLANT-FW-2'],
+      ["WW40'2026", null, null, null, 'AW', 'PCH', 'F631M001XX-P001-FW-01'],
+    ]
+    const container = drawFiltered(rows, UNBOUND_WELD_OPTIONAL)
+    openMenu(container)
+    expect(checkboxLabels(container)).toContain('Site General')
+    click(checkbox(container, 'Site General'))
+    expect(cardValue(container, 'Total Welds')).toBe('2')
+    expect(showing(container)).toBe('Showing 2 of 3 rows')
+  })
+
+  it('a weld listing P-012 and PF-025 matches either and counts once in Showing X of Y', () => {
+    const rows: InspectionRows = [
+      ["WW40'2026", null, null, null, 'AW', 'PCH', 'F631M001XX-P001-FW-01', 'P-012, PF-025', 'WP-100'],
+      ["WW40'2026", null, null, null, 'AW', 'PCH', 'F631M001XX-P001-FW-02', 'P-012', 'WP-100'],
+      ["WW40'2026", null, null, null, 'AW', 'PCH', 'F631M001XX-P001-FW-03', 'PF-025', 'WP-100'],
+      ["WW40'2026", null, null, null, 'AW', 'PCH', 'F631M001XX-P001-FW-04', 'P-031', 'WP-100'],
+    ]
+    const container = drawFiltered(rows)
+    openMenu(container)
+    toggleSection(container, 'Welder')
+    click(checkbox(container, 'PF-025'))
+    expect(showing(container)).toBe('Showing 2 of 4 rows')
+    expect(cardValue(container, 'Total Welds')).toBe('2')
+    click(checkbox(container, 'P-012'))
+    expect(showing(container)).toBe('Showing 3 of 4 rows')
+    expect(cardValue(container, 'Total Welds')).toBe('3')
+    expect(chipTexts(container)).toEqual(['Welder: P-012, PF-025'])
+  })
+
+  it('in range, the to-date cards and weekly charts restate', () => {
+    stubSize()
+    const container = drawFiltered(WELDING_ROWS, UNBOUND_WELD_OPTIONAL)
+    openMenu(container)
+    setRange(container, 202610, 202630)
+    expect(groupShading(container, 'In range')).toEqual(['is-toDate'])
+    expect(groupSubtitle(container)).toBe("WW10'2026 to WW30'2026")
+    expect(chipTexts(container)).toEqual(["Date range: WW10'2026 to WW30'2026"])
+
+    const inRange = WELDING_ROWS.filter((row) => {
+      const key = parseWorkWeek(row[0])?.key ?? 0
+      return key >= 202610 && key <= 202630
+    })
+    const signed = inRange.filter((row) => row[1] !== null)
+    expect(cardValue(container, 'Total Welds')).toBe(inRange.length.toLocaleString('en-US'))
+    expect(cardValue(container, 'Welds Signed')).toBe(signed.length.toLocaleString('en-US'))
+    const rate = `${((signed.length / inRange.length) * 100).toFixed(1)}%`
+    expect(cardValue(container, 'Overall Sign-off %')).toBe(rate)
+    expect(cardDetail(container, 'Overall Sign-off %')).toBe(`${signed.length} of ${inRange.length}`)
+
+    const weeks = mainHitWeeks(container)
+    expect(weeks).toHaveLength(21)
+    expect(weeks[0]).toBe('202610')
+    expect(weeks[20]).toBe('202630')
+  })
+
+  it('reads Issues by Building over the range', () => {
+    stubSize()
+    const container = drawFiltered(WELDING_ROWS, UNBOUND_WELD_OPTIONAL, { minWelds: 1 })
+    const totalIn = (open: HTMLElement): number => [...open.querySelectorAll('table.qaqc-table tbody tr')]
+      .reduce((sum, row) => sum + Number((row.querySelectorAll('td')[0]?.textContent ?? '0').replace(/,/g, '')), 0)
+    openMenu(container)
+    setRange(container, 202610, 202630)
+    click(filterButton(container))
+    const open = expandPanel(container, BUILDINGS_TITLE)
+    const inRange = WELDING_ROWS.filter((row) => {
+      const key = parseWorkWeek(row[0])?.key ?? 0
+      return key >= 202610 && key <= 202630
+    })
+    expect(totalIn(open)).toBe(inRange.length)
+  })
+
+  it('clamps the selected week into the range, and This WW cards follow it', () => {
+    const container = drawFiltered(WELDING_ROWS, UNBOUND_WELD_OPTIONAL)
+    openMenu(container)
+    setRange(container, 202610, 202630)
+    expect(weekTitle(container)).toBe("WW30'2026")
+    const logged = WELDING_ROWS.filter((row) => row[0] === "WW30'2026").length
+    expect(cardValue(container, 'Welds Logged')).toBe(String(logged))
+    expect(cardDetail(container, 'Total Welds')).toBe(`+${logged} this WW`)
+  })
+
+  it('the 30 WW | All toggle is disabled during a range', () => {
+    const container = drawFiltered(WELDING_ROWS, UNBOUND_WELD_OPTIONAL)
+    const toggles = (): HTMLButtonElement[] => [...container.querySelectorAll<HTMLButtonElement>('.qaqc-segmented button')]
+    expect(toggles().every((button) => !button.disabled)).toBe(true)
+    openMenu(container)
+    click(buttonNamed(container, 'Last 4 WW'))
+    expect(toggles().every((button) => button.disabled)).toBe(true)
+    click(buttonNamed(container, 'Last 4 WW'))
+    expect(toggles().every((button) => !button.disabled)).toBe(true)
+  })
+
+  it('the week picker lists only the range\'s weeks', () => {
+    const container = drawFiltered(WELDING_ROWS, UNBOUND_WELD_OPTIONAL)
+    expect(weekPicker(container).options).toHaveLength(44)
+    openMenu(container)
+    setRange(container, 202610, 202630)
+    const options = [...weekPicker(container).options].map((option) => option.value)
+    expect(options).toHaveLength(21)
+    expect(options[0]).toBe('202630')
+    expect(options[20]).toBe('202610')
+  })
+
+  it('a filter whose first match is WW20 still shows WW10 to WW30 in a WW10–WW30 range', () => {
+    stubSize()
+    const rows: InspectionRows = [
+      ["WW05'2026", null, null, null, 'AW', 'PCH', 'F631M001XX-P001-FW-01'],
+      ["WW20'2026", 'signed', "WW20'2026", 'BIM 1', 'AW', 'PCH', 'BK1XX101XX-M001-FW-01'],
+      ["WW25'2026", null, null, null, 'AW', 'PCH', 'BK1XX101XX-M001-FW-02'],
+      ["WW42'2026", null, null, null, 'AW', 'PCH', 'F631M001XX-P001-FW-02'],
+    ]
+    const container = drawFiltered(rows, UNBOUND_WELD_OPTIONAL)
+    openMenu(container)
+    click(checkbox(container, 'BK1'))
+    setRange(container, 202610, 202630)
+
+    const weeks = mainHitWeeks(container)
+    expect(weeks).toHaveLength(21)
+    expect(weeks[0]).toBe('202610')
+    expect(weeks[20]).toBe('202630')
+    expect(weekPicker(container).options).toHaveLength(21)
+    expect(groupSubtitle(container)).toBe("WW10'2026 to WW30'2026")
+    expect(cardValue(container, 'Total Welds')).toBe('2')
+    expect(cardValue(container, 'Overall Sign-off %')).toBe('50.0%')
+
+    // A week before the filter's first match can be selected like any other.
+    click(filterButton(container))
+    clickHit(container, '202612')
+    expect(weekTitle(container)).toBe("WW12'2026")
+  })
+
+  it('the existing selection and From/To stay valid', () => {
+    const rows: InspectionRows = [
+      ["WW10'2026", null, null, null, 'AW', 'PCH', 'F631M001XX-P001-FW-01'],
+      ["WW38'2026", null, null, null, 'AW', 'PCH', 'BK1XX101XX-M001-FW-01'],
+      ["WW42'2026", null, null, null, 'AW', 'PCH', 'F631M001XX-P001-FW-02'],
+    ]
+    const container = drawFiltered(rows, UNBOUND_WELD_OPTIONAL)
+    expect(weekPicker(container).options).toHaveLength(33)
+    pickWeekInDropdown(container, '202612')
+    openMenu(container)
+    click(checkbox(container, 'BK1'))
+
+    // The filter's first match is WW38, and the picked WW12 still exists on the axis.
+    expect(weekPicker(container).options).toHaveLength(33)
+    expect(weekTitle(container)).toBe("WW12'2026")
+    expect(cardValue(container, 'Welds Logged')).toBe('0')
+    const [from, to] = container.querySelectorAll<HTMLSelectElement>('.qaqc-filter-date select')
+    expect(from.options).toHaveLength(33)
+    expect(to.options).toHaveLength(33)
+
+    click(checkbox(container, 'BK1'))
+    expect(weekTitle(container)).toBe("WW12'2026")
+  })
+
+  it('counts Showing X of Y over the rows in the range', () => {
+    const container = drawFiltered(WELDING_ROWS, UNBOUND_WELD_OPTIONAL)
+    openMenu(container)
+    expect(showing(container)).toBe('Showing 1,751 of 1,751 rows')
+    setRange(container, 202610, 202630)
+    const inRange = WELDING_ROWS.filter((row) => {
+      const key = parseWorkWeek(row[0])?.key ?? 0
+      return key >= 202610 && key <= 202630
+    })
+    expect(showing(container)).toBe(`Showing ${inRange.length.toLocaleString('en-US')} of 1,751 rows`)
+  })
+
+  it('no matching rows shows the empty state with Clear filters', () => {
+    const rows: InspectionRows = [
+      ["WW10'2026", null, null, null, 'AW', 'PCH', 'F631M001XX-P001-FW-01'],
+      ["WW30'2026", null, null, null, 'AW', 'PCH', 'BK1XX101XX-M001-FW-01'],
+    ]
+    const container = drawFiltered(rows, UNBOUND_WELD_OPTIONAL)
+    openMenu(container)
+    setRange(container, 202611, 202620)
+    const empty = container.querySelector('.qaqc-filter-empty')
+    expect(empty?.textContent).toContain('There are no welds in this date range')
+    expect(container.querySelector('.qaqc-kpi-row')).toBeNull()
+    expect(container.querySelector('.qaqc-charts')).toBeNull()
+    click(buttonNamed(container, 'Clear filters'))
+    expect(container.querySelector('.qaqc-filter-empty')).toBeNull()
+    expect(cardValue(container, 'Total Welds')).toBe('2')
+    expect(document.activeElement).toBe(filterButton(container))
+  })
+
+  it('shows no empty state for an empty report with no filters', () => {
+    const container = drawFiltered([], UNBOUND_WELD_OPTIONAL)
+    expect(container.querySelector('.qaqc-filter-empty')).toBeNull()
+    expect(panel(container, MAIN_TITLE)?.textContent).toContain('No welds match the current filters')
+  })
+
+  it('says a filter\'s rows are outside the recent window instead of drawing an empty chart', () => {
+    const rows: InspectionRows = [
+      ["WW01'2026", null, null, null, 'AW', 'PCH', 'BK1XX101XX-M001-FW-01'],
+      ["WW42'2026", null, null, null, 'AW', 'PCH', 'F631M001XX-P001-FW-01'],
+    ]
+    const container = drawFiltered(rows, UNBOUND_WELD_OPTIONAL)
+    openMenu(container)
+    click(checkbox(container, 'BK1'))
+    expect(panel(container, MAIN_TITLE)?.textContent).toContain('switch to All')
+    click(filterButton(container))
+    clickRange(container, 'All')
+    expect(panel(container, MAIN_TITLE)?.textContent).not.toContain('switch to All')
+  })
+
+  it('restates skipped and future footnotes to the filtered rows', () => {
+    const rows: InspectionRows = [
+      ['not a week', null, null, null, 'AW', 'PCH', 'BK1XX101XX-M001-FW-01'],
+      ['not a week', null, null, null, 'AW', 'PCH', 'F631M001XX-P001-FW-01'],
+      ["WW42'2026", null, null, null, 'AW', 'PCH', 'F631M001XX-P001-FW-02'],
+    ]
+    const container = drawFiltered(rows, UNBOUND_WELD_OPTIONAL)
+    expect(container.querySelector('.qaqc-footnotes')?.textContent).toContain('2 rows skipped')
+    openMenu(container)
+    click(checkbox(container, 'BK1'))
+    expect(container.querySelector('.qaqc-footnotes')?.textContent).toContain('1 row skipped')
+  })
+
+  it('disables the Filter button when interactions are not allowed', () => {
+    const container = drawFiltered(WELDING_ROWS, UNBOUND_WELD_OPTIONAL, { interactive: false })
+    expect(filterButton(container).disabled).toBe(true)
+  })
+
+  it('returns to all systems when a filter removes the drilled system', () => {
+    stubSize()
+    const rows: InspectionRows = [
+      ["WW40'2026", null, null, null, 'AW', 'PCH', 'BK1XX101XX-M001-FW-01'],
+      ["WW40'2026", null, null, null, 'CWS', 'PCH', 'F631M001XX-P001-FW-01'],
+    ]
+    const container = drawFiltered(rows, UNBOUND_WELD_OPTIONAL)
+    drillInto(container, 'AW')
+    expect(breadcrumb(container)).not.toBeNull()
+    openMenu(container)
+    click(checkbox(container, 'F631'))
+    expect(breadcrumb(container)).toBeNull()
+    expect(systemRow(container, 'CWS')).not.toBeNull()
+  })
+})
+
+describe('WeldingDashboard week drill-down', () => {
+  const PLACEHOLDER_ROWS = withPlaceholderWeldColumns(WELDING_ROWS)
+  const ISSUE_KEY = 202617
+  const ISSUE_TITLE = "Issues · WW17'2026"
+
+  function drawDrill(
+    rows: InspectionRows = PLACEHOLDER_ROWS,
+    optional: WeldingDashboardProps['filterSource']['optional'] = PLACEHOLDER_WELD_OPTIONAL,
+    overrides: Partial<WeldingDashboardProps> = {},
+  ): HTMLElement {
+    stubSize()
+    const index = buildWeldIndex(rows, COLUMNS, TODAY)
+    view = draw({ index, filterSource: weldFilterSourceFor(rows, TODAY, optional), ...overrides })
+    return view.container
+  }
+
+  function page(container: HTMLElement): HTMLElement | null {
+    return [...container.querySelectorAll<HTMLElement>('[role="dialog"]')].find((node) => node.getAttribute('aria-label')?.startsWith('Issues · ')) ?? null
+  }
+
+  function pageRows(container: HTMLElement): string[][] {
+    const rows = page(container)?.querySelectorAll('tbody tr:not(.qaqc-virtual-spacer)') ?? []
+    return [...rows].map((row) => [...row.children].map((cell) => cell.textContent ?? ''))
+  }
+
+  function pageHeaders(container: HTMLElement): string[] {
+    return [...(page(container)?.querySelectorAll('thead th') ?? [])].map((node) => node.textContent ?? '')
+  }
+
+  function backButton(container: HTMLElement): HTMLButtonElement {
+    const button = page(container)?.querySelector<HTMLButtonElement>('.qaqc-back-button')
+    if (!button) throw new Error('back button missing')
+    return button
+  }
+
+  function chart(container: HTMLElement): Element {
+    const svg = panel(container, MAIN_TITLE)?.querySelector('svg.qaqc-chart')
+    if (!svg) throw new Error('chart missing')
+    return svg
+  }
+
+  function hit(container: HTMLElement, key: number): Element {
+    const rect = panel(container, MAIN_TITLE)?.querySelector(`.qaqc-hit[data-week="${key}"]`)
+    if (!rect) throw new Error(`no week ${key}`)
+    return rect
+  }
+
+  function pressOn(target: Element, key: string): void {
+    act(() => {
+      target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
+    })
+  }
+
+  /** The number the chart itself shows for a week: its tooltip's Issues created. */
+  function chartIssues(container: HTMLElement, onHover: ReturnType<typeof vi.fn>, key: number): number {
+    act(() => {
+      hit(container, key).dispatchEvent(new MouseEvent('mousemove', { bubbles: true }))
+    })
+    const request: unknown = onHover.mock.lastCall?.[0]
+    if (typeof request !== 'object' || request === null || !('rows' in request) || !Array.isArray(request.rows)) throw new Error('no tooltip')
+    const row: unknown = request.rows.find((item: { label?: string }) => item.label === 'Issues created')
+    if (typeof row !== 'object' || row === null || !('value' in row)) throw new Error('no issue row')
+    return Number(row.value)
+  }
+
+  it('a click on a week with issues selects it and opens the page titled Issues · WW17\'2026', () => {
+    const container = drawDrill()
+    click(hit(container, ISSUE_KEY))
+    expect(weekTitle(container)).toBe("WW17'2026")
+    const open = page(container)
+    expect(open?.getAttribute('aria-label')).toBe(ISSUE_TITLE)
+    expect(open?.querySelector('h3')?.textContent).toBe(ISSUE_TITLE)
+    expect(open?.querySelector('.qaqc-week-issues-count')?.textContent).toBe("2 issues in WW17'2026")
+  })
+
+  it('a click on a week with none only selects it', () => {
+    const container = drawDrill()
+    click(hit(container, 202635))
+    expect(weekTitle(container)).toBe("WW35'2026")
+    expect(container.querySelector('[role="dialog"]')).toBeNull()
+  })
+
+  it('Enter on the focused week behaves the same', () => {
+    const container = drawDrill()
+    pressOn(chart(container), 'Enter')
+    expect(weekTitle(container)).toBe("WW42'2026")
+    expect(container.querySelector('[role="dialog"]')).toBeNull()
+    pickWeekInDropdown(container, String(ISSUE_KEY))
+    pressOn(chart(container), 'Enter')
+    expect(page(container)?.getAttribute('aria-label')).toBe(ISSUE_TITLE)
+  })
+
+  it('Esc and Back return to the dashboard with focus on the chart', () => {
+    const container = drawDrill()
+    click(hit(container, ISSUE_KEY))
+    expect(document.activeElement).toBe(backButton(container))
+    click(backButton(container))
+    expect(page(container)).toBeNull()
+    expect(document.activeElement).toBe(chart(container))
+
+    click(hit(container, ISSUE_KEY))
+    const open = page(container)
+    if (!open) throw new Error('page missing')
+    pressEscape(open)
+    expect(page(container)).toBeNull()
+    expect(document.activeElement).toBe(chart(container))
+  })
+
+  it('clears the tooltip when the page opens', () => {
+    const onHover = vi.fn()
+    const container = drawDrill(PLACEHOLDER_ROWS, PLACEHOLDER_WELD_OPTIONAL, { onHover })
+    act(() => {
+      hit(container, ISSUE_KEY).dispatchEvent(new MouseEvent('mousemove', { bubbles: true }))
+    })
+    click(hit(container, ISSUE_KEY))
+    expect(onHover).toHaveBeenLastCalledWith(null)
+  })
+
+  it('opens from the expanded chart, and goes back to the dashboard with focus on the grid chart', () => {
+    const container = drawDrill()
+    clickRange(container, 'All')
+    const open = expandPanel(container, MAIN_TITLE)
+    const rect = open.querySelector(`.qaqc-hit[data-week="${ISSUE_KEY}"]`)
+    if (!rect) throw new Error('expanded chart has no week')
+    click(rect)
+    expect(page(container)?.getAttribute('aria-label')).toBe(ISSUE_TITLE)
+    click(backButton(container))
+    expect(container.querySelector('[role="dialog"]')).toBeNull()
+    expect(document.activeElement).toBe(chart(container))
+  })
+
+  it('every week\'s drill list length equals the chart\'s issue count, with and without a filter', () => {
+    const onHover = vi.fn()
+    const container = drawDrill(PLACEHOLDER_ROWS, PLACEHOLDER_WELD_OPTIONAL, { onHover })
+    clickRange(container, 'All')
+
+    function expectListsToMatch(index: WeldIndex): number {
+      let opened = 0
+      for (const item of index.weeks) {
+        const count = chartIssues(container, onHover, item.week.key)
+        expect(count).toBe(item.issues)
+        click(hit(container, item.week.key))
+        expect(weekTitle(container)).toBe(item.week.label)
+        if (count === 0) {
+          expect(page(container)).toBeNull()
+          continue
+        }
+        opened += 1
+        expect(pageRows(container)).toHaveLength(count)
+        const noun = count === 1 ? 'issue' : 'issues'
+        expect(page(container)?.querySelector('.qaqc-week-issues-count')?.textContent).toBe(`${count} ${noun} in ${item.week.label}`)
+        click(backButton(container))
+      }
+      return opened
+    }
+
+    const baseIndex = buildWeldIndex(PLACEHOLDER_ROWS, COLUMNS, TODAY)
+    expect(expectListsToMatch(baseIndex)).toBe(baseIndex.weeks.filter((item) => item.issues > 0).length)
+    expect(baseIndex.cumulativeIssues[baseIndex.cumulativeIssues.length - 1]).toBeGreaterThan(0)
+
+    // The building of the first issue, so the filtered list still has weeks to open.
+    const building = weldBuilding(PLACEHOLDER_ROWS[baseIndex.issueRowsByWeek.flat()[0]][COLUMNS.tagNo])
+    openMenu(container)
+    click(checkbox(container, building))
+    click(filterButton(container))
+    const filtered = PLACEHOLDER_ROWS.filter((row) => weldBuilding(row[COLUMNS.tagNo]) === building)
+    const filteredIndex = buildWeldIndex(filtered, COLUMNS, TODAY, { axisFromKey: baseIndex.weeks[0].week.key })
+    expect(expectListsToMatch(filteredIndex)).toBeGreaterThan(0)
+  })
+
+  it('lists the filtered rows, not the rows at the same positions of the full data', () => {
+    const rows: InspectionRows = [
+      ["WW40'2026", null, null, 'BIM 1', 'AW', 'PCH', 'BK1XX101XX-M001-FW-01'],
+      ["WW40'2026", null, null, 'BIM 2', 'AW', 'PCH', 'BK1XX101XX-M001-FW-02'],
+      ["WW40'2026", 'signed', "WW41'2026", 'BIM 3', 'IW', 'QCH', 'F631M001XX-P001-FW-01'],
+      ["WW40'2026", null, null, 'No', 'IW', 'QCH', 'F631M001XX-P001-FW-02'],
+      ["WW40'2026", null, null, null, 'IW', 'QCH', 'F631M001XX-P001-FW-03'],
+    ]
+    const container = drawDrill(rows, UNBOUND_WELD_OPTIONAL)
+    openMenu(container)
+    click(checkbox(container, 'F631'))
+    click(filterButton(container))
+    click(hit(container, 202640))
+    expect(pageHeaders(container)).toEqual(['Tag No', 'Pipe Spec', 'Fluid Code', 'Issue Created', 'Signature'])
+    expect(pageRows(container)).toEqual([['F631M001XX-P001-FW-01', 'QCH', 'IW', 'BIM 3', 'signed']])
+  })
+
+  it('shows Welder when it is bound', () => {
+    const rows: InspectionRows = [
+      ["WW40'2026", null, null, 'BIM 1', 'AW', 'PCH', 'BK1XX101XX-M001-FW-01', 'P-012, PF-025', 'WP-100'],
+    ]
+    const container = drawDrill(rows)
+    click(hit(container, 202640))
+    expect(pageHeaders(container)).toEqual(['Tag No', 'Welder', 'Pipe Spec', 'Fluid Code', 'Issue Created', 'Signature'])
+    expect(pageRows(container)).toEqual([['BK1XX101XX-M001-FW-01', 'P-012, PF-025', 'PCH', 'AW', 'BIM 1', '']])
+  })
+
+  it('a filter that leaves a week with no issues only selects it', () => {
+    const rows: InspectionRows = [
+      ["WW40'2026", null, null, 'BIM 1', 'AW', 'PCH', 'BK1XX101XX-M001-FW-01'],
+      ["WW40'2026", null, null, null, 'AW', 'PCH', 'F631M001XX-P001-FW-01'],
+    ]
+    const container = drawDrill(rows, UNBOUND_WELD_OPTIONAL)
+    openMenu(container)
+    click(checkbox(container, 'F631'))
+    click(filterButton(container))
+    click(hit(container, 202640))
+    expect(weekTitle(container)).toBe("WW40'2026")
+    expect(page(container)).toBeNull()
+  })
+
+  it('a date range only limits the weeks on the chart, not a week\'s list', () => {
+    const container = drawDrill()
+    openMenu(container)
+    const [from, to] = container.querySelectorAll<HTMLSelectElement>('.qaqc-filter-date select')
+    choose(from, 202615)
+    choose(to, 202620)
+    click(filterButton(container))
+    expect(mainHitWeeks(container)).toHaveLength(6)
+    click(hit(container, ISSUE_KEY))
+    expect(pageRows(container)).toHaveLength(2)
+  })
+
+  it('with interactions off, a click neither selects nor opens', () => {
+    const container = drawDrill(PLACEHOLDER_ROWS, PLACEHOLDER_WELD_OPTIONAL, { interactive: false })
+    click(hit(container, ISSUE_KEY))
+    expect(weekTitle(container)).toBe("WW42'2026")
+    expect(page(container)).toBeNull()
+  })
+
+  it('the other Welding charts do not open it', () => {
+    const container = drawDrill()
+    pickWeekInDropdown(container, String(ISSUE_KEY))
+    const row = container.querySelector('.qaqc-drill-row')
+    if (!row) throw new Error('no system row')
+    click(row)
+    expect(breadcrumb(container)).not.toBeNull()
+    expect(page(container)).toBeNull()
   })
 })

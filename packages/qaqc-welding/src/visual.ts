@@ -12,7 +12,7 @@ import { readWeldTable, type WeldFieldSlot, type WeldTableReadResult } from '../
 import { buildFootnotes } from '../../qaqc-shared/src/footnotes'
 import { resolveTheme, type HighContrastColors, type ResolvedTheme } from '../../qaqc-shared/src/theme'
 import type { WeldIndex } from '../../qaqc-shared/src/types'
-import { buildWeldIndex } from '../../qaqc-shared/src/welds'
+import { buildWeldIndex, type WeldFilterSource } from '../../qaqc-shared/src/welds'
 import { WeldingSettingsModel, readDisplaySettings } from './settings'
 
 import '../style/visual.less'
@@ -41,6 +41,7 @@ export class QaqcWeldingVisual implements powerbi.extensibility.visual.IVisual {
   private settings = new WeldingSettingsModel()
   private table: WeldTableReadResult | null = null
   private index: WeldIndex | null = null
+  private filterSource: WeldFilterSource | null = null
   private loading = false
   private rowLimitReached = false
   private renderError: unknown = null
@@ -114,9 +115,15 @@ export class QaqcWeldingVisual implements powerbi.extensibility.visual.IVisual {
 
   private readTable(dataView: powerbi.DataView | undefined): void {
     this.table = readWeldTable(dataView?.table)
-    this.index = this.table.kind === 'ready'
-      ? buildWeldIndex(this.table.rows, this.table.columns, new Date())
-      : null
+    if (this.table.kind !== 'ready') {
+      this.index = null
+      this.filterSource = null
+      return
+    }
+    const { rows, columns, optional } = this.table
+    const today = new Date()
+    this.index = buildWeldIndex(rows, columns, today)
+    this.filterSource = { rows, columns, optional, today }
   }
 
   /** flushSync does not re-throw React 19 render errors, so surface the one captured by onUncaughtError. */
@@ -156,7 +163,7 @@ export class QaqcWeldingVisual implements powerbi.extensibility.visual.IVisual {
     })
     this.applyTheme(theme)
 
-    if (this.index === null || this.table === null || this.table.kind === 'missing') {
+    if (this.index === null || this.filterSource === null || this.table === null || this.table.kind === 'missing') {
       this.renderEmptyState(this.table?.kind === 'missing' ? this.table.missing : [])
       return
     }
@@ -168,6 +175,7 @@ export class QaqcWeldingVisual implements powerbi.extensibility.visual.IVisual {
         title: 'QCx Welding Signoffs',
         icon: Flame,
         index,
+        filterSource: this.filterSource,
         minWelds: display.minWelds,
         theme,
         interactive: this.interactionsAllowed(),

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { buildFilterCatalog, cellDisplayText, matchRows } from '../rowFilters'
 import type { FilterFieldDef, FilterSelection, Row } from '../rowFilters'
+import { weldFilterFields } from '../welds'
 import { bestOf, elapsed, TIMING_RUNS } from './timing'
 
 const ROW_COUNT = 100_000
@@ -57,5 +58,28 @@ describe('row filter budgets', () => {
 
   it('buildFilterCatalog under 300 ms', () => {
     expect(bestOf(TIMING_RUNS, () => elapsed(() => buildFilterCatalog(rows, FIELDS)))).toBeLessThan(CATALOG_BUDGET_MS)
+  })
+})
+
+describe('weld filter budgets', () => {
+  const COLUMNS = { weldWeek: 0, signature: 1, signedWeek: 2, issue: 3, fluidCode: 4, pipeSpec: 5, tagNo: 6 }
+  const rows: Row[] = Array.from({ length: ROW_COUNT }, (_, serial) => {
+    const hash = mix(serial + 1)
+    return [
+      "WW40'2026", null, null, null, `S${hash % 56}`, `Spec ${hash % 20}`, `F631M001XX-P001-FW-${serial}`,
+      `P-${hash % 1_000}, PF-${hash % 700}`, `WP-${hash % 50}`,
+    ]
+  })
+  const fields = weldFilterFields(COLUMNS, { welder: 7, workPackage: 8 })
+  const catalog = buildFilterCatalog(rows, fields)
+  const selection: FilterSelection = new Map([
+    ['building', new Set(['f631'])],
+    ['pipeSpec', new Set(['spec 1', 'spec 2', 'spec 3'])],
+    ['welder', new Set(Array.from({ length: 500 }, (_, index) => `p-${index}`))],
+  ])
+
+  it('matches Building, Pipe Spec and a comma-separated Welder under 50 ms', () => {
+    expect(matchRows(rows, catalog, selection).length).toBeGreaterThan(0)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => matchRows(rows, catalog, selection)))).toBeLessThan(MATCH_BUDGET_MS)
   })
 })

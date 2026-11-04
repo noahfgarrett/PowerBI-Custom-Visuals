@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { inspectionDrillColumns, weekIssueRows, type DrillColumn } from '../drilldown'
+import { inspectionDrillColumns, weekIssueRows, weldDrillColumns, type DrillColumn } from '../drilldown'
 import { buildInspectionIndex } from '../inspections'
 import type { InspectionOptionalColumns } from '../types'
 import { INSPECTION_COLUMNS, PLACEHOLDER_OPTIONAL, UNBOUND_OPTIONAL } from './inspectionFilterFixture'
+import { PLACEHOLDER_WELD_OPTIONAL, UNBOUND_WELD_OPTIONAL, WELD_COLUMNS } from './weldFilterFixture'
 
 const FULL_ROW = [
   "WW23'2026", 'Final', 'Cable tray damaged', 'F63.1',
@@ -63,6 +64,49 @@ describe('inspectionDrillColumns', () => {
     const columns = inspectionDrillColumns(INSPECTION_COLUMNS, UNBOUND_OPTIONAL)
     expect(cell(columns, 'Issue', ["WW23'2026", 'Final', '  Cable tray damaged ', 'A'])).toBe('Cable tray damaged')
     expect(cell(columns, 'Issue', ["WW23'2026", 'Final', { nested: true }, 'A'])).toBe('')
+  })
+})
+
+describe('weldDrillColumns', () => {
+  const WELD_ROW = ["WW40'2026", 'signed', "WW41'2026", 'BIM 1234', ' AW ', 'PCH', 'F631M001XX-P001-FW-01', 'P-012, PF-025', 'WP-100']
+
+  it('lists the columns in the spec\'s order', () => {
+    expect(labels(weldDrillColumns(WELD_COLUMNS, PLACEHOLDER_WELD_OPTIONAL))).toEqual([
+      'Tag No', 'Welder', 'Pipe Spec', 'Fluid Code', 'Issue Created', 'Signature',
+    ])
+  })
+
+  it('hides Welder when it is unbound', () => {
+    expect(labels(weldDrillColumns(WELD_COLUMNS, UNBOUND_WELD_OPTIONAL))).toEqual([
+      'Tag No', 'Pipe Spec', 'Fluid Code', 'Issue Created', 'Signature',
+    ])
+  })
+
+  it('reads every column from its slot', () => {
+    const columns = weldDrillColumns(WELD_COLUMNS, PLACEHOLDER_WELD_OPTIONAL)
+    expect(columns.map((column) => column.read(WELD_ROW))).toEqual([
+      'F631M001XX-P001-FW-01', 'P-012, PF-025', 'PCH', 'AW', 'BIM 1234', 'signed',
+    ])
+  })
+
+  it('labels a blank Pipe Spec and Fluid Code as the charts do', () => {
+    const columns = weldDrillColumns(WELD_COLUMNS, UNBOUND_WELD_OPTIONAL)
+    const row = ["WW40'2026", null, null, 'BIM 1', null, '', 'F631M001XX-P001-FW-01']
+    expect(cell(columns, 'Pipe Spec', row)).toBe('Unspecified')
+    expect(cell(columns, 'Fluid Code', row)).toBe('Unspecified')
+    expect(cell(columns, 'Signature', row)).toBe('')
+  })
+
+  it('lets only Issue Created flex, so the short columns are not stretched', () => {
+    const columns = weldDrillColumns(WELD_COLUMNS, PLACEHOLDER_WELD_OPTIONAL)
+    expect(columns.filter((column) => column.isLong === true).map((column) => column.label)).toEqual(['Issue Created'])
+  })
+})
+
+describe('weldDrillColumns widths', () => {
+  it('marks the code columns, so a tag number shows in full when there is room', () => {
+    const columns = weldDrillColumns(WELD_COLUMNS, PLACEHOLDER_WELD_OPTIONAL)
+    expect(columns.filter((column) => column.isCode === true).map((column) => column.label)).toEqual(['Tag No', 'Welder', 'Pipe Spec', 'Fluid Code'])
   })
 })
 

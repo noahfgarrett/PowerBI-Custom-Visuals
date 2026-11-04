@@ -68,6 +68,15 @@ describe('performance budgets', () => {
 })
 
 describe('welding performance budgets', () => {
+  it('building the weld index with issueRowsByWeek stays inside the 100k budget', () => {
+    const rows = syntheticWeldRows(100_000)
+    const index = buildWeldIndex(rows, WELD_COLUMNS, TODAY)
+    const listed = index.issueRowsByWeek.reduce((sum, positions) => sum + positions.length, 0)
+    expect(listed).toBe(index.cumulativeIssues[index.cumulativeIssues.length - 1])
+    expect(listed).toBeGreaterThan(0)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => buildWeldIndex(rows, WELD_COLUMNS, TODAY, { axisFromKey: index.weeks[0].week.key })))).toBeLessThan(300)
+  })
+
   it('indexes 500,000 weld rows within budget', () => {
     const rows = syntheticWeldRows(500_000)
     buildWeldIndex(rows, WELD_COLUMNS, TODAY)

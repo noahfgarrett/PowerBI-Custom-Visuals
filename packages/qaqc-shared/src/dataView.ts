@@ -1,4 +1,4 @@
-import type { CombinedColumns, InspectionColumns, InspectionOptionalColumns, InspectionRows, IssueColumns, WeldColumns } from './types'
+import type { CombinedColumns, InspectionColumns, InspectionOptionalColumns, InspectionRows, IssueColumns, WeldColumns, WeldOptionalColumns } from './types'
 
 export interface FieldSlot<Role extends string = keyof InspectionColumns | 'rowId'> {
   role: Role
@@ -97,9 +97,15 @@ export const WELD_SLOTS: readonly WeldFieldSlot[] = [
   { role: 'rowId', slot: 'Row ID', column: 'Index' },
 ]
 
+/** The filter menu's extra fields, and the drill-down's Welder. A report without them keeps working. */
+export const WELD_OPTIONAL_SLOTS: readonly FieldSlot<keyof WeldOptionalColumns>[] = [
+  { role: 'welder', slot: 'Welder', column: 'WELDER' },
+  { role: 'workPackage', slot: 'Work Package', column: 'WORK PKG' },
+]
+
 export type WeldTableReadResult =
   | { kind: 'missing'; missing: WeldFieldSlot[] }
-  | { kind: 'ready'; rows: InspectionRows; columns: WeldColumns }
+  | { kind: 'ready'; rows: InspectionRows; columns: WeldColumns; optional: WeldOptionalColumns }
 
 export function readWeldTable(table: InspectionTableSource | undefined): WeldTableReadResult {
   if (!table) return { kind: 'missing', missing: [...WELD_SLOTS] }
@@ -129,6 +135,10 @@ export function readWeldTable(table: InspectionTableSource | undefined): WeldTab
       fluidCode: positions.fluidCode,
       pipeSpec: positions.pipeSpec,
       tagNo: positions.tagNo,
+    },
+    optional: {
+      welder: positionOf('welder'),
+      workPackage: positionOf('workPackage'),
     },
   }
 }

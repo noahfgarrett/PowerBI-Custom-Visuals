@@ -10,6 +10,7 @@ import {
   readInspectionTable,
   readIssueTable,
   readWeldTable,
+  WELD_OPTIONAL_SLOTS,
   type InspectionTableSource,
 } from '../dataView'
 
@@ -158,6 +159,28 @@ describe('readWeldTable', () => {
     const result = readWeldTable({ columns: ALL_WELD_ROLES.map((role) => ({ roles: { [role]: true } })) })
     expect(result.kind).toBe('ready')
     if (result.kind === 'ready') expect(result.rows).toEqual([])
+  })
+
+  it('reads an unbound Welder and Work Package as -1, and asks for neither', () => {
+    const result = readWeldTable(weldTable([WELD_ROW]))
+    expect(result.kind).toBe('ready')
+    if (result.kind === 'ready') expect(result.optional).toEqual({ welder: -1, workPackage: -1 })
+    const empty = readWeldTable(undefined)
+    if (empty.kind === 'missing') expect(empty.missing.map((slot) => slot.role)).not.toContain('welder')
+  })
+
+  it('finds a bound Welder and Work Package by role', () => {
+    const columns = [...ALL_WELD_ROLES, 'workPackage', 'welder'].map((role) => ({ roles: { [role]: true } }))
+    const result = readWeldTable({ columns, rows: [] })
+    expect(result.kind).toBe('ready')
+    if (result.kind === 'ready') expect(result.optional).toEqual({ welder: 9, workPackage: 8 })
+  })
+
+  it('names the optional slots after the sheet\'s columns', () => {
+    expect(WELD_OPTIONAL_SLOTS).toEqual([
+      { role: 'welder', slot: 'Welder', column: 'WELDER' },
+      { role: 'workPackage', slot: 'Work Package', column: 'WORK PKG' },
+    ])
   })
 })
 

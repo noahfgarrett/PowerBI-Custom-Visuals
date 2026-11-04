@@ -1,7 +1,8 @@
 import { parseDate } from './dates'
 import { normalizeBuilding } from './inspections'
 import { cellDisplayText, type Row } from './rowFilters'
-import type { InspectionColumns, InspectionOptionalColumns } from './types'
+import type { InspectionColumns, InspectionOptionalColumns, WeldColumns, WeldOptionalColumns } from './types'
+import { normalizePipeSpec, normalizeSystem } from './welds'
 
 /** One column of a week's list. */
 export interface DrillColumn {
@@ -10,6 +11,8 @@ export interface DrillColumn {
   read: (row: Row) => string
   /** Free text: truncates with a title, and is the only kind of column that flexes to fill the width. */
   isLong?: boolean
+  /** A code in capitals, such as a tag number: its letters run wider, and it's worth showing in full when there's room. */
+  isCode?: boolean
 }
 
 /** One table of a week's list. A title labels it when a list has several, such as opened and closed. */
@@ -58,5 +61,20 @@ export function inspectionDrillColumns(columns: InspectionColumns, optional: Ins
     ...dateColumn('dateObserved', 'Date Observed', optional.dateObserved),
     ...optionalColumn('qcr', 'QCR/FE', optional.qcr),
     ...optionalColumn('notes', 'Notes', optional.notes, true),
+  ]
+}
+
+/**
+ * Welding's list, in the spec's order. An unbound Welder is hidden. No column here is free text, but a table with no
+ * long column would stretch every fixed one, so Issue Created is the one that flexes: its text can run long.
+ */
+export function weldDrillColumns(columns: WeldColumns, optional: WeldOptionalColumns): DrillColumn[] {
+  return [
+    { key: 'tagNo', label: 'Tag No', read: (row) => cellDisplayText(row[columns.tagNo]), isCode: true },
+    ...optionalColumn('welder', 'Welder', optional.welder).map((column) => ({ ...column, isCode: true })),
+    { key: 'pipeSpec', label: 'Pipe Spec', read: (row) => normalizePipeSpec(row[columns.pipeSpec]), isCode: true },
+    { key: 'fluidCode', label: 'Fluid Code', read: (row) => normalizeSystem(row[columns.fluidCode]), isCode: true },
+    { key: 'issue', label: 'Issue Created', read: (row) => cellDisplayText(row[columns.issue]), isLong: true },
+    { key: 'signature', label: 'Signature', read: (row) => cellDisplayText(row[columns.signature]) },
   ]
 }

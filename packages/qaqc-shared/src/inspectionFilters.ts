@@ -1,6 +1,6 @@
 import { createWeekReader, groupKey as chartGroupKey } from './grouping'
 import { normalizeBuilding, UNSPECIFIED_BUILDING } from './inspections'
-import { cellDisplayText, type FilterFieldDef, type Row } from './rowFilters'
+import { optionalField, type FilterFieldDef, type Row } from './rowFilters'
 import type { InspectionColumns, InspectionOptionalColumns, InspectionRows } from './types'
 
 /** What a dashboard needs to rebuild its index when a field filter changes the rows. */
@@ -12,12 +12,6 @@ export interface InspectionFilterSource {
 }
 
 const UNSPECIFIED_KEY = chartGroupKey(UNSPECIFIED_BUILDING)
-
-/** A field for an optional slot: none when it isn't bound. */
-function optionalField(id: string, label: string, position: number): FilterFieldDef[] {
-  if (position < 0) return []
-  return [{ id, label, read: (row) => cellDisplayText(row[position]) }]
-}
 
 /** The menu's fields, in menu order. Only bound slots appear; Building is required, so it always does. */
 export function inspectionFilterFields(columns: InspectionColumns, optional: InspectionOptionalColumns): FilterFieldDef[] {

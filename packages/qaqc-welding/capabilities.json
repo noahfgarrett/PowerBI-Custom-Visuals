@@ -63,6 +63,22 @@
       "displayNameKey": "Qaqc_role_rowId",
       "description": "Required unique row number (Power Query Index column). Keeps identical rows separate.",
       "descriptionKey": "Qaqc_role_rowId_description"
+    },
+    {
+      "name": "welder",
+      "kind": "Grouping",
+      "displayName": "Welder",
+      "displayNameKey": "Qaqc_role_welder",
+      "description": "Welder IDs on the weld, separated by commas. Adds a filter, and is listed when a week is opened.",
+      "descriptionKey": "Qaqc_role_welder_description"
+    },
+    {
+      "name": "workPackage",
+      "kind": "Grouping",
+      "displayName": "Work Package",
+      "displayNameKey": "Qaqc_role_workPackage",
+      "description": "Work package of the weld. Adds a filter.",
+      "descriptionKey": "Qaqc_role_workPackage_description"
     }
   ],
   "dataViewMappings": [
@@ -91,6 +107,12 @@
             "max": 1
           },
           "rowId": {
+            "max": 1
+          },
+          "welder": {
+            "max": 1
+          },
+          "workPackage": {
             "max": 1
           }
         }
@@ -136,6 +158,16 @@
             {
               "for": {
                 "in": "rowId"
+              }
+            },
+            {
+              "for": {
+                "in": "welder"
+              }
+            },
+            {
+              "for": {
+                "in": "workPackage"
               }
             }
           ],

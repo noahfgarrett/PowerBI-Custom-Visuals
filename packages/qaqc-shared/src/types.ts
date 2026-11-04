@@ -157,6 +157,12 @@ export interface WeldColumns {
   tagNo: number
 }
 
+/** Optional Welding columns, for the filter menu and the drill-down. −1 when unbound. */
+export interface WeldOptionalColumns {
+  welder: number
+  workPackage: number
+}
+
 export interface WeldWeekCounts {
   week: WorkWeek
   /** Welds with this weld week. */
@@ -197,6 +203,8 @@ export interface WeldIndex {
   systemsByWeek: Array<Map<string, SystemTally>>
   /** Parallel to weeks: building → tally for that weld week. */
   buildingsByWeek: Array<Map<string, WeldBuildingTally>>
+  /** Parallel to weeks: the row positions behind that week's `issues` count, in the rows that built this index. */
+  issueRowsByWeek: Array<readonly number[]>
   positionByKey: Map<number, number>
   totalRows: number
   skippedRows: number
@@ -295,6 +303,8 @@ export interface WeldModel {
   /** Window issues ÷ window welds as a percent, 0 when the window has no welds. */
   overallIssueRate: number
   windowTotals: WeldWindowTotals
+  /** `WW10'2026 to WW30'2026` while a date range is set, when `toDate` restates to the range; otherwise null. */
+  rangeLabel: string | null
   hasData: boolean
 }
 

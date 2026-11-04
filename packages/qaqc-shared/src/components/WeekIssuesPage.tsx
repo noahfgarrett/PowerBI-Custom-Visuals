@@ -11,6 +11,9 @@ const LONG_COLUMN_MIN_WIDTH = 180
 const SHORT_COLUMN_MAX_WIDTH = 190
 // Estimates at the table's type sizes, so a column's width doesn't need measuring in the page.
 const CELL_CHAR_WIDTH = 7
+const CODE_CHAR_WIDTH = 8.4
+/** A code column stops widening here. Wide enough for the project's longest tag numbers. */
+const CODE_COLUMN_MAX_WIDTH = 420
 const CELL_PADDING = 24
 const HEADER_CHAR_WIDTH = 8
 /** Button padding and room for the sort arrow. */
@@ -21,10 +24,10 @@ function shortColumnWidth(column: DrillColumn, rows: ReadonlyArray<Row>): number
   const longestWord = column.label.split(' ').reduce((longest, word) => Math.max(longest, word.length), 0)
   const labelChars = Math.max(longestWord, Math.ceil(column.label.length / 2))
   const longestValue = rows.reduce((longest, row) => Math.max(longest, column.read(row).length), 0)
-  return Math.max(
-    labelChars * HEADER_CHAR_WIDTH + HEADER_PADDING,
-    Math.min(longestValue * CELL_CHAR_WIDTH + CELL_PADDING, SHORT_COLUMN_MAX_WIDTH),
-  )
+  const valueWidth = column.isCode === true
+    ? Math.min(longestValue * CODE_CHAR_WIDTH + CELL_PADDING, CODE_COLUMN_MAX_WIDTH)
+    : Math.min(longestValue * CELL_CHAR_WIDTH + CELL_PADDING, SHORT_COLUMN_MAX_WIDTH)
+  return Math.max(labelChars * HEADER_CHAR_WIDTH + HEADER_PADDING, valueWidth)
 }
 
 function tableColumns(group: DrillGroup): Array<IssueTableColumn<Row, string>> {

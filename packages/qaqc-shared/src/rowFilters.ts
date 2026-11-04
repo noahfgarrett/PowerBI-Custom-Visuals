@@ -68,6 +68,12 @@ export function cellDisplayText(value: unknown): string {
   return `${value.getFullYear()}-${month}-${day}`
 }
 
+/** A field for an optional slot: none when it isn't bound. */
+export function optionalField(id: string, label: string, position: number): FilterFieldDef[] {
+  if (position < 0) return []
+  return [{ id, label, read: (row) => cellDisplayText(row[position]) }]
+}
+
 /** A field's key remembered by raw text: a column repeats a few dozen values across all of its rows. */
 function createKeyReader(def: FilterFieldDef): (text: string) => string {
   const keyOfText = def.groupBy ?? groupKey

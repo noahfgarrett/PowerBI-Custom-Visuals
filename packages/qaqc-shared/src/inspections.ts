@@ -214,7 +214,10 @@ function totalBetween(cumulative: number[], start: number, end: number): number 
  * The first and last positions of a date range's weeks. The axis has them all, filtered or not; a range past either
  * end of an axis pulls to its nearest week.
  */
-function rangePositions(index: InspectionIndex, range: WeekRange): { start: number; end: number } {
+export function rangePositions(
+  index: { weeks: ReadonlyArray<{ week: { key: number } }> },
+  range: WeekRange,
+): { start: number; end: number } {
   const first = index.weeks.findIndex((item) => item.week.key >= range.fromKey)
   const start = first === -1 ? index.weeks.length - 1 : first
   let end = start

@@ -115,6 +115,22 @@ describe('WeekIssuesPage', () => {
     expect(wide).toBeLessThan(300)
   })
 
+  it('gives a code column room for a whole tag number, and caps it higher than other columns', () => {
+    const tag: DrillColumn = { ...column('tag', 'Tag No', 0), isCode: true }
+    const plain = column('tag', 'Tag No', 0)
+    const widthOf = (first: DrillColumn, value: string): number => {
+      view?.unmount()
+      view = render(<WeekIssuesPage weekLabel="WW23'2026" groups={[{ title: null, columns: [first, column('issue', 'Issue', 1, true)], rows: [[value, 'Text']] }]} />)
+      const col = view.container.querySelector('col')
+      return col instanceof HTMLElement ? Number.parseInt(col.style.width, 10) : 0
+    }
+    const TAG = 'BK1XX104XX-M087-B1.111054-200-0101-FW-01'
+    expect(widthOf(plain, TAG)).toBe(190)
+    expect(widthOf(tag, TAG)).toBe(360)
+    expect(widthOf(tag, 'W'.repeat(400))).toBe(420)
+    expect(widthOf(tag, '')).toBe(widthOf(plain, ''))
+  })
+
   it('labels each titled group and counts them together', () => {
     const container = draw([{ ...GROUP, title: 'Opened' }, { ...GROUP, title: 'Closed', rows: [ROWS[0]] }])
     expect(container.querySelector('.qaqc-week-issues-count')?.textContent).toBe("4 issues in WW23'2026")
