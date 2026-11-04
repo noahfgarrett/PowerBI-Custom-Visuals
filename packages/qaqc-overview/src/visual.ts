@@ -16,7 +16,7 @@ import {
   type CombinedTableReadResult,
 } from '../../qaqc-shared/src/dataView'
 import { buildOverviewFootnotes } from '../../qaqc-shared/src/footnotes'
-import { buildOverviewIndex, type OverviewIndex } from '../../qaqc-shared/src/overview'
+import { buildOverviewIndex, type OverviewFilterSource, type OverviewIndex } from '../../qaqc-shared/src/overview'
 import { resolveTheme, type HighContrastColors, type ResolvedTheme } from '../../qaqc-shared/src/theme'
 import { OverviewSettingsModel, readDisplaySettings } from './settings'
 
@@ -46,6 +46,7 @@ export class QaqcOverviewVisual implements powerbi.extensibility.visual.IVisual 
   private settings = new OverviewSettingsModel()
   private table: CombinedTableReadResult | null = null
   private index: OverviewIndex | null = null
+  private filterSource: OverviewFilterSource | null = null
   private loading = false
   private rowLimitReached = false
   private renderError: unknown = null
@@ -120,9 +121,15 @@ export class QaqcOverviewVisual implements powerbi.extensibility.visual.IVisual 
   /** Indexes once per data update; the dashboard builds each week's and mode's cards from the index. */
   private readTable(dataView: powerbi.DataView | undefined): void {
     this.table = readCombinedTable(dataView?.table, OVERVIEW_SLOTS)
-    this.index = this.table.kind === 'ready'
-      ? buildOverviewIndex(splitCombinedRows(this.table.rows, this.table.columns.source), this.table.columns, new Date())
-      : null
+    if (this.table.kind !== 'ready') {
+      this.index = null
+      this.filterSource = null
+      return
+    }
+    const { rows, columns } = this.table
+    const split = splitCombinedRows(rows, columns.source)
+    this.index = buildOverviewIndex(split, columns, new Date())
+    this.filterSource = { split, columns }
   }
 
   /** flushSync does not re-throw React 19 render errors, so surface the one captured by onUncaughtError. */
@@ -162,7 +169,7 @@ export class QaqcOverviewVisual implements powerbi.extensibility.visual.IVisual 
     })
     this.applyTheme(theme)
 
-    if (this.index === null || this.table === null || this.table.kind === 'missing') {
+    if (this.index === null || this.filterSource === null || this.table === null || this.table.kind === 'missing') {
       this.renderEmptyState(this.table?.kind === 'missing' ? this.table.missing : [])
       return
     }
@@ -174,6 +181,7 @@ export class QaqcOverviewVisual implements powerbi.extensibility.visual.IVisual 
         title: 'QCx Overview',
         icon: LayoutDashboard,
         index,
+        filterSource: this.filterSource,
         theme,
         interactive: this.interactionsAllowed(),
         animate: display.animate && !prefersReducedMotion(),

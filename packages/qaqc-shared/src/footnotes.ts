@@ -85,6 +85,19 @@ export function buildOverviewFootnotes(index: Pick<OverviewIndex, 'currentWeek' 
 }
 
 /**
+ * The Overview's notes while a field filter is on. Each source's notes restate to its filtered rows, and anything else
+ * from the visual, such as the row limit, stays first.
+ */
+export function restateOverviewFootnotes(
+  notes: readonly string[],
+  allRows: Pick<OverviewIndex, 'currentWeek' | 'footnotes'>,
+  filteredRows: Pick<OverviewIndex, 'currentWeek' | 'footnotes'>,
+): string[] {
+  const allRowNotes = new Set(buildOverviewFootnotes(allRows, false))
+  return [...notes.filter((note) => !allRowNotes.has(note)), ...buildOverviewFootnotes(filteredRows, false)]
+}
+
+/**
  * The Performance view's notes: the row limit over every combined row, then the shown group's skipped and future
  * rows, then its period note (finals with no QCR/FE, or welds crediting several welders), then the rows whose
  * Source matched none of the four.

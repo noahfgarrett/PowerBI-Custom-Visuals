@@ -6,6 +6,8 @@ export interface FieldSlot<Role extends string = keyof InspectionColumns | 'rowI
   slot: string
   /** Smartsheet column the user drags into it. */
   column: string
+  /** Optional on this visual, though another visual reading the same table may require the role. */
+  isOptional?: boolean
 }
 
 export const REQUIRED_SLOTS: readonly FieldSlot[] = [
@@ -278,6 +280,20 @@ export const OVERVIEW_SLOTS: readonly CombinedFieldSlot[] = [
   { role: 'bim360CreatedOn', slot: 'BIM360 Created On', column: 'BIM360 Created On' },
   { role: 'bim360ClosedOn', slot: 'BIM360 Closed On', column: 'BIM360 Closed On' },
   { role: 'closedAt', slot: 'Closed At', column: 'Closed At' },
+  { role: 'generalContractor', slot: 'General Contractor', column: 'General Contractor' },
+  { role: 'contractor', slot: 'Contractor', column: 'Contractor' },
+  { role: 'discipline', slot: 'Discipline', column: 'Discipline' },
+  { role: 'tagNo', slot: 'Tag No', column: 'Tag No', isOptional: true },
+  { role: 'welder', slot: 'Welder', column: 'Welder', isOptional: true },
+  { role: 'pipeSpec', slot: 'Pipe Spec', column: 'Pipe Spec' },
+  { role: 'fluidCode', slot: 'Fluid Code', column: 'Fluid Code' },
+  { role: 'inspectionId', slot: 'Inspection ID', column: 'Inspection ID' },
+  { role: 'equipmentTag', slot: 'Equipment ID / Tag Number', column: 'Equipment ID / Tag Number' },
+  { role: 'issueId', slot: 'Issue ID', column: 'Issue ID' },
+  { role: 'findingType', slot: 'Finding Type', column: 'Finding Type' },
+  { role: 'dateObserved', slot: 'Date Observed', column: 'Date Observed' },
+  { role: 'qcr', slot: 'QCR/FE', column: 'QCR/FE', isOptional: true },
+  { role: 'notes', slot: 'Notes', column: 'Notes' },
   { role: 'greenTags', slot: 'Green tags', column: 'Green tags measure' },
 ]
 
@@ -298,6 +314,7 @@ export const PERFORMANCE_SLOTS: readonly CombinedFieldSlot[] = [
  * Root Cause only feeds the Top root cause card, which asks for it when unbound.
  * The enrichment columns only matter for issues migrated from BIM 360; without them every issue reads its standard
  * Created By and dates.
+ * The rest only add Filter menu fields and drill-down columns, so reports without them keep working.
  */
 export const OPTIONAL_COMBINED_ROLES: ReadonlySet<CombinedSlotRole> = new Set<CombinedSlotRole>([
   'rootCause',
@@ -306,7 +323,29 @@ export const OPTIONAL_COMBINED_ROLES: ReadonlySet<CombinedSlotRole> = new Set<Co
   'bim360ClosedOn',
   'closedAt',
   'greenTags',
+  'generalContractor',
+  'contractor',
+  'tradeSupplier',
+  'discipline',
+  'inspectionCategory',
+  'inspectionId',
+  'equipmentTag',
+  'issueId',
+  'findingType',
+  'dateObserved',
+  'notes',
+  'pipeSpec',
+  'fluidCode',
+  'workPackage',
+  'title',
+  'dueDate',
+  'createdByCompany',
 ])
+
+/** The slots a visual can't draw without. */
+export function requiredCombinedSlots(slots: readonly CombinedFieldSlot[]): CombinedFieldSlot[] {
+  return slots.filter((slot) => slot.isOptional !== true && !OPTIONAL_COMBINED_ROLES.has(slot.role))
+}
 
 export type CombinedTableReadResult =
   | { kind: 'missing'; missing: CombinedFieldSlot[] }
@@ -317,7 +356,7 @@ export function readCombinedTable(
   table: InspectionTableSource | undefined,
   slots: readonly CombinedFieldSlot[],
 ): CombinedTableReadResult {
-  const required = slots.filter((slot) => !OPTIONAL_COMBINED_ROLES.has(slot.role))
+  const required = requiredCombinedSlots(slots)
   if (!table) return { kind: 'missing', missing: required }
 
   const positionOf = (role: string): number => table.columns.findIndex((column) => column.roles?.[role] === true)
@@ -344,6 +383,23 @@ export function readCombinedTable(
     bim360CreatedOn: positionOf('bim360CreatedOn'),
     bim360ClosedOn: positionOf('bim360ClosedOn'),
     closedAt: positionOf('closedAt'),
+    generalContractor: positionOf('generalContractor'),
+    contractor: positionOf('contractor'),
+    tradeSupplier: positionOf('tradeSupplier'),
+    discipline: positionOf('discipline'),
+    inspectionCategory: positionOf('inspectionCategory'),
+    inspectionId: positionOf('inspectionId'),
+    equipmentTag: positionOf('equipmentTag'),
+    issueId: positionOf('issueId'),
+    findingType: positionOf('findingType'),
+    dateObserved: positionOf('dateObserved'),
+    notes: positionOf('notes'),
+    pipeSpec: positionOf('pipeSpec'),
+    fluidCode: positionOf('fluidCode'),
+    workPackage: positionOf('workPackage'),
+    title: positionOf('title'),
+    dueDate: positionOf('dueDate'),
+    createdByCompany: positionOf('createdByCompany'),
   }
   const positions: Record<CombinedSlotRole, number> = { ...columns, rowId: positionOf('rowId') }
   const missing = required.filter((slot) => positions[slot.role] < 0)

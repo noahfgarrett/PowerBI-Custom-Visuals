@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { splitCombinedRows } from '../combined'
-import { buildCombinedIssueFootnotes, buildFootnotes, buildIssueFootnotes, buildOverviewFootnotes, buildPerformanceFootnotes } from '../footnotes'
+import { buildCombinedIssueFootnotes, buildFootnotes, buildIssueFootnotes, buildOverviewFootnotes, buildPerformanceFootnotes, restateOverviewFootnotes } from '../footnotes'
 import { buildInspectionIndex } from '../inspections'
 import { buildIssueIndex } from '../issues'
 import { buildPerformanceIndex, buildPerformanceModel, type PerformanceGroup, type PerformanceIndex } from '../performance'
@@ -290,6 +290,23 @@ describe('buildCombinedIssueFootnotes', () => {
       'Inspections: 3 rows skipped: unreadable work week',
       "Inspections: 1 row dated after WW42'2026 not counted",
       '2 rows with an unknown Source',
+    ])
+  })
+})
+
+describe('restateOverviewFootnotes', () => {
+  const counts = { totalRows: 10, skippedRows: 0, futureRows: 0, excludedRows: 0 }
+  const currentWeek = makeWorkWeek(2026, 42)
+  const sourceFootnotes = { electrical: counts, mechanical: counts, welding: counts, bim: counts, unknownSource: 0 }
+
+  it('replaces each source\'s notes with the filtered rows\', and keeps the row limit first', () => {
+    const all = { currentWeek, footnotes: { ...sourceFootnotes, electrical: { ...counts, skippedRows: 2 }, unknownSource: 1 } }
+    const filtered = { currentWeek, footnotes: { ...sourceFootnotes, electrical: { ...counts, skippedRows: 1 }, unknownSource: 1 } }
+    const notes = buildOverviewFootnotes(all, true)
+    expect(restateOverviewFootnotes(notes, all, filtered)).toEqual([
+      notes[0],
+      'Electrical: 1 row skipped: unreadable work week',
+      '1 row with an unknown Source',
     ])
   })
 })

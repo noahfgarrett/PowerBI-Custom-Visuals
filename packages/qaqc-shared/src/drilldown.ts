@@ -1,8 +1,9 @@
+import { inspectionColumnsOf, inspectionOptionalColumnsOf, weldColumnsOf, weldOptionalColumnsOf, type CombinedSplit } from './combined'
 import { parseDate } from './dates'
 import { normalizeBuilding } from './inspections'
 import { createIssueDetailReader } from './issues'
 import { cellDisplayText, type Row } from './rowFilters'
-import type { InspectionColumns, InspectionOptionalColumns, IssueColumns, IssueDetailRow, WeldColumns, WeldOptionalColumns } from './types'
+import type { CombinedColumns, InspectionColumns, InspectionIndex, InspectionOptionalColumns, IssueColumns, IssueDetailRow, WeldColumns, WeldIndex, WeldOptionalColumns } from './types'
 import { normalizePipeSpec, normalizeSystem } from './welds'
 
 /** One column of a week's list. */
@@ -82,18 +83,42 @@ export function inspectionDrillColumns(columns: InspectionColumns, optional: Ins
 }
 
 /**
- * Welding's list, in the spec's order. An unbound Welder is hidden. No column here is free text, but a table with no
- * long column would stretch every fixed one, so Issue Created is the one that flexes: its text can run long.
+ * Welding's list, in the spec's order. Unbound slots are hidden: Welder on the Welding visual, and Tag No, Pipe Spec and
+ * Fluid Code too on the Overview, where they're optional. No column here is free text, but a table with no long column
+ * would stretch every fixed one, so Issue Created is the one that flexes: its text can run long.
  */
 export function weldDrillColumns(columns: WeldColumns, optional: WeldOptionalColumns): DrillColumn[] {
+  const code = (key: string, label: string, position: number, read: (row: Row) => string): DrillColumn[] =>
+    position < 0 ? [] : [{ key, label, read, isCode: true }]
   return [
-    { key: 'tagNo', label: 'Tag No', read: (row) => cellDisplayText(row[columns.tagNo]), isCode: true },
-    ...optionalColumn('welder', 'Welder', optional.welder).map((column) => ({ ...column, isCode: true })),
-    { key: 'pipeSpec', label: 'Pipe Spec', read: (row) => normalizePipeSpec(row[columns.pipeSpec]), isCode: true },
-    { key: 'fluidCode', label: 'Fluid Code', read: (row) => normalizeSystem(row[columns.fluidCode]), isCode: true },
+    ...code('tagNo', 'Tag No', columns.tagNo, (row) => cellDisplayText(row[columns.tagNo])),
+    ...code('welder', 'Welder', optional.welder, (row) => cellDisplayText(row[optional.welder])),
+    ...code('pipeSpec', 'Pipe Spec', columns.pipeSpec, (row) => normalizePipeSpec(row[columns.pipeSpec])),
+    ...code('fluidCode', 'Fluid Code', columns.fluidCode, (row) => normalizeSystem(row[columns.fluidCode])),
     { key: 'issue', label: 'Issue Created', read: (row) => cellDisplayText(row[columns.issue]), isLong: true },
     { key: 'signature', label: 'Signature', read: (row) => cellDisplayText(row[columns.signature]) },
   ]
+}
+
+/** The parts of the Overview's index its week list reads: BIM has no list, because the Overview counts no BIM NCRs. */
+export interface OverviewDrillIndex {
+  electrical: InspectionIndex
+  mechanical: InspectionIndex
+  welding: WeldIndex
+}
+
+/**
+ * The Overview's list for a week: its Electrical, Mechanical and Welding NCRs by source, each omitted when it has none.
+ * `split` must be the rows that built `index`. Only reads that week's rows.
+ */
+export function overviewDrillGroups(index: OverviewDrillIndex, split: CombinedSplit, columns: CombinedColumns, key: number): DrillGroup[] {
+  const inspection = inspectionDrillColumns(inspectionColumnsOf(columns), inspectionOptionalColumnsOf(columns))
+  const groups: DrillGroup[] = [
+    { title: 'Electrical', columns: inspection, rows: weekIssueRows(index.electrical, split.electrical, key) },
+    { title: 'Mechanical', columns: inspection, rows: weekIssueRows(index.mechanical, split.mechanical, key) },
+    { title: 'Welding', columns: weldDrillColumns(weldColumnsOf(columns), weldOptionalColumnsOf(columns)), rows: weekIssueRows(index.welding, split.welding, key) },
+  ]
+  return groups.filter((group) => group.rows.length > 0)
 }
 
 /** Issue Detail's columns and widths, reading each row as the index does. Weeks and dates sort in time order, newest first. */

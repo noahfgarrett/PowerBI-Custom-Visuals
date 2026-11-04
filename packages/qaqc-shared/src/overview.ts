@@ -1,7 +1,10 @@
-import type { CombinedSplit } from './combined'
+import type { CombinedSource, CombinedSplit } from './combined'
 import type { DeltaTone, Trend } from './format'
-import type { CombinedColumns, InspectionIndex, IssueIndex, ViewState, WeldIndex, WorkWeek } from './types'
-import { inspectionColumnsOf, issueColumnsOf, weldColumnsOf } from './combined'
+import type { FilterSourceNote } from './hooks/useDashboardFilters'
+import type { FilterFieldDef, Row } from './rowFilters'
+import type { CombinedColumns, InspectionIndex, InspectionRows, IssueIndex, ViewState, WeldIndex, WorkWeek } from './types'
+import type { WeekRange } from './weekRange'
+import { createSourceReader, inspectionColumnsOf, issueColumnsOf, splitCombinedRows, weldColumnsOf } from './combined'
 import { readGreenTags } from './dataView'
 import {
   formatCount,
@@ -16,12 +19,15 @@ import {
   SIGNOFF_BAD_BELOW,
   trendOf,
 } from './format'
+import { inspectionBuildingField, inspectionRowWeekKey } from './inspectionFilters'
 import { buildInspectionIndex, passRateAt, recentWindowStart } from './inspections'
 import { buildIssueBenchmarks, type IssueBenchmarks } from './issueBenchmarks'
-import { buildIssueIndex, closureRateAt, riseIsBad } from './issues'
+import { buildIssueIndex, closureRateAt, DEFAULT_CONTRACTOR, issueContractor, issueFilterRows, issueRowWeekKey, riseIsBad } from './issues'
+import { cellDisplayText, groupKey, optionalField } from './rowFilters'
 import { topCauseCreated } from './rootCauses'
-import { buildWeldIndex, latestSignoff, overallRateAt } from './welds'
-import { enumerateWorkWeeks, previousWorkWeek } from './workWeeks'
+import { formatWeekRange } from './weekRange'
+import { buildWeldIndex, latestSignoff, overallRateAt, weldBuilding, weldRowWeekKey } from './welds'
+import { enumerateWorkWeeks, previousWorkWeek, workWeekFromKey } from './workWeeks'
 
 /** The Overview's cards show the selected week (`week`) or the project to date through it (`toDate`). */
 export type CardMode = 'week' | 'toDate'
@@ -46,15 +52,18 @@ export interface OverviewFootnoteCounts {
   unknownSource: number
 }
 
-export interface OverviewIndex {
-  currentWeek: WorkWeek
-  /** The day the index was built for; the issue benchmarks' end of a week is never later. */
-  today: Date
-  /** Each discipline indexed with its own builder. A source with no rows holds an empty index (one week, all zero). */
+/** Each discipline indexed with its own builder. A source with no rows holds an empty index (one week, all zero). */
+export interface SourceIndexes {
   electrical: InspectionIndex
   mechanical: InspectionIndex
   welding: WeldIndex
   bim: IssueIndex
+}
+
+export interface OverviewIndex extends SourceIndexes {
+  currentWeek: WorkWeek
+  /** The day the index was built for; the issue benchmarks' end of a week is never later. */
+  today: Date
   /** Continuous weeks from the earliest first week of the four indexes through the current week. */
   weeks: WorkWeek[]
   positionByKey: Map<number, number>
@@ -67,6 +76,20 @@ export interface OverviewIndex {
   dwnsByWeek: number[]
   cumulativeDwns: number[]
   footnotes: OverviewFootnoteCounts
+  /** For an index a field filter rebuilt: the sources it left with no rows, though the table has some. Null with no filter. */
+  filteredOut: ReadonlySet<CombinedSource> | null
+}
+
+/** What the dashboard needs to filter the Overview: the rows that built its index, split by Source. */
+export interface OverviewFilterSource {
+  split: CombinedSplit
+  columns: CombinedColumns
+}
+
+/** An index a field filter rebuilt, and the rows its drill-down positions index. */
+export interface FilteredOverview {
+  index: OverviewIndex
+  split: CombinedSplit
 }
 
 /** One card. `KpiCard` takes a single `detail`, so the dashboard joins `subLine` and `deltaDisplay` into it. */
@@ -166,8 +189,10 @@ export interface OverviewCardsModel {
   rows: OverviewRows
   /** CORs, NCRs, Inspection NCR pass rate, Welding NCR pass rate, DWNs, Top root cause. */
   quality: OverviewQualityCards
-  /** True when any source has a counted row. */
+  /** True when any source has a counted row, or in a date range, activity in it or issues open at its end. */
   hasData: boolean
+  /** `WW10'2026 to WW30'2026`; null with no date range. */
+  rangeLabel: string | null
 }
 
 /** The chart series, which depend on the view but not on the card mode. */
@@ -207,11 +232,25 @@ function runningTotals(values: number[]): number[] {
   return totals
 }
 
-export function buildOverviewIndex(split: CombinedSplit, columns: CombinedColumns, today: Date): OverviewIndex {
-  const electrical = buildInspectionIndex(split.electrical, inspectionColumnsOf(columns), today)
-  const mechanical = buildInspectionIndex(split.mechanical, inspectionColumnsOf(columns), today)
-  const welding = buildWeldIndex(split.welding, weldColumnsOf(columns), today)
-  const bim = buildIssueIndex(split.bim, issueColumnsOf(columns), today)
+/**
+ * Indexes each source. A source in `reuse` keeps that index and isn't read again; it must have been built over the same
+ * rows. Each rebuilt source's axis starts no later than its index in `axisFrom`, so a filtered source keeps its weeks.
+ */
+export function buildOverviewIndex(
+  split: CombinedSplit,
+  columns: CombinedColumns,
+  today: Date,
+  reuse: Partial<SourceIndexes> = {},
+  axisFrom?: SourceIndexes,
+): OverviewIndex {
+  const electrical = reuse.electrical
+    ?? buildInspectionIndex(split.electrical, inspectionColumnsOf(columns), today, { axisFromKey: axisFrom?.electrical.weeks[0].week.key })
+  const mechanical = reuse.mechanical
+    ?? buildInspectionIndex(split.mechanical, inspectionColumnsOf(columns), today, { axisFromKey: axisFrom?.mechanical.weeks[0].week.key })
+  const welding = reuse.welding
+    ?? buildWeldIndex(split.welding, weldColumnsOf(columns), today, { axisFromKey: axisFrom?.welding.weeks[0].week.key })
+  const bim = reuse.bim
+    ?? buildIssueIndex(split.bim, issueColumnsOf(columns), today, { axisFromKey: axisFrom?.bim.weeks[0].week.key })
   const currentWeek = electrical.currentWeek
 
   // Every index runs continuously to the current week, so the union starts at the earliest first week.
@@ -256,6 +295,126 @@ export function buildOverviewIndex(split: CombinedSplit, columns: CombinedColumn
       bim: { totalRows: bim.totalRows, skippedRows: bim.skippedRows, futureRows: bim.futureRows, excludedRows: bim.excludedRows },
       unknownSource: split.unknownSource,
     },
+    filteredOut: null,
+  }
+}
+
+/**
+ * The rows the Filter menu counts and matches: the ones the Overview can count. The LotusWorks limit on BIM issues has
+ * no Created By (Company) field here to untick, and an unknown Source is never counted.
+ */
+export function overviewFilterRows(split: CombinedSplit, columns: CombinedColumns): InspectionRows {
+  return [...split.electrical, ...split.mechanical, ...split.welding, ...issueFilterRows(split.bim, issueColumnsOf(columns))]
+}
+
+/**
+ * The index for the rows a field filter left of `overviewFilterRows`. Filtering only removes rows, so a source with
+ * as many rows as before has the same rows in the same order: its index is reused, positions and all.
+ */
+export function filterOverviewIndex(base: OverviewIndex, baseSplit: CombinedSplit, rows: InspectionRows, columns: CombinedColumns): FilteredOverview {
+  const split: CombinedSplit = { ...splitCombinedRows(rows, columns.source), unknownSource: baseSplit.unknownSource }
+  const countedBimRows = issueFilterRows(baseSplit.bim, issueColumnsOf(columns)).length
+  const index = buildOverviewIndex(
+    split,
+    columns,
+    base.today,
+    {
+      electrical: split.electrical.length === baseSplit.electrical.length ? base.electrical : undefined,
+      mechanical: split.mechanical.length === baseSplit.mechanical.length ? base.mechanical : undefined,
+      welding: split.welding.length === baseSplit.welding.length ? base.welding : undefined,
+      bim: split.bim.length === countedBimRows ? base.bim : undefined,
+    },
+    base,
+  )
+  const filteredOut = new Set<CombinedSource>()
+  for (const source of ['electrical', 'mechanical', 'welding', 'bim'] as const) {
+    if (index[source].totalRows === 0 && base[source].totalRows > 0) filteredOut.add(source)
+  }
+  return {
+    split,
+    index: {
+      ...index,
+      filteredOut,
+      // The rows that note counts never reach the filter.
+      footnotes: { ...index.footnotes, bim: { ...index.footnotes.bim, excludedRows: base.footnotes.bim.excludedRows } },
+    },
+  }
+}
+
+const UNASSIGNED_KEY = groupKey(DEFAULT_CONTRACTOR)
+
+/** Unassigned reads as '', the blank value, so inspections' blanks and BIM's defaulted issues are one value, listed last. */
+function contractorValue(name: string): string {
+  return groupKey(name) === UNASSIGNED_KEY ? '' : name
+}
+
+/** The menu's fields, in menu order. Only bound slots appear. Each reads only the sources that have it. */
+export function overviewFilterFields(columns: CombinedColumns): FilterFieldDef[] {
+  const sourceOf = createSourceReader(columns.source)
+  const isInspection = (row: Row): boolean => {
+    const source = sourceOf(row)
+    return source === 'electrical' || source === 'mechanical'
+  }
+  const generalContractor = columns.generalContractor ?? -1
+  const contractor = columns.contractor ?? -1
+  const contractorFields: FilterFieldDef[] = generalContractor < 0 && contractor < 0
+    ? []
+    : [{
+        id: 'contractor',
+        label: 'Contractor',
+        read: (row) => contractorValue(
+          sourceOf(row) === 'bim' ? issueContractor(row[columns.id], row[contractor]) : cellDisplayText(row[generalContractor]),
+        ),
+        blankLabel: DEFAULT_CONTRACTOR,
+        appliesTo: (row) => (sourceOf(row) === 'bim' ? contractor >= 0 : generalContractor >= 0 && isInspection(row)),
+      }]
+  const inspectionBuilding = inspectionBuildingField(columns.building)
+  const building: FilterFieldDef = {
+    ...inspectionBuilding,
+    read: (row) => (sourceOf(row) === 'welding' ? weldBuilding(row[columns.tagNo]) : inspectionBuilding.read(row)),
+    appliesTo: (row) => (sourceOf(row) === 'welding' ? columns.tagNo >= 0 : isInspection(row)),
+  }
+  const disciplineFields = optionalField('discipline', 'Discipline', columns.discipline ?? -1)
+    .map((field): FilterFieldDef => ({ ...field, appliesTo: (row) => sourceOf(row) === 'bim' || isInspection(row) }))
+  return [...contractorFields, building, ...disciplineFields]
+}
+
+/** What each field leaves unfiltered, for the notes under the chips. */
+export function overviewFilterNotes(columns: CombinedColumns): FilterSourceNote[] {
+  const notes: FilterSourceNote[] = [
+    { message: "Welding isn't filtered by Contractor", whenFieldActive: ['contractor'] },
+    { message: "Welding isn't filtered by Discipline", whenFieldActive: ['discipline'] },
+    { message: "BIM issues aren't filtered by Building", whenFieldActive: ['building'] },
+  ]
+  if (columns.tagNo < 0) notes.push({ message: "Welding isn't filtered by Building", whenFieldActive: ['building'] })
+  if ((columns.contractor ?? -1) < 0) notes.push({ message: "BIM issues aren't filtered by Contractor", whenFieldActive: ['contractor'] })
+  if ((columns.generalContractor ?? -1) < 0) notes.push({ message: "Inspections aren't filtered by Contractor", whenFieldActive: ['contractor'] })
+  return notes
+}
+
+/** Reads a row's week the way its source's index does, for counting rows in a date range. Null with an unknown Source. */
+export function overviewRowWeekKey(columns: CombinedColumns): (row: Row) => number | null {
+  const sourceOf = createSourceReader(columns.source)
+  const inspectionWeek = inspectionRowWeekKey(inspectionColumnsOf(columns))
+  const weldWeek = weldRowWeekKey(weldColumnsOf(columns))
+  const issueWeek = issueRowWeekKey(issueColumnsOf(columns))
+  return (row) => {
+    const source = sourceOf(row)
+    switch (source) {
+      case null:
+        return null
+      case 'electrical':
+      case 'mechanical':
+        return inspectionWeek(row)
+      case 'welding':
+        return weldWeek(row)
+      case 'bim':
+        return issueWeek(row)
+      default: {
+        const unreachable: never = source
+        return unreachable
+      }
+    }
   }
 }
 
@@ -271,8 +430,11 @@ type CountTone = (value: number, previous: number, mode: CardMode) => DeltaTone
 
 const CHANGE_NA = 'Change n/a'
 const NO_WELDS_YET = 'No welds logged yet'
+const NO_WELDS_IN_RANGE = 'No welds in range'
 const NO_ISSUES_YET = 'No issues opened yet'
 const GREEN_TAGS_MISSING = 'DWN rate n/a: add Green tags'
+const DWN_RATE_NA = 'DWN rate n/a'
+const DWN_RATE_FILTERED = 'Not available with filters'
 const PAST_WINDOW_LABEL = 'Past normal close window'
 const TOP_CAUSE_LABEL = 'Top root cause'
 const ROOT_CAUSE_MISSING = 'Add Root Cause'
@@ -385,24 +547,49 @@ function sumSeries(series: CountSeries[]): CountSeries {
   return total
 }
 
-/** A count from a discipline's weekly values and running totals, at the selected week and the week before. */
-function seriesAt(weekly: (position: number) => number, cumulative: readonly number[], position: number, previousPosition: number): CountSeries {
-  return {
-    week: position < 0 ? 0 : weekly(position),
-    previousWeek: previousPosition < 0 ? 0 : weekly(previousPosition),
-    toDate: valueAt(cumulative, position),
-    previousToDate: valueAt(cumulative, previousPosition),
-  }
+/** A date range's limits by week key, to place in each discipline's own weeks. */
+interface RangeKeys {
+  beforeStartKey: number
+  endKey: number
+}
+
+function rangeKeysOf(range: WeekRange | null): RangeKeys | null {
+  if (range === null) return null
+  return { beforeStartKey: previousWorkWeek(workWeekFromKey(range.fromKey)).key, endKey: range.toKey }
 }
 
 /** A discipline's positions for the selected week and the week before; −1 before its first week. */
 interface Positions {
   position: number
   previousPosition: number
+  /** In a date range, the week before it and its last week. */
+  span: { beforeStart: number; end: number } | null
 }
 
-function positionsIn(index: { positionByKey: ReadonlyMap<number, number> }, key: number, previousKey: number): Positions {
-  return { position: positionIn(index, key), previousPosition: positionIn(index, previousKey) }
+function positionsIn(index: { positionByKey: ReadonlyMap<number, number> }, key: number, previousKey: number, range: RangeKeys | null): Positions {
+  return {
+    position: positionIn(index, key),
+    previousPosition: positionIn(index, previousKey),
+    span: range === null ? null : { beforeStart: positionIn(index, range.beforeStartKey), end: positionIn(index, range.endKey) },
+  }
+}
+
+/** A running total through the selected week, or over the date range. */
+function totalAt(cumulative: readonly number[], { position, span }: Positions): number {
+  return span === null ? valueAt(cumulative, position) : valueAt(cumulative, span.end) - valueAt(cumulative, span.beforeStart)
+}
+
+/** A count from a discipline's weekly values and running totals, at the selected week and the week before. In a date range the total is the range's, and the selected week is what it gained. */
+function seriesAt(weekly: (position: number) => number, cumulative: readonly number[], positions: Positions): CountSeries {
+  const { position, previousPosition, span } = positions
+  const week = position < 0 ? 0 : weekly(position)
+  const toDate = totalAt(cumulative, positions)
+  return {
+    week,
+    previousWeek: previousPosition < 0 ? 0 : weekly(previousPosition),
+    toDate,
+    previousToDate: span === null ? valueAt(cumulative, previousPosition) : toDate - week,
+  }
 }
 
 interface InspectionCounts extends Positions {
@@ -411,14 +598,13 @@ interface InspectionCounts extends Positions {
   ncrs: CountSeries
 }
 
-function inspectionCounts(index: InspectionIndex, key: number, previousKey: number): InspectionCounts {
-  const { position, previousPosition } = positionsIn(index, key, previousKey)
+function inspectionCounts(index: InspectionIndex, key: number, previousKey: number, range: RangeKeys | null): InspectionCounts {
+  const positions = positionsIn(index, key, previousKey, range)
   return {
-    position,
-    previousPosition,
-    finals: seriesAt((at) => index.weeks[at].finals, index.cumulativeFinals, position, previousPosition),
-    sors: seriesAt((at) => index.weeks[at].sors, index.cumulativeSors, position, previousPosition),
-    ncrs: seriesAt((at) => index.weeks[at].issuesFound, index.cumulativeIssues, position, previousPosition),
+    ...positions,
+    finals: seriesAt((at) => index.weeks[at].finals, index.cumulativeFinals, positions),
+    sors: seriesAt((at) => index.weeks[at].sors, index.cumulativeSors, positions),
+    ncrs: seriesAt((at) => index.weeks[at].issuesFound, index.cumulativeIssues, positions),
   }
 }
 
@@ -427,22 +613,27 @@ interface WeldCounts extends Positions {
   ncrs: CountSeries
 }
 
-function weldCounts(index: WeldIndex, key: number, previousKey: number): WeldCounts {
-  const { position, previousPosition } = positionsIn(index, key, previousKey)
+function weldCounts(index: WeldIndex, key: number, previousKey: number, range: RangeKeys | null): WeldCounts {
+  const positions = positionsIn(index, key, previousKey, range)
   return {
-    position,
-    previousPosition,
-    welds: seriesAt((at) => index.weeks[at].logged, index.cumulativeLogged, position, previousPosition),
-    ncrs: seriesAt((at) => index.weeks[at].issues, index.cumulativeIssues, position, previousPosition),
+    ...positions,
+    welds: seriesAt((at) => index.weeks[at].logged, index.cumulativeLogged, positions),
+    ncrs: seriesAt((at) => index.weeks[at].issues, index.cumulativeIssues, positions),
   }
 }
 
+/** A rate over a date range stands alone, as on the discipline visuals: the weeks before it aren't in it to compare. */
+function rangeRateCard(label: string, rate: number | null, subLine: string): OverviewCard {
+  return { ...rateCard(label, rate, null, subLine, ''), deltaDisplay: null }
+}
+
 /** The pass rate and its counts in the selected week (This WW) or through it (To date), and for the week before. */
-function passRateCard(label: string, ncrs: CountSeries, totals: CountSeries, mode: CardMode, previousLabel: string, subLineOf: (ncrs: number, total: number) => string): OverviewCard {
+function passRateCard(label: string, ncrs: CountSeries, totals: CountSeries, mode: CardMode, isInRange: boolean, previousLabel: string, subLineOf: (ncrs: number, total: number) => string): OverviewCard {
   const isWeek = mode === 'week'
   const ncrCount = isWeek ? ncrs.week : ncrs.toDate
   const total = isWeek ? totals.week : totals.toDate
   const rate = passRate(ncrCount, total)
+  if (!isWeek && isInRange) return rangeRateCard(label, rate, subLineOf(ncrCount, total))
   const previousRate = isWeek ? passRate(ncrs.previousWeek, totals.previousWeek) : passRate(ncrs.previousToDate, totals.previousToDate)
   return rateCard(label, rate, previousRate, subLineOf(ncrCount, total), previousLabel)
 }
@@ -453,7 +644,8 @@ function cleanFinalsLine(ncrs: number, finals: number): string {
 
 /** A discipline's NCR pass rate: W's finals only in This WW, the Inspection visual's own rate in To date. */
 function inspectionPassRateCard(index: InspectionIndex, counts: InspectionCounts, mode: CardMode, previousLabel: string): OverviewCard {
-  if (mode === 'week') return passRateCard('NCR pass rate', counts.ncrs, counts.finals, mode, previousLabel, cleanFinalsLine)
+  const isInRange = counts.span !== null
+  if (mode === 'week' || isInRange) return passRateCard('NCR pass rate', counts.ncrs, counts.finals, mode, isInRange, previousLabel, cleanFinalsLine)
   const subLine = cleanFinalsLine(counts.ncrs.toDate, counts.finals.toDate)
   return rateCard('NCR pass rate', passRateAt(index, counts.position), passRateAt(index, counts.previousPosition), subLine, previousLabel)
 }
@@ -478,10 +670,13 @@ interface RowContext {
   sparkStart: number
   selectedPosition: number
   previousLabel: string
+  range: RangeKeys | null
 }
 
-function disconnectedRow(name: string): DisconnectedOverviewRow {
-  return { connected: false, message: `Not connected: no ${name} rows in QCx Combined` }
+/** A source with no rows to show: the table has none, or a filter left none. */
+function disconnectedRow(context: RowContext, name: string, source: CombinedSource): DisconnectedOverviewRow {
+  const isFilteredOut = context.index.filteredOut?.has(source) === true
+  return { connected: false, message: isFilteredOut ? `No ${name} rows match these filters` : `Not connected: no ${name} rows in QCx Combined` }
 }
 
 function connectedRow(context: RowContext, cards: OverviewCards, metricAt: (key: number) => number): ConnectedOverviewRow {
@@ -498,8 +693,8 @@ function connectedRow(context: RowContext, cards: OverviewCards, metricAt: (key:
   }
 }
 
-function inspectionRow(context: RowContext, name: string, index: InspectionIndex, counts: InspectionCounts): OverviewRow {
-  if (index.totalRows === 0) return disconnectedRow(name)
+function inspectionRow(context: RowContext, name: string, source: CombinedSource, index: InspectionIndex, counts: InspectionCounts): OverviewRow {
+  if (index.totalRows === 0) return disconnectedRow(context, name, source)
   const { mode, previousLabel } = context
   const cards: OverviewCards = [
     countCard('Finals', counts.finals, mode, previousLabel, neutralTone),
@@ -533,10 +728,16 @@ function signoffCard(index: WeldIndex, counts: WeldCounts, mode: CardMode, previ
       isValueBad: isBelowSignoffBaseline(rate),
     }
   }
-  const rate = overallRateAt(index, counts.position)
   const logged = counts.welds.toDate
-  const subLine = logged === 0 ? NO_WELDS_YET : `${formatCount(valueAt(index.cumulativeSigned, counts.position))} of ${formatCount(logged)} signed`
-  const card = rateCard('Sign-off %', rate, overallRateAt(index, counts.previousPosition), subLine, previousLabel)
+  const signed = totalAt(index.cumulativeSigned, counts)
+  const signedLine = `${formatCount(signed)} of ${formatCount(logged)} signed`
+  if (counts.span !== null) {
+    const rangeRate = logged === 0 ? null : (signed / logged) * 100
+    const card = rangeRateCard('Sign-off %', rangeRate, logged === 0 ? NO_WELDS_IN_RANGE : signedLine)
+    return { ...card, isValueBad: isBelowSignoffBaseline(rangeRate) }
+  }
+  const rate = overallRateAt(index, counts.position)
+  const card = rateCard('Sign-off %', rate, overallRateAt(index, counts.previousPosition), logged === 0 ? NO_WELDS_YET : signedLine, previousLabel)
   return { ...card, isValueBad: isBelowSignoffBaseline(rate) }
 }
 
@@ -545,7 +746,7 @@ function signedCard(index: WeldIndex, counts: WeldCounts, mode: CardMode, previo
   const thisWeek = signedInWeek(counts.position)
   if (mode === 'week') return weekCountCard('Signed', thisWeek, signedInWeek(counts.previousPosition), previousLabel, 'neutral')
   // Signed to date counts by weld week, as the Welding visual does; the change is the welds signed in the week.
-  const signed = valueAt(index.cumulativeSigned, counts.position)
+  const signed = totalAt(index.cumulativeSigned, counts)
   return {
     label: 'Signed',
     value: signed,
@@ -560,7 +761,7 @@ function signedCard(index: WeldIndex, counts: WeldCounts, mode: CardMode, previo
 }
 
 function weldingRow(context: RowContext, index: WeldIndex, counts: WeldCounts): OverviewRow {
-  if (index.totalRows === 0) return disconnectedRow('Welding')
+  if (index.totalRows === 0) return disconnectedRow(context, 'Welding', 'welding')
   const { mode, previousLabel } = context
   const cards: OverviewCards = [
     countCard('Welds logged', counts.welds, mode, previousLabel, neutralTone),
@@ -571,10 +772,11 @@ function weldingRow(context: RowContext, index: WeldIndex, counts: WeldCounts): 
   return connectedRow(context, cards, (key) => weekAt(index.weeks, positionIn(index, key))?.logged ?? 0)
 }
 
-/** Remaining open is always to date, with its change against the week before. */
-function remainingCard(opened: CountSeries, closed: CountSeries, previousLabel: string): OverviewCard {
-  const remaining = opened.toDate - closed.toDate
-  const previous = opened.previousToDate - closed.previousToDate
+/** Remaining open is always to date, with its change against the week before. In a date range it's as of the range's end. */
+function remainingCard(index: IssueIndex, asOf: number, previousAsOf: number, previousLabel: string): OverviewCard {
+  const remainingAt = (position: number): number => valueAt(index.cumulativeOpened, position) - valueAt(index.cumulativeClosed, position)
+  const remaining = remainingAt(asOf)
+  const previous = remainingAt(previousAsOf)
   return weekCountCard('Remaining open', remaining, previous, previousLabel, riseIsBad(remaining - previous))
 }
 
@@ -595,14 +797,14 @@ function benchmarksAt(index: IssueIndex, weekKey: number, today: Date): IssueBen
   return benchmarks
 }
 
-/** Open issues as of W older than the normal close window, the same in both modes, like Remaining open. */
-function pastWindowCard(index: IssueIndex, positions: Positions, opened: CountSeries, weekKey: number, today: Date): OverviewCard {
+/** Open issues as of W (a date range's end) older than the normal close window, the same in both modes, like Remaining open. */
+function pastWindowCard(index: IssueIndex, asOf: number, weekKey: number, today: Date): OverviewCard {
   // Before the first issue the benchmarks would fall back to the current week, so the card says so instead.
-  if (opened.toDate === 0) return noteCard(PAST_WINDOW_LABEL, 'n/a', NO_ISSUES_YET)
+  if (valueAt(index.cumulativeOpened, asOf) === 0) return noteCard(PAST_WINDOW_LABEL, 'n/a', NO_ISSUES_YET)
   const { open, window, pastWindow, olderThanAny } = benchmarksAt(index, weekKey, today)
   const openCount = formatCount(open.length)
   if (window === null) return noteCard(PAST_WINDOW_LABEL, 'n/a', `${openCount} open · no closures yet`)
-  const closedRate = formatPercent(closureRateAt(index, positions.position))
+  const closedRate = formatPercent(closureRateAt(index, asOf))
   return {
     label: PAST_WINDOW_LABEL,
     value: pastWindow,
@@ -617,16 +819,20 @@ function pastWindowCard(index: IssueIndex, positions: Positions, opened: CountSe
 }
 
 function bimRow(context: RowContext, index: IssueIndex, key: number, previousKey: number): OverviewRow {
-  if (index.totalRows === 0) return disconnectedRow('BIM Issues')
-  const { mode, previousLabel } = context
-  const positions = positionsIn(index, key, previousKey)
-  const opened = seriesAt((at) => index.weeks[at].opened, index.cumulativeOpened, positions.position, positions.previousPosition)
-  const closed = seriesAt((at) => index.weeks[at].closed, index.cumulativeClosed, positions.position, positions.previousPosition)
+  if (index.totalRows === 0) return disconnectedRow(context, 'BIM Issues', 'bim')
+  const { mode, previousLabel, range } = context
+  const positions = positionsIn(index, key, previousKey, range)
+  const opened = seriesAt((at) => index.weeks[at].opened, index.cumulativeOpened, positions)
+  const closed = seriesAt((at) => index.weeks[at].closed, index.cumulativeClosed, positions)
+  // A range can't restate these: they're counts at a moment, so they read at its end whichever week is selected.
+  const asOf = positions.span?.end ?? positions.position
+  const previousAsOf = positions.span === null ? positions.previousPosition : asOf - 1
+  const asOfKey = range?.endKey ?? key
   const cards: OverviewCards = [
     countCard('Opened', opened, mode, previousLabel, openedTone),
     countCard('Closed', closed, mode, previousLabel, closedTone),
-    remainingCard(opened, closed, previousLabel),
-    pastWindowCard(index, positions, opened, key, context.index.today),
+    remainingCard(index, asOf, previousAsOf, range === null ? previousLabel : previousWorkWeek(workWeekFromKey(asOfKey)).label),
+    pastWindowCard(index, asOf, asOfKey, context.index.today),
   ]
   return connectedRow(context, cards, (weekKey) => {
     const position = positionIn(index, weekKey)
@@ -671,18 +877,27 @@ function topRootCauseCard(index: IssueIndex, weekKey: number, mode: CardMode): O
 }
 
 function qualityCards(context: RowContext, electrical: InspectionCounts, mechanical: InspectionCounts, welds: WeldCounts): OverviewQualityCards {
-  const { index, mode, selectedPosition, previousLabel } = context
-  const cors = seriesAt((at) => index.corsByWeek[at], index.cumulativeCors, selectedPosition, selectedPosition - 1)
-  const dwns = seriesAt((at) => index.dwnsByWeek[at], index.cumulativeDwns, selectedPosition, selectedPosition - 1)
+  const { index, mode, selectedPosition, previousLabel, range } = context
+  const selectedKey = index.weeks[selectedPosition].key
+  const positions = positionsIn(index, selectedKey, previousWorkWeek(index.weeks[selectedPosition]).key, range)
+  const cors = seriesAt((at) => index.corsByWeek[at], index.cumulativeCors, positions)
+  const dwns = seriesAt((at) => index.dwnsByWeek[at], index.cumulativeDwns, positions)
+  const isInRange = range !== null
+  const isFiltered = isInRange || index.filteredOut !== null
   const inspectionNcrs = sumSeries([electrical.ncrs, mechanical.ncrs])
   const breakdown = `E ${formatCount(modeValue(electrical.ncrs, mode))} · M ${formatCount(modeValue(mechanical.ncrs, mode))} · W ${formatCount(modeValue(welds.ncrs, mode))}`
   return [
     countCard('CORs', cors, mode, previousLabel, amberWhenUp),
     { ...countCard('NCRs', sumSeries([inspectionNcrs, welds.ncrs]), mode, previousLabel, amberWhenUp), subLine: breakdown },
-    passRateCard('Inspection NCR pass rate', inspectionNcrs, sumSeries([electrical.finals, mechanical.finals]), mode, previousLabel, ncrsOfLine('final', 'finals')),
-    passRateCard('Welding NCR pass rate', welds.ncrs, welds.welds, mode, previousLabel, ncrsOfLine('weld', 'welds')),
-    { ...countCard('DWNs', dwns, mode, previousLabel, neutralTone), subLine: dwnRateLine(dwns.toDate, index.greenTags) },
-    topRootCauseCard(index.bim, index.weeks[selectedPosition].key, mode),
+    passRateCard('Inspection NCR pass rate', inspectionNcrs, sumSeries([electrical.finals, mechanical.finals]), mode, isInRange, previousLabel, ncrsOfLine('final', 'finals')),
+    passRateCard('Welding NCR pass rate', welds.ncrs, welds.welds, mode, isInRange, previousLabel, ncrsOfLine('weld', 'welds')),
+    isFiltered
+      // Green tags is a single unfiltered measure, so a filtered or in-range rate would mislead. Its reason takes the
+      // change's line, because together on one they'd be cut short on these narrow cards.
+      ? { ...countCard('DWNs', dwns, mode, previousLabel, neutralTone), subLine: DWN_RATE_NA, delta: null, deltaDisplay: DWN_RATE_FILTERED, trend: 'none' }
+      : { ...countCard('DWNs', dwns, mode, previousLabel, neutralTone), subLine: dwnRateLine(dwns.toDate, index.greenTags) },
+    // To date it's a reading at a moment, like Remaining open, so a range reads it at its end. This WW follows the week.
+    topRootCauseCard(index.bim, mode === 'toDate' && range !== null ? range.endKey : selectedKey, mode),
   ]
 }
 
@@ -734,6 +949,14 @@ function windowSeries(index: OverviewIndex, start: number, end: number): Overvie
   return { activity, rates, windowTotals }
 }
 
+/** Whether any week holds rows for each chart: Finals and SORs for the activity chart, Finals and welds for the rates. */
+export function overviewChartRows(index: SourceIndexes): { hasActivityRows: boolean; hasRatesRows: boolean } {
+  const atEnd = (cumulative: readonly number[]): number => cumulative[cumulative.length - 1]
+  const finals = atEnd(index.electrical.cumulativeFinals) + atEnd(index.mechanical.cumulativeFinals)
+  const sors = atEnd(index.electrical.cumulativeSors) + atEnd(index.mechanical.cumulativeSors)
+  return { hasActivityRows: finals + sors > 0, hasRatesRows: finals + atEnd(index.welding.cumulativeLogged) > 0 }
+}
+
 function hasCountedRows(index: OverviewIndex): boolean {
   const { electrical, mechanical, welding, bim } = index
   const inspectionsAtEnd = (inspections: InspectionIndex): number => {
@@ -748,21 +971,66 @@ function hasCountedRows(index: OverviewIndex): boolean {
   )
 }
 
+/**
+ * Whether a date range has anything to show. A quiet range with issues still open has real numbers: its Remaining open
+ * and its Past normal close window.
+ */
+function hasRangeRows(index: OverviewIndex, range: RangeKeys): boolean {
+  const { electrical, mechanical, welding, bim } = index
+  const inRange = (source: { positionByKey: ReadonlyMap<number, number> }, cumulative: readonly number[]): number => {
+    const beforeStart = positionIn(source, range.beforeStartKey)
+    return valueAt(cumulative, positionIn(source, range.endKey)) - valueAt(cumulative, beforeStart)
+  }
+  const signedInRange = welding.weeks.some(({ week, signedInWeek }) => signedInWeek > 0 && week.key > range.beforeStartKey && week.key <= range.endKey)
+  const bimEnd = positionIn(bim, range.endKey)
+  return (
+    inRange(electrical, electrical.cumulativeFinals) + inRange(electrical, electrical.cumulativeSors) > 0 ||
+    inRange(mechanical, mechanical.cumulativeFinals) + inRange(mechanical, mechanical.cumulativeSors) > 0 ||
+    inRange(welding, welding.cumulativeLogged) > 0 ||
+    signedInRange ||
+    inRange(bim, bim.cumulativeOpened) + inRange(bim, bim.cumulativeClosed) > 0 ||
+    valueAt(bim.cumulativeOpened, bimEnd) - valueAt(bim.cumulativeClosed, bimEnd) > 0
+  )
+}
+
 /** The union position of a view's week, or the current week's when the key is not in the data. */
 function viewPosition(index: OverviewIndex, key: number): number {
   return index.positionByKey.get(key) ?? index.weeks.length - 1
 }
 
-/** The chart series for the view's window. Mode switches leave these unchanged, so callers can keep them. */
+/** The union positions of a date range's weeks. A range past either end of the weeks pulls to its nearest week. */
+function unionRange(index: OverviewIndex, range: WeekRange): { start: number; end: number } {
+  const first = index.weeks.findIndex((week) => week.key >= range.fromKey)
+  const start = first === -1 ? index.weeks.length - 1 : first
+  let end = start
+  while (end + 1 < index.weeks.length && index.weeks[end + 1].key <= range.toKey) end += 1
+  return { start, end }
+}
+
+/** The chart series for the view's window, or its date range. Mode switches leave these unchanged, so callers can keep them. */
 export function buildOverviewSeries(index: OverviewIndex, view: ViewState): OverviewSeries {
+  if (view.dateRange !== null) {
+    const { start, end } = unionRange(index, view.dateRange)
+    return windowSeries(index, start, end)
+  }
   const endPosition = viewPosition(index, view.windowEndKey)
   const startPosition = view.range === 'all' ? 0 : recentWindowStart(endPosition)
   return windowSeries(index, startPosition, endPosition)
 }
 
+/** A week's NCRs on the charts: Electrical, Mechanical and Welding. The Overview doesn't count BIM NCRs. */
+export function overviewWeekNcrs(index: SourceIndexes, key: number): number {
+  const inspectionNcrs = (source: InspectionIndex): number => weekAt(source.weeks, positionIn(source, key))?.issuesFound ?? 0
+  const weldNcrs = weekAt(index.welding.weeks, positionIn(index.welding, key))?.issues ?? 0
+  return inspectionNcrs(index.electrical) + inspectionNcrs(index.mechanical) + weldNcrs
+}
+
 /** The rows and the quality strip for the view's selected week in one card mode. */
 export function buildOverviewCards(index: OverviewIndex, view: ViewState, mode: CardMode): OverviewCardsModel {
-  const selectedPosition = viewPosition(index, view.selectedKey)
+  const span = view.dateRange === null ? null : unionRange(index, view.dateRange)
+  const knownPosition = viewPosition(index, view.selectedKey)
+  const selectedPosition = span === null ? knownPosition : Math.min(Math.max(knownPosition, span.start), span.end)
+  const range = rangeKeysOf(view.dateRange)
   const selectedWeek = index.weeks[selectedPosition]
   const previousWeek = previousWorkWeek(selectedWeek)
   const key = selectedWeek.key
@@ -770,27 +1038,29 @@ export function buildOverviewCards(index: OverviewIndex, view: ViewState, mode: 
   const context: RowContext = {
     index,
     mode,
-    sparkStart: recentWindowStart(selectedPosition),
+    sparkStart: Math.max(recentWindowStart(selectedPosition), span?.start ?? 0),
     selectedPosition,
     previousLabel: previousWeek.label,
+    range,
   }
 
-  const electrical = inspectionCounts(index.electrical, key, previousKey)
-  const mechanical = inspectionCounts(index.mechanical, key, previousKey)
-  const welds = weldCounts(index.welding, key, previousKey)
+  const electrical = inspectionCounts(index.electrical, key, previousKey, range)
+  const mechanical = inspectionCounts(index.mechanical, key, previousKey, range)
+  const welds = weldCounts(index.welding, key, previousKey, range)
 
   return {
     selectedWeek,
     previousWeek,
-    weekOptions: [...index.weeks].reverse(),
+    weekOptions: (span === null ? [...index.weeks] : index.weeks.slice(span.start, span.end + 1)).reverse(),
     rows: {
-      electrical: inspectionRow(context, 'Electrical', index.electrical, electrical),
-      mechanical: inspectionRow(context, 'Mechanical', index.mechanical, mechanical),
+      electrical: inspectionRow(context, 'Electrical', 'electrical', index.electrical, electrical),
+      mechanical: inspectionRow(context, 'Mechanical', 'mechanical', index.mechanical, mechanical),
       welding: weldingRow(context, index.welding, welds),
       bim: bimRow(context, index.bim, key, previousKey),
     },
     quality: qualityCards(context, electrical, mechanical, welds),
-    hasData: hasCountedRows(index),
+    hasData: range === null ? hasCountedRows(index) : hasRangeRows(index, range),
+    rangeLabel: view.dateRange === null ? null : formatWeekRange(view.dateRange),
   }
 }
 

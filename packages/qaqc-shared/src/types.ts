@@ -375,6 +375,25 @@ export interface CombinedColumns {
   bim360CreatedOn?: number
   bim360ClosedOn?: number
   closedAt?: number
+  /** Inspection rows' contractor; `contractor` is BIM's. */
+  generalContractor?: number
+  contractor?: number
+  tradeSupplier?: number
+  /** Shared by the inspection and BIM rows, as Status is. */
+  discipline?: number
+  inspectionCategory?: number
+  inspectionId?: number
+  equipmentTag?: number
+  issueId?: number
+  findingType?: number
+  dateObserved?: number
+  notes?: number
+  pipeSpec?: number
+  fluidCode?: number
+  workPackage?: number
+  title?: number
+  dueDate?: number
+  createdByCompany?: number
 }
 
 export type IssueStatusKind = 'open' | 'pending' | 'closed' | 'void'

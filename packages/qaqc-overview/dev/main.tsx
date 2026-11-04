@@ -4,11 +4,12 @@ import { createRoot } from 'react-dom/client'
 import { COMBINED_COLUMNS, COMBINED_ROWS } from '../../qaqc-shared/src/__tests__/fixtures/combinedRows'
 import { ENRICHED_COMBINED_ROWS } from '../../qaqc-shared/src/__tests__/fixtures/enrichedCombinedRows'
 import { syntheticCombinedRows } from '../../qaqc-shared/src/__tests__/fixtures/syntheticCombined'
+import { COMBINED_FILTER_POSITIONS, withPlaceholderCombinedColumns } from '../../qaqc-shared/src/__tests__/overviewFilterFixture'
 import type { TooltipRequest } from '../../qaqc-shared/src/chartTypes'
 import { splitCombinedRows } from '../../qaqc-shared/src/combined'
 import { OverviewDashboard } from '../../qaqc-shared/src/components/OverviewDashboard'
 import { StatusPanel } from '../../qaqc-shared/src/components/StatusPanel'
-import { OPTIONAL_COMBINED_ROLES, OVERVIEW_SLOTS } from '../../qaqc-shared/src/dataView'
+import { OVERVIEW_SLOTS, requiredCombinedSlots } from '../../qaqc-shared/src/dataView'
 import { buildOverviewFootnotes } from '../../qaqc-shared/src/footnotes'
 import { buildOverviewIndex } from '../../qaqc-shared/src/overview'
 import { isPresetName, resolveTheme } from '../../qaqc-shared/src/theme'
@@ -23,6 +24,8 @@ const presetParam = params.get('preset') ?? 'qaqc'
 const data = params.get('data') ?? 'fixture'
 /** `?greenTags=N` binds the Green tags measure with N on every row, as Power BI repeats an unrelated measure. */
 const greenTagsParam = params.get('greenTags')
+/** `?slots=unbound` leaves every new optional slot unbound, as a report made before them does. */
+const isBound = params.get('slots') !== 'unbound' && (data === 'fixture' || data === 'enriched')
 const today = new Date(2026, 9, 15)
 
 const frame = document.getElementById('frame')
@@ -66,8 +69,8 @@ function position(name: (typeof COMBINED_COLUMNS)[number]): number {
 }
 
 /**
- * The fixture and the synthetic rows share the QCx Combined column order. The Overview binds every slot but the
- * Performance-only ones; the Green tags measure, when given, is one extra column after the combined columns.
+ * The fixture and the synthetic rows share the QCx Combined column order, with made-up values for the new columns on
+ * the fixture. The Green tags measure, when given, is one extra column after all of them.
  */
 const columns: CombinedColumns = {
   source: position('Source'),
@@ -75,9 +78,9 @@ const columns: CombinedColumns = {
   phase: position('Inspection Phase'),
   issue: position('Issue'),
   building: position('Building'),
-  qcr: -1,
-  welder: -1,
-  tagNo: -1,
+  qcr: isBound ? position('QCR/FE') : -1,
+  welder: isBound ? position('Welder') : -1,
+  tagNo: isBound ? position('Tag No') : -1,
   signature: position('Signature'),
   signedWeek: position('Work Week Signed'),
   id: position('ID'),
@@ -91,7 +94,8 @@ const columns: CombinedColumns = {
   bim360CreatedOn: position('BIM360 Created On'),
   bim360ClosedOn: position('BIM360 Closed On'),
   closedAt: position('Closed At'),
-  greenTags: greenTagsParam === null ? -1 : COMBINED_COLUMNS.length,
+  ...(isBound ? COMBINED_FILTER_POSITIONS : {}),
+  greenTags: greenTagsParam === null ? -1 : COMBINED_COLUMNS.length + (isBound ? Object.keys(COMBINED_FILTER_POSITIONS).length : 0),
 }
 
 function withGreenTags(rows: ReadonlyArray<ReadonlyArray<unknown>>): ReadonlyArray<ReadonlyArray<unknown>> {
@@ -103,8 +107,8 @@ function withGreenTags(rows: ReadonlyArray<ReadonlyArray<unknown>>): ReadonlyArr
 function sourceRows(): ReadonlyArray<ReadonlyArray<unknown>> {
   if (data === 'synthetic') return syntheticCombinedRows(Number(params.get('rows') ?? 500_000))
   if (data === 'empty') return []
-  if (data === 'enriched') return ENRICHED_COMBINED_ROWS
-  return COMBINED_ROWS
+  const rows = data === 'enriched' ? ENRICHED_COMBINED_ROWS : COMBINED_ROWS
+  return isBound ? withPlaceholderCombinedColumns(rows) : rows
 }
 
 const root = createRoot(frame)
@@ -115,7 +119,7 @@ if (data === 'missing') {
       icon={ListChecks}
       title="Add the QCx Combined columns"
       message="Drag these columns from the QCx Combined table into the matching field slots. See QCx_Overview_SETUP.md."
-      items={OVERVIEW_SLOTS.filter((slot) => !OPTIONAL_COMBINED_ROLES.has(slot.role)).map((slot) => `${slot.column} → ${slot.slot}`)}
+      items={requiredCombinedSlots(OVERVIEW_SLOTS).map((slot) => `${slot.column} → ${slot.slot}`)}
     />,
   )
 } else if (data === 'loading') {
@@ -123,13 +127,15 @@ if (data === 'missing') {
 } else {
   const rows = withGreenTags(sourceRows())
   const started = performance.now()
-  const index = buildOverviewIndex(splitCombinedRows(rows, columns.source), columns, today)
+  const split = splitCombinedRows(rows, columns.source)
+  const index = buildOverviewIndex(split, columns, today)
   document.title = `index ${Math.round(performance.now() - started)} ms`
   root.render(
     <OverviewDashboard
       title="QCx Overview"
       icon={LayoutDashboard}
       index={index}
+      filterSource={{ split, columns }}
       theme={theme}
       interactive={params.get('interactive') !== '0'}
       animate

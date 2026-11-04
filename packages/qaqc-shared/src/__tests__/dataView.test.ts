@@ -6,12 +6,14 @@ import {
   OVERVIEW_SLOTS,
   PERFORMANCE_SLOTS,
   readCombinedTable,
+  requiredCombinedSlots,
   readGreenTags,
   readInspectionTable,
   readIssueInspectionColumns,
   readIssueTable,
   readWeldTable,
   WELD_OPTIONAL_SLOTS,
+  type CombinedSlotRole,
   type InspectionTableSource,
 } from '../dataView'
 
@@ -457,7 +459,7 @@ const OVERVIEW_ROLES: CombinedRole[] = [
 const OPTIONAL_OVERVIEW_ROLES: CombinedRole[] = ['rootCause', 'bim360CreatedBy', 'bim360CreatedOn', 'bim360ClosedOn', 'closedAt', 'greenTags']
 const PERFORMANCE_ROLES: CombinedRole[] = ['source', 'rowId', 'workWeek', 'phase', 'issue', 'building', 'qcr', 'welder', 'tagNo']
 
-function combinedTable(roles: CombinedRole[]): InspectionTableSource {
+function combinedTable(roles: ReadonlyArray<CombinedRole | CombinedSlotRole>): InspectionTableSource {
   return {
     columns: roles.map((role) => ({ roles: { [role]: true } })),
     rows: [roles.map((role) => role)],
@@ -486,6 +488,20 @@ describe('OVERVIEW_SLOTS and PERFORMANCE_SLOTS', () => {
       ['bim360CreatedOn', 'BIM360 Created On', 'BIM360 Created On'],
       ['bim360ClosedOn', 'BIM360 Closed On', 'BIM360 Closed On'],
       ['closedAt', 'Closed At', 'Closed At'],
+      ['generalContractor', 'General Contractor', 'General Contractor'],
+      ['contractor', 'Contractor', 'Contractor'],
+      ['discipline', 'Discipline', 'Discipline'],
+      ['tagNo', 'Tag No', 'Tag No'],
+      ['welder', 'Welder', 'Welder'],
+      ['pipeSpec', 'Pipe Spec', 'Pipe Spec'],
+      ['fluidCode', 'Fluid Code', 'Fluid Code'],
+      ['inspectionId', 'Inspection ID', 'Inspection ID'],
+      ['equipmentTag', 'Equipment ID / Tag Number', 'Equipment ID / Tag Number'],
+      ['issueId', 'Issue ID', 'Issue ID'],
+      ['findingType', 'Finding Type', 'Finding Type'],
+      ['dateObserved', 'Date Observed', 'Date Observed'],
+      ['qcr', 'QCR/FE', 'QCR/FE'],
+      ['notes', 'Notes', 'Notes'],
       ['greenTags', 'Green tags', 'Green tags measure'],
     ])
   })
@@ -505,7 +521,58 @@ describe('OVERVIEW_SLOTS and PERFORMANCE_SLOTS', () => {
   })
 })
 
+/** The columns the Filter menu and drill-down added: −1 on a table that doesn't bind them. */
+const UNBOUND_NEW_COMBINED_COLUMNS = {
+  generalContractor: -1,
+  contractor: -1,
+  tradeSupplier: -1,
+  discipline: -1,
+  inspectionCategory: -1,
+  inspectionId: -1,
+  equipmentTag: -1,
+  issueId: -1,
+  findingType: -1,
+  dateObserved: -1,
+  notes: -1,
+  pipeSpec: -1,
+  fluidCode: -1,
+  workPackage: -1,
+  title: -1,
+  dueDate: -1,
+  createdByCompany: -1,
+}
+
 describe('readCombinedTable', () => {
+  it('keeps Tag No, Welder and QCR/FE required on Performance while they are optional on the Overview', () => {
+    const roles = (slots: Parameters<typeof requiredCombinedSlots>[0]): string[] => requiredCombinedSlots(slots).map((slot) => slot.role)
+    for (const role of ['tagNo', 'welder', 'qcr']) {
+      expect(roles(OVERVIEW_SLOTS)).not.toContain(role)
+      expect(roles(PERFORMANCE_SLOTS)).toContain(role)
+    }
+  })
+
+  it('reads the new Overview slots when they are bound', () => {
+    const result = readCombinedTable(
+      combinedTable([...OVERVIEW_ROLES, 'generalContractor', 'contractor', 'discipline', 'tagNo', 'welder', 'pipeSpec', 'fluidCode', 'notes']),
+      OVERVIEW_SLOTS,
+    )
+    expect(result.kind).toBe('ready')
+    if (result.kind === 'ready') {
+      const base = OVERVIEW_ROLES.length
+      expect(result.columns).toMatchObject({
+        generalContractor: base,
+        contractor: base + 1,
+        discipline: base + 2,
+        tagNo: base + 3,
+        welder: base + 4,
+        pipeSpec: base + 5,
+        fluidCode: base + 6,
+        notes: base + 7,
+        title: -1,
+      })
+    }
+  })
+
   it('reports every required Overview slot, but not Root Cause, the enrichment slots or Green tags, when there is no data view', () => {
     const result = readCombinedTable(undefined, OVERVIEW_SLOTS)
     expect(result.kind).toBe('missing')
@@ -569,6 +636,7 @@ describe('readCombinedTable', () => {
         bim360ClosedOn: 2,
         closedAt: 1,
         greenTags: 0,
+        ...UNBOUND_NEW_COMBINED_COLUMNS,
       })
       expect(result.rows[0][result.columns.source]).toBe('source')
     }
@@ -601,6 +669,7 @@ describe('readCombinedTable', () => {
         bim360ClosedOn: -1,
         closedAt: -1,
         greenTags: -1,
+        ...UNBOUND_NEW_COMBINED_COLUMNS,
       })
     }
   })

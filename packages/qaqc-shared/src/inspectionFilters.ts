@@ -13,24 +13,29 @@ export interface InspectionFilterSource {
 
 const UNSPECIFIED_KEY = chartGroupKey(UNSPECIFIED_BUILDING)
 
-/** The menu's fields, in menu order. Only bound slots appear; Building is required, so it always does. */
-export function inspectionFilterFields(columns: InspectionColumns, optional: InspectionOptionalColumns): FilterFieldDef[] {
-  const building: FilterFieldDef = {
+/**
+ * The chart's value and key, so the two can't disagree: `N/A` is a building of its own, as it is on the chart. What
+ * the chart shows as Unspecified reads as '', the blank value, so it's labelled that and listed last.
+ */
+export function inspectionBuildingField(buildingColumn: number): FilterFieldDef {
+  return {
     id: 'building',
     label: 'Building',
-    // The chart's value and key, so the two can't disagree: `N/A` is a building of its own, as it is on the chart.
-    // What the chart shows as Unspecified reads as '', the blank value, so it's labelled that and listed last.
     read: (row) => {
-      const name = normalizeBuilding(row[columns.building])
+      const name = normalizeBuilding(row[buildingColumn])
       return chartGroupKey(name) === UNSPECIFIED_KEY ? '' : name
     },
     groupBy: chartGroupKey,
     blankLabel: UNSPECIFIED_BUILDING,
   }
+}
+
+/** The menu's fields, in menu order. Only bound slots appear; Building is required, so it always does. */
+export function inspectionFilterFields(columns: InspectionColumns, optional: InspectionOptionalColumns): FilterFieldDef[] {
   return [
     ...optionalField('generalContractor', 'General Contractor', optional.generalContractor),
     ...optionalField('tradeSupplier', 'Trade Supplier', optional.tradeSupplier),
-    building,
+    inspectionBuildingField(columns.building),
     ...optionalField('discipline', 'Discipline', optional.discipline),
     ...optionalField('inspectionCategory', 'Inspection Category', optional.inspectionCategory),
     ...optionalField('status', 'Status', optional.status),

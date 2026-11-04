@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import type { CombinedColumns } from '../types'
@@ -139,7 +141,7 @@ function combinedRow(values: Partial<Record<CombinedRole, string>>): Array<strin
   const row = new Array<string | null>(ROLES.length).fill(null)
   for (const role of ROLES) {
     const value = values[role]
-    if (value !== undefined) row[COLUMNS[role]] = value
+    if (value !== undefined) row[COLUMNS[role] ?? -1] = value
   }
   return row
 }
@@ -248,5 +250,131 @@ describe('BIM rows from the enriched Autodesk export', () => {
 
   it('closes a native issue on its Closed At date', () => {
     expect(index.issues.find((issue) => issue.id === '#3')?.closedWeek?.label).toBe("WW41'2026")
+  })
+})
+
+describe('weldColumnsOf with the new columns bound', () => {
+  it('reads Pipe Spec and Fluid Code when they are bound', () => {
+    const columns = weldColumnsOf({ ...COLUMNS, pipeSpec: 20, fluidCode: 21 })
+    expect(columns.pipeSpec).toBe(20)
+    expect(columns.fluidCode).toBe(21)
+  })
+})
+
+describe('the QCx Combined script', () => {
+  const REPO_ROOT = join(__dirname, '..', '..', '..', '..')
+  const ORIGINAL_COLUMNS = [
+    'Source',
+    'Row ID',
+    'Work Week',
+    'Inspection Phase',
+    'Issue',
+    'Building',
+    'QCR/FE',
+    'Welder',
+    'Tag No',
+    'Signature',
+    'Work Week Signed',
+    'ID',
+    'Status',
+    'Type',
+    'Created On',
+    'Updated On',
+    'Created By',
+    'Root Cause',
+    'BIM360 Created By',
+    'BIM360 Created On',
+    'BIM360 Closed On',
+    'Closed At',
+  ]
+  const NEW_COLUMNS = [
+    'General Contractor',
+    'Contractor',
+    'Trade Supplier',
+    'Discipline',
+    'Inspection Category',
+    'Inspection ID',
+    'Equipment ID / Tag Number',
+    'Issue ID',
+    'Finding Type',
+    'Date Observed',
+    'Notes',
+    'Pipe Spec',
+    'Fluid Code',
+    'Work Package',
+    'Title',
+    'Due Date',
+    'Created By (Company)',
+  ]
+
+  function readRepoFile(...parts: string[]): string {
+    return readFileSync(join(REPO_ROOT, ...parts), 'utf8')
+  }
+
+  const script = readRepoFile('LotusWorks_Package', 'QCx_Combined.pq')
+
+  function block(name: string): string {
+    const start = script.indexOf(`    ${name} = `)
+    if (start < 0) throw new Error(`step ${name} missing`)
+    const nextStep = /\n    [A-Za-z]+ = |\nin\n/.exec(script.slice(start + 1))
+    return nextStep === null ? script.slice(start) : script.slice(start, start + 1 + nextStep.index)
+  }
+
+  function resultColumns(): string[] {
+    return [...block('Result').matchAll(/"([^"]+)"/g)].map((match) => match[1])
+  }
+
+  function setupGuideScript(folder: string): string {
+    const guide = readRepoFile(folder, 'QCx_Combined_SETUP.md')
+    const match = /```powerquery\n([\s\S]*?)```/.exec(guide)
+    if (match === null) throw new Error(`${folder} guide has no script`)
+    return match[1]
+  }
+
+  it('the first 22 Result columns are unchanged in order', () => {
+    expect(resultColumns().slice(0, 22)).toEqual(ORIGINAL_COLUMNS)
+  })
+
+  it('each new column is listed after them, in Result and with a type', () => {
+    expect(resultColumns().slice(22)).toEqual(NEW_COLUMNS)
+    for (const column of NEW_COLUMNS) {
+      expect(block('Typed')).toMatch(new RegExp(`\\{"${column.replace(/[()/]/g, '\\$&')}", type (text|date)\\}`))
+    }
+    expect(block('Typed')).toContain('{"Date Observed", type date}')
+  })
+
+  it('selects the new columns with MissingField.UseNull', () => {
+    for (const step of ['ElectricalSelected', 'MechanicalSelected', 'WeldingSelected', 'BimSelected']) {
+      expect(block(step)).toContain('MissingField.UseNull')
+    }
+    for (const column of ['General Contractor', 'Trade Supplier', 'Discipline', 'Inspection Category', 'Status', 'Equipment ID / Tag Number', 'Issue ID', 'Finding Type', 'Date Observed', 'Notes']) {
+      expect(block('ElectricalSelected')).toContain(`"${column}"`)
+      expect(block('MechanicalSelected')).toContain(`"${column}"`)
+    }
+    expect(block('ElectricalSelected')).toContain('"Inspection ID"')
+    expect(block('MechanicalSelected')).not.toContain('"Inspection ID"')
+    for (const column of ['Title', 'Contractor', 'Due date', 'Discipline', 'Created By (Company)']) {
+      expect(block('BimSelected')).toContain(`"${column}"`)
+    }
+  })
+
+  it('renames the Welding and export headers', () => {
+    for (const [from, to] of [['PIPE SPEC', 'Pipe Spec'], ['FLUID CODE', 'Fluid Code'], ['WORK PKG', 'Work Package']]) {
+      expect(block('WeldingSelected')).toContain(`"${from}"`)
+      expect(block('WeldingRenamed')).toContain(`{"${from}", "${to}"}`)
+    }
+    expect(block('BimRenamed')).toContain('{"Due date", "Due Date"}')
+  })
+
+  it('all four copies are identical', () => {
+    expect(readRepoFile('Business_Package', 'QCx_Combined.pq')).toBe(script)
+    expect(setupGuideScript('LotusWorks_Package')).toBe(script)
+    expect(setupGuideScript('Business_Package')).toBe(script)
+  })
+
+  it('both guides state the new column count', () => {
+    for (const folder of ['LotusWorks_Package', 'Business_Package']) {
+      expect(readRepoFile(folder, 'QCx_Combined_SETUP.md')).toContain('It should show 39 columns')
+    }
   })
 })

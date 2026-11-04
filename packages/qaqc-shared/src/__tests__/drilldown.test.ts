@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
-import { inspectionDrillColumns, issueDrillColumns, weekIssueRows, weekRows, weldDrillColumns, type DrillColumn } from '../drilldown'
+import { splitCombinedRows } from '../combined'
+import { inspectionDrillColumns, issueDrillColumns, overviewDrillGroups, weekIssueRows, weekRows, weldDrillColumns, type DrillColumn, type DrillGroup } from '../drilldown'
 import { buildInspectionIndex } from '../inspections'
 import { buildIssueIndex } from '../issues'
+import { buildOverviewIndex, buildOverviewSeries, filterOverviewIndex, overviewFilterFields, overviewFilterRows, overviewWeekNcrs, type OverviewFilterSource } from '../overview'
+import { buildFilterCatalog, matchRows } from '../rowFilters'
 import type { InspectionOptionalColumns, IssueColumns } from '../types'
 import { INSPECTION_COLUMNS, PLACEHOLDER_OPTIONAL, UNBOUND_OPTIONAL } from './inspectionFilterFixture'
+import { FILTER_COLUMNS, withValues } from './overviewFilterFixture'
+import { bim, COLUMNS, inspection, TODAY, weld } from './overviewRows'
 import { PLACEHOLDER_WELD_OPTIONAL, UNBOUND_WELD_OPTIONAL, WELD_COLUMNS } from './weldFilterFixture'
 
 const FULL_ROW = [
@@ -183,5 +188,91 @@ describe('weekRows', () => {
     expect(weekRows(positions, [[2, 0], []], rows, 202641)).toEqual([['c'], ['a']])
     expect(weekRows(positions, [[2, 0], []], rows, 202642)).toEqual([])
     expect(weekRows(positions, [[2, 0], []], rows, 202650)).toEqual([])
+  })
+})
+
+describe('overviewDrillGroups', () => {
+  const WW40 = "WW40'2026"
+  const KEY = 202640
+  const TAG = 'F631M008XX-1'
+  const ROWS: unknown[][] = [
+    withValues(inspection('Electrical', WW40, 'Final', 'Cable damaged'), { generalContractor: 'Greyfox', building: 'F63.1' }),
+    withValues(inspection('Electrical', WW40, 'Final', 'Tray bent'), { generalContractor: 'Bayside', building: 'F63.1' }),
+    withValues(inspection('Electrical', WW40, 'Final'), { generalContractor: 'Bayside', building: 'F63.1' }),
+    withValues(inspection('Mechanical', WW40, 'Final', 'Valve leak'), { generalContractor: 'Bayside', building: 'F63.2' }),
+    withValues(weld(WW40, { issue: 'BIM 12' }), { tagNo: TAG }),
+    withValues(weld(WW40), { tagNo: TAG }),
+    withValues(bim('#1', '9/29/2026', { type: 'NCR' }), { contractor: 'Bayside' }),
+  ]
+
+  function listed(groups: readonly DrillGroup[]): Array<[string | null, number]> {
+    return groups.map((group) => [group.title, group.rows.length])
+  }
+
+  function chartNcrs(index: ReturnType<typeof buildOverviewIndex>): number {
+    const view = { selectedKey: KEY, windowEndKey: KEY, range: 'all', dateRange: null } as const
+    const point = buildOverviewSeries(index, view).rates.find((item) => item.week.key === KEY)
+    if (point === undefined) throw new Error('no chart point')
+    return point.inspection.ncrs + point.welding.ncrs
+  }
+
+  it('a week\'s list equals that week\'s Electrical, Mechanical and Welding NCR counts, labelled by source; BIM rows aren\'t listed', () => {
+    const split = splitCombinedRows(ROWS, FILTER_COLUMNS.source)
+    const index = buildOverviewIndex(split, FILTER_COLUMNS, TODAY)
+    const groups = overviewDrillGroups(index, split, FILTER_COLUMNS, KEY)
+    expect(listed(groups)).toEqual([['Electrical', 2], ['Mechanical', 1], ['Welding', 1]])
+    expect(groups.flatMap((group) => group.rows).some((row) => row[FILTER_COLUMNS.source] === 'BIM')).toBe(false)
+    expect(chartNcrs(index)).toBe(4)
+    expect(overviewWeekNcrs(index, KEY)).toBe(4)
+  })
+
+  it('the same under filters', () => {
+    const split = splitCombinedRows(ROWS, FILTER_COLUMNS.source)
+    const base = buildOverviewIndex(split, FILTER_COLUMNS, TODAY)
+    const filterRows = overviewFilterRows(split, FILTER_COLUMNS)
+    const catalog = buildFilterCatalog(filterRows, overviewFilterFields(FILTER_COLUMNS))
+    const selection = new Map([['contractor', new Set(['greyfox'])]])
+    const { index, split: filteredSplit } = filterOverviewIndex(base, split, matchRows(filterRows, catalog, selection), FILTER_COLUMNS)
+    const groups = overviewDrillGroups(index, filteredSplit, FILTER_COLUMNS, KEY)
+    // Welding isn't filtered by Contractor, so its row stays, read from the index that was reused.
+    expect(listed(groups)).toEqual([['Electrical', 1], ['Welding', 1]])
+    expect(groups[0].rows[0][FILTER_COLUMNS.issue]).toBe('Cable damaged')
+    expect(groups[1].rows[0][FILTER_COLUMNS.issue]).toBe('BIM 12')
+    expect(chartNcrs(index)).toBe(2)
+    expect(overviewWeekNcrs(index, KEY)).toBe(2)
+  })
+
+  it('omits an empty group, and has none in a week with no NCRs', () => {
+    const rows = [inspection('Mechanical', WW40, 'Final', 'Valve leak'), inspection('Mechanical', "WW41'2026", 'Final')]
+    const split = splitCombinedRows(rows, COLUMNS.source)
+    const index = buildOverviewIndex(split, COLUMNS, TODAY)
+    expect(listed(overviewDrillGroups(index, split, COLUMNS, KEY))).toEqual([['Mechanical', 1]])
+    expect(overviewDrillGroups(index, split, COLUMNS, 202641)).toEqual([])
+    expect(overviewWeekNcrs(index, 202641)).toBe(0)
+  })
+
+  it('has no rows for a week before a source starts', () => {
+    const rows = [inspection('Mechanical', WW40, 'Final', 'Valve leak')]
+    const split = splitCombinedRows(rows, COLUMNS.source)
+    const index = buildOverviewIndex(split, COLUMNS, TODAY)
+    expect(overviewDrillGroups(index, split, COLUMNS, 202601)).toEqual([])
+    expect(overviewWeekNcrs(index, 202601)).toBe(0)
+  })
+
+  it('hides each column whose slot is unbound', () => {
+    const split = splitCombinedRows(ROWS, COLUMNS.source)
+    const index = buildOverviewIndex(split, COLUMNS, TODAY)
+    const unbound: OverviewFilterSource['columns'] = { ...COLUMNS, tagNo: -1 }
+    const groups = overviewDrillGroups(index, split, unbound, KEY)
+    expect(labels(groups[0].columns)).toEqual(['Building', 'Phase', 'Issue', 'Status'])
+    expect(labels(groups[2].columns)).toEqual(['Issue Created', 'Signature'])
+  })
+
+  it('lists the bound columns for each source', () => {
+    const split = splitCombinedRows(ROWS, FILTER_COLUMNS.source)
+    const index = buildOverviewIndex(split, FILTER_COLUMNS, TODAY)
+    const groups = overviewDrillGroups(index, split, FILTER_COLUMNS, KEY)
+    expect(labels(groups[0].columns)).toEqual(['Building', 'Phase', 'Issue', 'Inspection ID', 'Equipment ID / Tag Number', 'Issue ID', 'Finding Type', 'Status', 'Date Observed', 'QCR/FE', 'Notes'])
+    expect(labels(groups[2].columns)).toEqual(['Tag No', 'Welder', 'Pipe Spec', 'Fluid Code', 'Issue Created', 'Signature'])
   })
 })

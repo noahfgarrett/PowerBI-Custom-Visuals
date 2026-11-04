@@ -1,4 +1,4 @@
-import type { CombinedColumns, InspectionColumns, InspectionRows, IssueColumns, WeldColumns } from './types'
+import type { CombinedColumns, InspectionColumns, InspectionOptionalColumns, InspectionRows, IssueColumns, WeldColumns, WeldOptionalColumns } from './types'
 import { cellText } from './inspections'
 
 /** A column the QCx Combined table doesn't carry. `row[-1]` is undefined, which every builder reads as a blank cell. */
@@ -43,6 +43,33 @@ export function splitCombinedRows(rows: InspectionRows, sourceColumn: number): C
   return { electrical, mechanical, welding, bim, unknownSource }
 }
 
+export type CombinedSource = 'electrical' | 'mechanical' | 'welding' | 'bim'
+
+function sourceFromText(text: string): CombinedSource | null {
+  switch (text) {
+    case 'electrical':
+    case 'mechanical':
+    case 'welding':
+    case 'bim':
+      return text
+    default:
+      return null
+  }
+}
+
+/** Reads a row's Source as `splitCombinedRows` does, remembered by the cell: a table has four or so spellings of it. */
+export function createSourceReader(sourceColumn: number): (row: ReadonlyArray<unknown>) => CombinedSource | null {
+  const cache = new Map<unknown, CombinedSource | null>()
+  return (row) => {
+    const cell = row[sourceColumn]
+    const cached = cache.get(cell)
+    if (cached !== undefined) return cached
+    const source = sourceFromText(cellText(cell).toLowerCase())
+    cache.set(cell, source)
+    return source
+  }
+}
+
 export function inspectionColumnsOf(columns: CombinedColumns): InspectionColumns {
   return {
     workWeek: columns.workWeek,
@@ -52,22 +79,49 @@ export function inspectionColumnsOf(columns: CombinedColumns): InspectionColumns
   }
 }
 
-/** The combined table has no Fluid Code or Pipe Spec, so every weld falls under the Unspecified system and spec. */
+/** Fluid Code and Pipe Spec stay −1 while their slots are unbound, so every weld falls under the Unspecified system and spec. */
 export function weldColumnsOf(columns: CombinedColumns): WeldColumns {
   return {
     weldWeek: columns.workWeek,
     signature: columns.signature,
     signedWeek: columns.signedWeek,
     issue: columns.issue,
-    fluidCode: ABSENT_COLUMN,
-    pipeSpec: ABSENT_COLUMN,
+    fluidCode: columns.fluidCode ?? ABSENT_COLUMN,
+    pipeSpec: columns.pipeSpec ?? ABSENT_COLUMN,
     tagNo: columns.tagNo,
   }
 }
 
+/** The drill-down's Welder and the filter's Work Package; −1 while unbound. */
+export function weldOptionalColumnsOf(columns: CombinedColumns): WeldOptionalColumns {
+  return {
+    welder: columns.welder,
+    workPackage: columns.workPackage ?? ABSENT_COLUMN,
+  }
+}
+
+/** The inspection rows' filter and drill-down columns; −1 while unbound. */
+export function inspectionOptionalColumnsOf(columns: CombinedColumns): InspectionOptionalColumns {
+  return {
+    generalContractor: columns.generalContractor ?? ABSENT_COLUMN,
+    tradeSupplier: columns.tradeSupplier ?? ABSENT_COLUMN,
+    discipline: columns.discipline ?? ABSENT_COLUMN,
+    inspectionCategory: columns.inspectionCategory ?? ABSENT_COLUMN,
+    status: columns.status,
+    inspectionId: columns.inspectionId ?? ABSENT_COLUMN,
+    equipmentTag: columns.equipmentTag ?? ABSENT_COLUMN,
+    issueId: columns.issueId ?? ABSENT_COLUMN,
+    findingType: columns.findingType ?? ABSENT_COLUMN,
+    dateObserved: columns.dateObserved ?? ABSENT_COLUMN,
+    qcr: columns.qcr,
+    notes: columns.notes ?? ABSENT_COLUMN,
+  }
+}
+
 /**
- * The combined table has no Title, Contractor, Due Date or Root Cause Category, so issues take the builder's defaults
- * for those. Root Cause and the enrichment columns stay −1 when the visual has no slot bound for them.
+ * The index builds from the Overview's bound columns, and it shows no issue's Title, Contractor or Due Date, so issues
+ * take the builder's defaults for those. The table has no Root Cause Category. Root Cause and the enrichment columns
+ * stay −1 when the visual has no slot bound for them.
  */
 export function issueColumnsOf(columns: CombinedColumns): IssueColumns {
   return {
