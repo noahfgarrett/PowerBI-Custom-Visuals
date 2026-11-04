@@ -265,14 +265,14 @@ describe('QaqcPerformanceVisual', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(COMBINED_ROWS)))
     expect(harness.element.querySelector('.qaqc-perf-summary .qaqc-kpi-group-head em')?.textContent).toBe("WW13'2026 to WW42'2026")
-    expect(summaryValues(harness.element)).toEqual(['6', '221', '2', '0.90%'])
+    expect(summaryValues(harness.element)).toEqual(['6', '221', '2', '99.10%'])
   })
 
   it('renders the WW42 welder summary strip', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(COMBINED_ROWS)))
     click(groupButton(harness.element, 'Welders'))
-    expect(summaryValues(harness.element)).toEqual(['38', '1,570', '11', '0.70%'])
+    expect(summaryValues(harness.element)).toEqual(['38', '1,570', '11', '99.30%'])
   })
 
   it('ranks with the Format pane minimum finals', () => {
@@ -360,7 +360,7 @@ describe('QaqcPerformanceVisual', () => {
   it('shows plain names and disabled controls when interactions are not allowed', () => {
     harness = createHarness({ hostCapabilities: { allowInteractions: false } })
     apply(harness, update(tableDataView(COMBINED_ROWS)))
-    expect(summaryValues(harness.element)).toEqual(['6', '221', '2', '0.90%'])
+    expect(summaryValues(harness.element)).toEqual(['6', '221', '2', '99.10%'])
     expect(nameButton(harness.element, 'QCR 02')).toBeNull()
     expect(groupButton(harness.element, 'Welders')?.disabled).toBe(true)
     expect(harness.element.querySelector('select')?.disabled).toBe(true)
@@ -416,7 +416,7 @@ describe('QaqcPerformanceVisual', () => {
     expect(harness.element.querySelector('[role="progressbar"]')).not.toBeNull()
     apply(harness, update(tableDataView(COMBINED_ROWS), undefined, 1))
     expect(harness.element.querySelector('[role="progressbar"]')).toBeNull()
-    expect(summaryValues(harness.element)).toEqual(['6', '221', '2', '0.90%'])
+    expect(summaryValues(harness.element)).toEqual(['6', '221', '2', '99.10%'])
   })
 
   it('refreshes the ranking when a row changes and the row count stays the same', () => {
@@ -471,7 +471,7 @@ describe('QaqcPerformanceVisual', () => {
     applyOutsideAct(harness, update(tableDataView(COMBINED_ROWS)))
     dashboardControl.shouldThrow = false
     apply(harness, update(tableDataView(COMBINED_ROWS)))
-    expect(summaryValues(harness.element)).toEqual(['6', '221', '2', '0.90%'])
+    expect(summaryValues(harness.element)).toEqual(['6', '221', '2', '99.10%'])
     expect(harness.events.renderingFinished).toHaveBeenCalledTimes(1)
   })
 
