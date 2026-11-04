@@ -1,6 +1,7 @@
 import type { CombinedSplit } from '../combined'
 import { splitCombinedRows } from '../combined'
-import { buildOverviewIndex, type OverviewFilterSource, type OverviewIndex } from '../overview'
+import { buildOverviewIndex, type OverviewIndex } from '../overview'
+import type { OverviewFilterSource } from '../overviewFilters'
 import type { CombinedColumns, InspectionRows } from '../types'
 import { COMBINED_COLUMNS } from './fixtures/combinedRows'
 import { COLUMNS, TODAY } from './overviewRows'

@@ -44,20 +44,16 @@ import { WeekIssuesPage } from './WeekIssuesPage'
 import { overviewDrillGroups } from '../drilldown'
 import { restateOverviewFootnotes } from '../footnotes'
 import { RECENT_WEEK_COUNT } from '../inspections'
+import { overviewChartRows, overviewWeekNcrs, type CardMode, type OverviewIndex, type OverviewRows } from '../overview'
 import {
   filterOverviewIndex,
   overviewFilterFields,
   overviewFilterNotes,
-  overviewChartRows,
   overviewFilterRows,
   overviewRowWeekKey,
-  overviewWeekNcrs,
-  type CardMode,
   type FilteredOverview,
   type OverviewFilterSource,
-  type OverviewIndex,
-  type OverviewRows,
-} from '../overview'
+} from '../overviewFilters'
 import { chartColorsFromTheme } from '../theme'
 
 const NO_ROWS_MESSAGE = 'No QCx Combined rows match the current filters'

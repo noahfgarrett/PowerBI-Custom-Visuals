@@ -16,7 +16,8 @@ import {
   type CombinedTableReadResult,
 } from '../../qaqc-shared/src/dataView'
 import { buildOverviewFootnotes } from '../../qaqc-shared/src/footnotes'
-import { buildOverviewIndex, type OverviewFilterSource, type OverviewIndex } from '../../qaqc-shared/src/overview'
+import { buildOverviewIndex, type OverviewIndex } from '../../qaqc-shared/src/overview'
+import type { OverviewFilterSource } from '../../qaqc-shared/src/overviewFilters'
 import { resolveTheme, type HighContrastColors, type ResolvedTheme } from '../../qaqc-shared/src/theme'
 import { OverviewSettingsModel, readDisplaySettings } from './settings'
 
