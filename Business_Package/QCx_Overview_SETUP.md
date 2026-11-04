@@ -264,7 +264,7 @@ The Overview uses the same rules as the discipline visuals.
 - **Weld:** a Welding row whose Work Week can be read as a work week.
 - **Signed weld:** Signature is filled in.
 - **Weld NCR (issue weld):** Issue is filled in and is not "no", "n/a", "na", "none" or "-".
-- **LotusWorks creator:** the creator contains "LotusWorks" (any letter case, as one word), or is a removed-user record for Samuel Leach or Aaron Harwood.
+- **LotusWorks creator:** the creator contains "LotusWorks" (any letter case, as one word), or is a removed-user record for two deactivated LotusWorks accounts.
 - **Counted BIM issues:** an issue with any of BIM360 Created By, BIM360 Created On or BIM360 Closed On filled in counts when BIM360 Created By is a LotusWorks creator. Any other issue counts when Created By is one. Issues with Status Void are excluded everywhere.
 - **BIM week:** an issue opens in the week of BIM360 Created On, or of Created On when that is blank. A Closed issue closes in the week of the first filled-in value of BIM360 Closed On, Closed At and Updated On.
 - **Future weeks:** rows dated after the current work week aren't counted.

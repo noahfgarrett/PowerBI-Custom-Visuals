@@ -285,7 +285,7 @@ Past the normal close window is red when it is above 0. Then it shows `View issu
 
 ## Counting rules
 
-- **LotusWorks creator:** the creator contains "LotusWorks" in any letter case, ignoring punctuation. It must be one word, so "Lotus Works" is not counted. A removed-user record for Samuel Leach or Aaron Harwood also counts.
+- **LotusWorks creator:** the creator contains "LotusWorks" in any letter case, ignoring punctuation. It must be one word, so "Lotus Works" is not counted. A removed-user record for two deactivated LotusWorks accounts also counts.
 - **Counted issues:** an issue **has BIM360 data** when any of BIM360 Created By, BIM360 Created On or BIM360 Closed On is filled in.
   - With BIM360 data, the issue counts when **BIM360 Created By** is a LotusWorks creator. Created By is not used, and a blank BIM360 Created By is excluded.
   - Without BIM360 data, the issue counts when **Created By** is a LotusWorks creator.
