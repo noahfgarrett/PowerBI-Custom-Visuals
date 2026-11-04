@@ -102,9 +102,9 @@ export type OverviewCards = [OverviewCard, OverviewCard, OverviewCard, OverviewC
 export interface ConnectedOverviewRow {
   connected: true
   cards: OverviewCards
-  /** The row's metric for the 30 weeks ending at the selected week, oldest first. */
+  /** The row's metric for the 30 weeks ending at the selected week (BIM in a date range's totals: at its end), oldest first. */
   sparkline: number[]
-  /** The position of the selected week in `sparkline` (its last point). */
+  /** The position of the marked week in `sparkline` (its last point). */
   sparklineSelected: number
   /** The sparkline's change in words for screen readers, such as `up 4 vs WW41'2026`. */
   trendText: string
@@ -531,11 +531,11 @@ function trendWords(delta: number, previousLabel: string): string {
 interface RowContext {
   index: OverviewIndex
   mode: CardMode
-  /** Union positions of the sparkline's first week and the selected week. */
-  sparkStart: number
   selectedPosition: number
   previousLabel: string
   range: RangeKeys | null
+  /** Union positions of a date range's first and last weeks; null with no range. */
+  span: { start: number; end: number } | null
 }
 
 /** A source with no rows to show: the table has none, or a filter left none. */
@@ -544,11 +544,19 @@ function disconnectedRow(context: RowContext, name: string, source: CombinedSour
   return { connected: false, message: isFilteredOut ? `No ${name} rows match these filters` : `Not connected: no ${name} rows in QCx Combined` }
 }
 
-function connectedRow(context: RowContext, cards: OverviewCards, metricAt: (key: number) => number): ConnectedOverviewRow {
-  const { index, sparkStart, selectedPosition, previousLabel } = context
+/** `endPosition` is the sparkline's last week: the selected week, unless the row's cards read somewhere else. */
+function connectedRow(
+  context: RowContext,
+  cards: OverviewCards,
+  metricAt: (key: number) => number,
+  endPosition = context.selectedPosition,
+  previousLabel = context.previousLabel,
+): ConnectedOverviewRow {
+  const { index, span } = context
+  const sparkStart = Math.max(recentWindowStart(endPosition), span?.start ?? 0)
   const sparkline: number[] = []
-  for (let position = sparkStart; position <= selectedPosition; position += 1) sparkline.push(metricAt(index.weeks[position].key))
-  const previous = selectedPosition > 0 ? metricAt(index.weeks[selectedPosition - 1].key) : 0
+  for (let position = sparkStart; position <= endPosition; position += 1) sparkline.push(metricAt(index.weeks[position].key))
+  const previous = endPosition > 0 ? metricAt(index.weeks[endPosition - 1].key) : 0
   return {
     connected: true,
     cards,
@@ -637,7 +645,7 @@ function weldingRow(context: RowContext, index: WeldIndex, counts: WeldCounts): 
   return connectedRow(context, cards, (key) => weekAt(index.weeks, positionIn(index, key))?.logged ?? 0)
 }
 
-/** Remaining open is always to date, with its change against the week before. In a date range it's as of the range's end. */
+/** Remaining open is always to date, with its change against the week before. In a date range's totals it's as of the range's end. */
 function remainingCard(index: IssueIndex, asOf: number, previousAsOf: number, previousLabel: string): OverviewCard {
   const remainingAt = (position: number): number => valueAt(index.cumulativeOpened, position) - valueAt(index.cumulativeClosed, position)
   const remaining = remainingAt(asOf)
@@ -662,7 +670,7 @@ function benchmarksAt(index: IssueIndex, weekKey: number, today: Date): IssueBen
   return benchmarks
 }
 
-/** Open issues as of W (a date range's end) older than the normal close window, the same in both modes, like Remaining open. */
+/** Open issues as of a week older than the normal close window, like Remaining open: W in both modes, or a date range's end in its totals. */
 function pastWindowCard(index: IssueIndex, asOf: number, weekKey: number, today: Date): OverviewCard {
   // Before the first issue the benchmarks would fall back to the current week, so the card says so instead.
   if (valueAt(index.cumulativeOpened, asOf) === 0) return noteCard(PAST_WINDOW_LABEL, 'n/a', NO_ISSUES_YET)
@@ -685,24 +693,34 @@ function pastWindowCard(index: IssueIndex, asOf: number, weekKey: number, today:
 
 function bimRow(context: RowContext, index: IssueIndex, key: number, previousKey: number): OverviewRow {
   if (index.totalRows === 0) return disconnectedRow(context, 'BIM Issues', 'bim')
-  const { mode, previousLabel, range } = context
+  const { mode, previousLabel, range, span, selectedPosition } = context
   const positions = positionsIn(index, key, previousKey, range)
   const opened = seriesAt((at) => index.weeks[at].opened, index.cumulativeOpened, positions)
   const closed = seriesAt((at) => index.weeks[at].closed, index.cumulativeClosed, positions)
-  // A range can't restate these: they're counts at a moment, so they read at its end whichever week is selected.
-  const asOf = positions.span?.end ?? positions.position
-  const previousAsOf = positions.span === null ? positions.previousPosition : asOf - 1
-  const asOfKey = range?.endKey ?? key
+  // These are counts at a moment, so a range can't restate them: its totals read them at its end, a selected week at that week.
+  const rangeEnd = mode === 'toDate' && range !== null && positions.span !== null && span !== null
+    ? { position: positions.span.end, unionPosition: span.end, key: range.endKey, previousLabel: previousWorkWeek(workWeekFromKey(range.endKey)).label }
+    : null
+  const asOf = rangeEnd?.position ?? positions.position
+  const previousAsOf = rangeEnd === null ? positions.previousPosition : asOf - 1
+  const asOfPreviousLabel = rangeEnd?.previousLabel ?? previousLabel
   const cards: OverviewCards = [
     countCard('Opened', opened, mode, previousLabel, openedTone),
     countCard('Closed', closed, mode, previousLabel, closedTone),
-    remainingCard(index, asOf, previousAsOf, range === null ? previousLabel : previousWorkWeek(workWeekFromKey(asOfKey)).label),
-    pastWindowCard(index, asOf, asOfKey, context.index.today),
+    remainingCard(index, asOf, previousAsOf, asOfPreviousLabel),
+    pastWindowCard(index, asOf, rangeEnd?.key ?? key, context.index.today),
   ]
-  return connectedRow(context, cards, (weekKey) => {
-    const position = positionIn(index, weekKey)
-    return valueAt(index.cumulativeOpened, position) - valueAt(index.cumulativeClosed, position)
-  })
+  // Its last point is the Remaining open card, so it ends where that reads.
+  return connectedRow(
+    context,
+    cards,
+    (weekKey) => {
+      const position = positionIn(index, weekKey)
+      return valueAt(index.cumulativeOpened, position) - valueAt(index.cumulativeClosed, position)
+    },
+    rangeEnd?.unionPosition ?? selectedPosition,
+    asOfPreviousLabel,
+  )
 }
 
 /** The DWN rate is always to date. The index already treats a Green tags value of 0 or below as missing. */
@@ -903,10 +921,10 @@ export function buildOverviewCards(index: OverviewIndex, view: ViewState, mode: 
   const context: RowContext = {
     index,
     mode,
-    sparkStart: Math.max(recentWindowStart(selectedPosition), span?.start ?? 0),
     selectedPosition,
     previousLabel: previousWeek.label,
     range,
+    span,
   }
 
   const electrical = inspectionCounts(index.electrical, key, previousKey, range)

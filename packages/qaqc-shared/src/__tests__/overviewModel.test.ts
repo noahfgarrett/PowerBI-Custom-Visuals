@@ -737,13 +737,56 @@ describe('in a date range', () => {
     expect(closed.value).toBe(0)
   })
 
-  it('keeps Remaining open and Past normal close window as of the range end in both modes', () => {
-    const atEnd = cardsOf(modelAt(index, WW41, 'toDate'), 'bim')
-    for (const mode of ['week', 'toDate'] as const) {
-      const cards = cardsOf(ranged(mode), 'bim')
+  describe('Remaining open and Past normal close window', () => {
+    // Open count: 2 at WW39 and WW40, 4 at WW41, so the selected week and the range end disagree.
+    const movingIndex = overviewIndexOf([
+      bim('#1', '9/15/2026'), // WW38
+      bim('#2', '9/15/2026', { status: 'Closed', updatedOn: '9/29/2026' }), // WW38, closed WW40
+      bim('#3', '9/29/2026'), // WW40
+      bim('#4', '10/6/2026'), // WW41
+      bim('#5', '10/6/2026', { status: 'Closed', updatedOn: '10/8/2026' }), // WW41, closed WW41
+      bim('#6', '10/7/2026'), // WW41
+      inspection('Electrical', WW42, 'Final'),
+    ])
+
+    function movingCards(mode: CardMode): ReturnType<typeof cardsOf> {
+      return cardsOf(buildOverviewModel(movingIndex, rangedView, mode), 'bim')
+    }
+
+    it('have different open counts at the selected week and the range end in this fixture', () => {
+      expect(cardsOf(modelAt(movingIndex, WW40, 'toDate'), 'bim')[2].value).toBe(2)
+      expect(cardsOf(modelAt(movingIndex, WW41, 'toDate'), 'bim')[2].value).toBe(4)
+    })
+
+    it('read at the selected week in This WW', () => {
+      const atWeek = cardsOf(modelAt(movingIndex, WW40, 'week'), 'bim')
+      const cards = movingCards('week')
+      expect(cards[2]).toEqual(atWeek[2])
+      expect(cards[3]).toEqual(atWeek[3])
+      expect([cards[2].value, cards[2].deltaDisplay]).toEqual([2, "No change vs WW39'2026"])
+    })
+
+    it('read at the range end in In range', () => {
+      const atEnd = cardsOf(modelAt(movingIndex, WW41, 'toDate'), 'bim')
+      const cards = movingCards('toDate')
       expect(cards[2]).toEqual(atEnd[2])
       expect(cards[3]).toEqual(atEnd[3])
-    }
+      expect([cards[2].value, cards[2].deltaDisplay]).toEqual([4, "+2 vs WW40'2026"])
+    })
+
+    it('end the BIM sparkline on the card in both modes', () => {
+      const inRange = rowOf(buildOverviewModel(movingIndex, rangedView, 'toDate'), 'bim')
+      expect(inRange.sparkline).toEqual([2, 2, 4])
+      expect(inRange.sparklineSelected).toBe(2)
+      expect(inRange.trendText).toBe("up 2 vs WW40'2026")
+      const thisWeek = rowOf(buildOverviewModel(movingIndex, rangedView, 'week'), 'bim')
+      expect(thisWeek.sparkline).toEqual([2, 2])
+      expect(thisWeek.sparklineSelected).toBe(1)
+    })
+
+    it('leave the other rows\' sparklines on the selected week in In range', () => {
+      expect(rowOf(ranged('toDate'), 'electrical').sparkline).toEqual([1, 2])
+    })
   })
 
   it('reads Top root cause through the range end when in range, and the selected week in This WW', () => {
