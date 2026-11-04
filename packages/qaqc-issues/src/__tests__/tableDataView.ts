@@ -16,6 +16,8 @@ export type SlotRole =
   | 'bim360CreatedOn'
   | 'bim360ClosedOn'
   | 'closedAt'
+  | 'createdByCompany'
+  | 'discipline'
 
 export type Cell = string | Date | null
 
@@ -45,13 +47,16 @@ export const ROOT_CAUSE_ROLES: SlotRole[] = ['rootCause', 'rootCauseCategory']
 /** The optional enrichment slots of the enriched Autodesk export, which follow the Root Cause slots. */
 export const ENRICHMENT_ROLES: SlotRole[] = ['bim360CreatedBy', 'bim360CreatedOn', 'bim360ClosedOn', 'closedAt']
 
-/** Each input row's column order: the required slots, then the optional Root Cause and enrichment slots. */
-const ROW_ORDER: SlotRole[] = [...ALL_ROLES, ...ROOT_CAUSE_ROLES, ...ENRICHMENT_ROLES]
+/** The optional Filter menu slots, which follow the enrichment slots. */
+export const FILTER_ROLES: SlotRole[] = ['createdByCompany', 'discipline']
+
+/** Each input row's column order: the required slots, then the optional Root Cause, enrichment and Filter menu slots. */
+const ROW_ORDER: SlotRole[] = [...ALL_ROLES, ...ROOT_CAUSE_ROLES, ...ENRICHMENT_ROLES, ...FILTER_ROLES]
 
 /**
  * Builds a table data view whose columns carry the given roles, in order. Each input row supplies the slot values in
- * ALL_ROLES order, then Root Cause and Root Cause Category, then the enrichment slots; a missing or null cell becomes
- * blank text.
+ * ALL_ROLES order, then Root Cause and Root Cause Category, then the enrichment and Filter menu slots; a missing or
+ * null cell becomes blank text.
  */
 export function tableDataView(rows: ReadonlyArray<ReadonlyArray<Cell>>, options: TableOptions = {}): powerbi.DataView {
   const roles = options.roles ?? ALL_ROLES

@@ -332,6 +332,10 @@ export interface IssueColumns {
   bim360ClosedOn?: number
   /** Closed at: Autodesk's own closed date, used before Updated on. */
   closedAt?: number
+  /** Created By (Company): the Filter menu's company value for an issue the include rule doesn't call LotusWorks. */
+  createdByCompany?: number
+  /** Discipline: a Filter menu field. */
+  discipline?: number
 }
 
 /**
@@ -458,6 +462,12 @@ export interface IssueIndex {
   /** Parallel to weeks: running totals through each week. */
   cumulativeOpened: number[]
   cumulativeClosed: number[]
+  /** Parallel to weeks: issues now closed, by the week they were created, with or without a closed date. */
+  closedByCreatedWeek: number[]
+  /** Parallel to weeks: the positions, in the rows that built this index, of the rows behind opened. */
+  openedRowsByWeek: ReadonlyArray<readonly number[]>
+  /** Parallel to weeks: the positions, in the rows that built this index, of the rows behind closed. */
+  closedRowsByWeek: ReadonlyArray<readonly number[]>
   positionByKey: Map<number, number>
   /** Open and pending issues by age today. */
   openAging: AgingBucket[]
@@ -505,9 +515,18 @@ export interface IssueWindowTotals {
   closed: number
   /** Remaining open at the window end minus remaining open before the window. */
   remainingChange: number
-  /** Percent 0–100 through the window end, or null when nothing was opened. */
+  /**
+   * Percent 0–100 through the window end, or null when nothing was opened. In a date range, the share of the issues
+   * opened in the range that are now closed.
+   */
   closureRate: number | null
   weeks: number
+}
+
+/** A date range's Closure Rate, as counts. */
+export interface RangeClosure {
+  nowClosed: number
+  opened: number
 }
 
 export interface IssueDetail {
@@ -544,5 +563,9 @@ export interface IssueModel {
   overallAging: OverallAgingBucket[]
   openIssues: OpenIssueRow[]
   windowTotals: IssueWindowTotals
+  /** Null with no date range. */
+  rangeLabel: string | null
+  /** Null with no date range. */
+  rangeClosure: RangeClosure | null
   hasData: boolean
 }

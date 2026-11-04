@@ -218,3 +218,42 @@ describe('useWeekWindow', () => {
     expect(current().view).toBe(before)
   })
 })
+
+describe('useWeekWindow unrangedView', () => {
+  it('is the view itself with no date range', () => {
+    mount(weeksIndex(100))
+    expect(current().unrangedView).toBe(current().view)
+  })
+
+  it('reads the stored weeks in a date range, while the view clamps', () => {
+    const index = weeksIndex(100)
+    const range = { fromKey: 40, toKey: 60 }
+    view = render(<Probe index={index} />)
+    view.rerender(<Probe index={index} dateRange={range} />)
+    expect(current().view).toMatchObject({ selectedKey: 60, windowEndKey: 60, dateRange: range })
+    expect(current().unrangedView).toEqual({ selectedKey: 100, windowEndKey: 100, range: 'recent', dateRange: null })
+  })
+
+  it('a week picked on a page outside the range is what the page reads, and the view still clamps', () => {
+    const index = weeksIndex(100)
+    const range = { fromKey: 40, toKey: 60 }
+    view = render(<Probe index={index} />)
+    view.rerender(<Probe index={index} dateRange={range} />)
+    run((state) => state.pickWeek(10))
+    expect(current().unrangedView).toMatchObject({ selectedKey: 10, windowEndKey: 10 })
+    expect(current().view).toMatchObject({ selectedKey: 40, windowEndKey: 40 })
+  })
+
+  it('switching to 30 WW on a page keeps the stored week inside the page\'s window', () => {
+    const index = weeksIndex(100)
+    const range = { fromKey: 40, toKey: 60 }
+    view = render(<Probe index={index} />)
+    view.rerender(<Probe index={index} dateRange={range} />)
+    run((state) => state.changeRange('all'))
+    run((state) => state.selectWeek(5))
+    run((state) => state.changeRange('recent'))
+    const { selectedKey, windowEndKey } = current().unrangedView
+    expect(selectedKey).toBe(5)
+    expect(windowEndKey).toBe(5)
+  })
+})

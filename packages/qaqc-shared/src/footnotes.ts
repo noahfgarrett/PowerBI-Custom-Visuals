@@ -116,3 +116,26 @@ export function buildPerformanceFootnotes(
   }
   return notes
 }
+
+/**
+ * The Issues notes while a field filter is on. Skipped and future counts restate to the filtered rows, and anything
+ * else from the visual, such as the row limit, stays first. `otherCompanyRows` is the rows left out by a Created By
+ * (Company) selection, or null when no such selection is set: the LotusWorks limit, and its note, then still hold.
+ */
+export function restateIssueFootnotes(
+  notes: readonly string[],
+  allRows: FootnoteSource & Pick<IssueIndex, 'excludedRows'>,
+  filteredRows: FootnoteSource,
+  otherCompanyRows: number | null,
+): string[] {
+  const allRowNotes = new Set(buildIssueFootnotes(allRows, false))
+  const excludedRows = otherCompanyRows === null ? allRows.excludedRows : 0
+  const companyNote = otherCompanyRows !== null && otherCompanyRows > 0
+    ? [`${issueCount(otherCompanyRows)} from other companies ${pluralize(otherCompanyRows, 'is', 'are')} excluded`]
+    : []
+  return [
+    ...notes.filter((note) => !allRowNotes.has(note)),
+    ...companyNote,
+    ...buildIssueFootnotes({ ...filteredRows, excludedRows }, false),
+  ]
+}

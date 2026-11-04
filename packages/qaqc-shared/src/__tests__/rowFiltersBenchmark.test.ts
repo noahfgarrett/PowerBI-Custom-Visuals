@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { issueFilterFields } from '../issues'
 import { buildFilterCatalog, cellDisplayText, matchRows } from '../rowFilters'
 import type { FilterFieldDef, FilterSelection, Row } from '../rowFilters'
 import { weldFilterFields } from '../welds'
@@ -79,6 +80,30 @@ describe('weld filter budgets', () => {
   ])
 
   it('matches Building, Pipe Spec and a comma-separated Welder under 50 ms', () => {
+    expect(matchRows(rows, catalog, selection).length).toBeGreaterThan(0)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => matchRows(rows, catalog, selection)))).toBeLessThan(MATCH_BUDGET_MS)
+  })
+})
+
+describe('issue filter budgets', () => {
+  const COLUMNS = {
+    id: 0, title: 1, status: 2, type: 3, contractor: 4, createdOn: 5, updatedOn: 6, dueDate: 7, createdBy: 8, rootCause: 9, rootCauseCategory: -1, createdByCompany: 10,
+  }
+  const rows: Row[] = Array.from({ length: ROW_COUNT }, (_, serial) => {
+    const hash = mix(serial + 1)
+    return [
+      `#${serial}`, `Issue ${serial}`, `Status ${hash % 6}`, `Type ${hash % 13}`, hash % 9 === 0 ? null : `Contractor ${hash % 5}`, '10/5/2026', '10/6/2026', null,
+      hash % 5 === 0 ? `Person ${hash % 40} (LotusWorks)` : `Person ${hash % 400}`, `Cause ${hash % 40}`, `Company ${hash % 8}`,
+    ]
+  })
+  const catalog = buildFilterCatalog(rows, issueFilterFields(COLUMNS))
+  const selection: FilterSelection = new Map([
+    ['company', new Set(['lotusworks', 'company 1', 'company 2'])],
+    ['contractor', new Set(['contractor 1', 'contractor 2', ''])],
+    ['rootCause', new Set(Array.from({ length: 20 }, (_, index) => `cause ${index}`))],
+  ])
+
+  it('matches Created By (Company), Contractor and Root Cause under 50 ms', () => {
     expect(matchRows(rows, catalog, selection).length).toBeGreaterThan(0)
     expect(bestOf(TIMING_RUNS, () => elapsed(() => matchRows(rows, catalog, selection)))).toBeLessThan(MATCH_BUDGET_MS)
   })

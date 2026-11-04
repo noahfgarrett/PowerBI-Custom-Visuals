@@ -34,10 +34,12 @@ function tableColumns(group: DrillGroup): Array<IssueTableColumn<Row, string>> {
   return group.columns.map((column) => ({
     key: column.key,
     label: column.label,
-    width: column.isLong === true ? null : shortColumnWidth(column, group.rows),
+    width: column.isLong === true ? null : column.width ?? shortColumnWidth(column, group.rows),
     isText: true,
-    firstDirection: 'ascending',
-    sortValue: { kind: 'text', valueOf: column.read },
+    firstDirection: column.firstDirection ?? 'ascending',
+    sortValue: column.sortNumber === undefined
+      ? { kind: 'text', valueOf: column.read }
+      : { kind: 'number', valueOf: column.sortNumber },
   }))
 }
 

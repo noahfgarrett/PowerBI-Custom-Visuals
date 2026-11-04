@@ -163,11 +163,14 @@ export const ISSUE_SLOTS: readonly IssueFieldSlot[] = [
   { role: 'bim360CreatedOn', slot: 'BIM360 Created On', column: 'BIM360_Created On' },
   { role: 'bim360ClosedOn', slot: 'BIM360 Closed On', column: 'BIM360_Closed On' },
   { role: 'closedAt', slot: 'Closed At', column: 'Closed at' },
+  { role: 'createdByCompany', slot: 'Created By (Company)', column: 'Created By (Company)' },
+  { role: 'discipline', slot: 'Discipline', column: 'Discipline' },
 ]
 
 /**
  * Root Cause and its category only feed the Pareto, so reports without them keep working. The enrichment slots only
- * exist in the enriched Autodesk export; without them every issue reads its standard Created By and dates.
+ * exist in the enriched Autodesk export; without them every issue reads its standard Created By and dates. Created By
+ * (Company) and Discipline only add Filter menu fields.
  */
 export const OPTIONAL_ISSUE_ROLES: ReadonlySet<IssueSlotRole> = new Set<IssueSlotRole>([
   'rootCause',
@@ -176,6 +179,8 @@ export const OPTIONAL_ISSUE_ROLES: ReadonlySet<IssueSlotRole> = new Set<IssueSlo
   'bim360CreatedOn',
   'bim360ClosedOn',
   'closedAt',
+  'createdByCompany',
+  'discipline',
 ])
 
 export type IssueTableReadResult =
@@ -204,6 +209,8 @@ export function readIssueTable(table: InspectionTableSource | undefined): IssueT
     bim360CreatedOn: positionOf('bim360CreatedOn'),
     bim360ClosedOn: positionOf('bim360ClosedOn'),
     closedAt: positionOf('closedAt'),
+    createdByCompany: positionOf('createdByCompany'),
+    discipline: positionOf('discipline'),
   }
   const missing = required.filter((slot) => columns[slot.role] < 0)
   if (missing.length > 0) return { kind: 'missing', missing }

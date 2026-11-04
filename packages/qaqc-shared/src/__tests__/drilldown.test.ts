@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import { inspectionDrillColumns, weekIssueRows, weldDrillColumns, type DrillColumn } from '../drilldown'
+import { inspectionDrillColumns, issueDrillColumns, weekIssueRows, weekRows, weldDrillColumns, type DrillColumn } from '../drilldown'
 import { buildInspectionIndex } from '../inspections'
-import type { InspectionOptionalColumns } from '../types'
+import { buildIssueIndex } from '../issues'
+import type { InspectionOptionalColumns, IssueColumns } from '../types'
 import { INSPECTION_COLUMNS, PLACEHOLDER_OPTIONAL, UNBOUND_OPTIONAL } from './inspectionFilterFixture'
 import { PLACEHOLDER_WELD_OPTIONAL, UNBOUND_WELD_OPTIONAL, WELD_COLUMNS } from './weldFilterFixture'
 
@@ -126,5 +127,61 @@ describe('weekIssueRows', () => {
   it('is empty for a week with no issues and for a week the index does not have', () => {
     expect(weekIssueRows(INDEX, ROWS, 202641)).toEqual([])
     expect(weekIssueRows(INDEX, ROWS, 201001)).toEqual([])
+  })
+})
+
+describe('issueDrillColumns', () => {
+  const COLUMNS: IssueColumns = {
+    id: 0, title: 1, status: 2, type: 3, contractor: 4, createdOn: 5, updatedOn: 6, dueDate: 7, createdBy: 8, rootCause: -1, rootCauseCategory: -1,
+  }
+  const TODAY = new Date(2026, 9, 15)
+  const columns = issueDrillColumns(COLUMNS)
+  const OPEN = ['#1021', 'Grout', 'Pending', null, null, '10/5/2026', null, '10/20/2026', 'LotusWorks']
+  const CLOSED = ['#7', 'Bolts', 'Closed', 'NCR', 'Greyfox', '9/30/2026', '10/6/2026', null, 'LotusWorks']
+
+  it('lists Issue Detail\'s columns in its order, and only Title flexes', () => {
+    expect(labels(columns)).toEqual(['ID', 'Subtype', 'Status', 'Title', 'Contractor', 'Work Week', 'Created On', 'Work Week Closed', 'Due Date'])
+    expect(labels(columns.filter((column) => column.isLong === true))).toEqual(['Title'])
+  })
+
+  it('a row reads exactly as its Issue Detail row does', () => {
+    const index = buildIssueIndex([OPEN, CLOSED], COLUMNS, TODAY)
+    for (const row of [OPEN, CLOSED]) {
+      const detail = index.issues.find((issue) => issue.id === row[0])?.detail
+      if (detail === undefined) throw new Error('no issue')
+      expect(columns.map((column) => column.read(row))).toEqual([
+        detail.id, detail.subtype, detail.status, detail.title, detail.contractor, detail.workWeek, detail.createdOn, detail.workWeekClosed, detail.dueDate,
+      ])
+    }
+  })
+
+  it('shows Pending as Open, a blank Type as Uncategorized and the ID 1021 contractor default, as Issue Detail does', () => {
+    expect(cell(columns, 'Status', OPEN)).toBe('Open')
+    expect(cell(columns, 'Subtype', OPEN)).toBe('Uncategorized')
+    expect(cell(columns, 'Contractor', OPEN)).toBe('Bayside')
+  })
+
+  it('sorts weeks and dates by time, newest first, and a blank last', () => {
+    const closedWeek = columns.find((column) => column.key === 'workWeekClosed')
+    expect(closedWeek?.firstDirection).toBe('descending')
+    expect(closedWeek?.sortNumber?.(CLOSED)).toBe(202641)
+    expect(closedWeek?.sortNumber?.(OPEN)).toBeNull()
+  })
+
+  it('reads a void or undated row as blank instead of throwing', () => {
+    const voided = ['#2', 'Gone', 'Void', 'COR', 'Bayside', '10/5/2026', null, null, 'LotusWorks']
+    const undated = ['#3', 'Soon', 'Open', 'COR', 'Bayside', null, null, null, 'LotusWorks']
+    expect(cell(columns, 'ID', voided)).toBe('')
+    expect(cell(columns, 'ID', undated)).toBe('')
+  })
+})
+
+describe('weekRows', () => {
+  it('reads only that week\'s positions, and nothing for a week not on the axis', () => {
+    const rows = [['a'], ['b'], ['c']]
+    const positions = new Map([[202641, 0], [202642, 1]])
+    expect(weekRows(positions, [[2, 0], []], rows, 202641)).toEqual([['c'], ['a']])
+    expect(weekRows(positions, [[2, 0], []], rows, 202642)).toEqual([])
+    expect(weekRows(positions, [[2, 0], []], rows, 202650)).toEqual([])
   })
 })

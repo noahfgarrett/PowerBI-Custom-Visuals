@@ -43,6 +43,26 @@ function header(container: Element, label: string): HTMLButtonElement {
 }
 
 describe('WeekIssuesPage', () => {
+  it('gives a column the width it asks for', () => {
+    const container = draw([{ ...GROUP, columns: [{ ...COLUMNS[0], width: 104 }, COLUMNS[1]] }])
+    expect(container.querySelector<HTMLElement>('col')?.style.width).toBe('104px')
+  })
+
+  it('sorts a column with a sort number on it, blanks last, starting in its first direction', () => {
+    const week: DrillColumn = {
+      key: 'week',
+      label: 'Week',
+      read: (row) => cellDisplayText(row[0]),
+      sortNumber: (row) => (row[1] === null ? null : Number(row[1])),
+      firstDirection: 'descending',
+    }
+    const rows: Row[] = [["WW52'2025", 202552], ['Open', null], ["WW01'2026", 202601]]
+    const container = draw([{ title: null, columns: [COLUMNS[1], week], rows }])
+    click(header(container, 'Week'))
+    expect(bodyRows(container).map((row) => row[1])).toEqual(["WW01'2026", "WW52'2025", 'Open'])
+    expect(header(container, 'Week').closest('th')?.getAttribute('aria-sort')).toBe('descending')
+  })
+
   it('shows the count and the week', () => {
     const container = draw()
     expect(container.querySelector('.qaqc-week-issues-count')?.textContent).toBe("3 issues in WW23'2026")

@@ -3,10 +3,14 @@ import { act, type ReactElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { IssuesDashboard, type IssuesDashboardProps } from '../components/IssuesDashboard'
-import { buildIssueIndex } from '../issues'
+import { buildIssueFootnotes } from '../footnotes'
+import { buildIssueIndex, issueRowWeekKey } from '../issues'
 import { resolveTheme } from '../theme'
 import type { IssueColumns, IssueIndex } from '../types'
+import { badge, buttonNamed, checkbox, chipTexts, choose, filterButton, openMenu, pick, pressEscape, showing, toggleSection } from './filterHarness'
+import { ENRICHED_ISSUE_ROWS } from './fixtures/enrichedIssueRows'
 import { ISSUE_ROWS } from './fixtures/issueRows'
+import { ENRICHED_COLUMNS } from './issueFilterFixture'
 import { render, type Rendered } from './render'
 import { ruleBody } from './stylesheet'
 
@@ -45,6 +49,7 @@ function dashboardElement(overrides: Partial<IssuesDashboardProps> = {}): ReactE
       title="QCx Issues"
       icon={CircleAlert}
       index={INDEX}
+      filterSource={{ rows: ISSUE_ROWS, columns: COLUMNS, today: TODAY }}
       theme={THEME}
       interactive
       animate={false}
@@ -323,11 +328,12 @@ describe('IssuesDashboard layout', () => {
     view = draw()
     const controls = view.container.querySelector('.qaqc-controls')
     const order = [...(controls?.children ?? [])].map((node) => node.className)
-    expect(order).toEqual(['qaqc-header-button', 'qaqc-header-button', 'qaqc-header-button', 'qaqc-segmented', 'qaqc-week-picker'])
+    expect(order).toEqual(['qaqc-header-button', 'qaqc-header-button', 'qaqc-header-button', 'qaqc-filter-anchor', 'qaqc-segmented', 'qaqc-week-picker'])
     expect([...(controls?.querySelectorAll('.qaqc-header-button') ?? [])].map((node) => node.textContent)).toEqual([
       'Issue Detail',
       'Issues by Root Cause Pareto',
       'Issue Aging',
+      'Filter',
     ])
   })
 
@@ -659,5 +665,584 @@ describe('IssuesDashboard Issues by Root Cause Pareto', () => {
   it('hides the Pareto button when interactions are not allowed', () => {
     view = draw({ interactive: false })
     expect(paretoButton(view.container)).toBeNull()
+  })
+})
+
+describe('IssuesDashboard filters', () => {
+  const FILTER_TODAY = new Date(2026, 10, 4) // WW45'2026, after the export of 20 Oct
+  const BASE = buildIssueIndex(ENRICHED_ISSUE_ROWS, ENRICHED_COLUMNS, FILTER_TODAY)
+  const NOTES = buildIssueFootnotes(BASE, false)
+  const UNBOUND_COMPANY: IssueColumns = { ...ENRICHED_COLUMNS, createdByCompany: -1 }
+
+  function drawEnriched(columns: IssueColumns = ENRICHED_COLUMNS, overrides: Partial<IssuesDashboardProps> = {}): HTMLElement {
+    stubSize()
+    const index = buildIssueIndex(ENRICHED_ISSUE_ROWS, columns, FILTER_TODAY)
+    view = draw({
+      index,
+      filterSource: { rows: ENRICHED_ISSUE_ROWS, columns, today: FILTER_TODAY },
+      footnotes: buildIssueFootnotes(index, false),
+      ...overrides,
+    })
+    return view.container
+  }
+
+  function sectionTitles(container: HTMLElement): string[] {
+    return [...container.querySelectorAll('.qaqc-filter-section-toggle span:first-of-type')].map((node) => node.textContent ?? '')
+  }
+
+  function setRange(container: HTMLElement, fromKey: number, toKey: number): void {
+    const [from, to] = container.querySelectorAll<HTMLSelectElement>('.qaqc-filter-date select')
+    choose(from, fromKey)
+    choose(to, toKey)
+  }
+
+  function toDateValues(container: HTMLElement): Array<string | null> {
+    return ['Total Opened', 'Total Closed', 'Remaining Open', 'Closure Rate'].map((label) => cardValue(container, label))
+  }
+
+  function groupTitle(container: HTMLElement): string | null {
+    return container.querySelector('.qaqc-kpi-group.is-toDate span')?.textContent ?? null
+  }
+
+  function groupSubtitle(container: HTMLElement): string | null {
+    return container.querySelector('.qaqc-kpi-group.is-toDate em')?.textContent ?? null
+  }
+
+  function notes(container: HTMLElement): string[] {
+    return [...container.querySelectorAll('.qaqc-footnotes li, .qaqc-footnote')].map((node) => node.textContent ?? '')
+  }
+
+  function tickCompanies(container: HTMLElement, ...names: string[]): void {
+    for (const name of names) click(checkbox(container, name))
+  }
+
+  function weekPickerKeys(container: HTMLElement): string[] {
+    const select = pick(container, '.qaqc-week-picker select', HTMLSelectElement)
+    return [...select.options].map((option) => option.value)
+  }
+
+  it('the default view is today\'s visual: no badge, no chips, only LotusWorks ticked', () => {
+    const container = drawEnriched()
+    expect(toDateValues(container)).toEqual(['231', '175', '56', '75.8%'])
+    expect(badge(container)).toBeNull()
+    expect(chipTexts(container)).toEqual([])
+    openMenu(container)
+    expect(checkbox(container, 'LotusWorks').checked).toBe(true)
+    expect(checkbox(container, 'Greyfox').checked).toBe(false)
+    expect(notes(container)).toEqual(['846 issues not created by LotusWorks are excluded'])
+  })
+
+  it('lists the bound fields in the menu order', () => {
+    const container = drawEnriched({ ...ENRICHED_COLUMNS, discipline: ENRICHED_COLUMNS.type })
+    openMenu(container)
+    expect(sectionTitles(container)).toEqual(['Created By (Company)', 'Contractor', 'Status', 'Type', 'Discipline', 'Root Cause'])
+  })
+
+  it('Showing X of Y counts every issue row', () => {
+    const container = drawEnriched()
+    openMenu(container)
+    expect(showing(container)).toBe('Showing 231 of 1,077 rows')
+    tickCompanies(container, 'Greyfox', 'Bayside')
+    expect(showing(container)).toBe('Showing 269 of 1,077 rows')
+  })
+
+  it('selecting companies recalculates the cards, with a chip and a badge', () => {
+    const container = drawEnriched()
+    openMenu(container)
+    tickCompanies(container, 'Greyfox', 'Bayside')
+    expect(toDateValues(container)).toEqual(['269', '211', '58', '78.4%'])
+    expect(chipTexts(container)).toEqual(['Created By (Company): LotusWorks, Bayside, Greyfox'])
+    expect(badge(container)).toBe('1')
+  })
+
+  it('the excluded footnote follows the selection', () => {
+    const container = drawEnriched()
+    openMenu(container)
+    tickCompanies(container, 'Greyfox', 'Bayside')
+    expect(notes(container)).toEqual(['808 issues from other companies are excluded'])
+    click(buttonNamed(container, 'Select all'))
+    expect(notes(container)).toEqual([])
+  })
+
+  it('the excluded footnote stays while another field filters the default', () => {
+    const container = drawEnriched()
+    openMenu(container)
+    toggleSection(container, 'Status')
+    click(checkbox(container, 'Pending'))
+    expect(notes(container)).toEqual(['846 issues not created by LotusWorks are excluded'])
+  })
+
+  it('unticking every company falls back to the default', () => {
+    const container = drawEnriched()
+    openMenu(container)
+    click(checkbox(container, 'LotusWorks'))
+    expect(checkbox(container, 'LotusWorks').checked).toBe(true)
+    expect(badge(container)).toBeNull()
+    expect(toDateValues(container)).toEqual(['231', '175', '56', '75.8%'])
+  })
+
+  it('Select all ticks every company, and Clear all restores the default', () => {
+    const container = drawEnriched()
+    openMenu(container)
+    click(buttonNamed(container, 'Select all'))
+    expect(showing(container)).toBe('Showing 1,077 of 1,077 rows')
+    expect(cardValue(container, 'Total Opened')).toBe('1,077')
+    click(buttonNamed(container, 'Clear all'))
+    expect(showing(container)).toBe('Showing 231 of 1,077 rows')
+    expect(toDateValues(container)).toEqual(['231', '175', '56', '75.8%'])
+  })
+
+  it('a company that was never LotusWorks alone leaves LotusWorks out once it is unticked', () => {
+    const container = drawEnriched()
+    openMenu(container)
+    tickCompanies(container, 'Larch')
+    click(checkbox(container, 'LotusWorks'))
+    expect(cardValue(container, 'Total Opened')).toBe('4')
+    expect(chipTexts(container)).toEqual(['Created By (Company): Larch'])
+  })
+
+  it('Status filters by the sheet\'s value, Pending apart from Open, within the default company', () => {
+    const container = drawEnriched()
+    openMenu(container)
+    toggleSection(container, 'Status')
+    click(checkbox(container, 'Pending'))
+    const expected = BASE.issues.filter((issue) => issue.statusKind === 'pending').length
+    expect(cardValue(container, 'Total Opened')).toBe(String(expected))
+    expect(expected).toBeLessThan(56)
+    expect(chipTexts(container)).toEqual(['Status: Pending'])
+  })
+
+  it('Contractor agrees with what the tables show', () => {
+    const container = drawEnriched()
+    openMenu(container)
+    toggleSection(container, 'Created By (Company)')
+    toggleSection(container, 'Contractor')
+    click(checkbox(container, 'Greyfox'))
+    const expected = BASE.issues.filter((issue) => issue.contractor === 'Greyfox').length
+    expect(cardValue(container, 'Total Opened')).toBe(String(expected))
+  })
+
+  it('Root Cause agrees with the Pareto', () => {
+    const container = drawEnriched()
+    openMenu(container)
+    toggleSection(container, 'Root Cause')
+    click(checkbox(container, 'Installation'))
+    const expected = BASE.issues.filter((issue) => issue.rootCause === 'Installation').length
+    expect(cardValue(container, 'Total Opened')).toBe(String(expected))
+  })
+
+  it('with the company slot unbound, there is no company field and a filter keeps the LotusWorks limit', () => {
+    const container = drawEnriched(UNBOUND_COMPANY)
+    expect(toDateValues(container)).toEqual(['231', '175', '56', '75.8%'])
+    openMenu(container)
+    expect(sectionTitles(container)).toEqual(['Contractor', 'Status', 'Type', 'Root Cause'])
+    expect(showing(container)).toBe('Showing 231 of 231 rows')
+    toggleSection(container, 'Status')
+    click(checkbox(container, 'Closed'))
+    expect(toDateValues(container)).toEqual(['175', '175', '0', '100.0%'])
+    expect(showing(container)).toBe('Showing 175 of 231 rows')
+    expect(notes(container)).toEqual(['846 issues not created by LotusWorks are excluded'])
+  })
+
+  it('a filter never shortens the axis', () => {
+    const container = drawEnriched()
+    clickRange(container, 'All')
+    expect(mainHitWeeks(container)[0]).toBe('202446')
+    openMenu(container)
+    toggleSection(container, 'Status')
+    click(checkbox(container, 'Pending'))
+    const firstPending = Math.min(...BASE.issues.filter((issue) => issue.statusKind === 'pending').map((issue) => issue.createdWeek.key))
+    expect(firstPending).toBeGreaterThan(202446)
+    expect(mainHitWeeks(container)[0]).toBe('202446')
+  })
+
+  it('a company with earlier issues widens the axis to them', () => {
+    const container = drawEnriched()
+    clickRange(container, 'All')
+    openMenu(container)
+    tickCompanies(container, 'Greyfox')
+    expect(mainHitWeeks(container)[0]).toBe('202330')
+  })
+
+  it('the Pareto and Issue Aging follow a field filter', () => {
+    const container = drawEnriched()
+    openMenu(container)
+    tickCompanies(container, 'Greyfox', 'Bayside')
+    pressEscape(pick(container, '.qaqc-filter-popover', HTMLElement))
+    clickRange(container, 'All')
+    click(pick(container, 'button[aria-label="Open the Issues by Root Cause Pareto page"]', HTMLButtonElement))
+    expect(container.querySelector('[role="dialog"] .qaqc-pareto-chart-note')?.textContent).toContain('269')
+  })
+
+  it('the menu\'s From reaches the first week of any company', () => {
+    const container = drawEnriched()
+    openMenu(container)
+    const [from] = container.querySelectorAll<HTMLSelectElement>('.qaqc-filter-date select')
+    expect([...from.options].map((option) => option.value)).toContain('202209')
+    expect([...from.options].find((option) => option.value === '202209')?.textContent).toContain('(start)')
+  })
+
+  it('reaches a range before the default view\'s first week: charts show the range\'s weeks', () => {
+    const container = drawEnriched()
+    openMenu(container)
+    setRange(container, 202440, 202450)
+    const weeks = mainHitWeeks(container)
+    expect(weeks[0]).toBe('202440')
+    expect(weeks[weeks.length - 1]).toBe('202450')
+    expect(groupSubtitle(container)).toBe("WW40'2024 to WW50'2024")
+  })
+
+  it('a range with no issues shows the empty state, and Clear filters returns', () => {
+    const container = drawEnriched()
+    openMenu(container)
+    setRange(container, 202301, 202310)
+    expect(container.querySelector('.qaqc-filter-empty')?.textContent).toContain('There are no issues in this date range')
+    expect(container.querySelector('.qaqc-kpi-row')).toBeNull()
+    click(buttonNamed(container, 'Clear filters'))
+    expect(toDateValues(container)).toEqual(['231', '175', '56', '75.8%'])
+    expect(document.activeElement).toBe(filterButton(container))
+  })
+
+  it('a filter leaving no issues shows the empty state', () => {
+    const rows = [['#1', 'One', 'Void', 'COR', 'Bayside', '10/5/2026', null, null, 'LotusWorks']]
+    const index = buildIssueIndex(rows, COLUMNS, TODAY)
+    view = draw({ index, filterSource: { rows, columns: COLUMNS, today: TODAY } })
+    const { container } = view
+    openMenu(container)
+    expect(container.querySelector('.qaqc-filter-empty')).toBeNull()
+    toggleSection(container, 'Status')
+    click(checkbox(container, 'Void'))
+    expect(container.querySelector('.qaqc-filter-empty')?.textContent).toContain('There are no issues')
+    expect(showing(container)).toBe('Showing 1 of 1 rows')
+  })
+
+  it('in range, the group restates, the toggle is disabled and the week picker lists only the range', () => {
+    const container = drawEnriched()
+    openMenu(container)
+    setRange(container, 202630, 202640)
+    expect(groupTitle(container)).toBe('In range')
+    expect(groupSubtitle(container)).toBe("WW30'2026 to WW40'2026")
+    expect(chipTexts(container)).toEqual(["Date range: WW30'2026 to WW40'2026"])
+    expect(badge(container)).toBe('1')
+
+    const span = BASE.weeks.filter((item) => item.week.key >= 202630 && item.week.key <= 202640)
+    const opened = span.reduce((sum, item) => sum + item.opened, 0)
+    const closed = span.reduce((sum, item) => sum + item.closed, 0)
+    const nowClosed = BASE.issues.filter((issue) => issue.statusKind === 'closed' && issue.createdWeek.key >= 202630 && issue.createdWeek.key <= 202640).length
+    const position = BASE.positionByKey.get(202640) ?? -1
+    const remaining = BASE.cumulativeOpened[position] - BASE.cumulativeClosed[position]
+    expect(toDateValues(container)).toEqual([String(opened), String(closed), String(remaining), `${((nowClosed / opened) * 100).toFixed(1)}%`])
+    expect(cardDetail(container, 'Closure Rate')).toBe(`${nowClosed} of ${opened} closed`)
+
+    const weeks = mainHitWeeks(container)
+    expect(weeks).toHaveLength(11)
+    expect(container.querySelector<HTMLButtonElement>('.qaqc-header .qaqc-segmented button')?.disabled).toBe(true)
+    expect(weekPickerKeys(container)).toHaveLength(11)
+    expect(weekPickerKeys(container)[0]).toBe('202640')
+  })
+
+  it('Showing X of Y counts the rows created in the range', () => {
+    const container = drawEnriched()
+    openMenu(container)
+    setRange(container, 202630, 202640)
+    const readWeek = issueRowWeekKey(ENRICHED_COLUMNS)
+    const everyCompany = ENRICHED_ISSUE_ROWS.filter((row) => {
+      const key = readWeek(row)
+      return key !== null && key >= 202630 && key <= 202640
+    })
+    const lotusWorks = BASE.issues.filter((issue) => issue.createdWeek.key >= 202630 && issue.createdWeek.key <= 202640)
+    expect(everyCompany.length).toBeGreaterThan(lotusWorks.length)
+    expect(showing(container)).toBe(`Showing ${lotusWorks.length} of 1,077 rows`)
+  })
+
+  it('Aging and Pareto aren\'t restated by the range, and their own controls keep working', () => {
+    const container = drawEnriched()
+    clickRange(container, 'All')
+    click(pick(container, 'button[aria-label="Open the Issues by Root Cause Pareto page"]', HTMLButtonElement))
+    const readout = (): string | null | undefined => container.querySelector('[role="dialog"] .qaqc-pareto-chart-note')?.textContent
+    const title = (): string | null | undefined => container.querySelector('[role="dialog"] h3')?.textContent
+    const before = readout()
+    const titleBefore = title()
+    click(pick(container, '.qaqc-back-button', HTMLButtonElement))
+
+    openMenu(container)
+    setRange(container, 202630, 202640)
+    pressEscape(pick(container, '.qaqc-filter-popover', HTMLElement))
+    click(pick(container, 'button[aria-label="Open the Issues by Root Cause Pareto page"]', HTMLButtonElement))
+    expect(readout()).toBe(before)
+    expect(title()).toBe(titleBefore)
+
+    const page = pick(container, '[role="dialog"]', HTMLElement)
+    const toggle = [...page.querySelectorAll<HTMLButtonElement>('.qaqc-segmented button')].find((button) => button.textContent === '30 WW')
+    if (toggle === undefined) throw new Error('page toggle missing')
+    expect(toggle.disabled).toBe(false)
+    click(toggle)
+    expect(title()).not.toBe(titleBefore)
+    const picker = pick(page, '.qaqc-week-picker select', HTMLSelectElement)
+    expect(picker.options[picker.options.length - 1].value).toBe(String(BASE.weeks[0].week.key))
+    choose(picker, 202610)
+    expect(picker.value).toBe('202610')
+  })
+
+  it('Open Issue Aging doesn\'t change with the range', () => {
+    const container = drawEnriched()
+    const before = panel(container, OPEN_AGING_TITLE)?.textContent
+    openMenu(container)
+    setRange(container, 202630, 202640)
+    expect(panel(container, OPEN_AGING_TITLE)?.textContent).toBe(before)
+  })
+
+  it('says a filter\'s rows are outside the recent window instead of drawing an empty chart', () => {
+    const rows = [
+      ['#1', 'Old', 'Closed', 'COR', 'Bayside', '1/5/2024', '1/8/2024', null, 'LotusWorks'],
+      ['#2', 'New', 'Open', 'COR', 'Bayside', '10/5/2026', null, null, 'LotusWorks'],
+    ]
+    const index = buildIssueIndex(rows, COLUMNS, TODAY)
+    view = draw({ index, filterSource: { rows, columns: COLUMNS, today: TODAY } })
+    const { container } = view
+    expect(panel(container, TREND_TITLE)?.textContent).not.toContain('Nothing in this window')
+    openMenu(container)
+    toggleSection(container, 'Status')
+    click(checkbox(container, 'Closed'))
+    expect(panel(container, TREND_TITLE)?.textContent).toContain('switch to All to see them')
+  })
+
+  it('disables the Filter button when interactions are not allowed', () => {
+    const container = drawEnriched(ENRICHED_COLUMNS, { interactive: false })
+    expect(filterButton(container).disabled).toBe(true)
+  })
+
+  it('keeps the footnotes it is given with no filter set', () => {
+    const container = drawEnriched()
+    expect(notes(container)).toEqual(NOTES)
+  })
+})
+
+describe('IssuesDashboard week drill-down', () => {
+  const FILTER_TODAY = new Date(2026, 10, 4)
+  const BASE = buildIssueIndex(ENRICHED_ISSUE_ROWS, ENRICHED_COLUMNS, FILTER_TODAY)
+  // WW42: 2 opened, 1 closed. WW44: nothing, after the export.
+  const BUSY_KEY = 202642
+  const QUIET_KEY = 202644
+  const BUSY_TITLE = "Issues · WW42'2026"
+
+  function drawDrill(overrides: Partial<IssuesDashboardProps> = {}): HTMLElement {
+    stubSize()
+    view = draw({ index: BASE, filterSource: { rows: ENRICHED_ISSUE_ROWS, columns: ENRICHED_COLUMNS, today: FILTER_TODAY }, ...overrides })
+    return view.container
+  }
+
+  function page(container: HTMLElement): HTMLElement | null {
+    return [...container.querySelectorAll<HTMLElement>('[role="dialog"]')].find((node) => node.getAttribute('aria-label')?.startsWith('Issues · ')) ?? null
+  }
+
+  function hit(container: HTMLElement, key: number): Element {
+    const rect = panel(container, TREND_TITLE)?.querySelector(`.qaqc-hit[data-week="${key}"]`)
+    if (!rect) throw new Error(`no week ${key}`)
+    return rect
+  }
+
+  function chart(container: HTMLElement): Element {
+    const svg = panel(container, TREND_TITLE)?.querySelector('svg.qaqc-chart')
+    if (!svg) throw new Error('chart missing')
+    return svg
+  }
+
+  function backButton(container: HTMLElement): HTMLButtonElement {
+    const button = page(container)?.querySelector<HTMLButtonElement>('.qaqc-back-button')
+    if (!button) throw new Error('back button missing')
+    return button
+  }
+
+  /** The group headings, as "Opened (2)". */
+  function groupHeadings(container: HTMLElement): string[] {
+    return [...(page(container)?.querySelectorAll('.qaqc-week-issues-group h4') ?? [])].map((node) => node.textContent ?? '')
+  }
+
+  /** The number the chart itself shows for a week, from its tooltip. */
+  function chartCounts(container: HTMLElement, onHover: ReturnType<typeof vi.fn>, key: number): { opened: number; closed: number } {
+    act(() => {
+      hit(container, key).dispatchEvent(new MouseEvent('mousemove', { bubbles: true }))
+    })
+    const request: unknown = onHover.mock.lastCall?.[0]
+    if (typeof request !== 'object' || request === null || !('rows' in request) || !Array.isArray(request.rows)) throw new Error('no tooltip')
+    const value = (label: string): number => {
+      const row: unknown = Array.isArray(request.rows) ? request.rows.find((item: { label?: string }) => item.label === label) : undefined
+      if (typeof row !== 'object' || row === null || !('value' in row)) throw new Error(`no ${label}`)
+      return Number(row.value)
+    }
+    return { opened: value('Opened'), closed: value('Closed') }
+  }
+
+  function expectGroupsToMatchChart(container: HTMLElement, onHover: ReturnType<typeof vi.fn>): number {
+    let opens = 0
+    for (const key of mainHitWeeks(container).map(Number)) {
+      const { opened, closed } = chartCounts(container, onHover, key)
+      click(hit(container, key))
+      if (opened + closed === 0) {
+        expect(page(container)).toBeNull()
+        continue
+      }
+      opens += 1
+      const expected = [
+        ...(opened > 0 ? [`Opened (${opened})`] : []),
+        ...(closed > 0 ? [`Closed (${closed})`] : []),
+      ]
+      expect(groupHeadings(container)).toEqual(expected)
+      click(backButton(container))
+    }
+    return opens
+  }
+
+  it('a click on a week with activity selects it and opens the page', () => {
+    const container = drawDrill()
+    click(hit(container, BUSY_KEY))
+    expect(weekSubtitle(container)).toBe("WW42'2026")
+    const open = page(container)
+    expect(open?.getAttribute('aria-label')).toBe(BUSY_TITLE)
+    expect(open?.querySelector('h3')?.textContent).toBe(BUSY_TITLE)
+    expect(groupHeadings(container)).toEqual(['Opened (2)', 'Closed (1)'])
+    expect(open?.querySelector('.qaqc-week-issues-count')?.textContent).toBe("3 issues in WW42'2026")
+  })
+
+  it('a click on a week with no activity only selects it', () => {
+    const container = drawDrill()
+    click(hit(container, QUIET_KEY))
+    expect(weekSubtitle(container)).toBe("WW44'2026")
+    expect(container.querySelector('[role="dialog"]')).toBeNull()
+  })
+
+  it('Enter on the focused week behaves the same', () => {
+    const container = drawDrill()
+    pickWeekInDropdown(container, String(QUIET_KEY))
+    pressKeys(chart(container), ['Enter'])
+    expect(container.querySelector('[role="dialog"]')).toBeNull()
+    pickWeekInDropdown(container, String(BUSY_KEY))
+    pressKeys(chart(container), ['Enter'])
+    expect(page(container)?.getAttribute('aria-label')).toBe(BUSY_TITLE)
+  })
+
+  it('lists Issue Detail\'s columns', () => {
+    const container = drawDrill()
+    click(hit(container, BUSY_KEY))
+    const first = page(container)?.querySelector('.qaqc-week-issues-group')
+    expect([...(first?.querySelectorAll('thead th') ?? [])].map((node) => node.textContent)).toEqual([
+      'ID', 'Subtype', 'Status', 'Title', 'Contractor', 'Work Week', 'Created On', 'Work Week Closed', 'Due Date',
+    ])
+  })
+
+  it('a row reads as it does in Issue Detail', () => {
+    const container = drawDrill()
+    click(hit(container, BUSY_KEY))
+    const detail = BASE.issues.find((issue) => issue.createdWeek.key === BUSY_KEY)?.detail
+    if (detail === undefined) throw new Error('no issue that week')
+    const rows = [...(page(container)?.querySelectorAll('.qaqc-week-issues-group:first-of-type tbody tr:not(.qaqc-virtual-spacer)') ?? [])]
+    const row = rows.find((item) => item.children[0].textContent === detail.id)
+    expect([...(row?.children ?? [])].map((cell) => cell.textContent)).toEqual([
+      detail.id, detail.subtype, detail.status, detail.title, detail.contractor, detail.workWeek, detail.createdOn, detail.workWeekClosed, detail.dueDate,
+    ])
+  })
+
+  it('omits a group with no rows', () => {
+    const week = BASE.weeks.find((item) => item.opened > 0 && item.closed === 0)
+    if (week === undefined) throw new Error('no such week')
+    const container = drawDrill()
+    clickRange(container, 'All')
+    click(hit(container, week.week.key))
+    expect(groupHeadings(container)).toEqual([`Opened (${week.opened})`])
+  })
+
+  it('every week\'s groups equal the chart\'s opened and closed, with and without filters', () => {
+    const onHover = vi.fn()
+    const container = drawDrill({ onHover })
+    clickRange(container, 'All')
+    expect(expectGroupsToMatchChart(container, onHover)).toBeGreaterThan(10)
+
+    openMenu(container)
+    click(checkbox(container, 'Greyfox'))
+    click(checkbox(container, 'Bayside'))
+    pressEscape(pick(container, '.qaqc-filter-popover', HTMLElement))
+    expect(expectGroupsToMatchChart(container, onHover)).toBeGreaterThan(10)
+    // Draws the page for every week of two long axes, which takes a while on a busy machine.
+  }, 30_000)
+
+  it('a closed row shows the week it closed, in the Closed group', () => {
+    const container = drawDrill()
+    click(hit(container, BUSY_KEY))
+    const groups = page(container)?.querySelectorAll('.qaqc-week-issues-group') ?? []
+    const closedRow = groups[1]?.querySelector('tbody tr:not(.qaqc-virtual-spacer)')
+    expect(closedRow?.children[7].textContent).toBe("WW42'2026")
+  })
+
+  it('Esc and Back return to the dashboard with focus on the chart', () => {
+    const container = drawDrill()
+    click(hit(container, BUSY_KEY))
+    expect(document.activeElement).toBe(backButton(container))
+    click(backButton(container))
+    expect(page(container)).toBeNull()
+    expect(document.activeElement).toBe(chart(container))
+
+    click(hit(container, BUSY_KEY))
+    const open = page(container)
+    if (!open) throw new Error('page missing')
+    pressEscape(open)
+    expect(page(container)).toBeNull()
+    expect(document.activeElement).toBe(chart(container))
+  })
+
+  it('clears the tooltip when the page opens', () => {
+    const onHover = vi.fn()
+    const container = drawDrill({ onHover })
+    act(() => {
+      hit(container, BUSY_KEY).dispatchEvent(new MouseEvent('mousemove', { bubbles: true }))
+    })
+    click(hit(container, BUSY_KEY))
+    expect(onHover).toHaveBeenLastCalledWith(null)
+  })
+
+  it('opens from the expanded chart', () => {
+    const container = drawDrill()
+    const open = expandPanel(container, TREND_TITLE)
+    const rect = open.querySelector(`.qaqc-hit[data-week="${BUSY_KEY}"]`)
+    if (!rect) throw new Error('expanded chart has no week')
+    click(rect)
+    expect(page(container)?.getAttribute('aria-label')).toBe(BUSY_TITLE)
+    click(backButton(container))
+    expect(container.querySelector('[role="dialog"]')).toBeNull()
+  })
+
+  it('in a range, a click selects inside the range and opens that week', () => {
+    const container = drawDrill()
+    openMenu(container)
+    const [from, to] = container.querySelectorAll<HTMLSelectElement>('.qaqc-filter-date select')
+    choose(from, 202640)
+    choose(to, 202643)
+    click(hit(container, BUSY_KEY))
+    expect(page(container)?.getAttribute('aria-label')).toBe(BUSY_TITLE)
+  })
+
+  it('Issue Detail keeps working, and follows a filter', () => {
+    const container = drawDrill()
+    const open = openDetail(container)
+    expect(open.querySelector('.qaqc-issue-detail-legend')?.textContent).toContain('56')
+    click(pick(open, '.qaqc-back-button', HTMLButtonElement))
+    openMenu(container)
+    click(checkbox(container, 'Greyfox'))
+    click(checkbox(container, 'Bayside'))
+    pressEscape(pick(container, '.qaqc-filter-popover', HTMLElement))
+    expect(openDetail(container).querySelector('.qaqc-issue-detail-legend')?.textContent).toContain('58')
+  })
+
+  it('the Issue Aging page\'s Esc still closes its list before the page', () => {
+    const container = drawDrill()
+    click(pick(container, 'button[aria-label="Open the Issue Aging page"]', HTMLButtonElement))
+    const open = pick(container, '[role="dialog"]', HTMLElement)
+    click(pick(open, '.qaqc-expand-button', HTMLButtonElement))
+    expect(open.querySelector('.qaqc-aging-list')).not.toBeNull()
+    pressEscape(open)
+    expect(container.querySelector('[role="dialog"]')).not.toBeNull()
+    expect(open.querySelector('.qaqc-aging-list')).toBeNull()
+    pressEscape(open)
+    expect(container.querySelector('[role="dialog"]')).toBeNull()
   })
 })

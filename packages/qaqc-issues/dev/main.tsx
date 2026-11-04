@@ -21,7 +21,8 @@ const width = Number(params.get('w') ?? 1280)
 const height = Number(params.get('h') ?? 720)
 const presetParam = params.get('preset') ?? 'qaqc'
 const data = params.get('data') ?? 'fixture'
-const today = new Date(2026, 9, 15)
+// ?today=export is the date the fixture test and the mockup use, after the enriched export of 20 Oct.
+const today = params.get('today') === 'export' ? new Date(2026, 10, 4) : new Date(2026, 9, 15)
 
 const frame = document.getElementById('frame')
 const tooltip = document.getElementById('tooltip')
@@ -95,6 +96,7 @@ const enrichedColumns: IssueColumns = {
   bim360CreatedOn: enrichedPosition('BIM360_Created On'),
   bim360ClosedOn: enrichedPosition('BIM360_Closed On'),
   closedAt: enrichedPosition('Closed at'),
+  createdByCompany: enrichedPosition('Created By (Company)'),
 }
 
 interface HarnessData {
@@ -132,6 +134,7 @@ if (data === 'missing') {
         title="QCx Issues"
         icon={CircleAlert}
         index={index}
+        filterSource={{ rows, columns: boundColumns, today }}
         theme={theme}
         interactive={params.get('interactive') !== '0'}
         animate={params.get('animate') !== '0'}

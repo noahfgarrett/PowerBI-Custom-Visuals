@@ -287,3 +287,107 @@ describe('buildIssueDetail', () => {
     expect(detail.reportRows.find((row) => row.id === '#4')?.status).toBe('Open')
   })
 })
+
+describe('buildIssueModel in a date range', () => {
+  const inRange = (fromKey: number, toKey: number, selectedKey = toKey): ViewState => ({
+    selectedKey,
+    windowEndKey: toKey,
+    range: 'recent',
+    dateRange: { fromKey, toKey },
+  })
+  // Opened: WW39 3, WW40 1, WW41 3, WW42 1. Closed: WW40 1, WW41 2, WW42 1. Remaining: 3, 3, 4, 4.
+  const index = buildIssueIndex(ROWS, COLUMNS, TODAY)
+
+  it('Total Opened and Total Closed count within the range', () => {
+    const { toDate } = buildIssueModel(index, inRange(WW40, WW41))
+    expect(toDate.opened.value).toBe(4)
+    expect(toDate.closed.value).toBe(3)
+  })
+
+  it('Remaining Open is the open count at range end, and equals the Remaining Open line\'s last point', () => {
+    const model = buildIssueModel(index, inRange(WW40, WW41))
+    expect(model.toDate.remaining.value).toBe(4)
+    expect(model.trend[model.trend.length - 1].remainingOpen).toBe(4)
+  })
+
+  it('stays the count at range end with an earlier week selected', () => {
+    const model = buildIssueModel(index, inRange(WW39, WW41, WW40))
+    expect(model.toDate.remaining.value).toBe(4)
+    expect(model.selectedWeek.key).toBe(WW40)
+  })
+
+  it('the Remaining Open line stays the true open count each week', () => {
+    expect(buildIssueModel(index, inRange(WW40, WW42)).trend.map((point) => point.remainingOpen)).toEqual([3, 4, 4])
+  })
+
+  it('Closure Rate is the share opened in range now closed, never above 100%', () => {
+    // WW40 and WW41 opened #3, #4, #5, #6: #3 and #6 are now closed. Closed ÷ opened would read 75%.
+    const { toDate, rangeClosure } = buildIssueModel(index, inRange(WW40, WW41))
+    expect(toDate.closureRate.value).toBe(50)
+    expect(toDate.closureRate.deltaPoints).toBeNull()
+    expect(rangeClosure).toEqual({ nowClosed: 2, opened: 4 })
+
+    // WW42 alone closed two older issues and opened one that is still open: the closes don't count towards it.
+    const closesOnly = buildIssueIndex([issue('#1', '9/22/2026', 'Closed', '10/14/2026'), issue('#2', '9/22/2026', 'Closed', '10/14/2026'), issue('#3', '10/14/2026')], COLUMNS, TODAY)
+    const last = buildIssueModel(closesOnly, inRange(WW42, WW42))
+    expect(last.toDate.closed.value).toBe(2)
+    expect(last.toDate.opened.value).toBe(1)
+    expect(last.toDate.closureRate.value).toBe(0)
+  })
+
+  it('a range with nothing opened has no Closure Rate', () => {
+    const quiet = buildIssueIndex([issue('#1', '9/22/2026', 'Closed', '10/14/2026')], COLUMNS, TODAY)
+    expect(buildIssueModel(quiet, inRange(WW42, WW42)).toDate.closureRate.value).toBeNull()
+    expect(buildIssueModel(quiet, inRange(WW42, WW42)).windowTotals.closureRate).toBeNull()
+  })
+
+  it('the window summary reads the card\'s Closure Rate', () => {
+    expect(buildIssueModel(index, inRange(WW40, WW41)).windowTotals.closureRate).toBe(50)
+  })
+
+  it('the to-date cards still carry the selected week\'s change', () => {
+    const { toDate } = buildIssueModel(index, inRange(WW39, WW41, WW40))
+    expect(toDate.opened.delta).toBe(1)
+    expect(toDate.closed.delta).toBe(1)
+    expect(toDate.remaining.delta).toBe(0)
+  })
+
+  it('charts show exactly the range\'s weeks, whatever the 30 WW | All toggle says', () => {
+    expect(buildIssueModel(index, inRange(WW40, WW41)).trend.map((point) => point.week.key)).toEqual([WW40, WW41])
+    expect(buildIssueModel(index, { ...inRange(WW40, WW41), range: 'all' }).trend.map((point) => point.week.key)).toEqual([WW40, WW41])
+  })
+
+  it('the week options are the range\'s, and the selection clamps into it', () => {
+    const model = buildIssueModel(index, inRange(WW40, WW41, WW42))
+    expect(model.weekOptions.map((week) => week.key)).toEqual([WW41, WW40])
+    expect(model.selectedWeek.key).toBe(WW41)
+    expect(model.thisWeek.opened.value).toBe(3)
+  })
+
+  it('names the range', () => {
+    expect(buildIssueModel(index, inRange(WW40, WW41)).rangeLabel).toBe("WW40'2026 to WW41'2026")
+    expect(buildIssueModel(index, defaultViewState(index)).rangeLabel).toBeNull()
+  })
+
+  it('has no data when nothing was opened or closed in the range', () => {
+    const quiet = buildIssueIndex([issue('#1', '9/22/2026')], COLUMNS, TODAY)
+    expect(buildIssueModel(quiet, inRange(WW41, WW42)).hasData).toBe(false)
+    expect(buildIssueModel(quiet, inRange(WW39, WW42)).hasData).toBe(true)
+  })
+
+  it('Aging and Pareto aren\'t restated by the range', () => {
+    const model = buildIssueModel(index, inRange(WW40, WW40))
+    expect(model.openAging).toBe(index.openAging)
+    expect(model.overallAging).toBe(index.overallAging)
+    expect(model.openIssues).toBe(index.openIssues)
+  })
+
+  it('no range leaves the output as it was', () => {
+    const model = buildIssueModel(index, defaultViewState(index))
+    expect(model.toDate.opened.value).toBe(8)
+    expect(model.toDate.closed.value).toBe(4)
+    expect(model.toDate.remaining.value).toBe(4)
+    expect(model.toDate.closureRate.value).toBe(50)
+    expect(model.rangeClosure).toBeNull()
+  })
+})

@@ -501,3 +501,35 @@ describe('QaqcIssuesVisual with the enriched Autodesk export', () => {
     expect(footnotes(harness.element)).toEqual(['1,048 issues not created by LotusWorks are excluded'])
   })
 })
+
+describe('QaqcIssuesVisual filters', () => {
+  const COMPANY_ROLES = [...ENRICHED_ROLES, 'createdByCompany'] as const
+  function openFilterMenu(element: HTMLElement): void {
+    act(() => {
+      element.querySelector('.qaqc-filter-button')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+  }
+
+  it('shows the Filter button, with the company field once its slot is bound', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(ENRICHED_ROWS, { roles: [...COMPANY_ROLES] })))
+    openFilterMenu(harness.element)
+    const sections = [...harness.element.querySelectorAll('.qaqc-filter-section-toggle span:first-of-type')].map((node) => node.textContent)
+    expect(sections).toEqual(['Created By (Company)', 'Contractor', 'Status', 'Type', 'Root Cause'])
+  })
+
+  it('opens on today\'s visual with the company slot bound', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(ENRICHED_ROWS, { roles: [...COMPANY_ROLES] })))
+    expect(toDateCardValues(harness.element)).toEqual(['231', '174', '57', '75.3%'])
+    expect(footnotes(harness.element)).toEqual(['846 issues not created by LotusWorks are excluded'])
+  })
+
+  it('offers no company field with the slot unbound', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(ENRICHED_ROWS, { roles: [...ENRICHED_ROLES] })))
+    openFilterMenu(harness.element)
+    const sections = [...harness.element.querySelectorAll('.qaqc-filter-section-toggle span:first-of-type')].map((node) => node.textContent)
+    expect(sections).toEqual(['Contractor', 'Status', 'Type', 'Root Cause'])
+  })
+})

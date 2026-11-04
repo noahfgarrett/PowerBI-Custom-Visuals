@@ -1,6 +1,7 @@
 import type {
   AgingBucket,
   ClosureRateCard,
+  IncludedIssueStatusKind,
   InspectionRows,
   IssueColumns,
   IssueCountCard,
@@ -14,19 +15,24 @@ import type {
   IssueWindowTotals,
   OpenIssueRow,
   OverallAgingBucket,
+  RangeClosure,
   ViewState,
   WorkWeek,
 } from './types'
 import type { DeltaTone } from './format'
 import { daysBetween, formatDate, parseDate } from './dates'
 import { NAME_COLLATOR, pointsTone } from './format'
-import { cellText, recentWindowStart } from './inspections'
-import { enumerateWorkWeeks, previousWorkWeek, toIsoWorkWeek } from './workWeeks'
+import { groupKey as chartGroupKey } from './grouping'
+import { cellText, rangePositions, recentWindowStart } from './inspections'
+import { cellDisplayText, groupKey, optionalField, type FilterFieldDef, type Row } from './rowFilters'
+import { formatWeekRange } from './weekRange'
+import { enumerateWorkWeeks, previousWorkWeek, toIsoWorkWeek, workWeekFromKey } from './workWeeks'
 
 export const DEFAULT_CONTRACTOR = 'Unassigned'
 export const ISSUE_1021_CONTRACTOR = 'Bayside'
 export const DEFAULT_SUBTYPE = 'Uncategorized'
 export const DEFAULT_TITLE = 'Untitled issue'
+export const LOTUSWORKS_COMPANY = 'LotusWorks'
 
 // ACC replaces the company name with "Removed" when these LotusWorks accounts are deactivated.
 const REMOVED_LOTUSWORKS_CREATORS: readonly string[] = ['samuel leach', 'aaron harwood']
@@ -152,6 +158,131 @@ function isIncludedIssue(
   return isIncludedCreator(row[columns.createdBy], cache)
 }
 
+/**
+ * Which date opens an issue: the first present of BIM360_Created On and Created On. A present BIM360 value wins even
+ * when it doesn't parse, as in the app: the issue is then skipped, not dated.
+ */
+function createdCell(row: Row, columns: IssueColumns, enrichment: EnrichmentColumns): unknown {
+  const legacyCreatedOn = row[enrichment.bim360CreatedOn]
+  return isPresent(legacyCreatedOn) ? legacyCreatedOn : row[columns.createdOn]
+}
+
+/** Which date closes an issue: the first present of BIM360_Closed On, Closed At and Updated On. */
+function closedCell(row: Row, columns: IssueColumns, enrichment: EnrichmentColumns): unknown {
+  const legacyClosedOn = row[enrichment.bim360ClosedOn]
+  const closedAt = row[enrichment.closedAt]
+  return isPresent(legacyClosedOn) ? legacyClosedOn : isPresent(closedAt) ? closedAt : row[columns.updatedOn]
+}
+
+function companyOf(row: Row, columns: IssueColumns, enrichment: EnrichmentColumns, cache: Map<string, boolean>): string {
+  if (isIncludedIssue(row, columns, enrichment, cache)) return LOTUSWORKS_COMPANY
+  return cellText(row[columns.createdByCompany ?? -1])
+}
+
+/** The Created By (Company) value: LotusWorks when the include rule says so, else the trimmed company, '' when blank. */
+export function issueCompanyOf(row: Row, columns: IssueColumns): string {
+  return companyOf(row, columns, enrichmentColumns(columns), new Map())
+}
+
+/** What a dashboard needs to rebuild its index when a field filter changes the rows. */
+export interface IssueFilterSource {
+  rows: InspectionRows
+  columns: IssueColumns
+  today: Date
+}
+
+function hasCompanySlot(columns: IssueColumns): boolean {
+  return (columns.createdByCompany ?? -1) >= 0
+}
+
+/**
+ * A field the dashboard already labels, with its value and key, so the two can't disagree: `N/A` is a value of its
+ * own, as it is in the tables. What they show under `blankLabel` reads as '', the blank value, so it's listed last.
+ */
+function labelledField(id: string, label: string, read: (row: Row) => string, blankLabel: string): FilterFieldDef {
+  const blankKey = chartGroupKey(blankLabel)
+  return {
+    id,
+    label,
+    read: (row) => {
+      const name = read(row)
+      return chartGroupKey(name) === blankKey ? '' : name
+    },
+    groupBy: chartGroupKey,
+    blankLabel,
+  }
+}
+
+function companyField(columns: IssueColumns): FilterFieldDef {
+  const enrichment = enrichmentColumns(columns)
+  const cache = new Map<string, boolean>()
+  return {
+    id: 'company',
+    label: 'Created By (Company)',
+    read: (row) => companyOf(row, columns, enrichment, cache),
+    defaultKeys: [groupKey(LOTUSWORKS_COMPANY)],
+    hasSelectAll: true,
+  }
+}
+
+/** The menu's fields, in menu order. Only bound slots appear. Without the company slot the index stays LotusWorks-only. */
+export function issueFilterFields(columns: IssueColumns): FilterFieldDef[] {
+  const rootCause: FilterFieldDef[] = columns.rootCause < 0
+    ? []
+    // The Pareto's value and key: blank is its Not recorded bar, and `N/A` is a cause of its own.
+    : [{ id: 'rootCause', label: 'Root Cause', read: (row) => cellText(row[columns.rootCause]), groupBy: chartGroupKey }]
+  return [
+    ...(hasCompanySlot(columns) ? [companyField(columns)] : []),
+    labelledField('contractor', 'Contractor', (row) => issueContractor(row[columns.id], row[columns.contractor]), DEFAULT_CONTRACTOR),
+    // The sheet's values, so Pending can be picked apart from Open though both count as open on the cards.
+    { id: 'status', label: 'Status', read: (row) => cellDisplayText(row[columns.status]) },
+    labelledField('type', 'Type', (row) => issueSubtype(row[columns.type]), DEFAULT_SUBTYPE),
+    ...optionalField('discipline', 'Discipline', columns.discipline ?? -1),
+    ...rootCause,
+  ]
+}
+
+/**
+ * The rows the Filter menu counts and matches. With the company slot bound that's every row, the default keeping the
+ * dashboard to LotusWorks. Without it the LotusWorks limit can't be unticked, so only those rows are offered, and the
+ * menu's counts agree with what the dashboard shows.
+ */
+export function issueFilterRows(rows: InspectionRows, columns: IssueColumns): InspectionRows {
+  if (hasCompanySlot(columns)) return rows
+  const enrichment = enrichmentColumns(columns)
+  const cache = new Map<string, boolean>()
+  return rows.filter((row) => isIncludedIssue(row, columns, enrichment, cache))
+}
+
+/** Reads a row's created week the way the index does, for counting rows in a date range. */
+export function issueRowWeekKey(columns: IssueColumns): (row: Row) => number | null {
+  const enrichment = enrichmentColumns(columns)
+  const caches: DateCaches = { byText: new Map(), weekByTime: new Map() }
+  return (row) => readDate(createdCell(row, columns, enrichment), caches)?.week.key ?? null
+}
+
+/**
+ * The full data's weeks for the menu's From and To: from the first created or closed week of any creator, by the
+ * index's own rules, through the current week. Only dates are read, so it's far cheaper than building an index.
+ */
+export function issueDataWeeks(rows: InspectionRows, columns: IssueColumns, today: Date): WorkWeek[] {
+  const currentWeek = toIsoWorkWeek(parseDate(today) ?? today)
+  const enrichment = enrichmentColumns(columns)
+  const caches: DateCaches = { byText: new Map(), weekByTime: new Map() }
+  let first = currentWeek
+  for (const row of rows) {
+    const statusKind = issueStatusKind(row[columns.status])
+    if (statusKind === 'void') continue
+    const created = readDate(createdCell(row, columns, enrichment), caches)?.week ?? null
+    if (created === null || created.key > currentWeek.key) continue
+    if (created.key < first.key) first = created
+    if (statusKind !== 'closed') continue
+    const closed = readDate(closedCell(row, columns, enrichment), caches)?.week ?? null
+    if (closed !== null && closed.key < first.key) first = closed
+  }
+  return enumerateWorkWeeks(first, currentWeek)
+}
+
 interface SortableIssue {
   issue: IssueRecord
   /** The ID before its trailing digits. */
@@ -247,40 +378,137 @@ function buildOpenIssues(issues: IssueRecord[], today: Date): OpenIssueRow[] {
   return rows.sort((a, b) => a.createdOnTime - b.createdOnTime)
 }
 
-export function buildIssueIndex(rows: InspectionRows, columns: IssueColumns, today: Date): IssueIndex {
+/** One issue, read once by the index and again for a week's list, so the two can't disagree. */
+function readIssueRecord(
+  row: Row,
+  columns: IssueColumns,
+  statusKind: IncludedIssueStatusKind,
+  created: ReadDate,
+  updated: ReadDate | null,
+  caches: DateCaches,
+): IssueRecord {
+  const closedWeek = statusKind === 'closed' && updated !== null ? updated.week : null
+  const id = cellText(row[columns.id])
+  const title = issueTitle(row[columns.title])
+  const subtype = issueSubtype(row[columns.type])
+  const contractor = issueContractor(id, row[columns.contractor])
+  const dueDate = readDate(row[columns.dueDate], caches)?.date ?? null
+  const detail: IssueDetailRow = {
+    id,
+    // Set once every issue is sorted by ID.
+    idRank: 0,
+    subtype,
+    // Pending displays as Open, and so does a blank status.
+    status: statusKind === 'pending' ? 'Open' : cellText(row[columns.status]) || 'Open',
+    statusKind,
+    title,
+    contractor,
+    workWeek: created.week.label,
+    workWeekKey: created.week.key,
+    createdOn: formatDate(created.date),
+    createdOnTime: created.date.getTime(),
+    workWeekClosed: statusKind === 'closed' ? (closedWeek?.label ?? '') : 'Open',
+    workWeekClosedKey: closedWeek?.key ?? null,
+    dueDate: formatDate(dueDate),
+    dueDateTime: dueDate?.getTime() ?? null,
+  }
+  return {
+    id,
+    title,
+    statusKind,
+    subtype,
+    contractor,
+    createdOn: created.date,
+    updatedOn: updated?.date ?? null,
+    dueDate,
+    // An unbound slot is −1, and row[-1] is undefined, which reads as ''.
+    rootCause: cellText(row[columns.rootCause]),
+    rootCauseCategory: cellText(row[columns.rootCauseCategory]),
+    createdWeek: created.week,
+    closedWeek,
+    detail,
+  }
+}
+
+/**
+ * Reads a row as Issue Detail shows it, for a week's list; null for a row the index leaves out (void or undated).
+ * `idRank` isn't set: the list sorts IDs in collator order. A row is read once however many cells ask for it.
+ */
+export function createIssueDetailReader(columns: IssueColumns): (row: Row) => IssueDetailRow | null {
+  const enrichment = enrichmentColumns(columns)
+  const caches: DateCaches = { byText: new Map(), weekByTime: new Map() }
+  const details = new WeakMap<Row, IssueDetailRow | null>()
+  function read(row: Row): IssueDetailRow | null {
+    const statusKind = issueStatusKind(row[columns.status])
+    if (statusKind === 'void') return null
+    const created = readDate(createdCell(row, columns, enrichment), caches)
+    if (created === null) return null
+    const updated = readDate(closedCell(row, columns, enrichment), caches)
+    return readIssueRecord(row, columns, statusKind, created, updated, caches).detail
+  }
+  return (row) => {
+    const known = details.get(row)
+    if (known !== undefined) return known
+    const detail = read(row)
+    details.set(row, detail)
+    return detail
+  }
+}
+
+export interface BuildIssueIndexOptions {
+  /** Counts every creator instead of only LotusWorks-created issues. Void and undated exclusions are unchanged. */
+  includeAllCreators?: boolean
+  /** The axis starts here when that is before the first data week, so a filtered index never shortens the axis. */
+  axisFromKey?: number
+}
+
+interface IssueWeekBucket extends IssueWeekCounts {
+  openedRows: number[]
+  closedRows: number[]
+  /** Issues created this week that are closed now. */
+  nowClosed: number
+}
+
+const NO_ROWS: readonly number[] = []
+
+export function buildIssueIndex(
+  rows: InspectionRows,
+  columns: IssueColumns,
+  today: Date,
+  options: BuildIssueIndexOptions = {},
+): IssueIndex {
+  const { includeAllCreators = false, axisFromKey } = options
   const todayNoon = parseDate(today) ?? today
   const currentWeek = toIsoWorkWeek(todayNoon)
   const caches: DateCaches = { byText: new Map(), weekByTime: new Map() }
   const creatorCache = new Map<string, boolean>()
   const enrichment = enrichmentColumns(columns)
-  const buckets = new Map<number, IssueWeekCounts>()
+  const buckets = new Map<number, IssueWeekBucket>()
   const issues: IssueRecord[] = []
   let excludedRows = 0
   let skippedRows = 0
   let futureRows = 0
   let firstWeek: WorkWeek | null = null
 
-  const bucketFor = (week: WorkWeek): IssueWeekCounts => {
+  const bucketFor = (week: WorkWeek): IssueWeekBucket => {
     let bucket = buckets.get(week.key)
     if (!bucket) {
-      bucket = { week, opened: 0, closed: 0 }
+      bucket = { week, opened: 0, closed: 0, openedRows: [], closedRows: [], nowClosed: 0 }
       buckets.set(week.key, bucket)
     }
     return bucket
   }
 
-  for (const row of rows) {
-    if (!isIncludedIssue(row, columns, enrichment, creatorCache)) {
+  for (let rowPosition = 0; rowPosition < rows.length; rowPosition += 1) {
+    const row = rows[rowPosition]
+    if (!includeAllCreators && !isIncludedIssue(row, columns, enrichment, creatorCache)) {
       excludedRows += 1
       continue
     }
     const statusKind = issueStatusKind(row[columns.status])
     if (statusKind === 'void') continue
 
-    // The first present of BIM360_Created On and Created On. A present BIM360 value wins even when it doesn't parse,
-    // as in the app: the issue is then skipped, not dated.
-    const legacyCreatedOn = row[enrichment.bim360CreatedOn]
-    const created = readDate(isPresent(legacyCreatedOn) ? legacyCreatedOn : row[columns.createdOn], caches)
+    const created = readDate(createdCell(row, columns, enrichment), caches)
     if (created === null) {
       skippedRows += 1
       continue
@@ -291,59 +519,23 @@ export function buildIssueIndex(rows: InspectionRows, columns: IssueColumns, tod
     }
     if (!firstWeek || created.week.key < firstWeek.key) firstWeek = created.week
 
-    // The closed date: the first present of BIM360_Closed On, Closed At and Updated On.
-    const legacyClosedOn = row[enrichment.bim360ClosedOn]
-    const closedAt = row[enrichment.closedAt]
-    const closedCell = isPresent(legacyClosedOn) ? legacyClosedOn : isPresent(closedAt) ? closedAt : row[columns.updatedOn]
-    const updated = readDate(closedCell, caches)
-    const closedWeek = statusKind === 'closed' && updated !== null ? updated.week : null
+    const updated = readDate(closedCell(row, columns, enrichment), caches)
+    const record = readIssueRecord(row, columns, statusKind, created, updated, caches)
+    const { closedWeek } = record
     // A closed week after the current week is not counted in any week.
     const countedClosedWeek = closedWeek !== null && closedWeek.key <= currentWeek.key ? closedWeek : null
     if (countedClosedWeek !== null && countedClosedWeek.key < firstWeek.key) firstWeek = countedClosedWeek
+    issues.push(record)
 
-    const id = cellText(row[columns.id])
-    const title = issueTitle(row[columns.title])
-    const subtype = issueSubtype(row[columns.type])
-    const contractor = issueContractor(id, row[columns.contractor])
-    const dueDate = readDate(row[columns.dueDate], caches)?.date ?? null
-    const detail: IssueDetailRow = {
-      id,
-      // Set once every issue is sorted by ID.
-      idRank: 0,
-      subtype,
-      // Pending displays as Open, and so does a blank status.
-      status: statusKind === 'pending' ? 'Open' : cellText(row[columns.status]) || 'Open',
-      statusKind,
-      title,
-      contractor,
-      workWeek: created.week.label,
-      workWeekKey: created.week.key,
-      createdOn: formatDate(created.date),
-      createdOnTime: created.date.getTime(),
-      workWeekClosed: statusKind === 'closed' ? (closedWeek?.label ?? '') : 'Open',
-      workWeekClosedKey: closedWeek?.key ?? null,
-      dueDate: formatDate(dueDate),
-      dueDateTime: dueDate?.getTime() ?? null,
+    const createdBucket = bucketFor(created.week)
+    createdBucket.opened += 1
+    createdBucket.openedRows.push(rowPosition)
+    if (statusKind === 'closed') createdBucket.nowClosed += 1
+    if (countedClosedWeek !== null) {
+      const closedBucket = bucketFor(countedClosedWeek)
+      closedBucket.closed += 1
+      closedBucket.closedRows.push(rowPosition)
     }
-    issues.push({
-      id,
-      title,
-      statusKind,
-      subtype,
-      contractor,
-      createdOn: created.date,
-      updatedOn: updated?.date ?? null,
-      dueDate,
-      // An unbound slot is −1, and row[-1] is undefined, which reads as ''.
-      rootCause: cellText(row[columns.rootCause]),
-      rootCauseCategory: cellText(row[columns.rootCauseCategory]),
-      createdWeek: created.week,
-      closedWeek,
-      detail,
-    })
-
-    bucketFor(created.week).opened += 1
-    if (countedClosedWeek !== null) bucketFor(countedClosedWeek).closed += 1
   }
 
   const sorted = issues.map(sortableIssue).sort(byIdDescending)
@@ -353,11 +545,17 @@ export function buildIssueIndex(rows: InspectionRows, columns: IssueColumns, tod
   const weeks: IssueWeekCounts[] = []
   const cumulativeOpened: number[] = []
   const cumulativeClosed: number[] = []
+  const closedByCreatedWeek: number[] = []
+  const openedRowsByWeek: Array<readonly number[]> = []
+  const closedRowsByWeek: Array<readonly number[]> = []
   const positionByKey = new Map<number, number>()
   let opened = 0
   let closed = 0
 
-  for (const week of enumerateWorkWeeks(firstWeek ?? currentWeek, currentWeek)) {
+  const dataStart = firstWeek ?? currentWeek
+  const axisStart = axisFromKey !== undefined && axisFromKey < dataStart.key ? workWeekFromKey(axisFromKey) : dataStart
+
+  for (const week of enumerateWorkWeeks(axisStart, currentWeek)) {
     const bucket = buckets.get(week.key)
     const counts: IssueWeekCounts = { week, opened: bucket?.opened ?? 0, closed: bucket?.closed ?? 0 }
     opened += counts.opened
@@ -366,6 +564,9 @@ export function buildIssueIndex(rows: InspectionRows, columns: IssueColumns, tod
     weeks.push(counts)
     cumulativeOpened.push(opened)
     cumulativeClosed.push(closed)
+    closedByCreatedWeek.push(bucket?.nowClosed ?? 0)
+    openedRowsByWeek.push(bucket?.openedRows ?? NO_ROWS)
+    closedRowsByWeek.push(bucket?.closedRows ?? NO_ROWS)
   }
 
   return {
@@ -375,6 +576,9 @@ export function buildIssueIndex(rows: InspectionRows, columns: IssueColumns, tod
     weeks,
     cumulativeOpened,
     cumulativeClosed,
+    closedByCreatedWeek,
+    openedRowsByWeek,
+    closedRowsByWeek,
     positionByKey,
     openAging: buildOpenAging(issues, todayNoon),
     overallAging: buildOverallAging(issues, todayNoon),
@@ -448,40 +652,58 @@ export function buildIssueDetail(index: IssueIndex, selectedKey: number): IssueD
   }
 }
 
+function rangeClosureOf(index: IssueIndex, start: number, end: number, opened: number): RangeClosure {
+  let nowClosed = 0
+  for (let position = start; position <= end; position += 1) nowClosed += index.closedByCreatedWeek[position]
+  return { nowClosed, opened }
+}
+
 export function buildIssueModel(index: IssueIndex, view: ViewState): IssueModel {
   const lastPosition = index.weeks.length - 1
-  const selectedPosition = index.positionByKey.get(view.selectedKey) ?? lastPosition
-  const endPosition = index.positionByKey.get(view.windowEndKey) ?? lastPosition
-  const startPosition = view.range === 'all' ? 0 : recentWindowStart(endPosition)
+  // In a date range the window is the range's weeks.
+  const span = view.dateRange === null ? null : rangePositions(index, view.dateRange)
+  const endPosition = span?.end ?? index.positionByKey.get(view.windowEndKey) ?? lastPosition
+  const startPosition = span?.start ?? (view.range === 'all' ? 0 : recentWindowStart(endPosition))
+  const knownSelected = index.positionByKey.get(view.selectedKey) ?? lastPosition
+  const selectedPosition = span === null ? knownSelected : Math.min(Math.max(knownSelected, span.start), span.end)
   const selected = index.weeks[selectedPosition]
   const previous = selectedPosition > 0 ? index.weeks[selectedPosition - 1] : null
   const { cumulativeOpened, cumulativeClosed } = index
   const remainingAt = (position: number): number =>
     cumulativeAt(cumulativeOpened, position) - cumulativeAt(cumulativeClosed, position)
 
-  const opened = cumulativeOpened[selectedPosition]
-  const closed = cumulativeClosed[selectedPosition]
-  const previousOpened = cumulativeAt(cumulativeOpened, selectedPosition - 1)
-  const previousClosed = cumulativeAt(cumulativeClosed, selectedPosition - 1)
-  const remaining = remainingAt(selectedPosition)
-  const previousRemaining = remainingAt(selectedPosition - 1)
   const openedInWeek = selected.opened
   const closedInWeek = selected.closed
   const openedInPreviousWeek = previous?.opened ?? 0
   const closedInPreviousWeek = previous?.closed ?? 0
+  const remainingChangeInWeek = remainingAt(selectedPosition) - remainingAt(selectedPosition - 1)
+
+  const openedInWindow = cumulativeOpened[endPosition] - cumulativeAt(cumulativeOpened, startPosition - 1)
+  const closedInWindow = cumulativeClosed[endPosition] - cumulativeAt(cumulativeClosed, startPosition - 1)
+  const rangeClosure = span === null ? null : rangeClosureOf(index, span.start, span.end, openedInWindow)
+  // Closed ÷ opened over a range could pass 100%, so a range reads the share of its own opened issues now closed.
+  const rangeRate = rangeClosure === null || rangeClosure.opened === 0 ? null : (rangeClosure.nowClosed / rangeClosure.opened) * 100
 
   const windowTotals: IssueWindowTotals = {
-    opened: cumulativeOpened[endPosition] - cumulativeAt(cumulativeOpened, startPosition - 1),
-    closed: cumulativeClosed[endPosition] - cumulativeAt(cumulativeClosed, startPosition - 1),
+    opened: openedInWindow,
+    closed: closedInWindow,
     remainingChange: remainingAt(endPosition) - remainingAt(startPosition - 1),
-    closureRate: closureRateAt(index, endPosition),
+    closureRate: span === null ? closureRateAt(index, endPosition) : rangeRate,
     weeks: endPosition - startPosition + 1,
   }
+
+  const opened = span === null ? cumulativeOpened[selectedPosition] : openedInWindow
+  const closed = span === null ? cumulativeClosed[selectedPosition] : closedInWindow
+  // The open count at the range's end. It isn't restated to the range, because that could go negative.
+  const remaining = remainingAt(span === null ? selectedPosition : endPosition)
+  const previousOpened = opened - openedInWeek
+  const previousClosed = closed - closedInWeek
+  const previousRemaining = remaining - remainingChangeInWeek
 
   return {
     selectedWeek: selected.week,
     previousWeek: previousWorkWeek(selected.week),
-    weekOptions: index.weeks.map((item) => item.week).reverse(),
+    weekOptions: (span === null ? index.weeks : index.weeks.slice(span.start, span.end + 1)).map((item) => item.week).reverse(),
     thisWeek: {
       opened: countCard(openedInWeek, openedInPreviousWeek, openedInWeek > openedInPreviousWeek ? 'warn' : 'neutral'),
       // Good when at least as many closed as the week before, but a week with nothing closed is never good.
@@ -491,7 +713,7 @@ export function buildIssueModel(index: IssueIndex, view: ViewState): IssueModel 
       opened: countCard(opened, previousOpened, riseIsBad(opened - previousOpened)),
       closed: countCard(closed, previousClosed, closed > previousClosed ? 'good' : 'neutral'),
       remaining: countCard(remaining, previousRemaining, riseIsBad(remaining - previousRemaining)),
-      closureRate: closureRateCard(index, selectedPosition),
+      closureRate: span === null ? closureRateCard(index, selectedPosition) : { value: rangeRate, deltaPoints: null, tone: pointsTone(null) },
     },
     trend: index.weeks.slice(startPosition, endPosition + 1).map((counts, offset) => ({
       week: counts.week,
@@ -503,6 +725,8 @@ export function buildIssueModel(index: IssueIndex, view: ViewState): IssueModel 
     overallAging: index.overallAging,
     openIssues: index.openIssues,
     windowTotals,
-    hasData: cumulativeOpened[lastPosition] > 0,
+    rangeLabel: view.dateRange === null ? null : formatWeekRange(view.dateRange),
+    rangeClosure,
+    hasData: span === null ? cumulativeOpened[lastPosition] > 0 : openedInWindow + closedInWindow > 0,
   }
 }

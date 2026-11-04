@@ -7,7 +7,7 @@ import { layoutWeekLines, type WeekLine } from '../components/OverviewLinesChart
 import { splitCombinedRows } from '../combined'
 import { buildInspectionIndex, buildInspectionModel, defaultViewState } from '../inspections'
 import { agingProfile, buildIssueBenchmarks, quarterMedians } from '../issueBenchmarks'
-import { buildIssueDetail, buildIssueIndex, buildIssueModel } from '../issues'
+import { buildIssueDetail, buildIssueIndex, buildIssueModel, issueDataWeeks } from '../issues'
 import type { OverviewIndex } from '../overview'
 import { buildOverviewIndex, buildOverviewModel } from '../overview'
 import { buildRootCausePareto, paretoIssues } from '../rootCauses'
@@ -96,6 +96,19 @@ describe('issues performance budgets', () => {
     const rows = syntheticIssueRows(200_000)
     buildIssueIndex(rows, ISSUE_COLUMNS, TODAY)
     expect(bestOf(TIMING_RUNS, () => elapsed(() => buildIssueIndex(rows, ISSUE_COLUMNS, TODAY)))).toBeLessThan(1500)
+  })
+
+  it('rebuilds a filtered index of 100,000 issue rows within the 300 ms index budget, with row positions and the axis', () => {
+    const rows = syntheticIssueRows(100_000)
+    const options = { includeAllCreators: true, axisFromKey: 202001 }
+    buildIssueIndex(rows, ISSUE_COLUMNS, TODAY, options)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => buildIssueIndex(rows, ISSUE_COLUMNS, TODAY, options)))).toBeLessThan(300)
+  })
+
+  it('reads the full data\'s weeks from 100,000 issue rows well under a rebuild', () => {
+    const rows = syntheticIssueRows(100_000)
+    expect(issueDataWeeks(rows, ISSUE_COLUMNS, TODAY).length).toBeGreaterThan(1)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => issueDataWeeks(rows, ISSUE_COLUMNS, TODAY)))).toBeLessThan(100)
   })
 
   it('recomputes the All-range issue model from a 200,000-row index within one frame', () => {

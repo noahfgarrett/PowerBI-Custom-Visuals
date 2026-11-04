@@ -13,6 +13,8 @@ export interface WeekWindowIndex {
 export interface WeekWindow {
   /** The selected week, the window's last week, and the range, for the dashboard's model. */
   view: ViewState
+  /** The same, as if no date range were set, for pages a date range doesn't restate. `view` itself when none is. */
+  unrangedView: ViewState
   range: RangeMode
   /**
    * A bar click or chart keyboard selection: selects the week and leaves the window where it is. In a date range the
@@ -47,16 +49,21 @@ export function useWeekWindow(index: WeekWindowIndex, dateRange: WeekRange | nul
     () => ({ selectedKey: effectiveSelected, windowEndKey: effectiveEnd, range, dateRange }),
     [effectiveSelected, effectiveEnd, range, dateRange],
   )
+  const unrangedView = useMemo(
+    () => (dateRange === null ? view : { selectedKey: availableSelected, windowEndKey: availableEnd, range, dateRange: null }),
+    [view, dateRange, availableSelected, availableEnd, range],
+  )
 
   function changeRange(mode: RangeMode): void {
     setRange(mode)
     if (mode !== 'recent') return
-    // Returning to the recent range must not leave the selected week outside the visible window.
-    const selectedPosition = index.positionByKey.get(effectiveSelected)
-    const endPosition = index.positionByKey.get(effectiveEnd)
+    // Returning to the recent range must not leave the selected week outside the visible window. The stored weeks are
+    // what a date range's pages read, and what's left when one is cleared.
+    const selectedPosition = index.positionByKey.get(availableSelected)
+    const endPosition = index.positionByKey.get(availableEnd)
     if (selectedPosition === undefined || endPosition === undefined) return
     if (selectedPosition > endPosition || selectedPosition < recentWindowStart(endPosition)) {
-      setWindowEndKey(effectiveSelected)
+      setWindowEndKey(availableSelected)
     }
   }
 
@@ -74,5 +81,5 @@ export function useWeekWindow(index: WeekWindowIndex, dateRange: WeekRange | nul
     setWindowEndKey(key)
   }
 
-  return { view, range, selectWeek, pickWeek, changeRange }
+  return { view, unrangedView, range, selectWeek, pickWeek, changeRange }
 }

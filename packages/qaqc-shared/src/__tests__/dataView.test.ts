@@ -249,6 +249,8 @@ describe('ISSUE_SLOTS', () => {
       ['bim360CreatedOn', 'BIM360 Created On', 'BIM360_Created On'],
       ['bim360ClosedOn', 'BIM360 Closed On', 'BIM360_Closed On'],
       ['closedAt', 'Closed At', 'Closed at'],
+      ['createdByCompany', 'Created By (Company)', 'Created By (Company)'],
+      ['discipline', 'Discipline', 'Discipline'],
     ])
   })
 })
@@ -304,9 +306,24 @@ describe('readIssueTable', () => {
         bim360CreatedOn: -1,
         bim360ClosedOn: -1,
         closedAt: -1,
+        createdByCompany: -1,
+        discipline: -1,
       })
       expect(result.rows[0][result.columns.id]).toBe('#1020')
       expect(result.rows[0][result.columns.rootCause]).toBe('Installation')
+    }
+  })
+
+  it('reads the Filter menu slots, which are optional', () => {
+    const table: InspectionTableSource = {
+      columns: [...REQUIRED_ISSUE_ROLES, 'createdByCompany', 'discipline'].map((role) => ({ roles: { [role]: true } })),
+      rows: [],
+    }
+    const result = readIssueTable(table)
+    expect(result.kind).toBe('ready')
+    if (result.kind === 'ready') {
+      expect(result.columns.createdByCompany).toBe(9)
+      expect(result.columns.discipline).toBe(10)
     }
   })
 

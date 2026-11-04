@@ -10,7 +10,7 @@ import { StatusPanel } from '../../qaqc-shared/src/components/StatusPanel'
 import { IssuesDashboard } from '../../qaqc-shared/src/components/IssuesDashboard'
 import { readIssueTable, type IssueFieldSlot, type IssueTableReadResult } from '../../qaqc-shared/src/dataView'
 import { buildIssueFootnotes } from '../../qaqc-shared/src/footnotes'
-import { buildIssueIndex } from '../../qaqc-shared/src/issues'
+import { buildIssueIndex, type IssueFilterSource } from '../../qaqc-shared/src/issues'
 import { resolveTheme, type HighContrastColors, type ResolvedTheme } from '../../qaqc-shared/src/theme'
 import type { IssueIndex } from '../../qaqc-shared/src/types'
 import { IssuesSettingsModel, readDisplaySettings } from './settings'
@@ -41,6 +41,7 @@ export class QaqcIssuesVisual implements powerbi.extensibility.visual.IVisual {
   private settings = new IssuesSettingsModel()
   private table: IssueTableReadResult | null = null
   private index: IssueIndex | null = null
+  private filterSource: IssueFilterSource | null = null
   private loading = false
   private rowLimitReached = false
   private renderError: unknown = null
@@ -114,9 +115,15 @@ export class QaqcIssuesVisual implements powerbi.extensibility.visual.IVisual {
 
   private readTable(dataView: powerbi.DataView | undefined): void {
     this.table = readIssueTable(dataView?.table)
-    this.index = this.table.kind === 'ready'
-      ? buildIssueIndex(this.table.rows, this.table.columns, new Date())
-      : null
+    if (this.table.kind !== 'ready') {
+      this.index = null
+      this.filterSource = null
+      return
+    }
+    const { rows, columns } = this.table
+    const today = new Date()
+    this.index = buildIssueIndex(rows, columns, today)
+    this.filterSource = { rows, columns, today }
   }
 
   /** flushSync does not re-throw React 19 render errors, so surface the one captured by onUncaughtError. */
@@ -156,7 +163,7 @@ export class QaqcIssuesVisual implements powerbi.extensibility.visual.IVisual {
     })
     this.applyTheme(theme)
 
-    if (this.index === null || this.table === null || this.table.kind === 'missing') {
+    if (this.index === null || this.filterSource === null || this.table === null || this.table.kind === 'missing') {
       this.renderEmptyState(this.table?.kind === 'missing' ? this.table.missing : [])
       return
     }
@@ -168,6 +175,7 @@ export class QaqcIssuesVisual implements powerbi.extensibility.visual.IVisual {
         title: 'QCx Issues',
         icon: CircleAlert,
         index,
+        filterSource: this.filterSource,
         theme,
         interactive: this.interactionsAllowed(),
         animate: display.animate && !prefersReducedMotion(),
