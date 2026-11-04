@@ -39,6 +39,27 @@ describe('KpiCard', () => {
     expect(card?.getAttribute('aria-label')).toBe('Pass rate: 98.9%. 3 NCRs of 282 finals. +0.01 pts')
   })
 
+  it('renders no detail element when the card has no detail', () => {
+    view = render(<KpiCard label="NCR Pass Rate" value="98.00%" tone="neutral" trend="none" icon={ClipboardCheck} />)
+    expect(view.container.querySelector('.qaqc-kpi-detail')).toBeNull()
+    expect(view.container.querySelector('.qaqc-kpi-value')?.textContent).toBe('98.00%')
+  })
+
+  it('ends the accessible summary at the value when the card has no detail', () => {
+    view = render(<KpiCard label="NCR Pass Rate" value="98.00%" tone="neutral" trend="none" icon={ClipboardCheck} />)
+    expect(view.container.querySelector('article')?.getAttribute('aria-label')).toBe('NCR Pass Rate: 98.00%')
+  })
+
+  it('reads the context alone when the card has no detail', () => {
+    view = render(<KpiCard label="Pass rate" value="98.9%" context="3 NCRs of 282 finals" tone="neutral" trend="none" icon={ClipboardCheck} />)
+    expect(view.container.querySelector('article')?.getAttribute('aria-label')).toBe('Pass rate: 98.9%. 3 NCRs of 282 finals')
+  })
+
+  it('keeps the target and status words clean when the card has no detail', () => {
+    view = render(<KpiCard label="Sign-off %" value="5%" tone="neutral" trend="none" icon={ClipboardCheck} isValueBad status="bad" />)
+    expect(view.container.querySelector('article')?.getAttribute('aria-label')).toBe('Sign-off %: 5%. Below target. Status: below target')
+  })
+
   it('has no context line by default', () => {
     view = render(<KpiCard label="Finals" value="3" detail="+3 this WW" tone="neutral" trend="none" icon={ClipboardCheck} />)
     expect(view.container.querySelector('.qaqc-kpi-context')).toBeNull()

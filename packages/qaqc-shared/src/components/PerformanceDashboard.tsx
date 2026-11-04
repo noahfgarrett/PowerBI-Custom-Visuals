@@ -18,7 +18,7 @@ import { Footnotes } from './Footnotes'
 import { KpiCard } from './KpiCard'
 import { KpiGroup } from './KpiGroup'
 import { LoadingBar } from './LoadingBar'
-import { disciplineNames, formatNcrRate, PerformanceTable } from './PerformanceTable'
+import { disciplineNames, formatPassRate, PerformanceTable } from './PerformanceTable'
 import { PersonDetail } from './PersonDetail'
 import { SegmentedToggle, type SegmentedOption } from './SegmentedToggle'
 
@@ -36,7 +36,6 @@ interface GroupWords {
   /** Lower case: "5 finals", "10 welds". */
   volumeNoun: string
   ncrDetail: string
-  rateDetail: string
   emptyTitle: string
 }
 
@@ -49,7 +48,6 @@ const GROUP_WORDS: Record<PerformanceGroup, GroupWords> = {
     volumeIcon: ClipboardCheck,
     volumeNoun: 'finals',
     ncrDetail: 'Finals with an issue found',
-    rateDetail: 'NCRs ÷ finals',
     emptyTitle: 'No finals',
   },
   welders: {
@@ -60,7 +58,6 @@ const GROUP_WORDS: Record<PerformanceGroup, GroupWords> = {
     volumeIcon: Flame,
     volumeNoun: 'welds',
     ncrDetail: 'Welds with an issue',
-    rateDetail: 'NCRs ÷ welds',
     emptyTitle: 'No welds',
   },
 }
@@ -103,7 +100,7 @@ function personTitle(person: OpenPerson): string {
 }
 
 /**
- * NCR performance for one group at a time: a summary strip for the period, then everyone ranked by NCR rate, with a
+ * NCR performance for one group at a time: a summary strip for the period, then everyone ranked by NCR Pass Rate, with a
  * page per person. The index is built once per data update; switching group, range or week only re-ranks it.
  */
 export function PerformanceDashboard({
@@ -224,10 +221,9 @@ export function PerformanceDashboard({
                 trend="none"
               />
               <KpiCard
-                label="NCR rate"
+                label="NCR Pass Rate"
                 icon={Percent}
-                value={formatNcrRate(summary.rate)}
-                detail={words.rateDetail}
+                value={formatPassRate(summary.passRate)}
                 tone="neutral"
                 trend="none"
               />

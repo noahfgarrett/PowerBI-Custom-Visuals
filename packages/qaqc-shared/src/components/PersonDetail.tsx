@@ -12,7 +12,7 @@ import type { ViewState } from '../types'
 import { ChartPanel } from './ChartPanel'
 import { KpiCard } from './KpiCard'
 import { KpiGroup, type KpiGroupProps } from './KpiGroup'
-import { formatNcrRate } from './PerformanceTable'
+import { formatPassRate } from './PerformanceTable'
 import { PersonWeekChart, personWeekLegend } from './PersonWeekChart'
 
 interface CardWords {
@@ -21,7 +21,6 @@ interface CardWords {
   volumeIcon: LucideIcon
   volumeDetail: string
   ncrDetail: string
-  rateDetail: string
   /** Lower case, for running text. */
   volumeNoun: [string, string]
 }
@@ -32,7 +31,6 @@ const CARD_WORDS: Record<PerformanceGroup, CardWords> = {
     volumeIcon: ClipboardCheck,
     volumeDetail: 'Final inspections',
     ncrDetail: 'Finals with an issue found',
-    rateDetail: 'NCRs ÷ finals',
     volumeNoun: ['final', 'finals'],
   },
   welders: {
@@ -40,7 +38,6 @@ const CARD_WORDS: Record<PerformanceGroup, CardWords> = {
     volumeIcon: Flame,
     volumeDetail: 'Welds credited',
     ncrDetail: 'Welds with an issue',
-    rateDetail: 'NCRs ÷ welds',
     volumeNoun: ['weld', 'welds'],
   },
 }
@@ -174,7 +171,7 @@ function TotalsCards({ title, subtitle, variant, totals, words }: TotalsCardsPro
     <KpiGroup title={title} subtitle={subtitle} variant={variant}>
       <KpiCard label={words.volumeLabel} icon={words.volumeIcon} value={formatCount(totals.volume)} detail={words.volumeDetail} tone="neutral" trend="none" />
       <KpiCard label="NCRs" icon={TriangleAlert} value={formatCount(totals.ncrs)} detail={words.ncrDetail} tone="neutral" trend="none" />
-      <KpiCard label="NCR rate" icon={Percent} value={formatNcrRate(totals.rate)} detail={words.rateDetail} tone="neutral" trend="none" />
+      <KpiCard label="NCR Pass Rate" icon={Percent} value={formatPassRate(totals.passRate)} tone="neutral" trend="none" />
     </KpiGroup>
   )
 }

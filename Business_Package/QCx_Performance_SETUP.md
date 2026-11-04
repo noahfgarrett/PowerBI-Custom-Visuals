@@ -1,11 +1,11 @@
 # QCx Performance visual: setup
 
-NCR performance per person: each QCR / FE across Electrical and Mechanical final inspections, and, separately, each welder. People are ranked by NCR rate over a period you choose, and each has their own page.
+NCR performance per person: each QCR / FE across Electrical and Mechanical final inspections, and, separately, each welder. People are ranked by NCR Pass Rate, lowest first, over a period you choose, and each has their own page.
 
 ## 1. Import the visual (once per report)
 
 1. In Power BI Desktop, open the Visualizations pane, select the three dots (…), then **Import a visual from a file**.
-2. Choose `qaqcPerformance_AD661934E05F.1.0.0.0.pbiviz`.
+2. Choose `qaqcPerformance_AD661934E05F.1.1.0.0.pbiviz`.
 3. To update later, import the newer file the same way. It replaces the old version in place and keeps your field bindings.
 
 ## 2. Add the QCx Combined table (once per report, required)
@@ -56,27 +56,29 @@ Four cards for the shown group and period:
 - **QCR/FE ranked** (or **Welders ranked**): how many people are ranked, with the minimum and how many are below it.
 - **Finals** (or **Welds**): every final (or weld) in the period for the whole group, including people below the minimum and Not recorded.
 - **NCRs:** the whole group's NCRs in the period.
-- **NCR rate:** NCRs ÷ Finals (or welds) for the whole group.
+- **NCR Pass Rate:** 100% − (NCRs ÷ Finals), or 100% − (NCRs ÷ welds), for the whole group. 100 finals with 2 NCRs shows 98.00%.
 
 ### The table
 
 | QCR / FE columns | Welders columns |
 |---|---|
-| Name, Finals, NCRs, NCR rate, Trend | Welder, Welds, NCRs, NCR rate, Trend |
+| Name, Finals, NCRs, NCR Pass Rate, Trend | Welder, Welds, NCRs, NCR Pass Rate, Trend |
 
 The table has three blocks, in this order:
 
-1. **Ranked people:** everyone with at least the minimum finals (or welds) in the period, ordered by NCR rate (highest first), then NCRs (most first), then name. QCR / FE names carry `E` and `M` tags for the disciplines of their finals in the period.
+1. **Ranked people:** everyone with at least the minimum finals (or welds) in the period, ordered by NCR Pass Rate (lowest first), then NCRs (most first), then name. QCR / FE names carry `E` and `M` tags for the disciplines of their finals in the period.
 2. **Below minimum (n people):** a collapsed group with a disclosure button. Open it to see everyone under the minimum, ordered by finals (or welds), most first. They are listed but never ranked.
 3. **Not recorded:** a single row totalling every final (or weld) with no name recorded, shown last and never ranked. It only appears when there is at least one.
 
-Click any column header to sort by it; click again to reverse. The three blocks stay in their order and each sorts within itself. The header stays in place as you scroll.
+A 100.00% NCR Pass Rate is muted, so anything below it stands out.
+
+Click any column header to sort by it; click again to reverse. NCR Pass Rate starts lowest first, the same way the ranking does. The three blocks stay in their order and each sorts within itself. The header stays in place as you scroll.
 
 ### Trend
 
 The Trend column is a strip of the 30 weeks ending at the selected week: one tiny bar per week for the person's finals (or welds), with weeks that had an NCR drawn in red and flagged above the bar. Screen readers hear the same as text: "NCRs in n of the last 30 weeks".
 
-It is not a weekly NCR-rate line on purpose. Most people have a handful of finals a week, so a weekly rate would jump between 0% and 100% and hide the pattern; bars plus NCR weeks show both volume and when NCRs happened.
+It is not a weekly NCR Pass Rate line on purpose. Most people have a handful of finals a week, so a weekly pass rate would jump between 0% and 100% and hide the pattern; bars plus NCR weeks show both volume and when NCRs happened.
 
 ### Person page
 
@@ -84,8 +86,8 @@ Click a person's row, or press Enter on their name, to open their page over the 
 
 The page shows:
 
-- **Cards:** Finals (or Welds), NCRs and NCR rate for **This period**, and the same three for **All time**.
-- **Week by week:** a bar per week for the person's finals (or welds) over the period, with NCRs as red bars beside them, and the **Running NCR rate** within the period as a line on the right axis. Hover a week for its numbers.
+- **Cards:** Finals (or Welds), NCRs and NCR Pass Rate for **This period**, and the same three for **All time**.
+- **Week by week:** a bar per week for the person's finals (or welds) over the period, with NCRs as red bars beside them, and the **Running NCR Pass Rate** within the period as a line on the right axis, which always runs from 0% to 100%. Hover a week for its numbers.
 - **NCR table:** each NCR in the period, with Work Week, Source (Electrical, Mechanical or Welding), Building (inspections) or Tag No (welds), and Issue (the cell text). It opens newest first; click a header to sort.
 
 ### Tile sizes
@@ -102,14 +104,14 @@ The page shows:
 - **One row per person:** someone with finals in both Electrical and Mechanical has one row, with both `E` and `M` tags.
 - **Finals:** Inspection Phase is Final (any case), starts with "Final ", or contains "final inspection". Every other phase, SORs included, isn't counted.
 - **NCRs:** finals whose Issue is filled in and is not "No Issue Found".
-- **NCR rate:** NCRs ÷ Finals.
+- **NCR Pass Rate:** 100% − (NCRs ÷ Finals). A period with no finals shows n/a.
 
 ### Welders
 
 - **Who's counted:** Welding rows in the period whose Work Week can be read and isn't after the current work week.
 - **Welder lists:** the Welder cell is split on commas, and each name is trimmed and grouped ignoring letter case and extra spaces. A weld that lists several welders counts once for **each** welder it lists, and its NCR counts for each of them. The footnote says how many welds in the period list more than one welder. Because of this, the welds in the table can add up to more than the Welds card, which counts each weld once.
 - **NCRs:** welds whose Issue is filled in and is not "no", "n/a", "na", "none" or "-".
-- **NCR rate:** NCRs ÷ welds.
+- **NCR Pass Rate:** 100% − (NCRs ÷ welds). A period with no welds shows n/a.
 
 ### Not recorded
 

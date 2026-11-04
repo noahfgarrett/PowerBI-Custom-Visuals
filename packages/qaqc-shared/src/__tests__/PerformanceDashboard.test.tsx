@@ -234,7 +234,7 @@ describe('PerformanceDashboard header', () => {
 })
 
 describe('PerformanceDashboard ranking', () => {
-  it('ranks the 30 WW QCR/FEs by NCR rate, then NCRs, then name', () => {
+  it('ranks the 30 WW QCR/FEs lowest NCR Pass Rate first, then NCRs, then name', () => {
     view = draw()
     expect(rankedNames(view.container)).toEqual(['QCR 02', 'QCR 01', 'QCR 04', 'QCR 05', 'QCR 06', 'QCR 07'])
   })
@@ -299,32 +299,32 @@ describe('PerformanceDashboard ranking', () => {
 describe('PerformanceDashboard summary strip', () => {
   it('labels the QCR/FE cards', () => {
     view = draw()
-    expect(cardLabels(view.container)).toEqual(['QCR/FE ranked', 'Finals', 'NCRs', 'NCR rate'])
+    expect(cardLabels(view.container)).toEqual(['QCR/FE ranked', 'Finals', 'NCRs', 'NCR Pass Rate'])
   })
 
   it('labels the welder cards', () => {
     view = draw()
     showGroup(view.container, 'Welders')
-    expect(cardLabels(view.container)).toEqual(['Welders ranked', 'Welds', 'NCRs', 'NCR rate'])
+    expect(cardLabels(view.container)).toEqual(['Welders ranked', 'Welds', 'NCRs', 'NCR Pass Rate'])
   })
 
   it('shows the 30 WW QCR/FE totals for the whole group', () => {
     view = draw()
-    expect(summaryValues(view.container)).toEqual(['6', '221', '2', '0.90%'])
+    expect(summaryValues(view.container)).toEqual(['6', '221', '2', '99.10%'])
     expect(summaryHead(view.container)).toEqual(['QCR / FE', "WW13'2026 to WW42'2026"])
   })
 
   it('shows the All QCR/FE totals', () => {
     view = draw()
     showRange(view.container, 'All')
-    expect(summaryValues(view.container)).toEqual(['7', '282', '3', '1.06%'])
+    expect(summaryValues(view.container)).toEqual(['7', '282', '3', '98.94%'])
     expect(summaryHead(view.container)).toEqual(['QCR / FE', "WW51'2025 to WW42'2026"])
   })
 
   it('shows the 30 WW welder totals', () => {
     view = draw()
     showGroup(view.container, 'Welders')
-    expect(summaryValues(view.container)).toEqual(['38', '1,570', '11', '0.70%'])
+    expect(summaryValues(view.container)).toEqual(['38', '1,570', '11', '99.30%'])
     expect(summaryHead(view.container)[0]).toBe('Welders')
   })
 
@@ -332,7 +332,7 @@ describe('PerformanceDashboard summary strip', () => {
     view = draw()
     showGroup(view.container, 'Welders')
     showRange(view.container, 'All')
-    expect(summaryValues(view.container)).toEqual(['45', '1,751', '11', '0.63%'])
+    expect(summaryValues(view.container)).toEqual(['45', '1,751', '11', '99.37%'])
   })
 
   it('names the minimum and the people below it', () => {
@@ -345,10 +345,21 @@ describe('PerformanceDashboard summary strip', () => {
   it('says the totals cover the whole group', () => {
     view = draw()
     expect(cardDetail(view.container, 'Finals')).toBe('Whole group, incl. unranked')
-    expect(cardDetail(view.container, 'NCR rate')).toBe('NCRs ÷ finals')
     showGroup(view.container, 'Welders')
     expect(cardDetail(view.container, 'Welds')).toBe('Whole group, incl. unranked')
-    expect(cardDetail(view.container, 'NCR rate')).toBe('NCRs ÷ welds')
+  })
+
+  it('shows the group NCR Pass Rate with no small print', () => {
+    view = draw()
+    const qcrCard = card(view.container, 'NCR Pass Rate')
+    expect(qcrCard?.querySelector('.qaqc-kpi-value')?.textContent).toBe('99.10%')
+    expect(qcrCard?.querySelector('.qaqc-kpi-detail')).toBeNull()
+    expect(qcrCard?.getAttribute('aria-label')).toBe('NCR Pass Rate: 99.10%')
+    showGroup(view.container, 'Welders')
+    const welderCard = card(view.container, 'NCR Pass Rate')
+    expect(welderCard?.querySelector('.qaqc-kpi-value')?.textContent).toBe('99.30%')
+    expect(welderCard?.querySelector('.qaqc-kpi-detail')).toBeNull()
+    expect(welderCard?.getAttribute('aria-label')).toBe('NCR Pass Rate: 99.30%')
   })
 
   it('moves the period with the week picker', () => {
@@ -434,7 +445,7 @@ describe('PerformanceDashboard person page', () => {
     view = draw()
     click(nameButton(view.container, 'QCR 02'))
     const values = [...(dialog(view.container)?.querySelectorAll('.qaqc-kpi-group.is-period .qaqc-kpi-value') ?? [])].map((node) => node.textContent)
-    expect(values).toEqual(['65', '2', '3.08%'])
+    expect(values).toEqual(['65', '2', '96.92%'])
   })
 
   it('names the person chart with its weeks when chart summaries are on', () => {
@@ -442,7 +453,7 @@ describe('PerformanceDashboard person page', () => {
     view = draw()
     click(nameButton(view.container, 'QCR 02'))
     expect(dialog(view.container)?.querySelector('.qaqc-perf-chart')?.getAttribute('aria-label')).toBe(
-      "Finals and NCRs by work week, with the running NCR rate, WW13'2026 to WW42'2026",
+      "Finals and NCRs by work week, with the Running NCR Pass Rate, WW13'2026 to WW42'2026",
     )
   })
 
@@ -451,7 +462,7 @@ describe('PerformanceDashboard person page', () => {
     view = draw({ describeCharts: false })
     click(nameButton(view.container, 'QCR 02'))
     expect(dialog(view.container)?.querySelector('.qaqc-perf-chart')?.getAttribute('aria-label')).toBe(
-      'Finals and NCRs by work week, with the running NCR rate',
+      'Finals and NCRs by work week, with the Running NCR Pass Rate',
     )
   })
 
@@ -539,7 +550,7 @@ describe('PerformanceDashboard layout', () => {
     const root = view.container.querySelector('.qaqc-root')
     expect(root?.classList.contains('is-cards-only')).toBe(true)
     expect(root?.classList.contains('is-compact')).toBe(true)
-    expect(summaryValues(view.container)).toEqual(['6', '221', '2', '0.90%'])
+    expect(summaryValues(view.container)).toEqual(['6', '221', '2', '99.10%'])
   })
 
   it('shows the loading bar', () => {
