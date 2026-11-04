@@ -1,5 +1,5 @@
 import { inspectionColumnsOf, inspectionOptionalColumnsOf, weldColumnsOf, weldOptionalColumnsOf, type CombinedSplit } from './combined'
-import { parseDate } from './dates'
+import { formatDate, parseDate } from './dates'
 import { normalizeBuilding } from './inspections'
 import { createIssueDetailReader } from './issues'
 import { cellDisplayText, type Row } from './rowFilters'
@@ -59,10 +59,22 @@ function optionalColumn(key: string, label: string, position: number, isLong?: b
   return [{ key, label, read: (row) => cellDisplayText(row[position]), isLong }]
 }
 
-/** Dates can arrive as Date values, timestamps or serials; anything that isn't a date shows as it is. */
+/**
+ * Dates can arrive as Date values, timestamps or serials. They read MM/DD/YY as in the Issues lists and sort in time
+ * order, newest first; anything that isn't a date shows as it is and sorts with the blanks.
+ */
 function dateColumn(key: string, label: string, position: number): DrillColumn[] {
   if (position < 0) return []
-  return [{ key, label, read: (row) => cellDisplayText(parseDate(row[position]) ?? row[position]) }]
+  return [{
+    key,
+    label,
+    read: (row) => {
+      const date = parseDate(row[position])
+      return date === null ? cellDisplayText(row[position]) : formatDate(date)
+    },
+    sortNumber: (row) => parseDate(row[position])?.getTime() ?? null,
+    firstDirection: 'descending',
+  }]
 }
 
 /** Electrical and Mechanical's list, in the spec's order. Unbound slots are hidden; the required ones always show. */

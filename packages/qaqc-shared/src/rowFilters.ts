@@ -67,7 +67,7 @@ export function crossSourceBuildingKey(text: string): string {
   return text.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '')
 }
 
-/** A cell as the dashboard would show it: a Date as yyyy-mm-dd, other values as their text, null as ''. */
+/** A cell as filter and list text: a Date in a slot that isn't a date column as yyyy-mm-dd, other values as their text, null as ''. */
 export function cellDisplayText(value: unknown): string {
   if (!(value instanceof Date)) return cellText(value)
   if (Number.isNaN(value.getTime())) return ''

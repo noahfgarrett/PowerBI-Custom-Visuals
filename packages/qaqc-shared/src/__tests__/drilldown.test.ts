@@ -47,19 +47,35 @@ describe('inspectionDrillColumns', () => {
     expect(labels(long)).toEqual(['Issue', 'Notes'])
   })
 
-  it('a Date Observed cell shows yyyy-mm-dd and a numeric Issue ID shows as text', () => {
+  it('a Date Observed cell shows MM/DD/YY as the Issues lists do, and a numeric Issue ID shows as text', () => {
     const columns = inspectionDrillColumns(INSPECTION_COLUMNS, PLACEHOLDER_OPTIONAL)
-    expect(cell(columns, 'Date Observed', FULL_ROW)).toBe('2026-06-04')
+    expect(cell(columns, 'Date Observed', FULL_ROW)).toBe('06/04/26')
     expect(cell(columns, 'Issue ID', FULL_ROW)).toBe('90123')
   })
 
-  it('reads a Date Observed that arrives as a timestamp or a serial as yyyy-mm-dd, and blank or other text as it is', () => {
+  describe('Date Observed', () => {
     const columns = inspectionDrillColumns(INSPECTION_COLUMNS, PLACEHOLDER_OPTIONAL)
     const withDate = (value: unknown): unknown[] => FULL_ROW.map((item, position) => (position === PLACEHOLDER_OPTIONAL.dateObserved ? value : item))
-    expect(cell(columns, 'Date Observed', withDate('2026-06-04T12:00:00'))).toBe('2026-06-04')
-    expect(cell(columns, 'Date Observed', withDate(46177))).toBe('2026-06-04')
-    expect(cell(columns, 'Date Observed', withDate(null))).toBe('')
-    expect(cell(columns, 'Date Observed', withDate('not yet'))).toBe('not yet')
+    const dateObserved = columns.find((column) => column.key === 'dateObserved')
+
+    it('reads a timestamp or a serial as MM/DD/YY, and blank or other text as it is', () => {
+      expect(cell(columns, 'Date Observed', withDate('2026-06-04T12:00:00'))).toBe('06/04/26')
+      expect(cell(columns, 'Date Observed', withDate(46177))).toBe('06/04/26')
+      expect(cell(columns, 'Date Observed', withDate(null))).toBe('')
+      expect(cell(columns, 'Date Observed', withDate('not yet'))).toBe('not yet')
+    })
+
+    it('sorts by the real date across a year, newest first', () => {
+      const december = dateObserved?.sortNumber?.(withDate(new Date(2025, 11, 31))) ?? Number.POSITIVE_INFINITY
+      const january = dateObserved?.sortNumber?.(withDate(new Date(2026, 0, 1))) ?? Number.NEGATIVE_INFINITY
+      expect(december).toBeLessThan(january)
+      expect(dateObserved?.firstDirection).toBe('descending')
+    })
+
+    it('sorts a blank or a value that is not a date with no date', () => {
+      expect(dateObserved?.sortNumber?.(withDate(null))).toBeNull()
+      expect(dateObserved?.sortNumber?.(withDate('not yet'))).toBeNull()
+    })
   })
 
   it('shows a blank Building as the chart does', () => {

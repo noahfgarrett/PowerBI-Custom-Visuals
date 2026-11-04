@@ -1342,7 +1342,7 @@ describe('InspectionDashboard week drill-down', () => {
     expect(pageHeaders(container)).toEqual([
       'Building', 'Phase', 'Issue', 'Inspection ID', 'Equipment ID / Tag Number', 'Issue ID', 'Finding Type', 'Status', 'Date Observed', 'QCR/FE', 'Notes',
     ])
-    expect(pageRows(container)).toEqual([['F63.1', 'Final', 'Tray bent', 'INS-1', 'TAG-1', '90123', 'Damage', 'Open', '2026-09-30', 'QCR A', 'Rework']])
+    expect(pageRows(container)).toEqual([['F63.1', 'Final', 'Tray bent', 'INS-1', 'TAG-1', '90123', 'Damage', 'Open', '09/30/26', 'QCR A', 'Rework']])
   })
 
   it('works on a compact tile', () => {
