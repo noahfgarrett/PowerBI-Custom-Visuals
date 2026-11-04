@@ -36,6 +36,15 @@ export function alignedScale(maxValue: number, steps: number): NiceScale {
   return { max, ticks: ticksTo(max, step) }
 }
 
+/**
+ * A fixed 0 to 100 axis with exactly `steps` steps, for a percent axis whose ticks must sit on another axis's
+ * gridlines. Ticks need not be whole percents: three steps put them at a third and two thirds.
+ */
+export function percentScale(steps: number): NiceScale {
+  const stepCount = Math.max(1, steps)
+  return { max: 100, ticks: Array.from({ length: stepCount + 1 }, (_, step) => (step / stepCount) * 100) }
+}
+
 /** Which bar indices get an axis label: evenly spaced from the right, always including the selection. */
 export function labelIndices(count: number, plotWidth: number, selectedIndex: number, minLabelWidth = 44): Set<number> {
   const result = new Set<number>()

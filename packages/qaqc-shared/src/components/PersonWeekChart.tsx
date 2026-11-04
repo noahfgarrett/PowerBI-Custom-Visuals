@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState, type MouseEvent, type ReactElement } from
 
 import { boxesOverlap, createLabelPlacer, LABEL_GAP, labelBox, labelHalfWidth, labelTextWidth, type LabelBox } from '../chartLabels'
 import {
-  alignedScale,
   labelIndices,
   niceScale,
+  percentScale,
   roundedTopBarPath,
   smoothPath,
   WEEK_AXIS_HEIGHT,
@@ -43,6 +43,8 @@ const LINE_LABEL_EVERY = 3
 const MIN_LINE_LABEL_SPACING = 40
 const LINE_LABEL_ABOVE = 7
 const LINE_LABEL_BELOW = 14
+/** A line point this close under the top of the plot may lift its label above the plot, clear of the tallest bars. */
+const TOP_LABEL_REACH = 28
 /** Rate labels keep at least this far from every bar. */
 const BAR_LABEL_PAD = 2
 
@@ -126,14 +128,10 @@ export function layoutPersonWeeks(weeks: PersonWeek[], width: number, height: nu
   const barWidth = Math.min(MAX_BAR_WIDTH, Math.max(MIN_BAR_WIDTH, (band * PAIR_RATIO - pairGap) / 2))
   const pairWidth = barWidth * 2 + pairGap
   let maxCount = 0
-  let maxPassRate = 0
-  for (const week of weeks) {
-    maxCount = Math.max(maxCount, week.volume, week.ncrs)
-    if (week.runningPassRate !== null) maxPassRate = Math.max(maxPassRate, week.runningPassRate)
-  }
+  for (const week of weeks) maxCount = Math.max(maxCount, week.volume, week.ncrs)
   const countScale = niceScale(maxCount)
-  // The right axis takes the left axis's step count, so its labels sit on the left axis's gridlines.
-  const passRateScale = alignedScale(Math.ceil(maxPassRate), countScale.ticks.length - 1)
+  // The right axis always runs 0 to 100%, in the left axis's step count so its labels sit on the left axis's gridlines.
+  const passRateScale = percentScale(countScale.ticks.length - 1)
   const countHeight = (value: number): number => (value / countScale.max) * plotHeight
   const bandX = (index: number): number => MARGIN.left + index * band
   const volumeX = (index: number): number => bandX(index) + (band - pairWidth) / 2
@@ -178,6 +176,8 @@ export function layoutPersonWeeks(weeks: PersonWeek[], width: number, height: nu
     const half = labelHalfWidth(text)
     const x = Math.min(Math.max(point.x, MARGIN.left + half), plotRight - half)
     const candidates = [{ x, y: point.y - LINE_LABEL_ABOVE }, { x, y: point.y + LINE_LABEL_BELOW }]
+    // Pass rates usually run just under 100%, where the tallest bars end; no bar reaches above the plot.
+    if (point.y - MARGIN.top <= TOP_LABEL_REACH) candidates.push({ x, y: MARGIN.top - LINE_LABEL_ABOVE })
     // Rate labels stay off the bars (bar counts may sit right on top of theirs, so the bars only block rate labels).
     // The newest rate is the one readers take as current: with every position on a bar, it keeps them anyway.
     const offBars = candidates.filter((candidate) => {
@@ -263,7 +263,7 @@ export function PersonWeekChart({ weeks, group, width, height, colors, animate, 
             </text>
             {step < layout.passRateScale.ticks.length && (
               <text className="qaqc-axis-text qaqc-perf-rate-axis-text" x={layout.plotRight + 6} y={countY(tick) + 3.5} fill={colors.warn}>
-                {`${formatCount(layout.passRateScale.ticks[step])}%`}
+                {`${formatCount(Math.round(layout.passRateScale.ticks[step]))}%`}
               </text>
             )}
           </g>

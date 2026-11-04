@@ -816,6 +816,37 @@ describe('PersonWeekChart', () => {
     expect(rates.every((text) => text.endsWith('%'))).toBe(true)
   })
 
+  it.each<{ steps: string; counts: Array<[number, number]>; expected: string[] }>([
+    { steps: 'one step', counts: [[1, 0]], expected: ['0%', '100%'] },
+    { steps: 'two steps', counts: [[100, 0], [40, 1]], expected: ['0%', '50%', '100%'] },
+    { steps: 'three steps', counts: [[6, 0], [3, 1]], expected: ['0%', '33%', '67%', '100%'] },
+    { steps: 'four steps', counts: [[8, 0], [3, 1]], expected: ['0%', '25%', '50%', '75%', '100%'] },
+  ])('fixes the right axis at 0 to 100% on the count axis gridlines, with $steps', ({ counts, expected }) => {
+    view = drawChart({ weeks: personWeeks(counts) })
+    const rates = all(view.container, '.qaqc-perf-rate-axis-text')
+    expect(rates.map((tick) => tick.textContent)).toEqual(expected)
+    expect(rates.map((tick) => numberAttr(tick, 'y'))).toEqual(all(view.container, '.qaqc-perf-count-axis-text').map((tick) => numberAttr(tick, 'y')))
+  })
+
+  it('plots 100% on the top gridline and 0% on the baseline', () => {
+    view = drawChart({ weeks: personWeeks([[5, 5], [0, 0], [0, 0], [495, 0]]), width: 1240, height: 340 })
+    const tickY = (text: string): number => {
+      const tick = all(view?.container ?? document.body, '.qaqc-perf-rate-axis-text').find((node) => node.textContent === text)
+      if (!tick) throw new Error(`${text} tick missing`)
+      return numberAttr(tick, 'y') - 3.5
+    }
+    const dots = all(view.container, '.qaqc-perf-rate-dot').map((dot) => numberAttr(dot, 'cy'))
+    expect(dots[0]).toBeCloseTo(tickY('0%'), 5)
+    expect(dots[dots.length - 1]).toBeCloseTo(tickY('100%') + (1 / 100) * (tickY('0%') - tickY('100%')), 5)
+  })
+
+  it('keeps a running 100% on the top gridline whatever the counts', () => {
+    view = drawChart({ weeks: personWeeks([[3, 0], [7, 0], [2, 0]]) })
+    const ticks = all(view.container, '.qaqc-perf-rate-axis-text')
+    const top = numberAttr(ticks[ticks.length - 1], 'y') - 3.5
+    expect(all(view.container, '.qaqc-perf-rate-dot').map((dot) => numberAttr(dot, 'cy'))).toEqual([top, top, top])
+  })
+
   it('starts the running rate line at the first week with finals', () => {
     view = drawChart()
     const path = view.container.querySelector('.qaqc-perf-rate-line')?.getAttribute('d') ?? ''
@@ -957,6 +988,38 @@ describe('PersonWeekChart', () => {
       const latest = weeks[weeks.length - 1]
       const label = view.container.querySelector(`.qaqc-perf-chart-label.is-rate[data-week="${latest.week.key}"]`)
       expect(label?.textContent).toBe(formatPassRate(latest.runningPassRate))
+    })
+  })
+
+  describe('with the line running near 100% over tall bars', () => {
+    // A bad first week holds the running pass rate near 95%, where the tallest bars end, and the newest week is a tallest bar.
+    const weeks = personWeeks(Array.from({ length: 30 }, (_, index): [number, number] => {
+      if (index === 0) return [10, 10]
+      return [index === 29 || index % 3 === 0 ? 10 : 5, 0]
+    }))
+
+    it.each(SIZES)('keeps the newest rate label off the bars at %i × %i', (width, height) => {
+      view = drawChart({ weeks, width, height })
+      const bars = all(view.container, '.qaqc-perf-chart-bar').map(barBox)
+      const label = view.container.querySelector(`.qaqc-perf-chart-label.is-rate[data-week="${weeks[29].week.key}"]`)
+      if (!label) throw new Error('newest rate label missing')
+      const box = chartLabelBox(label)
+      expect(bars.filter((bar) => box.left < bar.right && bar.left < box.right && box.top < bar.bottom && bar.top < box.bottom)).toEqual([])
+    })
+
+    it.each(SIZES)('still places every label without collisions at %i × %i', (width, height) => {
+      view = drawChart({ weeks, width, height })
+      expect(labelCollisions(view.container)).toEqual([])
+      expect(axisCollisions(view.container)).toEqual([])
+    })
+
+    it('leaves a mid-plot rate label beside its point rather than at the top of the plot', () => {
+      const low = personWeeks([[10, 5], [10, 5], [10, 5]])
+      view = drawChart({ weeks: low, width: 900, height: 280 })
+      const label = view.container.querySelector(`.qaqc-perf-chart-label.is-rate[data-week="${low[2].week.key}"]`)
+      if (!label) throw new Error('newest rate label missing')
+      const dots = all(view.container, '.qaqc-perf-rate-dot')
+      expect(Math.abs(numberAttr(dots[2], 'cy') - numberAttr(label, 'y'))).toBeLessThan(20)
     })
   })
 
