@@ -210,6 +210,14 @@
   gap: 8px;
 }
 
+// A column fits "No change vs WW44'2026" with its arrow, the longest usual line. The cards hold their own padding, so
+// the tighter column gap is what lets five share the four-card width on a 1280 px tile.
+.qaqc-kpi-group.can-wrap .qaqc-kpi-group-body {
+  grid-auto-flow: row;
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  column-gap: 4px;
+}
+
 .qaqc-kpi {
   display: flex;
   flex-direction: column;
@@ -292,6 +300,11 @@
 
 .qaqc-root.is-cards-only .qaqc-kpi-value {
   font-size: 30px;
+}
+
+// Two rows of cards need the smaller values too, so a footnote line still fits on a short tile.
+.qaqc-root.is-cards-only .qaqc-kpi-group.can-wrap .qaqc-kpi-value {
+  font-size: 22px;
 }
 
 // Narrow tiles stack the groups, so the values stay smaller and a footnote line still fits on a 300 px tile.

@@ -60,6 +60,8 @@ const NO_ROWS_MESSAGE = 'No issues match the current filters'
 const NO_OPEN_MESSAGE = 'No open issues'
 const OUTSIDE_WINDOW_MESSAGE = `Nothing in this window. These rows fall outside the last ${RECENT_WEEK_COUNT} WW: switch to All to see them.`
 const COMPANY_FIELD_ID = 'company'
+/** The Project to date group's width share with its usual four cards, kept when NCR Pass Rate joins them. */
+const FOUR_CARD_SHARE = 4
 
 type ChartId = 'trend' | 'openAging' | 'overallAging'
 type PanelId = ChartId | 'detail' | 'pareto' | 'aging' | 'drill'
@@ -409,6 +411,7 @@ export function IssuesDashboard({
                   title={isInRange ? 'In range' : 'Project to date'}
                   subtitle={model.rangeLabel ?? `Through ${model.selectedWeek.label}`}
                   variant="toDate"
+                  wrapShare={inspectionIndex === null ? undefined : FOUR_CARD_SHARE}
                 >
                   <KpiCard
                     label="Total Opened"

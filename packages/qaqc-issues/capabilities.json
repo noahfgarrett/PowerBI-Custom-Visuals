@@ -149,7 +149,7 @@
       "kind": "Grouping",
       "displayName": "Row ID",
       "displayNameKey": "Qaqc_role_rowId",
-      "description": "Optional. The QCx Combined Row ID column. Bind it with Source: it keeps identical inspection rows from merging, so NCR Pass Rate counts every final.",
+      "description": "Optional. The QCx Combined Row ID column; NCR Pass Rate needs it, since it keeps identical inspection rows from merging.",
       "descriptionKey": "Qaqc_role_rowId_description"
     },
     {

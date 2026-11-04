@@ -234,7 +234,8 @@ export function readIssueTable(table: InspectionTableSource | undefined): IssueT
   return { kind: 'ready', rows: table.rows ?? [], columns }
 }
 
-const INSPECTION_CARD_ROLES: readonly IssueSlotRole[] = ['workWeek', 'phase', 'issue']
+/** Row ID is read by nothing, but without it Power BI merges identical inspection rows and the rate is wrong. */
+const INSPECTION_CARD_ROLES: readonly IssueSlotRole[] = ['rowId', 'workWeek', 'phase', 'issue']
 
 export type IssueInspectionColumnsResult =
   | { kind: 'missing'; missing: IssueFieldSlot[] }

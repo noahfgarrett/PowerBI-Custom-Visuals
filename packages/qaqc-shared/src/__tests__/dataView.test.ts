@@ -668,15 +668,21 @@ describe('readIssueInspectionColumns', () => {
   const BASE = { id: 0, title: 1, status: 2, type: 3, contractor: 4, createdOn: 5, updatedOn: 6, dueDate: 7, createdBy: 8, rootCause: -1, rootCauseCategory: -1 }
 
   it('reads the inspection columns, with no Building to read', () => {
-    expect(readIssueInspectionColumns({ ...BASE, workWeek: 9, phase: 10, issue: 11 })).toEqual({
+    expect(readIssueInspectionColumns({ ...BASE, rowId: 12, workWeek: 9, phase: 10, issue: 11 })).toEqual({
       kind: 'ready',
       columns: { workWeek: 9, phase: 10, issue: 11, building: -1 },
     })
   })
 
   it('names the slots still empty, unbound or absent, in slot order', () => {
-    const result = readIssueInspectionColumns({ ...BASE, workWeek: -1, phase: 10 })
+    const result = readIssueInspectionColumns({ ...BASE, rowId: 12, workWeek: -1, phase: 10 })
     expect(result.kind).toBe('missing')
     if (result.kind === 'missing') expect(result.missing.map((slot) => slot.slot)).toEqual(['Work Week', 'Issue'])
+  })
+
+  it('needs Row ID, since without it identical inspection rows merge and the rate is wrong', () => {
+    const result = readIssueInspectionColumns({ ...BASE, workWeek: 9, phase: 10, issue: 11 })
+    expect(result.kind).toBe('missing')
+    if (result.kind === 'missing') expect(result.missing.map((slot) => slot.slot)).toEqual(['Row ID'])
   })
 })

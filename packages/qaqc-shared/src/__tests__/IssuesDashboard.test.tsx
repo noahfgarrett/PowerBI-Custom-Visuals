@@ -1402,6 +1402,18 @@ describe('IssuesDashboard NCR Pass Rate', () => {
     expect(markupOf(drawCard({ inspections: { index: null } }))).toBe(unbound)
   })
 
+  it('lets the five cards wrap, keeping the four-card share so This WW doesn\'t narrow', () => {
+    const group = drawCard().querySelector<HTMLElement>('.qaqc-kpi-group.is-toDate')
+    expect(group?.classList.contains('can-wrap')).toBe(true)
+    expect(group?.style.getPropertyValue('--qaqc-kpi-cards')).toBe('4')
+    expect(ruleBody('.qaqc-kpi-group.can-wrap .qaqc-kpi-group-body')).toMatch(/grid-template-columns: repeat\(auto-fit, minmax\(\d+px, 1fr\)\);/)
+  })
+
+  it('stays the four-card layout with the card hidden', () => {
+    const group = drawCard({ inspections: { index: null } }).querySelector<HTMLElement>('.qaqc-kpi-group.is-toDate')
+    expect(group?.className).toBe('qaqc-kpi-group is-toDate')
+  })
+
   it('a card has no small print', () => {
     const element = card(drawCard(), CARD)
     expect(element?.querySelector('.qaqc-kpi-label')?.textContent).toBe(CARD)

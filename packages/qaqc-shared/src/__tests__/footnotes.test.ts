@@ -6,6 +6,7 @@ import { buildInspectionIndex } from '../inspections'
 import { buildIssueIndex } from '../issues'
 import { buildPerformanceIndex, buildPerformanceModel, type PerformanceGroup, type PerformanceIndex } from '../performance'
 import type { CombinedColumns, IssueColumns } from '../types'
+import { makeWorkWeek } from '../workWeeks'
 import { bim, inspection, overviewIndexOf, weld } from './overviewRows'
 
 const COLUMNS = { workWeek: 0, phase: 1, issue: 2, building: 3 }
@@ -273,12 +274,22 @@ describe('buildPerformanceFootnotes', () => {
 })
 
 describe('buildCombinedIssueFootnotes', () => {
-  it('has nothing to say with every Source known and every slot bound', () => {
-    expect(buildCombinedIssueFootnotes(0, [])).toEqual([])
+  const CURRENT = { currentWeek: makeWorkWeek(2026, 42), totalRows: 10 }
+
+  it('has nothing to say with every Source known, every slot bound and every week read', () => {
+    expect(buildCombinedIssueFootnotes(0, [], { ...CURRENT, skippedRows: 0, futureRows: 0 })).toEqual([])
   })
 
   it('notes rows with an unknown Source, in the Overview\'s wording, then the slots NCR Pass Rate needs', () => {
-    expect(buildCombinedIssueFootnotes(1, ['Inspection Phase'])).toEqual(['1 row with an unknown Source', 'NCR Pass Rate hidden: add Inspection Phase'])
-    expect(buildCombinedIssueFootnotes(1_200, ['Work Week', 'Issue'])).toEqual(['1,200 rows with an unknown Source', 'NCR Pass Rate hidden: add Work Week, Issue'])
+    expect(buildCombinedIssueFootnotes(1, ['Inspection Phase'], null)).toEqual(['1 row with an unknown Source', 'NCR Pass Rate hidden: add Inspection Phase'])
+    expect(buildCombinedIssueFootnotes(1_200, ['Work Week', 'Issue'], null)).toEqual(['1,200 rows with an unknown Source', 'NCR Pass Rate hidden: add Work Week, Issue'])
+  })
+
+  it('notes the inspection rows the card leaves out, first, in the Overview\'s wording with its own source name', () => {
+    expect(buildCombinedIssueFootnotes(2, [], { ...CURRENT, skippedRows: 3, futureRows: 1 })).toEqual([
+      'Inspections: 3 rows skipped: unreadable work week',
+      "Inspections: 1 row dated after WW42'2026 not counted",
+      '2 rows with an unknown Source',
+    ])
   })
 })

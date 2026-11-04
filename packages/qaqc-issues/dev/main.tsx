@@ -4,17 +4,21 @@ import { createRoot } from 'react-dom/client'
 
 import '../style/visual.less'
 
+import { COMBINED_COLUMNS } from '../../qaqc-shared/src/__tests__/fixtures/combinedRows'
+import { ENRICHED_COMBINED_ROWS } from '../../qaqc-shared/src/__tests__/fixtures/enrichedCombinedRows'
 import { ENRICHED_ISSUE_COLUMNS, ENRICHED_ISSUE_ROWS } from '../../qaqc-shared/src/__tests__/fixtures/enrichedIssueRows'
 import { ISSUE_ROWS } from '../../qaqc-shared/src/__tests__/fixtures/issueRows'
 import { syntheticIssueRows } from '../../qaqc-shared/src/__tests__/fixtures/syntheticRows'
 import type { TooltipRequest } from '../../qaqc-shared/src/chartTypes'
+import { splitCombinedRows } from '../../qaqc-shared/src/combined'
 import { IssuesDashboard } from '../../qaqc-shared/src/components/IssuesDashboard'
 import { StatusPanel } from '../../qaqc-shared/src/components/StatusPanel'
-import { ISSUE_SLOTS, OPTIONAL_ISSUE_ROLES } from '../../qaqc-shared/src/dataView'
-import { buildIssueFootnotes } from '../../qaqc-shared/src/footnotes'
+import { ISSUE_SLOTS, OPTIONAL_ISSUE_ROLES, readIssueInspectionColumns } from '../../qaqc-shared/src/dataView'
+import { buildCombinedIssueFootnotes, buildIssueFootnotes } from '../../qaqc-shared/src/footnotes'
+import { buildInspectionIndex } from '../../qaqc-shared/src/inspections'
 import { buildIssueIndex } from '../../qaqc-shared/src/issues'
 import { isPresetName, resolveTheme } from '../../qaqc-shared/src/theme'
-import type { InspectionRows, IssueColumns } from '../../qaqc-shared/src/types'
+import type { InspectionIndex, InspectionRows, IssueColumns } from '../../qaqc-shared/src/types'
 
 const params = new URLSearchParams(window.location.search)
 const width = Number(params.get('w') ?? 1280)
@@ -99,17 +103,57 @@ const enrichedColumns: IssueColumns = {
   createdByCompany: enrichedPosition('Created By (Company)'),
 }
 
+function combinedPosition(name: (typeof COMBINED_COLUMNS)[number]): number {
+  return COMBINED_COLUMNS.indexOf(name)
+}
+
+/** ?data=combined: QCx Combined with its Source roles bound, as the visual splits it. Title, Contractor and Due date aren't in the fixture. */
+const combinedColumns: IssueColumns = {
+  id: combinedPosition('ID'),
+  title: -1,
+  status: combinedPosition('Status'),
+  type: combinedPosition('Type'),
+  contractor: -1,
+  createdOn: combinedPosition('Created On'),
+  updatedOn: combinedPosition('Updated On'),
+  dueDate: -1,
+  createdBy: combinedPosition('Created By'),
+  rootCause: combinedPosition('Root Cause'),
+  rootCauseCategory: -1,
+  bim360CreatedBy: combinedPosition('BIM360 Created By'),
+  bim360CreatedOn: combinedPosition('BIM360 Created On'),
+  bim360ClosedOn: combinedPosition('BIM360 Closed On'),
+  closedAt: combinedPosition('Closed At'),
+  source: combinedPosition('Source'),
+  rowId: combinedPosition('Row ID'),
+  workWeek: combinedPosition('Work Week'),
+  phase: combinedPosition('Inspection Phase'),
+  issue: combinedPosition('Issue'),
+}
+
 interface HarnessData {
   rows: InspectionRows
   columns: IssueColumns
+  inspectionIndex: InspectionIndex | null
+  combinedNotes: string[]
 }
 
-/** ?data=synthetic|empty|enriched; anything else is the Smartsheet fixture. */
+function combinedHarnessData(): HarnessData {
+  const split = splitCombinedRows(ENRICHED_COMBINED_ROWS, combinedPosition('Source'))
+  const inspection = readIssueInspectionColumns(combinedColumns)
+  if (inspection.kind === 'missing') throw new Error('harness columns missing')
+  const inspectionIndex = buildInspectionIndex([...split.electrical, ...split.mechanical], inspection.columns, today)
+  return { rows: split.bim, columns: combinedColumns, inspectionIndex, combinedNotes: buildCombinedIssueFootnotes(split.unknownSource, [], inspectionIndex) }
+}
+
+/** ?data=synthetic|empty|enriched|combined; anything else is the Smartsheet fixture. */
 function harnessData(): HarnessData {
-  if (data === 'synthetic') return { rows: syntheticIssueRows(Number(params.get('rows') ?? 200_000)), columns }
-  if (data === 'empty') return { rows: [], columns }
-  if (data === 'enriched') return { rows: ENRICHED_ISSUE_ROWS, columns: enrichedColumns }
-  return { rows: ISSUE_ROWS, columns }
+  if (data === 'combined') return combinedHarnessData()
+  const noInspections = { inspectionIndex: null, combinedNotes: [] }
+  if (data === 'synthetic') return { rows: syntheticIssueRows(Number(params.get('rows') ?? 200_000)), columns, ...noInspections }
+  if (data === 'empty') return { rows: [], columns, ...noInspections }
+  if (data === 'enriched') return { rows: ENRICHED_ISSUE_ROWS, columns: enrichedColumns, ...noInspections }
+  return { rows: ISSUE_ROWS, columns, ...noInspections }
 }
 
 if (data === 'missing') {
@@ -124,7 +168,7 @@ if (data === 'missing') {
 } else if (data === 'loading') {
   root.render(<StatusPanel icon={LoaderCircle} title="Loading issues" message="Power BI is sending the rows in batches." items={[]} />)
 } else {
-  const { rows, columns: boundColumns } = harnessData()
+  const { rows, columns: boundColumns, inspectionIndex, combinedNotes } = harnessData()
   const started = performance.now()
   const index = buildIssueIndex(rows, boundColumns, today)
   document.title = `index ${Math.round(performance.now() - started)} ms`
@@ -135,12 +179,13 @@ if (data === 'missing') {
         icon={CircleAlert}
         index={index}
         filterSource={{ rows, columns: boundColumns, today }}
+        inspections={{ index: inspectionIndex }}
         theme={theme}
         interactive={params.get('interactive') !== '0'}
         animate={params.get('animate') !== '0'}
         describeCharts
         loading={false}
-        footnotes={buildIssueFootnotes(index, false)}
+        footnotes={[...buildIssueFootnotes(index, false), ...combinedNotes]}
         viewport={{ width, height }}
         onHover={showTooltip}
       />

@@ -143,7 +143,8 @@ export class QaqcIssuesVisual implements powerbi.extensibility.visual.IVisual {
     if (inspection.kind === 'ready') {
       this.inspectionIndex = buildInspectionIndex([...split.electrical, ...split.mechanical], inspection.columns, today)
     }
-    this.combinedNotes = buildCombinedIssueFootnotes(split.unknownSource, inspection.kind === 'missing' ? inspection.missing.map((slot) => slot.slot) : [])
+    const missingSlots = inspection.kind === 'missing' ? inspection.missing.map((slot) => slot.slot) : []
+    this.combinedNotes = buildCombinedIssueFootnotes(split.unknownSource, missingSlots, this.inspectionIndex)
     return split.bim
   }
 

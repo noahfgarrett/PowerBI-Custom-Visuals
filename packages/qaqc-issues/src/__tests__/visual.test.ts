@@ -747,10 +747,55 @@ describe('QaqcIssuesVisual bound to QCx Combined', () => {
     harness = createHarness()
     apply(harness, update(combinedView(BOUND_ROLES, mergedLikePowerBi(rows, boundCells(BOUND_ROLES)))))
     expect(cardValue(harness.element, CARD)).toBe('75.0%')
+  })
 
-    const withoutRowId = BOUND_ROLES.filter((role) => role !== 'rowId')
-    apply(harness, update(combinedView(withoutRowId, mergedLikePowerBi(rows, boundCells(withoutRowId)))))
-    expect(cardValue(harness.element, CARD)).toBe('50.0%')
+  it('without Row ID the rows would merge into a wrong rate, so the card hides and the note names the slot', () => {
+    harness = createHarness()
+    apply(harness, update(combinedView(BOUND_ROLES.filter((role) => role !== 'rowId'))))
+    expect(cardValue(harness.element, CARD)).toBeNull()
+    expect(toDateCardValues(harness.element)).toEqual(['231', '174', '57', '75.3%'])
+    expect(footnotes(harness.element)).toEqual(['846 issues not created by LotusWorks are excluded', 'NCR Pass Rate hidden: add Row ID'])
+  })
+
+  it('names every missing slot in slot order with only Source bound', () => {
+    harness = createHarness()
+    apply(harness, update(combinedView(BOUND_ROLES.filter((role) => !['rowId', 'workWeek', 'phase', 'issue'].includes(role)))))
+    expect(footnotes(harness.element)).toContain('NCR Pass Rate hidden: add Row ID, Work Week, Inspection Phase, Issue')
+  })
+
+  describe('inspection rows the card leaves out', () => {
+    const LEFT_OUT = [
+      inspectionRow(90001, 'not a week', 'Final', 'NCR'),
+      inspectionRow(90002, 'not a week', 'Final', 'NCR', 'Mechanical'),
+      inspectionRow(90003, "WW50'2026", 'Final', 'NCR'),
+    ]
+    const NOTES = ['Inspections: 2 rows skipped: unreadable work week', "Inspections: 1 row dated after WW42'2026 not counted"]
+
+    it('are noted in the Overview\'s wording while the card shows, and stay out of its rate', () => {
+      harness = createHarness()
+      apply(harness, update(combinedView(BOUND_ROLES, [...COMBINED_TABLE, ...LEFT_OUT])))
+      expect(cardValue(harness.element, CARD)).toBe(overviewPassRate(WW42))
+      expect(footnotes(harness.element)).toEqual(['846 issues not created by LotusWorks are excluded', ...NOTES])
+    })
+
+    it('stay noted under an issue field filter, which doesn\'t reach them', () => {
+      harness = createHarness()
+      apply(harness, update(combinedView(BOUND_ROLES, [...COMBINED_TABLE, ...LEFT_OUT])))
+      openFilterMenu(harness.element)
+      const tick = harness.element.querySelector<HTMLInputElement>('.qaqc-filter-popover input[aria-label^="Greyfox,"]')
+      if (tick === null) throw new Error('company checkbox missing')
+      act(() => {
+        tick.click()
+      })
+      expect(footnotes(harness.element)).toEqual(expect.arrayContaining(NOTES))
+    })
+
+    it('aren\'t noted when the card is hidden', () => {
+      harness = createHarness()
+      apply(harness, update(combinedView(BOUND_ROLES.filter((role) => role !== 'issue'), [...COMBINED_TABLE, ...LEFT_OUT])))
+      expect(cardValue(harness.element, CARD)).toBeNull()
+      expect(footnotes(harness.element)).toEqual(['846 issues not created by LotusWorks are excluded', 'NCR Pass Rate hidden: add Issue'])
+    })
   })
 
   it('builds the inspection index once per data update, not on a resize or a filter change', () => {

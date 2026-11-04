@@ -38,7 +38,7 @@
     "Qaqc_role_source": "Source",
     "Qaqc_role_source_description": "Optional. The QCx Combined Source column. Bound, only BIM rows count as issues and the NCR Pass Rate card appears, reading Electrical and Mechanical rows. Leave it empty for the Issues export.",
     "Qaqc_role_rowId": "Row ID",
-    "Qaqc_role_rowId_description": "Optional. The QCx Combined Row ID column. Bind it with Source: it keeps identical inspection rows from merging, so NCR Pass Rate counts every final.",
+    "Qaqc_role_rowId_description": "Optional. The QCx Combined Row ID column; NCR Pass Rate needs it, since it keeps identical inspection rows from merging.",
     "Qaqc_role_workWeek": "Work Week",
     "Qaqc_role_workWeek_description": "Optional. The QCx Combined Work Week column; NCR Pass Rate needs it.",
     "Qaqc_role_phase": "Inspection Phase",

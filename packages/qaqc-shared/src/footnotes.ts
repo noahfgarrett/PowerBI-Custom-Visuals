@@ -118,11 +118,11 @@ export function buildPerformanceFootnotes(
 }
 
 /**
- * QCx Issues' notes when bound to QCx Combined: the rows whose Source matched none of the four, then the slots
- * NCR Pass Rate still needs.
+ * QCx Issues' notes when bound to QCx Combined: the inspection rows NCR Pass Rate leaves out, when the card shows and
+ * so has an index, then the rows whose Source matched none of the four, then the slots the card still needs.
  */
-export function buildCombinedIssueFootnotes(unknownSource: number, missingSlots: readonly string[]): string[] {
-  const notes: string[] = []
+export function buildCombinedIssueFootnotes(unknownSource: number, missingSlots: readonly string[], inspections: FootnoteSource | null): string[] {
+  const notes = inspections === null ? [] : prefixed('Inspections', buildFootnotes(inspections, false))
   if (unknownSource > 0) {
     notes.push(`${formatCount(unknownSource)} ${pluralize(unknownSource, 'row', 'rows')} with an unknown Source`)
   }

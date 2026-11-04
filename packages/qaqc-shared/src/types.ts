@@ -338,7 +338,7 @@ export interface IssueColumns {
   discipline?: number
   /** Source: bound, the table is QCx Combined, so only BIM rows are issues and Electrical and Mechanical rows feed NCR Pass Rate. */
   source?: number
-  /** Row ID: read by nothing. Bound only so Power BI keeps identical inspection rows apart. */
+  /** Row ID: read by nothing, but NCR Pass Rate needs it bound, so Power BI keeps identical inspection rows apart. */
   rowId?: number
   /** Work Week: the inspection rows' week, for NCR Pass Rate. */
   workWeek?: number
