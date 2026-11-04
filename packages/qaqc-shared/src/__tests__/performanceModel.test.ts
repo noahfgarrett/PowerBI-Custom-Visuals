@@ -77,7 +77,7 @@ function names(rows: PerformanceRow[]): string[] {
 }
 
 describe('buildPerformanceModel: ranking', () => {
-  it('ranks by NCR rate, then NCRs, then name', () => {
+  it('ranks lowest NCR Pass Rate first, then NCRs, then name', () => {
     const built = index([
       ...finals('QCR 9', 42, 5),
       ...finals('QCR 10', 42, 5),
@@ -87,7 +87,28 @@ describe('buildPerformanceModel: ranking', () => {
     ])
     const model = buildPerformanceModel(built, view('recent'), 'qcr', 5)
     expect(names(model.ranked)).toEqual(['Top', 'High', 'Low', 'QCR 9', 'QCR 10'])
-    expect(model.ranked.map((row) => row.rate)).toEqual([40, 20, 20, 0, 0])
+    expect(model.ranked.map((row) => row.passRate)).toEqual([60, 80, 80, 100, 100])
+  })
+
+  it('shows 100 finals with 2 NCRs as a 98% pass rate', () => {
+    const model = buildPerformanceModel(index(finals('QCR 01', 42, 100, 2)), view('recent'), 'qcr', 5)
+    expect(model.ranked[0].passRate).toBe(98)
+  })
+
+  it('shows 100 welds with 2 NCRs as a 98% pass rate', () => {
+    const model = buildPerformanceModel(index(welds('Welder 001', 42, 100, 2)), view('recent'), 'welders', 10)
+    expect(model.ranked[0].passRate).toBe(98)
+  })
+
+  it('reads 0% for a person whose every final has an NCR', () => {
+    const model = buildPerformanceModel(index(finals('QCR 01', 42, 5, 5)), view('recent'), 'qcr', 5)
+    expect(model.ranked[0].passRate).toBe(0)
+  })
+
+  it('treats equal fractions as a tie, whatever their volumes, and breaks it on NCRs', () => {
+    const built = index([...finals('QCR 01', 42, 7, 1), ...finals('QCR 02', 42, 21, 3), ...finals('QCR 03', 42, 49, 7)])
+    const model = buildPerformanceModel(built, view('recent'), 'qcr', 5)
+    expect(names(model.ranked)).toEqual(['QCR 03', 'QCR 02', 'QCR 01'])
   })
 
   it('ranks a person whose volume equals the minimum and puts one below it under Below minimum', () => {
@@ -110,7 +131,7 @@ describe('buildPerformanceModel: ranking', () => {
     expect(recent.ranked).toEqual([])
     const all = buildPerformanceModel(built, view('all'), 'qcr', 5)
     expect(names(all.belowMinimum)).toEqual(['Two', 'Mixed'])
-    expect(all.belowMinimum[1]).toMatchObject({ volume: 1, ncrs: 0, rate: 0 })
+    expect(all.belowMinimum[1]).toMatchObject({ volume: 1, ncrs: 0, passRate: 100 })
   })
 
   it('tags a person with the disciplines of their finals in the period only', () => {
@@ -198,8 +219,8 @@ describe('buildPerformanceModel: Not recorded and summary', () => {
   it('gathers Not recorded rows into one row and counts them in the summary', () => {
     const built = index([...finals('QCR 01', 42, 5, 1), ...sors(null, 42, 3), ...finals('N/A', 42, 2, 1)])
     const model = buildPerformanceModel(built, view('recent'), 'qcr', 5)
-    expect(model.notRecorded).toMatchObject({ name: 'Not recorded', volume: 2, ncrs: 1, rate: 50 })
-    expect(model.summary).toEqual({ peopleRanked: 1, volume: 7, ncrs: 2, rate: (2 / 7) * 100 })
+    expect(model.notRecorded).toMatchObject({ name: 'Not recorded', volume: 2, ncrs: 1, passRate: 50 })
+    expect(model.summary).toEqual({ peopleRanked: 1, volume: 7, ncrs: 2, passRate: (5 / 7) * 100 })
   })
 
   it('has no Not recorded row when the only rows with no QCR/FE are SORs', () => {
@@ -219,13 +240,13 @@ describe('buildPerformanceModel: Not recorded and summary', () => {
       ['Welder 002', 10, 1],
       ['Welder 001', 12, 1],
     ])
-    expect(model.summary).toEqual({ peopleRanked: 2, volume: 12, ncrs: 1, rate: (1 / 12) * 100 })
+    expect(model.summary).toEqual({ peopleRanked: 2, volume: 12, ncrs: 1, passRate: (11 / 12) * 100 })
     expect(model.sharedWelds).toBe(10)
   })
 
-  it('reports a null rate and no rows when the period has only SORs', () => {
+  it('reports a null pass rate and no rows when the period has only SORs', () => {
     const model = buildPerformanceModel(index(sors('QCR 01', 42, 2)), view('recent'), 'qcr', 5)
-    expect(model.summary).toEqual({ peopleRanked: 0, volume: 0, ncrs: 0, rate: null })
+    expect(model.summary).toEqual({ peopleRanked: 0, volume: 0, ncrs: 0, passRate: null })
     expect([model.ranked, model.belowMinimum, model.notRecorded]).toEqual([[], [], null])
   })
 
@@ -245,22 +266,22 @@ describe('buildPersonDetail', () => {
     ...welds('Welder 001, Welder 002', 41, 2, 1),
   ])
 
-  it('runs the NCR rate cumulatively within the period', () => {
+  it('runs the NCR Pass Rate cumulatively within the period', () => {
     const detail = buildPersonDetail(built, 'qcr', 'qcr 01', view('recent'))
-    const weeks = detail?.weeks.slice(-3).map((item) => [item.week.label, item.volume, item.ncrs, item.runningRate])
+    const weeks = detail?.weeks.slice(-3).map((item) => [item.week.label, item.volume, item.ncrs, item.runningPassRate])
     expect(weeks).toEqual([
       ["WW40'2026", 2, 1, 50],
       ["WW41'2026", 0, 0, 50],
-      ["WW42'2026", 3, 1, 40],
+      ["WW42'2026", 3, 1, 60],
     ])
-    expect(detail?.weeks[0]).toMatchObject({ volume: 0, runningRate: null })
+    expect(detail?.weeks[0]).toMatchObject({ volume: 0, runningPassRate: null })
     expect(detail?.weeks).toHaveLength(30)
   })
 
   it('gives period and all-time cards', () => {
     const detail = buildPersonDetail(built, 'qcr', 'qcr 01', view('recent'))
-    expect(detail?.period).toEqual({ volume: 5, ncrs: 2, rate: 40 })
-    expect(detail?.allTime).toEqual({ volume: 7, ncrs: 4, rate: (4 / 7) * 100 })
+    expect(detail?.period).toEqual({ volume: 5, ncrs: 2, passRate: 60 })
+    expect(detail?.allTime).toEqual({ volume: 7, ncrs: 4, passRate: (3 / 7) * 100 })
     expect(detail?.tags).toEqual(['E', 'M'])
   })
 

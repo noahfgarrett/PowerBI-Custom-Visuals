@@ -16,7 +16,7 @@ import type { ChartColors, TooltipHandler } from '../chartTypes'
 import { formatCount } from '../format'
 import type { PerformanceGroup, PersonWeek } from '../performance'
 import type { LegendItem } from './ChartPanel'
-import { formatNcrRate } from './PerformanceTable'
+import { formatPassRate } from './PerformanceTable'
 import { WeekAxisTick } from './WeekAxisTick'
 
 // The IssuesTrendChart layout: a bar pair per week on the left axis, a line on its own right axis.
@@ -47,6 +47,7 @@ const LINE_LABEL_BELOW = 14
 const BAR_LABEL_PAD = 2
 
 const VOLUME_LABELS: Record<PerformanceGroup, string> = { qcr: 'Finals', welders: 'Welds' }
+const RUNNING_PASS_RATE_LABEL = 'Running NCR Pass Rate'
 
 export interface PersonWeekChartProps {
   /** Each week of the period, oldest first. */
@@ -85,11 +86,11 @@ export interface PersonWeekLayout {
   plotBottom: number
   band: number
   countScale: NiceScale
-  rateScale: NiceScale
+  passRateScale: NiceScale
   bars: BarMark[]
   /** Each week's band centre. */
   centers: number[]
-  /** Each week's point on the rate line, or null before the period's first volume. */
+  /** Each week's point on the pass rate line, or null before the period's first volume. */
   linePoints: Array<PlotPoint | null>
   linePath: string
   labels: ChartLabel[]
@@ -100,7 +101,7 @@ export function personWeekLegend(colors: ChartColors, group: PerformanceGroup): 
   return [
     { label: VOLUME_LABELS[group], color: colors.series1, shape: 'bar' },
     { label: 'NCRs', color: colors.bad, shape: 'bar' },
-    { label: 'Running NCR rate', color: colors.warn, shape: 'line' },
+    { label: RUNNING_PASS_RATE_LABEL, color: colors.warn, shape: 'line' },
   ]
 }
 
@@ -125,14 +126,14 @@ export function layoutPersonWeeks(weeks: PersonWeek[], width: number, height: nu
   const barWidth = Math.min(MAX_BAR_WIDTH, Math.max(MIN_BAR_WIDTH, (band * PAIR_RATIO - pairGap) / 2))
   const pairWidth = barWidth * 2 + pairGap
   let maxCount = 0
-  let maxRate = 0
+  let maxPassRate = 0
   for (const week of weeks) {
     maxCount = Math.max(maxCount, week.volume, week.ncrs)
-    if (week.runningRate !== null) maxRate = Math.max(maxRate, week.runningRate)
+    if (week.runningPassRate !== null) maxPassRate = Math.max(maxPassRate, week.runningPassRate)
   }
   const countScale = niceScale(maxCount)
   // The right axis takes the left axis's step count, so its labels sit on the left axis's gridlines.
-  const rateScale = alignedScale(Math.ceil(maxRate), countScale.ticks.length - 1)
+  const passRateScale = alignedScale(Math.ceil(maxPassRate), countScale.ticks.length - 1)
   const countHeight = (value: number): number => (value / countScale.max) * plotHeight
   const bandX = (index: number): number => MARGIN.left + index * band
   const volumeX = (index: number): number => bandX(index) + (band - pairWidth) / 2
@@ -154,7 +155,7 @@ export function layoutPersonWeeks(weeks: PersonWeek[], width: number, height: nu
     if (week.ncrs > 0) addBar(`n${index}`, 'ncr', ncrX(index), week.ncrs)
     const center = bandX(index) + band / 2
     centers.push(center)
-    linePoints.push(week.runningRate === null ? null : { x: center, y: plotBottom - (week.runningRate / rateScale.max) * plotHeight })
+    linePoints.push(week.runningPassRate === null ? null : { x: center, y: plotBottom - (week.runningPassRate / passRateScale.max) * plotHeight })
   })
 
   // Labels go in priority order, each at its first position inside the plot and clear of every label already
@@ -167,11 +168,11 @@ export function layoutPersonWeeks(weeks: PersonWeek[], width: number, height: nu
     const spot = placer.place(label.text, candidates)
     if (spot !== null) placed.push({ ...label, x: spot.x, y: spot.y })
   }
-  function placeRateLabel(index: number): void {
+  function placePassRateLabel(index: number): void {
     const point = linePoints[index]
-    const rate = weeks[index].runningRate
-    if (point === null || rate === null) return
-    const text = formatNcrRate(rate)
+    const passRate = weeks[index].runningPassRate
+    if (point === null || passRate === null) return
+    const text = formatPassRate(passRate)
     // A point within half a label of either axis (the newest week always is, on narrow bands) slides its label
     // inward until it ends at the axis, rather than losing it.
     const half = labelHalfWidth(text)
@@ -198,13 +199,13 @@ export function layoutPersonWeeks(weeks: PersonWeek[], width: number, height: nu
   }
 
   const lastIndex = weeks.length - 1
-  if (lastIndex >= 0) placeRateLabel(lastIndex)
+  if (lastIndex >= 0) placePassRateLabel(lastIndex)
   if (band >= MIN_BAR_LABEL_BAND) {
     for (let index = lastIndex; index >= 0; index -= 1) placeBarLabel(index, 'ncr')
     for (let index = lastIndex; index >= 0; index -= 1) placeBarLabel(index, 'volume')
   }
   for (const index of lineLabelIndices(weeks.length, band)) {
-    if (index !== lastIndex) placeRateLabel(index)
+    if (index !== lastIndex) placePassRateLabel(index)
   }
 
   // Bar labels by week, then the rate labels drawn over them.
@@ -222,7 +223,7 @@ export function layoutPersonWeeks(weeks: PersonWeek[], width: number, height: nu
     plotBottom,
     band,
     countScale,
-    rateScale,
+    passRateScale,
     bars,
     centers,
     linePoints,
@@ -233,11 +234,11 @@ export function layoutPersonWeeks(weeks: PersonWeek[], width: number, height: nu
 }
 
 function chartTitle(group: PerformanceGroup): string {
-  return `${VOLUME_LABELS[group]} and NCRs by work week, with the running NCR rate`
+  return `${VOLUME_LABELS[group]} and NCRs by work week, with the ${RUNNING_PASS_RATE_LABEL}`
 }
 
 /**
- * One person's weeks in the period: their Finals (or welds) with NCRs beside them, and the running NCR rate within
+ * One person's weeks in the period: their Finals (or welds) with NCRs beside them, and the Running NCR Pass Rate within
  * the period on a right axis. Hover shows each week; there is no week selection.
  */
 export function PersonWeekChart({ weeks, group, width, height, colors, animate, describe, onHover }: PersonWeekChartProps): ReactElement {
@@ -260,9 +261,9 @@ export function PersonWeekChart({ weeks, group, width, height, colors, animate, 
             <text className="qaqc-axis-text qaqc-perf-count-axis-text" x={MARGIN.left - 6} y={countY(tick) + 3.5} textAnchor="end" fill={colors.axisText}>
               {formatCount(tick)}
             </text>
-            {step < layout.rateScale.ticks.length && (
+            {step < layout.passRateScale.ticks.length && (
               <text className="qaqc-axis-text qaqc-perf-rate-axis-text" x={layout.plotRight + 6} y={countY(tick) + 3.5} fill={colors.warn}>
-                {`${formatCount(layout.rateScale.ticks[step])}%`}
+                {`${formatCount(layout.passRateScale.ticks[step])}%`}
               </text>
             )}
           </g>
@@ -299,7 +300,7 @@ export function PersonWeekChart({ weeks, group, width, height, colors, animate, 
           transform={`rotate(90 ${width - AXIS_TITLE_INSET} ${middle})`}
           fill={colors.warn}
         >
-          Running NCR rate
+          {RUNNING_PASS_RATE_LABEL}
         </text>
       </>
     )
@@ -360,7 +361,7 @@ export function PersonWeekChart({ weeks, group, width, height, colors, animate, 
       rows: [
         { label: volumeLabel, value: formatCount(week.volume) },
         { label: 'NCRs', value: formatCount(week.ncrs) },
-        { label: 'Running NCR rate', value: formatNcrRate(week.runningRate) },
+        { label: RUNNING_PASS_RATE_LABEL, value: formatPassRate(week.runningPassRate) },
       ],
       clientX: event.clientX,
       clientY: event.clientY,

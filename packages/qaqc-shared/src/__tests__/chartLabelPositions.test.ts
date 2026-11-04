@@ -56,7 +56,7 @@ const formatRate = (value: number): string => `${value.toFixed(1)}%`
 const PERSON_WEEKS: PersonWeek[] = Array.from({ length: 30 }, (_, index) => {
   const volume = index < 3 ? 0 : (index * 7) % 12
   const ncrs = index < 3 ? 0 : (index * 3) % 4
-  return { week: makeWorkWeek(2026, index + 10), volume, ncrs, runningRate: index < 3 ? null : 2 + ((index * 13) % 17) / 3 }
+  return { week: makeWorkWeek(2026, index + 10), volume, ncrs, runningPassRate: index < 3 ? null : 98 - ((index * 13) % 17) / 3 }
 })
 
 describe('chart label positions', () => {

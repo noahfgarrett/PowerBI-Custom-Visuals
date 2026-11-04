@@ -100,8 +100,8 @@ export interface PerformanceRow {
   /** Always at least 1: a row exists only when the period has finals or welds for it. */
   volume: number
   ncrs: number
-  /** NCRs ÷ volume as a percentage. */
-  rate: number
+  /** The NCR Pass Rate: 100% − (NCRs ÷ volume), as a percentage. */
+  passRate: number
   /** The 30 weeks ending at the period's last week, whatever the range. */
   trend: PerformanceTrendWeek[]
   /** Weeks in `trend` with an NCR. */
@@ -113,7 +113,8 @@ export interface PerformanceSummary {
   /** Distinct finals or welds in the period for the whole group, including below minimum and Not recorded. */
   volume: number
   ncrs: number
-  rate: number | null
+  /** Null when the period has no volume. */
+  passRate: number | null
 }
 
 export interface PerformanceWindow {
@@ -125,7 +126,7 @@ export interface PerformanceWindow {
 export interface PerformanceModel {
   group: PerformanceGroup
   summary: PerformanceSummary
-  /** Volume at or above the minimum: NCR rate descending, then NCRs descending, then name. */
+  /** Volume at or above the minimum: lowest NCR Pass Rate first, then NCRs descending, then name. */
   ranked: PerformanceRow[]
   /** Everyone else with rows in the period: volume descending, then name. */
   belowMinimum: PerformanceRow[]
@@ -142,15 +143,16 @@ export interface PerformanceModel {
 export interface PerformanceTotals {
   volume: number
   ncrs: number
-  rate: number | null
+  /** Null when there is no volume. */
+  passRate: number | null
 }
 
 export interface PersonWeek {
   week: WorkWeek
   volume: number
   ncrs: number
-  /** NCRs ÷ volume from the period's first week through this week, or null before any volume. */
-  runningRate: number | null
+  /** The NCR Pass Rate from the period's first week through this week, or null before any volume. */
+  runningPassRate: number | null
 }
 
 export type PersonNcrSource = 'Electrical' | 'Mechanical' | 'Welding'
@@ -461,8 +463,9 @@ function sumRange(values: Int32Array, start: number, end: number): number {
   return sum
 }
 
-function rateOf(ncrs: number, volume: number): number | null {
-  return volume > 0 ? (ncrs / volume) * 100 : null
+/** 100% − (NCRs ÷ volume) as a percentage, or null with no volume. */
+function passRateOf(ncrs: number, volume: number): number | null {
+  return volume > 0 ? ((volume - ncrs) / volume) * 100 : null
 }
 
 function tagsInRange(tagsByWeek: Uint8Array, start: number, end: number): DisciplineTag[] {
@@ -491,7 +494,7 @@ function rowOf(key: string, name: string, weekly: WeeklyBuckets, tagsByWeek: Uin
     tags: tagsByWeek ? tagsInRange(tagsByWeek, period.start, period.end) : [],
     volume,
     ncrs,
-    rate: (ncrs / volume) * 100,
+    passRate: ((volume - ncrs) / volume) * 100,
     trend,
     ncrWeeks,
   }
@@ -502,7 +505,7 @@ function compareNames(a: PerformanceRow, b: PerformanceRow): number {
   return NAME_COLLATOR.compare(a.name, b.name) || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0)
 }
 
-/** NCR rate descending (compared exactly, as fractions), then NCRs descending, then name. */
+/** Lowest NCR Pass Rate first (compared exactly, as NCR fractions: most NCRs per volume first), then NCRs descending, then name. */
 function compareRanked(a: PerformanceRow, b: PerformanceRow): number {
   return b.ncrs * a.volume - a.ncrs * b.volume || b.ncrs - a.ncrs || compareNames(a, b)
 }
@@ -540,7 +543,7 @@ export function buildPerformanceModel(
 
   return {
     group,
-    summary: { peopleRanked: ranked.length, volume, ncrs, rate: rateOf(ncrs, volume) },
+    summary: { peopleRanked: ranked.length, volume, ncrs, passRate: passRateOf(ncrs, volume) },
     ranked,
     belowMinimum,
     notRecorded: rowOf(NOT_RECORDED_KEY, NOT_RECORDED_NAME, index.notRecorded[group], null, period),
@@ -582,7 +585,7 @@ export function buildPersonDetail(
   for (let position = period.start; position <= period.end; position += 1) {
     runningVolume += volume[position]
     runningNcrs += ncrs[position]
-    weeks.push({ week: index.weeks[position], volume: volume[position], ncrs: ncrs[position], runningRate: rateOf(runningNcrs, runningVolume) })
+    weeks.push({ week: index.weeks[position], volume: volume[position], ncrs: ncrs[position], runningPassRate: passRateOf(runningNcrs, runningVolume) })
   }
 
   const last = index.weeks.length - 1
@@ -596,8 +599,8 @@ export function buildPersonDetail(
     name: person.name,
     group,
     tags: person.tagsByWeek ? tagsInRange(person.tagsByWeek, period.start, period.end) : [],
-    period: { volume: runningVolume, ncrs: runningNcrs, rate: rateOf(runningNcrs, runningVolume) },
-    allTime: { volume: allTimeVolume, ncrs: allTimeNcrs, rate: rateOf(allTimeNcrs, allTimeVolume) },
+    period: { volume: runningVolume, ncrs: runningNcrs, passRate: passRateOf(runningNcrs, runningVolume) },
+    allTime: { volume: allTimeVolume, ncrs: allTimeNcrs, passRate: passRateOf(allTimeNcrs, allTimeVolume) },
     weeks,
     ncrRows: person.ncrRows
       .filter((ref) => ref.weekKey >= firstKey && ref.weekKey <= lastKey)
