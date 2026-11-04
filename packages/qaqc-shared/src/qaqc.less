@@ -2668,8 +2668,10 @@
   flex-wrap: wrap;
 }
 
+// Groups wrap before a card is too narrow for its "NCR Pass Rate" label. A basis, not a minimum, so a tile under
+// 400 px shrinks the one group on its line rather than overflowing.
 .qaqc-perf-person-cards .qaqc-kpi-group {
-  min-width: 320px;
+  flex-basis: 400px;
 }
 
 .qaqc-perf-person-chart {

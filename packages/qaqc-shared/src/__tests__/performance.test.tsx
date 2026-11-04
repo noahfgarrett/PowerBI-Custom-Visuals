@@ -375,6 +375,14 @@ describe('PerformanceTable stylesheet', () => {
   })
 })
 
+describe('PersonDetail stylesheet', () => {
+  it('wraps the card groups before a card is too narrow for the NCR Pass Rate label', () => {
+    const rule = ruleBody('.qaqc-perf-person-cards .qaqc-kpi-group')
+    expect(rule).toContain('flex-basis: 400px')
+    expect(rule).not.toContain('min-width')
+  })
+})
+
 describe('PerformanceTable blocks', () => {
   it('lists the ranked people in model order, then the collapsed below-minimum group, then Not recorded', () => {
     view = drawTable()
