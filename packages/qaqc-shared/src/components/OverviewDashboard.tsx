@@ -69,7 +69,8 @@ const OUTSIDE_WINDOW_MESSAGE = `Nothing in this window. These rows fall outside 
  * root's 12 + 10 px padding, the 30 px header, the root's two 10 px gaps (header, footnotes), the 267 px discipline rows
  * (a 15 px head and four 61 px rows of cards inside 8 px padding and the border), the body's two 8 px gaps, the 110 px
  * two-line quality strip, the 180 px chart minimum (`.qaqc-overview-charts`) and a 12 px footnote line:
- * 22 + 30 + 20 + 267 + 16 + 110 + 180 + 12 = 657, rounded up to 660.
+ * 22 + 30 + 20 + 267 + 16 + 110 + 180 + 12 = 657, rounded up to 660. A chip row's 27 px comes out of the chart minimum,
+ * so filtering a tile at this height doesn't take its charts away.
  */
 export const OVERVIEW_CARDS_ONLY_HEIGHT = 660
 
@@ -79,6 +80,9 @@ export const OVERVIEW_CARDS_ONLY_HEIGHT = 660
  * cards-only tiles are always dense, since their full cards stack two by two.
  */
 export const OVERVIEW_DENSE_HEIGHT = 480
+
+/** Dense tiles narrower than this drop the sparklines, so a value such as 100.0% isn't cut short to 1… */
+export const OVERVIEW_TIGHT_WIDTH = 640
 
 /** The `This WW | To date` switch for the cards. */
 const CARD_MODE_OPTIONS: ReadonlyArray<SegmentedOption<CardMode>> = [
@@ -190,7 +194,8 @@ export function OverviewDashboard({
     return range === 'recent' ? OUTSIDE_WINDOW_MESSAGE : null
   }
   const groupClass = `qaqc-kpi-group is-${mode}`
-  const rowsClass = isDense ? `${groupClass} qaqc-overview-rows is-dense` : `${groupClass} qaqc-overview-rows`
+  const tightClass = viewport.width < OVERVIEW_TIGHT_WIDTH ? ' is-tight' : ''
+  const rowsClass = isDense ? `${groupClass} qaqc-overview-rows is-dense${tightClass}` : `${groupClass} qaqc-overview-rows`
 
   /** A week click or Enter on a chart: selects the week, and opens its list when it has NCRs. */
   function selectChartWeek(chart: ChartId, key: number): void {
@@ -342,7 +347,7 @@ export function OverviewDashboard({
 
               <div className="qaqc-overview-quality">
                 {isDense ? (
-                  <section className={`${groupClass} qaqc-overview-quality-dense`} aria-label="Quality">
+                  <section className={`${groupClass} qaqc-overview-quality-dense${tightClass}`} aria-label="Quality">
                     <OverviewRowLabel name="Quality" icon={ShieldCheck} />
                     {cards.quality.map((card) => (
                       <OverviewDenseValue key={card.label} card={card} />

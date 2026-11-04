@@ -235,6 +235,16 @@ function expectXs(actual: number[], expected: number[]): void {
 const LABEL_SIZES: Array<[number, number]> = [[800, 420], [480, 240], [1300, 700]]
 
 describe('ActivityLinesChart lines', () => {
+  it('labels only the axis ends when the plot is too short for every tick', () => {
+    const labels = (rendered: Rendered): string[] => [...rendered.container.querySelectorAll('.qaqc-overview-axis-text')].map((node) => node.textContent ?? '')
+    view = drawActivity({ height: 160 })
+    expect(labels(view).length).toBeGreaterThan(2)
+    view.unmount()
+    view = drawActivity({ height: 70 })
+    expect(labels(view)).toHaveLength(2)
+    expect(view.container.querySelectorAll('.qaqc-grid-line').length).toBeGreaterThan(2)
+  })
+
   it('draws Electrical in series 1 and Mechanical in series 3', () => {
     view = drawActivity()
     expect(element(view.container, '.qaqc-overview-line.is-electrical').getAttribute('stroke')).toBe(COLORS.series1)

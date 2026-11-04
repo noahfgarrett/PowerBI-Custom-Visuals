@@ -522,6 +522,23 @@ describe('OverviewDashboard layout', () => {
     expect(ruleBody('.qaqc-overview-body')).toContain('overflow-y: auto;')
   })
 
+  it('lets the charts give up the chip row\'s height, so chips and a note still fit at the threshold', () => {
+    // One 27 px chip row at OVERVIEW_CARDS_ONLY_HEIGHT leaves the charts 153 px, measured in Chrome.
+    expect(ruleBody('.qaqc-filter-chips + .qaqc-overview-body .qaqc-overview-charts')).toContain('min-height: 150px;')
+  })
+
+  it('makes room for whole values on a tile too narrow for dense values and a sparkline', () => {
+    view = draw({ viewport: { width: 480, height: 320 } })
+    expect(view.container.querySelector('.qaqc-overview-rows.is-dense.is-tight')).not.toBeNull()
+    expect(view.container.querySelector('.qaqc-overview-quality-dense.is-tight')).not.toBeNull()
+    view.unmount()
+    view = draw({ viewport: { width: 800, height: 300 } })
+    expect(view.container.querySelector('.qaqc-overview-rows.is-dense')).not.toBeNull()
+    expect(view.container.querySelector('.is-tight')).toBeNull()
+    expect(ruleBody('.qaqc-overview-rows.is-dense.is-tight .qaqc-overview-row-trend')).toContain('display: none;')
+    expect(ruleBody('.qaqc-overview-quality-dense.is-tight')).toContain('grid-template-columns: repeat(3, minmax(0, 1fr));')
+  })
+
   it('shows the rows and the strip as dense values on a short tile', () => {
     view = draw({ viewport: { width: 1340, height: 400 } })
     expect(view.container.querySelector('.qaqc-root.is-cards-only')).not.toBeNull()

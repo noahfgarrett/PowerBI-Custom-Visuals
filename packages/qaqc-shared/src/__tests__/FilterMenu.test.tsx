@@ -329,5 +329,16 @@ describe('FilterMenu', () => {
       expect(body).toMatch(/position: sticky/)
       expect(body).toMatch(/bottom: 0/)
     })
+
+    it('the empty state never squeezes its icon, text or button on a short tile', () => {
+      expect(ruleBody('.qaqc-filter-empty > *')).toContain('flex: none;')
+      const body = ruleBody('.qaqc-filter-empty')
+      expect(body).toContain('justify-content: safe center;')
+      expect(body).toContain('overflow-y: auto;')
+    })
+
+    it('the empty state takes its full height on a compact tile, whose root scrolls', () => {
+      expect(ruleBody('.qaqc-root.is-compact .qaqc-filter-empty')).toContain('flex: 1 0 auto;')
+    })
   })
 })

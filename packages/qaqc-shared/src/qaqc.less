@@ -2441,6 +2441,11 @@
   min-height: 180px;
 }
 
+// One chip row costs 27 px, so at OVERVIEW_CARDS_ONLY_HEIGHT the charts give it up rather than scroll under the footnotes.
+.qaqc-filter-chips + .qaqc-overview-body .qaqc-overview-charts {
+  min-height: 150px;
+}
+
 .qaqc-overview-charts .qaqc-panel-main {
   grid-row: auto;
 }
@@ -2515,6 +2520,35 @@
   gap: 0 10px;
   min-height: 34px;
   padding: 3px 12px;
+}
+
+// Tiles under OVERVIEW_TIGHT_WIDTH have no room for four values and a sparkline: an ellipsis would turn 100.0% into 1…
+// So the sparkline and the row icons go, and the strip's six values take two lines.
+.qaqc-overview-rows.is-dense.is-tight {
+  grid-template-columns: 70px repeat(3, minmax(0, 1fr)) minmax(0, 1.25fr);
+}
+
+.qaqc-overview-rows.is-tight .qaqc-overview-row-icon,
+.qaqc-overview-quality-dense.is-tight .qaqc-overview-row-icon {
+  display: none;
+}
+
+.qaqc-overview-rows.is-dense.is-tight .qaqc-overview-row-trend {
+  display: none;
+}
+
+.qaqc-overview-quality-dense.is-tight {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 3px 0;
+}
+
+.qaqc-overview-quality-dense.is-tight .qaqc-overview-row-label {
+  grid-column: 1 / -1;
+}
+
+.qaqc-overview-rows.is-tight .qaqc-overview-value,
+.qaqc-overview-quality-dense.is-tight .qaqc-overview-value {
+  padding: 0 6px;
 }
 
 .qaqc-overview-value {
@@ -3710,14 +3744,31 @@ li.is-blank .qaqc-filter-option-name {
   flex: 1 1 auto;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  // Safe, so a short tile scrolls to the icon rather than centring it out of reach.
+  justify-content: safe center;
   gap: 8px;
   min-height: 0;
   padding: 24px;
+  overflow-y: auto;
   border: 1px dashed var(--qaqc-faint);
   border-radius: 14px;
   background: var(--qaqc-card);
   text-align: center;
+}
+
+.qaqc-filter-empty > * {
+  flex: none;
+}
+
+// Short tiles need the height for the message.
+.qaqc-root.is-cards-only .qaqc-filter-empty {
+  padding: 12px;
+}
+
+// The compact root scrolls itself, so the message takes its content's height under the chips.
+.qaqc-root.is-compact .qaqc-filter-empty {
+  flex: 1 0 auto;
+  overflow-y: visible;
 }
 
 .qaqc-filter-empty-icon {
