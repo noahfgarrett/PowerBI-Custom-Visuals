@@ -77,7 +77,7 @@
       "kind": "Grouping",
       "displayName": "Root Cause",
       "displayNameKey": "Qaqc_role_rootCause",
-      "description": "Optional. The BIM Issues Log Root Cause column; adds the Issues by Root Cause Pareto.",
+      "description": "Optional. The Root Cause column; adds the Issues by Root Cause Pareto.",
       "descriptionKey": "Qaqc_role_rootCause_description"
     },
     {
@@ -85,7 +85,7 @@
       "kind": "Grouping",
       "displayName": "Root Cause Category",
       "displayNameKey": "Qaqc_role_rootCauseCategory",
-      "description": "Optional. The BIM Issues Log Root Cause Category column; adds the category panel to the Issues by Root Cause Pareto.",
+      "description": "Optional. The Root Cause Category column; adds the category panel to the Issues by Root Cause Pareto.",
       "descriptionKey": "Qaqc_role_rootCauseCategory_description"
     },
     {

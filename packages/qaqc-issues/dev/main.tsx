@@ -114,8 +114,8 @@ if (data === 'missing') {
   root.render(
     <StatusPanel
       icon={ListChecks}
-      title="Add the BIM Issues Log columns"
-      message="Drag these columns from your Smartsheet table into the matching field slots."
+      title="Add the Issues export columns"
+      message="Drag these columns from the Issues sheet of your enriched Autodesk export into the matching field slots."
       items={ISSUE_SLOTS.filter((slot) => !OPTIONAL_ISSUE_ROLES.has(slot.role)).map((slot) => `${slot.column} → ${slot.slot}`)}
     />,
   )
@@ -129,7 +129,7 @@ if (data === 'missing') {
   root.render(
     <Harness>
       <IssuesDashboard
-        title="QCx BIM Issues"
+        title="QCx Issues"
         icon={CircleAlert}
         index={index}
         theme={theme}
