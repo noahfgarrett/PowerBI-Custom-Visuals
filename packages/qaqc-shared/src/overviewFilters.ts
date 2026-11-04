@@ -3,7 +3,7 @@ import type { FilterSourceNote } from './hooks/useDashboardFilters'
 import { inspectionBuildingField, inspectionRowWeekKey } from './inspectionFilters'
 import { DEFAULT_CONTRACTOR, issueContractor, issueFilterRows, issueRowWeekKey } from './issues'
 import { buildOverviewIndex, type OverviewIndex } from './overview'
-import { cellDisplayText, groupKey, optionalField, type FilterFieldDef, type Row } from './rowFilters'
+import { cellDisplayText, crossSourceBuildingKey, groupKey, optionalField, type FilterFieldDef, type Row } from './rowFilters'
 import type { CombinedColumns, InspectionRows } from './types'
 import { weldBuilding, weldRowWeekKey } from './welds'
 
@@ -91,6 +91,7 @@ export function overviewFilterFields(columns: CombinedColumns): FilterFieldDef[]
   const inspectionBuilding = inspectionBuildingField(columns.building)
   const building: FilterFieldDef = {
     ...inspectionBuilding,
+    groupBy: crossSourceBuildingKey,
     read: (row) => (sourceOf(row) === 'welding' ? weldBuilding(row[columns.tagNo]) : inspectionBuilding.read(row)),
     appliesTo: (row) => (sourceOf(row) === 'welding' ? columns.tagNo >= 0 : isInspection(row)),
   }

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { splitCombinedRows } from '../combined'
-import { buildFilterCatalog, matchRows } from '../rowFilters'
+import { buildFilterCatalog, crossSourceBuildingKey, matchRows } from '../rowFilters'
 import * as inspections from '../inspections'
 import * as issues from '../issues'
 import { buildOverviewIndex, type OverviewIndex } from '../overview'
@@ -186,12 +186,35 @@ describe('overviewFilterFields', () => {
     ])
   })
 
-  it('keeps a building spelled differently on the two sources as two values', () => {
-    const rows = [
+  describe('Building across sources', () => {
+    const SPELLED_ROWS = [
       withValues(inspection('Electrical', "WW40'2026", 'Final'), { building: 'F63.1' }),
+      withValues(inspection('Mechanical', "WW40'2026", 'Final'), { building: 'f63.1' }),
+      withValues(inspection('Electrical', "WW41'2026", 'Final'), { building: 'WR1' }),
+      withValues(inspection('Electrical', "WW41'2026", 'Final'), { building: '' }),
       withValues(weld("WW40'2026"), { tagNo: 'F631M008XX-1' }),
+      withValues(weld("WW40'2026"), { tagNo: 'F631M009XX-1' }),
+      withValues(weld("WW41'2026"), { tagNo: 'F631M010XX-1' }),
+      withValues(weld("WW41'2026"), { tagNo: 'WR1XX104XX-M006-FW-1' }),
     ]
-    expect(optionsOf(catalogOf(rows), 'building')).toEqual([['F63.1', 1], ['F631', 1]])
+
+    it('is one choice for a building spelled differently on each, in its most common spelling', () => {
+      expect(optionsOf(catalogOf(SPELLED_ROWS), 'building')).toEqual([['F631', 5], ['WR1', 2], ['Unspecified', 1]])
+    })
+
+    it('filters both sources when that choice is ticked', () => {
+      const { index } = filtered(SPELLED_ROWS, { building: [crossSourceBuildingKey('F63.1')] })
+      expect(index.electrical.totalRows).toBe(1)
+      expect(index.mechanical.totalRows).toBe(1)
+      expect(index.welding.totalRows).toBe(3)
+    })
+
+    it('keeps blank as Unspecified', () => {
+      const { index } = filtered(SPELLED_ROWS, { building: [''] })
+      expect(index.electrical.totalRows).toBe(1)
+      expect(index.mechanical.totalRows).toBe(0)
+      expect(index.welding.totalRows).toBe(0)
+    })
   })
 
   it('Discipline reads the inspection and BIM rows, not the welds', () => {

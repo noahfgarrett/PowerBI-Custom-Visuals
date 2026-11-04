@@ -4,6 +4,7 @@ import {
   activeFieldCount,
   buildFilterCatalog,
   cellDisplayText,
+  crossSourceBuildingKey,
   effectiveKeys,
   groupKey,
   isFieldActive,
@@ -297,5 +298,22 @@ describe('groupBy', () => {
       { label: NOT_RECORDED_LABEL, count: 4 },
     ])
     expect(matchRows(ROWS, catalog, selectionOf({ plain: [''] }))).toEqual([['N/A'], ['n/a'], ['None'], ['']])
+  })
+})
+
+describe('crossSourceBuildingKey', () => {
+  it('ignores case and punctuation', () => {
+    expect(crossSourceBuildingKey('F63.1')).toBe('f631')
+    expect(crossSourceBuildingKey('f631')).toBe('f631')
+    expect(crossSourceBuildingKey('IWW Pump-Station')).toBe('iwwpumpstation')
+  })
+
+  it('keeps letters and digits outside ASCII', () => {
+    expect(crossSourceBuildingKey('Bâtiment 2')).toBe('bâtiment2')
+  })
+
+  it('is the blank key for a blank value', () => {
+    expect(crossSourceBuildingKey('')).toBe('')
+    expect(crossSourceBuildingKey(' - ')).toBe('')
   })
 })

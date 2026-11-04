@@ -59,6 +59,14 @@ export function groupKey(text: string): string {
   return BLANK_SPELLINGS.has(key) ? BLANK_KEY : key
 }
 
+/**
+ * The key a building groups under on a dashboard reading several sources, which spell one building differently:
+ * inspections write `F63.1`, and the welds' derived value is `F631`. Letters and digits only, lower-cased.
+ */
+export function crossSourceBuildingKey(text: string): string {
+  return text.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '')
+}
+
 /** A cell as the dashboard would show it: a Date as yyyy-mm-dd, other values as their text, null as ''. */
 export function cellDisplayText(value: unknown): string {
   if (!(value instanceof Date)) return cellText(value)
