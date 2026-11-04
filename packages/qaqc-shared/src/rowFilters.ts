@@ -202,19 +202,27 @@ export function effectiveKeys(field: CatalogField, selection: FilterSelection): 
 
 /**
  * The rows every filtered field accepts: a row passes a field when any of its values is in the field's effective
- * keys, and must pass all of them. Once any field is active, fields with `defaultKeys` filter too (by their
- * default when nothing else is ticked), so the default limit holds while other fields are filtered.
+ * keys, and must pass all of them. A field's default limits it here whether or not anything is active, so this is
+ * what a dashboard shows with only its defaults set. `rows` itself when no field has any keys.
+ */
+export function matchEffectiveRows(rows: ReadonlyArray<Row>, catalog: FilterCatalog, selection: FilterSelection): ReadonlyArray<Row> {
+  const filters: ActiveFilter[] = []
+  for (const field of catalog.fields) {
+    const keys = effectiveKeys(field, selection)
+    if (keys.size > 0) filters.push({ def: field.def, keys })
+  }
+  if (filters.length === 0) return rows
+  const keyOf = createKeyReader()
+  return rows.filter((row) => filters.every((filter) => matchesFilter(row, filter, keyOf)))
+}
+
+/**
+ * `matchEffectiveRows` once any field is active, so the default limit holds while other fields are filtered.
  *
  * When no field is active this returns `rows` itself, all of them: a dashboard must keep its default-limited
  * base index in that case rather than use the result.
  */
 export function matchRows(rows: ReadonlyArray<Row>, catalog: FilterCatalog, selection: FilterSelection): ReadonlyArray<Row> {
   if (activeFieldCount(catalog, selection) === 0) return rows
-  const filters: ActiveFilter[] = []
-  for (const field of catalog.fields) {
-    const keys = effectiveKeys(field, selection)
-    if (keys.size > 0) filters.push({ def: field.def, keys })
-  }
-  const keyOf = createKeyReader()
-  return rows.filter((row) => filters.every((filter) => matchesFilter(row, filter, keyOf)))
+  return matchEffectiveRows(rows, catalog, selection)
 }

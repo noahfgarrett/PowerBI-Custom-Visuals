@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react'
 import type { ReactElement, ReactNode } from 'react'
 
 import type { TooltipHandler } from '../chartTypes'
+import { FilterMenu, type FilterMenuProps } from './FilterMenu'
 import { RangeToggle } from './RangeToggle'
 import { WorkWeekPicker } from './WorkWeekPicker'
 import { RECENT_WEEK_COUNT } from '../inspections'
@@ -30,15 +31,19 @@ export interface DashboardHeaderProps {
   onRangeChange: (mode: RangeMode) => void
   /** The range toggle's accessible name; RangeToggle's default ("Chart range") when left out. */
   rangeLabel?: string
+  /** A date range replaces the range toggle's window, so the toggle is disabled while one is set. */
+  isRangeDisabled?: boolean
+  /** The Filter button and its menu; left out, the header has none. */
+  filterMenu?: FilterMenuProps
   /** Newest first. */
   weekOptions: WorkWeek[]
   selectedKey: number
   onPickWeek: (key: number) => void
-  /** Controls placed before the range toggle, such as a HeaderOverlayButton. */
+  /** Controls placed before the Filter button and the range toggle, such as a HeaderOverlayButton. */
   children?: ReactNode
 }
 
-/** A dashboard's title row: its icon and title, then any leading controls, the range toggle and the week picker. */
+/** A dashboard's title row: its icon and title, then any leading controls, the filter menu, the range toggle and the week picker. */
 export function DashboardHeader({
   title,
   icon: Icon,
@@ -46,6 +51,8 @@ export function DashboardHeader({
   range,
   onRangeChange,
   rangeLabel,
+  isRangeDisabled = false,
+  filterMenu,
   weekOptions,
   selectedKey,
   onPickWeek,
@@ -61,7 +68,14 @@ export function DashboardHeader({
       </div>
       <div className="qaqc-controls">
         {children}
-        <RangeToggle value={range} recentCount={RECENT_WEEK_COUNT} disabled={!interactive} label={rangeLabel} onChange={onRangeChange} />
+        {filterMenu !== undefined && <FilterMenu {...filterMenu} disabled={!interactive} />}
+        <RangeToggle
+          value={range}
+          recentCount={RECENT_WEEK_COUNT}
+          disabled={!interactive || isRangeDisabled}
+          label={rangeLabel}
+          onChange={onRangeChange}
+        />
         <WorkWeekPicker options={weekOptions} valueKey={selectedKey} disabled={!interactive} onChange={onPickWeek} />
       </div>
     </div>

@@ -7,6 +7,7 @@ import {
   effectiveKeys,
   groupKey,
   isFieldActive,
+  matchEffectiveRows,
   matchRows,
   NO_SELECTION,
   normalizeSelection,
@@ -243,5 +244,21 @@ describe('normalizeSelection', () => {
   it('returns the same selection when nothing changes', () => {
     const selection = selectionOf({ discipline: ['electrical'] })
     expect(normalizeSelection(selection, catalog)).toBe(selection)
+  })
+})
+
+describe('matchEffectiveRows', () => {
+  const rows: Row[] = [['Electrical', 'F63.1'], ['Mechanical', 'F63.1'], ['Electrical', 'F63.2']]
+
+  it('applies a default that matchRows leaves to the dashboard', () => {
+    const defaulted: FilterFieldDef = { ...DISCIPLINE, defaultKeys: ['electrical'] }
+    const catalog = buildFilterCatalog(rows, [defaulted])
+    expect(matchRows(rows, catalog, NO_SELECTION)).toBe(rows)
+    expect(matchEffectiveRows(rows, catalog, NO_SELECTION)).toEqual([rows[0], rows[2]])
+  })
+
+  it('returns the rows themselves when no field has any keys', () => {
+    const catalog = buildFilterCatalog(rows, [DISCIPLINE, BUILDING])
+    expect(matchEffectiveRows(rows, catalog, NO_SELECTION)).toBe(rows)
   })
 })
