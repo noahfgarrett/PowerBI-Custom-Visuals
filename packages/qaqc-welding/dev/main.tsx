@@ -5,13 +5,13 @@ import '../style/visual.less'
 
 import { syntheticWeldRows } from '../../qaqc-shared/src/__tests__/fixtures/syntheticRows'
 import { WELDING_ROWS } from '../../qaqc-shared/src/__tests__/fixtures/weldingRows'
+import { PLACEHOLDER_WELD_OPTIONAL, UNBOUND_WELD_OPTIONAL, WELD_COLUMNS, weldFilterSourceFor, withPlaceholderWeldColumns } from '../../qaqc-shared/src/__tests__/weldFilterFixture'
 import type { TooltipRequest } from '../../qaqc-shared/src/chartTypes'
 import { StatusPanel } from '../../qaqc-shared/src/components/StatusPanel'
 import { WeldingDashboard } from '../../qaqc-shared/src/components/WeldingDashboard'
 import { WELD_SLOTS } from '../../qaqc-shared/src/dataView'
 import { buildFootnotes } from '../../qaqc-shared/src/footnotes'
 import { isPresetName, resolveTheme } from '../../qaqc-shared/src/theme'
-import type { WeldColumns } from '../../qaqc-shared/src/types'
 import { buildWeldIndex } from '../../qaqc-shared/src/welds'
 
 const params = new URLSearchParams(window.location.search)
@@ -59,7 +59,6 @@ function showTooltip(request: TooltipRequest | null): void {
 }
 
 const root = createRoot(frame)
-const columns: WeldColumns = { weldWeek: 0, signature: 1, signedWeek: 2, issue: 3, fluidCode: 4, pipeSpec: 5, tagNo: 6 }
 
 if (data === 'missing') {
   root.render(
@@ -73,17 +72,19 @@ if (data === 'missing') {
 } else if (data === 'loading') {
   root.render(<StatusPanel icon={LoaderCircle} title="Loading welds" message="Power BI is sending the rows in batches." items={[]} />)
 } else {
+  // The fixture has only the required columns, so made-up ones fill the filter menu here.
   const rows = data === 'synthetic'
     ? syntheticWeldRows(Number(params.get('rows') ?? 500_000))
-    : data === 'empty' ? [] : WELDING_ROWS
+    : data === 'empty' ? [] : withPlaceholderWeldColumns(WELDING_ROWS)
   const started = performance.now()
-  const index = buildWeldIndex(rows, columns, today)
+  const index = buildWeldIndex(rows, WELD_COLUMNS, today)
   document.title = `index ${Math.round(performance.now() - started)} ms`
   root.render(
     <WeldingDashboard
       title="QCx Welding Signoffs"
       icon={Flame}
       index={index}
+      filterSource={weldFilterSourceFor(rows, today, data === 'synthetic' ? UNBOUND_WELD_OPTIONAL : PLACEHOLDER_WELD_OPTIONAL)}
       minWelds={minWelds}
       theme={theme}
       interactive={params.get('interactive') !== '0'}

@@ -7,7 +7,7 @@ import { agingProfile } from '../issueBenchmarks'
 import { resolveTheme } from '../theme'
 import type { IssueIndex } from '../types'
 import { ISSUE_ROWS } from './fixtures/issueRows'
-import { agingIndex, all, click, noClosuresIndex, pressKey, stubSize, texts } from './agingFixture'
+import { AGING_COLUMNS, AGING_TODAY, agingIndex, all, click, noClosuresIndex, pressKey, stubSize, texts } from './agingFixture'
 import { countCompares } from './countCompares'
 import { render, type Rendered } from './render'
 
@@ -32,9 +32,10 @@ afterEach(() => {
 function dashboard(overrides: Partial<IssuesDashboardProps> = {}): ReactElement {
   return (
     <IssuesDashboard
-      title="QCx BIM Issues"
+      title="QCx Issues"
       icon={CircleAlert}
       index={INDEX}
+      filterSource={{ rows: ISSUE_ROWS, columns: AGING_COLUMNS, today: AGING_TODAY }}
       theme={THEME}
       interactive
       animate={false}

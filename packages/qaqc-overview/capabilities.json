@@ -153,6 +153,118 @@
       "descriptionKey": "Qaqc_role_closedAt_description"
     },
     {
+      "name": "generalContractor",
+      "kind": "Grouping",
+      "displayName": "General Contractor",
+      "displayNameKey": "Qaqc_role_generalContractor",
+      "description": "Optional. The QCx Combined General Contractor column. Adds Contractor to the Filter menu for inspections.",
+      "descriptionKey": "Qaqc_role_generalContractor_description"
+    },
+    {
+      "name": "contractor",
+      "kind": "Grouping",
+      "displayName": "Contractor",
+      "displayNameKey": "Qaqc_role_contractor",
+      "description": "Optional. The QCx Combined Contractor column. Adds Contractor to the Filter menu for BIM issues.",
+      "descriptionKey": "Qaqc_role_contractor_description"
+    },
+    {
+      "name": "discipline",
+      "kind": "Grouping",
+      "displayName": "Discipline",
+      "displayNameKey": "Qaqc_role_discipline",
+      "description": "Optional. The QCx Combined Discipline column. Adds Discipline to the Filter menu for inspections and BIM issues.",
+      "descriptionKey": "Qaqc_role_discipline_description"
+    },
+    {
+      "name": "tagNo",
+      "kind": "Grouping",
+      "displayName": "Tag No",
+      "displayNameKey": "Qaqc_role_tagNo",
+      "description": "Optional. The QCx Combined Tag No column. Lets the Building filter reach welds, and shows in a week's issue list.",
+      "descriptionKey": "Qaqc_role_tagNo_description"
+    },
+    {
+      "name": "welder",
+      "kind": "Grouping",
+      "displayName": "Welder",
+      "displayNameKey": "Qaqc_role_welder",
+      "description": "Optional. The QCx Combined Welder column. Shows in a week's issue list.",
+      "descriptionKey": "Qaqc_role_welder_description"
+    },
+    {
+      "name": "pipeSpec",
+      "kind": "Grouping",
+      "displayName": "Pipe Spec",
+      "displayNameKey": "Qaqc_role_pipeSpec",
+      "description": "Optional. The QCx Combined Pipe Spec column. Shows in a week's issue list.",
+      "descriptionKey": "Qaqc_role_pipeSpec_description"
+    },
+    {
+      "name": "fluidCode",
+      "kind": "Grouping",
+      "displayName": "Fluid Code",
+      "displayNameKey": "Qaqc_role_fluidCode",
+      "description": "Optional. The QCx Combined Fluid Code column. Shows in a week's issue list.",
+      "descriptionKey": "Qaqc_role_fluidCode_description"
+    },
+    {
+      "name": "inspectionId",
+      "kind": "Grouping",
+      "displayName": "Inspection ID",
+      "displayNameKey": "Qaqc_role_inspectionId",
+      "description": "Optional. The QCx Combined Inspection ID column. Shows in a week's issue list.",
+      "descriptionKey": "Qaqc_role_inspectionId_description"
+    },
+    {
+      "name": "equipmentTag",
+      "kind": "Grouping",
+      "displayName": "Equipment ID / Tag Number",
+      "displayNameKey": "Qaqc_role_equipmentTag",
+      "description": "Optional. The QCx Combined Equipment ID / Tag Number column. Shows in a week's issue list.",
+      "descriptionKey": "Qaqc_role_equipmentTag_description"
+    },
+    {
+      "name": "issueId",
+      "kind": "Grouping",
+      "displayName": "Issue ID",
+      "displayNameKey": "Qaqc_role_issueId",
+      "description": "Optional. The QCx Combined Issue ID column. Shows in a week's issue list.",
+      "descriptionKey": "Qaqc_role_issueId_description"
+    },
+    {
+      "name": "findingType",
+      "kind": "Grouping",
+      "displayName": "Finding Type",
+      "displayNameKey": "Qaqc_role_findingType",
+      "description": "Optional. The QCx Combined Finding Type column. Shows in a week's issue list.",
+      "descriptionKey": "Qaqc_role_findingType_description"
+    },
+    {
+      "name": "dateObserved",
+      "kind": "Grouping",
+      "displayName": "Date Observed",
+      "displayNameKey": "Qaqc_role_dateObserved",
+      "description": "Optional. The QCx Combined Date Observed column. Shows in a week's issue list.",
+      "descriptionKey": "Qaqc_role_dateObserved_description"
+    },
+    {
+      "name": "qcr",
+      "kind": "Grouping",
+      "displayName": "QCR/FE",
+      "displayNameKey": "Qaqc_role_qcr",
+      "description": "Optional. The QCx Combined QCR/FE column. Shows in a week's issue list.",
+      "descriptionKey": "Qaqc_role_qcr_description"
+    },
+    {
+      "name": "notes",
+      "kind": "Grouping",
+      "displayName": "Notes",
+      "displayNameKey": "Qaqc_role_notes",
+      "description": "Optional. The QCx Combined Notes column. Shows in a week's issue list.",
+      "descriptionKey": "Qaqc_role_notes_description"
+    },
+    {
       "name": "greenTags",
       "kind": "Measure",
       "displayName": "Green tags",
@@ -220,6 +332,48 @@
             "max": 1
           },
           "closedAt": {
+            "max": 1
+          },
+          "generalContractor": {
+            "max": 1
+          },
+          "contractor": {
+            "max": 1
+          },
+          "discipline": {
+            "max": 1
+          },
+          "tagNo": {
+            "max": 1
+          },
+          "welder": {
+            "max": 1
+          },
+          "pipeSpec": {
+            "max": 1
+          },
+          "fluidCode": {
+            "max": 1
+          },
+          "inspectionId": {
+            "max": 1
+          },
+          "equipmentTag": {
+            "max": 1
+          },
+          "issueId": {
+            "max": 1
+          },
+          "findingType": {
+            "max": 1
+          },
+          "dateObserved": {
+            "max": 1
+          },
+          "qcr": {
+            "max": 1
+          },
+          "notes": {
             "max": 1
           },
           "greenTags": {
@@ -323,6 +477,76 @@
             {
               "for": {
                 "in": "closedAt"
+              }
+            },
+            {
+              "for": {
+                "in": "generalContractor"
+              }
+            },
+            {
+              "for": {
+                "in": "contractor"
+              }
+            },
+            {
+              "for": {
+                "in": "discipline"
+              }
+            },
+            {
+              "for": {
+                "in": "tagNo"
+              }
+            },
+            {
+              "for": {
+                "in": "welder"
+              }
+            },
+            {
+              "for": {
+                "in": "pipeSpec"
+              }
+            },
+            {
+              "for": {
+                "in": "fluidCode"
+              }
+            },
+            {
+              "for": {
+                "in": "inspectionId"
+              }
+            },
+            {
+              "for": {
+                "in": "equipmentTag"
+              }
+            },
+            {
+              "for": {
+                "in": "issueId"
+              }
+            },
+            {
+              "for": {
+                "in": "findingType"
+              }
+            },
+            {
+              "for": {
+                "in": "dateObserved"
+              }
+            },
+            {
+              "for": {
+                "in": "qcr"
+              }
+            },
+            {
+              "for": {
+                "in": "notes"
               }
             },
             {

@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react'
+import { useEffect, useImperativeHandle, useRef, useState, type ReactElement, type ReactNode, type Ref } from 'react'
 
 import type { TooltipHandler } from '../chartTypes'
 import type { ElementSize } from '../hooks/useElementSize'
@@ -50,8 +50,19 @@ export interface ExpandableProps {
  */
 export type OpenPage<Id extends string> = (id: Id, source: HTMLElement, focusTarget: HTMLElement) => void
 
+/** For a chart's week click, which happens outside the `children` call that hands out `openPage`. */
+export interface ChartExpansionHandle<Id extends string> {
+  /**
+   * Opens a page from a grid chart, including from that chart's expanded view: the page grows from the chart's panel,
+   * and focus returns to the chart when it closes. Does nothing when interactions are not allowed or the panel is not
+   * on the page.
+   */
+  openPageFromChart: (pageId: Id, chartId: Id) => void
+}
+
 export interface ChartExpansionFrameProps<Id extends string> {
   panels: Record<Id, ExpandablePanel>
+  handle?: Ref<ChartExpansionHandle<Id>>
   interactive: boolean
   animate: boolean
   isCompact: boolean
@@ -81,6 +92,7 @@ function originBox(frame: HTMLElement, panel: HTMLElement | null): PanelBox | nu
  */
 export function ChartExpansionFrame<Id extends string>({
   panels,
+  handle,
   interactive,
   animate,
   isCompact,
@@ -89,6 +101,8 @@ export function ChartExpansionFrame<Id extends string>({
   children,
 }: ChartExpansionFrameProps<Id>): ReactElement {
   const [expanded, setExpanded] = useState<Id | null>(null)
+  // A page opened from an expanded chart replaces it where it is, rather than shrinking to the grid and growing back.
+  const [isSwappedIn, setIsSwappedIn] = useState(false)
   const frameRef = useRef<HTMLDivElement | null>(null)
   const panelRefs = useRef(new Map<Id, HTMLElement | null>())
   const restoreFocusRef = useRef<Id | null>(null)
@@ -131,13 +145,25 @@ export function ChartExpansionFrame<Id extends string>({
 
   function openPage(id: Id, source: HTMLElement, focusTarget: HTMLElement): void {
     if (!interactive) return
+    // A chart swapped for the page, or a pointer that stays still under it, never reports leaving the chart.
+    onHover(null)
     panelRefs.current.set(id, source)
     focusTargets.current.set(id, focusTarget)
+    setIsSwappedIn(isOverlayShown)
     setExpanded(id)
   }
 
+  useImperativeHandle(handle, () => ({
+    openPageFromChart: (pageId, chartId) => {
+      const panel = panelRefs.current.get(chartId) ?? null
+      if (panel === null) return
+      openPage(pageId, panel, panel.querySelector<HTMLElement>('svg.qaqc-chart') ?? panel)
+    },
+  }))
+
   function closeExpanded(id: Id): void {
     restoreFocusRef.current = id
+    setIsSwappedIn(false)
     setExpanded(null)
   }
 
@@ -163,6 +189,7 @@ export function ChartExpansionFrame<Id extends string>({
           legend={panels[expanded].expandedLegend ?? panels[expanded].legend}
           emptyMessage={panels[expanded].emptyMessage}
           animate={animate}
+          opensInPlace={isSwappedIn}
           className={isCompact ? 'is-compact' : undefined}
           getRootBox={() => (frameRef.current ? frameBox(frameRef.current) : ZERO_BOX)}
           getOriginBox={() => (frameRef.current ? originBox(frameRef.current, panelRefs.current.get(expanded) ?? null) : null)}

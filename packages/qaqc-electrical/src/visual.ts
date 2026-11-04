@@ -10,6 +10,7 @@ import { InspectionDashboard } from '../../qaqc-shared/src/components/Inspection
 import { StatusPanel } from '../../qaqc-shared/src/components/StatusPanel'
 import { readInspectionTable, type FieldSlot, type TableReadResult } from '../../qaqc-shared/src/dataView'
 import { buildFootnotes } from '../../qaqc-shared/src/footnotes'
+import type { InspectionFilterSource } from '../../qaqc-shared/src/inspectionFilters'
 import { buildInspectionIndex } from '../../qaqc-shared/src/inspections'
 import { resolveTheme, type HighContrastColors, type ResolvedTheme } from '../../qaqc-shared/src/theme'
 import type { InspectionIndex } from '../../qaqc-shared/src/types'
@@ -41,6 +42,7 @@ export class QaqcElectricalVisual implements powerbi.extensibility.visual.IVisua
   private settings = new ElectricalSettingsModel()
   private table: TableReadResult | null = null
   private index: InspectionIndex | null = null
+  private filterSource: InspectionFilterSource | null = null
   private loading = false
   private rowLimitReached = false
   private renderError: unknown = null
@@ -114,9 +116,15 @@ export class QaqcElectricalVisual implements powerbi.extensibility.visual.IVisua
 
   private readTable(dataView: powerbi.DataView | undefined): void {
     this.table = readInspectionTable(dataView?.table)
-    this.index = this.table.kind === 'ready'
-      ? buildInspectionIndex(this.table.rows, this.table.columns, new Date())
-      : null
+    if (this.table.kind !== 'ready') {
+      this.index = null
+      this.filterSource = null
+      return
+    }
+    const { rows, columns, optional } = this.table
+    const today = new Date()
+    this.index = buildInspectionIndex(rows, columns, today)
+    this.filterSource = { rows, columns, optional, today }
   }
 
   /** flushSync does not re-throw React 19 render errors, so surface the one captured by onUncaughtError. */
@@ -156,7 +164,7 @@ export class QaqcElectricalVisual implements powerbi.extensibility.visual.IVisua
     })
     this.applyTheme(theme)
 
-    if (this.index === null || this.table === null || this.table.kind === 'missing') {
+    if (this.index === null || this.filterSource === null || this.table === null || this.table.kind === 'missing') {
       this.renderEmptyState(this.table?.kind === 'missing' ? this.table.missing : [])
       return
     }
@@ -168,6 +176,7 @@ export class QaqcElectricalVisual implements powerbi.extensibility.visual.IVisua
         title: 'QCx Electrical Inspections',
         icon: Zap,
         index,
+        filterSource: this.filterSource,
         theme,
         interactive: this.interactionsAllowed(),
         animate: display.animate && !prefersReducedMotion(),

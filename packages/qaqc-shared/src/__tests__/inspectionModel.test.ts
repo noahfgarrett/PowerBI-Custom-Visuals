@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildInspectionIndex, buildInspectionModel, defaultViewState, RECENT_WEEK_COUNT, recentWindowStart } from '../inspections'
+import { buildInspectionIndex, buildInspectionModel, defaultViewState, passRateAt, passRateInWeeks, RECENT_WEEK_COUNT, recentWindowStart } from '../inspections'
 import type { InspectionIndex, ViewState } from '../types'
 
 const COLUMNS = { workWeek: 0, phase: 1, issue: 2, building: 3 }
@@ -176,5 +176,182 @@ describe('recentWindowStart', () => {
   it('starts at the first week when there are fewer weeks than the window', () => {
     expect(recentWindowStart(RECENT_WEEK_COUNT - 2)).toBe(0)
     expect(recentWindowStart(RECENT_WEEK_COUNT - 1)).toBe(0)
+  })
+})
+
+describe('buildInspectionModel in a date range', () => {
+  const RANGE = { fromKey: 202610, toKey: 202620 }
+
+  function inRange(index: InspectionIndex, overrides: Partial<ViewState> = {}): ViewState {
+    return view(index, { dateRange: RANGE, selectedKey: 202615, windowEndKey: 202615, ...overrides })
+  }
+
+  /** Sums a week count over the range's weeks, which is what a restated total must equal. */
+  function rangeTotal(index: InspectionIndex, read: (week: InspectionIndex['weeks'][number]) => number): number {
+    return index.weeks
+      .filter((item) => item.week.key >= RANGE.fromKey && item.week.key <= RANGE.toKey)
+      .reduce((sum, item) => sum + read(item), 0)
+  }
+
+  it('in range, the trend shows only the range\'s weeks', () => {
+    const model = buildInspectionModel(syntheticIndex(), inRange(syntheticIndex()))
+    expect(model.window.map((item) => item.week.key)).toEqual([202610, 202611, 202612, 202613, 202614, 202615, 202616, 202617, 202618, 202619, 202620])
+    expect(model.passRateTrend.map((point) => point.week.key)).toEqual(model.window.map((item) => item.week.key))
+    expect(model.windowTotals.weeks).toBe(11)
+  })
+
+  it('ignores the 30 WW and All choice while a range is set', () => {
+    const index = syntheticIndex()
+    expect(buildInspectionModel(index, inRange(index, { range: 'all' })).window).toEqual(buildInspectionModel(index, inRange(index)).window)
+  })
+
+  it('to-date totals restate to the range', () => {
+    const index = syntheticIndex()
+    const model = buildInspectionModel(index, inRange(index))
+    const finals = rangeTotal(index, (item) => item.finals)
+    const issues = rangeTotal(index, (item) => item.issuesFound)
+    expect(model.toDate.finals).toBe(finals)
+    expect(model.toDate.sors).toBe(rangeTotal(index, (item) => item.sors))
+    expect(model.toDate.cleanFinals).toBe(finals - issues)
+    expect(model.toDate.passRate).toBeCloseTo(((finals - issues) / finals) * 100, 10)
+    expect(model.toDate.passRateDeltaPoints).toBeNull()
+    expect(model.rangeLabel).toBe("WW10'2026 to WW20'2026")
+  })
+
+  it('keeps the This WW cards on the selected week, compared with the week before it', () => {
+    const index = syntheticIndex()
+    const model = buildInspectionModel(index, inRange(index, { selectedKey: 202610, windowEndKey: 202610 }))
+    expect(model.selectedWeek.key).toBe(202610)
+    expect(model.thisWeek.finals).toEqual({ value: 1, delta: 1 - 5 })
+    expect(model.toDate.finalsThisWeek).toBe(1)
+  })
+
+  it('the pass rate trend restarts at From, and its last point equals the In Range card', () => {
+    const index = syntheticIndex()
+    const model = buildInspectionModel(index, inRange(index))
+    const first = model.passRateTrend[0]
+    // Week 10 has one Final and it has the NCR, whatever came before.
+    expect(first.totalFinals).toBe(1)
+    expect(first.cleanFinals).toBe(0)
+    expect(first.rate).toBe(0)
+    const last = model.passRateTrend[model.passRateTrend.length - 1]
+    expect(last.rate).toBe(model.toDate.passRate)
+    expect(last.totalFinals).toBe(model.toDate.finals)
+    expect(last.cleanFinals).toBe(model.toDate.cleanFinals)
+  })
+
+  it('reads buildings from the range', () => {
+    const index = buildInspectionIndex(
+      [
+        ["WW05'2026", 'Final', 'No Issue Found', 'Outside'],
+        ["WW12'2026", 'Final', 'No Issue Found', 'Inside'],
+        ["WW30'2026", 'SOR', '', 'Outside'],
+      ],
+      COLUMNS,
+      TODAY,
+    )
+    const model = buildInspectionModel(index, inRange(index))
+    expect(model.allBuildings.map((bar) => bar.building)).toEqual(['Inside'])
+  })
+
+  it('lists only the range\'s weeks in the week picker, newest first', () => {
+    const index = syntheticIndex()
+    const options = buildInspectionModel(index, inRange(index)).weekOptions
+    expect(options[0].key).toBe(202620)
+    expect(options[options.length - 1].key).toBe(202610)
+    expect(options).toHaveLength(11)
+  })
+
+  it('has no data when the range holds no Finals or SORs, though other weeks do', () => {
+    const index = buildInspectionIndex(
+      [["WW05'2026", 'Final', 'No Issue Found', 'A'], ["WW30'2026", 'Final', 'No Issue Found', 'A']],
+      COLUMNS,
+      TODAY,
+    )
+    const model = buildInspectionModel(index, inRange(index))
+    expect(model.hasData).toBe(false)
+    expect(model.toDate.passRate).toBeNull()
+    expect(model.passRateTrend.every((point) => point.rate === null)).toBe(true)
+  })
+
+  it('shows every week of the range on a filtered index that keeps the full axis', () => {
+    const index = buildInspectionIndex([["WW15'2026", 'Final', 'NCR', 'A']], COLUMNS, TODAY, { axisFromKey: 202601 })
+    const model = buildInspectionModel(index, view(index, { dateRange: RANGE, selectedKey: 202612 }))
+    expect(model.window.map((item) => item.week.key)).toEqual([202610, 202611, 202612, 202613, 202614, 202615, 202616, 202617, 202618, 202619, 202620])
+    expect(model.weekOptions).toHaveLength(11)
+    expect(model.selectedWeek.key).toBe(202612)
+    expect(model.toDate.finals).toBe(1)
+    expect(model.passRateTrend[0].rate).toBeNull()
+    expect(model.passRateTrend[5].rate).toBe(0)
+  })
+
+  it('pulls a range past the axis to its nearest week rather than throwing', () => {
+    const index = buildInspectionIndex([["WW30'2026", 'Final', 'No Issue Found', 'A']], COLUMNS, TODAY)
+    const model = buildInspectionModel(index, view(index, { dateRange: RANGE }))
+    expect(model.window.map((item) => item.week.key)).toEqual([202630])
+    expect(model.weekOptions.map((week) => week.key)).toEqual([202630])
+    expect(model.selectedWeek.key).toBe(202630)
+  })
+
+  it('no range equals the existing output exactly', () => {
+    const index = syntheticIndex()
+    const selected = index.positionByKey.get(202640) ?? -1
+    const model = buildInspectionModel(index, view(index, { selectedKey: 202640, windowEndKey: 202642, range: 'all' }))
+    expect(model.rangeLabel).toBeNull()
+    expect(model.weekOptions).toEqual(index.weeks.map((item) => item.week).reverse())
+    expect(model.window).toEqual(index.weeks)
+    expect(model.toDate).toEqual({
+      finals: index.cumulativeFinals[selected],
+      sors: index.cumulativeSors[selected],
+      finalsThisWeek: index.weeks[selected].finals,
+      sorsThisWeek: index.weeks[selected].sors,
+      cleanFinals: index.cumulativeFinals[selected] - index.cumulativeIssues[selected],
+      passRate: passRateAt(index, selected),
+      passRateDeltaPoints: (passRateAt(index, selected) ?? 0) - (passRateAt(index, selected - 1) ?? 0),
+    })
+    model.passRateTrend.forEach((point, position) => {
+      expect(point).toEqual({
+        week: index.weeks[position].week,
+        rate: passRateAt(index, position),
+        cleanFinals: index.cumulativeFinals[position] - index.cumulativeIssues[position],
+        totalFinals: index.cumulativeFinals[position],
+        hadIssue: index.weeks[position].issuesFound > 0,
+        issuesFound: index.weeks[position].issuesFound,
+      })
+    })
+    expect(model.hasData).toBe(true)
+  })
+})
+
+describe('passRateInWeeks', () => {
+  const rows = [
+    ["WW10'2026", 'Final', 'NCR', 'F63.1'],
+    ["WW10'2026", 'Final', 'No Issue Found', 'F63.1'],
+    ["WW12'2026", 'Final', 'No Issue Found', 'F63.1'],
+    ["WW12'2026", 'SOR', 'NCR', 'F63.1'],
+    ["WW14'2026", 'Final', 'NCR', 'F63.1'],
+  ]
+  const index = buildInspectionIndex(rows, COLUMNS, TODAY)
+
+  it('counts every final through the last week with no first week', () => {
+    expect(passRateInWeeks(index, null, 202642)).toBe(50)
+    expect(passRateInWeeks(index, null, 202612)).toBeCloseTo(66.67, 2)
+    expect(passRateInWeeks(index, null, 202612)).toBe(passRateAt(index, index.positionByKey.get(202612) ?? -1))
+  })
+
+  it('counts only the finals inside the weeks', () => {
+    expect(passRateInWeeks(index, 202611, 202613)).toBe(100)
+    expect(passRateInWeeks(index, 202612, 202614)).toBe(50)
+  })
+
+  it('counts weeks past either end of the index as having no finals', () => {
+    expect(passRateInWeeks(index, null, 202609)).toBeNull()
+    expect(passRateInWeeks(index, 202601, 202609)).toBeNull()
+    expect(passRateInWeeks(index, 202601, 202610)).toBe(50)
+    expect(passRateInWeeks(index, 202614, 202701)).toBe(0)
+  })
+
+  it('is null with no finals in the weeks', () => {
+    expect(passRateInWeeks(index, 202615, 202642)).toBeNull()
   })
 })

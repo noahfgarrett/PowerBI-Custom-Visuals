@@ -22,7 +22,7 @@ const TODAY = new Date(2026, 9, 15) // WW42'2026
 const index = buildIssueIndex(ISSUE_ROWS, COLUMNS, TODAY)
 
 function viewAt(key: number): ViewState {
-  return { selectedKey: key, windowEndKey: 202642, range: 'recent' }
+  return { selectedKey: key, windowEndKey: 202642, range: 'recent', dateRange: null }
 }
 
 describe('BIM Issues Log export (2026-10-14)', () => {

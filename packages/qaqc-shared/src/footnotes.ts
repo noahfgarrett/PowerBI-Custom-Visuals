@@ -28,6 +28,15 @@ export function buildFootnotes(index: FootnoteSource, rowLimitReached: boolean):
   return notes
 }
 
+/**
+ * A dashboard's notes while a field filter is on. `notes` came from the visual and describe every row: their skipped
+ * and future notes give way to the filtered rows' own. Anything else, such as the row limit, stays first.
+ */
+export function restateFootnotes(notes: readonly string[], allRows: FootnoteSource, filteredRows: FootnoteSource): string[] {
+  const allRowNotes = new Set(buildFootnotes(allRows, false))
+  return [...notes.filter((note) => !allRowNotes.has(note)), ...buildFootnotes(filteredRows, false)]
+}
+
 /** Issues are dated by Created On, not a work week column, and only LotusWorks-created issues are included. */
 export function buildIssueFootnotes(index: FootnoteSource & Pick<IssueIndex, 'excludedRows'>, rowLimitReached: boolean): string[] {
   const notes: string[] = []
@@ -76,6 +85,19 @@ export function buildOverviewFootnotes(index: Pick<OverviewIndex, 'currentWeek' 
 }
 
 /**
+ * The Overview's notes while a field filter is on. Each source's notes restate to its filtered rows, and anything else
+ * from the visual, such as the row limit, stays first.
+ */
+export function restateOverviewFootnotes(
+  notes: readonly string[],
+  allRows: Pick<OverviewIndex, 'currentWeek' | 'footnotes'>,
+  filteredRows: Pick<OverviewIndex, 'currentWeek' | 'footnotes'>,
+): string[] {
+  const allRowNotes = new Set(buildOverviewFootnotes(allRows, false))
+  return [...notes.filter((note) => !allRowNotes.has(note)), ...buildOverviewFootnotes(filteredRows, false)]
+}
+
+/**
  * The Performance view's notes: the row limit over every combined row, then the shown group's skipped and future
  * rows, then its period note (finals with no QCR/FE, or welds crediting several welders), then the rows whose
  * Source matched none of the four.
@@ -106,4 +128,42 @@ export function buildPerformanceFootnotes(
     notes.push(`${formatCount(footnotes.unknownSource)} ${pluralize(footnotes.unknownSource, 'row', 'rows')} with an unknown Source`)
   }
   return notes
+}
+
+/**
+ * QCx Issues' notes when bound to QCx Combined: the inspection rows NCR Pass Rate leaves out, when the card shows and
+ * so has an index, then the rows whose Source matched none of the four, then the slots the card still needs.
+ */
+export function buildCombinedIssueFootnotes(unknownSource: number, missingSlots: readonly string[], inspections: FootnoteSource | null): string[] {
+  const notes = inspections === null ? [] : prefixed('Inspections', buildFootnotes(inspections, false))
+  if (unknownSource > 0) {
+    notes.push(`${formatCount(unknownSource)} ${pluralize(unknownSource, 'row', 'rows')} with an unknown Source`)
+  }
+  if (missingSlots.length > 0) {
+    notes.push(`NCR Pass Rate hidden: add ${missingSlots.join(', ')}`)
+  }
+  return notes
+}
+
+/**
+ * The Issues notes while a field filter is on. Skipped and future counts restate to the filtered rows, and anything
+ * else from the visual, such as the row limit, stays first. `otherCompanyRows` is the rows left out by a Created By
+ * (Company) selection, or null when no such selection is set: the LotusWorks limit, and its note, then still hold.
+ */
+export function restateIssueFootnotes(
+  notes: readonly string[],
+  allRows: FootnoteSource & Pick<IssueIndex, 'excludedRows'>,
+  filteredRows: FootnoteSource,
+  otherCompanyRows: number | null,
+): string[] {
+  const allRowNotes = new Set(buildIssueFootnotes(allRows, false))
+  const excludedRows = otherCompanyRows === null ? allRows.excludedRows : 0
+  const companyNote = otherCompanyRows !== null && otherCompanyRows > 0
+    ? [`${issueCount(otherCompanyRows)} from other companies ${pluralize(otherCompanyRows, 'is', 'are')} excluded`]
+    : []
+  return [
+    ...notes.filter((note) => !allRowNotes.has(note)),
+    ...companyNote,
+    ...buildIssueFootnotes({ ...filteredRows, excludedRows }, false),
+  ]
 }

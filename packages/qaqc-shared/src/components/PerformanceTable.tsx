@@ -5,12 +5,11 @@ import type { ChartColors } from '../chartTypes'
 import { formatCount, formatPercent, pluralize } from '../format'
 import { directionSign, type SortDirection, type SortState } from '../hooks/useTableSort'
 import { TABLE_ROW_HEIGHT, useVirtualRows } from '../hooks/useVirtualRows'
-import { RECENT_WEEK_COUNT } from '../inspections'
 import type { DisciplineTag, PerformanceGroup, PerformanceRow } from '../performance'
 import { createRankCache } from '../tableSort'
 import { TREND_STRIP_WIDTH, TrendStrip } from './TrendStrip'
 
-type SortKey = 'name' | 'volume' | 'ncrs' | 'rate' | 'trend'
+type SortKey = 'name' | 'volume' | 'ncrs' | 'passRate' | 'trend'
 
 interface Column {
   key: SortKey
@@ -20,6 +19,8 @@ interface Column {
 }
 
 const NUMBER_WIDTH = 84
+/** Fits the NCR PASS RATE header on one line with room for its sort arrow. */
+const PASS_RATE_WIDTH = 132
 const TREND_WIDTH = TREND_STRIP_WIDTH + 24
 /** The name never gets narrower than this; narrower tiles scroll the table sideways instead. */
 const NAME_MIN_WIDTH = 200
@@ -30,14 +31,14 @@ const COLUMNS: Record<PerformanceGroup, readonly Column[]> = {
     { key: 'name', label: 'Name', width: null },
     { key: 'volume', label: 'Finals', width: NUMBER_WIDTH },
     { key: 'ncrs', label: 'NCRs', width: NUMBER_WIDTH },
-    { key: 'rate', label: 'NCR rate', width: NUMBER_WIDTH + 8 },
+    { key: 'passRate', label: 'NCR Pass Rate', width: PASS_RATE_WIDTH },
     { key: 'trend', label: 'Trend', width: TREND_WIDTH },
   ],
   welders: [
     { key: 'name', label: 'Welder', width: null },
     { key: 'volume', label: 'Welds', width: NUMBER_WIDTH },
     { key: 'ncrs', label: 'NCRs', width: NUMBER_WIDTH },
-    { key: 'rate', label: 'NCR rate', width: NUMBER_WIDTH + 8 },
+    { key: 'passRate', label: 'NCR Pass Rate', width: PASS_RATE_WIDTH },
     { key: 'trend', label: 'Trend', width: TREND_WIDTH },
   ],
 }
@@ -62,9 +63,9 @@ const TAG_NAMES: Record<DisciplineTag, string> = {
   M: 'Mechanical',
 }
 
-/** The NCR rate as the table, the person detail and its chart tooltip show it. */
-export function formatNcrRate(rate: number | null): string {
-  return formatPercent(rate, 2)
+/** The NCR Pass Rate as the table, the person detail and its chart tooltip show it. */
+export function formatPassRate(passRate: number | null): string {
+  return formatPercent(passRate, 2)
 }
 
 type Block = 'ranked' | 'below'
@@ -75,9 +76,9 @@ type TableItem =
   | { kind: 'disclosure'; count: number }
   | { kind: 'notRecorded'; row: PerformanceRow }
 
-/** Names start A to Z; every number column starts largest first. */
+/** Names start A to Z and the NCR Pass Rate lowest first, as the ranking does; other number columns start largest first. */
 function firstDirection(key: SortKey): SortDirection {
-  return key === 'name' ? 'ascending' : 'descending'
+  return key === 'name' || key === 'passRate' ? 'ascending' : 'descending'
 }
 
 /** The number a row sorts on. */
@@ -87,8 +88,8 @@ function numberValue(row: PerformanceRow, key: Exclude<SortKey, 'name'>): number
       return row.volume
     case 'ncrs':
       return row.ncrs
-    case 'rate':
-      return row.rate
+    case 'passRate':
+      return row.passRate
     case 'trend':
       return row.ncrWeeks
     default: {
@@ -119,21 +120,21 @@ function sortBlock(
   return positions.map((position) => rows[position])
 }
 
-/** A zero rate is quieter than a rate with NCRs. */
-function rateClass(rate: number): string {
-  return rate === 0 ? 'qaqc-perf-rate is-zero' : 'qaqc-perf-rate'
+/** A 100% pass rate is quieter than a pass rate with NCRs. */
+function passRateClass(passRate: number): string {
+  return passRate === 100 ? 'qaqc-perf-rate is-perfect' : 'qaqc-perf-rate'
 }
 
-/** "NCRs in 2 of the last 30 weeks"; a one-week trend (the data's first week) reads as a plain sentence. */
+/** "NCRs in 2 of the last 30 weeks"; a one-week trend (the data's first week, or a range of one) reads as a plain sentence. */
 function trendText(row: PerformanceRow): string {
-  const weeks = Math.min(RECENT_WEEK_COUNT, row.trend.length)
+  const weeks = row.trend.length
   if (weeks === 1) return row.ncrWeeks > 0 ? 'NCRs in the last week' : 'No NCRs in the last week'
   return `NCRs in ${formatCount(row.ncrWeeks)} of the last ${formatCount(weeks)} weeks`
 }
 
 export interface PerformanceTableProps {
   group: PerformanceGroup
-  /** In model order: NCR rate descending, then NCRs, then name. */
+  /** In model order: lowest NCR Pass Rate first, then NCRs, then name. */
   ranked: PerformanceRow[]
   /** In model order: volume descending, then name. */
   belowMinimum: PerformanceRow[]
@@ -161,7 +162,7 @@ function NumberCells({ row, colors, isHighContrast, trendTextId }: CellsProps): 
     <>
       <td>{formatCount(row.volume)}</td>
       <td className={row.ncrs > 0 ? 'qaqc-perf-ncrs is-nonzero' : 'qaqc-perf-ncrs'}>{formatCount(row.ncrs)}</td>
-      <td className={rateClass(row.rate)}>{formatNcrRate(row.rate)}</td>
+      <td className={passRateClass(row.passRate)}>{formatPassRate(row.passRate)}</td>
       <td className="qaqc-perf-trend-cell">
         <TrendStrip trend={row.trend} colors={colors} isHighContrast={isHighContrast} />
         <span id={trendTextId} className="qaqc-visually-hidden">{trendText(row)}</span>

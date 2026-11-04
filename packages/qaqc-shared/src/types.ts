@@ -1,4 +1,5 @@
 import type { DeltaTone } from './format'
+import type { WeekRange } from './weekRange'
 
 export interface WorkWeek {
   week: number
@@ -17,6 +18,22 @@ export interface InspectionColumns {
   phase: number
   issue: number
   building: number
+}
+
+/** Column positions of the optional inspection slots, or −1 when the slot isn't bound. */
+export interface InspectionOptionalColumns {
+  generalContractor: number
+  tradeSupplier: number
+  discipline: number
+  inspectionCategory: number
+  status: number
+  inspectionId: number
+  equipmentTag: number
+  issueId: number
+  findingType: number
+  dateObserved: number
+  qcr: number
+  notes: number
 }
 
 export type InspectionRows = ReadonlyArray<ReadonlyArray<unknown>>
@@ -44,6 +61,8 @@ export interface InspectionIndex {
   cumulativeIssues: number[]
   /** Parallel to weeks: building → tally for that week. */
   buildingsByWeek: Array<Map<string, BuildingTally>>
+  /** Parallel to weeks: the positions, in the rows that built this index, of the rows behind issuesFound. */
+  issueRowsByWeek: ReadonlyArray<readonly number[]>
   positionByKey: Map<number, number>
   totalRows: number
   skippedRows: number
@@ -56,6 +75,8 @@ export interface ViewState {
   selectedKey: number
   windowEndKey: number
   range: RangeMode
+  /** Replaces the `range` window while set. */
+  dateRange: WeekRange | null
 }
 
 export interface DeltaMetric {
@@ -119,6 +140,9 @@ export interface InspectionModel {
   allBuildings: BuildingBar[]
   otherBuildings: OtherBuildings | null
   windowTotals: WindowTotals
+  /** `WW10'2026 to WW30'2026` while a date range is set: the to-date cards and the window then cover it. */
+  rangeLabel: string | null
+  /** Whether any Final or SOR is in the data, or in the date range when one is set. */
   hasData: boolean
 }
 
@@ -131,6 +155,12 @@ export interface WeldColumns {
   fluidCode: number
   pipeSpec: number
   tagNo: number
+}
+
+/** Optional Welding columns, for the filter menu and the drill-down. −1 when unbound. */
+export interface WeldOptionalColumns {
+  welder: number
+  workPackage: number
 }
 
 export interface WeldWeekCounts {
@@ -173,6 +203,8 @@ export interface WeldIndex {
   systemsByWeek: Array<Map<string, SystemTally>>
   /** Parallel to weeks: building → tally for that weld week. */
   buildingsByWeek: Array<Map<string, WeldBuildingTally>>
+  /** Parallel to weeks: the row positions behind that week's `issues` count, in the rows that built this index. */
+  issueRowsByWeek: Array<readonly number[]>
   positionByKey: Map<number, number>
   totalRows: number
   skippedRows: number
@@ -271,6 +303,8 @@ export interface WeldModel {
   /** Window issues ÷ window welds as a percent, 0 when the window has no welds. */
   overallIssueRate: number
   windowTotals: WeldWindowTotals
+  /** `WW10'2026 to WW30'2026` while a date range is set, when `toDate` restates to the range; otherwise null. */
+  rangeLabel: string | null
   hasData: boolean
 }
 
@@ -298,6 +332,20 @@ export interface IssueColumns {
   bim360ClosedOn?: number
   /** Closed at: Autodesk's own closed date, used before Updated on. */
   closedAt?: number
+  /** Created By (Company): the Filter menu's company value for an issue the include rule doesn't call LotusWorks. */
+  createdByCompany?: number
+  /** Discipline: a Filter menu field. */
+  discipline?: number
+  /** Source: bound, the table is QCx Combined, so only BIM rows are issues and Electrical and Mechanical rows feed NCR Pass Rate. */
+  source?: number
+  /** Row ID: read by nothing, but NCR Pass Rate needs it bound, so Power BI keeps identical inspection rows apart. */
+  rowId?: number
+  /** Work Week: the inspection rows' week, for NCR Pass Rate. */
+  workWeek?: number
+  /** Inspection Phase: the inspection rows' phase, for NCR Pass Rate. */
+  phase?: number
+  /** Issue: the inspection rows' Issue column, for NCR Pass Rate. Not an issue record. */
+  issue?: number
 }
 
 /**
@@ -327,6 +375,25 @@ export interface CombinedColumns {
   bim360CreatedOn?: number
   bim360ClosedOn?: number
   closedAt?: number
+  /** Inspection rows' contractor; `contractor` is BIM's. */
+  generalContractor?: number
+  contractor?: number
+  tradeSupplier?: number
+  /** Shared by the inspection and BIM rows, as Status is. */
+  discipline?: number
+  inspectionCategory?: number
+  inspectionId?: number
+  equipmentTag?: number
+  issueId?: number
+  findingType?: number
+  dateObserved?: number
+  notes?: number
+  pipeSpec?: number
+  fluidCode?: number
+  workPackage?: number
+  title?: number
+  dueDate?: number
+  createdByCompany?: number
 }
 
 export type IssueStatusKind = 'open' | 'pending' | 'closed' | 'void'
@@ -424,6 +491,12 @@ export interface IssueIndex {
   /** Parallel to weeks: running totals through each week. */
   cumulativeOpened: number[]
   cumulativeClosed: number[]
+  /** Parallel to weeks: issues now closed, by the week they were created, with or without a closed date. */
+  closedByCreatedWeek: number[]
+  /** Parallel to weeks: the positions, in the rows that built this index, of the rows behind opened. */
+  openedRowsByWeek: ReadonlyArray<readonly number[]>
+  /** Parallel to weeks: the positions, in the rows that built this index, of the rows behind closed. */
+  closedRowsByWeek: ReadonlyArray<readonly number[]>
   positionByKey: Map<number, number>
   /** Open and pending issues by age today. */
   openAging: AgingBucket[]
@@ -471,9 +544,18 @@ export interface IssueWindowTotals {
   closed: number
   /** Remaining open at the window end minus remaining open before the window. */
   remainingChange: number
-  /** Percent 0–100 through the window end, or null when nothing was opened. */
+  /**
+   * Percent 0–100 through the window end, or null when nothing was opened. In a date range, the share of the issues
+   * opened in the range that are now closed.
+   */
   closureRate: number | null
   weeks: number
+}
+
+/** A date range's Closure Rate, as counts. */
+export interface RangeClosure {
+  nowClosed: number
+  opened: number
 }
 
 export interface IssueDetail {
@@ -510,5 +592,9 @@ export interface IssueModel {
   overallAging: OverallAgingBucket[]
   openIssues: OpenIssueRow[]
   windowTotals: IssueWindowTotals
+  /** Null with no date range. */
+  rangeLabel: string | null
+  /** Null with no date range. */
+  rangeClosure: RangeClosure | null
   hasData: boolean
 }

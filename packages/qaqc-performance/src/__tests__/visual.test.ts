@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
 import type powerbi from 'powerbi-visuals-api'
 import { act, createElement, type ComponentProps } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -9,9 +12,10 @@ import { splitCombinedRows } from '../../../qaqc-shared/src/combined'
 import { buildPerformanceIndex, buildPerformanceModel } from '../../../qaqc-shared/src/performance'
 import type { CombinedColumns } from '../../../qaqc-shared/src/types'
 import capabilities from '../../capabilities.json'
+import packageJson from '../../package.json'
 import pbiviz from '../../pbiviz.json'
 import { QaqcPerformanceVisual } from '../visual'
-import { ALL_ROLES, tableDataView } from './tableDataView'
+import { ALL_ROLES, FILTER_ROLE_POSITIONS, tableDataView, type Cell, type FilterRole } from './tableDataView'
 
 const dashboardControl = vi.hoisted(() => ({ shouldThrow: false }))
 const indexBuilds = vi.hoisted(() => ({ count: 0 }))
@@ -106,7 +110,7 @@ function fixtureQcrModel(minimum: number): ReturnType<typeof buildPerformanceMod
   }
   const index = buildPerformanceIndex(splitCombinedRows(COMBINED_ROWS, SOURCE), columns, new Date(2026, 9, 15))
   const key = index.currentWeek.key
-  return buildPerformanceModel(index, { selectedKey: key, windowEndKey: key, range: 'recent' }, 'qcr', minimum)
+  return buildPerformanceModel(index, { selectedKey: key, windowEndKey: key, range: 'recent', dateRange: null }, 'qcr', minimum)
 }
 
 function update(dataView: powerbi.DataView | undefined, viewport = { width: 1280, height: 720 }, operationKind = 0, type = 2): UpdateOptions {
@@ -199,6 +203,11 @@ describe('QaqcPerformanceVisual name', () => {
     expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QCx Performance')
   })
 
+  it('is version 1.2.0 in pbiviz.json and package.json', () => {
+    expect(pbiviz.visual.version).toBe('1.2.0.0')
+    expect(packageJson.version).toBe('1.2.0')
+  })
+
   it('shows its QCx name in Power BI', () => {
     expect(pbiviz.visual.displayName).toBe('QCx Performance')
     expect(pbiviz.visual.description).not.toContain('QAQC')
@@ -265,14 +274,14 @@ describe('QaqcPerformanceVisual', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(COMBINED_ROWS)))
     expect(harness.element.querySelector('.qaqc-perf-summary .qaqc-kpi-group-head em')?.textContent).toBe("WW13'2026 to WW42'2026")
-    expect(summaryValues(harness.element)).toEqual(['6', '221', '2', '0.90%'])
+    expect(summaryValues(harness.element)).toEqual(['6', '221', '2', '99.10%'])
   })
 
   it('renders the WW42 welder summary strip', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(COMBINED_ROWS)))
     click(groupButton(harness.element, 'Welders'))
-    expect(summaryValues(harness.element)).toEqual(['38', '1,570', '11', '0.70%'])
+    expect(summaryValues(harness.element)).toEqual(['38', '1,570', '11', '99.30%'])
   })
 
   it('ranks with the Format pane minimum finals', () => {
@@ -360,7 +369,7 @@ describe('QaqcPerformanceVisual', () => {
   it('shows plain names and disabled controls when interactions are not allowed', () => {
     harness = createHarness({ hostCapabilities: { allowInteractions: false } })
     apply(harness, update(tableDataView(COMBINED_ROWS)))
-    expect(summaryValues(harness.element)).toEqual(['6', '221', '2', '0.90%'])
+    expect(summaryValues(harness.element)).toEqual(['6', '221', '2', '99.10%'])
     expect(nameButton(harness.element, 'QCR 02')).toBeNull()
     expect(groupButton(harness.element, 'Welders')?.disabled).toBe(true)
     expect(harness.element.querySelector('select')?.disabled).toBe(true)
@@ -416,7 +425,7 @@ describe('QaqcPerformanceVisual', () => {
     expect(harness.element.querySelector('[role="progressbar"]')).not.toBeNull()
     apply(harness, update(tableDataView(COMBINED_ROWS), undefined, 1))
     expect(harness.element.querySelector('[role="progressbar"]')).toBeNull()
-    expect(summaryValues(harness.element)).toEqual(['6', '221', '2', '0.90%'])
+    expect(summaryValues(harness.element)).toEqual(['6', '221', '2', '99.10%'])
   })
 
   it('refreshes the ranking when a row changes and the row count stays the same', () => {
@@ -471,7 +480,7 @@ describe('QaqcPerformanceVisual', () => {
     applyOutsideAct(harness, update(tableDataView(COMBINED_ROWS)))
     dashboardControl.shouldThrow = false
     apply(harness, update(tableDataView(COMBINED_ROWS)))
-    expect(summaryValues(harness.element)).toEqual(['6', '221', '2', '0.90%'])
+    expect(summaryValues(harness.element)).toEqual(['6', '221', '2', '99.10%'])
     expect(harness.events.renderingFinished).toHaveBeenCalledTimes(1)
   })
 
@@ -502,5 +511,103 @@ describe('QaqcPerformanceVisual', () => {
     const cards = harness.visual.getFormattingModel().cards
     expect(cards).toHaveLength(5)
     expect(cards.map((card) => ('uid' in card ? card.uid : ''))).toContain('ranking-card')
+  })
+})
+
+describe('QaqcPerformanceVisual filters', () => {
+  const FILTER_ROLES: FilterRole[] = ['generalContractor', 'discipline', 'pipeSpec', 'fluidCode']
+
+  /** The fixture with the optional slots' columns, every other row Greyfox / PCH. */
+  const FILTER_ROWS: ReadonlyArray<ReadonlyArray<Cell>> = COMBINED_ROWS.map((row, position) => {
+    const cells: Cell[] = [...row]
+    cells[FILTER_ROLE_POSITIONS.generalContractor] = position % 2 === 0 ? 'Greyfox' : 'Bayside'
+    cells[FILTER_ROLE_POSITIONS.discipline] = 'Electrical'
+    cells[FILTER_ROLE_POSITIONS.pipeSpec] = position % 2 === 0 ? 'PCH' : 'PEH'
+    cells[FILTER_ROLE_POSITIONS.fluidCode] = 'AW'
+    return cells
+  })
+
+  function filterButton(element: HTMLElement): HTMLButtonElement {
+    const button = element.querySelector<HTMLButtonElement>('.qaqc-filter-button')
+    if (!button) throw new Error('filter button missing')
+    return button
+  }
+
+  function menuFields(element: HTMLElement): string[] {
+    return [...element.querySelectorAll('.qaqc-filter-section-toggle span:first-of-type')].map((node) => node.textContent ?? '')
+  }
+
+  function tick(element: HTMLElement, name: string): void {
+    click([...element.querySelectorAll('.qaqc-filter-popover input[type="checkbox"]')].find((node) => node.getAttribute('aria-label')?.startsWith(`${name},`)))
+  }
+
+  it('draws with every filter slot unbound, offering Date range and Building', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(COMBINED_ROWS)))
+    click(filterButton(harness.element))
+    expect(harness.element.querySelector('.qaqc-filter-date')).not.toBeNull()
+    expect(menuFields(harness.element)).toEqual(['Building'])
+  })
+
+  it('offers each group its bound fields', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(FILTER_ROWS, { roles: [...ALL_ROLES, ...FILTER_ROLES] })))
+    click(filterButton(harness.element))
+    expect(menuFields(harness.element)).toEqual(['Contractor', 'Building', 'Discipline'])
+    click(filterButton(harness.element))
+    click(groupButton(harness.element, 'Welders'))
+    click(filterButton(harness.element))
+    expect(menuFields(harness.element)).toEqual(['Building', 'Pipe Spec', 'Fluid Code'])
+  })
+
+  it('moves no number when the filter slots are bound and nothing is ticked', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(COMBINED_ROWS)))
+    const unbound = summaryValues(harness.element)
+    apply(harness, update(tableDataView(FILTER_ROWS, { roles: [...ALL_ROLES, ...FILTER_ROLES] })))
+    expect(summaryValues(harness.element)).toEqual(unbound)
+  })
+
+  it('keeps a filter across a resize and a Format pane change, without indexing the rows again', () => {
+    harness = createHarness()
+    const dataView = tableDataView(FILTER_ROWS, { roles: [...ALL_ROLES, ...FILTER_ROLES] })
+    apply(harness, update(dataView))
+    const baseFinals = cardValue(harness.element, 'Finals')
+    click(filterButton(harness.element))
+    tick(harness.element, 'Greyfox')
+    const filteredFinals = cardValue(harness.element, 'Finals')
+    expect(filteredFinals).not.toBe(baseFinals)
+    const builds = indexBuilds.count
+    apply(harness, update(dataView, { width: 1000, height: 700 }, 0, RESIZE_UPDATE))
+    apply(harness, update(dataView, undefined, 0, STYLE_UPDATE))
+    expect(indexBuilds.count).toBe(builds)
+    expect(cardValue(harness.element, 'Finals')).toBe(filteredFinals)
+  })
+
+  it('keeps a filter across a data refresh', () => {
+    harness = createHarness()
+    const dataView = tableDataView(FILTER_ROWS, { roles: [...ALL_ROLES, ...FILTER_ROLES] })
+    apply(harness, update(dataView))
+    click(filterButton(harness.element))
+    tick(harness.element, 'Greyfox')
+    const filteredFinals = cardValue(harness.element, 'Finals')
+    apply(harness, update(dataView))
+    expect(cardValue(harness.element, 'Finals')).toBe(filteredFinals)
+  })
+
+  it('disables the Filter button when the host disallows interactions', () => {
+    harness = createHarness({ hostCapabilities: { allowInteractions: false } })
+    apply(harness, update(tableDataView(COMBINED_ROWS)))
+    expect(filterButton(harness.element).disabled).toBe(true)
+  })
+
+  it('declares a localized name and description for every filter slot', () => {
+    const resources = readFileSync(join(__dirname, '..', '..', 'stringResources', 'en-US', 'resources.resjson'), 'utf8')
+    for (const name of FILTER_ROLES) {
+      const role = capabilities.dataRoles.find((item) => item.name === name)
+      expect(role?.description.startsWith('Optional.')).toBe(true)
+      expect(resources).toContain(`"Qaqc_role_${name}": ${JSON.stringify(role?.displayName)}`)
+      expect(resources).toContain(`"Qaqc_role_${name}_description": ${JSON.stringify(role?.description)}`)
+    }
   })
 })

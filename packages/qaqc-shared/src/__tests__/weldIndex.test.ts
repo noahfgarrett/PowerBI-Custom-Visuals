@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
+import { weekIssueRows } from '../drilldown'
+import { buildFilterCatalog, matchRows, type FilterFieldDef } from '../rowFilters'
 import type { WeldColumns } from '../types'
-import { buildWeldIndex } from '../welds'
+import { buildWeldIndex, isWeldIssue, SITE_GENERAL, UNSPECIFIED_WELD_VALUE, weldBuilding, weldFilterFields, weldRowWeekKey } from '../welds'
+import { WELDING_ROWS } from './fixtures/weldingRows'
+import { UNBOUND_WELD_OPTIONAL } from './weldFilterFixture'
 
 const COLUMNS: WeldColumns = {
   weldWeek: 0,
@@ -207,5 +211,169 @@ describe('buildWeldIndex', () => {
     expect(index.weeks[0].week.label).toBe("WW41'2026")
     expect(index.weeks[0].signed).toBe(1)
     expect(index.weeks[1].signedInWeek).toBe(1)
+  })
+})
+
+describe('buildWeldIndex axisFromKey', () => {
+  const LATE = [weld("WW40'2026", null), weld("WW41'2026", null)]
+
+  it('starts the axis at an earlier week, with no welds before the first data week', () => {
+    const index = buildWeldIndex(LATE, COLUMNS, TODAY, { axisFromKey: 202638 })
+    expect(index.weeks.map((item) => item.week.label)).toEqual(["WW38'2026", "WW39'2026", "WW40'2026", "WW41'2026", "WW42'2026"])
+    expect(index.weeks.map((item) => item.logged)).toEqual([0, 0, 1, 1, 0])
+    expect(index.cumulativeLogged).toEqual([0, 0, 1, 2, 2])
+    expect(index.positionByKey.get(202640)).toBe(2)
+    expect(index.systemsByWeek).toHaveLength(5)
+    expect(index.buildingsByWeek).toHaveLength(5)
+    expect(index.issueRowsByWeek).toHaveLength(5)
+  })
+
+  it('crosses a year', () => {
+    const index = buildWeldIndex(LATE, COLUMNS, TODAY, { axisFromKey: 202551 })
+    expect(index.weeks[0].week.label).toBe("WW51'2025")
+    expect(index.positionByKey.get(202601)).toBe(2)
+  })
+
+  it('ignores a later week: data before it stays on the axis', () => {
+    const index = buildWeldIndex(LATE, COLUMNS, TODAY, { axisFromKey: 202641 })
+    expect(index.weeks[0].week.label).toBe("WW40'2026")
+  })
+
+  it('keeps the axis with no rows at all', () => {
+    const index = buildWeldIndex([], COLUMNS, TODAY, { axisFromKey: 202640 })
+    expect(index.weeks.map((item) => item.week.label)).toEqual(["WW40'2026", "WW41'2026", "WW42'2026"])
+  })
+
+  it('without the option the output is unchanged', () => {
+    expect(buildWeldIndex(LATE, COLUMNS, TODAY)).toEqual(buildWeldIndex(LATE, COLUMNS, TODAY, {}))
+    expect(buildWeldIndex(LATE, COLUMNS, TODAY).weeks[0].week.label).toBe("WW40'2026")
+  })
+})
+
+describe('buildWeldIndex issueRowsByWeek', () => {
+  it('holds the row positions behind each week\'s issue count', () => {
+    const rows = [
+      weld("WW40'2026", null),
+      weld("WW40'2026", null, { issue: 'BIM 1' }),
+      weld("WW41'2026", null, { issue: 'BIM 2' }),
+      weld("WW40'2026", null, { issue: 'Yes 3' }),
+    ]
+    const index = buildWeldIndex(rows, COLUMNS, TODAY)
+    expect(index.issueRowsByWeek).toEqual([[1, 3], [2], []])
+    expect(index.weeks.map((item) => item.issues)).toEqual([2, 1, 0])
+  })
+
+  it('leaves out an explicit no, an unreadable week and a future week, as the count does', () => {
+    const rows = [
+      weld("WW40'2026", null, { issue: 'No' }),
+      weld("WW40'2026", null, { issue: 'n/a' }),
+      weld("WW40'2026", null, { issue: '-' }),
+      weld('not a week', null, { issue: 'BIM 1' }),
+      weld("WW50'2026", null, { issue: 'BIM 2' }),
+      weld("WW40'2026", null, { issue: 'BIM 3' }),
+    ]
+    const index = buildWeldIndex(rows, COLUMNS, TODAY)
+    expect(index.issueRowsByWeek[0]).toEqual([5])
+    expect(index.weeks[0].issues).toBe(1)
+  })
+
+  it('counts a weld with an issue in its weld week, not its signed week', () => {
+    const index = buildWeldIndex([weld("WW40'2026", "WW42'2026", { issue: 'BIM 1' })], COLUMNS, TODAY)
+    expect(index.issueRowsByWeek).toEqual([[0], [], []])
+  })
+
+  it('every week of the fixture lists exactly the chart\'s issue count, with and without a filter', () => {
+    const all = buildWeldIndex(WELDING_ROWS, COLUMNS, TODAY)
+    const listed = all.issueRowsByWeek.map((positions) => positions.length)
+    expect(listed).toEqual(all.weeks.map((item) => item.issues))
+    expect(all.cumulativeIssues[all.cumulativeIssues.length - 1]).toBeGreaterThan(0)
+    for (const positions of all.issueRowsByWeek) {
+      for (const position of positions) expect(isWeldIssue(WELDING_ROWS[position][COLUMNS.issue])).toBe(true)
+    }
+
+    const fields = weldFilterFields(COLUMNS, UNBOUND_WELD_OPTIONAL)
+    const issueBuilding = weldBuilding(WELDING_ROWS[all.issueRowsByWeek.flat()[0]][COLUMNS.tagNo])
+    const catalog = buildFilterCatalog(WELDING_ROWS, fields)
+    const selection = new Map([['building', new Set([issueBuilding.toLowerCase()])]])
+    const filtered = matchRows(WELDING_ROWS, catalog, selection)
+    expect(filtered.length).toBeLessThan(WELDING_ROWS.length)
+    const narrowed = buildWeldIndex(filtered, COLUMNS, TODAY, { axisFromKey: all.weeks[0].week.key })
+    expect(narrowed.weeks).toHaveLength(all.weeks.length)
+    expect(narrowed.issueRowsByWeek.map((positions) => positions.length)).toEqual(narrowed.weeks.map((item) => item.issues))
+    expect(narrowed.cumulativeIssues[narrowed.cumulativeIssues.length - 1]).toBeGreaterThan(0)
+    for (const item of narrowed.weeks) {
+      const rows = weekIssueRows(narrowed, filtered, item.week.key)
+      expect(rows).toHaveLength(item.issues)
+      for (const row of rows) expect(weldBuilding(row[COLUMNS.tagNo])).toBe(issueBuilding)
+    }
+  })
+})
+
+describe('weldFilterFields', () => {
+  const OPTIONAL = { welder: 7, workPackage: 8 }
+
+  function field(id: string, optional = OPTIONAL): FilterFieldDef {
+    const found = weldFilterFields(COLUMNS, optional).find((candidate) => candidate.id === id)
+    if (found === undefined) throw new Error(`no field ${id}`)
+    return found
+  }
+
+  function rowOf(cells: { tag?: Cell; spec?: Cell; system?: Cell; welder?: unknown; workPackage?: unknown }): unknown[] {
+    return ["WW40'2026", null, null, null, cells.system ?? 'AW', cells.spec ?? 'PCH', cells.tag ?? F631, cells.welder ?? null, cells.workPackage ?? null]
+  }
+
+  function options(id: string, rows: ReadonlyArray<readonly unknown[]>): Array<[string, number]> {
+    const catalog = buildFilterCatalog(rows, [field(id)])
+    return catalog.fields[0].options.map((option) => [option.label, option.count])
+  }
+
+  it('lists the fields in the menu order', () => {
+    expect(weldFilterFields(COLUMNS, OPTIONAL).map((item) => item.label)).toEqual(['Building', 'Pipe Spec', 'Fluid Code', 'Welder', 'Work Package'])
+  })
+
+  it('leaves out an unbound Welder and Work Package', () => {
+    expect(weldFilterFields(COLUMNS, UNBOUND_WELD_OPTIONAL).map((item) => item.label)).toEqual(['Building', 'Pipe Spec', 'Fluid Code'])
+  })
+
+  it('Building filters through the Tag No derivation', () => {
+    const rows = [rowOf({ tag: F631 }), rowOf({ tag: F631 }), rowOf({ tag: BK1 }), rowOf({ tag: 'no building here' })]
+    expect(options('building', rows)).toEqual([['F631', 2], ['BK1', 1], [SITE_GENERAL, 1]])
+    const building = field('building')
+    expect(building.read(rowOf({ tag: F631 }))).toBe('F631')
+    expect(building.read(rowOf({ tag: 'no building here' }))).toBe(SITE_GENERAL)
+  })
+
+  it('groups a blank Pipe Spec and Fluid Code as the chart\'s Unspecified, listed last', () => {
+    const rows = [rowOf({ spec: '  ', system: '  ' }), rowOf({ spec: 'unspecified', system: 'UNSPECIFIED' }), rowOf({}), rowOf({}), rowOf({})]
+    expect(options('pipeSpec', rows)).toEqual([['PCH', 3], [UNSPECIFIED_WELD_VALUE, 2]])
+    expect(options('fluidCode', rows)).toEqual([['AW', 3], [UNSPECIFIED_WELD_VALUE, 2]])
+  })
+
+  it('keeps an N/A Pipe Spec its own choice, as it is on the chart', () => {
+    const rows = [rowOf({ spec: 'N/A' }), rowOf({ spec: null })]
+    expect(options('pipeSpec', rows)).toContainEqual(['N/A', 1])
+  })
+
+  it('groups Fluid Code spellings the way the chart does', () => {
+    const rows = [rowOf({ system: 'AW' }), rowOf({ system: ' aw ' })]
+    expect(options('fluidCode', rows)).toEqual([['AW', 2]])
+  })
+
+  it('splits Welder on commas, as Performance does', () => {
+    expect(field('welder').read(rowOf({ welder: 'P-012, PF-025' }))).toEqual(['P-012', 'PF-025'])
+    expect(field('welder').read(rowOf({ welder: ' P-012 ,, N/A , - ' }))).toEqual(['P-012'])
+    expect(field('welder').read(rowOf({ welder: 312 }))).toEqual(['312'])
+    expect(field('welder').read(rowOf({ welder: null }))).toEqual([])
+  })
+
+  it('a weld listing P-012 and PF-025 counts under each, and once for a repeat', () => {
+    const rows = [rowOf({ welder: 'P-012, PF-025' }), rowOf({ welder: 'PF-025, pf-025' }), rowOf({ welder: 'N/A' }), rowOf({ welder: '' })]
+    expect(options('welder', rows)).toEqual([['PF-025', 2], ['P-012', 1], ['Not recorded', 2]])
+  })
+
+  it('reads a row\'s week from Weld Work Week', () => {
+    const weekKey = weldRowWeekKey(COLUMNS)
+    expect(weekKey(weld("WW40'2026", "WW42'2026"))).toBe(202640)
+    expect(weekKey(weld('not a week', "WW42'2026"))).toBeNull()
   })
 })

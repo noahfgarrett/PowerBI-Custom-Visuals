@@ -100,7 +100,8 @@
 }
 
 .qaqc-segmented button:disabled,
-.qaqc-week-picker select:disabled {
+.qaqc-week-picker select:disabled,
+.qaqc-filter-button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
 }
@@ -209,6 +210,14 @@
   gap: 8px;
 }
 
+// A column fits "No change vs WW44'2026" with its arrow, the longest usual line. The cards hold their own padding, so
+// the tighter column gap is what lets five share the four-card width on a 1280 px tile.
+.qaqc-kpi-group.can-wrap .qaqc-kpi-group-body {
+  grid-auto-flow: row;
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  column-gap: 4px;
+}
+
 .qaqc-kpi {
   display: flex;
   flex-direction: column;
@@ -291,6 +300,11 @@
 
 .qaqc-root.is-cards-only .qaqc-kpi-value {
   font-size: 30px;
+}
+
+// Two rows of cards need the smaller values too, so a footnote line still fits on a short tile.
+.qaqc-root.is-cards-only .qaqc-kpi-group.can-wrap .qaqc-kpi-value {
+  font-size: 22px;
 }
 
 // Narrow tiles stack the groups, so the values stay smaller and a footnote line still fits on a 300 px tile.
@@ -615,6 +629,12 @@
 
 .qaqc-root.is-compact .qaqc-header {
   flex-wrap: wrap;
+}
+
+// The Filter button makes the controls wider than the narrowest tiles.
+.qaqc-root.is-compact .qaqc-controls {
+  flex-wrap: wrap;
+  max-width: 100%;
 }
 
 .qaqc-root.is-compact .qaqc-kpi-row {
@@ -1262,7 +1282,7 @@
   color: var(--qaqc-accent);
 }
 
-.qaqc-header-button:hover {
+.qaqc-header-button:hover:not(:disabled) {
   border-color: var(--qaqc-accent);
   background: var(--qaqc-accent-soft);
 }
@@ -1423,6 +1443,71 @@
   box-shadow: inset 3px 0 var(--qaqc-muted);
 }
 
+// The week drill-down page: its groups share the page's height, and each table scrolls on its own.
+.qaqc-week-issues {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  min-height: 0;
+}
+
+.qaqc-week-issues-count {
+  flex: 0 0 auto;
+  margin: 0;
+  color: var(--qaqc-muted);
+  font-size: 12.5px;
+}
+
+.qaqc-week-issues-count strong {
+  color: var(--qaqc-ink);
+}
+
+.qaqc-week-issues-group {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 0;
+}
+
+.qaqc-week-issues-group h4 {
+  flex: 0 0 auto;
+  margin: 0;
+  color: var(--qaqc-ink);
+  font-size: 12.5px;
+  font-weight: 650;
+}
+
+.qaqc-week-issues-wrap {
+  overflow: auto;
+  border: 1px solid var(--qaqc-border);
+  border-radius: 12px;
+  background: var(--qaqc-card-solid);
+}
+
+.qaqc-week-issues-table {
+  table-layout: fixed;
+}
+
+// The fixed row height needs no vertical padding, as in the Issue Detail table.
+.qaqc-week-issues-table td,
+.qaqc-week-issues-table tbody th {
+  padding-top: 0;
+  padding-bottom: 0;
+  vertical-align: middle;
+}
+
+// A long label wraps instead of widening its column.
+.qaqc-table.is-windowed.qaqc-week-issues-table thead th {
+  vertical-align: bottom;
+  white-space: normal;
+}
+
+.qaqc-week-issues-table tbody tr:not(.qaqc-virtual-spacer):hover > * {
+  background: var(--qaqc-accent-soft);
+}
+
 // Text carries the contrast (ink on a light tint in every preset); the dot carries the status color.
 .qaqc-status-pill {
   display: inline-block;
@@ -1503,7 +1588,7 @@
   font-size: 12px;
 }
 
-// Issue aging: the page opened from the BIM Issues header (IssueAgingPage, AgeBucketsChart, BacklogAgeChart,
+// Issue aging: the page opened from the QCx Issues header (IssueAgingPage, AgeBucketsChart, BacklogAgeChart,
 // QuarterCloseChart, AgingIssueList). The issue list slides up over the charts; the cards and controls stay above it.
 
 .qaqc-aging-page {
@@ -1827,7 +1912,7 @@
   grid-row: auto;
 }
 
-// Root cause Pareto: the page opened from the BIM Issues header (RootCauseParetoPage, ParetoChart,
+// Root cause Pareto: the page opened from the QCx Issues header (RootCauseParetoPage, ParetoChart,
 // RootCauseCategoryPanel). The chart sits over the selected bar's issues, with the category panel down the right.
 // Short tiles scroll the page, so the chart and the table keep the minimum heights below.
 
@@ -2356,6 +2441,11 @@
   min-height: 180px;
 }
 
+// One chip row costs 27 px, so at OVERVIEW_CARDS_ONLY_HEIGHT the charts give it up rather than scroll under the footnotes.
+.qaqc-filter-chips + .qaqc-overview-body .qaqc-overview-charts {
+  min-height: 150px;
+}
+
 .qaqc-overview-charts .qaqc-panel-main {
   grid-row: auto;
 }
@@ -2430,6 +2520,35 @@
   gap: 0 10px;
   min-height: 34px;
   padding: 3px 12px;
+}
+
+// Tiles under OVERVIEW_TIGHT_WIDTH have no room for four values and a sparkline: an ellipsis would turn 100.0% into 1…
+// So the sparkline and the row icons go, and the strip's six values take two lines.
+.qaqc-overview-rows.is-dense.is-tight {
+  grid-template-columns: 70px repeat(3, minmax(0, 1fr)) minmax(0, 1.25fr);
+}
+
+.qaqc-overview-rows.is-tight .qaqc-overview-row-icon,
+.qaqc-overview-quality-dense.is-tight .qaqc-overview-row-icon {
+  display: none;
+}
+
+.qaqc-overview-rows.is-dense.is-tight .qaqc-overview-row-trend {
+  display: none;
+}
+
+.qaqc-overview-quality-dense.is-tight {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 3px 0;
+}
+
+.qaqc-overview-quality-dense.is-tight .qaqc-overview-row-label {
+  grid-column: 1 / -1;
+}
+
+.qaqc-overview-rows.is-tight .qaqc-overview-value,
+.qaqc-overview-quality-dense.is-tight .qaqc-overview-value {
+  padding: 0 6px;
 }
 
 .qaqc-overview-value {
@@ -2590,7 +2709,7 @@
   font-weight: 600;
 }
 
-.qaqc-perf-rate.is-zero {
+.qaqc-perf-rate.is-perfect {
   color: var(--qaqc-ink-2);
   font-weight: 500;
 }
@@ -2668,8 +2787,10 @@
   flex-wrap: wrap;
 }
 
+// Groups wrap before a card is too narrow for its "NCR Pass Rate" label. A basis, not a minimum, so a tile under
+// 400 px shrinks the one group on its line rather than overflowing.
 .qaqc-perf-person-cards .qaqc-kpi-group {
-  min-width: 320px;
+  flex-basis: 400px;
 }
 
 .qaqc-perf-person-chart {
@@ -3126,6 +3247,573 @@ span.qaqc-perf-name {
 
 // Forced colors (Windows high contrast) drop backgrounds and box shadows, so the discussion marker becomes a real
 // border, and the legend swatches keep their outlines.
+// Filter menu: the header button and popover (FilterMenu) and the chips under the header (FilterChips).
+
+.qaqc-filter-anchor {
+  position: relative;
+  display: inline-flex;
+}
+
+.qaqc-filter-button.is-active {
+  border-color: var(--qaqc-accent);
+  background: var(--qaqc-accent-soft);
+  color: var(--qaqc-accent);
+}
+
+.qaqc-filter-button[aria-expanded="true"] {
+  border-color: var(--qaqc-accent);
+}
+
+.qaqc-filter-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--qaqc-accent);
+  color: var(--qaqc-on-accent);
+  font-size: 10.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+// FilterMenu narrows the height and width to the tile once it can measure them; 100vh is the tile inside a visual's frame.
+.qaqc-filter-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  width: 348px;
+  max-height: calc(100vh - 60px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--qaqc-border);
+  border-radius: 12px;
+  background: var(--qaqc-card-solid);
+  box-shadow: 0 12px 32px rgba(27, 37, 48, 0.2);
+}
+
+.qaqc-filter-popover:focus {
+  outline: none;
+}
+
+.qaqc-filter-date {
+  padding: 10px 12px 12px;
+  border-bottom: 1px solid var(--qaqc-border);
+}
+
+.qaqc-filter-date h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  color: var(--qaqc-ink);
+  font-size: 12.5px;
+  font-weight: 650;
+}
+
+.qaqc-filter-date h3 svg {
+  color: var(--qaqc-accent);
+}
+
+.qaqc-filter-date-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.qaqc-filter-field-label {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--qaqc-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.qaqc-filter-select {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 30px;
+  border: 1px solid var(--qaqc-border);
+  border-radius: 8px;
+  background: var(--qaqc-card-solid);
+  color: var(--qaqc-ink);
+}
+
+.qaqc-filter-select:focus-within {
+  outline: 2px solid var(--qaqc-accent);
+  outline-offset: 1px;
+}
+
+.qaqc-filter-select.is-set {
+  border-color: var(--qaqc-accent);
+  background: var(--qaqc-accent-soft);
+}
+
+.qaqc-filter-select select {
+  width: 100%;
+  height: 100%;
+  padding: 0 24px 0 9px;
+  border: 0;
+  outline: none;
+  appearance: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.qaqc-filter-select select:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.qaqc-filter-select svg {
+  position: absolute;
+  right: 7px;
+  color: var(--qaqc-muted);
+  pointer-events: none;
+}
+
+.qaqc-filter-presets {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.qaqc-filter-preset {
+  flex: 1 1 0;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--qaqc-border);
+  border-radius: 7px;
+  background: var(--qaqc-card-solid);
+  color: var(--qaqc-ink-2);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.qaqc-filter-preset:hover:not(:disabled) {
+  border-color: var(--qaqc-accent);
+  color: var(--qaqc-accent);
+}
+
+.qaqc-filter-preset[aria-pressed="true"] {
+  border-color: var(--qaqc-accent);
+  background: var(--qaqc-accent);
+  color: var(--qaqc-on-accent);
+}
+
+.qaqc-filter-preset[aria-pressed="true"]:hover:not(:disabled) {
+  color: var(--qaqc-on-accent);
+}
+
+.qaqc-filter-preset:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.qaqc-filter-section {
+  border-bottom: 1px solid var(--qaqc-hairline);
+}
+
+.qaqc-filter-section:last-of-type {
+  border-bottom: 0;
+}
+
+.qaqc-filter-section h3 {
+  margin: 0;
+  font: inherit;
+}
+
+.qaqc-filter-section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  height: 34px;
+  padding: 0 12px 0 9px;
+  border: 0;
+  background: transparent;
+  color: var(--qaqc-ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 650;
+  text-align: left;
+}
+
+.qaqc-filter-section-toggle:hover,
+.qaqc-filter-option:hover {
+  background: var(--qaqc-page);
+}
+
+.qaqc-filter-section-toggle svg {
+  flex: 0 0 auto;
+  color: var(--qaqc-muted);
+  transition: transform 120ms ease-out;
+}
+
+.qaqc-filter-section-toggle[aria-expanded="true"] svg {
+  transform: rotate(90deg);
+}
+
+.qaqc-filter-section-summary {
+  max-width: 60%;
+  margin-left: auto;
+  overflow: hidden;
+  color: var(--qaqc-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qaqc-filter-section-summary.is-set {
+  color: var(--qaqc-accent);
+  font-weight: 700;
+}
+
+.qaqc-filter-section-body {
+  padding: 0 8px 8px;
+}
+
+.qaqc-filter-search-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  padding: 0 4px;
+}
+
+.qaqc-filter-search {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.qaqc-filter-search svg {
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  color: var(--qaqc-faint);
+  pointer-events: none;
+}
+
+.qaqc-filter-search input {
+  width: 100%;
+  height: 27px;
+  padding: 0 8px 0 25px;
+  border: 1px solid var(--qaqc-border);
+  border-radius: 7px;
+  background: var(--qaqc-card-solid);
+  color: var(--qaqc-ink);
+  font: inherit;
+  font-size: 12px;
+}
+
+.qaqc-filter-search input::placeholder {
+  color: var(--qaqc-muted);
+}
+
+.qaqc-filter-search input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.qaqc-filter-hint {
+  margin: 2px 4px 4px;
+  color: var(--qaqc-muted);
+  font-size: 10.5px;
+}
+
+.qaqc-filter-options {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.qaqc-filter-options li.is-blank {
+  margin-top: 3px;
+  padding-top: 3px;
+  border-top: 1px solid var(--qaqc-hairline);
+}
+
+// A search can leave the blank value alone at the top, with nothing above for its rule to separate.
+.qaqc-filter-options li.is-blank:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.qaqc-filter-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 25px;
+  padding: 2px 4px;
+  border-radius: 6px;
+  color: var(--qaqc-ink);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.qaqc-filter-option input {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--qaqc-accent);
+  cursor: pointer;
+}
+
+.qaqc-filter-option input:focus-visible {
+  outline: 2px solid var(--qaqc-accent);
+  outline-offset: 2px;
+}
+
+.qaqc-filter-option-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qaqc-filter-option-count {
+  flex: 0 0 auto;
+  color: var(--qaqc-muted);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+li.is-blank .qaqc-filter-option-name {
+  color: var(--qaqc-muted);
+  font-style: italic;
+}
+
+.qaqc-filter-no-match {
+  margin: 4px;
+  color: var(--qaqc-muted);
+  font-size: 11.5px;
+}
+
+// Stays in view while the popover scrolls. The page colour can be see-through, so it lies over the solid card.
+.qaqc-filter-footer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--qaqc-border);
+  background: linear-gradient(var(--qaqc-page), var(--qaqc-page)), var(--qaqc-card-solid);
+}
+
+.qaqc-filter-showing {
+  color: var(--qaqc-ink-2);
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.qaqc-filter-link {
+  padding: 2px 4px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--qaqc-accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.qaqc-filter-link:hover {
+  text-decoration: underline;
+}
+
+.qaqc-filter-link[aria-disabled="true"] {
+  color: var(--qaqc-faint);
+  cursor: default;
+  text-decoration: none;
+}
+
+.qaqc-filter-chips {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: -2px 0;
+}
+
+.qaqc-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: min(420px, 100%);
+  height: 24px;
+  padding: 0 3px 0 9px;
+  border: 1px solid color-mix(in srgb, var(--qaqc-accent) 25%, transparent);
+  border-radius: 999px;
+  background: var(--qaqc-accent-soft);
+  color: var(--qaqc-ink);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.qaqc-filter-chip-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qaqc-filter-chip-text b {
+  color: var(--qaqc-ink-2);
+  font-weight: 600;
+}
+
+.qaqc-filter-chip-text span {
+  color: var(--qaqc-accent);
+  font-weight: 650;
+}
+
+.qaqc-filter-chip button {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--qaqc-accent);
+  cursor: pointer;
+}
+
+.qaqc-filter-chip button:hover:not(:disabled) {
+  background: var(--qaqc-accent);
+  color: var(--qaqc-on-accent);
+}
+
+.qaqc-filter-chip button:disabled,
+.qaqc-filter-link:disabled,
+.qaqc-filter-empty button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.qaqc-filter-link:disabled {
+  text-decoration: none;
+}
+
+.qaqc-filter-note {
+  color: var(--qaqc-muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.qaqc-filter-chip button:focus-visible,
+.qaqc-filter-link:focus-visible,
+.qaqc-filter-preset:focus-visible,
+.qaqc-filter-search input:focus-visible {
+  outline: 2px solid var(--qaqc-accent);
+  outline-offset: 1px;
+}
+
+.qaqc-filter-section-toggle:focus-visible {
+  outline: 2px solid var(--qaqc-accent);
+  outline-offset: -2px;
+}
+
+.qaqc-filter-empty {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  // Safe, so a short tile scrolls to the icon rather than centring it out of reach.
+  justify-content: safe center;
+  gap: 8px;
+  min-height: 0;
+  padding: 24px;
+  overflow-y: auto;
+  border: 1px dashed var(--qaqc-faint);
+  border-radius: 14px;
+  background: var(--qaqc-card);
+  text-align: center;
+}
+
+.qaqc-filter-empty > * {
+  flex: none;
+}
+
+// Short tiles need the height for the message.
+.qaqc-root.is-cards-only .qaqc-filter-empty {
+  padding: 12px;
+}
+
+// The compact root scrolls itself, so the message takes its content's height under the chips.
+.qaqc-root.is-compact .qaqc-filter-empty {
+  flex: 1 0 auto;
+  overflow-y: visible;
+}
+
+.qaqc-filter-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--qaqc-accent-soft);
+  color: var(--qaqc-accent);
+}
+
+.qaqc-filter-empty h3 {
+  margin: 0;
+  color: var(--qaqc-ink);
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.qaqc-filter-empty p {
+  max-width: 480px;
+  margin: 0;
+  color: var(--qaqc-ink-2);
+  font-size: 12.5px;
+}
+
+.qaqc-filter-empty button {
+  height: 30px;
+  margin-top: 4px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--qaqc-accent);
+  color: var(--qaqc-on-accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.qaqc-filter-empty button:focus-visible {
+  outline: 2px solid var(--qaqc-accent);
+  outline-offset: 2px;
+}
+
 @media (forced-colors: active) {
   .qaqc-issue-detail-table tbody tr.is-discussion > th {
     border-left: 3px solid CanvasText;

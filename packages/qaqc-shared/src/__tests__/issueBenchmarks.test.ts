@@ -259,7 +259,7 @@ describe('agingProfile', () => {
     issue('#5', '2026-09-03', null, 'Closed'),
   ]
   const index = indexOf(rows)
-  const view: ViewState = { selectedKey: WW42, windowEndKey: WW42, range: 'all' }
+  const view: ViewState = { selectedKey: WW42, windowEndKey: WW42, range: 'all', dateRange: null }
 
   it('matches the benchmarks as of every week in the range', () => {
     const profile = agingProfile(index, view, TODAY)
@@ -280,7 +280,7 @@ describe('agingProfile', () => {
 
   it('ends at the window end and keeps the last 30 weeks in the recent range', () => {
     const long = indexOf([issue('#1', '2025-01-06'), issue('#2', '2026-10-12')])
-    const profile = agingProfile(long, { selectedKey: WW42, windowEndKey: WW41, range: 'recent' }, TODAY)
+    const profile = agingProfile(long, { selectedKey: WW42, windowEndKey: WW41, range: 'recent', dateRange: null }, TODAY)
     expect(profile).toHaveLength(30)
     expect(profile[29].week.key).toBe(WW41)
   })

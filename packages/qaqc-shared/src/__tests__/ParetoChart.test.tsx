@@ -26,7 +26,7 @@ const COLUMNS: IssueColumns = {
   rootCauseCategory: 10,
 }
 const TODAY = new Date(2026, 9, 15) // WW42'2026
-const ALL: ViewState = { selectedKey: 202642, windowEndKey: 202642, range: 'all' }
+const ALL: ViewState = { selectedKey: 202642, windowEndKey: 202642, range: 'all', dateRange: null }
 const INDEX = buildIssueIndex(ISSUE_ROWS, COLUMNS, TODAY)
 const ALL_ISSUES = buildRootCausePareto(INDEX, ALL, 'all', TODAY)
 const OPEN_ONLY = buildRootCausePareto(INDEX, ALL, 'open', TODAY)

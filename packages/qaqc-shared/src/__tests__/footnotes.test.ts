@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
 import { splitCombinedRows } from '../combined'
-import { buildFootnotes, buildIssueFootnotes, buildOverviewFootnotes, buildPerformanceFootnotes } from '../footnotes'
+import { buildCombinedIssueFootnotes, buildFootnotes, buildIssueFootnotes, buildOverviewFootnotes, buildPerformanceFootnotes, restateOverviewFootnotes } from '../footnotes'
 import { buildInspectionIndex } from '../inspections'
 import { buildIssueIndex } from '../issues'
 import { buildPerformanceIndex, buildPerformanceModel, type PerformanceGroup, type PerformanceIndex } from '../performance'
 import type { CombinedColumns, IssueColumns } from '../types'
+import { makeWorkWeek } from '../workWeeks'
 import { bim, inspection, overviewIndexOf, weld } from './overviewRows'
 
 const COLUMNS = { workWeek: 0, phase: 1, issue: 2, building: 3 }
@@ -186,7 +187,7 @@ function performanceIndexOf(rows: PerformanceRow[]): PerformanceIndex {
 function performanceNotes(rows: PerformanceRow[], group: PerformanceGroup, rowLimitReached = false, range: 'recent' | 'all' = 'recent'): string[] {
   const index = performanceIndexOf(rows)
   const key = index.currentWeek.key
-  const model = buildPerformanceModel(index, { selectedKey: key, windowEndKey: key, range }, group, 1)
+  const model = buildPerformanceModel(index, { selectedKey: key, windowEndKey: key, range, dateRange: null }, group, 1)
   return buildPerformanceFootnotes(index, group, model, rowLimitReached)
 }
 
@@ -269,5 +270,43 @@ describe('buildPerformanceFootnotes', () => {
     const rows = [qcrRow("WW42'2026", 'Final', 'QCR 01'), weldRow("WW42'2026", 'Welder 001'), bimRow, bimRow]
     expect(performanceNotes(rows, 'qcr', true)).toEqual(['Showing the first 4 rows (Power BI data limit)'])
     expect(performanceNotes(rows, 'welders', true)).toEqual(['Showing the first 4 rows (Power BI data limit)'])
+  })
+})
+
+describe('buildCombinedIssueFootnotes', () => {
+  const CURRENT = { currentWeek: makeWorkWeek(2026, 42), totalRows: 10 }
+
+  it('has nothing to say with every Source known, every slot bound and every week read', () => {
+    expect(buildCombinedIssueFootnotes(0, [], { ...CURRENT, skippedRows: 0, futureRows: 0 })).toEqual([])
+  })
+
+  it('notes rows with an unknown Source, in the Overview\'s wording, then the slots NCR Pass Rate needs', () => {
+    expect(buildCombinedIssueFootnotes(1, ['Inspection Phase'], null)).toEqual(['1 row with an unknown Source', 'NCR Pass Rate hidden: add Inspection Phase'])
+    expect(buildCombinedIssueFootnotes(1_200, ['Work Week', 'Issue'], null)).toEqual(['1,200 rows with an unknown Source', 'NCR Pass Rate hidden: add Work Week, Issue'])
+  })
+
+  it('notes the inspection rows the card leaves out, first, in the Overview\'s wording with its own source name', () => {
+    expect(buildCombinedIssueFootnotes(2, [], { ...CURRENT, skippedRows: 3, futureRows: 1 })).toEqual([
+      'Inspections: 3 rows skipped: unreadable work week',
+      "Inspections: 1 row dated after WW42'2026 not counted",
+      '2 rows with an unknown Source',
+    ])
+  })
+})
+
+describe('restateOverviewFootnotes', () => {
+  const counts = { totalRows: 10, skippedRows: 0, futureRows: 0, excludedRows: 0 }
+  const currentWeek = makeWorkWeek(2026, 42)
+  const sourceFootnotes = { electrical: counts, mechanical: counts, welding: counts, bim: counts, unknownSource: 0 }
+
+  it('replaces each source\'s notes with the filtered rows\', and keeps the row limit first', () => {
+    const all = { currentWeek, footnotes: { ...sourceFootnotes, electrical: { ...counts, skippedRows: 2 }, unknownSource: 1 } }
+    const filtered = { currentWeek, footnotes: { ...sourceFootnotes, electrical: { ...counts, skippedRows: 1 }, unknownSource: 1 } }
+    const notes = buildOverviewFootnotes(all, true)
+    expect(restateOverviewFootnotes(notes, all, filtered)).toEqual([
+      notes[0],
+      'Electrical: 1 row skipped: unreadable work week',
+      '1 row with an unknown Source',
+    ])
   })
 })

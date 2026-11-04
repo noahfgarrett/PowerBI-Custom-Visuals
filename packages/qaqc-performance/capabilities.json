@@ -71,6 +71,38 @@
       "displayNameKey": "Qaqc_role_tagNo",
       "description": "Weld tag number, shown in the person page NCR table.",
       "descriptionKey": "Qaqc_role_tagNo_description"
+    },
+    {
+      "name": "generalContractor",
+      "kind": "Grouping",
+      "displayName": "General Contractor",
+      "displayNameKey": "Qaqc_role_generalContractor",
+      "description": "Optional. The QCx Combined General Contractor column. Adds Contractor to the Filter menu on QCR / FE.",
+      "descriptionKey": "Qaqc_role_generalContractor_description"
+    },
+    {
+      "name": "discipline",
+      "kind": "Grouping",
+      "displayName": "Discipline",
+      "displayNameKey": "Qaqc_role_discipline",
+      "description": "Optional. The QCx Combined Discipline column. Adds Discipline to the Filter menu on QCR / FE.",
+      "descriptionKey": "Qaqc_role_discipline_description"
+    },
+    {
+      "name": "pipeSpec",
+      "kind": "Grouping",
+      "displayName": "Pipe Spec",
+      "displayNameKey": "Qaqc_role_pipeSpec",
+      "description": "Optional. The QCx Combined Pipe Spec column. Adds Pipe Spec to the Filter menu on Welders.",
+      "descriptionKey": "Qaqc_role_pipeSpec_description"
+    },
+    {
+      "name": "fluidCode",
+      "kind": "Grouping",
+      "displayName": "Fluid Code",
+      "displayNameKey": "Qaqc_role_fluidCode",
+      "description": "Optional. The QCx Combined Fluid Code column. Adds Fluid Code to the Filter menu on Welders.",
+      "descriptionKey": "Qaqc_role_fluidCode_description"
     }
   ],
   "dataViewMappings": [
@@ -102,6 +134,18 @@
             "max": 1
           },
           "tagNo": {
+            "max": 1
+          },
+          "generalContractor": {
+            "max": 1
+          },
+          "discipline": {
+            "max": 1
+          },
+          "pipeSpec": {
+            "max": 1
+          },
+          "fluidCode": {
             "max": 1
           }
         }
@@ -152,6 +196,26 @@
             {
               "for": {
                 "in": "tagNo"
+              }
+            },
+            {
+              "for": {
+                "in": "generalContractor"
+              }
+            },
+            {
+              "for": {
+                "in": "discipline"
+              }
+            },
+            {
+              "for": {
+                "in": "pipeSpec"
+              }
+            },
+            {
+              "for": {
+                "in": "fluidCode"
               }
             }
           ],

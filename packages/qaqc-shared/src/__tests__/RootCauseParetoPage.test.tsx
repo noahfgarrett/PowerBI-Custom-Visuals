@@ -23,8 +23,8 @@ const COLUMNS: IssueColumns = {
 }
 const TODAY = new Date(2026, 9, 15) // WW42'2026
 const WW42 = 202642
-const ALL: ViewState = { selectedKey: WW42, windowEndKey: WW42, range: 'all' }
-const RECENT: ViewState = { selectedKey: WW42, windowEndKey: WW42, range: 'recent' }
+const ALL: ViewState = { selectedKey: WW42, windowEndKey: WW42, range: 'all', dateRange: null }
+const RECENT: ViewState = { selectedKey: WW42, windowEndKey: WW42, range: 'recent', dateRange: null }
 const INDEX = buildIssueIndex(ISSUE_ROWS, COLUMNS, TODAY)
 
 const COLORS: ChartColors = {
@@ -270,7 +270,7 @@ describe('RootCauseParetoPage selection', () => {
     const element = (
       <RootCauseParetoPage
         index={INDEX}
-        view={{ selectedKey: 202530, windowEndKey: 202530, range: 'recent' }}
+        view={{ selectedKey: 202530, windowEndKey: 202530, range: 'recent', dateRange: null }}
         weekOptions={[]}
         colors={COLORS}
         isHighContrast={false}
@@ -355,7 +355,7 @@ describe('RootCauseParetoPage without categories or issues', () => {
       COLUMNS,
       TODAY,
     )
-    view = draw({ index: closedOnly, view: { selectedKey: WW42, windowEndKey: WW42, range: 'recent' } })
+    view = draw({ index: closedOnly, view: { selectedKey: WW42, windowEndKey: WW42, range: 'recent', dateRange: null } })
     click(button(view.container, 'Open only'))
     expect(view.container.querySelector('.qaqc-pareto-chart-panel .qaqc-chart-empty')?.textContent).toBe('No open issues in this period')
     expect(view.container.querySelector('section.qaqc-pareto-table')).toBeNull()

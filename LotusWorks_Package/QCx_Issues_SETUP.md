@@ -1,4 +1,8 @@
-# QCx BIM Issues visual: setup
+# QCx Issues visual: setup
+
+**Version 1.3.0:** a **Filter** menu in the header filters the page by date range and field, including a new Created By (Company) choice that shows other companies' issues. Clicking a week with issues lists them. Bound to QCx Combined, the visual also shows an **NCR Pass Rate** card. All the new slots are optional, and with none of them bound the visual opens as it did before. Its identity is unchanged, so importing the new file updates existing reports in place and keeps your field bindings.
+
+**Version 1.2.1:** the visual is renamed **QCx Issues** (it was QCx BIM Issues). Nothing else changes. Its identity is unchanged, so importing the new file updates existing reports in place and keeps your field bindings.
 
 **Version 1.2.0:** the visual reads the **enriched Autodesk export** in place of the Smartsheet BIM Issues Log. Four new optional slots, BIM360 Created By, BIM360 Created On, BIM360 Closed On and Closed At, carry the real creator and dates of the issues migrated from BIM 360. A report still bound to the Smartsheet log keeps working unchanged.
 
@@ -9,7 +13,7 @@
 ## 1. Import the visual (once per report)
 
 1. In Power BI Desktop, open the Visualizations pane, select the three dots (…), then **Import a visual from a file**.
-2. Choose `qaqcIssues_1999F247C7D6.<version>.pbiviz`.
+2. Choose `qaqcIssues_1999F247C7D6.1.3.0.0.pbiviz`.
 3. To update later, import the newer file the same way. It replaces the old version in place and keeps your field bindings.
 
 ## 2. Bind the columns
@@ -35,10 +39,16 @@ The first nine slots are required. The visual shows its setup screen until every
 | BIM360 Created On (optional) | BIM360_Created On |
 | BIM360 Closed On (optional) | BIM360_Closed On |
 | Closed At (optional) | Closed at |
+| Created By (Company) (optional) | Created By (Company) |
+| Discipline (optional) | Discipline |
 
 Set every field to **Don't summarize**. The visual is designed to fill a full report page.
 
-The slot names are unchanged. A report still bound to the Smartsheet BIM Issues Log, with the same nine required slots and its Root Cause columns, keeps working: leave the four new slots empty.
+**Date fields:** bind Created On, Updated On, Due Date and Closed At as the plain date, not Power BI's Date Hierarchy. In the field well, use the drop-down on the field and choose the field name.
+
+The slot names are unchanged. A report still bound to the Smartsheet BIM Issues Log, with the same nine required slots and its Root Cause columns, keeps working: leave the new slots empty.
+
+Five more optional slots, Source, Row ID, Work Week, Inspection Phase and Issue, only matter when the visual is bound to QCx Combined. Leave them empty for the Issues table.
 
 ### BIM360 and Closed At slots (optional, but bind them for the enriched export)
 
@@ -58,15 +68,103 @@ The BIM360 dates are text such as `10/15/22 3:45 PM`. The visual reads the date 
 - Causes and categories are trimmed and grouped ignoring letter case and extra spaces. Each group shows the spelling of its earliest created issue.
 - A blank Root Cause (or Root Cause Category) counts as **Not recorded**.
 
-There is no Row ID slot: issue IDs are unique, so Power BI cannot merge two different issues. Discipline is not a slot because no card, chart or column uses it, but a slicer on Discipline (or any other column of the table) still filters the visual.
+### Filter slots (optional)
+
+- **Created By (Company)** adds that choice to the Filter menu, ticked to LotusWorks by default.
+- **Discipline** adds that field to the Filter menu.
+
+Bound to the Issues table, no Row ID is needed: issue IDs are unique, so Power BI cannot merge two different issues. A slicer on any column of the table still filters the visual.
+
+### Show the NCR Pass Rate: bind to QCx Combined (optional)
+
+A visual reads one table, and the issues export has no inspections. To show the **NCR Pass Rate** card, bind the visual to **QCx Combined** in place of the Issues table. Follow [QCx_Combined_SETUP.md](QCx_Combined_SETUP.md) to add the table first. Then, for this visual:
+
+1. Remove every field from the visual's field slots. All of a visual's fields must come from one table.
+2. From **QCx Combined**, drag each column into the slot of the same name: ID, Title, Status, Type, Contractor, Created On, Updated On, Due Date, Created By, Root Cause, BIM360 Created By, BIM360 Created On, BIM360 Closed On, Closed At, Created By (Company) and Discipline. Leave Root Cause Category empty.
+3. Add the five slots that only QCx Combined fills:
+
+| Field slot | QCx Combined column |
+|---|---|
+| Source (optional) | Source |
+| Row ID (optional) | Row ID |
+| Work Week (optional) | Work Week |
+| Inspection Phase (optional) | Inspection Phase |
+| Issue (optional) | Issue |
+
+4. Set every field to **Don't summarize**.
+
+With Source bound, BIM rows drive the whole page, Electrical and Mechanical finals drive the card, and Welding rows are ignored. The issue numbers don't change.
+
+**Bind Row ID.** Without it the card hides and a footnote names the slots still needed, for example `NCR Pass Rate hidden: add Row ID`. The same goes for Work Week, Inspection Phase and Issue. Power BI merges inspection rows that are identical in every bound column, so without Row ID the rate would be wrong with no sign of it.
+
+Without Source, the visual works from the issues table alone, and there's no card.
 
 ## 3. Use it
 
 - The week dropdown opens on the current work week every time the report opens. Cards and Issue Detail read "as of" the selected week. The two aging charts always measure from today.
 - `30 WW | All` switches the Issues by Work Week chart between the last 30 weeks and full history.
-- Click a bar to see that week's cards without moving the chart.
+- Click a bar to see that week's cards without moving the chart. If the week had issues opened or closed, its list opens too (see See a week's issues).
+- **Filter** narrows the page by date range and by field (see Filter menu).
 - Click the expand icon on any chart to fill the visual with more detail; press Esc or the collapse icon to return. The icon is hidden on empty charts and in read-only views.
 - Format pane: **Colors → Preset** (QCx, Blue, LotusWorks, Grayscale), **Background** (color, background opacity, card opacity), **Animation**, **Accessibility**.
+
+### Filter menu
+
+Select **Filter** in the header, before `30 WW | All`.
+
+- **Date range:** From and To work-week dropdowns, labelled `(start)` and `(now)` at the data's limits, and the presets Last 4 WW, Last 13 WW and This year. Presets end at the current work week.
+- **Fields,** in this order: Created By (Company), Contractor, Status, Type, Discipline and Root Cause. Created By (Company), Discipline and Root Cause appear when their slots are bound. Each field has a search box and tick boxes with row counts, most rows first.
+- **Status** lists the sheet's values, so you can pick Pending apart from Open, though both count as open on the cards.
+- **Contractor** and **Type** read as the charts do: a blank Contractor is Unassigned and a blank Type is Uncategorized.
+- **Changes apply at once.** There's no Apply button. Press Esc or click outside to close the menu.
+- **Ticks:** within a field, a row matches any ticked value. Across fields, it must match all of them. Ticking nothing in a field means no filter on it. The footer's **Showing X of Y rows** updates as you tick.
+- **Chips:** each active filter shows as a chip under the header. Click a chip's × to remove it, or **Clear all** to remove every filter. The Filter button shows how many filters are active.
+- **Grouping:** values are grouped ignoring letter case and extra spaces, so `Electrical` and `ELECTRICAL` are one choice. On Created By (Company), Status and Discipline, blank, `N/A`, `NA`, `None` and `-` are one **Not recorded** choice, listed last. Contractor, Type and Root Cause match the charts and tables: a blank is **Unassigned**, **Uncategorized** and **Not recorded** respectively, listed last, and `N/A`, `NA`, `None` and `-` each stay their own choice.
+- **Typos:** a typo in the sheet appears as a separate choice. Nothing corrects spelling; fix it in the sheet.
+- **No matching rows:** the cards and charts give way to a message with a **Clear filters** button, so zeros can't be read as real results.
+- **Keeping filters:** filters survive a data refresh, and a ticked value no longer in the data is dropped. They reset when the report is reopened. They apply to this visual only.
+- **Read-only views:** the Filter button is disabled when interactions are off.
+
+### Created By (Company)
+
+By default the page shows the issues LotusWorks created, as it always has. Bind the **Created By (Company)** slot to look at other companies' issues too.
+
+- **LotusWorks** is its own choice, worked out from who created the issue, not from the company column: an issue that the LotusWorks creator rule counts (see Counting rules) is LotusWorks. Every other issue takes its Created By (Company) value, and a blank is **Not recorded**.
+- LotusWorks is ticked by default, and that default isn't counted as a filter: no badge and no chip.
+- Tick more companies, or untick LotusWorks and tick others. **Select all** ticks every company. Unticking everything goes back to LotusWorks, and so does **Clear all**.
+- **Showing X of Y rows** counts every issue row, whichever companies are ticked.
+- Every card, chart, Issue Detail, the Pareto and Issue Aging recalculate for the ticked companies. The excluded-issues footnote follows the selection.
+- The QCx Overview visual has no such choice: its BIM Issues row keeps counting LotusWorks-created issues only. QCx Performance counts no issues.
+
+Without the slot, the choice isn't in the menu and only LotusWorks-created issues count.
+
+### In range
+
+Setting a date range changes the page to read that range:
+
+- `30 WW | All` is disabled, and Issues by Work Week shows exactly the weeks in the range.
+- The week dropdown offers only the weeks in the range, and the selected week stays inside it. **This WW** cards and Issue Detail follow the selected week.
+- **Project to date** becomes **In range**, with the subtitle `WW.. to WW..`:
+
+| Card | In a date range |
+|---|---|
+| Total Opened | Opened in the range |
+| Total Closed | Closed in the range |
+| Remaining Open | The open count at the end of the range. It isn't restated to the range, because that could go negative. |
+| Closure Rate | The share of the issues opened in the range that are now closed. |
+| NCR Pass Rate | Over the finals in the range |
+
+- The **Remaining Open** line stays the true open count each week, so its last point equals the card.
+- **Open Issue Aging**, **Overall Issue Aging**, the **Pareto** and the **Issue Aging** page aren't restated by a date range. They do follow field filters.
+- A range from the first week of the data to the current week is the same as no range, so it isn't counted as a filter.
+
+### See a week's issues
+
+Click a week on **Issues by Work Week**, or focus the chart and press Enter. That selects the week. If the week had issues opened or closed, a list of them opens too; a week with none is only selected.
+
+- The title names the week, for example `Issues · WW23'2026`, and the line under it gives the count. The list has two groups, **Opened** and **Closed**. An issue opened and closed in the same week appears in both and counts once in that line.
+- Columns are the same as Issue Detail.
+- Click a column header to sort. Press Esc or **Back** to return, with the focus back on the chart.
 
 ### Cards
 
@@ -85,6 +183,7 @@ There is no Row ID slot: issue IDs are unique, so Power BI cannot merge two diff
 | Total Closed | Green when up, neutral when unchanged |
 | Remaining Open | Red when up, green when down (Total Opened minus Total Closed) |
 | Closure Rate | Green when up, red when down; `n/a` when nothing has been opened (Total Closed ÷ Total Opened, change shown in points) |
+| NCR Pass Rate | Neutral. Only when bound to QCx Combined: the same calculation as the QCx Overview's Inspection NCR pass rate, 100% − (Electrical + Mechanical NCRs ÷ finals), through the selected week. Issue filters don't change it, apart from Date range, so while one is active it carries a small `All inspections` note |
 
 ### Charts
 
@@ -97,7 +196,7 @@ There is no Row ID slot: issue IDs are unique, so Power BI cannot merge two diff
 
 ### Issue Detail
 
-Select **Issue Detail** in the header to open the QCx BIM Issues Detail view for the selected week. Esc or the back button returns. The button is hidden when interactions are off (read-only views).
+Select **Issue Detail** in the header to open the QCx Issues Detail view for the selected week. Esc or the back button returns. The button is hidden when interactions are off (read-only views).
 
 - Cards: Opened This Week, Closed This Week, Opened Last Week, Closed Last Week.
 - Table, in two blocks:
@@ -188,11 +287,12 @@ Past the normal close window is red when it is above 0. Then it shows `View issu
 
 ## Counting rules
 
-- **LotusWorks creator:** the creator contains "LotusWorks" in any letter case, ignoring punctuation. It must be one word, so "Lotus Works" is not counted. A removed-user record for Samuel Leach or Aaron Harwood also counts.
+- **LotusWorks creator:** the creator contains "LotusWorks" in any letter case, ignoring punctuation. It must be one word, so "Lotus Works" is not counted. A removed-user record for two deactivated LotusWorks accounts also counts.
 - **Counted issues:** an issue **has BIM360 data** when any of BIM360 Created By, BIM360 Created On or BIM360 Closed On is filled in.
   - With BIM360 data, the issue counts when **BIM360 Created By** is a LotusWorks creator. Created By is not used, and a blank BIM360 Created By is excluded.
   - Without BIM360 data, the issue counts when **Created By** is a LotusWorks creator.
   - Excluded issues, including those with a blank creator, are noted in a footnote.
+  - With Created By (Company) bound, this rule decides which issues are the **LotusWorks** choice, and the ticked companies decide what counts (see Created By (Company)).
 - **Void:** issues with Status Void are excluded everywhere.
 - **Created date and work week:** the created date is BIM360 Created On when it is filled in, otherwise Created On. An issue's work week is the week of its created date. Issues whose created date is blank or unreadable are skipped and noted in a footnote. That includes a filled-in BIM360 Created On that is not a date: the visual does not fall back to Created On.
 - **Closed:** an issue is closed when its Status is Closed. Its closed date is the first filled-in value of BIM360 Closed On, Closed At and Updated On, and its closed week is the week of that date. A closed issue with no closed date counts as opened but is not counted as closed in any week.

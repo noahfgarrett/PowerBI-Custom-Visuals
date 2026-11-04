@@ -8,8 +8,10 @@ import { buildOverviewFootnotes } from '../footnotes'
 import { buildOverviewIndex } from '../overview'
 import { resolveTheme } from '../theme'
 import type { CombinedColumns } from '../types'
+import { buttonNamed, checkbox, checkboxLabels, chipTexts, choose, filterButton, openMenu, pick, pressEscape, showing, toggleSection } from './filterHarness'
 import { COMBINED_COLUMNS, COMBINED_ROWS } from './fixtures/combinedRows'
-import { inspection, overviewIndexOf } from './overviewRows'
+import { FILTER_COLUMNS, filterSetup, withValues, type FilterSetup } from './overviewFilterFixture'
+import { bim, inspection, overviewIndexOf, weld } from './overviewRows'
 import { render, type Rendered } from './render'
 import { ruleBody } from './stylesheet'
 
@@ -40,7 +42,9 @@ const COLUMNS: CombinedColumns = {
   greenTags: -1,
 }
 const TODAY = new Date(2026, 9, 15) // WW42'2026
-const INDEX = buildOverviewIndex(splitCombinedRows(COMBINED_ROWS, COLUMNS.source), COLUMNS, TODAY)
+const SPLIT = splitCombinedRows(COMBINED_ROWS, COLUMNS.source)
+const INDEX = buildOverviewIndex(SPLIT, COLUMNS, TODAY)
+const FILTER_SOURCE = { split: SPLIT, columns: COLUMNS }
 const THEME = resolveTheme({ preset: 'qaqc', backgroundColor: '', backgroundOpacity: 100, cardOpacity: 100, highContrast: null })
 const ACTIVITY_TITLE = 'Inspection activity by Work Week'
 const RATES_TITLE = 'Quality rates by Work Week'
@@ -62,6 +66,7 @@ function dashboardElement(overrides: Partial<OverviewDashboardProps> = {}): Reac
       title="QCx Overview"
       icon={LayoutDashboard}
       index={INDEX}
+      filterSource={FILTER_SOURCE}
       theme={THEME}
       interactive
       animate={false}
@@ -430,10 +435,11 @@ describe('OverviewDashboard layout', () => {
     view = draw()
     const controls = view.container.querySelector('.qaqc-controls')
     // Each control by what it is to a screen reader: the two toggles are named groups, the picker is a select.
-    const order = [...(controls?.children ?? [])].map((node) =>
-      node.getAttribute('role') === 'group' ? node.getAttribute('aria-label') : node.querySelector('select') ? 'week picker' : null,
-    )
-    expect(order).toEqual(['Card values', 'Chart range', 'week picker'])
+    const order = [...(controls?.children ?? [])].map((node) => {
+      if (node.classList.contains('qaqc-filter-anchor')) return 'filter menu'
+      return node.getAttribute('role') === 'group' ? node.getAttribute('aria-label') : node.querySelector('select') ? 'week picker' : null
+    })
+    expect(order).toEqual(['Card values', 'filter menu', 'Chart range', 'week picker'])
   })
 
   it('stacks the rows, then the quality strip, then the charts', () => {
@@ -514,6 +520,23 @@ describe('OverviewDashboard layout', () => {
     expect(OVERVIEW_DENSE_HEIGHT).toBe(480)
     expect(ruleBody('.qaqc-overview-charts')).toContain('min-height: 180px;')
     expect(ruleBody('.qaqc-overview-body')).toContain('overflow-y: auto;')
+  })
+
+  it('lets the charts give up the chip row\'s height, so chips and a note still fit at the threshold', () => {
+    // One 27 px chip row at OVERVIEW_CARDS_ONLY_HEIGHT leaves the charts 153 px, measured in Chrome.
+    expect(ruleBody('.qaqc-filter-chips + .qaqc-overview-body .qaqc-overview-charts')).toContain('min-height: 150px;')
+  })
+
+  it('makes room for whole values on a tile too narrow for dense values and a sparkline', () => {
+    view = draw({ viewport: { width: 480, height: 320 } })
+    expect(view.container.querySelector('.qaqc-overview-rows.is-dense.is-tight')).not.toBeNull()
+    expect(view.container.querySelector('.qaqc-overview-quality-dense.is-tight')).not.toBeNull()
+    view.unmount()
+    view = draw({ viewport: { width: 800, height: 300 } })
+    expect(view.container.querySelector('.qaqc-overview-rows.is-dense')).not.toBeNull()
+    expect(view.container.querySelector('.is-tight')).toBeNull()
+    expect(ruleBody('.qaqc-overview-rows.is-dense.is-tight .qaqc-overview-row-trend')).toContain('display: none;')
+    expect(ruleBody('.qaqc-overview-quality-dense.is-tight')).toContain('grid-template-columns: repeat(3, minmax(0, 1fr));')
   })
 
   it('shows the rows and the strip as dense values on a short tile', () => {
@@ -741,5 +764,344 @@ describe('OverviewDashboard expanded charts', () => {
       expect(view.container.querySelector('[role="dialog"]')).toBeNull()
       expect(document.activeElement).toBe(expandButton(view.container, title))
     }
+  })
+})
+
+describe('OverviewDashboard filters', () => {
+  const WW40 = "WW40'2026"
+  const WW41 = "WW41'2026"
+  const WW42 = "WW42'2026"
+  const TAG_BK1 = 'BK1XX104XX-M006-FW-1'
+  const TAG_WR1 = 'WR1XX104XX-M006-FW-1'
+  const ROWS: unknown[][] = [
+    withValues(inspection('Electrical', WW42, 'Final', 'Cable damaged'), { generalContractor: 'Greyfox', discipline: 'Electrical', building: 'BK1' }),
+    withValues(inspection('Electrical', WW42, 'Final'), { generalContractor: 'Bayside', discipline: 'Controls', building: 'WR1' }),
+    withValues(inspection('Electrical', WW40, 'Final'), { generalContractor: 'Greyfox', discipline: 'Electrical', building: 'BK1' }),
+    withValues(inspection('Mechanical', WW42, 'Final', 'Valve leak'), { generalContractor: 'Bayside', discipline: 'Piping', building: 'BK1' }),
+    withValues(weld(WW42, { issue: 'BIM 12' }), { tagNo: TAG_BK1 }),
+    withValues(weld(WW41), { tagNo: TAG_WR1 }),
+    withValues(bim('#1', '10/13/2026', { type: 'COR' }), { contractor: 'Bayside', discipline: 'Piping' }),
+    withValues(bim('#2', '10/6/2026', { type: 'DWN' }), { contractor: 'Greyfox', discipline: 'Electrical' }),
+  ]
+
+  function drawFiltered(setup: FilterSetup = filterSetup(ROWS), overrides: Partial<OverviewDashboardProps> = {}): HTMLElement {
+    stubSize()
+    view = draw({ index: setup.index, filterSource: setup.filterSource, ...overrides })
+    return view.container
+  }
+
+  function sectionTitles(container: HTMLElement): string[] {
+    return [...container.querySelectorAll('.qaqc-filter-section-toggle span:first-of-type')].map((node) => node.textContent ?? '')
+  }
+
+  /** Opens the section if it's closed, as the first one isn't, and ticks the value. */
+  function tick(container: HTMLElement, section: string, label: string): void {
+    const toggle = [...container.querySelectorAll('.qaqc-filter-section-toggle')].find((button) => button.textContent?.startsWith(section))
+    if (toggle?.getAttribute('aria-expanded') !== 'true') toggleSection(container, section)
+    click(checkbox(container, label))
+  }
+
+  function setRange(container: HTMLElement, fromKey: number, toKey: number): void {
+    const [from, to] = container.querySelectorAll<HTMLSelectElement>('.qaqc-filter-date select')
+    choose(from, fromKey)
+    choose(to, toKey)
+  }
+
+  function notes(container: HTMLElement): string[] {
+    return [...container.querySelectorAll('.qaqc-filter-note')].map((node) => node.textContent ?? '')
+  }
+
+  it('shows the Filter button with only the bound fields', () => {
+    const container = drawFiltered()
+    openMenu(container)
+    expect(sectionTitles(container)).toEqual(['Contractor', 'Building', 'Discipline'])
+  })
+
+  it('shows Building alone, and Date range, with the new slots unbound', () => {
+    stubSize()
+    view = draw()
+    openMenu(view.container)
+    expect(sectionTitles(view.container)).toEqual(['Building'])
+    expect(view.container.querySelector('.qaqc-filter-date')).not.toBeNull()
+  })
+
+  it('disables the Filter button when interactions are not allowed', () => {
+    const container = drawFiltered(filterSetup(ROWS), { interactive: false })
+    expect(filterButton(container).disabled).toBe(true)
+  })
+
+  it('lists Contractor from inspections and BIM together', () => {
+    const container = drawFiltered()
+    openMenu(container)
+    expect(checkboxLabels(container)).toEqual(['Bayside', 'Greyfox'])
+  })
+
+  it('welding is unaffected by Contractor and Discipline, with the note "Welding isn\'t filtered by Contractor"', () => {
+    const container = drawFiltered()
+    expect(notes(container)).toEqual([])
+    const welds = shown(row(container, 'Welding'), 'Welds logged')
+    openMenu(container)
+    tick(container, 'Contractor', 'Greyfox')
+    expect(notes(container)).toEqual(["Welding isn't filtered by Contractor"])
+    expect(shown(row(container, 'Welding'), 'Welds logged')).toEqual(welds)
+    expect(shown(row(container, 'Electrical'), 'Finals')[0]).toBe('1')
+    click(checkbox(container, 'Greyfox'))
+    expect(notes(container)).toEqual([])
+    tick(container, 'Discipline', 'Piping')
+    expect(notes(container)).toEqual(["Welding isn't filtered by Discipline"])
+    expect(shown(row(container, 'Welding'), 'Welds logged')).toEqual(welds)
+  })
+
+  it('BIM is unaffected by Building, with its note', () => {
+    const container = drawFiltered()
+    const opened = shown(row(container, 'BIM Issues'), 'Opened')
+    openMenu(container)
+    tick(container, 'Building', 'WR1')
+    expect(notes(container)).toEqual(["BIM issues aren't filtered by Building"])
+    expect(shown(row(container, 'BIM Issues'), 'Opened')).toEqual(opened)
+    expect(shown(row(container, 'Electrical'), 'Finals')[0]).toBe('1')
+  })
+
+  it('Building filters welding through the Tag No derivation', () => {
+    const container = drawFiltered()
+    expect(shown(row(container, 'Welding'), 'Welds logged')[0]).toBe('1')
+    openMenu(container)
+    tick(container, 'Building', 'WR1')
+    expect(shown(row(container, 'Welding'), 'Welds logged')[0]).toBe('0')
+  })
+
+  it('says so when Building can\'t reach welding with Tag No unbound', () => {
+    const container = drawFiltered(filterSetup(ROWS, { ...FILTER_COLUMNS, tagNo: -1 }))
+    openMenu(container)
+    tick(container, 'Building', 'WR1')
+    expect(notes(container)).toEqual(["BIM issues aren't filtered by Building", "Welding isn't filtered by Building"])
+    expect(shown(row(container, 'Welding'), 'Welds logged')[0]).toBe('1')
+  })
+
+  it('shows a chip per filter and a live row count', () => {
+    const container = drawFiltered()
+    openMenu(container)
+    expect(showing(container)).toBe('Showing 8 of 8 rows')
+    tick(container, 'Contractor', 'Greyfox')
+    expect(chipTexts(container)).toEqual(['Contractor: Greyfox'])
+    // Two Greyfox inspections, Greyfox's issue and both welds.
+    expect(showing(container)).toBe('Showing 5 of 8 rows')
+  })
+
+  it('says a filtered-away source has no matching rows', () => {
+    const container = drawFiltered()
+    openMenu(container)
+    tick(container, 'Contractor', 'Greyfox')
+    expect(row(container, 'Mechanical').textContent).toContain('No Mechanical rows match these filters')
+  })
+
+  it('shows the empty state when nothing matches anywhere, and Clear filters brings the numbers back', () => {
+    const rows = [
+      withValues(inspection('Electrical', WW42, 'Final'), { generalContractor: 'Greyfox', discipline: 'Electrical', building: 'BK1' }),
+      withValues(inspection('Mechanical', WW40, 'Final'), { generalContractor: 'Bayside', discipline: 'Piping', building: 'BK1' }),
+    ]
+    const container = drawFiltered(filterSetup(rows))
+    openMenu(container)
+    tick(container, 'Contractor', 'Greyfox')
+    tick(container, 'Discipline', 'Piping')
+    expect(container.querySelector('.qaqc-filter-empty')?.textContent).toContain('inspections, welds or BIM issues')
+    expect(container.querySelector('.qaqc-overview-body')).toBeNull()
+    click(buttonNamed(container.querySelector('.qaqc-filter-empty') ?? container, 'Clear filters'))
+    expect(container.querySelector('.qaqc-filter-empty')).toBeNull()
+    expect(shown(row(container, 'Electrical'), 'Finals')[0]).toBe('1')
+  })
+
+  it('says no inspections match when only welds keep the dashboard up', () => {
+    const rows = [
+      withValues(inspection('Electrical', WW42, 'Final'), { generalContractor: 'Greyfox' }),
+      withValues(inspection('Mechanical', WW42, 'Final'), { generalContractor: 'Bayside' }),
+      withValues(weld(WW42), { tagNo: TAG_BK1 }),
+      withValues(bim('#1', '10/13/2026'), { contractor: 'Tasman' }),
+    ]
+    const container = drawFiltered(filterSetup(rows))
+    openMenu(container)
+    tick(container, 'Contractor', 'Tasman')
+    expect(panel(container, ACTIVITY_TITLE)?.textContent).toContain('No inspections match the current filters')
+    expect(panel(container, RATES_TITLE)?.querySelector('svg.qaqc-chart')).not.toBeNull()
+  })
+
+  it('says rows fall outside the window when the filtered inspections are all older', () => {
+    const rows = [
+      withValues(inspection('Electrical', "WW01'2024", 'Final'), { generalContractor: 'Greyfox' }),
+      withValues(inspection('Mechanical', WW42, 'Final'), { generalContractor: 'Bayside' }),
+    ]
+    const container = drawFiltered(filterSetup(rows))
+    openMenu(container)
+    tick(container, 'Contractor', 'Greyfox')
+    expect(panel(container, ACTIVITY_TITLE)?.textContent).toContain('switch to All')
+    click(buttonNamed(container.querySelector('.qaqc-header') ?? container, 'All'))
+    expect(panel(container, ACTIVITY_TITLE)?.querySelector('svg.qaqc-chart')).not.toBeNull()
+  })
+
+  it('restates the footnotes to the filtered rows, keeping the excluded issues', () => {
+    const rows = [
+      ...ROWS,
+      withValues(inspection('Electrical', 'not a week', 'Final'), { generalContractor: 'Bayside' }),
+      withValues(bim('#9', '10/6/2026', { createdBy: 'Other Company' }), { contractor: 'Greyfox' }),
+    ]
+    const setup = filterSetup(rows)
+    const container = drawFiltered(setup, { footnotes: buildOverviewFootnotes(setup.index, false) })
+    const footnotes = (): string | null | undefined => container.querySelector('.qaqc-footnotes')?.textContent
+    expect(footnotes()).toContain('Electrical: 1 row skipped')
+    openMenu(container)
+    tick(container, 'Contractor', 'Greyfox')
+    expect(footnotes()).not.toContain('Electrical: 1 row skipped')
+    expect(footnotes()).toContain('BIM Issues: 1 issue not created by LotusWorks is excluded')
+  })
+
+  it('shows the DWN rate as n/a while any filter is active, and restores it', () => {
+    const rows = ROWS.map((item) => {
+      const wide = [...item]
+      wide[FILTER_COLUMNS.greenTags] = 10
+      return wide
+    })
+    const container = drawFiltered(filterSetup(rows))
+    const dwns = (): Array<string | null> => shownLines(quality(container), 'DWNs').slice(1)
+    expect(dwns()[0]).toContain('of green tags')
+    openMenu(container)
+    tick(container, 'Contractor', 'Greyfox')
+    expect(dwns()).toEqual(['DWN rate n/a', 'Not available with filters'])
+    click(buttonNamed(container, 'Clear all'))
+    expect(dwns()[0]).toContain('of green tags')
+    setRange(container, 202641, 202642)
+    expect(dwns()).toEqual(['DWN rate n/a', 'Not available with filters'])
+  })
+
+  describe('in a date range', () => {
+    it('in range, cards and series restate', () => {
+      const container = drawFiltered()
+      showToDate(container)
+      expect(shown(row(container, 'Electrical'), 'Finals')[0]).toBe('3')
+      openMenu(container)
+      setRange(container, 202641, 202642)
+      expect(chipTexts(container)).toEqual(["Date range: WW41'2026 to WW42'2026"])
+      expect(modeButton(container, 'In range').getAttribute('aria-pressed')).toBe('true')
+      expect(shown(row(container, 'Electrical'), 'Finals')[0]).toBe('2')
+      expect(rowsSubtitle(container)).toBe("WW41'2026 to WW42'2026")
+      pressEscape(pick(container, '.qaqc-filter-popover', HTMLElement))
+      const weeks = [...(panel(container, ACTIVITY_TITLE)?.querySelectorAll('.qaqc-hit') ?? [])].map((node) => node.getAttribute('data-week'))
+      expect(weeks).toEqual(['202641', '202642'])
+      const options = [...pick(container, '.qaqc-week-picker select', HTMLSelectElement).options].map((option) => option.value)
+      expect(options).toEqual(['202642', '202641'])
+    })
+
+    it('names the range end on Top root cause, on its own line under the counts', () => {
+      const container = drawFiltered()
+      showToDate(container)
+      openMenu(container)
+      setRange(container, 202641, 202642)
+      expect(shownLines(quality(container), 'Top root cause')).toEqual(['None', '2 issues · none recorded', "through WW42'2026"])
+    })
+
+    it('disables the range toggle while a range is set', () => {
+      const container = drawFiltered()
+      openMenu(container)
+      setRange(container, 202641, 202642)
+      expect(buttonNamed(container.querySelector('.qaqc-header') ?? container, 'All').disabled).toBe(true)
+    })
+
+    it('keeps the open count on a quiet range rather than the empty state', () => {
+      const rows = [
+        withValues(bim('#1', '9/1/2026'), { contractor: 'Bayside' }),
+        withValues(inspection('Electrical', WW42, 'Final'), { generalContractor: 'Greyfox' }),
+        withValues(inspection('Electrical', "WW30'2026", 'Final'), { generalContractor: 'Greyfox' }),
+      ]
+      const container = drawFiltered(filterSetup(rows))
+      openMenu(container)
+      setRange(container, 202638, 202640)
+      expect(container.querySelector('.qaqc-filter-empty')).toBeNull()
+      expect(shown(row(container, 'BIM Issues'), 'Remaining open')[0]).toBe('1')
+      expect(panel(container, ACTIVITY_TITLE)?.textContent).toContain('No inspections in this range')
+    })
+
+    it('shows the empty state for a range with nothing to show', () => {
+      const rows = [
+        withValues(inspection('Electrical', WW42, 'Final'), { generalContractor: 'Greyfox' }),
+        withValues(inspection('Electrical', "WW30'2026", 'Final'), { generalContractor: 'Greyfox' }),
+      ]
+      const container = drawFiltered(filterSetup(rows))
+      openMenu(container)
+      setRange(container, 202638, 202640)
+      expect(container.querySelector('.qaqc-filter-empty')?.textContent).toContain('in this date range')
+    })
+  })
+
+  describe('week drill-down', () => {
+    function page(container: HTMLElement): HTMLElement | null {
+      return [...container.querySelectorAll<HTMLElement>('[role="dialog"]')].find((node) => node.getAttribute('aria-label')?.startsWith('Issues · ')) ?? null
+    }
+
+    function groupsOf(container: HTMLElement): Array<string | null> {
+      return [...(page(container)?.querySelectorAll('.qaqc-week-issues-group h4') ?? [])].map((node) => node.textContent)
+    }
+
+    it('opens from the activity chart, with the week\'s NCRs by source and no BIM rows', () => {
+      const container = drawFiltered()
+      clickHit(container, ACTIVITY_TITLE, '202642')
+      expect(page(container)?.getAttribute('aria-label')).toBe("Issues · WW42'2026")
+      expect(groupsOf(container)).toEqual(['Electrical (1)', 'Mechanical (1)', 'Welding (1)'])
+      expect(page(container)?.querySelector('.qaqc-week-issues-count')?.textContent).toBe("3 issues in WW42'2026")
+    })
+
+    it('opens from the quality rates chart', () => {
+      const container = drawFiltered()
+      clickHit(container, RATES_TITLE, '202642')
+      expect(page(container)?.getAttribute('aria-label')).toBe("Issues · WW42'2026")
+    })
+
+    it('only selects a week with no NCRs', () => {
+      const container = drawFiltered()
+      clickHit(container, ACTIVITY_TITLE, '202641')
+      expect(rowsSubtitle(container)).toBe(WW41)
+      expect(page(container)).toBeNull()
+    })
+
+    it('opens from Enter on the focused week', () => {
+      const container = drawFiltered()
+      const chart = panel(container, ACTIVITY_TITLE)?.querySelector('svg.qaqc-chart')
+      if (!chart) throw new Error('activity chart missing')
+      pressKeys(chart, ['Enter'])
+      expect(page(container)?.getAttribute('aria-label')).toBe("Issues · WW42'2026")
+    })
+
+    it('lists only the rows left under a filter', () => {
+      const container = drawFiltered()
+      openMenu(container)
+      tick(container, 'Contractor', 'Greyfox')
+      pressEscape(pick(container, '.qaqc-filter-popover', HTMLElement))
+      clickHit(container, RATES_TITLE, '202642')
+      expect(groupsOf(container)).toEqual(['Electrical (1)', 'Welding (1)'])
+    })
+
+    it('Esc returns focus to the chart that opened it', () => {
+      const container = drawFiltered()
+      clickHit(container, RATES_TITLE, '202642')
+      const open = page(container)
+      if (open === null) throw new Error('page missing')
+      pressEscape(open)
+      expect(page(container)).toBeNull()
+      expect(document.activeElement).toBe(panel(container, RATES_TITLE)?.querySelector('svg.qaqc-chart'))
+    })
+
+    it('Back returns focus to the chart that opened it', () => {
+      const container = drawFiltered()
+      clickHit(container, ACTIVITY_TITLE, '202642')
+      const back = page(container)?.querySelector<HTMLButtonElement>('.qaqc-back-button')
+      if (!back) throw new Error('back button missing')
+      click(back)
+      expect(page(container)).toBeNull()
+      expect(document.activeElement).toBe(panel(container, ACTIVITY_TITLE)?.querySelector('svg.qaqc-chart'))
+    })
+
+    it('does not open when interactions are not allowed', () => {
+      const container = drawFiltered(filterSetup(ROWS), { interactive: false })
+      expect(panel(container, ACTIVITY_TITLE)?.querySelector('.qaqc-hit')?.getAttribute('role')).not.toBe('button')
+      expect(page(container)).toBeNull()
+    })
   })
 })

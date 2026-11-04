@@ -7,7 +7,7 @@ import { AGING_COLORS, agingIndex, all, click, fire, pressKey, textCollisions, t
 import { render, type Rendered } from './render'
 
 const INDEX = agingIndex()
-const RECENT = agingProfile(INDEX, { selectedKey: WW42, windowEndKey: WW42, range: 'recent' }, INDEX.today)
+const RECENT = agingProfile(INDEX, { selectedKey: WW42, windowEndKey: WW42, range: 'recent', dateRange: null }, INDEX.today)
 
 let view: Rendered | null = null
 

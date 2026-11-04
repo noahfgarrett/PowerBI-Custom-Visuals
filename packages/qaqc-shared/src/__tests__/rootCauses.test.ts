@@ -20,7 +20,7 @@ const COLUMNS: IssueColumns = {
 }
 const TODAY = new Date(2026, 9, 15) // Thursday of WW42'2026
 const WW42 = 202642
-const ALL_TO_WW42: ViewState = { selectedKey: WW42, windowEndKey: WW42, range: 'all' }
+const ALL_TO_WW42: ViewState = { selectedKey: WW42, windowEndKey: WW42, range: 'all', dateRange: null }
 
 type Cell = string | null
 
@@ -200,7 +200,7 @@ describe('buildRootCausePareto period and scope', () => {
       issue('#in', '2026-08-03', 'Recent'),
       issue('#late', '2026-10-13', 'Late'),
     ]
-    const ww40: ViewState = { selectedKey: 202640, windowEndKey: WW42, range: 'recent' }
+    const ww40: ViewState = { selectedKey: 202640, windowEndKey: WW42, range: 'recent', dateRange: null }
     expect(labels(pareto(rows, 'all', ww40))).toEqual(['Recent'])
     expect(labels(pareto(rows, 'all', { ...ww40, range: 'all' }))).toEqual(['Old', 'Recent'])
   })
@@ -213,14 +213,14 @@ describe('buildRootCausePareto period and scope', () => {
         issue('#later', '2026-08-03', 'Closed later', { closedOn: '2026-10-14' }),
       ],
       'open',
-      { selectedKey: 202640, windowEndKey: WW42, range: 'all' },
+      { selectedKey: 202640, windowEndKey: WW42, range: 'all', dateRange: null },
     )
     expect(labels(model).sort()).toEqual(['Closed later', 'Open cause'])
     expect(model.total).toBe(2)
   })
 
   it('is empty without issues in the period', () => {
-    const model = pareto([issue('#old', '2024-01-08', 'Old')], 'all', { selectedKey: WW42, windowEndKey: WW42, range: 'recent' })
+    const model = pareto([issue('#old', '2024-01-08', 'Old')], 'all', { selectedKey: WW42, windowEndKey: WW42, range: 'recent', dateRange: null })
     expect(model.bars).toEqual([])
     expect(model.total).toBe(0)
     expect(model.distinct).toBe(0)
@@ -313,8 +313,8 @@ describe('paretoIssues', () => {
     issue('#7', '2026-09-01', null),
   ]
   const index = indexOf(rows)
-  const model = buildRootCausePareto(index, { selectedKey: 202641, windowEndKey: WW42, range: 'all' }, 'all', TODAY)
-  const view: ViewState = { selectedKey: 202641, windowEndKey: WW42, range: 'all' }
+  const model = buildRootCausePareto(index, { selectedKey: 202641, windowEndKey: WW42, range: 'all', dateRange: null }, 'all', TODAY)
+  const view: ViewState = { selectedKey: 202641, windowEndKey: WW42, range: 'all', dateRange: null }
 
   it('lists open issues oldest first, then closed issues longest to close first', () => {
     const drill = paretoIssues(index, barLabelled(model, 'Alpha'), view, 'all', TODAY)

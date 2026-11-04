@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildInspectionIndex } from '../inspections'
+import { buildInspectionIndex, classifyPhase, isIssueFound } from '../inspections'
+import { ELECTRICAL_ROWS } from './fixtures/electricalRows'
+import { MECHANICAL_ROWS } from './fixtures/mechanicalRows'
 
 const COLUMNS = { workWeek: 0, phase: 1, issue: 2, building: 3 }
 const TODAY = new Date(2026, 9, 15) // WW42'2026
@@ -14,6 +16,45 @@ const ROWS = [
   ["WW44'2026", 'Final', '', 'F63.2'],
   [null, 'SOR', '', ''],
 ]
+
+describe('buildInspectionIndex axisFromKey', () => {
+  const WEEK_40 = [["WW40'2026", 'Final', 'NCR', 'A']]
+
+  it('starts the axis at axisFromKey when it is before the first data week, with those weeks at zero', () => {
+    const index = buildInspectionIndex(WEEK_40, COLUMNS, TODAY, { axisFromKey: 202638 })
+    expect(index.weeks.map((item) => item.week.key)).toEqual([202638, 202639, 202640, 202641, 202642])
+    expect(index.weeks[0]).toMatchObject({ finals: 0, sors: 0, issuesFound: 0 })
+    expect(index.cumulativeFinals).toEqual([0, 0, 1, 1, 1])
+    expect(index.cumulativeIssues).toEqual([0, 0, 1, 1, 1])
+    expect(index.buildingsByWeek[0].size).toBe(0)
+    expect(index.positionByKey.get(202638)).toBe(0)
+  })
+
+  it('starts at the first data week when axisFromKey is later', () => {
+    const index = buildInspectionIndex(WEEK_40, COLUMNS, TODAY, { axisFromKey: 202641 })
+    expect(index.weeks[0].week.key).toBe(202640)
+  })
+
+  it('crosses a year on the way to the first data week', () => {
+    const index = buildInspectionIndex([["WW02'2026", 'SOR', '', 'A']], COLUMNS, new Date(2026, 0, 15), { axisFromKey: 202552 })
+    expect(index.weeks.map((item) => item.week.label)).toEqual(["WW52'2025", "WW01'2026", "WW02'2026", "WW03'2026"])
+  })
+
+  it('holds the axis with no rows at all', () => {
+    const index = buildInspectionIndex([], COLUMNS, TODAY, { axisFromKey: 202640 })
+    expect(index.weeks.map((item) => item.week.key)).toEqual([202640, 202641, 202642])
+  })
+
+  it('never starts after the current week', () => {
+    const index = buildInspectionIndex([], COLUMNS, TODAY, { axisFromKey: 202650 })
+    expect(index.weeks.map((item) => item.week.key)).toEqual([202642])
+  })
+
+  it('without the option the output is unchanged', () => {
+    expect(buildInspectionIndex(ROWS, COLUMNS, TODAY, {})).toEqual(buildInspectionIndex(ROWS, COLUMNS, TODAY))
+    expect(buildInspectionIndex(ROWS, COLUMNS, TODAY).weeks[0].week.key).toBe(202640)
+  })
+})
 
 describe('buildInspectionIndex', () => {
   it('builds continuous weeks from the first data week through the current week', () => {
@@ -96,5 +137,56 @@ describe('buildInspectionIndex', () => {
     ]
     const index = buildInspectionIndex(rows, COLUMNS, TODAY)
     expect(index.weeks.map((item) => item.week.label)).toEqual(["WW42'2026"])
+  })
+})
+
+describe('buildInspectionIndex issueRowsByWeek', () => {
+  it('issueRowsByWeek holds exactly the rows behind each week\'s issuesFound', () => {
+    const index = buildInspectionIndex(ROWS, COLUMNS, TODAY)
+    expect(index.weeks.map((item) => item.week.key)).toEqual([202640, 202641, 202642])
+    // Row 1 is a SOR with issue text and row 0 a clean Final: neither is an "Issue found", as on the chart.
+    expect(index.issueRowsByWeek).toEqual([[], [], [2]])
+  })
+
+  it('leaves out rows with no readable week and rows after the current week', () => {
+    const rows = [
+      ['UPW', 'Final', 'NCR', 'A'],
+      ["WW44'2026", 'Final', 'NCR', 'A'],
+      ["WW42'2026", 'Final', 'NCR', 'A'],
+    ]
+    expect(buildInspectionIndex(rows, COLUMNS, TODAY).issueRowsByWeek).toEqual([[2]])
+  })
+
+  it('keeps the positions in row order within a week', () => {
+    const rows = [
+      ["WW42'2026", 'Final', 'NCR', 'A'],
+      ["WW41'2026", 'Final', 'NCR', 'A'],
+      ["WW42'2026", 'Final', 'COR', 'B'],
+    ]
+    expect(buildInspectionIndex(rows, COLUMNS, TODAY).issueRowsByWeek).toEqual([[1], [0, 2]])
+  })
+
+  it('stays parallel to weeks on a stretched axis and with no rows', () => {
+    const stretched = buildInspectionIndex([["WW40'2026", 'Final', 'NCR', 'A']], COLUMNS, TODAY, { axisFromKey: 202638 })
+    expect(stretched.issueRowsByWeek).toEqual([[], [], [0], [], []])
+    expect(buildInspectionIndex([], COLUMNS, TODAY).issueRowsByWeek).toEqual([[]])
+  })
+
+  it.each([
+    ['Electrical', ELECTRICAL_ROWS],
+    ['Mechanical', MECHANICAL_ROWS],
+  ])('lists exactly each week\'s issue-found Finals on the %s fixture', (_name, rows) => {
+    const index = buildInspectionIndex(rows, COLUMNS, TODAY)
+    index.weeks.forEach((item, position) => {
+      const positions = index.issueRowsByWeek[position]
+      expect(positions).toHaveLength(item.issuesFound)
+      for (const rowPosition of positions) {
+        const row = rows[rowPosition]
+        expect(classifyPhase(row[COLUMNS.phase])).toBe('final')
+        expect(isIssueFound(row[COLUMNS.issue])).toBe(true)
+      }
+    })
+    const listed = index.issueRowsByWeek.reduce((sum, positions) => sum + positions.length, 0)
+    expect(listed).toBe(index.cumulativeIssues[index.cumulativeIssues.length - 1])
   })
 })

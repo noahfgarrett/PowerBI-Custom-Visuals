@@ -7,6 +7,7 @@ import { PerformanceDashboard, type PerformanceDashboardProps } from '../compone
 import { buildPerformanceIndex, buildPerformanceModel, type PerformanceIndex } from '../performance'
 import { resolveTheme } from '../theme'
 import type { CombinedColumns } from '../types'
+import { buttonNamed, checkbox, chipTexts, choose, filterButton, openMenu, showing, toggleSection } from './filterHarness'
 import { COMBINED_COLUMNS, COMBINED_ROWS } from './fixtures/combinedRows'
 import { render, type Rendered } from './render'
 import { ruleBody } from './stylesheet'
@@ -205,7 +206,7 @@ describe('PerformanceDashboard header', () => {
     view = draw()
     const controls = view.container.querySelector('.qaqc-controls')
     const order = [...(controls?.children ?? [])].map((node) => node.getAttribute('aria-label') ?? node.className)
-    expect(order).toEqual(['People group', 'Ranking period', 'qaqc-week-picker'])
+    expect(order).toEqual(['People group', 'qaqc-filter-anchor', 'Ranking period', 'qaqc-week-picker'])
   })
 
   it('starts on QCR / FE', () => {
@@ -234,7 +235,7 @@ describe('PerformanceDashboard header', () => {
 })
 
 describe('PerformanceDashboard ranking', () => {
-  it('ranks the 30 WW QCR/FEs by NCR rate, then NCRs, then name', () => {
+  it('ranks the 30 WW QCR/FEs lowest NCR Pass Rate first, then NCRs, then name', () => {
     view = draw()
     expect(rankedNames(view.container)).toEqual(['QCR 02', 'QCR 01', 'QCR 04', 'QCR 05', 'QCR 06', 'QCR 07'])
   })
@@ -271,7 +272,7 @@ describe('PerformanceDashboard ranking', () => {
   })
 
   it('ranks fewer welders with a higher minimum welds', () => {
-    const expected = buildPerformanceModel(INDEX, { selectedKey: CURRENT, windowEndKey: CURRENT, range: 'recent' }, 'welders', 100)
+    const expected = buildPerformanceModel(INDEX, { selectedKey: CURRENT, windowEndKey: CURRENT, range: 'recent', dateRange: null }, 'welders', 100)
     view = draw({ minimumWelds: 100 })
     showGroup(view.container, 'Welders')
     expect(expected.ranked.length).toBeLessThan(38)
@@ -299,32 +300,32 @@ describe('PerformanceDashboard ranking', () => {
 describe('PerformanceDashboard summary strip', () => {
   it('labels the QCR/FE cards', () => {
     view = draw()
-    expect(cardLabels(view.container)).toEqual(['QCR/FE ranked', 'Finals', 'NCRs', 'NCR rate'])
+    expect(cardLabels(view.container)).toEqual(['QCR/FE ranked', 'Finals', 'NCRs', 'NCR Pass Rate'])
   })
 
   it('labels the welder cards', () => {
     view = draw()
     showGroup(view.container, 'Welders')
-    expect(cardLabels(view.container)).toEqual(['Welders ranked', 'Welds', 'NCRs', 'NCR rate'])
+    expect(cardLabels(view.container)).toEqual(['Welders ranked', 'Welds', 'NCRs', 'NCR Pass Rate'])
   })
 
   it('shows the 30 WW QCR/FE totals for the whole group', () => {
     view = draw()
-    expect(summaryValues(view.container)).toEqual(['6', '221', '2', '0.90%'])
+    expect(summaryValues(view.container)).toEqual(['6', '221', '2', '99.10%'])
     expect(summaryHead(view.container)).toEqual(['QCR / FE', "WW13'2026 to WW42'2026"])
   })
 
   it('shows the All QCR/FE totals', () => {
     view = draw()
     showRange(view.container, 'All')
-    expect(summaryValues(view.container)).toEqual(['7', '282', '3', '1.06%'])
+    expect(summaryValues(view.container)).toEqual(['7', '282', '3', '98.94%'])
     expect(summaryHead(view.container)).toEqual(['QCR / FE', "WW51'2025 to WW42'2026"])
   })
 
   it('shows the 30 WW welder totals', () => {
     view = draw()
     showGroup(view.container, 'Welders')
-    expect(summaryValues(view.container)).toEqual(['38', '1,570', '11', '0.70%'])
+    expect(summaryValues(view.container)).toEqual(['38', '1,570', '11', '99.30%'])
     expect(summaryHead(view.container)[0]).toBe('Welders')
   })
 
@@ -332,7 +333,7 @@ describe('PerformanceDashboard summary strip', () => {
     view = draw()
     showGroup(view.container, 'Welders')
     showRange(view.container, 'All')
-    expect(summaryValues(view.container)).toEqual(['45', '1,751', '11', '0.63%'])
+    expect(summaryValues(view.container)).toEqual(['45', '1,751', '11', '99.37%'])
   })
 
   it('names the minimum and the people below it', () => {
@@ -345,10 +346,21 @@ describe('PerformanceDashboard summary strip', () => {
   it('says the totals cover the whole group', () => {
     view = draw()
     expect(cardDetail(view.container, 'Finals')).toBe('Whole group, incl. unranked')
-    expect(cardDetail(view.container, 'NCR rate')).toBe('NCRs ÷ finals')
     showGroup(view.container, 'Welders')
     expect(cardDetail(view.container, 'Welds')).toBe('Whole group, incl. unranked')
-    expect(cardDetail(view.container, 'NCR rate')).toBe('NCRs ÷ welds')
+  })
+
+  it('shows the group NCR Pass Rate with no small print', () => {
+    view = draw()
+    const qcrCard = card(view.container, 'NCR Pass Rate')
+    expect(qcrCard?.querySelector('.qaqc-kpi-value')?.textContent).toBe('99.10%')
+    expect(qcrCard?.querySelector('.qaqc-kpi-detail')).toBeNull()
+    expect(qcrCard?.getAttribute('aria-label')).toBe('NCR Pass Rate: 99.10%')
+    showGroup(view.container, 'Welders')
+    const welderCard = card(view.container, 'NCR Pass Rate')
+    expect(welderCard?.querySelector('.qaqc-kpi-value')?.textContent).toBe('99.30%')
+    expect(welderCard?.querySelector('.qaqc-kpi-detail')).toBeNull()
+    expect(welderCard?.getAttribute('aria-label')).toBe('NCR Pass Rate: 99.30%')
   })
 
   it('moves the period with the week picker', () => {
@@ -434,7 +446,7 @@ describe('PerformanceDashboard person page', () => {
     view = draw()
     click(nameButton(view.container, 'QCR 02'))
     const values = [...(dialog(view.container)?.querySelectorAll('.qaqc-kpi-group.is-period .qaqc-kpi-value') ?? [])].map((node) => node.textContent)
-    expect(values).toEqual(['65', '2', '3.08%'])
+    expect(values).toEqual(['65', '2', '96.92%'])
   })
 
   it('names the person chart with its weeks when chart summaries are on', () => {
@@ -442,7 +454,7 @@ describe('PerformanceDashboard person page', () => {
     view = draw()
     click(nameButton(view.container, 'QCR 02'))
     expect(dialog(view.container)?.querySelector('.qaqc-perf-chart')?.getAttribute('aria-label')).toBe(
-      "Finals and NCRs by work week, with the running NCR rate, WW13'2026 to WW42'2026",
+      "Finals and NCRs by work week, with the Running NCR Pass Rate, WW13'2026 to WW42'2026",
     )
   })
 
@@ -451,7 +463,7 @@ describe('PerformanceDashboard person page', () => {
     view = draw({ describeCharts: false })
     click(nameButton(view.container, 'QCR 02'))
     expect(dialog(view.container)?.querySelector('.qaqc-perf-chart')?.getAttribute('aria-label')).toBe(
-      'Finals and NCRs by work week, with the running NCR rate',
+      'Finals and NCRs by work week, with the Running NCR Pass Rate',
     )
   })
 
@@ -539,7 +551,7 @@ describe('PerformanceDashboard layout', () => {
     const root = view.container.querySelector('.qaqc-root')
     expect(root?.classList.contains('is-cards-only')).toBe(true)
     expect(root?.classList.contains('is-compact')).toBe(true)
-    expect(summaryValues(view.container)).toEqual(['6', '221', '2', '0.90%'])
+    expect(summaryValues(view.container)).toEqual(['6', '221', '2', '99.10%'])
   })
 
   it('shows the loading bar', () => {
@@ -593,5 +605,361 @@ describe('PerformanceDashboard compact strip', () => {
     const body = ruleBody('.qaqc-root.is-compact .qaqc-perf-summary .qaqc-kpi-group-body')
     expect(body).toContain('grid-auto-flow: row;')
     expect(body).toContain('grid-template-columns: repeat(2, minmax(0, 1fr));')
+  })
+})
+
+describe('PerformanceDashboard filters', () => {
+  const BASE = COMBINED_COLUMNS.length
+  const FILTER_COLUMNS: CombinedColumns = { ...COLUMNS, generalContractor: BASE, discipline: BASE + 1, pipeSpec: BASE + 2, fluidCode: BASE + 3 }
+  const TAG_F631 = 'P4-F631XX001-1'
+  const TAG_F632 = 'P4-F632XX001-1'
+
+  interface RowValues {
+    source?: 'Electrical' | 'Mechanical' | 'Welding'
+    week: number
+    phase?: string
+    issue?: string
+    building?: string
+    qcr?: string
+    welder?: string
+    tag?: string
+    contractor?: string
+    discipline?: string
+    pipeSpec?: string
+    fluidCode?: string
+  }
+
+  function makeRow(values: RowValues): Array<string | null> {
+    const row = new Array<string | null>(BASE + 4).fill(null)
+    row[COLUMNS.source] = values.source ?? 'Electrical'
+    row[COLUMNS.workWeek] = `WW${String(values.week).padStart(2, '0')}'2026`
+    row[COLUMNS.phase] = values.phase ?? (values.source === 'Welding' ? null : 'Final')
+    row[COLUMNS.issue] = values.issue ?? (values.source === 'Welding' ? 'No' : 'No Issue Found')
+    row[COLUMNS.building] = values.building ?? null
+    row[COLUMNS.qcr] = values.qcr ?? null
+    row[COLUMNS.welder] = values.welder ?? null
+    row[COLUMNS.tagNo] = values.tag ?? null
+    row[BASE] = values.contractor ?? null
+    row[BASE + 1] = values.discipline ?? null
+    row[BASE + 2] = values.pipeSpec ?? null
+    row[BASE + 3] = values.fluidCode ?? null
+    return row
+  }
+
+  function repeat(count: number, values: RowValues, issues = 0): Array<Array<string | null>> {
+    return Array.from({ length: count }, (_, item) => makeRow(item < issues ? { ...values, issue: values.source === 'Welding' ? `BIM ${item}` : `Defect ${values.week}.${item}` } : values))
+  }
+
+  const GREYFOX = { contractor: 'Greyfox', discipline: 'Electrical', building: 'F63.1' }
+  const BAYSIDE = { contractor: 'Bayside', discipline: 'Controls', building: 'F63.2' }
+  const WELD_F631 = { source: 'Welding', tag: TAG_F631, pipeSpec: 'PCH', fluidCode: 'AW' } as const
+  const WELD_F632 = { source: 'Welding', tag: TAG_F632, pipeSpec: 'PEH', fluidCode: 'CWS' } as const
+
+  const ROWS = [
+    ...repeat(6, { ...GREYFOX, week: 40, qcr: 'QCR 01' }, 1),
+    ...repeat(4, { ...BAYSIDE, week: 41, qcr: 'QCR 01' }, 2),
+    ...repeat(6, { ...BAYSIDE, week: 41, qcr: 'QCR 02' }),
+    ...repeat(6, { ...GREYFOX, source: 'Mechanical', week: 42, qcr: 'QCR 03' }, 3),
+    ...repeat(3, { ...GREYFOX, source: 'Mechanical', week: 42, qcr: 'N/A' }, 1),
+    ...repeat(2, { ...BAYSIDE, week: 42, qcr: 'QCR 02', phase: 'SOR' }),
+    ...repeat(1, { ...GREYFOX, week: 2, qcr: 'QCR 01' }),
+    ...repeat(12, { ...WELD_F631, week: 41, welder: 'Welder 001' }, 2),
+    ...repeat(11, { ...WELD_F632, week: 42, welder: 'Welder 002' }, 1),
+    ...repeat(2, { ...WELD_F632, week: 42, welder: 'N/A' }),
+  ]
+  const BOUND_INDEX = buildPerformanceIndex(splitCombinedRows(ROWS, FILTER_COLUMNS.source), FILTER_COLUMNS, TODAY)
+
+  function drawFiltered(overrides: Partial<PerformanceDashboardProps> = {}): HTMLElement {
+    stubSize()
+    view = draw({ index: BOUND_INDEX, ...overrides })
+    return view.container
+  }
+
+  function menuFields(container: HTMLElement): string[] {
+    return [...container.querySelectorAll('.qaqc-filter-section-toggle span:first-of-type')].map((node) => node.textContent ?? '')
+  }
+
+  function tick(container: HTMLElement, section: string, value: string): void {
+    const toggle = [...container.querySelectorAll('.qaqc-filter-section-toggle')].find((button) => button.textContent?.startsWith(section))
+    if (!toggle) throw new Error(`section ${section} missing`)
+    if (toggle.getAttribute('aria-expanded') !== 'true') toggleSection(container, section)
+    click(checkbox(container, value))
+  }
+
+  function setRange(container: HTMLElement, from: number, to: number): void {
+    const [fromSelect, toSelect] = container.querySelectorAll<HTMLSelectElement>('.qaqc-filter-date select')
+    choose(fromSelect, from)
+    choose(toSelect, to)
+  }
+
+  function periodCards(container: HTMLElement): Array<string | null> {
+    return [...(dialog(container)?.querySelectorAll('.qaqc-kpi-group.is-period .qaqc-kpi-value') ?? [])].map((node) => node.textContent)
+  }
+
+  function allTimeCards(container: HTMLElement): Array<string | null> {
+    return [...(dialog(container)?.querySelectorAll('.qaqc-kpi-group.is-toDate .qaqc-kpi-value') ?? [])].map((node) => node.textContent)
+  }
+
+  function trendSentence(container: HTMLElement, name: string): string | null {
+    return rowNamed(container, name).querySelector('.qaqc-perf-trend-cell .qaqc-visually-hidden')?.textContent ?? null
+  }
+
+  function trendBars(container: HTMLElement, name: string): number {
+    return rowNamed(container, name).querySelectorAll('.qaqc-perf-trend-bar').length
+  }
+
+  it('the QCR / FE group offers Contractor, Building and Discipline', () => {
+    const container = drawFiltered()
+    openMenu(container)
+    expect(menuFields(container)).toEqual(['Contractor', 'Building', 'Discipline'])
+    expect(container.querySelector('.qaqc-filter-date')).not.toBeNull()
+  })
+
+  it('the Welders group offers Building, Pipe Spec and Fluid Code', () => {
+    const container = drawFiltered()
+    showGroup(container, 'Welders')
+    openMenu(container)
+    expect(menuFields(container)).toEqual(['Building', 'Pipe Spec', 'Fluid Code'])
+  })
+
+  it('offers Date range and Building with no new slot bound', () => {
+    const container = drawFiltered({ index: INDEX })
+    openMenu(container)
+    expect(menuFields(container)).toEqual(['Building'])
+    expect(container.querySelector('.qaqc-filter-date')).not.toBeNull()
+  })
+
+  it('counts Showing over the group on screen, keeping unreadable and future rows in Y', () => {
+    const rows = [...ROWS, makeRow({ ...GREYFOX, week: 50, qcr: 'QCR 01' }), makeRow({ source: 'Welding', week: 50, tag: TAG_F631, welder: 'Welder 001' })]
+    const container = drawFiltered({ index: buildPerformanceIndex(splitCombinedRows(rows, FILTER_COLUMNS.source), FILTER_COLUMNS, TODAY) })
+    openMenu(container)
+    // Every Electrical and Mechanical row, SORs and the future row included.
+    expect(showing(container)).toBe('Showing 29 of 29 rows')
+    tick(container, 'Contractor', 'Bayside')
+    expect(showing(container)).toBe('Showing 12 of 29 rows')
+    click(filterButton(container))
+    showGroup(container, 'Welders')
+    openMenu(container)
+    expect(showing(container)).toBe('Showing 26 of 26 rows')
+  })
+
+  it('narrows the ranking, the cards and the table to the matching rows', () => {
+    const container = drawFiltered()
+    openMenu(container)
+    tick(container, 'Contractor', 'Bayside')
+    expect(summaryValues(container)).toEqual(['1', '10', '2', '80.00%'])
+    expect(rankedNames(container)).toEqual(['QCR 02'])
+    expect(cardDetail(container, 'QCR/FE ranked')).toBe('Minimum 5 finals · 1 below')
+    expect(chipTexts(container)).toEqual(['Contractor: Bayside'])
+  })
+
+  it('switching groups keeps the other group\'s selection without applying it', () => {
+    const container = drawFiltered()
+    openMenu(container)
+    tick(container, 'Contractor', 'Bayside')
+    tick(container, 'Discipline', 'Controls')
+    click(filterButton(container))
+    expect(chipTexts(container)).toEqual(['Contractor: Bayside', 'Discipline: Controls'])
+
+    showGroup(container, 'Welders')
+    expect(chipTexts(container)).toEqual([])
+    expect(filterButton(container).querySelector('.qaqc-filter-badge')).toBeNull()
+    expect(summaryValues(container)).toEqual(['2', '25', '3', '88.00%'])
+
+    openMenu(container)
+    tick(container, 'Pipe Spec', 'PCH')
+    click(filterButton(container))
+    expect(chipTexts(container)).toEqual(['Pipe Spec: PCH'])
+    expect(summaryValues(container)).toEqual(['1', '12', '2', '83.33%'])
+
+    showGroup(container, 'QCR / FE')
+    expect(chipTexts(container)).toEqual(['Contractor: Bayside', 'Discipline: Controls'])
+    expect(summaryValues(container)).toEqual(['1', '10', '2', '80.00%'])
+
+    showGroup(container, 'Welders')
+    expect(chipTexts(container)).toEqual(['Pipe Spec: PCH'])
+    expect(summaryValues(container)).toEqual(['1', '12', '2', '83.33%'])
+  })
+
+  it('applies a Building ticked on one group to the other, spelled as that group spells it', () => {
+    const container = drawFiltered()
+    openMenu(container)
+    tick(container, 'Building', 'F63.1')
+    click(filterButton(container))
+    expect(chipTexts(container)).toEqual(['Building: F63.1'])
+    showGroup(container, 'Welders')
+    expect(chipTexts(container)).toEqual(['Building: F631'])
+    expect(rankedNames(container)).toEqual(['Welder 001'])
+  })
+
+  it('a date range replaces the period: ranks, cards and trend use it, and 30 WW | All is disabled', () => {
+    const container = drawFiltered()
+    expect(toggleButton(container, 'Ranking period', '30 WW').disabled).toBe(false)
+    openMenu(container)
+    setRange(container, 202640, 202641)
+    click(filterButton(container))
+
+    expect(toggleButton(container, 'Ranking period', '30 WW').disabled).toBe(true)
+    expect(toggleButton(container, 'Ranking period', 'All').disabled).toBe(true)
+    expect(summaryHead(container)).toEqual(['QCR / FE', "WW40'2026 to WW41'2026"])
+    expect(summaryValues(container)).toEqual(['2', '16', '3', '81.25%'])
+    expect(rankedNames(container)).toEqual(['QCR 01', 'QCR 02'])
+    expect(trendBars(container, 'QCR 01')).toBe(2)
+    expect(trendSentence(container, 'QCR 01')).toContain('2 of the last 2 weeks')
+    expect([...container.querySelectorAll<HTMLOptionElement>('.qaqc-header select option')].map((node) => node.textContent))
+      .toEqual(["WW41'2026", "WW40'2026"])
+    expect(chipTexts(container)).toEqual(["Date range: WW40'2026 to WW41'2026"])
+  })
+
+  it('draws every week of a range longer than 30 weeks', () => {
+    const container = drawFiltered()
+    openMenu(container)
+    setRange(container, 202603, 202642)
+    expect(trendSentence(container, 'QCR 01')).toContain('of the last 40 weeks')
+    expect(trendBars(container, 'QCR 01')).toBe(2)
+  })
+
+  it('Minimum finals applies inside the filtered period', () => {
+    const container = drawFiltered()
+    expect(rankedNames(container)).toEqual(['QCR 03', 'QCR 01', 'QCR 02'])
+    openMenu(container)
+    tick(container, 'Contractor', 'Bayside')
+    expect(rankedNames(container)).toEqual(['QCR 02'])
+    expect(cardDetail(container, 'QCR/FE ranked')).toBe('Minimum 5 finals · 1 below')
+    click(filterButton(container))
+    click(disclosure(container))
+    expect(rowNamed(container, 'QCR 01').classList.contains('is-below')).toBe(true)
+  })
+
+  it('Minimum welds applies inside the filtered period', () => {
+    const container = drawFiltered({ minimumWelds: 12 })
+    showGroup(container, 'Welders')
+    expect(rankedNames(container)).toEqual(['Welder 001'])
+    openMenu(container)
+    setRange(container, 202642, 202642)
+    expect(rankedNames(container)).toEqual([])
+    expect(cardDetail(container, 'Welders ranked')).toBe('Minimum 12 welds · 1 below')
+  })
+
+  it('restates the Not recorded row and its note', () => {
+    const container = drawFiltered()
+    expect(footnotes(container)).toContain('3 finals have no QCR/FE')
+    openMenu(container)
+    tick(container, 'Contractor', 'Bayside')
+    expect(container.querySelector('tr.qaqc-perf-row.is-not-recorded')).toBeNull()
+    expect(footnotes(container).some((note) => note.includes('no QCR/FE'))).toBe(false)
+  })
+
+  it('the person page restates its This period cards and chart, and All time stays all time', () => {
+    const container = drawFiltered()
+    openMenu(container)
+    tick(container, 'Contractor', 'Greyfox')
+    setRange(container, 202640, 202641)
+    click(filterButton(container))
+    click(nameButton(container, 'QCR 01'))
+
+    const heads = [...(dialog(container)?.querySelectorAll('.qaqc-kpi-group-head') ?? [])].map((head) => head.textContent ?? '')
+    expect(heads).toEqual(["This periodWW40'2026 to WW41'2026", "All timeWW02'2026 to WW42'2026"])
+    expect(periodCards(container)).toEqual(['6', '1', '83.33%'])
+    expect(allTimeCards(container)).toEqual(['11', '3', '72.73%'])
+    expect(dialog(container)?.querySelector('.qaqc-perf-chart')?.getAttribute('aria-label')).toContain("WW40'2026 to WW41'2026")
+    const ncrs = [...(dialog(container)?.querySelectorAll<HTMLTableRowElement>('.qaqc-perf-ncr-table tbody tr[aria-rowindex]') ?? [])]
+    expect(ncrs.map((row) => row.cells[3].textContent)).toEqual(['Defect 40.0'])
+  })
+
+  it('the person page keeps its rows when a person has no NCRs under the filter', () => {
+    const container = drawFiltered()
+    openMenu(container)
+    tick(container, 'Contractor', 'Bayside')
+    click(filterButton(container))
+    click(nameButton(container, 'QCR 02'))
+    expect(periodCards(container)).toEqual(['6', '0', '100.00%'])
+    expect(dialog(container)?.querySelector('.qaqc-perf-person-empty strong')?.textContent).toBe('No NCRs in this period')
+  })
+
+  it('shows the shared empty state when a filter matches no rows, and Clear filters brings the data back', () => {
+    const container = drawFiltered()
+    openMenu(container)
+    tick(container, 'Contractor', 'Bayside')
+    tick(container, 'Building', 'F63.1')
+    click(filterButton(container))
+    const empty = container.querySelector('.qaqc-filter-empty')
+    expect(empty?.querySelector('p')?.textContent).toContain('There are no finals with this combination')
+    expect(container.querySelector('.qaqc-perf-summary')).toBeNull()
+    expect(container.querySelector('.qaqc-perf-table, .qaqc-perf-empty-state')).toBeNull()
+
+    click(buttonNamed(container, 'Clear filters'))
+    expect(container.querySelector('.qaqc-filter-empty')).toBeNull()
+    expect(summaryValues(container)).toEqual(['3', '25', '7', '72.00%'])
+    expect(document.activeElement).toBe(filterButton(container))
+  })
+
+  it('shows the shared empty state when a date range holds no rows', () => {
+    const container = drawFiltered()
+    openMenu(container)
+    setRange(container, 202610, 202612)
+    click(filterButton(container))
+    expect(container.querySelector('.qaqc-filter-empty p')?.textContent).toContain('There are no finals in this date range')
+    showGroup(container, 'Welders')
+    expect(container.querySelector('.qaqc-filter-empty p')?.textContent).toContain('There are no welds in this date range')
+  })
+
+  it('says switch to All, not no match, when the matching rows are outside the 30 WW', () => {
+    const rows = [...ROWS, ...repeat(2, { contractor: 'Larch', building: 'F63.1', discipline: 'Electrical', week: 2, qcr: 'QCR 09' })]
+    const container = drawFiltered({ index: buildPerformanceIndex(splitCombinedRows(rows, FILTER_COLUMNS.source), FILTER_COLUMNS, TODAY) })
+    openMenu(container)
+    tick(container, 'Contractor', 'Larch')
+    click(filterButton(container))
+    expect(container.querySelector('.qaqc-filter-empty')).toBeNull()
+    expect(container.querySelector('.qaqc-perf-empty-state span')?.textContent).toContain('choose All')
+    showRange(container, 'All')
+    expect(rankedNames(container)).toEqual([])
+    expect(summaryValues(container)).toEqual(['0', '2', '0', '100.00%'])
+  })
+
+  it('keeps the shared empty state on a cards-only tile', () => {
+    const container = drawFiltered({ viewport: { width: 1340, height: 300 } })
+    openMenu(container)
+    setRange(container, 202610, 202612)
+    click(filterButton(container))
+    expect(container.querySelector('.qaqc-filter-empty')).not.toBeNull()
+    expect(container.querySelector('.qaqc-perf-summary')).toBeNull()
+  })
+
+  it('restates the skipped note to the matching rows and keeps the row limit over every row', () => {
+    const unreadable = (contractor: string): Array<string | null> => {
+      const row = makeRow({ week: 40, contractor, building: 'F63.1', qcr: 'QCR 01' })
+      row[COLUMNS.workWeek] = 'no week'
+      return row
+    }
+    const rows = [...ROWS, unreadable('Greyfox'), unreadable('Bayside'), unreadable('Bayside')]
+    const container = drawFiltered({ rowLimitReached: true, index: buildPerformanceIndex(splitCombinedRows(rows, FILTER_COLUMNS.source), FILTER_COLUMNS, TODAY) })
+    expect(footnotes(container)[0]).toBe(`Showing the first ${rows.length} rows (Power BI data limit)`)
+    expect(footnotes(container)).toContain('3 rows skipped: unreadable work week')
+    openMenu(container)
+    tick(container, 'Contractor', 'Greyfox')
+    expect(footnotes(container)[0]).toBe(`Showing the first ${rows.length} rows (Power BI data limit)`)
+    expect(footnotes(container)).toContain('1 row skipped: unreadable work week')
+  })
+
+  it('no filter leaves fixtures unchanged', () => {
+    const baseline = draw()
+    const values = summaryValues(baseline.container)
+    const names = rankedNames(baseline.container)
+    const notes = footnotes(baseline.container)
+    baseline.unmount()
+
+    const boundRows = COMBINED_ROWS.map((row, position) => [...row, position % 2 === 0 ? 'Greyfox' : 'Bayside', 'Electrical', 'PCH', 'AW'])
+    const container = drawFiltered({ index: buildPerformanceIndex(splitCombinedRows(boundRows, FILTER_COLUMNS.source), FILTER_COLUMNS, TODAY) })
+    expect(summaryValues(container)).toEqual(values)
+    expect(rankedNames(container)).toEqual(names)
+    expect(footnotes(container)).toEqual(notes)
+    expect(chipTexts(container)).toEqual([])
+    expect(filterButton(container).querySelector('.qaqc-filter-badge')).toBeNull()
+  })
+
+  it('disables the Filter button when interactions are not allowed', () => {
+    const container = drawFiltered({ interactive: false })
+    expect(filterButton(container).disabled).toBe(true)
   })
 })

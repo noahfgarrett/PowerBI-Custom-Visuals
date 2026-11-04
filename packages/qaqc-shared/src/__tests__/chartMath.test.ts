@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { alignedScale, labelIndices, niceScale, ordinalOpacity, round, passRateDomain, roundedRightBarPath, roundedTopBarPath, smoothPath, truncateLabel, yearMarkers } from '../chartMath'
+import { alignedScale, labelIndices, niceScale, ordinalOpacity, percentScale, round, passRateDomain, roundedRightBarPath, roundedTopBarPath, smoothPath, truncateLabel, yearMarkers } from '../chartMath'
 
 describe('niceScale', () => {
   it('rounds the max up to a nice step with integer ticks', () => {
@@ -77,6 +77,25 @@ describe('round', () => {
     expect(round(88.4999)).toBe(88.5)
     expect(round(1 / 3)).toBe(0.33)
     expect(round(-2.005)).toBe(-2)
+  })
+})
+
+describe('percentScale', () => {
+  it('runs from 0 to 100 in the given number of steps', () => {
+    expect(percentScale(4)).toEqual({ max: 100, ticks: [0, 25, 50, 75, 100] })
+    expect(percentScale(2)).toEqual({ max: 100, ticks: [0, 50, 100] })
+    expect(percentScale(1)).toEqual({ max: 100, ticks: [0, 100] })
+  })
+
+  it('ends exactly at 100 when the steps are not whole percents', () => {
+    const { ticks } = percentScale(3)
+    expect(ticks).toHaveLength(4)
+    expect(ticks[1]).toBeCloseTo(100 / 3, 10)
+    expect(ticks[3]).toBe(100)
+  })
+
+  it('treats fewer than one step as one', () => {
+    expect(percentScale(0)).toEqual({ max: 100, ticks: [0, 100] })
   })
 })
 

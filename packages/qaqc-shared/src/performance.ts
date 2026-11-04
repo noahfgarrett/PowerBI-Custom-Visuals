@@ -1,10 +1,14 @@
 import type { CombinedSplit } from './combined'
 import type { CombinedColumns, InspectionPhase, InspectionRows, ViewState, WorkWeek } from './types'
 import { NAME_COLLATOR } from './format'
+import { splitCombinedRows } from './combined'
 import { createNameGrouper, createWeekReader } from './grouping'
+import { inspectionBuildingField } from './inspectionFilters'
 import { cellText, isIssueFound, readPhase, recentWindowStart } from './inspections'
-import { isWeldIssue } from './welds'
-import { enumerateWorkWeeks, toIsoWorkWeek } from './workWeeks'
+import { contractorFilterValue, DEFAULT_CONTRACTOR } from './issues'
+import { cellDisplayText, crossSourceBuildingKey, optionalField, type FilterFieldDef, type Row } from './rowFilters'
+import { chartLabelledField, isWeldIssue, normalizePipeSpec, normalizeSystem, weldBuilding } from './welds'
+import { enumerateWorkWeeks, toIsoWorkWeek, workWeekFromKey } from './workWeeks'
 
 export type PerformanceGroup = 'qcr' | 'welders'
 
@@ -71,6 +75,8 @@ export interface PerformanceFootnotes {
 }
 
 export interface PerformanceIndex {
+  /** The date the index was built for, so a field filter's rebuild reads the same current week. */
+  today: Date
   currentWeek: WorkWeek
   /** From the earliest counted week of either group to the current week, with no gaps. */
   weeks: WorkWeek[]
@@ -100,9 +106,9 @@ export interface PerformanceRow {
   /** Always at least 1: a row exists only when the period has finals or welds for it. */
   volume: number
   ncrs: number
-  /** NCRs ÷ volume as a percentage. */
-  rate: number
-  /** The 30 weeks ending at the period's last week, whatever the range. */
+  /** The NCR Pass Rate: 100% − (NCRs ÷ volume), as a percentage. */
+  passRate: number
+  /** The 30 weeks ending at the period's last week, whatever the range; exactly the weeks of a date range. */
   trend: PerformanceTrendWeek[]
   /** Weeks in `trend` with an NCR. */
   ncrWeeks: number
@@ -113,7 +119,8 @@ export interface PerformanceSummary {
   /** Distinct finals or welds in the period for the whole group, including below minimum and Not recorded. */
   volume: number
   ncrs: number
-  rate: number | null
+  /** Null when the period has no volume. */
+  passRate: number | null
 }
 
 export interface PerformanceWindow {
@@ -125,7 +132,7 @@ export interface PerformanceWindow {
 export interface PerformanceModel {
   group: PerformanceGroup
   summary: PerformanceSummary
-  /** Volume at or above the minimum: NCR rate descending, then NCRs descending, then name. */
+  /** Volume at or above the minimum: lowest NCR Pass Rate first, then NCRs descending, then name. */
   ranked: PerformanceRow[]
   /** Everyone else with rows in the period: volume descending, then name. */
   belowMinimum: PerformanceRow[]
@@ -142,15 +149,16 @@ export interface PerformanceModel {
 export interface PerformanceTotals {
   volume: number
   ncrs: number
-  rate: number | null
+  /** Null when there is no volume. */
+  passRate: number | null
 }
 
 export interface PersonWeek {
   week: WorkWeek
   volume: number
   ncrs: number
-  /** NCRs ÷ volume from the period's first week through this week, or null before any volume. */
-  runningRate: number | null
+  /** The NCR Pass Rate from the period's first week through this week, or null before any volume. */
+  runningPassRate: number | null
 }
 
 export type PersonNcrSource = 'Electrical' | 'Mechanical' | 'Welding'
@@ -348,12 +356,22 @@ function scanWelds(
   }
 }
 
+export interface PerformanceIndexOptions {
+  /** Starts the week axis no later than this week, so a filtered index keeps every week of the full data. */
+  axisFromKey?: number
+}
+
 /**
  * Per-person week buckets for both groups, built once per data update so the model can rank any period in
  * O(people × weeks). QCR/FE counts Electrical and Mechanical Final rows; welders count every weld.
  * Both skip unreadable and future weeks.
  */
-export function buildPerformanceIndex(split: CombinedSplit, columns: CombinedColumns, today: Date): PerformanceIndex {
+export function buildPerformanceIndex(
+  split: CombinedSplit,
+  columns: CombinedColumns,
+  today: Date,
+  options: PerformanceIndexOptions = {},
+): PerformanceIndex {
   const currentWeek = toIsoWorkWeek(today)
   const scan: WeekScan = { readWeek: createWeekReader(), currentKey: currentWeek.key, firstWeek: currentWeek }
   const qcrPeople = newPeople()
@@ -367,7 +385,9 @@ export function buildPerformanceIndex(split: CombinedSplit, columns: CombinedCol
   scanInspections(split.mechanical, 'mechanical', columns, scan, qcrPeople, inspections, qcrCounts)
   scanWelds(split.welding, columns, scan, welderPeople, welds, welderCounts)
 
-  const weeks = enumerateWorkWeeks(scan.firstWeek, currentWeek)
+  const { axisFromKey } = options
+  const axisStart = axisFromKey !== undefined && axisFromKey < scan.firstWeek.key ? workWeekFromKey(axisFromKey) : scan.firstWeek
+  const weeks = enumerateWorkWeeks(axisStart, currentWeek)
   const positionByKey = new Map<number, number>()
   weeks.forEach((week, position) => positionByKey.set(week.key, position))
   // Every counted week lies between the first counted week and the current week, so the lookups always hit.
@@ -417,6 +437,7 @@ export function buildPerformanceIndex(split: CombinedSplit, columns: CombinedCol
   }
 
   return {
+    today,
     currentWeek,
     weeks,
     positionByKey,
@@ -436,13 +457,72 @@ export function buildPerformanceIndex(split: CombinedSplit, columns: CombinedCol
   }
 }
 
+/**
+ * The Filter menu's fields for a group, in menu order. Only bound slots appear. Both groups' Building is one field, which
+ * groups by `crossSourceBuildingKey`: inspections write `F63.1`, and the welds' value derived from Tag No is `F631`.
+ */
+export function performanceFilterFields(columns: CombinedColumns, group: PerformanceGroup): FilterFieldDef[] {
+  if (group === 'welders') {
+    const pipeSpec = columns.pipeSpec ?? -1
+    const fluidCode = columns.fluidCode ?? -1
+    const building: FilterFieldDef = {
+      id: 'building',
+      label: 'Building',
+      read: (row) => weldBuilding(row[columns.tagNo]),
+      groupBy: crossSourceBuildingKey,
+    }
+    return [
+      ...(columns.tagNo < 0 ? [] : [building]),
+      ...(pipeSpec < 0 ? [] : [chartLabelledField('pipeSpec', 'Pipe Spec', normalizePipeSpec, pipeSpec)]),
+      ...(fluidCode < 0 ? [] : [chartLabelledField('fluidCode', 'Fluid Code', normalizeSystem, fluidCode)]),
+    ]
+  }
+  const generalContractor = columns.generalContractor ?? -1
+  const contractor: FilterFieldDef = {
+    id: 'contractor',
+    label: 'Contractor',
+    read: (row) => contractorFilterValue(cellDisplayText(row[generalContractor])),
+    blankLabel: DEFAULT_CONTRACTOR,
+  }
+  const building: FilterFieldDef = { ...inspectionBuildingField(columns.building), groupBy: crossSourceBuildingKey }
+  return [
+    ...(generalContractor < 0 ? [] : [contractor]),
+    ...(columns.building < 0 ? [] : [building]),
+    ...optionalField('discipline', 'Discipline', columns.discipline ?? -1),
+  ]
+}
+
+/** The rows a group's menu counts and matches, as its index reads them: every Electrical and Mechanical row, or every weld. */
+export function performanceFilterRows(index: PerformanceIndex, group: PerformanceGroup): InspectionRows {
+  return group === 'welders' ? index.sources.welding : [...index.sources.electrical, ...index.sources.mechanical]
+}
+
+/** Reads a row's Work Week the way the index does, for counting rows in a date range. */
+export function performanceRowWeekKey(columns: CombinedColumns): (row: Row) => number | null {
+  const readWeek = createWeekReader()
+  return (row) => readWeek(row[columns.workWeek])?.key ?? null
+}
+
+/**
+ * The index over the rows a field filter left of one group's `performanceFilterRows`, on the base index's weeks. The other
+ * group has no rows in it. The row limit and unknown Source notes still describe every combined row.
+ */
+export function filterPerformanceIndex(base: PerformanceIndex, rows: InspectionRows): PerformanceIndex {
+  const index = buildPerformanceIndex(splitCombinedRows(rows, base.columns.source), base.columns, base.today, { axisFromKey: base.weeks[0].key })
+  const { unknownSource, combinedRows } = base.footnotes
+  return { ...index, footnotes: { ...index.footnotes, unknownSource, combinedRows } }
+}
+
 const SOURCE_LABELS: Record<PerformanceSource, PersonNcrSource> = {
   electrical: 'Electrical',
   mechanical: 'Mechanical',
   welding: 'Welding',
 }
 
-/** Week positions of the period (the range ending at the picked week) and of the 30-week trend ending there. */
+/**
+ * Week positions of the period (the range ending at the picked week) and of the 30-week trend ending there. A date range
+ * replaces both with its own weeks.
+ */
 interface Period {
   start: number
   end: number
@@ -450,6 +530,11 @@ interface Period {
 }
 
 function periodOf(index: PerformanceIndex, view: ViewState): Period {
+  if (view.dateRange !== null) {
+    // The axis has every week from its first to the current one, and the range was clamped to them.
+    const start = index.positionByKey.get(view.dateRange.fromKey) ?? 0
+    return { start, end: index.positionByKey.get(view.dateRange.toKey) ?? index.weeks.length - 1, trendStart: start }
+  }
   const end = index.positionByKey.get(view.windowEndKey) ?? index.weeks.length - 1
   const trendStart = recentWindowStart(end)
   return { start: view.range === 'all' ? 0 : trendStart, end, trendStart }
@@ -461,8 +546,9 @@ function sumRange(values: Int32Array, start: number, end: number): number {
   return sum
 }
 
-function rateOf(ncrs: number, volume: number): number | null {
-  return volume > 0 ? (ncrs / volume) * 100 : null
+/** 100% − (NCRs ÷ volume) as a percentage, or null with no volume. */
+function passRateOf(ncrs: number, volume: number): number | null {
+  return volume > 0 ? ((volume - ncrs) / volume) * 100 : null
 }
 
 function tagsInRange(tagsByWeek: Uint8Array, start: number, end: number): DisciplineTag[] {
@@ -491,7 +577,7 @@ function rowOf(key: string, name: string, weekly: WeeklyBuckets, tagsByWeek: Uin
     tags: tagsByWeek ? tagsInRange(tagsByWeek, period.start, period.end) : [],
     volume,
     ncrs,
-    rate: (ncrs / volume) * 100,
+    passRate: ((volume - ncrs) / volume) * 100,
     trend,
     ncrWeeks,
   }
@@ -502,7 +588,7 @@ function compareNames(a: PerformanceRow, b: PerformanceRow): number {
   return NAME_COLLATOR.compare(a.name, b.name) || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0)
 }
 
-/** NCR rate descending (compared exactly, as fractions), then NCRs descending, then name. */
+/** Lowest NCR Pass Rate first (compared exactly, as NCR fractions: most NCRs per volume first), then NCRs descending, then name. */
 function compareRanked(a: PerformanceRow, b: PerformanceRow): number {
   return b.ncrs * a.volume - a.ncrs * b.volume || b.ncrs - a.ncrs || compareNames(a, b)
 }
@@ -537,16 +623,20 @@ export function buildPerformanceModel(
   const totals = index.totals[group]
   const volume = sumRange(totals.volume, period.start, period.end)
   const ncrs = sumRange(totals.ncrs, period.start, period.end)
+  const isInRange = view.dateRange !== null
+  const knownSelected = index.positionByKey.get(view.selectedKey) ?? period.end
+  const selected = isInRange ? Math.min(Math.max(knownSelected, period.start), period.end) : knownSelected
+  const pickableWeeks = isInRange ? index.weeks.slice(period.start, period.end + 1) : index.weeks
 
   return {
     group,
-    summary: { peopleRanked: ranked.length, volume, ncrs, rate: rateOf(ncrs, volume) },
+    summary: { peopleRanked: ranked.length, volume, ncrs, passRate: passRateOf(ncrs, volume) },
     ranked,
     belowMinimum,
     notRecorded: rowOf(NOT_RECORDED_KEY, NOT_RECORDED_NAME, index.notRecorded[group], null, period),
     sharedWelds: group === 'welders' ? sumRange(index.sharedWelds, period.start, period.end) : 0,
-    weekOptions: [...index.weeks].reverse(),
-    selectedWeek: index.weeks[index.positionByKey.get(view.selectedKey) ?? period.end],
+    weekOptions: [...pickableWeeks].reverse(),
+    selectedWeek: index.weeks[selected],
     window: { first: index.weeks[period.start], last: index.weeks[period.end], weekCount: period.end - period.start + 1 },
   }
 }
@@ -564,12 +654,16 @@ function ncrRowOf(index: PerformanceIndex, ref: NcrRowRef): PersonNcrRow {
   }
 }
 
-/** One person's cards, weekly series and NCR rows for the period, or null when the key isn't in the group. */
+/**
+ * One person's cards, weekly series and NCR rows for the period, or null when the key isn't in the group. `allTimeIndex`
+ * is the index over every row, which All time reads while `index` is a filtered one.
+ */
 export function buildPersonDetail(
   index: PerformanceIndex,
   group: PerformanceGroup,
   key: string,
   view: ViewState,
+  allTimeIndex: PerformanceIndex = index,
 ): PersonDetail | null {
   const person = index[group].find((candidate) => candidate.key === key)
   if (!person) return null
@@ -582,12 +676,14 @@ export function buildPersonDetail(
   for (let position = period.start; position <= period.end; position += 1) {
     runningVolume += volume[position]
     runningNcrs += ncrs[position]
-    weeks.push({ week: index.weeks[position], volume: volume[position], ncrs: ncrs[position], runningRate: rateOf(runningNcrs, runningVolume) })
+    weeks.push({ week: index.weeks[position], volume: volume[position], ncrs: ncrs[position], runningPassRate: passRateOf(runningNcrs, runningVolume) })
   }
 
-  const last = index.weeks.length - 1
-  const allTimeVolume = sumRange(volume, 0, last)
-  const allTimeNcrs = sumRange(ncrs, 0, last)
+  // A filtered index holds only rows of the index over every row, so the person is always in it.
+  const allTimeWeekly = allTimeIndex[group].find((candidate) => candidate.key === key)?.weekly ?? person.weekly
+  const last = allTimeIndex.weeks.length - 1
+  const allTimeVolume = sumRange(allTimeWeekly.volume, 0, last)
+  const allTimeNcrs = sumRange(allTimeWeekly.ncrs, 0, last)
   const firstKey = index.weeks[period.start].key
   const lastKey = index.weeks[period.end].key
 
@@ -596,8 +692,8 @@ export function buildPersonDetail(
     name: person.name,
     group,
     tags: person.tagsByWeek ? tagsInRange(person.tagsByWeek, period.start, period.end) : [],
-    period: { volume: runningVolume, ncrs: runningNcrs, rate: rateOf(runningNcrs, runningVolume) },
-    allTime: { volume: allTimeVolume, ncrs: allTimeNcrs, rate: rateOf(allTimeNcrs, allTimeVolume) },
+    period: { volume: runningVolume, ncrs: runningNcrs, passRate: passRateOf(runningNcrs, runningVolume) },
+    allTime: { volume: allTimeVolume, ncrs: allTimeNcrs, passRate: passRateOf(allTimeNcrs, allTimeVolume) },
     weeks,
     ncrRows: person.ncrRows
       .filter((ref) => ref.weekKey >= firstKey && ref.weekKey <= lastKey)

@@ -43,7 +43,7 @@ const index = buildPerformanceIndex(split, COLUMNS, TODAY)
 
 function model(group: 'qcr' | 'welders', range: RangeMode): PerformanceModel {
   const minimum = group === 'qcr' ? QCR_MINIMUM : WELDER_MINIMUM
-  return buildPerformanceModel(index, { selectedKey: CURRENT, windowEndKey: CURRENT, range }, group, minimum)
+  return buildPerformanceModel(index, { selectedKey: CURRENT, windowEndKey: CURRENT, range, dateRange: null }, group, minimum)
 }
 
 function percent(value: number | null): string {
@@ -51,11 +51,11 @@ function percent(value: number | null): string {
 }
 
 function qcrTable(rows: PerformanceRow[]): Array<[string, string, number, number, string]> {
-  return rows.map((row) => [row.name, row.tags.join('/'), row.volume, row.ncrs, percent(row.rate)])
+  return rows.map((row) => [row.name, row.tags.join('/'), row.volume, row.ncrs, percent(row.passRate)])
 }
 
 function welderTable(rows: PerformanceRow[]): Array<[string, number, number, string]> {
-  return rows.map((row) => [row.name, row.volume, row.ncrs, percent(row.rate)])
+  return rows.map((row) => [row.name, row.volume, row.ncrs, percent(row.passRate)])
 }
 
 function sums(rows: PerformanceRow[]): { people: number; volume: number; ncrs: number } {
@@ -66,9 +66,9 @@ function sums(rows: PerformanceRow[]): { people: number; volume: number; ncrs: n
   }
 }
 
-function rankedOnlyRate(rows: PerformanceRow[]): string {
+function rankedOnlyPassRate(rows: PerformanceRow[]): string {
   const { volume, ncrs } = sums(rows)
-  return percent((ncrs / volume) * 100)
+  return percent(((volume - ncrs) / volume) * 100)
 }
 
 /** Final rows of one source whose QCR/FE is Not recorded. */
@@ -130,12 +130,12 @@ describe('QAQC Performance fixture: QCR / FE, minimum finals 5', () => {
   it('ranks the 30 WW period WW13 to WW42', () => {
     expect([recent.window.first.label, recent.window.last.label]).toEqual(["WW13'2026", "WW42'2026"])
     expect(qcrTable(recent.ranked)).toEqual([
-      ['QCR 02', 'E', 65, 2, '3.08%'],
-      ['QCR 01', 'E', 94, 0, '0.00%'],
-      ['QCR 04', 'E', 22, 0, '0.00%'],
-      ['QCR 05', 'M', 12, 0, '0.00%'],
-      ['QCR 06', 'M', 13, 0, '0.00%'],
-      ['QCR 07', 'M', 5, 0, '0.00%'],
+      ['QCR 02', 'E', 65, 2, '96.92%'],
+      ['QCR 01', 'E', 94, 0, '100.00%'],
+      ['QCR 04', 'E', 22, 0, '100.00%'],
+      ['QCR 05', 'M', 12, 0, '100.00%'],
+      ['QCR 06', 'M', 13, 0, '100.00%'],
+      ['QCR 07', 'M', 5, 0, '100.00%'],
     ])
   })
 
@@ -151,13 +151,13 @@ describe('QAQC Performance fixture: QCR / FE, minimum finals 5', () => {
   it('ranks the All period from WW51 2025', () => {
     expect([all.window.first.label, all.window.last.label]).toEqual(["WW51'2025", "WW42'2026"])
     expect(qcrTable(all.ranked)).toEqual([
-      ['QCR 02', 'E', 70, 2, '2.86%'],
-      ['QCR 01', 'E', 94, 0, '0.00%'],
-      ['QCR 03', 'E', 39, 0, '0.00%'],
-      ['QCR 04', 'E', 31, 0, '0.00%'],
-      ['QCR 05', 'M', 12, 0, '0.00%'],
-      ['QCR 06', 'M', 14, 0, '0.00%'],
-      ['QCR 07', 'M', 5, 0, '0.00%'],
+      ['QCR 02', 'E', 70, 2, '97.14%'],
+      ['QCR 01', 'E', 94, 0, '100.00%'],
+      ['QCR 03', 'E', 39, 0, '100.00%'],
+      ['QCR 04', 'E', 31, 0, '100.00%'],
+      ['QCR 05', 'M', 12, 0, '100.00%'],
+      ['QCR 06', 'M', 14, 0, '100.00%'],
+      ['QCR 07', 'M', 5, 0, '100.00%'],
     ])
   })
 
@@ -187,13 +187,13 @@ describe('QAQC Performance fixture: QCR / FE, minimum finals 5', () => {
   })
 
   it('totals the summary strip over the whole group', () => {
-    expect([recent.summary.peopleRanked, recent.summary.volume, recent.summary.ncrs, percent(recent.summary.rate)]).toEqual([6, 221, 2, '0.90%'])
-    expect([all.summary.peopleRanked, all.summary.volume, all.summary.ncrs, percent(all.summary.rate)]).toEqual([7, 282, 3, '1.06%'])
+    expect([recent.summary.peopleRanked, recent.summary.volume, recent.summary.ncrs, percent(recent.summary.passRate)]).toEqual([6, 221, 2, '99.10%'])
+    expect([all.summary.peopleRanked, all.summary.volume, all.summary.ncrs, percent(all.summary.passRate)]).toEqual([7, 282, 3, '98.94%'])
   })
 
   it('matches the bracketed ranked-only sums', () => {
-    expect([sums(recent.ranked).volume, sums(recent.ranked).ncrs, rankedOnlyRate(recent.ranked)]).toEqual([211, 2, '0.95%'])
-    expect([sums(all.ranked).volume, sums(all.ranked).ncrs, rankedOnlyRate(all.ranked)]).toEqual([265, 2, '0.75%'])
+    expect([sums(recent.ranked).volume, sums(recent.ranked).ncrs, rankedOnlyPassRate(recent.ranked)]).toEqual([211, 2, '99.05%'])
+    expect([sums(all.ranked).volume, sums(all.ranked).ncrs, rankedOnlyPassRate(all.ranked)]).toEqual([265, 2, '99.25%'])
   })
 })
 
@@ -203,31 +203,31 @@ describe('QAQC Performance fixture: welders, minimum welds 10', () => {
 
   it('ranks the 30 WW top 10', () => {
     expect(welderTable(recent.ranked.slice(0, 10))).toEqual([
-      ['Welder 024', 22, 3, '13.64%'],
-      ['Welder 028', 22, 2, '9.09%'],
-      ['Welder 043', 12, 1, '8.33%'],
-      ['Welder 016', 41, 2, '4.88%'],
-      ['Welder 020', 29, 1, '3.45%'],
-      ['Welder 019', 30, 1, '3.33%'],
-      ['Welder 006', 72, 1, '1.39%'],
-      ['Welder 001', 165, 0, '0.00%'],
-      ['Welder 002', 111, 0, '0.00%'],
-      ['Welder 003', 102, 0, '0.00%'],
+      ['Welder 024', 22, 3, '86.36%'],
+      ['Welder 028', 22, 2, '90.91%'],
+      ['Welder 043', 12, 1, '91.67%'],
+      ['Welder 016', 41, 2, '95.12%'],
+      ['Welder 020', 29, 1, '96.55%'],
+      ['Welder 019', 30, 1, '96.67%'],
+      ['Welder 006', 72, 1, '98.61%'],
+      ['Welder 001', 165, 0, '100.00%'],
+      ['Welder 002', 111, 0, '100.00%'],
+      ['Welder 003', 102, 0, '100.00%'],
     ])
   })
 
   it('ranks the All top 10', () => {
     expect(welderTable(all.ranked.slice(0, 10))).toEqual([
-      ['Welder 024', 27, 3, '11.11%'],
-      ['Welder 028', 22, 2, '9.09%'],
-      ['Welder 043', 12, 1, '8.33%'],
-      ['Welder 016', 41, 2, '4.88%'],
-      ['Welder 020', 29, 1, '3.45%'],
-      ['Welder 019', 30, 1, '3.33%'],
-      ['Welder 006', 72, 1, '1.39%'],
-      ['Welder 001', 179, 0, '0.00%'],
-      ['Welder 002', 111, 0, '0.00%'],
-      ['Welder 003', 102, 0, '0.00%'],
+      ['Welder 024', 27, 3, '88.89%'],
+      ['Welder 028', 22, 2, '90.91%'],
+      ['Welder 043', 12, 1, '91.67%'],
+      ['Welder 016', 41, 2, '95.12%'],
+      ['Welder 020', 29, 1, '96.55%'],
+      ['Welder 019', 30, 1, '96.67%'],
+      ['Welder 006', 72, 1, '98.61%'],
+      ['Welder 001', 179, 0, '100.00%'],
+      ['Welder 002', 111, 0, '100.00%'],
+      ['Welder 003', 102, 0, '100.00%'],
     ])
   })
 
@@ -255,12 +255,12 @@ describe('QAQC Performance fixture: welders, minimum welds 10', () => {
   })
 
   it('totals the summary strip over distinct welds', () => {
-    expect([recent.summary.peopleRanked, recent.summary.volume, recent.summary.ncrs, percent(recent.summary.rate)]).toEqual([38, 1570, 11, '0.70%'])
-    expect([all.summary.peopleRanked, all.summary.volume, all.summary.ncrs, percent(all.summary.rate)]).toEqual([45, 1751, 11, '0.63%'])
+    expect([recent.summary.peopleRanked, recent.summary.volume, recent.summary.ncrs, percent(recent.summary.passRate)]).toEqual([38, 1570, 11, '99.30%'])
+    expect([all.summary.peopleRanked, all.summary.volume, all.summary.ncrs, percent(all.summary.passRate)]).toEqual([45, 1751, 11, '99.37%'])
   })
 
   it('matches the bracketed ranked-only credited sums', () => {
-    expect([sums(recent.ranked).volume, sums(recent.ranked).ncrs, rankedOnlyRate(recent.ranked)]).toEqual([1542, 11, '0.71%'])
-    expect([sums(all.ranked).volume, sums(all.ranked).ncrs, rankedOnlyRate(all.ranked)]).toEqual([1762, 11, '0.62%'])
+    expect([sums(recent.ranked).volume, sums(recent.ranked).ncrs, rankedOnlyPassRate(recent.ranked)]).toEqual([1542, 11, '99.29%'])
+    expect([sums(all.ranked).volume, sums(all.ranked).ncrs, rankedOnlyPassRate(all.ranked)]).toEqual([1762, 11, '99.38%'])
   })
 })

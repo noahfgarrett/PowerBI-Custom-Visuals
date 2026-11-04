@@ -46,7 +46,7 @@ const ROWS: Cell[][] = [
 const index = buildWeldIndex(ROWS, COLUMNS, TODAY)
 
 function viewAt(key: number): ViewState {
-  return { selectedKey: key, windowEndKey: key, range: 'recent' }
+  return { selectedKey: key, windowEndKey: key, range: 'recent', dateRange: null }
 }
 
 describe('buildWeldModel cards', () => {
@@ -109,7 +109,7 @@ describe('buildWeldModel cards', () => {
   })
 
   it('falls back to the current week for unknown view keys', () => {
-    const model = buildWeldModel(index, { selectedKey: 199901, windowEndKey: 199901, range: 'recent' }, null, 1)
+    const model = buildWeldModel(index, { selectedKey: 199901, windowEndKey: 199901, range: 'recent', dateRange: null }, null, 1)
     expect(model.selectedWeek.label).toBe(WW42)
   })
 
@@ -155,7 +155,7 @@ describe('buildWeldModel window', () => {
   it('moves the window with the window end while the selection stays', () => {
     const model = buildWeldModel(
       longIndex,
-      { selectedKey: 202642, windowEndKey: 202625, range: 'recent' },
+      { selectedKey: 202642, windowEndKey: 202625, range: 'recent', dateRange: null },
       null,
       1,
     )
@@ -279,5 +279,96 @@ describe('buildWeldModel buildings', () => {
 
   it('has no Other when every building meets the minimum', () => {
     expect(buildWeldModel(index, defaultViewState(index), null, 1).otherBuildings).toBeNull()
+  })
+})
+
+describe('buildWeldModel in a date range', () => {
+  // WW38: 2 welds, 1 signed, 1 issue. WW39: none. WW40: 3 welds, 2 signed, 1 issue. WW41: 1 weld, signed. WW42: none.
+  const RANGE_ROWS: Cell[][] = [
+    weld("WW38'2026", "WW38'2026", 'AW', 'PCH', F631),
+    weld("WW38'2026", null, 'CWS', 'PCH', BK1, 'BIM 1'),
+    weld("WW40'2026", "WW41'2026", 'AW', 'PCH', F631, 'BIM 2'),
+    weld("WW40'2026", "WW40'2026", 'IW', 'QCH', F631),
+    weld("WW40'2026", null, 'IW', 'QCH', BK1),
+    weld("WW41'2026", "WW42'2026", 'AW', 'PCH', F631),
+  ]
+  const rangeIndex = buildWeldIndex(RANGE_ROWS, COLUMNS, TODAY)
+
+  function inRange(fromKey: number, toKey: number, selectedKey = toKey): ViewState {
+    return { selectedKey, windowEndKey: toKey, range: 'recent', dateRange: { fromKey, toKey } }
+  }
+
+  it('in range, the to-date cards and weekly charts restate', () => {
+    const model = buildWeldModel(rangeIndex, inRange(202640, 202641), null, 1)
+    expect(model.rangeLabel).toBe("WW40'2026 to WW41'2026")
+    expect(model.window.map((item) => item.week.label)).toEqual([WW40, WW41])
+    expect(model.toDate.total).toBe(4)
+    expect(model.toDate.signed).toBe(3)
+    expect(model.toDate.overallRate).toBe(75)
+    expect(model.toDate.overallRateDeltaPoints).toBeNull()
+    expect(model.windowTotals).toEqual({ welds: 4, signed: 3, issues: 1, weeks: 2 })
+  })
+
+  it('reads Issue Rate by Building over the range', () => {
+    const whole = buildWeldModel(rangeIndex, { ...defaultViewState(rangeIndex), range: 'all' }, null, 1)
+    expect(whole.allBuildings.find((bar) => bar.building === 'BK1')).toMatchObject({ welds: 2, issues: 1, rate: 50 })
+
+    const model = buildWeldModel(rangeIndex, inRange(202640, 202641), null, 1)
+    expect(model.allBuildings).toEqual([
+      { building: 'F631', welds: 3, issues: 1, rate: expect.closeTo(33.333, 3) },
+      { building: 'BK1', welds: 1, issues: 0, rate: 0 },
+    ])
+    expect(model.overallIssueRate).toBe(25)
+  })
+
+  it('reads the systems over the range', () => {
+    const model = buildWeldModel(rangeIndex, inRange(202640, 202641), null, 1)
+    expect(model.allSystems.map((system) => [system.system, system.total, system.signed])).toEqual([['AW', 2, 2], ['IW', 2, 1]])
+    expect(buildWeldModel(rangeIndex, inRange(202640, 202641), 'CWS', 1).drill).toBeNull()
+  })
+
+  it('limits the week options to the range, newest first', () => {
+    const model = buildWeldModel(rangeIndex, inRange(202639, 202641), null, 1)
+    expect(model.weekOptions.map((week) => week.label)).toEqual([WW41, WW40, "WW39'2026"])
+  })
+
+  it('clamps the selected week into the range, and This WW cards follow it', () => {
+    const model = buildWeldModel(rangeIndex, inRange(202638, 202640, 202642), null, 1)
+    expect(model.selectedWeek.label).toBe(WW40)
+    expect(model.thisWeek.logged).toEqual({ value: 3, delta: 3 })
+    expect(model.toDate.totalThisWeek).toBe(3)
+    expect(buildWeldModel(rangeIndex, inRange(202640, 202641, 202638), null, 1).selectedWeek.label).toBe(WW40)
+  })
+
+  it('has no rate and no data in a range with no welds', () => {
+    const model = buildWeldModel(rangeIndex, inRange(202639, 202639), null, 1)
+    expect(model.hasData).toBe(false)
+    expect(model.toDate.total).toBe(0)
+    expect(model.toDate.overallRate).toBeNull()
+    expect(model.overallIssueRate).toBe(0)
+  })
+
+  it('shows every week of the range on a filtered index that keeps the full axis', () => {
+    const filtered = buildWeldIndex(RANGE_ROWS.slice(5), COLUMNS, TODAY, { axisFromKey: rangeIndex.weeks[0].week.key })
+    const model = buildWeldModel(filtered, inRange(202638, 202641), null, 1)
+    expect(model.window.map((item) => item.week.key)).toEqual([202638, 202639, 202640, 202641])
+    expect(model.window.map((item) => item.logged)).toEqual([0, 0, 0, 1])
+    expect(model.weekOptions).toHaveLength(4)
+    expect(model.hasData).toBe(true)
+  })
+
+  it('pulls a range past the axis to its nearest week rather than throwing', () => {
+    const model = buildWeldModel(rangeIndex, inRange(203001, 203002), null, 1)
+    expect(model.selectedWeek.label).toBe(WW42)
+    expect(model.window.map((item) => item.week.label)).toEqual([WW42])
+  })
+
+  it('no range leaves the output as it was', () => {
+    const model = buildWeldModel(rangeIndex, defaultViewState(rangeIndex), null, 1)
+    expect(model.rangeLabel).toBeNull()
+    expect(model.toDate.total).toBe(6)
+    expect(model.toDate.signed).toBe(4)
+    expect(model.weekOptions).toHaveLength(5)
+    expect(model.hasData).toBe(true)
   })
 })

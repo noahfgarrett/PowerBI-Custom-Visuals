@@ -4,7 +4,7 @@
     "displayName": "QCx Electrical Inspections",
     "guid": "qaqcElectrical_6B2E9D4A1C7F",
     "visualClassName": "QaqcElectricalVisual",
-    "version": "1.1.1.0",
+    "version": "1.2.0.0",
     "description": "Weekly Electrical inspection Finals, SORs, NCR pass rate, and building breakdown from the Smartsheet Electrical Inspection Log.",
     "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
     "gitHubUrl": "https://github.com/noahgarrett/PowerBI"

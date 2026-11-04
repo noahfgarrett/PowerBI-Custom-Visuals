@@ -3,12 +3,30 @@ import { act, createElement, type ComponentProps } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createConstructorOptions } from '../../../core/src/__test-utils__'
+import { checkbox, chipTexts, click, openMenu, showing } from '../../../qaqc-shared/src/__tests__/filterHarness'
 import { MECHANICAL_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/mechanicalRows'
+import { INSPECTION_OPTIONAL_SLOTS } from '../../../qaqc-shared/src/dataView'
+import type { InspectionRows } from '../../../qaqc-shared/src/types'
+import capabilities from '../../capabilities.json'
+import packageJson from '../../package.json'
 import pbiviz from '../../pbiviz.json'
 import { QaqcMechanicalVisual } from '../visual'
 import { tableDataView } from './tableDataView'
 
 const dashboardControl = vi.hoisted(() => ({ shouldThrow: false }))
+const indexBuilds = vi.hoisted((): { rows: unknown[] } => ({ rows: [] }))
+
+// Passes through to the real builder, noting the rows of each build.
+vi.mock('../../../qaqc-shared/src/inspections', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../qaqc-shared/src/inspections')>()
+  return {
+    ...actual,
+    buildInspectionIndex: (...args: Parameters<typeof actual.buildInspectionIndex>) => {
+      indexBuilds.rows.push(args[0])
+      return actual.buildInspectionIndex(...args)
+    },
+  }
+})
 
 // Passes through to the real dashboard; throws during React render when the flag is set.
 vi.mock('../../../qaqc-shared/src/components/InspectionDashboard', async (importOriginal) => {
@@ -88,6 +106,7 @@ let harness: Harness | null = null
 
 beforeEach(() => {
   dashboardControl.shouldThrow = false
+  indexBuilds.rows.length = 0
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date(2026, 9, 15, 12))
 })
@@ -106,6 +125,11 @@ describe('QaqcMechanicalVisual name', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(MECHANICAL_ROWS)))
     expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QCx Mechanical / Process Inspections')
+  })
+
+  it('is version 1.1.0 in pbiviz.json and package.json', () => {
+    expect(pbiviz.visual.version).toBe('1.1.0.0')
+    expect(packageJson.version).toBe('1.1.0')
   })
 
   it('shows its QCx name in Power BI', () => {
@@ -313,5 +337,99 @@ describe('QaqcMechanicalVisual', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(MECHANICAL_ROWS)))
     expect(harness.visual.getFormattingModel().cards).toHaveLength(4)
+  })
+})
+
+describe('QaqcMechanicalVisual filters', () => {
+  const DECLARED_SLOTS = INSPECTION_OPTIONAL_SLOTS.filter((slot) => slot.role !== 'inspectionId')
+
+  it('optional roles are declared in capabilities, in order, none required', () => {
+    const optionalRoles = DECLARED_SLOTS.map((slot) => slot.role)
+    const dataRoles = capabilities.dataRoles.map((role) => role.name)
+    expect(dataRoles).toEqual(['workWeek', 'phase', 'issue', 'building', 'rowId', ...optionalRoles])
+
+    const mapping = capabilities.dataViewMappings[0]
+    const conditions: Record<string, unknown> = mapping.conditions[0]
+    const selected = mapping.table.rows.select.map((item) => item.for.in)
+    expect(selected).toEqual(dataRoles)
+    for (const role of optionalRoles) {
+      expect(conditions[role]).toEqual({ max: 1 })
+    }
+  })
+
+  it('declares each optional role as a Grouping with its string keys', () => {
+    for (const slot of DECLARED_SLOTS) {
+      const role = capabilities.dataRoles.find((candidate) => candidate.name === slot.role)
+      expect(role?.displayNameKey).toBe(`Qaqc_role_${slot.role}`)
+      expect(role?.descriptionKey).toBe(`Qaqc_role_${slot.role}_description`)
+      expect(role?.kind).toBe('Grouping')
+    }
+  })
+
+  it('declares the sheet\'s own QCR / FE spelling, and no Inspection ID', () => {
+    const names = capabilities.dataRoles.map((role) => role.name)
+    expect(names).not.toContain('inspectionId')
+    expect(capabilities.dataRoles.find((role) => role.name === 'qcr')?.displayName).toBe('QCR / FE')
+  })
+
+  it('the base index still builds once per data update, not on a filter change', () => {
+    const target = createHarness()
+    harness = target
+    const dataView = tableDataView(MECHANICAL_ROWS)
+    apply(target, update(dataView))
+    expect(indexBuilds.rows).toEqual([dataView.table?.rows])
+
+    apply(target, update(dataView, { width: 900, height: 600 }, 0, RESIZE_UPDATE))
+    expect(indexBuilds.rows).toHaveLength(1)
+
+    openMenu(target.element)
+    click(checkbox(target.element, 'F63.1'))
+    // The dashboard's own rebuild, over the filtered rows; the base index isn't touched.
+    expect(indexBuilds.rows).toHaveLength(2)
+    const filtered = indexBuilds.rows[1]
+    if (!Array.isArray(filtered)) throw new Error('expected rows')
+    expect(filtered.length).toBeLessThan(MECHANICAL_ROWS.length)
+
+    apply(target, update(dataView, { width: 900, height: 600 }, 0, RESIZE_UPDATE))
+    expect(indexBuilds.rows).toHaveLength(2)
+
+    click(checkbox(target.element, 'F63.1'))
+    expect(indexBuilds.rows).toHaveLength(2)
+    expect(chipTexts(target.element)).toEqual([])
+
+    apply(target, update(tableDataView(MECHANICAL_ROWS)))
+    expect(indexBuilds.rows).toHaveLength(3)
+  })
+
+  it('keeps a filter across a data refresh', () => {
+    const target = createHarness()
+    harness = target
+    apply(target, update(tableDataView(MECHANICAL_ROWS)))
+    openMenu(target.element)
+    click(checkbox(target.element, 'F63.1'))
+    const narrowed = cardValue(target.element, 'Finals to Date')
+    apply(target, update(tableDataView(MECHANICAL_ROWS)))
+    expect(chipTexts(target.element)).toEqual(['Building: F63.1'])
+    expect(cardValue(target.element, 'Finals to Date')).toBe(narrowed)
+  })
+
+  it('offers a bound optional column in the menu', () => {
+    const target = createHarness()
+    harness = target
+    const rows: InspectionRows = MECHANICAL_ROWS
+    apply(
+      target,
+      update(tableDataView(MECHANICAL_ROWS, { extraColumns: [{ role: 'generalContractor', value: (rowIndex) => (rowIndex === 0 ? 'Greyfox' : 'Bayside') }] })),
+    )
+    openMenu(target.element)
+    click(checkbox(target.element, 'Greyfox'))
+    expect(chipTexts(target.element)).toEqual(['General Contractor: Greyfox'])
+    expect(showing(target.element)).toBe(`Showing 1 of ${rows.length} rows`)
+  })
+
+  it('disables the Filter button when interactions are blocked', () => {
+    harness = createHarness({ hostCapabilities: { allowInteractions: false } })
+    apply(harness, update(tableDataView(MECHANICAL_ROWS)))
+    expect(harness.element.querySelector<HTMLButtonElement>('.qaqc-filter-button')?.disabled).toBe(true)
   })
 })

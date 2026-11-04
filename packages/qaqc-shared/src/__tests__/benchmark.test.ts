@@ -7,9 +7,10 @@ import { layoutWeekLines, type WeekLine } from '../components/OverviewLinesChart
 import { splitCombinedRows } from '../combined'
 import { buildInspectionIndex, buildInspectionModel, defaultViewState } from '../inspections'
 import { agingProfile, buildIssueBenchmarks, quarterMedians } from '../issueBenchmarks'
-import { buildIssueDetail, buildIssueIndex, buildIssueModel } from '../issues'
+import { buildIssueDetail, buildIssueIndex, buildIssueModel, issueDataWeeks } from '../issues'
 import type { OverviewIndex } from '../overview'
 import { buildOverviewIndex, buildOverviewModel } from '../overview'
+import { filterOverviewIndex, overviewFilterRows } from '../overviewFilters'
 import { buildRootCausePareto, paretoIssues } from '../rootCauses'
 import type { CombinedColumns, IssueDetailRow, IssueTrendPoint, ViewState } from '../types'
 import { buildWeldIndex, buildWeldModel } from '../welds'
@@ -44,6 +45,15 @@ describe('performance budgets', () => {
     expect(bestOf(TIMING_RUNS, () => elapsed(() => buildInspectionIndex(rows, COLUMNS, TODAY)))).toBeLessThan(300)
   })
 
+  it('building the index with issueRowsByWeek stays inside the existing 100k budget', () => {
+    const rows = syntheticInspectionRows(100_000)
+    const index = buildInspectionIndex(rows, COLUMNS, TODAY)
+    const listed = index.issueRowsByWeek.reduce((sum, positions) => sum + positions.length, 0)
+    expect(listed).toBe(index.cumulativeIssues[index.cumulativeIssues.length - 1])
+    expect(listed).toBeGreaterThan(0)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => buildInspectionIndex(rows, COLUMNS, TODAY)))).toBeLessThan(300)
+  })
+
   it('indexes 500,000 rows within budget', () => {
     const rows = syntheticInspectionRows(500_000)
     buildInspectionIndex(rows, COLUMNS, TODAY)
@@ -59,6 +69,15 @@ describe('performance budgets', () => {
 })
 
 describe('welding performance budgets', () => {
+  it('building the weld index with issueRowsByWeek stays inside the 100k budget', () => {
+    const rows = syntheticWeldRows(100_000)
+    const index = buildWeldIndex(rows, WELD_COLUMNS, TODAY)
+    const listed = index.issueRowsByWeek.reduce((sum, positions) => sum + positions.length, 0)
+    expect(listed).toBe(index.cumulativeIssues[index.cumulativeIssues.length - 1])
+    expect(listed).toBeGreaterThan(0)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => buildWeldIndex(rows, WELD_COLUMNS, TODAY, { axisFromKey: index.weeks[0].week.key })))).toBeLessThan(300)
+  })
+
   it('indexes 500,000 weld rows within budget', () => {
     const rows = syntheticWeldRows(500_000)
     buildWeldIndex(rows, WELD_COLUMNS, TODAY)
@@ -78,6 +97,19 @@ describe('issues performance budgets', () => {
     const rows = syntheticIssueRows(200_000)
     buildIssueIndex(rows, ISSUE_COLUMNS, TODAY)
     expect(bestOf(TIMING_RUNS, () => elapsed(() => buildIssueIndex(rows, ISSUE_COLUMNS, TODAY)))).toBeLessThan(1500)
+  })
+
+  it('rebuilds a filtered index of 100,000 issue rows within the 300 ms index budget, with row positions and the axis', () => {
+    const rows = syntheticIssueRows(100_000)
+    const options = { includeAllCreators: true, axisFromKey: 202001 }
+    buildIssueIndex(rows, ISSUE_COLUMNS, TODAY, options)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => buildIssueIndex(rows, ISSUE_COLUMNS, TODAY, options)))).toBeLessThan(300)
+  })
+
+  it('reads the full data\'s weeks from 100,000 issue rows well under a rebuild', () => {
+    const rows = syntheticIssueRows(100_000)
+    expect(issueDataWeeks(rows, ISSUE_COLUMNS, TODAY).length).toBeGreaterThan(1)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => issueDataWeeks(rows, ISSUE_COLUMNS, TODAY)))).toBeLessThan(100)
   })
 
   it('recomputes the All-range issue model from a 200,000-row index within one frame', () => {
@@ -195,6 +227,35 @@ describe('overview performance budgets', () => {
 
   const rows = syntheticCombinedRows(500_000)
   const index = indexCombined(rows)
+
+  describe('rebuilding for a field filter, leaving 100,000 rows', () => {
+    // One build per source a filter changes: a filter touching one source stays inside the 300 ms single-source budget,
+    // and one touching all four inside 4 × 300 ms.
+    const SINGLE_SOURCE_BUDGET_MS = 300
+    const ALL_SOURCES_BUDGET_MS = 4 * SINGLE_SOURCE_BUDGET_MS
+    const KEPT_ROWS = 100_000
+
+    const baseSplit = splitCombinedRows(syntheticCombinedRows(KEPT_ROWS + 1_000), COMBINED.source)
+    const baseIndex = buildOverviewIndex(baseSplit, COMBINED, TODAY)
+    const allRows = overviewFilterRows(baseSplit, COMBINED)
+
+    it('rebuilds every source within 4 × the single-source budget, 1,200 ms', () => {
+      // Dropping every 200th row takes rows from all four sources, so none can reuse its index.
+      const kept = allRows.filter((_, position) => position % 200 !== 0).slice(0, KEPT_ROWS)
+      const { index } = filterOverviewIndex(baseIndex, baseSplit, kept, COMBINED)
+      for (const source of ['electrical', 'mechanical', 'welding', 'bim'] as const) expect(index[source]).not.toBe(baseIndex[source])
+      expect(kept).toHaveLength(KEPT_ROWS)
+      expect(bestOf(TIMING_RUNS, () => elapsed(() => filterOverviewIndex(baseIndex, baseSplit, kept, COMBINED)))).toBeLessThan(ALL_SOURCES_BUDGET_MS)
+    })
+
+    it('rebuilds one source within the single-source budget, reusing the rest', () => {
+      const kept = allRows.slice(1)
+      const { index } = filterOverviewIndex(baseIndex, baseSplit, kept, COMBINED)
+      expect(index.electrical).not.toBe(baseIndex.electrical)
+      for (const source of ['mechanical', 'welding', 'bim'] as const) expect(index[source]).toBe(baseIndex[source])
+      expect(bestOf(TIMING_RUNS, () => elapsed(() => filterOverviewIndex(baseIndex, baseSplit, kept, COMBINED)))).toBeLessThan(SINGLE_SOURCE_BUDGET_MS)
+    })
+  })
 
   it('splits and indexes 500,000 combined rows within budget', () => {
     expect(bestOf(TIMING_RUNS, () => elapsed(() => indexCombined(rows)))).toBeLessThan(1500)

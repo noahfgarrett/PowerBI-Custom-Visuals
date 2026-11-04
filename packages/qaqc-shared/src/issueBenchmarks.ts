@@ -3,7 +3,7 @@ import { parseDate } from './dates'
 import { recentWindowStart } from './inspections'
 import { MS_PER_DAY, previousWorkWeek } from './workWeeks'
 
-// Close-time benchmarks and open-issue ages as of a week W, shared by QCx BIM Issues and QCx Overview so their numbers
+// Close-time benchmarks and open-issue ages as of a week W, shared by QCx Issues and QCx Overview so their numbers
 // always agree. The rules are ported from the mockup's compute2.py: the end of W is its Sunday but never later than
 // today; an issue is open as of W when it was created by then and not closed by then (a Closed issue without an
 // Updated On never counts as closed); typical is the median close time and the window its nearest-rank 90th percentile.

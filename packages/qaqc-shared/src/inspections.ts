@@ -15,7 +15,8 @@ import type {
 } from './types'
 import { NAME_COLLATOR } from './format'
 import { createNameGrouper, createWeekReader, firstSpelling } from './grouping'
-import { enumerateWorkWeeks, previousWorkWeek, toIsoWorkWeek } from './workWeeks'
+import { formatWeekRange, type WeekRange } from './weekRange'
+import { enumerateWorkWeeks, previousWorkWeek, toIsoWorkWeek, workWeekFromKey } from './workWeeks'
 
 export const UNSPECIFIED_BUILDING = 'Unspecified'
 const NO_ISSUE = 'no issue found'
@@ -57,8 +58,11 @@ interface WeekBucket {
   finals: number
   sors: number
   issuesFound: number
+  issueRows: number[]
   buildings: Map<string, BuildingTally>
 }
+
+const NO_ROWS: readonly number[] = []
 
 /** `classifyPhase`, cached by the raw text: phase text repeats heavily across hundreds of thousands of rows. */
 export function readPhase(value: unknown, cache: Map<string, InspectionPhase>): InspectionPhase {
@@ -70,10 +74,16 @@ export function readPhase(value: unknown, cache: Map<string, InspectionPhase>): 
   return phase
 }
 
+export interface InspectionIndexOptions {
+  /** The axis starts here when that is before the first data week, so a filtered index keeps the full data's weeks. */
+  axisFromKey?: number
+}
+
 export function buildInspectionIndex(
   rows: InspectionRows,
   columns: InspectionColumns,
   today: Date,
+  options: InspectionIndexOptions = {},
 ): InspectionIndex {
   const currentWeek = toIsoWorkWeek(today)
   const readWeek = createWeekReader()
@@ -85,7 +95,8 @@ export function buildInspectionIndex(
   let futureRows = 0
   let firstWeek: WorkWeek | null = null
 
-  for (const row of rows) {
+  for (let rowPosition = 0; rowPosition < rows.length; rowPosition += 1) {
+    const row = rows[rowPosition]
     const phase = readPhase(row[columns.phase], phaseCache)
     if (phase === 'other') continue
 
@@ -103,7 +114,7 @@ export function buildInspectionIndex(
 
     let bucket = buckets.get(week.key)
     if (!bucket) {
-      bucket = { finals: 0, sors: 0, issuesFound: 0, buildings: new Map() }
+      bucket = { finals: 0, sors: 0, issuesFound: 0, issueRows: [], buildings: new Map() }
       buckets.set(week.key, bucket)
     }
     const building = buildingName(normalizeBuilding(row[columns.building]))
@@ -115,7 +126,10 @@ export function buildInspectionIndex(
     if (phase === 'final') {
       bucket.finals += 1
       tally.finals += 1
-      if (isIssueFound(row[columns.issue])) bucket.issuesFound += 1
+      if (isIssueFound(row[columns.issue])) {
+        bucket.issuesFound += 1
+        bucket.issueRows.push(rowPosition)
+      }
     } else {
       bucket.sors += 1
       tally.sors += 1
@@ -127,12 +141,17 @@ export function buildInspectionIndex(
   const cumulativeSors: number[] = []
   const cumulativeIssues: number[] = []
   const buildingsByWeek: Array<Map<string, BuildingTally>> = []
+  const issueRowsByWeek: Array<readonly number[]> = []
   const positionByKey = new Map<number, number>()
   let finals = 0
   let sors = 0
   let issues = 0
 
-  for (const week of enumerateWorkWeeks(firstWeek ?? currentWeek, currentWeek)) {
+  const dataStart = firstWeek ?? currentWeek
+  const { axisFromKey } = options
+  const axisStart = axisFromKey !== undefined && axisFromKey < dataStart.key ? workWeekFromKey(axisFromKey) : dataStart
+
+  for (const week of enumerateWorkWeeks(axisStart, currentWeek)) {
     const bucket = buckets.get(week.key)
     const counts: WeekCounts = {
       week,
@@ -149,6 +168,7 @@ export function buildInspectionIndex(
     cumulativeSors.push(sors)
     cumulativeIssues.push(issues)
     buildingsByWeek.push(bucket?.buildings ?? new Map())
+    issueRowsByWeek.push(bucket?.issueRows ?? NO_ROWS)
   }
 
   return {
@@ -158,6 +178,7 @@ export function buildInspectionIndex(
     cumulativeSors,
     cumulativeIssues,
     buildingsByWeek,
+    issueRowsByWeek,
     positionByKey,
     totalRows: rows.length,
     skippedRows,
@@ -166,18 +187,58 @@ export function buildInspectionIndex(
 }
 
 export function defaultViewState(index: { currentWeek: WorkWeek }): ViewState {
-  return { selectedKey: index.currentWeek.key, windowEndKey: index.currentWeek.key, range: 'recent' }
+  return { selectedKey: index.currentWeek.key, windowEndKey: index.currentWeek.key, range: 'recent', dateRange: null }
 }
 
 function deltaMetric(value: number, previous: number): DeltaMetric {
   return { value, delta: value - previous }
 }
 
+/** Percent 0–100 of Finals with no issue found, or null with no Finals. */
+function passRateOf(finals: number, issues: number): number | null {
+  if (finals === 0) return null
+  return ((finals - issues) / finals) * 100
+}
+
 export function passRateAt(index: InspectionIndex, position: number): number | null {
   if (position < 0) return null
-  const finals = index.cumulativeFinals[position]
-  if (finals === 0) return null
-  return ((finals - index.cumulativeIssues[position]) / finals) * 100
+  return passRateOf(index.cumulativeFinals[position], index.cumulativeIssues[position])
+}
+
+/**
+ * The pass rate over a span of work weeks, from `fromKey` (the first week, when null) through `toKey`, for a dashboard
+ * whose own weeks aren't this index's. A week outside this index holds no finals; null with no finals in the span.
+ */
+export function passRateInWeeks(index: InspectionIndex, fromKey: number | null, toKey: number): number | null {
+  let finals = 0
+  let issues = 0
+  for (const { week, finals: weekFinals, issuesFound } of index.weeks) {
+    if (week.key > toKey) break
+    if (fromKey !== null && week.key < fromKey) continue
+    finals += weekFinals
+    issues += issuesFound
+  }
+  return passRateOf(finals, issues)
+}
+
+/** A running total's growth over positions `start` to `end`. */
+function totalBetween(cumulative: number[], start: number, end: number): number {
+  return cumulative[end] - (start > 0 ? cumulative[start - 1] : 0)
+}
+
+/**
+ * The first and last positions of a date range's weeks. The axis has them all, filtered or not; a range past either
+ * end of an axis pulls to its nearest week.
+ */
+export function rangePositions(
+  index: { weeks: ReadonlyArray<{ week: { key: number } }> },
+  range: WeekRange,
+): { start: number; end: number } {
+  const first = index.weeks.findIndex((item) => item.week.key >= range.fromKey)
+  const start = first === -1 ? index.weeks.length - 1 : first
+  let end = start
+  while (end + 1 < index.weeks.length && index.weeks[end + 1].week.key <= range.toKey) end += 1
+  return { start, end }
 }
 
 function summarizeBuildings(
@@ -213,29 +274,36 @@ function summarizeBuildings(
 
 export function buildInspectionModel(index: InspectionIndex, view: ViewState): InspectionModel {
   const lastPosition = index.weeks.length - 1
-  const selectedPosition = index.positionByKey.get(view.selectedKey) ?? lastPosition
-  const endPosition = index.positionByKey.get(view.windowEndKey) ?? lastPosition
-  const startPosition = view.range === 'all' ? 0 : recentWindowStart(endPosition)
+  // In a date range the window is the range's weeks.
+  const span = view.dateRange === null ? null : rangePositions(index, view.dateRange)
+  const isInRange = span !== null
+  const endPosition = span?.end ?? index.positionByKey.get(view.windowEndKey) ?? lastPosition
+  const startPosition = span?.start ?? (view.range === 'all' ? 0 : recentWindowStart(endPosition))
+  const knownSelected = index.positionByKey.get(view.selectedKey) ?? lastPosition
+  const selectedPosition = span === null ? knownSelected : Math.min(Math.max(knownSelected, span.start), span.end)
   const selected = index.weeks[selectedPosition]
   const previous = selectedPosition > 0 ? index.weeks[selectedPosition - 1] : null
-  const finalsToDate = index.cumulativeFinals[selectedPosition]
-  const passRate = passRateAt(index, selectedPosition)
-  const previousPassRate = passRateAt(index, selectedPosition - 1)
   const window = index.weeks.slice(startPosition, endPosition + 1)
   const { buildings, allBuildings, otherBuildings } = summarizeBuildings(index, startPosition, endPosition)
 
-  const before = (cumulative: number[]): number => (startPosition > 0 ? cumulative[startPosition - 1] : 0)
   const windowTotals: WindowTotals = {
-    finals: index.cumulativeFinals[endPosition] - before(index.cumulativeFinals),
-    sors: index.cumulativeSors[endPosition] - before(index.cumulativeSors),
-    issuesFound: index.cumulativeIssues[endPosition] - before(index.cumulativeIssues),
+    finals: totalBetween(index.cumulativeFinals, startPosition, endPosition),
+    sors: totalBetween(index.cumulativeSors, startPosition, endPosition),
+    issuesFound: totalBetween(index.cumulativeIssues, startPosition, endPosition),
     weeks: window.length,
   }
+
+  const finalsToDate = isInRange ? windowTotals.finals : index.cumulativeFinals[selectedPosition]
+  const issuesToDate = isInRange ? windowTotals.issuesFound : index.cumulativeIssues[selectedPosition]
+  const passRate = passRateOf(finalsToDate, issuesToDate)
+  const previousPassRate = isInRange ? null : passRateAt(index, selectedPosition - 1)
+  // Cumulative rates restart at From, so the trend's last point in a range equals the In range card.
+  const trendStart = isInRange ? startPosition : 0
 
   return {
     selectedWeek: selected.week,
     previousWeek: previousWorkWeek(selected.week),
-    weekOptions: index.weeks.map((item) => item.week).reverse(),
+    weekOptions: (isInRange ? window : index.weeks).map((item) => item.week).reverse(),
     thisWeek: {
       finals: deltaMetric(selected.finals, previous?.finals ?? 0),
       sors: deltaMetric(selected.sors, previous?.sors ?? 0),
@@ -243,21 +311,22 @@ export function buildInspectionModel(index: InspectionIndex, view: ViewState): I
     },
     toDate: {
       finals: finalsToDate,
-      sors: index.cumulativeSors[selectedPosition],
+      sors: isInRange ? windowTotals.sors : index.cumulativeSors[selectedPosition],
       finalsThisWeek: selected.finals,
       sorsThisWeek: selected.sors,
-      cleanFinals: finalsToDate - index.cumulativeIssues[selectedPosition],
+      cleanFinals: finalsToDate - issuesToDate,
       passRate,
       passRateDeltaPoints: passRate !== null && previousPassRate !== null ? passRate - previousPassRate : null,
     },
     window,
     passRateTrend: window.map((item, offset) => {
       const position = startPosition + offset
-      const totalFinals = index.cumulativeFinals[position]
+      const totalFinals = totalBetween(index.cumulativeFinals, trendStart, position)
+      const totalIssues = totalBetween(index.cumulativeIssues, trendStart, position)
       return {
         week: item.week,
-        rate: passRateAt(index, position),
-        cleanFinals: totalFinals - index.cumulativeIssues[position],
+        rate: passRateOf(totalFinals, totalIssues),
+        cleanFinals: totalFinals - totalIssues,
         totalFinals,
         hadIssue: item.issuesFound > 0,
         issuesFound: item.issuesFound,
@@ -267,6 +336,9 @@ export function buildInspectionModel(index: InspectionIndex, view: ViewState): I
     allBuildings,
     otherBuildings,
     windowTotals,
-    hasData: index.cumulativeFinals[lastPosition] + index.cumulativeSors[lastPosition] > 0,
+    rangeLabel: view.dateRange === null ? null : formatWeekRange(view.dateRange),
+    hasData: isInRange
+      ? windowTotals.finals + windowTotals.sors > 0
+      : index.cumulativeFinals[lastPosition] + index.cumulativeSors[lastPosition] > 0,
   }
 }

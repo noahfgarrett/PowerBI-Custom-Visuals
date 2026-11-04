@@ -12,7 +12,7 @@ import type { ViewState } from '../types'
 import { ChartPanel } from './ChartPanel'
 import { KpiCard } from './KpiCard'
 import { KpiGroup, type KpiGroupProps } from './KpiGroup'
-import { formatNcrRate } from './PerformanceTable'
+import { formatPassRate } from './PerformanceTable'
 import { PersonWeekChart, personWeekLegend } from './PersonWeekChart'
 
 interface CardWords {
@@ -21,7 +21,6 @@ interface CardWords {
   volumeIcon: LucideIcon
   volumeDetail: string
   ncrDetail: string
-  rateDetail: string
   /** Lower case, for running text. */
   volumeNoun: [string, string]
 }
@@ -32,7 +31,6 @@ const CARD_WORDS: Record<PerformanceGroup, CardWords> = {
     volumeIcon: ClipboardCheck,
     volumeDetail: 'Final inspections',
     ncrDetail: 'Finals with an issue found',
-    rateDetail: 'NCRs ÷ finals',
     volumeNoun: ['final', 'finals'],
   },
   welders: {
@@ -40,7 +38,6 @@ const CARD_WORDS: Record<PerformanceGroup, CardWords> = {
     volumeIcon: Flame,
     volumeDetail: 'Welds credited',
     ncrDetail: 'Welds with an issue',
-    rateDetail: 'NCRs ÷ welds',
     volumeNoun: ['weld', 'welds'],
   },
 }
@@ -174,13 +171,16 @@ function TotalsCards({ title, subtitle, variant, totals, words }: TotalsCardsPro
     <KpiGroup title={title} subtitle={subtitle} variant={variant}>
       <KpiCard label={words.volumeLabel} icon={words.volumeIcon} value={formatCount(totals.volume)} detail={words.volumeDetail} tone="neutral" trend="none" />
       <KpiCard label="NCRs" icon={TriangleAlert} value={formatCount(totals.ncrs)} detail={words.ncrDetail} tone="neutral" trend="none" />
-      <KpiCard label="NCR rate" icon={Percent} value={formatNcrRate(totals.rate)} detail={words.rateDetail} tone="neutral" trend="none" />
+      <KpiCard label="NCR Pass Rate" icon={Percent} value={formatPassRate(totals.passRate)} tone="neutral" trend="none" />
     </KpiGroup>
   )
 }
 
 export interface PersonDetailProps {
+  /** The rows the page's period reads: filtered while a field filter is on. */
   index: PerformanceIndex
+  /** The index over every row, which All time reads. Defaults to `index`. */
+  allTimeIndex?: PerformanceIndex
   group: PerformanceGroup
   personKey: string
   /** The dashboard's period: the range ending at the picked week. */
@@ -196,12 +196,12 @@ export interface PersonDetailProps {
  * The person overlay's content: period and all-time cards, the week-by-week chart and the period's NCRs.
  * Mount it only while the overlay is open: the detail is built from the index on mount.
  */
-export function PersonDetail({ index, group, personKey, view, colors, animate, describe, onHover }: PersonDetailProps): ReactElement {
-  const { selectedKey, windowEndKey, range } = view
+export function PersonDetail({ index, allTimeIndex = index, group, personKey, view, colors, animate, describe, onHover }: PersonDetailProps): ReactElement {
+  const { selectedKey, windowEndKey, range, dateRange } = view
   // Keyed on the view's values, not its object, so a dashboard re-render with an equal view does not rebuild.
   const detail = useMemo(
-    () => buildPersonDetail(index, group, personKey, { selectedKey, windowEndKey, range }),
-    [index, group, personKey, selectedKey, windowEndKey, range],
+    () => buildPersonDetail(index, group, personKey, { selectedKey, windowEndKey, range, dateRange }, allTimeIndex),
+    [index, allTimeIndex, group, personKey, selectedKey, windowEndKey, range, dateRange],
   )
   const words = CARD_WORDS[group]
 
@@ -216,7 +216,8 @@ export function PersonDetail({ index, group, personKey, view, colors, animate, d
   const firstWeek = detail.weeks[0]?.week ?? null
   const lastWeek = detail.weeks[detail.weeks.length - 1]?.week ?? null
   const periodLabel = firstWeek !== null && lastWeek !== null ? `${firstWeek.label} to ${lastWeek.label}` : ''
-  const allTimeLabel = index.weeks.length > 0 ? `${index.weeks[0].label} to ${index.weeks[index.weeks.length - 1].label}` : ''
+  const allWeeks = allTimeIndex.weeks
+  const allTimeLabel = allWeeks.length > 0 ? `${allWeeks[0].label} to ${allWeeks[allWeeks.length - 1].label}` : ''
   const volumeNoun = pluralize(detail.period.volume, words.volumeNoun[0], words.volumeNoun[1])
   const inPeriod = periodLabel === '' ? '' : ` in ${periodLabel}`
   const emptyDetail = detail.period.volume === 0

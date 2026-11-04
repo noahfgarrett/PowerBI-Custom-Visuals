@@ -4,9 +4,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { LABEL_METRICS } from '../chartLabels'
 import type { ChartColors } from '../chartTypes'
 import { splitCombinedRows } from '../combined'
-import { disciplineNames, formatNcrRate, PerformanceTable, type PerformanceTableProps } from '../components/PerformanceTable'
+import { disciplineNames, formatPassRate, PerformanceTable, type PerformanceTableProps } from '../components/PerformanceTable'
 import { PersonDetail, type PersonDetailProps } from '../components/PersonDetail'
-import { PersonWeekChart, type PersonWeekChartProps } from '../components/PersonWeekChart'
+import { PersonWeekChart, personWeekLegend, type PersonWeekChartProps } from '../components/PersonWeekChart'
 import { TrendStrip } from '../components/TrendStrip'
 import { TABLE_ROW_HEIGHT } from '../hooks/useVirtualRows'
 import { buildPerformanceIndex } from '../performance'
@@ -106,6 +106,19 @@ describe('TrendStrip', () => {
     expect(bars.map((bar) => numberAttr(bar, 'x'))).toEqual(fullBars.slice(27))
   })
 
+  it('draws every week of a date range too long for its 30 slots, inside the strip', () => {
+    const long = trendOf(Array.from({ length: 90 }, () => 1), [0, 89])
+    view = render(<TrendStrip trend={long} colors={COLORS} isHighContrast={false} />)
+    const svgWidth = numberAttr(view.container.querySelector('svg') ?? document.createElement('svg'), 'width')
+    const bars = all(view.container, '.qaqc-perf-trend-bar')
+    expect(bars).toHaveLength(90)
+    expect(numberAttr(bars[0], 'x')).toBe(0)
+    const last = bars[bars.length - 1]
+    expect(numberAttr(last, 'x') + numberAttr(last, 'width')).toBeCloseTo(svgWidth, 5)
+    expect(numberAttr(last, 'width')).toBeGreaterThanOrEqual(1)
+    expect(all(view.container, '.qaqc-perf-trend-flag')).toHaveLength(2)
+  })
+
   it('skips weeks with no volume and keeps their slots', () => {
     view = render(<TrendStrip trend={trendOf([2, 0, 4])} colors={COLORS} isHighContrast={false} />)
     expect(all(view.container, '.qaqc-perf-trend-bar')).toHaveLength(2)
@@ -162,27 +175,27 @@ function personRow(name: string, overrides: Partial<PerformanceRow> = {}): Perfo
     tags: ['E'],
     volume: 10,
     ncrs: 0,
-    rate: 0,
+    passRate: 100,
     trend: trendOf(Array.from({ length: 30 }, () => 1)),
     ncrWeeks: 0,
     ...overrides,
   }
 }
 
-// Model order: ranked by rate, then NCRs, then name. Values are chosen so every column orders the rows differently.
+// Model order: ranked by pass rate, lowest first, then NCRs, then name. Values are chosen so every column orders the rows differently.
 const RANKED: PerformanceRow[] = [
-  personRow('QCR 10', { volume: 20, ncrs: 4, rate: 20, ncrWeeks: 3 }),
-  personRow('QCR 2', { volume: 50, ncrs: 5, rate: 10, ncrWeeks: 5, tags: ['E', 'M'] }),
-  personRow('QCR 01', { volume: 40, ncrs: 2, rate: 5, ncrWeeks: 1, tags: ['M'] }),
-  personRow('QCR 3', { volume: 30, ncrs: 0, rate: 0, ncrWeeks: 0 }),
+  personRow('QCR 10', { volume: 20, ncrs: 4, passRate: 80, ncrWeeks: 3 }),
+  personRow('QCR 2', { volume: 50, ncrs: 5, passRate: 90, ncrWeeks: 5, tags: ['E', 'M'] }),
+  personRow('QCR 01', { volume: 40, ncrs: 2, passRate: 95, ncrWeeks: 1, tags: ['M'] }),
+  personRow('QCR 3', { volume: 30, ncrs: 0, passRate: 100, ncrWeeks: 0 }),
 ]
-// Model order is volume descending; NCRs and NCR rate each order these differently.
+// Model order is volume descending; NCRs and NCR Pass Rate each order these differently.
 const BELOW: PerformanceRow[] = [
-  personRow('QCR 21', { volume: 4, ncrs: 1, rate: 25, ncrWeeks: 1 }),
-  personRow('QCR 20', { volume: 3, ncrs: 0, rate: 0, ncrWeeks: 0 }),
-  personRow('QCR 22', { volume: 2, ncrs: 1, rate: 50, ncrWeeks: 1 }),
+  personRow('QCR 21', { volume: 4, ncrs: 1, passRate: 75, ncrWeeks: 1 }),
+  personRow('QCR 20', { volume: 3, ncrs: 0, passRate: 100, ncrWeeks: 0 }),
+  personRow('QCR 22', { volume: 2, ncrs: 1, passRate: 50, ncrWeeks: 1 }),
 ]
-const NOT_RECORDED: PerformanceRow = personRow('Not recorded', { key: '', tags: [], volume: 7, ncrs: 1, rate: 100 / 7, ncrWeeks: 1 })
+const NOT_RECORDED: PerformanceRow = personRow('Not recorded', { key: '', tags: [], volume: 7, ncrs: 1, passRate: 600 / 7, ncrWeeks: 1 })
 
 function drawTable(overrides: Partial<PerformanceTableProps> = {}): Rendered {
   return render(
@@ -266,9 +279,9 @@ function cellTexts(row: HTMLTableRowElement): string[] {
 }
 
 describe('PerformanceTable columns', () => {
-  it('heads the QCR / FE table with Name, Finals, NCRs, NCR rate and Trend, with no SORs column', () => {
+  it('heads the QCR / FE table with Name, Finals, NCRs, NCR Pass Rate and Trend, with no SORs column', () => {
     view = drawTable()
-    expect([...view.container.querySelectorAll('thead th')].map((cell) => cell.textContent)).toEqual(['Name', 'Finals', 'NCRs', 'NCR rate', 'Trend'])
+    expect([...view.container.querySelectorAll('thead th')].map((cell) => cell.textContent)).toEqual(['Name', 'Finals', 'NCRs', 'NCR Pass Rate', 'Trend'])
     expect(view.container.querySelectorAll('col')).toHaveLength(5)
   })
 
@@ -278,20 +291,34 @@ describe('PerformanceTable columns', () => {
     expect(notRecordedRow(view.container).cells).toHaveLength(5)
   })
 
-  it('heads the welders table with Welder, Welds, NCRs, NCR rate and Trend', () => {
+  it('heads the welders table with Welder, Welds, NCRs, NCR Pass Rate and Trend', () => {
     view = drawTable({ group: 'welders' })
-    expect([...view.container.querySelectorAll('thead th')].map((cell) => cell.textContent)).toEqual(['Welder', 'Welds', 'NCRs', 'NCR rate', 'Trend'])
+    expect([...view.container.querySelectorAll('thead th')].map((cell) => cell.textContent)).toEqual(['Welder', 'Welds', 'NCRs', 'NCR Pass Rate', 'Trend'])
   })
 
-  it('shows the counts and the NCR rate to two decimals', () => {
-    view = drawTable({ ranked: [personRow('QCR 02', { volume: 65, ncrs: 2, rate: (2 / 65) * 100 })] })
-    expect(cellTexts(rowNamed(view.container, 'QCR 02')).slice(1, 4)).toEqual(['65', '2', '3.08%'])
+  it('shows the counts and the NCR Pass Rate to two decimals', () => {
+    view = drawTable({ ranked: [personRow('QCR 02', { volume: 100, ncrs: 2, passRate: 98 })] })
+    expect(cellTexts(rowNamed(view.container, 'QCR 02')).slice(1, 4)).toEqual(['100', '2', '98.00%'])
   })
 
-  it('quiets a zero NCR rate next to one with NCRs', () => {
+  it('quiets a 100.00% NCR Pass Rate next to one with NCRs', () => {
     view = drawTable()
-    expect(rowNamed(view.container, 'QCR 3').querySelector('.qaqc-perf-rate')?.classList.contains('is-zero')).toBe(true)
-    expect(rowNamed(view.container, 'QCR 10').querySelector('.qaqc-perf-rate')?.classList.contains('is-zero')).toBe(false)
+    expect(rowNamed(view.container, 'QCR 3').querySelector('.qaqc-perf-rate')?.classList.contains('is-perfect')).toBe(true)
+    expect(rowNamed(view.container, 'QCR 10').querySelector('.qaqc-perf-rate')?.classList.contains('is-perfect')).toBe(false)
+  })
+
+  it('lets a 0.00% NCR Pass Rate stand out', () => {
+    view = drawTable({ ranked: [personRow('QCR 02', { volume: 5, ncrs: 5, passRate: 0 })] })
+    const cell = rowNamed(view.container, 'QCR 02').querySelector('.qaqc-perf-rate')
+    expect(cell?.textContent).toBe('0.00%')
+    expect(cell?.classList.contains('is-perfect')).toBe(false)
+  })
+
+  it('lets a pass rate that rounds up to 100.00% stand out, since it still has an NCR', () => {
+    view = drawTable({ ranked: [personRow('QCR 02', { volume: 100_000, ncrs: 1, passRate: 99.999 })] })
+    const cell = rowNamed(view.container, 'QCR 02').querySelector('.qaqc-perf-rate')
+    expect(cell?.textContent).toBe('100.00%')
+    expect(cell?.classList.contains('is-perfect')).toBe(false)
   })
 
   it('tags QCR / FE names with their disciplines', () => {
@@ -361,6 +388,14 @@ describe('PerformanceTable stylesheet', () => {
   })
 })
 
+describe('PersonDetail stylesheet', () => {
+  it('wraps the card groups before a card is too narrow for the NCR Pass Rate label', () => {
+    const rule = ruleBody('.qaqc-perf-person-cards .qaqc-kpi-group')
+    expect(rule).toContain('flex-basis: 400px')
+    expect(rule).not.toContain('min-width')
+  })
+})
+
 describe('PerformanceTable blocks', () => {
   it('lists the ranked people in model order, then the collapsed below-minimum group, then Not recorded', () => {
     view = drawTable()
@@ -421,7 +456,7 @@ describe('PerformanceTable sorting', () => {
     expect(view.container.querySelectorAll('thead th[aria-sort]')).toHaveLength(0)
   })
 
-  it.each(['Name', 'Finals', 'NCRs', 'NCR rate', 'Trend'])('keeps the blocks in order when sorting by %s, both ways', (column) => {
+  it.each(['Name', 'Finals', 'NCRs', 'NCR Pass Rate', 'Trend'])('keeps the blocks in order when sorting by %s, both ways', (column) => {
     view = drawTable()
     expand(view.container)
     const expected = ['ranked', 'ranked', 'ranked', 'ranked', 'disclosure', 'below', 'below', 'below', 'not-recorded']
@@ -459,18 +494,22 @@ describe('PerformanceTable sorting', () => {
     expect(names(view.container, 'below')).toEqual(['QCR 21', 'QCR 22', 'QCR 20'])
   })
 
-  it('sorts the NCR rate highest first', () => {
+  it('sorts the NCR Pass Rate lowest first, as the ranking does', () => {
     view = drawTable()
     expand(view.container)
-    sortBy(view.container, 'NCR rate')
+    sortBy(view.container, 'NCR Pass Rate')
+    expect(headerCell(view.container, 'NCR Pass Rate').getAttribute('aria-sort')).toBe('ascending')
+    expect(names(view.container, 'ranked')).toEqual(['QCR 10', 'QCR 2', 'QCR 01', 'QCR 3'])
     expect(names(view.container, 'below')).toEqual(['QCR 22', 'QCR 21', 'QCR 20'])
   })
 
-  it('sorts the NCR rate lowest first on a second click', () => {
+  it('sorts the NCR Pass Rate highest first on a second click', () => {
     view = drawTable()
     expand(view.container)
-    sortBy(view.container, 'NCR rate')
-    sortBy(view.container, 'NCR rate')
+    sortBy(view.container, 'NCR Pass Rate')
+    sortBy(view.container, 'NCR Pass Rate')
+    expect(headerCell(view.container, 'NCR Pass Rate').getAttribute('aria-sort')).toBe('descending')
+    expect(names(view.container, 'ranked')).toEqual(['QCR 3', 'QCR 01', 'QCR 2', 'QCR 10'])
     expect(names(view.container, 'below')).toEqual(['QCR 20', 'QCR 21', 'QCR 22'])
   })
 
@@ -485,7 +524,7 @@ describe('PerformanceTable sorting', () => {
     view = drawTable()
     expand(view.container)
     sortBy(view.container, 'NCRs')
-    sortBy(view.container, 'NCR rate')
+    sortBy(view.container, 'NCR Pass Rate')
     expect(calls()).toBe(0)
   })
 
@@ -655,7 +694,7 @@ describe('PerformanceTable with many rows', () => {
   })
 })
 
-/** Running NCR rate from the first week, as buildPersonDetail computes it. */
+/** Running NCR Pass Rate from the first week, as buildPersonDetail computes it. */
 function personWeeks(counts: Array<[number, number]>, lastYear = 2026, lastWeek = 42): PersonWeek[] {
   const all = enumerateWorkWeeks(makeWorkWeek(lastYear - 12, 1), makeWorkWeek(lastYear, lastWeek))
   const weeks = all.slice(all.length - counts.length)
@@ -664,7 +703,7 @@ function personWeeks(counts: Array<[number, number]>, lastYear = 2026, lastWeek 
   return counts.map(([weekVolume, weekNcrs], index) => {
     volume += weekVolume
     ncrs += weekNcrs
-    return { week: weeks[index], volume: weekVolume, ncrs: weekNcrs, runningRate: volume > 0 ? (ncrs / volume) * 100 : null }
+    return { week: weeks[index], volume: weekVolume, ncrs: weekNcrs, runningPassRate: volume > 0 ? ((volume - ncrs) / volume) * 100 : null }
   })
 }
 
@@ -798,6 +837,37 @@ describe('PersonWeekChart', () => {
     expect(rates.every((text) => text.endsWith('%'))).toBe(true)
   })
 
+  it.each<{ steps: string; counts: Array<[number, number]>; expected: string[] }>([
+    { steps: 'one step', counts: [[1, 0]], expected: ['0%', '100%'] },
+    { steps: 'two steps', counts: [[100, 0], [40, 1]], expected: ['0%', '50%', '100%'] },
+    { steps: 'three steps', counts: [[6, 0], [3, 1]], expected: ['0%', '33%', '67%', '100%'] },
+    { steps: 'four steps', counts: [[8, 0], [3, 1]], expected: ['0%', '25%', '50%', '75%', '100%'] },
+  ])('fixes the right axis at 0 to 100% on the count axis gridlines, with $steps', ({ counts, expected }) => {
+    view = drawChart({ weeks: personWeeks(counts) })
+    const rates = all(view.container, '.qaqc-perf-rate-axis-text')
+    expect(rates.map((tick) => tick.textContent)).toEqual(expected)
+    expect(rates.map((tick) => numberAttr(tick, 'y'))).toEqual(all(view.container, '.qaqc-perf-count-axis-text').map((tick) => numberAttr(tick, 'y')))
+  })
+
+  it('plots 100% on the top gridline and 0% on the baseline', () => {
+    view = drawChart({ weeks: personWeeks([[5, 5], [0, 0], [0, 0], [495, 0]]), width: 1240, height: 340 })
+    const tickY = (text: string): number => {
+      const tick = all(view?.container ?? document.body, '.qaqc-perf-rate-axis-text').find((node) => node.textContent === text)
+      if (!tick) throw new Error(`${text} tick missing`)
+      return numberAttr(tick, 'y') - 3.5
+    }
+    const dots = all(view.container, '.qaqc-perf-rate-dot').map((dot) => numberAttr(dot, 'cy'))
+    expect(dots[0]).toBeCloseTo(tickY('0%'), 5)
+    expect(dots[dots.length - 1]).toBeCloseTo(tickY('100%') + (1 / 100) * (tickY('0%') - tickY('100%')), 5)
+  })
+
+  it('keeps a running 100% on the top gridline whatever the counts', () => {
+    view = drawChart({ weeks: personWeeks([[3, 0], [7, 0], [2, 0]]) })
+    const ticks = all(view.container, '.qaqc-perf-rate-axis-text')
+    const top = numberAttr(ticks[ticks.length - 1], 'y') - 3.5
+    expect(all(view.container, '.qaqc-perf-rate-dot').map((dot) => numberAttr(dot, 'cy'))).toEqual([top, top, top])
+  })
+
   it('starts the running rate line at the first week with finals', () => {
     view = drawChart()
     const path = view.container.querySelector('.qaqc-perf-rate-line')?.getAttribute('d') ?? ''
@@ -823,13 +893,23 @@ describe('PersonWeekChart', () => {
   it('names the chart with a static label', () => {
     view = drawChart()
     expect(view.container.querySelector('svg')?.getAttribute('aria-label')).toBe(
-      "Finals and NCRs by work week, with the running NCR rate, WW36'2026 to WW42'2026",
+      "Finals and NCRs by work week, with the Running NCR Pass Rate, WW36'2026 to WW42'2026",
     )
   })
 
   it('names the chart by its title alone when chart summaries are off', () => {
     view = drawChart({ describe: false })
-    expect(view.container.querySelector('svg')?.getAttribute('aria-label')).toBe('Finals and NCRs by work week, with the running NCR rate')
+    expect(view.container.querySelector('svg')?.getAttribute('aria-label')).toBe('Finals and NCRs by work week, with the Running NCR Pass Rate')
+  })
+
+  it('names the line Running NCR Pass Rate in the legend', () => {
+    expect(personWeekLegend(COLORS, 'qcr').map((item) => item.label)).toEqual(['Finals', 'NCRs', 'Running NCR Pass Rate'])
+    expect(personWeekLegend(COLORS, 'welders').map((item) => item.label)).toEqual(['Welds', 'NCRs', 'Running NCR Pass Rate'])
+  })
+
+  it('titles the right axis Running NCR Pass Rate', () => {
+    view = drawChart()
+    expect(all(view.container, '.qaqc-axis-title').map((title) => title.textContent)).toEqual(['Finals per week', 'Running NCR Pass Rate'])
   })
 
   it('names the welder chart by welds', () => {
@@ -855,7 +935,7 @@ describe('PersonWeekChart', () => {
       rows: [
         { label: 'Finals', value: '3' },
         { label: 'NCRs', value: '2' },
-        { label: 'Running NCR rate', value: '23.08%' },
+        { label: 'Running NCR Pass Rate', value: '76.92%' },
       ],
       clientX: (4.5 * 540) / 7,
       clientY: 100,
@@ -872,7 +952,7 @@ describe('PersonWeekChart', () => {
       rows: [
         { label: 'Welds', value: '0' },
         { label: 'NCRs', value: '0' },
-        { label: 'Running NCR rate', value: 'n/a' },
+        { label: 'Running NCR Pass Rate', value: 'n/a' },
       ],
     }))
   })
@@ -928,7 +1008,39 @@ describe('PersonWeekChart', () => {
       view = drawChart({ weeks, width, height })
       const latest = weeks[weeks.length - 1]
       const label = view.container.querySelector(`.qaqc-perf-chart-label.is-rate[data-week="${latest.week.key}"]`)
-      expect(label?.textContent).toBe(formatNcrRate(latest.runningRate))
+      expect(label?.textContent).toBe(formatPassRate(latest.runningPassRate))
+    })
+  })
+
+  describe('with the line running near 100% over tall bars', () => {
+    // A bad first week holds the running pass rate near 95%, where the tallest bars end, and the newest week is a tallest bar.
+    const weeks = personWeeks(Array.from({ length: 30 }, (_, index): [number, number] => {
+      if (index === 0) return [10, 10]
+      return [index === 29 || index % 3 === 0 ? 10 : 5, 0]
+    }))
+
+    it.each(SIZES)('keeps the newest rate label off the bars at %i × %i', (width, height) => {
+      view = drawChart({ weeks, width, height })
+      const bars = all(view.container, '.qaqc-perf-chart-bar').map(barBox)
+      const label = view.container.querySelector(`.qaqc-perf-chart-label.is-rate[data-week="${weeks[29].week.key}"]`)
+      if (!label) throw new Error('newest rate label missing')
+      const box = chartLabelBox(label)
+      expect(bars.filter((bar) => box.left < bar.right && bar.left < box.right && box.top < bar.bottom && bar.top < box.bottom)).toEqual([])
+    })
+
+    it.each(SIZES)('still places every label without collisions at %i × %i', (width, height) => {
+      view = drawChart({ weeks, width, height })
+      expect(labelCollisions(view.container)).toEqual([])
+      expect(axisCollisions(view.container)).toEqual([])
+    })
+
+    it('leaves a mid-plot rate label beside its point rather than at the top of the plot', () => {
+      const low = personWeeks([[10, 5], [10, 5], [10, 5]])
+      view = drawChart({ weeks: low, width: 900, height: 280 })
+      const label = view.container.querySelector(`.qaqc-perf-chart-label.is-rate[data-week="${low[2].week.key}"]`)
+      if (!label) throw new Error('newest rate label missing')
+      const dots = all(view.container, '.qaqc-perf-rate-dot')
+      expect(Math.abs(numberAttr(dots[2], 'cy') - numberAttr(label, 'y'))).toBeLessThan(20)
     })
   })
 
@@ -985,7 +1097,7 @@ function fixtureIndex(): PerformanceIndex {
 const FIXTURE_INDEX = fixtureIndex()
 
 function fixtureView(range: RangeMode): ViewState {
-  return { selectedKey: FIXTURE_WEEK, windowEndKey: FIXTURE_WEEK, range }
+  return { selectedKey: FIXTURE_WEEK, windowEndKey: FIXTURE_WEEK, range, dateRange: null }
 }
 
 function drawDetail(overrides: Partial<PersonDetailProps> = {}): Rendered {
@@ -1046,16 +1158,23 @@ describe('PersonDetail', () => {
     expect(view.container.querySelector('.qaqc-perf-person')?.firstElementChild?.textContent).not.toContain('QCR 02')
   })
 
-  it('shows the period and all-time cards for a ranked QCR / FE (spec: QCR 02 65 / 2 / 3.08%, all 70 / 2 / 2.86%)', () => {
+  it('shows the period and all-time cards for a ranked QCR / FE (spec: QCR 02 65 / 2 / 96.92%, all 70 / 2 / 97.14%)', () => {
     view = drawDetail()
     expect(cardLabels(view.container)).toEqual([
       'Finals: 65. Final inspections',
       'NCRs: 2. Finals with an issue found',
-      'NCR rate: 3.08%. NCRs ÷ finals',
+      'NCR Pass Rate: 96.92%',
       'Finals: 70. Final inspections',
       'NCRs: 2. Finals with an issue found',
-      'NCR rate: 2.86%. NCRs ÷ finals',
+      'NCR Pass Rate: 97.14%',
     ])
+  })
+
+  it('puts no small print on the NCR Pass Rate cards', () => {
+    view = drawDetail()
+    const passRateCards = [...view.container.querySelectorAll('article.qaqc-kpi')].filter((card) => card.getAttribute('aria-label')?.startsWith('NCR Pass Rate:'))
+    expect(passRateCards).toHaveLength(2)
+    expect(passRateCards.every((card) => card.querySelector('.qaqc-kpi-detail') === null)).toBe(true)
   })
 
   it('heads the card groups with the period and the whole history', () => {
@@ -1063,15 +1182,15 @@ describe('PersonDetail', () => {
     expect(groupHeads(view.container)).toEqual(["This periodWW13'2026 to WW42'2026", "All timeWW51'2025 to WW42'2026"])
   })
 
-  it('shows the period and all-time cards for a ranked welder (spec: Welder 024 22 / 3 / 13.64%, all 27 / 3 / 11.11%)', () => {
+  it('shows the period and all-time cards for a ranked welder (spec: Welder 024 22 / 3 / 86.36%, all 27 / 3 / 88.89%)', () => {
     view = drawDetail({ group: 'welders', personKey: 'welder 024' })
     expect(cardLabels(view.container)).toEqual([
       'Welds: 22. Welds credited',
       'NCRs: 3. Welds with an issue',
-      'NCR rate: 13.64%. NCRs ÷ welds',
+      'NCR Pass Rate: 86.36%',
       'Welds: 27. Welds credited',
       'NCRs: 3. Welds with an issue',
-      'NCR rate: 11.11%. NCRs ÷ welds',
+      'NCR Pass Rate: 88.89%',
     ])
     expect(view.container.querySelector('.qaqc-perf-person-head')).toBeNull()
   })
@@ -1088,7 +1207,7 @@ describe('PersonDetail', () => {
     expect(cardLabels(view.container).slice(0, 3)).toEqual([
       'Welds: 27. Welds credited',
       'NCRs: 3. Welds with an issue',
-      'NCR rate: 11.11%. NCRs ÷ welds',
+      'NCR Pass Rate: 88.89%',
     ])
   })
 
@@ -1183,7 +1302,7 @@ describe('PersonDetail', () => {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 900, 260))
     view = drawDetail()
     expect(view.container.querySelector('.qaqc-perf-chart')?.getAttribute('aria-label')).toBe(
-      "Finals and NCRs by work week, with the running NCR rate, WW13'2026 to WW42'2026",
+      "Finals and NCRs by work week, with the Running NCR Pass Rate, WW13'2026 to WW42'2026",
     )
   })
 
@@ -1191,7 +1310,7 @@ describe('PersonDetail', () => {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 900, 260))
     view = drawDetail({ describe: false })
     expect(view.container.querySelector('.qaqc-perf-chart')?.getAttribute('aria-label')).toBe(
-      'Finals and NCRs by work week, with the running NCR rate',
+      'Finals and NCRs by work week, with the Running NCR Pass Rate',
     )
   })
 

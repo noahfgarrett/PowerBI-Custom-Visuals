@@ -39,6 +39,102 @@
       "displayNameKey": "Qaqc_role_rowId",
       "description": "Required unique row number (Power Query Index column). Keeps identical rows separate.",
       "descriptionKey": "Qaqc_role_rowId_description"
+    },
+    {
+      "name": "generalContractor",
+      "kind": "Grouping",
+      "displayName": "General Contractor",
+      "displayNameKey": "Qaqc_role_generalContractor",
+      "description": "General contractor on the inspection. Adds a filter.",
+      "descriptionKey": "Qaqc_role_generalContractor_description"
+    },
+    {
+      "name": "tradeSupplier",
+      "kind": "Grouping",
+      "displayName": "Trade Supplier",
+      "displayNameKey": "Qaqc_role_tradeSupplier",
+      "description": "Trade supplier on the inspection. Adds a filter.",
+      "descriptionKey": "Qaqc_role_tradeSupplier_description"
+    },
+    {
+      "name": "discipline",
+      "kind": "Grouping",
+      "displayName": "Discipline",
+      "displayNameKey": "Qaqc_role_discipline",
+      "description": "Discipline inspected. Adds a filter.",
+      "descriptionKey": "Qaqc_role_discipline_description"
+    },
+    {
+      "name": "inspectionCategory",
+      "kind": "Grouping",
+      "displayName": "Inspection Category",
+      "displayNameKey": "Qaqc_role_inspectionCategory",
+      "description": "Category of the inspection. Adds a filter.",
+      "descriptionKey": "Qaqc_role_inspectionCategory_description"
+    },
+    {
+      "name": "status",
+      "kind": "Grouping",
+      "displayName": "Status",
+      "displayNameKey": "Qaqc_role_status",
+      "description": "Inspection status from the sheet. Adds a filter.",
+      "descriptionKey": "Qaqc_role_status_description"
+    },
+    {
+      "name": "inspectionId",
+      "kind": "Grouping",
+      "displayName": "Inspection ID",
+      "displayNameKey": "Qaqc_role_inspectionId",
+      "description": "Inspection ID, listed when a week is opened.",
+      "descriptionKey": "Qaqc_role_inspectionId_description"
+    },
+    {
+      "name": "equipmentTag",
+      "kind": "Grouping",
+      "displayName": "Equipment ID / Tag Number",
+      "displayNameKey": "Qaqc_role_equipmentTag",
+      "description": "Equipment ID or tag number, listed when a week is opened.",
+      "descriptionKey": "Qaqc_role_equipmentTag_description"
+    },
+    {
+      "name": "issueId",
+      "kind": "Grouping",
+      "displayName": "Issue ID",
+      "displayNameKey": "Qaqc_role_issueId",
+      "description": "Issue ID, listed when a week is opened.",
+      "descriptionKey": "Qaqc_role_issueId_description"
+    },
+    {
+      "name": "findingType",
+      "kind": "Grouping",
+      "displayName": "Finding Type",
+      "displayNameKey": "Qaqc_role_findingType",
+      "description": "Finding type, listed when a week is opened.",
+      "descriptionKey": "Qaqc_role_findingType_description"
+    },
+    {
+      "name": "dateObserved",
+      "kind": "Grouping",
+      "displayName": "Date Observed",
+      "displayNameKey": "Qaqc_role_dateObserved",
+      "description": "Date observed, listed when a week is opened.",
+      "descriptionKey": "Qaqc_role_dateObserved_description"
+    },
+    {
+      "name": "qcr",
+      "kind": "Grouping",
+      "displayName": "QCR/FE",
+      "displayNameKey": "Qaqc_role_qcr",
+      "description": "QCR or field engineer, listed when a week is opened.",
+      "descriptionKey": "Qaqc_role_qcr_description"
+    },
+    {
+      "name": "notes",
+      "kind": "Grouping",
+      "displayName": "Notes",
+      "displayNameKey": "Qaqc_role_notes",
+      "description": "Notes, listed when a week is opened.",
+      "descriptionKey": "Qaqc_role_notes_description"
     }
   ],
   "dataViewMappings": [
@@ -49,7 +145,19 @@
           "phase": { "max": 1 },
           "issue": { "max": 1 },
           "building": { "max": 1 },
-          "rowId": { "max": 1 }
+          "rowId": { "max": 1 },
+          "generalContractor": { "max": 1 },
+          "tradeSupplier": { "max": 1 },
+          "discipline": { "max": 1 },
+          "inspectionCategory": { "max": 1 },
+          "status": { "max": 1 },
+          "inspectionId": { "max": 1 },
+          "equipmentTag": { "max": 1 },
+          "issueId": { "max": 1 },
+          "findingType": { "max": 1 },
+          "dateObserved": { "max": 1 },
+          "qcr": { "max": 1 },
+          "notes": { "max": 1 }
         }
       ],
       "table": {
@@ -59,7 +167,19 @@
             { "for": { "in": "phase" } },
             { "for": { "in": "issue" } },
             { "for": { "in": "building" } },
-            { "for": { "in": "rowId" } }
+            { "for": { "in": "rowId" } },
+            { "for": { "in": "generalContractor" } },
+            { "for": { "in": "tradeSupplier" } },
+            { "for": { "in": "discipline" } },
+            { "for": { "in": "inspectionCategory" } },
+            { "for": { "in": "status" } },
+            { "for": { "in": "inspectionId" } },
+            { "for": { "in": "equipmentTag" } },
+            { "for": { "in": "issueId" } },
+            { "for": { "in": "findingType" } },
+            { "for": { "in": "dateObserved" } },
+            { "for": { "in": "qcr" } },
+            { "for": { "in": "notes" } }
           ],
           "dataReductionAlgorithm": {
             "window": { "count": 30000 }

@@ -69,7 +69,7 @@
       "kind": "Grouping",
       "displayName": "Created By",
       "displayNameKey": "Qaqc_role_createdBy",
-      "description": "Who created the issue. Only issues created by LotusWorks are counted.",
+      "description": "Who created the issue. Issues created by LotusWorks are counted unless Created By (Company) picks others.",
       "descriptionKey": "Qaqc_role_createdBy_description"
     },
     {
@@ -77,7 +77,7 @@
       "kind": "Grouping",
       "displayName": "Root Cause",
       "displayNameKey": "Qaqc_role_rootCause",
-      "description": "Optional. The BIM Issues Log Root Cause column; adds the Issues by Root Cause Pareto.",
+      "description": "Optional. The Root Cause column; adds the Issues by Root Cause Pareto.",
       "descriptionKey": "Qaqc_role_rootCause_description"
     },
     {
@@ -85,7 +85,7 @@
       "kind": "Grouping",
       "displayName": "Root Cause Category",
       "displayNameKey": "Qaqc_role_rootCauseCategory",
-      "description": "Optional. The BIM Issues Log Root Cause Category column; adds the category panel to the Issues by Root Cause Pareto.",
+      "description": "Optional. The Root Cause Category column; adds the category panel to the Issues by Root Cause Pareto.",
       "descriptionKey": "Qaqc_role_rootCauseCategory_description"
     },
     {
@@ -119,6 +119,62 @@
       "displayNameKey": "Qaqc_role_closedAt",
       "description": "Optional. The enriched Autodesk export Closed at column. A closed issue counts as closed on this date instead of Updated On.",
       "descriptionKey": "Qaqc_role_closedAt_description"
+    },
+    {
+      "name": "createdByCompany",
+      "kind": "Grouping",
+      "displayName": "Created By (Company)",
+      "displayNameKey": "Qaqc_role_createdByCompany",
+      "description": "Optional. The enriched Autodesk export Created By (Company) column. Adds a Filter menu choice to show other companies' issues; LotusWorks stays the default.",
+      "descriptionKey": "Qaqc_role_createdByCompany_description"
+    },
+    {
+      "name": "discipline",
+      "kind": "Grouping",
+      "displayName": "Discipline",
+      "displayNameKey": "Qaqc_role_discipline",
+      "description": "Optional. The Discipline column; adds Discipline to the Filter menu.",
+      "descriptionKey": "Qaqc_role_discipline_description"
+    },
+    {
+      "name": "source",
+      "kind": "Grouping",
+      "displayName": "Source",
+      "displayNameKey": "Qaqc_role_source",
+      "description": "Optional. The QCx Combined Source column. Bound, only BIM rows count as issues and the NCR Pass Rate card appears, reading Electrical and Mechanical rows. Leave it empty for the Issues export.",
+      "descriptionKey": "Qaqc_role_source_description"
+    },
+    {
+      "name": "rowId",
+      "kind": "Grouping",
+      "displayName": "Row ID",
+      "displayNameKey": "Qaqc_role_rowId",
+      "description": "Optional. The QCx Combined Row ID column; NCR Pass Rate needs it, since it keeps identical inspection rows from merging.",
+      "descriptionKey": "Qaqc_role_rowId_description"
+    },
+    {
+      "name": "workWeek",
+      "kind": "Grouping",
+      "displayName": "Work Week",
+      "displayNameKey": "Qaqc_role_workWeek",
+      "description": "Optional. The QCx Combined Work Week column; NCR Pass Rate needs it.",
+      "descriptionKey": "Qaqc_role_workWeek_description"
+    },
+    {
+      "name": "phase",
+      "kind": "Grouping",
+      "displayName": "Inspection Phase",
+      "displayNameKey": "Qaqc_role_phase",
+      "description": "Optional. The QCx Combined Inspection Phase column; NCR Pass Rate needs it.",
+      "descriptionKey": "Qaqc_role_phase_description"
+    },
+    {
+      "name": "issue",
+      "kind": "Grouping",
+      "displayName": "Issue",
+      "displayNameKey": "Qaqc_role_issue",
+      "description": "Optional. The QCx Combined Issue column, which marks an inspection with an issue found; NCR Pass Rate needs it.",
+      "descriptionKey": "Qaqc_role_issue_description"
     }
   ],
   "dataViewMappings": [
@@ -168,6 +224,27 @@
             "max": 1
           },
           "closedAt": {
+            "max": 1
+          },
+          "createdByCompany": {
+            "max": 1
+          },
+          "discipline": {
+            "max": 1
+          },
+          "source": {
+            "max": 1
+          },
+          "rowId": {
+            "max": 1
+          },
+          "workWeek": {
+            "max": 1
+          },
+          "phase": {
+            "max": 1
+          },
+          "issue": {
             "max": 1
           }
         }
@@ -248,6 +325,41 @@
             {
               "for": {
                 "in": "closedAt"
+              }
+            },
+            {
+              "for": {
+                "in": "createdByCompany"
+              }
+            },
+            {
+              "for": {
+                "in": "discipline"
+              }
+            },
+            {
+              "for": {
+                "in": "source"
+              }
+            },
+            {
+              "for": {
+                "in": "rowId"
+              }
+            },
+            {
+              "for": {
+                "in": "workWeek"
+              }
+            },
+            {
+              "for": {
+                "in": "phase"
+              }
+            },
+            {
+              "for": {
+                "in": "issue"
               }
             }
           ],

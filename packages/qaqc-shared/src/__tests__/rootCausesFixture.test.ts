@@ -23,8 +23,8 @@ const COLUMNS: IssueColumns = {
 }
 const TODAY = new Date(2026, 9, 15) // WW42'2026
 const WW42 = 202642
-const ALL: ViewState = { selectedKey: WW42, windowEndKey: WW42, range: 'all' }
-const RECENT: ViewState = { selectedKey: WW42, windowEndKey: WW42, range: 'recent' }
+const ALL: ViewState = { selectedKey: WW42, windowEndKey: WW42, range: 'all', dateRange: null }
+const RECENT: ViewState = { selectedKey: WW42, windowEndKey: WW42, range: 'recent', dateRange: null }
 const index = buildIssueIndex(ISSUE_ROWS, COLUMNS, TODAY)
 
 function barValues(model: ParetoModel): Array<[string, number]> {

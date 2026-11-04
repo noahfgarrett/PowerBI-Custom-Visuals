@@ -127,7 +127,7 @@ export interface RootCauseParetoPageProps {
 }
 
 /**
- * The Issues by Root Cause Pareto page opened from the BIM Issues header: issues created in the dashboard's period
+ * The Issues by Root Cause Pareto page opened from the QCx Issues header: issues created in the dashboard's period
  * by root cause, with the category split, the read-out, and the selected bar's issues. Mount it only while the page
  * is open; it builds the Pareto for the period and scope.
  */

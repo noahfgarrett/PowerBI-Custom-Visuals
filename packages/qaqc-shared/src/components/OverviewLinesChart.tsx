@@ -17,6 +17,8 @@ const MARGIN_LEFT = 40
 const MARGIN_LEFT_TITLED = 50
 const AXIS_TITLE_INSET = 10
 const TICK_GAP = 6
+/** Tick labels closer than this touch, so a short plot labels only its ends. */
+const MIN_TICK_SPACING = 12
 const DOT_RADIUS = 4
 const HOVERED_DOT_RADIUS = 5.5
 /** Bands narrower than this draw dots only on labelled points, the selected week and lone points. */
@@ -263,20 +265,24 @@ export function OverviewLinesChart({
   // Hover and focus re-render the chart often, so every layer that does not depend on them is built once per layout.
   const marks = useMemo(() => {
     const middle = MARGIN_TOP + layout.plotHeight / 2
+    const lastTick = scale.ticks.length - 1
+    const areTicksCrowded = layout.plotHeight < MIN_TICK_SPACING * lastTick
     return (
       <>
-        {scale.ticks.map((tick) => (
+        {scale.ticks.map((tick, at) => (
           <g key={tick}>
             <line className="qaqc-grid-line" x1={layout.plotLeft} x2={layout.plotRight} y1={layout.yOf(tick)} y2={layout.yOf(tick)} stroke={colors.grid} />
-            <text
-              className="qaqc-axis-text qaqc-overview-axis-text"
-              x={layout.plotLeft - TICK_GAP}
-              y={layout.yOf(tick) + 3.5}
-              textAnchor="end"
-              fill={colors.axisText}
-            >
-              {formatTick(tick)}
-            </text>
+            {(!areTicksCrowded || at === 0 || at === lastTick) && (
+              <text
+                className="qaqc-axis-text qaqc-overview-axis-text"
+                x={layout.plotLeft - TICK_GAP}
+                y={layout.yOf(tick) + 3.5}
+                textAnchor="end"
+                fill={colors.axisText}
+              >
+                {formatTick(tick)}
+              </text>
+            )}
           </g>
         ))}
         {axisTitle !== null && (

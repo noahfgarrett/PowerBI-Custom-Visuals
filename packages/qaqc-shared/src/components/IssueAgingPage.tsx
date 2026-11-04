@@ -88,7 +88,7 @@ export interface IssueAgingPageProps {
 }
 
 /**
- * The Issue Aging page opened from the BIM Issues header: how old the open issues are as of the selected week,
+ * The Issue Aging page opened from the QCx Issues header: how old the open issues are as of the selected week,
  * against the normal close window, with the issues behind any bar or the red card in a list over the charts.
  * Mount it only while the page is open; it builds the benchmarks for the selected week.
  */

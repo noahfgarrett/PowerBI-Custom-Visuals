@@ -9,7 +9,8 @@ export interface SegmentedToggleProps<T extends string> {
   /** The group's accessible name: what the switch sets. */
   label: string
   options: ReadonlyArray<SegmentedOption<T>>
-  value: T
+  /** Null when none of the options applies right now. */
+  value: T | null
   disabled: boolean
   onChange: (value: T) => void
 }

@@ -3,14 +3,29 @@ import { act, createElement, type ComponentProps } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createConstructorOptions } from '../../../core/src/__test-utils__'
-import { WELD_SLOTS } from '../../../qaqc-shared/src/dataView'
+import { checkbox, chipTexts, click, openMenu, showing, toggleSection } from '../../../qaqc-shared/src/__tests__/filterHarness'
+import { WELD_OPTIONAL_SLOTS, WELD_SLOTS } from '../../../qaqc-shared/src/dataView'
 import { WELDING_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/weldingRows'
 import capabilities from '../../capabilities.json'
+import packageJson from '../../package.json'
 import pbiviz from '../../pbiviz.json'
 import { QaqcWeldingVisual } from '../visual'
 import { tableDataView } from './tableDataView'
 
 const dashboardControl = vi.hoisted(() => ({ shouldThrow: false }))
+const indexBuilds = vi.hoisted((): { rows: unknown[] } => ({ rows: [] }))
+
+// Passes through to the real builder, noting the rows of each build.
+vi.mock('../../../qaqc-shared/src/welds', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../qaqc-shared/src/welds')>()
+  return {
+    ...actual,
+    buildWeldIndex: (...args: Parameters<typeof actual.buildWeldIndex>) => {
+      indexBuilds.rows.push(args[0])
+      return actual.buildWeldIndex(...args)
+    },
+  }
+})
 
 // Passes through to the real dashboard; throws during React render when the flag is set.
 vi.mock('../../../qaqc-shared/src/components/WeldingDashboard', async (importOriginal) => {
@@ -111,6 +126,7 @@ let harness: Harness | null = null
 
 beforeEach(() => {
   dashboardControl.shouldThrow = false
+  indexBuilds.rows = []
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date(2026, 9, 15, 12))
 })
@@ -132,6 +148,11 @@ describe('QaqcWeldingVisual name', () => {
     expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QCx Welding Signoffs')
   })
 
+  it('is version 1.1.0 in pbiviz.json and package.json', () => {
+    expect(pbiviz.visual.version).toBe('1.1.0.0')
+    expect(packageJson.version).toBe('1.1.0')
+  })
+
   it('shows its QCx name in Power BI', () => {
     expect(pbiviz.visual.displayName).toBe('QCx Welding Signoffs')
     expect(pbiviz.visual.description).not.toContain('QAQC')
@@ -146,7 +167,7 @@ describe('QaqcWeldingVisual', () => {
 
   it('names each data role like its field slot', () => {
     const roleNames = Object.fromEntries(capabilities.dataRoles.map((role) => [role.name, role.displayName]))
-    expect(roleNames).toEqual(Object.fromEntries(WELD_SLOTS.map((slot) => [slot.role, slot.slot])))
+    expect(roleNames).toEqual(Object.fromEntries([...WELD_SLOTS, ...WELD_OPTIONAL_SLOTS].map((slot) => [slot.role, slot.slot])))
   })
 
   it('lists the missing field slots before data is bound', () => {
@@ -361,5 +382,88 @@ describe('QaqcWeldingVisual', () => {
     const labels = buildingRowLabels(harness.element)
     expect(labels).toContain('F632')
     expect(labels.some((label) => label.startsWith('Other'))).toBe(false)
+  })
+})
+
+describe('QaqcWeldingVisual filters', () => {
+  it('optional roles are declared in capabilities, in order, none required', () => {
+    const optionalRoles = WELD_OPTIONAL_SLOTS.map((slot) => slot.role)
+    const dataRoles = capabilities.dataRoles.map((role) => role.name)
+    expect(dataRoles).toEqual([...WELD_SLOTS.map((slot) => slot.role), ...optionalRoles])
+
+    const mapping = capabilities.dataViewMappings[0]
+    const conditions: Record<string, unknown> = mapping.conditions[0]
+    const selected = mapping.table.rows.select.map((item) => item.for.in)
+    expect(selected).toEqual(dataRoles)
+    for (const role of optionalRoles) {
+      expect(conditions[role]).toEqual({ max: 1 })
+    }
+  })
+
+  it('declares each optional role as a Grouping with its string keys', () => {
+    for (const slot of WELD_OPTIONAL_SLOTS) {
+      const role = capabilities.dataRoles.find((candidate) => candidate.name === slot.role)
+      expect(role?.displayNameKey).toBe(`Qaqc_role_${slot.role}`)
+      expect(role?.descriptionKey).toBe(`Qaqc_role_${slot.role}_description`)
+      expect(role?.kind).toBe('Grouping')
+    }
+  })
+
+  it('the base index still builds once per data update, not on a filter change', () => {
+    const target = createHarness()
+    harness = target
+    const dataView = tableDataView(WELDING_ROWS)
+    apply(target, update(dataView))
+    expect(indexBuilds.rows).toEqual([dataView.table?.rows])
+
+    apply(target, update(dataView, { width: 900, height: 600 }, 0, RESIZE_UPDATE))
+    expect(indexBuilds.rows).toHaveLength(1)
+
+    openMenu(target.element)
+    click(checkbox(target.element, 'F632'))
+    // The dashboard's own rebuild, over the filtered rows; the base index isn't touched.
+    expect(indexBuilds.rows).toHaveLength(2)
+    const filtered = indexBuilds.rows[1]
+    if (!Array.isArray(filtered)) throw new Error('expected rows')
+    expect(filtered.length).toBeLessThan(WELDING_ROWS.length)
+
+    click(checkbox(target.element, 'F632'))
+    expect(indexBuilds.rows).toHaveLength(2)
+    expect(chipTexts(target.element)).toEqual([])
+
+    apply(target, update(tableDataView(WELDING_ROWS)))
+    expect(indexBuilds.rows).toHaveLength(3)
+  })
+
+  it('keeps a filter across a data refresh', () => {
+    const target = createHarness()
+    harness = target
+    apply(target, update(tableDataView(WELDING_ROWS)))
+    openMenu(target.element)
+    click(checkbox(target.element, 'F632'))
+    const narrowed = cardValue(target.element, 'Total Welds')
+    apply(target, update(tableDataView(WELDING_ROWS)))
+    expect(chipTexts(target.element)).toEqual(['Building: F632'])
+    expect(cardValue(target.element, 'Total Welds')).toBe(narrowed)
+  })
+
+  it('offers a bound Welder in the menu, split on commas', () => {
+    const target = createHarness()
+    harness = target
+    apply(
+      target,
+      update(tableDataView(WELDING_ROWS, { extraColumns: [{ role: 'welder', value: (rowIndex) => (rowIndex === 0 ? 'P-012, PF-025' : 'P-031') }] })),
+    )
+    openMenu(target.element)
+    toggleSection(target.element, 'Welder')
+    click(checkbox(target.element, 'PF-025'))
+    expect(chipTexts(target.element)).toEqual(['Welder: PF-025'])
+    expect(showing(target.element)).toBe('Showing 1 of 1,751 rows')
+  })
+
+  it('disables the Filter button when interactions are blocked', () => {
+    harness = createHarness({ hostCapabilities: { allowInteractions: false } })
+    apply(harness, update(tableDataView(WELDING_ROWS)))
+    expect(harness.element.querySelector<HTMLButtonElement>('.qaqc-filter-button')?.disabled).toBe(true)
   })
 })

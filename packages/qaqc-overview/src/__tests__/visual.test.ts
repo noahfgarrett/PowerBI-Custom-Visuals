@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import type powerbi from 'powerbi-visuals-api'
 import { act, createElement, type ComponentProps } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -7,6 +9,7 @@ import { OVERVIEW_SLOTS } from '../../../qaqc-shared/src/dataView'
 import { COMBINED_COLUMNS, COMBINED_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/combinedRows'
 import { ENRICHED_COMBINED_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/enrichedCombinedRows'
 import capabilities from '../../capabilities.json'
+import packageJson from '../../package.json'
 import pbiviz from '../../pbiviz.json'
 import { QaqcOverviewVisual } from '../visual'
 import { ALL_ROLES, ENRICHMENT_ROLES, tableDataView } from './tableDataView'
@@ -213,6 +216,11 @@ describe('QaqcOverviewVisual name', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(COMBINED_ROWS)))
     expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QCx Overview')
+  })
+
+  it('is version 1.3.0 in pbiviz.json and package.json', () => {
+    expect(pbiviz.visual.version).toBe('1.3.0.0')
+    expect(packageJson.version).toBe('1.3.0')
   })
 
   it('shows its QCx name in Power BI', () => {
@@ -618,5 +626,84 @@ describe('QaqcOverviewVisual with the enriched Autodesk export as the BIM source
     const bim = row(harness.element, 'BIM Issues')
     expect([cardValue(bim, 'Opened'), cardValue(bim, 'Closed'), cardValue(bim, 'Remaining open')]).toEqual(['29', '16', '13'])
     expect(footnotes(harness.element)).toEqual(['BIM Issues: 1,048 issues not created by LotusWorks are excluded'])
+  })
+})
+
+describe('QaqcOverviewVisual filter and drill-down', () => {
+  function filterButton(element: HTMLElement): HTMLButtonElement {
+    const button = element.querySelector<HTMLButtonElement>('.qaqc-filter-button')
+    if (!button) throw new Error('filter button missing')
+    return button
+  }
+
+  function menuFields(element: HTMLElement): string[] {
+    return [...element.querySelectorAll('.qaqc-filter-section-toggle span:first-of-type')].map((node) => node.textContent ?? '')
+  }
+
+  function tickBuilding(element: HTMLElement, name: string): void {
+    const toggle = [...element.querySelectorAll('.qaqc-filter-section-toggle')].find((node) => node.textContent?.startsWith('Building'))
+    if (toggle?.getAttribute('aria-expanded') !== 'true') click(toggle)
+    click([...element.querySelectorAll('.qaqc-filter-popover input[type="checkbox"]')].find((node) => node.getAttribute('aria-label')?.startsWith(`${name},`)))
+  }
+
+  function notes(element: HTMLElement): string[] {
+    return [...element.querySelectorAll('.qaqc-filter-note')].map((node) => node.textContent ?? '')
+  }
+
+  it('draws with every new slot unbound, offering Date range and Building', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(COMBINED_ROWS)))
+    click(filterButton(harness.element))
+    expect(harness.element.querySelector('.qaqc-filter-date')).not.toBeNull()
+    expect(menuFields(harness.element)).toEqual(['Building'])
+  })
+
+  it('says Building leaves welding alone while Tag No is unbound', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(COMBINED_ROWS)))
+    click(filterButton(harness.element))
+    tickBuilding(harness.element, 'BK1')
+    expect(notes(harness.element)).toEqual(["BIM issues aren't filtered by Building", "Welding isn't filtered by Building"])
+    expect(cardValue(row(harness.element, 'Welding'), 'Signed')).toBe('70')
+  })
+
+  it('filters welding by Building once Tag No is bound', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(COMBINED_ROWS, { roles: [...ALL_ROLES, 'tagNo'] })))
+    click(filterButton(harness.element))
+    tickBuilding(harness.element, 'BK1')
+    expect(notes(harness.element)).toEqual(["BIM issues aren't filtered by Building"])
+    expect(cardValue(row(harness.element, 'Welding'), 'Signed')).not.toBe('70')
+  })
+
+  it('keeps a filter across a resize, without indexing again', () => {
+    harness = createHarness()
+    apply(harness, update(tableDataView(COMBINED_ROWS)))
+    click(filterButton(harness.element))
+    tickBuilding(harness.element, 'BK1')
+    const builds = indexBuilds.count
+    apply(harness, update(tableDataView(COMBINED_ROWS), { width: 1000, height: 700 }, 0, RESIZE_UPDATE))
+    expect(indexBuilds.count).toBe(builds)
+    expect(notes(harness.element)).toContain("BIM issues aren't filtered by Building")
+  })
+
+  it('disables the Filter button when the host disallows interactions', () => {
+    harness = createHarness({ hostCapabilities: { allowInteractions: false } })
+    apply(harness, update(tableDataView(COMBINED_ROWS)))
+    expect(filterButton(harness.element).disabled).toBe(true)
+  })
+
+  it('declares a localized name and description for every new slot', () => {
+    const NEW_ROLES = [
+      'generalContractor', 'contractor', 'discipline', 'tagNo', 'welder', 'pipeSpec', 'fluidCode',
+      'inspectionId', 'equipmentTag', 'issueId', 'findingType', 'dateObserved', 'qcr', 'notes',
+    ]
+    const resources = readFileSync(join(__dirname, '..', '..', 'stringResources', 'en-US', 'resources.resjson'), 'utf8')
+    for (const name of NEW_ROLES) {
+      const role = capabilities.dataRoles.find((item) => item.name === name)
+      expect(role?.description.startsWith('Optional.')).toBe(true)
+      expect(resources).toContain(`"Qaqc_role_${name}": ${JSON.stringify(role?.displayName)}`)
+      expect(resources).toContain(`"Qaqc_role_${name}_description": ${JSON.stringify(role?.description)}`)
+    }
   })
 })

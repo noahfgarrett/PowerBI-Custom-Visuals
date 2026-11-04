@@ -1,4 +1,4 @@
-import type { CombinedColumns, InspectionColumns, InspectionRows, IssueColumns, WeldColumns } from './types'
+import type { CombinedColumns, InspectionColumns, InspectionOptionalColumns, InspectionRows, IssueColumns, WeldColumns, WeldOptionalColumns } from './types'
 
 export interface FieldSlot<Role extends string = keyof InspectionColumns | 'rowId'> {
   role: Role
@@ -6,6 +6,8 @@ export interface FieldSlot<Role extends string = keyof InspectionColumns | 'rowI
   slot: string
   /** Smartsheet column the user drags into it. */
   column: string
+  /** Optional on this visual, though another visual reading the same table may require the role. */
+  isOptional?: boolean
 }
 
 export const REQUIRED_SLOTS: readonly FieldSlot[] = [
@@ -16,9 +18,28 @@ export const REQUIRED_SLOTS: readonly FieldSlot[] = [
   { role: 'rowId', slot: 'Row ID', column: 'Index' },
 ]
 
+/**
+ * The filter menu's fields and the drill-down's columns. A report without them keeps working. A visual declares the
+ * ones its sheet has, in this order, under the sheet's spelling: Mechanical has no Inspection ID, and writes `QCR / FE`.
+ */
+export const INSPECTION_OPTIONAL_SLOTS: readonly FieldSlot<keyof InspectionOptionalColumns>[] = [
+  { role: 'generalContractor', slot: 'General Contractor', column: 'General Contractor' },
+  { role: 'tradeSupplier', slot: 'Trade Supplier', column: 'Trade Supplier' },
+  { role: 'discipline', slot: 'Discipline', column: 'Discipline' },
+  { role: 'inspectionCategory', slot: 'Inspection Category', column: 'Inspection Category' },
+  { role: 'status', slot: 'Status', column: 'Status' },
+  { role: 'inspectionId', slot: 'Inspection ID', column: 'Inspection ID' },
+  { role: 'equipmentTag', slot: 'Equipment ID / Tag Number', column: 'Equipment ID / Tag Number' },
+  { role: 'issueId', slot: 'Issue ID', column: 'Issue ID' },
+  { role: 'findingType', slot: 'Finding Type', column: 'Finding Type' },
+  { role: 'dateObserved', slot: 'Date Observed', column: 'Date Observed' },
+  { role: 'qcr', slot: 'QCR/FE', column: 'QCR/FE' },
+  { role: 'notes', slot: 'Notes', column: 'Notes' },
+]
+
 export type TableReadResult =
   | { kind: 'missing'; missing: FieldSlot[] }
-  | { kind: 'ready'; rows: InspectionRows; columns: InspectionColumns }
+  | { kind: 'ready'; rows: InspectionRows; columns: InspectionColumns; optional: InspectionOptionalColumns }
 
 export interface TableColumnLike {
   roles?: { [role: string]: boolean }
@@ -47,6 +68,20 @@ export function readInspectionTable(table: InspectionTableSource | undefined): T
     kind: 'ready',
     rows: table.rows ?? [],
     columns: { workWeek, phase, issue, building },
+    optional: {
+      generalContractor: positionOf('generalContractor'),
+      tradeSupplier: positionOf('tradeSupplier'),
+      discipline: positionOf('discipline'),
+      inspectionCategory: positionOf('inspectionCategory'),
+      status: positionOf('status'),
+      inspectionId: positionOf('inspectionId'),
+      equipmentTag: positionOf('equipmentTag'),
+      issueId: positionOf('issueId'),
+      findingType: positionOf('findingType'),
+      dateObserved: positionOf('dateObserved'),
+      qcr: positionOf('qcr'),
+      notes: positionOf('notes'),
+    },
   }
 }
 
@@ -64,9 +99,15 @@ export const WELD_SLOTS: readonly WeldFieldSlot[] = [
   { role: 'rowId', slot: 'Row ID', column: 'Index' },
 ]
 
+/** The filter menu's extra fields, and the drill-down's Welder. A report without them keeps working. */
+export const WELD_OPTIONAL_SLOTS: readonly FieldSlot<keyof WeldOptionalColumns>[] = [
+  { role: 'welder', slot: 'Welder', column: 'WELDER' },
+  { role: 'workPackage', slot: 'Work Package', column: 'WORK PKG' },
+]
+
 export type WeldTableReadResult =
   | { kind: 'missing'; missing: WeldFieldSlot[] }
-  | { kind: 'ready'; rows: InspectionRows; columns: WeldColumns }
+  | { kind: 'ready'; rows: InspectionRows; columns: WeldColumns; optional: WeldOptionalColumns }
 
 export function readWeldTable(table: InspectionTableSource | undefined): WeldTableReadResult {
   if (!table) return { kind: 'missing', missing: [...WELD_SLOTS] }
@@ -97,6 +138,10 @@ export function readWeldTable(table: InspectionTableSource | undefined): WeldTab
       pipeSpec: positions.pipeSpec,
       tagNo: positions.tagNo,
     },
+    optional: {
+      welder: positionOf('welder'),
+      workPackage: positionOf('workPackage'),
+    },
   }
 }
 
@@ -120,11 +165,20 @@ export const ISSUE_SLOTS: readonly IssueFieldSlot[] = [
   { role: 'bim360CreatedOn', slot: 'BIM360 Created On', column: 'BIM360_Created On' },
   { role: 'bim360ClosedOn', slot: 'BIM360 Closed On', column: 'BIM360_Closed On' },
   { role: 'closedAt', slot: 'Closed At', column: 'Closed at' },
+  { role: 'createdByCompany', slot: 'Created By (Company)', column: 'Created By (Company)' },
+  { role: 'discipline', slot: 'Discipline', column: 'Discipline' },
+  { role: 'source', slot: 'Source', column: 'Source' },
+  { role: 'rowId', slot: 'Row ID', column: 'Row ID' },
+  { role: 'workWeek', slot: 'Work Week', column: 'Work Week' },
+  { role: 'phase', slot: 'Inspection Phase', column: 'Inspection Phase' },
+  { role: 'issue', slot: 'Issue', column: 'Issue' },
 ]
 
 /**
  * Root Cause and its category only feed the Pareto, so reports without them keep working. The enrichment slots only
- * exist in the enriched Autodesk export; without them every issue reads its standard Created By and dates.
+ * exist in the enriched Autodesk export; without them every issue reads its standard Created By and dates. Created By
+ * (Company) and Discipline only add Filter menu fields. Source and the slots after it only matter when the visual is
+ * bound to QCx Combined.
  */
 export const OPTIONAL_ISSUE_ROLES: ReadonlySet<IssueSlotRole> = new Set<IssueSlotRole>([
   'rootCause',
@@ -133,6 +187,13 @@ export const OPTIONAL_ISSUE_ROLES: ReadonlySet<IssueSlotRole> = new Set<IssueSlo
   'bim360CreatedOn',
   'bim360ClosedOn',
   'closedAt',
+  'createdByCompany',
+  'discipline',
+  'source',
+  'rowId',
+  'workWeek',
+  'phase',
+  'issue',
 ])
 
 export type IssueTableReadResult =
@@ -161,11 +222,38 @@ export function readIssueTable(table: InspectionTableSource | undefined): IssueT
     bim360CreatedOn: positionOf('bim360CreatedOn'),
     bim360ClosedOn: positionOf('bim360ClosedOn'),
     closedAt: positionOf('closedAt'),
+    createdByCompany: positionOf('createdByCompany'),
+    discipline: positionOf('discipline'),
+    source: positionOf('source'),
+    rowId: positionOf('rowId'),
+    workWeek: positionOf('workWeek'),
+    phase: positionOf('phase'),
+    issue: positionOf('issue'),
   }
   const missing = required.filter((slot) => columns[slot.role] < 0)
   if (missing.length > 0) return { kind: 'missing', missing }
 
   return { kind: 'ready', rows: table.rows ?? [], columns }
+}
+
+/** Row ID is read by nothing, but without it Power BI merges identical inspection rows and the rate is wrong. */
+const INSPECTION_CARD_ROLES: readonly IssueSlotRole[] = ['rowId', 'workWeek', 'phase', 'issue']
+
+export type IssueInspectionColumnsResult =
+  | { kind: 'missing'; missing: IssueFieldSlot[] }
+  | { kind: 'ready'; columns: InspectionColumns }
+
+/**
+ * The inspection columns NCR Pass Rate reads from an issues table bound to QCx Combined. The card has no use for
+ * Building and the visual has no slot for it: `row[-1]` is undefined, which the index reads as a blank cell.
+ */
+export function readIssueInspectionColumns(columns: IssueColumns): IssueInspectionColumnsResult {
+  const missing = ISSUE_SLOTS.filter((slot) => INSPECTION_CARD_ROLES.includes(slot.role) && (columns[slot.role] ?? -1) < 0)
+  if (missing.length > 0) return { kind: 'missing', missing }
+  return {
+    kind: 'ready',
+    columns: { workWeek: columns.workWeek ?? -1, phase: columns.phase ?? -1, issue: columns.issue ?? -1, building: -1 },
+  }
 }
 
 export type CombinedSlotRole = keyof CombinedColumns | 'rowId'
@@ -192,6 +280,20 @@ export const OVERVIEW_SLOTS: readonly CombinedFieldSlot[] = [
   { role: 'bim360CreatedOn', slot: 'BIM360 Created On', column: 'BIM360 Created On' },
   { role: 'bim360ClosedOn', slot: 'BIM360 Closed On', column: 'BIM360 Closed On' },
   { role: 'closedAt', slot: 'Closed At', column: 'Closed At' },
+  { role: 'generalContractor', slot: 'General Contractor', column: 'General Contractor' },
+  { role: 'contractor', slot: 'Contractor', column: 'Contractor' },
+  { role: 'discipline', slot: 'Discipline', column: 'Discipline' },
+  { role: 'tagNo', slot: 'Tag No', column: 'Tag No', isOptional: true },
+  { role: 'welder', slot: 'Welder', column: 'Welder', isOptional: true },
+  { role: 'pipeSpec', slot: 'Pipe Spec', column: 'Pipe Spec' },
+  { role: 'fluidCode', slot: 'Fluid Code', column: 'Fluid Code' },
+  { role: 'inspectionId', slot: 'Inspection ID', column: 'Inspection ID' },
+  { role: 'equipmentTag', slot: 'Equipment ID / Tag Number', column: 'Equipment ID / Tag Number' },
+  { role: 'issueId', slot: 'Issue ID', column: 'Issue ID' },
+  { role: 'findingType', slot: 'Finding Type', column: 'Finding Type' },
+  { role: 'dateObserved', slot: 'Date Observed', column: 'Date Observed' },
+  { role: 'qcr', slot: 'QCR/FE', column: 'QCR/FE', isOptional: true },
+  { role: 'notes', slot: 'Notes', column: 'Notes' },
   { role: 'greenTags', slot: 'Green tags', column: 'Green tags measure' },
 ]
 
@@ -205,6 +307,10 @@ export const PERFORMANCE_SLOTS: readonly CombinedFieldSlot[] = [
   { role: 'qcr', slot: 'QCR/FE', column: 'QCR/FE' },
   { role: 'welder', slot: 'Welder', column: 'Welder' },
   { role: 'tagNo', slot: 'Tag No', column: 'Tag No' },
+  { role: 'generalContractor', slot: 'General Contractor', column: 'General Contractor' },
+  { role: 'discipline', slot: 'Discipline', column: 'Discipline' },
+  { role: 'pipeSpec', slot: 'Pipe Spec', column: 'Pipe Spec' },
+  { role: 'fluidCode', slot: 'Fluid Code', column: 'Fluid Code' },
 ]
 
 /**
@@ -212,6 +318,7 @@ export const PERFORMANCE_SLOTS: readonly CombinedFieldSlot[] = [
  * Root Cause only feeds the Top root cause card, which asks for it when unbound.
  * The enrichment columns only matter for issues migrated from BIM 360; without them every issue reads its standard
  * Created By and dates.
+ * The rest only add Filter menu fields and drill-down columns, so reports without them keep working.
  */
 export const OPTIONAL_COMBINED_ROLES: ReadonlySet<CombinedSlotRole> = new Set<CombinedSlotRole>([
   'rootCause',
@@ -220,7 +327,29 @@ export const OPTIONAL_COMBINED_ROLES: ReadonlySet<CombinedSlotRole> = new Set<Co
   'bim360ClosedOn',
   'closedAt',
   'greenTags',
+  'generalContractor',
+  'contractor',
+  'tradeSupplier',
+  'discipline',
+  'inspectionCategory',
+  'inspectionId',
+  'equipmentTag',
+  'issueId',
+  'findingType',
+  'dateObserved',
+  'notes',
+  'pipeSpec',
+  'fluidCode',
+  'workPackage',
+  'title',
+  'dueDate',
+  'createdByCompany',
 ])
+
+/** The slots a visual can't draw without. */
+export function requiredCombinedSlots(slots: readonly CombinedFieldSlot[]): CombinedFieldSlot[] {
+  return slots.filter((slot) => slot.isOptional !== true && !OPTIONAL_COMBINED_ROLES.has(slot.role))
+}
 
 export type CombinedTableReadResult =
   | { kind: 'missing'; missing: CombinedFieldSlot[] }
@@ -231,7 +360,7 @@ export function readCombinedTable(
   table: InspectionTableSource | undefined,
   slots: readonly CombinedFieldSlot[],
 ): CombinedTableReadResult {
-  const required = slots.filter((slot) => !OPTIONAL_COMBINED_ROLES.has(slot.role))
+  const required = requiredCombinedSlots(slots)
   if (!table) return { kind: 'missing', missing: required }
 
   const positionOf = (role: string): number => table.columns.findIndex((column) => column.roles?.[role] === true)
@@ -258,6 +387,23 @@ export function readCombinedTable(
     bim360CreatedOn: positionOf('bim360CreatedOn'),
     bim360ClosedOn: positionOf('bim360ClosedOn'),
     closedAt: positionOf('closedAt'),
+    generalContractor: positionOf('generalContractor'),
+    contractor: positionOf('contractor'),
+    tradeSupplier: positionOf('tradeSupplier'),
+    discipline: positionOf('discipline'),
+    inspectionCategory: positionOf('inspectionCategory'),
+    inspectionId: positionOf('inspectionId'),
+    equipmentTag: positionOf('equipmentTag'),
+    issueId: positionOf('issueId'),
+    findingType: positionOf('findingType'),
+    dateObserved: positionOf('dateObserved'),
+    notes: positionOf('notes'),
+    pipeSpec: positionOf('pipeSpec'),
+    fluidCode: positionOf('fluidCode'),
+    workPackage: positionOf('workPackage'),
+    title: positionOf('title'),
+    dueDate: positionOf('dueDate'),
+    createdByCompany: positionOf('createdByCompany'),
   }
   const positions: Record<CombinedSlotRole, number> = { ...columns, rowId: positionOf('rowId') }
   const missing = required.filter((slot) => positions[slot.role] < 0)

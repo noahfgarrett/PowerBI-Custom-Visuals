@@ -116,7 +116,10 @@ export class QaqcPerformanceVisual implements powerbi.extensibility.visual.IVisu
     this.root.unmount()
   }
 
-  /** Indexes once per data update; the dashboard re-ranks the index for each group, range and week. */
+  /**
+   * Indexes once per data update. The dashboard re-ranks the index for each group, range and week, and rebuilds it over
+   * the matching rows for a field filter.
+   */
   private readTable(dataView: powerbi.DataView | undefined): void {
     this.table = readCombinedTable(dataView?.table, PERFORMANCE_SLOTS)
     this.index = this.table.kind === 'ready'

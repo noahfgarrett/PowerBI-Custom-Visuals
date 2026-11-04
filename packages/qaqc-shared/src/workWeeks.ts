@@ -17,6 +17,11 @@ export function makeWorkWeek(year: number, week: number): WorkWeek {
   }
 }
 
+/** The week a `WorkWeek.key` names. */
+export function workWeekFromKey(key: number): WorkWeek {
+  return makeWorkWeek(Math.floor(key / 100), key % 100)
+}
+
 export function toIsoWorkWeek(date: Date): WorkWeek {
   const utc = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
   const day = utc.getUTCDay() || 7

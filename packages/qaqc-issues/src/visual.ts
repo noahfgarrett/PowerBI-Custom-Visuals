@@ -6,13 +6,15 @@ import { flushSync } from 'react-dom'
 import { createRoot, type Root } from 'react-dom/client'
 
 import type { TooltipRequest } from '../../qaqc-shared/src/chartTypes'
+import { splitCombinedRows } from '../../qaqc-shared/src/combined'
 import { StatusPanel } from '../../qaqc-shared/src/components/StatusPanel'
 import { IssuesDashboard } from '../../qaqc-shared/src/components/IssuesDashboard'
-import { readIssueTable, type IssueFieldSlot, type IssueTableReadResult } from '../../qaqc-shared/src/dataView'
-import { buildIssueFootnotes } from '../../qaqc-shared/src/footnotes'
-import { buildIssueIndex } from '../../qaqc-shared/src/issues'
+import { readIssueInspectionColumns, readIssueTable, type IssueFieldSlot, type IssueTableReadResult } from '../../qaqc-shared/src/dataView'
+import { buildCombinedIssueFootnotes, buildIssueFootnotes } from '../../qaqc-shared/src/footnotes'
+import { buildInspectionIndex } from '../../qaqc-shared/src/inspections'
+import { buildIssueIndex, type IssueFilterSource } from '../../qaqc-shared/src/issues'
 import { resolveTheme, type HighContrastColors, type ResolvedTheme } from '../../qaqc-shared/src/theme'
-import type { IssueIndex } from '../../qaqc-shared/src/types'
+import type { InspectionIndex, InspectionRows, IssueColumns, IssueIndex } from '../../qaqc-shared/src/types'
 import { IssuesSettingsModel, readDisplaySettings } from './settings'
 
 import '../style/visual.less'
@@ -41,18 +43,21 @@ export class QaqcIssuesVisual implements powerbi.extensibility.visual.IVisual {
   private settings = new IssuesSettingsModel()
   private table: IssueTableReadResult | null = null
   private index: IssueIndex | null = null
+  private filterSource: IssueFilterSource | null = null
+  private inspectionIndex: InspectionIndex | null = null
+  private combinedNotes: string[] = []
   private loading = false
   private rowLimitReached = false
   private renderError: unknown = null
   private viewport: powerbi.IViewport = { width: 0, height: 0 }
 
   constructor(options?: VisualConstructorOptions) {
-    if (!options) throw new Error('QCx BIM Issues requires a Power BI visual host.')
+    if (!options) throw new Error('QCx Issues requires a Power BI visual host.')
     this.host = options.host
     this.element = options.element
     this.element.classList.add('qaqc-host')
     this.element.setAttribute('role', 'region')
-    this.element.setAttribute('aria-label', 'QCx BIM issues dashboard')
+    this.element.setAttribute('aria-label', 'QCx Issues dashboard')
     this.selectionManager = this.host.createSelectionManager()
     this.formattingSettingsService = new FormattingSettingsService(this.host.createLocalizationManager())
     // React 19 reports render errors here instead of re-throwing from flushSync; commit() re-throws them.
@@ -114,9 +119,33 @@ export class QaqcIssuesVisual implements powerbi.extensibility.visual.IVisual {
 
   private readTable(dataView: powerbi.DataView | undefined): void {
     this.table = readIssueTable(dataView?.table)
-    this.index = this.table.kind === 'ready'
-      ? buildIssueIndex(this.table.rows, this.table.columns, new Date())
-      : null
+    this.inspectionIndex = null
+    this.combinedNotes = []
+    if (this.table.kind !== 'ready') {
+      this.index = null
+      this.filterSource = null
+      return
+    }
+    const { rows, columns } = this.table
+    const today = new Date()
+    const issueRows = columns.source !== undefined && columns.source >= 0 ? this.splitCombinedTable(rows, columns, columns.source, today) : rows
+    this.index = buildIssueIndex(issueRows, columns, today)
+    this.filterSource = { rows: issueRows, columns, today }
+  }
+
+  /**
+   * With Source bound the table is QCx Combined. Returns its BIM rows, the only ones that are issues; Electrical and
+   * Mechanical rows feed NCR Pass Rate, and Welding rows aren't read.
+   */
+  private splitCombinedTable(rows: InspectionRows, columns: IssueColumns, sourceColumn: number, today: Date): InspectionRows {
+    const split = splitCombinedRows(rows, sourceColumn)
+    const inspection = readIssueInspectionColumns(columns)
+    if (inspection.kind === 'ready') {
+      this.inspectionIndex = buildInspectionIndex([...split.electrical, ...split.mechanical], inspection.columns, today)
+    }
+    const missingSlots = inspection.kind === 'missing' ? inspection.missing.map((slot) => slot.slot) : []
+    this.combinedNotes = buildCombinedIssueFootnotes(split.unknownSource, missingSlots, this.inspectionIndex)
+    return split.bim
   }
 
   /** flushSync does not re-throw React 19 render errors, so surface the one captured by onUncaughtError. */
@@ -135,7 +164,7 @@ export class QaqcIssuesVisual implements powerbi.extensibility.visual.IVisual {
       this.commit(
         createElement(StatusPanel, {
           icon: TriangleAlert,
-          title: 'Could not draw the QCx BIM Issues visual',
+          title: 'Could not draw the QCx Issues visual',
           message: 'Check the bound columns, then refresh the report.',
           items: [],
         }),
@@ -156,18 +185,21 @@ export class QaqcIssuesVisual implements powerbi.extensibility.visual.IVisual {
     })
     this.applyTheme(theme)
 
-    if (this.index === null || this.table === null || this.table.kind === 'missing') {
+    if (this.index === null || this.filterSource === null || this.table === null || this.table.kind === 'missing') {
       this.renderEmptyState(this.table?.kind === 'missing' ? this.table.missing : [])
       return
     }
 
     const index = this.index
-    const footnotes = buildIssueFootnotes(index, this.rowLimitReached)
+    // The row limit is on the table's rows, which with Source bound are more than the issues.
+    const footnotes = [...buildIssueFootnotes({ ...index, totalRows: this.table.rows.length }, this.rowLimitReached), ...this.combinedNotes]
     this.commit(
       createElement(IssuesDashboard, {
-        title: 'QCx BIM Issues',
+        title: 'QCx Issues',
         icon: CircleAlert,
         index,
+        filterSource: this.filterSource,
+        inspections: { index: this.inspectionIndex },
         theme,
         interactive: this.interactionsAllowed(),
         animate: display.animate && !prefersReducedMotion(),
@@ -180,13 +212,13 @@ export class QaqcIssuesVisual implements powerbi.extensibility.visual.IVisual {
     )
   }
 
-  /** Setup state: tells the author which Smartsheet columns still need a field slot. */
+  /** Setup state: tells the author which Issues export columns still need a field slot. */
   private renderEmptyState(missing: IssueFieldSlot[]): void {
     this.commit(
       createElement(StatusPanel, {
         icon: ListChecks,
-        title: 'Add the BIM Issues Log columns',
-        message: 'Drag these columns from your Smartsheet table into the matching field slots.',
+        title: 'Add the Issues export columns',
+        message: 'Drag these columns from the Issues sheet of your enriched Autodesk export into the matching field slots.',
         items: missing.map((slot) => `${slot.column} → ${slot.slot}`),
       }),
     )

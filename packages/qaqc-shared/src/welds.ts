@@ -15,14 +15,17 @@ import type {
   WeldColumns,
   WeldIndex,
   WeldModel,
+  WeldOptionalColumns,
   WeldWeekCounts,
   WeldWindowTotals,
   WorkWeek,
 } from './types'
 import { NAME_COLLATOR } from './format'
 import { createNameGrouper, createWeekReader, firstSpelling, groupKey } from './grouping'
-import { cellText, recentWindowStart } from './inspections'
-import { enumerateWorkWeeks, previousWorkWeek, toIsoWorkWeek } from './workWeeks'
+import { cellText, rangePositions, recentWindowStart } from './inspections'
+import { groupKey as filterGroupKey, optionalField, type FilterFieldDef, type Row } from './rowFilters'
+import { formatWeekRange } from './weekRange'
+import { enumerateWorkWeeks, previousWorkWeek, toIsoWorkWeek, workWeekFromKey } from './workWeeks'
 
 export const SITE_GENERAL = 'Site General'
 export const UNSPECIFIED_WELD_VALUE = 'Unspecified'
@@ -55,15 +58,89 @@ export function weldBuilding(tag: unknown): string {
   return match ? match[1] : SITE_GENERAL
 }
 
+/** What a dashboard needs to rebuild its index when a field filter changes the rows. */
+export interface WeldFilterSource {
+  rows: InspectionRows
+  columns: WeldColumns
+  optional: WeldOptionalColumns
+  today: Date
+}
+
+const UNSPECIFIED_KEY = groupKey(UNSPECIFIED_WELD_VALUE)
+
+/**
+ * A field the charts already label, with the chart's value and key, so the two can't disagree: `N/A` is a value of its
+ * own, as it is on the chart. What the chart shows as Unspecified reads as '', the blank value, so it's listed last.
+ */
+export function chartLabelledField(id: string, label: string, normalize: (value: unknown) => string, position: number): FilterFieldDef {
+  return {
+    id,
+    label,
+    read: (row) => {
+      const name = normalize(row[position])
+      return groupKey(name) === UNSPECIFIED_KEY ? '' : name
+    },
+    groupBy: groupKey,
+    blankLabel: UNSPECIFIED_WELD_VALUE,
+  }
+}
+
+/** The recorded welders a Welder cell lists, split as Performance splits them, remembered by cell text. */
+function createWelderReader(position: number): (row: Row) => readonly string[] {
+  const cache = new Map<string, readonly string[]>()
+  return (row) => {
+    const text = cellText(row[position])
+    const cached = cache.get(text)
+    if (cached !== undefined) return cached
+    const welders = text.split(',').map((part) => part.trim()).filter((part) => filterGroupKey(part) !== '')
+    cache.set(text, welders)
+    return welders
+  }
+}
+
+/** The menu's fields, in menu order. Only bound slots appear; the required ones always do. */
+export function weldFilterFields(columns: WeldColumns, optional: WeldOptionalColumns): FilterFieldDef[] {
+  const welder: FilterFieldDef[] = optional.welder < 0
+    ? []
+    : [{ id: 'welder', label: 'Welder', read: createWelderReader(optional.welder) }]
+  return [
+    // The chart's value and key, derived from Tag No. Every weld has one, so there's no blank value to label.
+    { id: 'building', label: 'Building', read: (row) => weldBuilding(row[columns.tagNo]), groupBy: groupKey },
+    chartLabelledField('pipeSpec', 'Pipe Spec', normalizePipeSpec, columns.pipeSpec),
+    chartLabelledField('fluidCode', 'Fluid Code', normalizeSystem, columns.fluidCode),
+    ...welder,
+    ...optionalField('workPackage', 'Work Package', optional.workPackage),
+  ]
+}
+
+/** Reads a row's Weld Work Week the way the index does, for counting rows in a date range. */
+export function weldRowWeekKey(columns: WeldColumns): (row: Row) => number | null {
+  const readWeek = createWeekReader()
+  return (row) => readWeek(row[columns.weldWeek])?.key ?? null
+}
+
 interface WeekBucket {
   logged: number
   signed: number
   issues: number
+  issueRows: number[]
   systems: Map<string, SystemTally>
   buildings: Map<string, WeldBuildingTally>
 }
 
-export function buildWeldIndex(rows: InspectionRows, columns: WeldColumns, today: Date): WeldIndex {
+const NO_ROWS: readonly number[] = []
+
+export interface WeldIndexOptions {
+  /** The axis starts here when that is before the first data week, so a filtered index keeps the full data's weeks. */
+  axisFromKey?: number
+}
+
+export function buildWeldIndex(
+  rows: InspectionRows,
+  columns: WeldColumns,
+  today: Date,
+  options: WeldIndexOptions = {},
+): WeldIndex {
   const currentWeek = toIsoWorkWeek(today)
   const readWeek = createWeekReader()
   const buckets = new Map<number, WeekBucket>()
@@ -77,7 +154,8 @@ export function buildWeldIndex(rows: InspectionRows, columns: WeldColumns, today
   let futureRows = 0
   let firstWeek: WorkWeek | null = null
 
-  for (const row of rows) {
+  for (let rowPosition = 0; rowPosition < rows.length; rowPosition += 1) {
+    const row = rows[rowPosition]
     const week = readWeek(row[columns.weldWeek])
     if (!week) {
       skippedRows += 1
@@ -92,7 +170,7 @@ export function buildWeldIndex(rows: InspectionRows, columns: WeldColumns, today
 
     let bucket = buckets.get(week.key)
     if (!bucket) {
-      bucket = { logged: 0, signed: 0, issues: 0, systems: new Map(), buildings: new Map() }
+      bucket = { logged: 0, signed: 0, issues: 0, issueRows: [], systems: new Map(), buildings: new Map() }
       buckets.set(week.key, bucket)
     }
 
@@ -123,6 +201,7 @@ export function buildWeldIndex(rows: InspectionRows, columns: WeldColumns, today
     buildingTally.welds += 1
     if (isWeldIssue(row[columns.issue])) {
       bucket.issues += 1
+      bucket.issueRows.push(rowPosition)
       buildingTally.issues += 1
     }
     if (isSigned) {
@@ -143,12 +222,17 @@ export function buildWeldIndex(rows: InspectionRows, columns: WeldColumns, today
   const cumulativeIssues: number[] = []
   const systemsByWeek: Array<Map<string, SystemTally>> = []
   const buildingsByWeek: Array<Map<string, WeldBuildingTally>> = []
+  const issueRowsByWeek: Array<readonly number[]> = []
   const positionByKey = new Map<number, number>()
   let logged = 0
   let signed = 0
   let issues = 0
 
-  for (const week of enumerateWorkWeeks(firstWeek ?? currentWeek, currentWeek)) {
+  const dataStart = firstWeek ?? currentWeek
+  const { axisFromKey } = options
+  const axisStart = axisFromKey !== undefined && axisFromKey < dataStart.key ? workWeekFromKey(axisFromKey) : dataStart
+
+  for (const week of enumerateWorkWeeks(axisStart, currentWeek)) {
     const bucket = buckets.get(week.key)
     const counts: WeldWeekCounts = {
       week,
@@ -167,6 +251,7 @@ export function buildWeldIndex(rows: InspectionRows, columns: WeldColumns, today
     cumulativeIssues.push(issues)
     systemsByWeek.push(bucket?.systems ?? new Map())
     buildingsByWeek.push(bucket?.buildings ?? new Map())
+    issueRowsByWeek.push(bucket?.issueRows ?? NO_ROWS)
   }
 
   return {
@@ -177,6 +262,7 @@ export function buildWeldIndex(rows: InspectionRows, columns: WeldColumns, today
     cumulativeIssues,
     systemsByWeek,
     buildingsByWeek,
+    issueRowsByWeek,
     positionByKey,
     totalRows: rows.length,
     skippedRows,
@@ -265,13 +351,15 @@ export function buildWeldModel(
   minWelds: number,
 ): WeldModel {
   const lastPosition = index.weeks.length - 1
-  const selectedPosition = index.positionByKey.get(view.selectedKey) ?? lastPosition
-  const endPosition = index.positionByKey.get(view.windowEndKey) ?? lastPosition
-  const startPosition = view.range === 'all' ? 0 : recentWindowStart(endPosition)
+  // In a date range the window is the range's weeks.
+  const span = view.dateRange === null ? null : rangePositions(index, view.dateRange)
+  const isInRange = span !== null
+  const endPosition = span?.end ?? index.positionByKey.get(view.windowEndKey) ?? lastPosition
+  const startPosition = span?.start ?? (view.range === 'all' ? 0 : recentWindowStart(endPosition))
+  const knownSelected = index.positionByKey.get(view.selectedKey) ?? lastPosition
+  const selectedPosition = span === null ? knownSelected : Math.min(Math.max(knownSelected, span.start), span.end)
   const selected = index.weeks[selectedPosition]
   const previous = selectedPosition > 0 ? index.weeks[selectedPosition - 1] : null
-  const overallRate = overallRateAt(index, selectedPosition)
-  const previousRate = overallRateAt(index, selectedPosition - 1)
   const window = index.weeks.slice(startPosition, endPosition + 1)
 
   const allSystems = summarizeSystems(index, startPosition, endPosition)
@@ -306,10 +394,14 @@ export function buildWeldModel(
     weeks: window.length,
   }
 
+  const inRangeRate = windowTotals.welds === 0 ? null : (windowTotals.signed / windowTotals.welds) * 100
+  const overallRate = isInRange ? inRangeRate : overallRateAt(index, selectedPosition)
+  const previousRate = isInRange ? null : overallRateAt(index, selectedPosition - 1)
+
   return {
     selectedWeek: selected.week,
     previousWeek: previousWorkWeek(selected.week),
-    weekOptions: index.weeks.map((item) => item.week).reverse(),
+    weekOptions: (isInRange ? window : index.weeks).map((item) => item.week).reverse(),
     thisWeek: {
       logged: deltaMetric(selected.logged, previous?.logged ?? 0),
       signedInWeek: deltaMetric(selected.signedInWeek, previous?.signedInWeek ?? 0),
@@ -317,8 +409,8 @@ export function buildWeldModel(
       issues: deltaMetric(selected.issues, previous?.issues ?? 0),
     },
     toDate: {
-      total: index.cumulativeLogged[selectedPosition],
-      signed: index.cumulativeSigned[selectedPosition],
+      total: isInRange ? windowTotals.welds : index.cumulativeLogged[selectedPosition],
+      signed: isInRange ? windowTotals.signed : index.cumulativeSigned[selectedPosition],
       totalThisWeek: selected.logged,
       overallRate,
       overallRateDeltaPoints: overallRate !== null && previousRate !== null ? overallRate - previousRate : null,
@@ -334,6 +426,7 @@ export function buildWeldModel(
     otherBuildings,
     overallIssueRate: windowTotals.welds === 0 ? 0 : (windowTotals.issues / windowTotals.welds) * 100,
     windowTotals,
-    hasData: index.cumulativeLogged[lastPosition] > 0,
+    rangeLabel: view.dateRange === null ? null : formatWeekRange(view.dateRange),
+    hasData: isInRange ? windowTotals.welds > 0 : index.cumulativeLogged[lastPosition] > 0,
   }
 }
