@@ -1,9 +1,9 @@
 import { createSourceReader, inspectionColumnsOf, issueColumnsOf, splitCombinedRows, weldColumnsOf, type CombinedSource, type CombinedSplit } from './combined'
 import type { FilterSourceNote } from './hooks/useDashboardFilters'
 import { inspectionBuildingField, inspectionRowWeekKey } from './inspectionFilters'
-import { DEFAULT_CONTRACTOR, issueContractor, issueFilterRows, issueRowWeekKey } from './issues'
+import { contractorFilterValue, DEFAULT_CONTRACTOR, issueContractor, issueFilterRows, issueRowWeekKey } from './issues'
 import { buildOverviewIndex, type OverviewIndex } from './overview'
-import { cellDisplayText, crossSourceBuildingKey, groupKey, optionalField, type FilterFieldDef, type Row } from './rowFilters'
+import { cellDisplayText, crossSourceBuildingKey, optionalField, type FilterFieldDef, type Row } from './rowFilters'
 import type { CombinedColumns, InspectionRows } from './types'
 import { weldBuilding, weldRowWeekKey } from './welds'
 
@@ -61,13 +61,6 @@ export function filterOverviewIndex(base: OverviewIndex, baseSplit: CombinedSpli
   }
 }
 
-const UNASSIGNED_KEY = groupKey(DEFAULT_CONTRACTOR)
-
-/** Unassigned reads as '', the blank value, so inspections' blanks and BIM's defaulted issues are one value, listed last. */
-function contractorValue(name: string): string {
-  return groupKey(name) === UNASSIGNED_KEY ? '' : name
-}
-
 /** The menu's fields, in menu order. Only bound slots appear. Each reads only the sources that have it. */
 export function overviewFilterFields(columns: CombinedColumns): FilterFieldDef[] {
   const sourceOf = createSourceReader(columns.source)
@@ -82,7 +75,7 @@ export function overviewFilterFields(columns: CombinedColumns): FilterFieldDef[]
     : [{
         id: 'contractor',
         label: 'Contractor',
-        read: (row) => contractorValue(
+        read: (row) => contractorFilterValue(
           sourceOf(row) === 'bim' ? issueContractor(row[columns.id], row[contractor]) : cellDisplayText(row[generalContractor]),
         ),
         blankLabel: DEFAULT_CONTRACTOR,

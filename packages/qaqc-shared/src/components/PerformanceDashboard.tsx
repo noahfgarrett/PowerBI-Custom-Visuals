@@ -3,9 +3,14 @@ import { useMemo, useState, type ReactElement } from 'react'
 
 import { buildPerformanceFootnotes } from '../footnotes'
 import { formatCount } from '../format'
+import { useDashboardFilters } from '../hooks/useDashboardFilters'
 import { useWeekWindow } from '../hooks/useWeekWindow'
 import {
   buildPerformanceModel,
+  filterPerformanceIndex,
+  performanceFilterFields,
+  performanceFilterRows,
+  performanceRowWeekKey,
   type DisciplineTag,
   type PerformanceGroup,
   type PerformanceIndex,
@@ -14,6 +19,8 @@ import {
 import { chartColorsFromTheme } from '../theme'
 import { CARDS_ONLY_HEIGHT, ChartExpansionFrame, COMPACT_WIDTH, type ExpandablePanel, type OpenPage } from './ChartExpansionFrame'
 import { DashboardHeader, type DashboardChromeProps } from './DashboardHeader'
+import { FilterChips } from './FilterChips'
+import { FilterEmptyState } from './FilterEmptyState'
 import { Footnotes } from './Footnotes'
 import { KpiCard } from './KpiCard'
 import { KpiGroup } from './KpiGroup'
@@ -69,6 +76,7 @@ const GROUP_OPTIONS: ReadonlyArray<SegmentedOption<PerformanceGroup>> = [
 ]
 
 export interface PerformanceDashboardProps extends Omit<DashboardChromeProps, 'footnotes'> {
+  /** Built over every row, once per data update. */
   index: PerformanceIndex
   /** People need at least this many finals in the period to be ranked (Format pane, Ranking). */
   minimumFinals: number
@@ -101,12 +109,14 @@ function personTitle(person: OpenPerson): string {
 
 /**
  * NCR performance for one group at a time: a summary strip for the period, then everyone ranked by NCR Pass Rate, with a
- * page per person. The index is built once per data update; switching group, range or week only re-ranks it.
+ * page per person. The index is built once per data update; switching group, range or week only re-ranks it, and a field
+ * filter rebuilds it over the matching rows. The Filter menu's state is shared: each group offers and applies its own
+ * fields, and the other group's stay ticked, unapplied, until it's back on screen.
  */
 export function PerformanceDashboard({
   title,
   icon,
-  index,
+  index: baseIndex,
   minimumFinals,
   minimumWelds,
   theme,
@@ -118,8 +128,18 @@ export function PerformanceDashboard({
   viewport,
   onHover,
 }: PerformanceDashboardProps): ReactElement {
-  const { view, range, pickWeek, changeRange } = useWeekWindow(index)
   const [group, setGroup] = useState<PerformanceGroup>('qcr')
+  const { columns } = baseIndex
+  const fields = useMemo(() => performanceFilterFields(columns, group), [columns, group])
+  const rows = useMemo(() => performanceFilterRows(baseIndex, group), [baseIndex, group])
+  const rowWeekKey = useMemo(() => performanceRowWeekKey(columns), [columns])
+  const filters = useDashboardFilters({ rows, fields, weeks: baseIndex.weeks, currentKey: baseIndex.currentWeek.key, rowWeekKey })
+  const { filteredRows, isFieldFilterActive, dateRange } = filters
+  const index = useMemo(
+    () => (isFieldFilterActive ? filterPerformanceIndex(baseIndex, filteredRows) : baseIndex),
+    [isFieldFilterActive, baseIndex, filteredRows],
+  )
+  const { view, range, pickWeek, changeRange } = useWeekWindow(index, dateRange)
   const [openPerson, setOpenPerson] = useState<OpenPerson | null>(null)
   const minimum = group === 'qcr' ? minimumFinals : minimumWelds
 
@@ -132,6 +152,8 @@ export function PerformanceDashboard({
   const isCardsOnly = viewport.height < CARDS_ONLY_HEIGHT
   const period = periodLabel(model.window)
   const hasRows = model.ranked.length > 0 || model.belowMinimum.length > 0 || model.notRecorded !== null
+  // Field-filtered rows outside the 30 WW do match: the message below points to All instead.
+  const hasNoMatch = filters.isAnyActive && !hasRows && (dateRange !== null || !index.totals[group].volume.some((volume) => volume > 0))
   const { summary } = model
 
   const panels: Record<PanelId, ExpandablePanel> = {
@@ -146,6 +168,7 @@ export function PerformanceDashboard({
         openPerson === null ? null : (
           <PersonDetail
             index={index}
+            allTimeIndex={baseIndex}
             group={openPerson.group}
             personKey={openPerson.key}
             view={view}
@@ -187,6 +210,8 @@ export function PerformanceDashboard({
             range={range}
             onRangeChange={changeRange}
             rangeLabel="Ranking period"
+            isRangeDisabled={dateRange !== null}
+            filterMenu={filters.menu}
             weekOptions={model.weekOptions}
             selectedKey={model.selectedWeek.key}
             onPickWeek={pickWeek}
@@ -194,61 +219,77 @@ export function PerformanceDashboard({
             <SegmentedToggle label="People group" options={GROUP_OPTIONS} value={group} disabled={!interactive} onChange={setGroup} />
           </DashboardHeader>
 
-          <div className="qaqc-kpi-row qaqc-perf-summary">
-            <KpiGroup title={words.title} subtitle={period} variant="period">
-              <KpiCard
-                label={words.rankedLabel}
-                icon={ListOrdered}
-                value={formatCount(summary.peopleRanked)}
-                detail={`Minimum ${formatCount(minimum)} ${words.volumeNoun} · ${formatCount(model.belowMinimum.length)} below`}
-                tone="neutral"
-                trend="none"
-              />
-              <KpiCard
-                label={words.volumeLabel}
-                icon={words.volumeIcon}
-                value={formatCount(summary.volume)}
-                detail="Whole group, incl. unranked"
-                tone="neutral"
-                trend="none"
-              />
-              <KpiCard
-                label="NCRs"
-                icon={TriangleAlert}
-                value={formatCount(summary.ncrs)}
-                detail={words.ncrDetail}
-                tone="neutral"
-                trend="none"
-              />
-              <KpiCard
-                label="NCR Pass Rate"
-                icon={Percent}
-                value={formatPassRate(summary.passRate)}
-                tone="neutral"
-                trend="none"
-              />
-            </KpiGroup>
-          </div>
+          <FilterChips {...filters.chips} disabled={!interactive} />
 
-          {!isCardsOnly && (hasRows ? (
-            <PerformanceTable
-              // Keyed on the group, so switching groups starts with the below-minimum group collapsed and no sort.
-              key={group}
-              group={group}
-              ranked={model.ranked}
-              belowMinimum={model.belowMinimum}
-              notRecorded={model.notRecorded}
-              colors={colors}
-              isHighContrast={theme.isHighContrast}
-              onOpenPerson={interactive ? (key, row) => openFrom(openPage, key, row) : null}
+          {hasNoMatch ? (
+            <FilterEmptyState
+              rowsName={words.volumeNoun}
+              isInRange={dateRange !== null}
+              disabled={!interactive}
+              onClear={() => {
+                filters.clearAll()
+                filters.chips.onFocusLost()
+              }}
             />
           ) : (
-            <p className="qaqc-issue-detail-empty qaqc-perf-empty-state">
-              <Inbox size={22} aria-hidden="true" />
-              <strong>{`${words.emptyTitle} in ${period}`}</strong>
-              <span>Pick another work week, or choose All to rank the whole history.</span>
-            </p>
-          ))}
+            <>
+              <div className="qaqc-kpi-row qaqc-perf-summary">
+                <KpiGroup title={words.title} subtitle={period} variant="period">
+                  <KpiCard
+                    label={words.rankedLabel}
+                    icon={ListOrdered}
+                    value={formatCount(summary.peopleRanked)}
+                    detail={`Minimum ${formatCount(minimum)} ${words.volumeNoun} · ${formatCount(model.belowMinimum.length)} below`}
+                    tone="neutral"
+                    trend="none"
+                  />
+                  <KpiCard
+                    label={words.volumeLabel}
+                    icon={words.volumeIcon}
+                    value={formatCount(summary.volume)}
+                    detail="Whole group, incl. unranked"
+                    tone="neutral"
+                    trend="none"
+                  />
+                  <KpiCard
+                    label="NCRs"
+                    icon={TriangleAlert}
+                    value={formatCount(summary.ncrs)}
+                    detail={words.ncrDetail}
+                    tone="neutral"
+                    trend="none"
+                  />
+                  <KpiCard
+                    label="NCR Pass Rate"
+                    icon={Percent}
+                    value={formatPassRate(summary.passRate)}
+                    tone="neutral"
+                    trend="none"
+                  />
+                </KpiGroup>
+              </div>
+
+              {!isCardsOnly && (hasRows ? (
+                <PerformanceTable
+                  // Keyed on the group, so switching groups starts with the below-minimum group collapsed and no sort.
+                  key={group}
+                  group={group}
+                  ranked={model.ranked}
+                  belowMinimum={model.belowMinimum}
+                  notRecorded={model.notRecorded}
+                  colors={colors}
+                  isHighContrast={theme.isHighContrast}
+                  onOpenPerson={interactive ? (key, row) => openFrom(openPage, key, row) : null}
+                />
+              ) : (
+                <p className="qaqc-issue-detail-empty qaqc-perf-empty-state">
+                  <Inbox size={22} aria-hidden="true" />
+                  <strong>{`${words.emptyTitle} in ${period}`}</strong>
+                  <span>Pick another work week, or choose All to rank the whole history.</span>
+                </p>
+              ))}
+            </>
+          )}
 
           <Footnotes notes={notes} />
         </>

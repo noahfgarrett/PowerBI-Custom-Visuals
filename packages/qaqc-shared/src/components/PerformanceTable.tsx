@@ -5,7 +5,6 @@ import type { ChartColors } from '../chartTypes'
 import { formatCount, formatPercent, pluralize } from '../format'
 import { directionSign, type SortDirection, type SortState } from '../hooks/useTableSort'
 import { TABLE_ROW_HEIGHT, useVirtualRows } from '../hooks/useVirtualRows'
-import { RECENT_WEEK_COUNT } from '../inspections'
 import type { DisciplineTag, PerformanceGroup, PerformanceRow } from '../performance'
 import { createRankCache } from '../tableSort'
 import { TREND_STRIP_WIDTH, TrendStrip } from './TrendStrip'
@@ -126,9 +125,9 @@ function passRateClass(passRate: number): string {
   return passRate === 100 ? 'qaqc-perf-rate is-perfect' : 'qaqc-perf-rate'
 }
 
-/** "NCRs in 2 of the last 30 weeks"; a one-week trend (the data's first week) reads as a plain sentence. */
+/** "NCRs in 2 of the last 30 weeks"; a one-week trend (the data's first week, or a range of one) reads as a plain sentence. */
 function trendText(row: PerformanceRow): string {
-  const weeks = Math.min(RECENT_WEEK_COUNT, row.trend.length)
+  const weeks = row.trend.length
   if (weeks === 1) return row.ncrWeeks > 0 ? 'NCRs in the last week' : 'No NCRs in the last week'
   return `NCRs in ${formatCount(row.ncrWeeks)} of the last ${formatCount(weeks)} weeks`
 }

@@ -4,10 +4,27 @@ import { COMBINED_COLUMNS } from '../../../qaqc-shared/src/__tests__/fixtures/co
 
 export type SlotRole = 'source' | 'rowId' | 'workWeek' | 'phase' | 'issue' | 'building' | 'qcr' | 'welder' | 'tagNo'
 
+/** The optional slots' columns, past the QCx Combined fixture's own: a row carries them only when a test adds them. */
+export type FilterRole = 'generalContractor' | 'discipline' | 'pipeSpec' | 'fluidCode'
+
+export const FILTER_ROLE_POSITIONS: Record<FilterRole, number> = {
+  generalContractor: COMBINED_COLUMNS.length,
+  discipline: COMBINED_COLUMNS.length + 1,
+  pipeSpec: COMBINED_COLUMNS.length + 2,
+  fluidCode: COMBINED_COLUMNS.length + 3,
+}
+
+const FILTER_ROLE_NAMES: Record<FilterRole, string> = {
+  generalContractor: 'General Contractor',
+  discipline: 'Discipline',
+  pipeSpec: 'Pipe Spec',
+  fluidCode: 'Fluid Code',
+}
+
 export type Cell = string | number | Date | null
 
 export interface TableOptions {
-  roles?: SlotRole[]
+  roles?: Array<SlotRole | FilterRole>
   segment?: boolean
   /** Format pane values, as Power BI delivers them in metadata.objects. */
   objects?: powerbi.DataViewObjects
@@ -28,6 +45,10 @@ const COLUMN_OF: Record<SlotRole, (typeof COMBINED_COLUMNS)[number]> = {
   tagNo: 'Tag No',
 }
 
+function isFilterRole(role: SlotRole | FilterRole): role is FilterRole {
+  return role in FILTER_ROLE_POSITIONS
+}
+
 /**
  * Builds a table data view whose columns carry the given roles, in order. Each input row is a QCx Combined row
  * (`COMBINED_COLUMNS` order); a null cell becomes blank text, as Power BI sends it.
@@ -35,11 +56,11 @@ const COLUMN_OF: Record<SlotRole, (typeof COMBINED_COLUMNS)[number]> = {
 export function tableDataView(rows: ReadonlyArray<ReadonlyArray<Cell>>, options: TableOptions = {}): powerbi.DataView {
   const roles = options.roles ?? ALL_ROLES
   const columns: powerbi.DataViewMetadataColumn[] = roles.map((role, index) => ({
-    displayName: COLUMN_OF[role],
+    displayName: isFilterRole(role) ? FILTER_ROLE_NAMES[role] : COLUMN_OF[role],
     index,
     roles: { [role]: true },
   }))
-  const positions = roles.map((role) => COMBINED_COLUMNS.indexOf(COLUMN_OF[role]))
+  const positions = roles.map((role) => (isFilterRole(role) ? FILTER_ROLE_POSITIONS[role] : COMBINED_COLUMNS.indexOf(COLUMN_OF[role])))
   const tableRows: powerbi.DataViewTableRow[] = rows.map((row) => positions.map((position) => row[position] ?? ''))
   const metadata: powerbi.DataViewMetadata = { columns }
   if (options.segment) metadata.segment = {}

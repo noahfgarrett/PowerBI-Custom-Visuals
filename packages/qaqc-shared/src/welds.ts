@@ -72,7 +72,7 @@ const UNSPECIFIED_KEY = groupKey(UNSPECIFIED_WELD_VALUE)
  * A field the charts already label, with the chart's value and key, so the two can't disagree: `N/A` is a value of its
  * own, as it is on the chart. What the chart shows as Unspecified reads as '', the blank value, so it's listed last.
  */
-function chartLabelledField(id: string, label: string, normalize: (value: unknown) => string, position: number): FilterFieldDef {
+export function chartLabelledField(id: string, label: string, normalize: (value: unknown) => string, position: number): FilterFieldDef {
   return {
     id,
     label,

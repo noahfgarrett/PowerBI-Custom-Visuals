@@ -5,6 +5,7 @@ import '../style/visual.less'
 
 import { COMBINED_COLUMNS, COMBINED_ROWS } from '../../qaqc-shared/src/__tests__/fixtures/combinedRows'
 import { syntheticCombinedRows } from '../../qaqc-shared/src/__tests__/fixtures/syntheticCombined'
+import { COMBINED_FILTER_POSITIONS, withPlaceholderCombinedColumns } from '../../qaqc-shared/src/__tests__/overviewFilterFixture'
 import type { TooltipRequest } from '../../qaqc-shared/src/chartTypes'
 import { splitCombinedRows } from '../../qaqc-shared/src/combined'
 import { PerformanceDashboard } from '../../qaqc-shared/src/components/PerformanceDashboard'
@@ -20,6 +21,7 @@ const width = Number(params.get('w') ?? 1280)
 const height = Number(params.get('h') ?? 720)
 const presetParam = params.get('preset') ?? 'qaqc'
 const data = params.get('data') ?? 'fixture'
+const isBound = params.get('bound') !== '0'
 const today = new Date(2026, 9, 15)
 
 const frame = document.getElementById('frame')
@@ -62,7 +64,10 @@ function position(name: (typeof COMBINED_COLUMNS)[number]): number {
   return COMBINED_COLUMNS.indexOf(name)
 }
 
-/** The fixture and the synthetic rows share the QCx Combined column order. Performance binds only its own slots. */
+/**
+ * The fixture and the synthetic rows share the QCx Combined column order, with made-up values for the new columns on
+ * the fixture. Performance binds only its own slots. `?bound=0` leaves the filter slots unbound.
+ */
 const columns: CombinedColumns = {
   source: position('Source'),
   workWeek: position('Work Week'),
@@ -82,6 +87,14 @@ const columns: CombinedColumns = {
   createdBy: -1,
   rootCause: -1,
   greenTags: -1,
+  ...(isBound
+    ? {
+        generalContractor: COMBINED_FILTER_POSITIONS.generalContractor,
+        discipline: COMBINED_FILTER_POSITIONS.discipline,
+        pipeSpec: COMBINED_FILTER_POSITIONS.pipeSpec,
+        fluidCode: COMBINED_FILTER_POSITIONS.fluidCode,
+      }
+    : {}),
 }
 
 const root = createRoot(frame)
@@ -100,7 +113,7 @@ if (data === 'missing') {
 } else {
   const rows = data === 'synthetic'
     ? syntheticCombinedRows(Number(params.get('rows') ?? 500_000))
-    : data === 'empty' ? [] : COMBINED_ROWS
+    : data === 'empty' ? [] : isBound ? withPlaceholderCombinedColumns(COMBINED_ROWS) : COMBINED_ROWS
   const started = performance.now()
   const index = buildPerformanceIndex(splitCombinedRows(rows, columns.source), columns, today)
   document.title = `index ${Math.round(performance.now() - started)} ms`

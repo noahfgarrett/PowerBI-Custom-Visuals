@@ -517,6 +517,10 @@ describe('OVERVIEW_SLOTS and PERFORMANCE_SLOTS', () => {
       ['qcr', 'QCR/FE', 'QCR/FE'],
       ['welder', 'Welder', 'Welder'],
       ['tagNo', 'Tag No', 'Tag No'],
+      ['generalContractor', 'General Contractor', 'General Contractor'],
+      ['discipline', 'Discipline', 'Discipline'],
+      ['pipeSpec', 'Pipe Spec', 'Pipe Spec'],
+      ['fluidCode', 'Fluid Code', 'Fluid Code'],
     ])
   })
 })
@@ -549,6 +553,11 @@ describe('readCombinedTable', () => {
       expect(roles(OVERVIEW_SLOTS)).not.toContain(role)
       expect(roles(PERFORMANCE_SLOTS)).toContain(role)
     }
+  })
+
+  it('keeps the Performance filter slots optional', () => {
+    const required = requiredCombinedSlots(PERFORMANCE_SLOTS).map((slot) => slot.role)
+    expect(required).toEqual(['source', 'rowId', 'workWeek', 'phase', 'issue', 'building', 'qcr', 'welder', 'tagNo'])
   })
 
   it('reads the new Overview slots when they are bound', () => {

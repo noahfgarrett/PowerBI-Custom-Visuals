@@ -307,6 +307,10 @@ export const PERFORMANCE_SLOTS: readonly CombinedFieldSlot[] = [
   { role: 'qcr', slot: 'QCR/FE', column: 'QCR/FE' },
   { role: 'welder', slot: 'Welder', column: 'Welder' },
   { role: 'tagNo', slot: 'Tag No', column: 'Tag No' },
+  { role: 'generalContractor', slot: 'General Contractor', column: 'General Contractor' },
+  { role: 'discipline', slot: 'Discipline', column: 'Discipline' },
+  { role: 'pipeSpec', slot: 'Pipe Spec', column: 'Pipe Spec' },
+  { role: 'fluidCode', slot: 'Fluid Code', column: 'Fluid Code' },
 ]
 
 /**

@@ -177,7 +177,10 @@ function TotalsCards({ title, subtitle, variant, totals, words }: TotalsCardsPro
 }
 
 export interface PersonDetailProps {
+  /** The rows the page's period reads: filtered while a field filter is on. */
   index: PerformanceIndex
+  /** The index over every row, which All time reads. Defaults to `index`. */
+  allTimeIndex?: PerformanceIndex
   group: PerformanceGroup
   personKey: string
   /** The dashboard's period: the range ending at the picked week. */
@@ -193,12 +196,12 @@ export interface PersonDetailProps {
  * The person overlay's content: period and all-time cards, the week-by-week chart and the period's NCRs.
  * Mount it only while the overlay is open: the detail is built from the index on mount.
  */
-export function PersonDetail({ index, group, personKey, view, colors, animate, describe, onHover }: PersonDetailProps): ReactElement {
+export function PersonDetail({ index, allTimeIndex = index, group, personKey, view, colors, animate, describe, onHover }: PersonDetailProps): ReactElement {
   const { selectedKey, windowEndKey, range, dateRange } = view
   // Keyed on the view's values, not its object, so a dashboard re-render with an equal view does not rebuild.
   const detail = useMemo(
-    () => buildPersonDetail(index, group, personKey, { selectedKey, windowEndKey, range, dateRange }),
-    [index, group, personKey, selectedKey, windowEndKey, range, dateRange],
+    () => buildPersonDetail(index, group, personKey, { selectedKey, windowEndKey, range, dateRange }, allTimeIndex),
+    [index, allTimeIndex, group, personKey, selectedKey, windowEndKey, range, dateRange],
   )
   const words = CARD_WORDS[group]
 
@@ -213,7 +216,8 @@ export function PersonDetail({ index, group, personKey, view, colors, animate, d
   const firstWeek = detail.weeks[0]?.week ?? null
   const lastWeek = detail.weeks[detail.weeks.length - 1]?.week ?? null
   const periodLabel = firstWeek !== null && lastWeek !== null ? `${firstWeek.label} to ${lastWeek.label}` : ''
-  const allTimeLabel = index.weeks.length > 0 ? `${index.weeks[0].label} to ${index.weeks[index.weeks.length - 1].label}` : ''
+  const allWeeks = allTimeIndex.weeks
+  const allTimeLabel = allWeeks.length > 0 ? `${allWeeks[0].label} to ${allWeeks[allWeeks.length - 1].label}` : ''
   const volumeNoun = pluralize(detail.period.volume, words.volumeNoun[0], words.volumeNoun[1])
   const inPeriod = periodLabel === '' ? '' : ` in ${periodLabel}`
   const emptyDetail = detail.period.volume === 0

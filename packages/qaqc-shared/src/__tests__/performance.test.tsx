@@ -106,6 +106,19 @@ describe('TrendStrip', () => {
     expect(bars.map((bar) => numberAttr(bar, 'x'))).toEqual(fullBars.slice(27))
   })
 
+  it('draws every week of a date range too long for its 30 slots, inside the strip', () => {
+    const long = trendOf(Array.from({ length: 90 }, () => 1), [0, 89])
+    view = render(<TrendStrip trend={long} colors={COLORS} isHighContrast={false} />)
+    const svgWidth = numberAttr(view.container.querySelector('svg') ?? document.createElement('svg'), 'width')
+    const bars = all(view.container, '.qaqc-perf-trend-bar')
+    expect(bars).toHaveLength(90)
+    expect(numberAttr(bars[0], 'x')).toBe(0)
+    const last = bars[bars.length - 1]
+    expect(numberAttr(last, 'x') + numberAttr(last, 'width')).toBeCloseTo(svgWidth, 5)
+    expect(numberAttr(last, 'width')).toBeGreaterThanOrEqual(1)
+    expect(all(view.container, '.qaqc-perf-trend-flag')).toHaveLength(2)
+  })
+
   it('skips weeks with no volume and keeps their slots', () => {
     view = render(<TrendStrip trend={trendOf([2, 0, 4])} colors={COLORS} isHighContrast={false} />)
     expect(all(view.container, '.qaqc-perf-trend-bar')).toHaveLength(2)

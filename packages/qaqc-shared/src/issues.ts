@@ -60,6 +60,13 @@ export function issueStatusKind(value: unknown): IssueStatusKind {
   return 'open'
 }
 
+const UNASSIGNED_KEY = groupKey(DEFAULT_CONTRACTOR)
+
+/** Unassigned reads as '', the blank value, so blank cells and an Unassigned cell are one value, listed last. */
+export function contractorFilterValue(name: string): string {
+  return groupKey(name) === UNASSIGNED_KEY ? '' : name
+}
+
 export function issueContractor(id: unknown, contractor: unknown): string {
   const populated = cellText(contractor)
   if (populated) return populated
