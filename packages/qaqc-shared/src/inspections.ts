@@ -58,8 +58,11 @@ interface WeekBucket {
   finals: number
   sors: number
   issuesFound: number
+  issueRows: number[]
   buildings: Map<string, BuildingTally>
 }
+
+const NO_ROWS: readonly number[] = []
 
 /** `classifyPhase`, cached by the raw text: phase text repeats heavily across hundreds of thousands of rows. */
 export function readPhase(value: unknown, cache: Map<string, InspectionPhase>): InspectionPhase {
@@ -92,7 +95,8 @@ export function buildInspectionIndex(
   let futureRows = 0
   let firstWeek: WorkWeek | null = null
 
-  for (const row of rows) {
+  for (let rowPosition = 0; rowPosition < rows.length; rowPosition += 1) {
+    const row = rows[rowPosition]
     const phase = readPhase(row[columns.phase], phaseCache)
     if (phase === 'other') continue
 
@@ -110,7 +114,7 @@ export function buildInspectionIndex(
 
     let bucket = buckets.get(week.key)
     if (!bucket) {
-      bucket = { finals: 0, sors: 0, issuesFound: 0, buildings: new Map() }
+      bucket = { finals: 0, sors: 0, issuesFound: 0, issueRows: [], buildings: new Map() }
       buckets.set(week.key, bucket)
     }
     const building = buildingName(normalizeBuilding(row[columns.building]))
@@ -122,7 +126,10 @@ export function buildInspectionIndex(
     if (phase === 'final') {
       bucket.finals += 1
       tally.finals += 1
-      if (isIssueFound(row[columns.issue])) bucket.issuesFound += 1
+      if (isIssueFound(row[columns.issue])) {
+        bucket.issuesFound += 1
+        bucket.issueRows.push(rowPosition)
+      }
     } else {
       bucket.sors += 1
       tally.sors += 1
@@ -134,6 +141,7 @@ export function buildInspectionIndex(
   const cumulativeSors: number[] = []
   const cumulativeIssues: number[] = []
   const buildingsByWeek: Array<Map<string, BuildingTally>> = []
+  const issueRowsByWeek: Array<readonly number[]> = []
   const positionByKey = new Map<number, number>()
   let finals = 0
   let sors = 0
@@ -160,6 +168,7 @@ export function buildInspectionIndex(
     cumulativeSors.push(sors)
     cumulativeIssues.push(issues)
     buildingsByWeek.push(bucket?.buildings ?? new Map())
+    issueRowsByWeek.push(bucket?.issueRows ?? NO_ROWS)
   }
 
   return {
@@ -169,6 +178,7 @@ export function buildInspectionIndex(
     cumulativeSors,
     cumulativeIssues,
     buildingsByWeek,
+    issueRowsByWeek,
     positionByKey,
     totalRows: rows.length,
     skippedRows,

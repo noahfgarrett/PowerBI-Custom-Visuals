@@ -3,6 +3,7 @@ import type { MouseEvent, ReactElement } from 'react'
 import { labelIndices, passRateDomain, WEEK_AXIS_HEIGHT, yearMarkers } from '../chartMath'
 import type { ChartColors, TooltipHandler } from '../chartTypes'
 import { formatCount, formatPercent } from '../format'
+import { useWeekFocus } from '../hooks/useWeekFocus'
 import type { PassRatePoint } from '../types'
 import { WeekAxisTick } from './WeekAxisTick'
 
@@ -24,7 +25,14 @@ export interface LineChartProps {
   labelIssueWeeks?: boolean
   /** Draws thinned work-week labels under the plot, with the selected week in bold. */
   showWeekAxis?: boolean
+  /** Makes the weeks selectable by click and keyboard. Without it the chart is a plain picture with tooltips. */
+  onSelectWeek?: (key: number) => void
   onHover: TooltipHandler
+}
+
+function describeWeek(item: PassRatePoint): string {
+  const issues = `${formatCount(item.issuesFound)} ${item.issuesFound === 1 ? 'issue' : 'issues'} found`
+  return `${item.week.label}: ${formatPercent(item.rate)} NCR pass rate, ${issues}`
 }
 
 export function LineChart({
@@ -36,8 +44,17 @@ export function LineChart({
   describe,
   labelIssueWeeks = false,
   showWeekAxis = false,
+  onSelectWeek,
   onHover,
 }: LineChartProps): ReactElement {
+  const selectedIndex = points.findIndex((item) => item.week.key === selectedKey)
+  const isSelectable = onSelectWeek !== undefined
+  const { focus, hasFocus, showFocusRing, svgProps } = useWeekFocus({
+    count: points.length,
+    selectedIndex,
+    interactive: isSelectable,
+    onSelect: (index) => onSelectWeek?.(points[index].week.key),
+  })
   const plotWidth = Math.max(0, width - MARGIN.left - MARGIN.right)
   const bottomMargin = showWeekAxis ? WEEK_AXIS_HEIGHT : MARGIN.bottom
   const plotHeight = Math.max(0, height - MARGIN.top - bottomMargin)
@@ -59,7 +76,6 @@ export function LineChart({
 
   const hitWidth = points.length > 1 ? step : plotWidth
   const lastIndex = points.reduce((found, item, index) => (item.rate !== null ? index : found), -1)
-  const selectedIndex = points.findIndex((item) => item.week.key === selectedKey)
   const axisLabels = showWeekAxis ? labelIndices(points.length, plotWidth, selectedIndex) : new Set<number>()
   const axisYears = yearMarkers(axisLabels, points.map((item) => item.week))
   const plotBottom = MARGIN.top + plotHeight
@@ -92,8 +108,15 @@ export function LineChart({
     })
   }
 
-  return (
-    <svg className="qaqc-chart" width={width} height={height} role="img" aria-label={summary}>
+  const chart = (
+    <svg
+      className="qaqc-chart"
+      width={width}
+      height={height}
+      role={isSelectable ? 'group' : 'img'}
+      aria-label={summary}
+      {...(isSelectable ? svgProps : undefined)}
+    >
       {ticks.map((tick) => (
         <g key={tick}>
           <line x1={MARGIN.left} x2={width - MARGIN.right} y1={y(tick)} y2={y(tick)} stroke={colors.grid} />
@@ -168,6 +191,19 @@ export function LineChart({
           />
         ) : null,
       )}
+      {isSelectable && hasFocus && showFocusRing && points.length > 0 && (
+        <rect
+          className="qaqc-focus-ring"
+          x={x(focus) - hitWidth / 2 + 1}
+          y={MARGIN.top - 2}
+          width={Math.max(0, hitWidth - 2)}
+          height={plotHeight + 4}
+          rx={3}
+          fill="none"
+          stroke={colors.accent}
+          strokeWidth={1.5}
+        />
+      )}
       <g onMouseLeave={() => onHover(null)}>
         {points.map((item, index) => (
           <rect
@@ -179,10 +215,22 @@ export function LineChart({
             width={hitWidth}
             height={plotHeight}
             fill="transparent"
+            style={isSelectable ? { cursor: 'pointer' } : undefined}
             onMouseMove={(event) => showTooltip(item, event)}
+            onClick={isSelectable ? () => onSelectWeek(item.week.key) : undefined}
           />
         ))}
       </g>
     </svg>
+  )
+
+  if (!isSelectable) return chart
+  return (
+    <>
+      {chart}
+      <p className="qaqc-visually-hidden" aria-live="polite">
+        {hasFocus && points.length > 0 ? describeWeek(points[focus]) : ''}
+      </p>
+    </>
   )
 }

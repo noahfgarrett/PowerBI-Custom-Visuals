@@ -1,11 +1,11 @@
 import { Building2, ChartColumnStacked, CircleAlert, CircleCheck, ClipboardCheck, Gauge, TrendingUp, Wrench } from 'lucide-react'
-import { useMemo, type ReactElement } from 'react'
+import { useMemo, useRef, type ReactElement } from 'react'
 
 import { useDashboardFilters } from '../hooks/useDashboardFilters'
 import type { ElementSize } from '../hooks/useElementSize'
 import { useWeekWindow } from '../hooks/useWeekWindow'
 import { BuildingTable } from './BuildingTable'
-import { CARDS_ONLY_HEIGHT, ChartExpansionFrame, COMPACT_WIDTH, type GridPanel } from './ChartExpansionFrame'
+import { CARDS_ONLY_HEIGHT, ChartExpansionFrame, COMPACT_WIDTH, type ChartExpansionHandle, type ExpandablePanel, type GridPanel } from './ChartExpansionFrame'
 import { ChartFill } from './ChartFill'
 import { ChartPanel, type LegendItem } from './ChartPanel'
 import { DashboardHeader, type DashboardChromeProps } from './DashboardHeader'
@@ -19,7 +19,9 @@ import { KpiGroup } from './KpiGroup'
 import { LineChart } from './LineChart'
 import { LoadingBar } from './LoadingBar'
 import { StackedBarChart } from './StackedBarChart'
+import { WeekIssuesPage } from './WeekIssuesPage'
 import { WindowSummary } from './WindowSummary'
+import { inspectionDrillColumns, weekIssueRows, type DrillGroup } from '../drilldown'
 import {
   formatCount,
   formatDelta,
@@ -39,9 +41,10 @@ const NO_ROWS_MESSAGE = 'No inspections match the current filters'
 const EMPTY_RANGE_MESSAGE = 'No inspections in this range'
 const OUTSIDE_WINDOW_MESSAGE = `Nothing in this window. These rows fall outside the last ${RECENT_WEEK_COUNT} WW: switch to All to see them.`
 
-type PanelId = 'trend' | 'passRate' | 'buildings'
+type ChartId = 'trend' | 'passRate' | 'buildings'
+type PanelId = ChartId | 'drill'
 
-const PANEL_IDS: readonly PanelId[] = ['trend', 'passRate', 'buildings'] as const
+const CHART_IDS: readonly ChartId[] = ['trend', 'passRate', 'buildings'] as const
 
 export interface InspectionDashboardProps extends DashboardChromeProps {
   /** Built over all of `filterSource.rows`, once per data update. */
@@ -77,9 +80,18 @@ export function InspectionDashboard({
     ),
     [isFieldFilterActive, filteredRows, columns, today, baseIndex],
   )
+  // The drill list's positions index the rows that built `index`.
+  const indexRows = isFieldFilterActive ? filteredRows : rows
   const { view, range, selectWeek, pickWeek, changeRange } = useWeekWindow(index, dateRange)
+  const frame = useRef<ChartExpansionHandle<PanelId> | null>(null)
 
   const model = useMemo(() => buildInspectionModel(index, view), [index, view])
+  const selectedKey = model.selectedWeek.key
+  const drillColumns = useMemo(() => inspectionDrillColumns(columns, optional), [columns, optional])
+  const drillGroups = useMemo(
+    (): DrillGroup[] => [{ title: null, columns: drillColumns, rows: weekIssueRows(index, indexRows, selectedKey) }],
+    [drillColumns, index, indexRows, selectedKey],
+  )
   // Memoized so the charts' own memos see the same colors object until the theme changes.
   const colors = useMemo(() => chartColorsFromTheme(theme), [theme])
   const { thisWeek, toDate } = model
@@ -103,6 +115,13 @@ export function InspectionDashboard({
       ? finalsSummary
       : `${finalsSummary} · ${formatPointsDelta(toDate.passRateDeltaPoints)}`
 
+  /** A week click or Enter on a chart: selects the week, and opens its list when it has issues. */
+  function selectChartWeek(chart: ChartId, key: number): void {
+    selectWeek(key)
+    const position = index.positionByKey.get(key)
+    if (position !== undefined && index.weeks[position].issuesFound > 0) frame.current?.openPageFromChart('drill', chart)
+  }
+
   function renderTrend(size: ElementSize, showValues: boolean): ReactElement {
     return (
       <StackedBarChart
@@ -115,7 +134,7 @@ export function InspectionDashboard({
         animate={animate}
         describe={describeCharts}
         showValues={showValues}
-        onSelectWeek={selectWeek}
+        onSelectWeek={(key) => selectChartWeek('trend', key)}
         onHover={onHover}
       />
     )
@@ -132,12 +151,13 @@ export function InspectionDashboard({
         describe={describeCharts}
         labelIssueWeeks={isExpandedView}
         showWeekAxis={isExpandedView}
+        onSelectWeek={interactive ? (key) => selectChartWeek('passRate', key) : undefined}
         onHover={onHover}
       />
     )
   }
 
-  const panels: Record<PanelId, GridPanel> = {
+  const charts: Record<ChartId, GridPanel> = {
     trend: {
       title: 'Finals + SORs by Work Week',
       icon: ChartColumnStacked,
@@ -190,9 +210,23 @@ export function InspectionDashboard({
     },
   }
 
+  const panels: Record<PanelId, ExpandablePanel> = {
+    ...charts,
+    drill: {
+      title: `Issues · ${model.selectedWeek.label}`,
+      icon: CircleAlert,
+      kind: 'page',
+      legend: [],
+      // Only a data refresh can leave the open week with no issues.
+      emptyMessage: drillGroups[0].rows.length > 0 ? null : 'No issues in this week',
+      renderExpanded: () => <WeekIssuesPage weekLabel={model.selectedWeek.label} groups={drillGroups} />,
+    },
+  }
+
   return (
     <ChartExpansionFrame
       panels={panels}
+      handle={frame}
       interactive={interactive}
       animate={animate}
       isCompact={isCompact}
@@ -289,8 +323,8 @@ export function InspectionDashboard({
 
               {!isCardsOnly && (
                 <div className="qaqc-charts">
-                  {PANEL_IDS.map((id) => {
-                    const panel = panels[id]
+                  {CHART_IDS.map((id) => {
+                    const panel = charts[id]
                     return (
                       <ChartPanel
                         key={id}

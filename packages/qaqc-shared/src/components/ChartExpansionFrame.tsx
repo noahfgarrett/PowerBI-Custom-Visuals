@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react'
+import { useEffect, useImperativeHandle, useRef, useState, type ReactElement, type ReactNode, type Ref } from 'react'
 
 import type { TooltipHandler } from '../chartTypes'
 import type { ElementSize } from '../hooks/useElementSize'
@@ -50,8 +50,19 @@ export interface ExpandableProps {
  */
 export type OpenPage<Id extends string> = (id: Id, source: HTMLElement, focusTarget: HTMLElement) => void
 
+/** For a chart's week click, which happens outside the `children` call that hands out `openPage`. */
+export interface ChartExpansionHandle<Id extends string> {
+  /**
+   * Opens a page from a grid chart, including from that chart's expanded view: the page grows from the chart's panel,
+   * and focus returns to the chart when it closes. Does nothing when interactions are not allowed or the panel is not
+   * on the page.
+   */
+  openPageFromChart: (pageId: Id, chartId: Id) => void
+}
+
 export interface ChartExpansionFrameProps<Id extends string> {
   panels: Record<Id, ExpandablePanel>
+  handle?: Ref<ChartExpansionHandle<Id>>
   interactive: boolean
   animate: boolean
   isCompact: boolean
@@ -81,6 +92,7 @@ function originBox(frame: HTMLElement, panel: HTMLElement | null): PanelBox | nu
  */
 export function ChartExpansionFrame<Id extends string>({
   panels,
+  handle,
   interactive,
   animate,
   isCompact,
@@ -135,6 +147,14 @@ export function ChartExpansionFrame<Id extends string>({
     focusTargets.current.set(id, focusTarget)
     setExpanded(id)
   }
+
+  useImperativeHandle(handle, () => ({
+    openPageFromChart: (pageId, chartId) => {
+      const panel = panelRefs.current.get(chartId) ?? null
+      if (panel === null) return
+      openPage(pageId, panel, panel.querySelector<HTMLElement>('svg.qaqc-chart') ?? panel)
+    },
+  }))
 
   function closeExpanded(id: Id): void {
     restoreFocusRef.current = id

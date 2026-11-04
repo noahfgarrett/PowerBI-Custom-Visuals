@@ -61,6 +61,8 @@ export interface InspectionIndex {
   cumulativeIssues: number[]
   /** Parallel to weeks: building → tally for that week. */
   buildingsByWeek: Array<Map<string, BuildingTally>>
+  /** Parallel to weeks: the positions, in the rows that built this index, of the rows behind issuesFound. */
+  issueRowsByWeek: ReadonlyArray<readonly number[]>
   positionByKey: Map<number, number>
   totalRows: number
   skippedRows: number

@@ -235,6 +235,105 @@ describe('LineChart', () => {
   })
 })
 
+describe('LineChart week selection', () => {
+  const POINTS = [point(40, 99.5), point(41, 99.1, true), point(42, 99.16)]
+
+  function drawSelectable(onSelectWeek: (key: number) => void, onHover = vi.fn()): Element {
+    view = render(
+      <LineChart points={POINTS} selectedKey={202642} width={300} height={160} colors={COLORS} describe onSelectWeek={onSelectWeek} onHover={onHover} />,
+    )
+    const svg = view.container.querySelector('svg.qaqc-chart')
+    if (!svg) throw new Error('chart missing')
+    return svg
+  }
+
+  function press(target: Element, key: string): void {
+    act(() => {
+      target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
+    })
+  }
+
+  it('reports a clicked week', () => {
+    const onSelectWeek = vi.fn()
+    drawSelectable(onSelectWeek)
+    const hit = view?.container.querySelector('[data-week="202641"]')
+    if (!hit) throw new Error('hit missing')
+    act(() => {
+      hit.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+    expect(onSelectWeek).toHaveBeenCalledWith(202641)
+  })
+
+  it('reports the focused week on Enter and Space, moving with the arrows', () => {
+    const onSelectWeek = vi.fn()
+    const svg = drawSelectable(onSelectWeek)
+    press(svg, 'Enter')
+    expect(onSelectWeek).toHaveBeenLastCalledWith(202642)
+    press(svg, 'ArrowLeft')
+    press(svg, ' ')
+    expect(onSelectWeek).toHaveBeenLastCalledWith(202641)
+    press(svg, 'Home')
+    press(svg, 'Enter')
+    expect(onSelectWeek).toHaveBeenLastCalledWith(202640)
+  })
+
+  it('draws a focus ring and says the focused week once the keyboard is used', () => {
+    const svg = drawSelectable(vi.fn())
+    act(() => {
+      svg.dispatchEvent(new FocusEvent('focusin', { bubbles: true }))
+    })
+    expect(view?.container.querySelector('.qaqc-focus-ring')).toBeNull()
+    press(svg, 'ArrowLeft')
+    expect(view?.container.querySelector('.qaqc-focus-ring')).not.toBeNull()
+    expect(view?.container.querySelector('[aria-live="polite"]')?.textContent).toBe("WW41'2026: 99.1% NCR pass rate, 1 issue found")
+  })
+
+  it('can be focused and points at the weeks when selectable', () => {
+    const svg = drawSelectable(vi.fn())
+    expect(svg.getAttribute('tabindex')).toBe('0')
+    expect(svg.getAttribute('role')).toBe('group')
+    const hit = view?.container.querySelector<SVGRectElement>('[data-week="202641"]')
+    expect(hit?.style.cursor).toBe('pointer')
+  })
+
+  it('stays a plain picture without onSelectWeek', () => {
+    view = render(<LineChart points={POINTS} selectedKey={202642} width={300} height={160} colors={COLORS} describe onHover={vi.fn()} />)
+    const svg = view.container.querySelector('svg.qaqc-chart')
+    expect(svg?.getAttribute('tabindex')).toBeNull()
+    expect(svg?.getAttribute('role')).toBe('img')
+    expect(view.container.querySelector('[aria-live]')).toBeNull()
+    const hit = view.container.querySelector('[data-week="202641"]')
+    if (!hit) throw new Error('hit missing')
+    expect(hit.getAttribute('style')).toBeNull()
+    if (!svg) throw new Error('chart missing')
+    press(svg, 'ArrowLeft')
+    expect(view.container.querySelector('.qaqc-focus-ring')).toBeNull()
+  })
+
+  it('keeps the same tooltips and hides them the same way when selectable', () => {
+    const onHover = vi.fn()
+    drawSelectable(vi.fn(), onHover)
+    const hit = view?.container.querySelector('[data-week="202642"]')
+    if (!hit) throw new Error('hit missing')
+    act(() => {
+      hit.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 5, clientY: 6 }))
+    })
+    expect(onHover).toHaveBeenLastCalledWith({
+      title: "WW42'2026",
+      rows: [
+        { label: 'NCR pass rate', value: '99.2%' },
+        { label: 'Clean Finals', value: '236 / 238' },
+      ],
+      clientX: 5,
+      clientY: 6,
+    })
+    act(() => {
+      hit.dispatchEvent(new MouseEvent('mouseout', { bubbles: true, relatedTarget: document.body }))
+    })
+    expect(onHover).toHaveBeenLastCalledWith(null)
+  })
+})
+
 describe('HorizontalBarChart', () => {
   it('draws one row per building plus Other', () => {
     view = render(

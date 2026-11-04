@@ -1430,6 +1430,71 @@
   box-shadow: inset 3px 0 var(--qaqc-muted);
 }
 
+// The week drill-down page: its groups share the page's height, and each table scrolls on its own.
+.qaqc-week-issues {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  min-height: 0;
+}
+
+.qaqc-week-issues-count {
+  flex: 0 0 auto;
+  margin: 0;
+  color: var(--qaqc-muted);
+  font-size: 12.5px;
+}
+
+.qaqc-week-issues-count strong {
+  color: var(--qaqc-ink);
+}
+
+.qaqc-week-issues-group {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 0;
+}
+
+.qaqc-week-issues-group h4 {
+  flex: 0 0 auto;
+  margin: 0;
+  color: var(--qaqc-ink);
+  font-size: 12.5px;
+  font-weight: 650;
+}
+
+.qaqc-week-issues-wrap {
+  overflow: auto;
+  border: 1px solid var(--qaqc-border);
+  border-radius: 12px;
+  background: var(--qaqc-card-solid);
+}
+
+.qaqc-week-issues-table {
+  table-layout: fixed;
+}
+
+// The fixed row height needs no vertical padding, as in the Issue Detail table.
+.qaqc-week-issues-table td,
+.qaqc-week-issues-table tbody th {
+  padding-top: 0;
+  padding-bottom: 0;
+  vertical-align: middle;
+}
+
+// A long label wraps instead of widening its column.
+.qaqc-table.is-windowed.qaqc-week-issues-table thead th {
+  vertical-align: bottom;
+  white-space: normal;
+}
+
+.qaqc-week-issues-table tbody tr:not(.qaqc-virtual-spacer):hover > * {
+  background: var(--qaqc-accent-soft);
+}
+
 // Text carries the contrast (ink on a light tint in every preset); the dot carries the status color.
 .qaqc-status-pill {
   display: inline-block;

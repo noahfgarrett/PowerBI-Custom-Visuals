@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildInspectionIndex } from '../inspections'
+import { buildInspectionIndex, classifyPhase, isIssueFound } from '../inspections'
+import { ELECTRICAL_ROWS } from './fixtures/electricalRows'
+import { MECHANICAL_ROWS } from './fixtures/mechanicalRows'
 
 const COLUMNS = { workWeek: 0, phase: 1, issue: 2, building: 3 }
 const TODAY = new Date(2026, 9, 15) // WW42'2026
@@ -135,5 +137,56 @@ describe('buildInspectionIndex', () => {
     ]
     const index = buildInspectionIndex(rows, COLUMNS, TODAY)
     expect(index.weeks.map((item) => item.week.label)).toEqual(["WW42'2026"])
+  })
+})
+
+describe('buildInspectionIndex issueRowsByWeek', () => {
+  it('issueRowsByWeek holds exactly the rows behind each week\'s issuesFound', () => {
+    const index = buildInspectionIndex(ROWS, COLUMNS, TODAY)
+    expect(index.weeks.map((item) => item.week.key)).toEqual([202640, 202641, 202642])
+    // Row 1 is a SOR with issue text and row 0 a clean Final: neither is an "Issue found", as on the chart.
+    expect(index.issueRowsByWeek).toEqual([[], [], [2]])
+  })
+
+  it('leaves out rows with no readable week and rows after the current week', () => {
+    const rows = [
+      ['UPW', 'Final', 'NCR', 'A'],
+      ["WW44'2026", 'Final', 'NCR', 'A'],
+      ["WW42'2026", 'Final', 'NCR', 'A'],
+    ]
+    expect(buildInspectionIndex(rows, COLUMNS, TODAY).issueRowsByWeek).toEqual([[2]])
+  })
+
+  it('keeps the positions in row order within a week', () => {
+    const rows = [
+      ["WW42'2026", 'Final', 'NCR', 'A'],
+      ["WW41'2026", 'Final', 'NCR', 'A'],
+      ["WW42'2026", 'Final', 'COR', 'B'],
+    ]
+    expect(buildInspectionIndex(rows, COLUMNS, TODAY).issueRowsByWeek).toEqual([[1], [0, 2]])
+  })
+
+  it('stays parallel to weeks on a stretched axis and with no rows', () => {
+    const stretched = buildInspectionIndex([["WW40'2026", 'Final', 'NCR', 'A']], COLUMNS, TODAY, { axisFromKey: 202638 })
+    expect(stretched.issueRowsByWeek).toEqual([[], [], [0], [], []])
+    expect(buildInspectionIndex([], COLUMNS, TODAY).issueRowsByWeek).toEqual([[]])
+  })
+
+  it.each([
+    ['Electrical', ELECTRICAL_ROWS],
+    ['Mechanical', MECHANICAL_ROWS],
+  ])('lists exactly each week\'s issue-found Finals on the %s fixture', (_name, rows) => {
+    const index = buildInspectionIndex(rows, COLUMNS, TODAY)
+    index.weeks.forEach((item, position) => {
+      const positions = index.issueRowsByWeek[position]
+      expect(positions).toHaveLength(item.issuesFound)
+      for (const rowPosition of positions) {
+        const row = rows[rowPosition]
+        expect(classifyPhase(row[COLUMNS.phase])).toBe('final')
+        expect(isIssueFound(row[COLUMNS.issue])).toBe(true)
+      }
+    })
+    const listed = index.issueRowsByWeek.reduce((sum, positions) => sum + positions.length, 0)
+    expect(listed).toBe(index.cumulativeIssues[index.cumulativeIssues.length - 1])
   })
 })

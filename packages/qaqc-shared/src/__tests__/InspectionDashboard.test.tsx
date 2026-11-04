@@ -8,8 +8,9 @@ import { buildInspectionIndex, buildInspectionModel, defaultViewState } from '..
 import { resolveTheme } from '../theme'
 import type { InspectionRows } from '../types'
 import { parseWorkWeek } from '../workWeeks'
-import { buttonNamed, checkbox, checkboxLabels, chipTexts, choose, click, filterButton, openMenu, pick, showing, toggleSection } from './filterHarness'
+import { buttonNamed, checkbox, checkboxLabels, chipTexts, choose, click, filterButton, openMenu, pick, popover, pressAndClick, pressEscape, showing, toggleSection } from './filterHarness'
 import { ELECTRICAL_ROWS } from './fixtures/electricalRows'
+import { MECHANICAL_ROWS } from './fixtures/mechanicalRows'
 import { filterSourceFor, PLACEHOLDER_OPTIONAL, UNBOUND_OPTIONAL, withPlaceholderColumns } from './inspectionFilterFixture'
 import { render, type Rendered } from './render'
 
@@ -971,5 +972,356 @@ describe('InspectionDashboard filters', () => {
     const buttons = [...container.querySelectorAll<HTMLButtonElement>('.qaqc-filter-chips button')]
     expect(buttons.length).toBeGreaterThan(1)
     expect(buttons.every((button) => button.disabled)).toBe(true)
+  })
+})
+
+describe('InspectionDashboard week drill-down', () => {
+  const ISSUE_WEEK = 202623
+  const ISSUE_TITLE = "Issues · WW23'2026"
+  const PLACEHOLDER_ROWS = withPlaceholderColumns(ELECTRICAL_ROWS)
+  const COLUMNS = { workWeek: 0, phase: 1, issue: 2, building: 3 }
+
+  function stubChartSize(): void {
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+      x: 0,
+      y: 0,
+      top: 0,
+      left: 0,
+      right: 800,
+      bottom: 400,
+      width: 800,
+      height: 400,
+      toJSON: () => ({}),
+    })
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  function drawDrill(
+    rows: InspectionRows = PLACEHOLDER_ROWS,
+    optional: InspectionDashboardProps['filterSource']['optional'] = PLACEHOLDER_OPTIONAL,
+    overrides: Partial<InspectionDashboardProps> = {},
+  ): HTMLElement {
+    stubChartSize()
+    const index = buildInspectionIndex(rows, COLUMNS, TODAY)
+    view = draw({ index, filterSource: filterSourceFor(rows, TODAY, optional), ...overrides })
+    return view.container
+  }
+
+  function page(container: HTMLElement): HTMLElement | null {
+    return [...container.querySelectorAll<HTMLElement>('[role="dialog"]')].find((node) => node.getAttribute('aria-label')?.startsWith('Issues · ')) ?? null
+  }
+
+  function hit(container: HTMLElement, panel: string, week: number): Element {
+    const panelNode = byLabel(container.querySelectorAll('section.qaqc-panel'), panel)
+    const rect = panelNode?.querySelector(`.qaqc-hit[data-week="${week}"]`)
+    if (!rect) throw new Error(`${panel} has no week ${week}`)
+    return rect
+  }
+
+  function chartOf(container: HTMLElement, panel: string): Element {
+    const chart = byLabel(container.querySelectorAll('section.qaqc-panel'), panel)?.querySelector('svg.qaqc-chart')
+    if (!chart) throw new Error(`${panel} has no chart`)
+    return chart
+  }
+
+  function pageRows(container: HTMLElement): string[][] {
+    const rows = page(container)?.querySelectorAll('tbody tr:not(.qaqc-virtual-spacer)') ?? []
+    return [...rows].map((row) => [...row.children].map((cell) => cell.textContent ?? ''))
+  }
+
+  function pageHeaders(container: HTMLElement): string[] {
+    return [...(page(container)?.querySelectorAll('thead th') ?? [])].map((node) => node.textContent ?? '')
+  }
+
+  function backButton(container: HTMLElement): Element {
+    const button = page(container)?.querySelector('.qaqc-back-button')
+    if (!button) throw new Error('back button missing')
+    return button
+  }
+
+  function pressOn(target: Element, key: string): void {
+    act(() => {
+      target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
+    })
+  }
+
+  it('a click on a week with issues selects it and opens the page titled Issues · WW23\'2026', () => {
+    const container = drawDrill()
+    click(hit(container, 'Finals + SORs by Work Week', ISSUE_WEEK))
+    expect(weekTitle(container)).toBe("WW23'2026")
+    const open = dialog(container, ISSUE_TITLE)
+    expect(open).not.toBeNull()
+    expect(open?.querySelector('h3')?.textContent).toBe(ISSUE_TITLE)
+    expect(open?.querySelector('.qaqc-back-button')).not.toBeNull()
+    expect(open?.querySelector('.qaqc-week-issues-count')?.textContent).toBe("1 issue in WW23'2026")
+  })
+
+  it('a click on a week with none only selects it', () => {
+    const container = drawDrill()
+    click(hit(container, 'Finals + SORs by Work Week', 202635))
+    expect(weekTitle(container)).toBe("WW35'2026")
+    expect(container.querySelector('[role="dialog"]')).toBeNull()
+  })
+
+  it('Enter on the focused week behaves the same', () => {
+    const container = drawDrill()
+    const chart = chartOf(container, 'Finals + SORs by Work Week')
+    pressOn(chart, 'Enter')
+    // The focus starts on the selected week, which has no issues.
+    expect(weekTitle(container)).toBe("WW42'2026")
+    expect(container.querySelector('[role="dialog"]')).toBeNull()
+    pickWeekInDropdown(container, String(ISSUE_WEEK))
+    pressOn(chart, 'Enter')
+    expect(dialog(container, ISSUE_TITLE)).not.toBeNull()
+  })
+
+  it('Esc and Back return to the dashboard with focus on the chart', () => {
+    const container = drawDrill()
+    const panel = 'Finals + SORs by Work Week'
+    click(hit(container, panel, ISSUE_WEEK))
+    expect(document.activeElement).toBe(backButton(container))
+    expect(container.querySelector('.qaqc-root')?.hasAttribute('inert')).toBe(true)
+
+    click(backButton(container))
+    expect(page(container)).toBeNull()
+    expect(container.querySelector('.qaqc-root')?.hasAttribute('inert')).toBe(false)
+    expect(document.activeElement).toBe(chartOf(container, panel))
+
+    click(hit(container, panel, ISSUE_WEEK))
+    const open = page(container)
+    if (!open) throw new Error('page missing')
+    pressEscape(open)
+    expect(page(container)).toBeNull()
+    expect(document.activeElement).toBe(chartOf(container, panel))
+  })
+
+  it('the NCR Pass Rate Trend opens the same page, and hover behaviour is unchanged', () => {
+    const onHover = vi.fn()
+    const container = drawDrill(PLACEHOLDER_ROWS, PLACEHOLDER_OPTIONAL, { onHover })
+    const panel = 'NCR Pass Rate Trend'
+    const rect = hit(container, panel, ISSUE_WEEK)
+    act(() => {
+      rect.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 5, clientY: 6 }))
+    })
+    expect(onHover).toHaveBeenLastCalledWith(expect.objectContaining({ title: "WW23'2026" }))
+    expect(page(container)).toBeNull()
+
+    click(rect)
+    expect(dialog(container, ISSUE_TITLE)).not.toBeNull()
+    click(backButton(container))
+    expect(document.activeElement).toBe(chartOf(container, panel))
+
+    pressOn(chartOf(container, panel), 'Enter')
+    expect(dialog(container, ISSUE_TITLE)).not.toBeNull()
+  })
+
+  it('selects without opening on the pass-rate chart for a week with none', () => {
+    const container = drawDrill()
+    click(hit(container, 'NCR Pass Rate Trend', 202635))
+    expect(weekTitle(container)).toBe("WW35'2026")
+    expect(container.querySelector('[role="dialog"]')).toBeNull()
+  })
+
+  it('opens from an expanded chart and goes back to the dashboard with focus on the grid chart', () => {
+    const container = drawDrill()
+    const panel = 'NCR Pass Rate Trend'
+    expandPanel(container, panel)
+    const rect = dialog(container, panel)?.querySelector(`.qaqc-hit[data-week="${ISSUE_WEEK}"]`)
+    if (!rect) throw new Error('expanded hit missing')
+    click(rect)
+    expect(dialog(container, panel)).toBeNull()
+    expect(dialog(container, ISSUE_TITLE)).not.toBeNull()
+    click(backButton(container))
+    expect(container.querySelector('[role="dialog"]')).toBeNull()
+    expect(document.activeElement).toBe(chartOf(container, panel))
+  })
+
+  it('with interactions off, a click neither selects nor opens', () => {
+    const container = drawDrill(PLACEHOLDER_ROWS, PLACEHOLDER_OPTIONAL, { interactive: false })
+    click(hit(container, 'Finals + SORs by Work Week', ISSUE_WEEK))
+    click(hit(container, 'NCR Pass Rate Trend', ISSUE_WEEK))
+    expect(weekTitle(container)).toBe("WW42'2026")
+    expect(container.querySelector('[role="dialog"]')).toBeNull()
+  })
+
+  it('a click on a week that dismisses the open menu opens nothing; the next click does', () => {
+    const container = drawDrill()
+    openMenu(container)
+    const rect = hit(container, 'Finals + SORs by Work Week', ISSUE_WEEK)
+    pressAndClick(rect)
+    expect(popover(container)).toBeNull()
+    expect(page(container)).toBeNull()
+    expect(weekTitle(container)).toBe("WW42'2026")
+    pressAndClick(rect)
+    expect(dialog(container, ISSUE_TITLE)).not.toBeNull()
+  })
+
+  it('every week\'s list length equals issuesFound, with and without a filter', () => {
+    const container = drawDrill()
+    clickRange(container, 'All')
+    const panel = 'Finals + SORs by Work Week'
+
+    function expectListsToMatch(index: InspectionDashboardProps['index']): number {
+      let opened = 0
+      for (const item of index.weeks) {
+        click(hit(container, panel, item.week.key))
+        expect(weekTitle(container)).toBe(item.week.label)
+        if (item.issuesFound === 0) {
+          expect(page(container)).toBeNull()
+          continue
+        }
+        opened += 1
+        expect(pageRows(container)).toHaveLength(item.issuesFound)
+        const noun = item.issuesFound === 1 ? 'issue' : 'issues'
+        expect(page(container)?.querySelector('.qaqc-week-issues-count')?.textContent).toBe(`${item.issuesFound} ${noun} in ${item.week.label}`)
+        click(backButton(container))
+      }
+      return opened
+    }
+
+    const baseIndex = buildInspectionIndex(PLACEHOLDER_ROWS, COLUMNS, TODAY)
+    expect(expectListsToMatch(baseIndex)).toBe(baseIndex.weeks.filter((item) => item.issuesFound > 0).length)
+    expect(baseIndex.cumulativeIssues[baseIndex.cumulativeIssues.length - 1]).toBeGreaterThan(0)
+
+    // The building of the first issue, so the filtered list still has weeks to open.
+    const issueRow = baseIndex.issueRowsByWeek.flat()[0]
+    const building = String(PLACEHOLDER_ROWS[issueRow][COLUMNS.building])
+    openMenu(container)
+    toggleSection(container, 'Building')
+    click(checkbox(container, building))
+    click(filterButton(container))
+    const filtered = PLACEHOLDER_ROWS.filter((row) => row[COLUMNS.building] === building)
+    const filteredIndex = buildInspectionIndex(filtered, COLUMNS, TODAY, { axisFromKey: baseIndex.weeks[0].week.key })
+    expect(expectListsToMatch(filteredIndex)).toBeGreaterThan(0)
+  })
+
+  it('lists the filtered rows, not the rows at the same positions of the full data', () => {
+    const rows: InspectionRows = [
+      ["WW40'2026", 'Final', 'NCR A', 'Other'],
+      ["WW40'2026", 'Final', 'NCR B', 'Other'],
+      ["WW40'2026", 'Final', 'NCR C', 'Picked'],
+      ["WW40'2026", 'Final', 'No Issue Found', 'Picked'],
+      ["WW40'2026", 'SOR', 'COR with text', 'Picked'],
+    ]
+    const container = drawDrill(rows, UNBOUND_OPTIONAL)
+    openMenu(container)
+    click(checkbox(container, 'Picked'))
+    click(filterButton(container))
+    click(hit(container, 'Finals + SORs by Work Week', 202640))
+    expect(pageHeaders(container)).toEqual(['Building', 'Phase', 'Issue'])
+    expect(pageRows(container)).toEqual([['Picked', 'Final', 'NCR C']])
+  })
+
+  it('a filter that leaves a week with no issues only selects it', () => {
+    const rows: InspectionRows = [
+      ["WW40'2026", 'Final', 'NCR', 'Other'],
+      ["WW40'2026", 'Final', 'No Issue Found', 'Picked'],
+    ]
+    const container = drawDrill(rows, UNBOUND_OPTIONAL)
+    openMenu(container)
+    click(checkbox(container, 'Picked'))
+    click(filterButton(container))
+    click(hit(container, 'Finals + SORs by Work Week', 202640))
+    expect(weekTitle(container)).toBe("WW40'2026")
+    expect(page(container)).toBeNull()
+  })
+
+  it('a date range only limits the weeks on the chart, not a week\'s list', () => {
+    const rows: InspectionRows = [
+      ["WW30'2026", 'Final', 'NCR A', 'B1'],
+      ["WW36'2026", 'Final', 'NCR B', 'B1'],
+      ["WW36'2026", 'Final', 'NCR C', 'B2'],
+      ["WW42'2026", 'Final', 'No Issue Found', 'B1'],
+    ]
+    const container = drawDrill(rows, UNBOUND_OPTIONAL)
+    openMenu(container)
+    const [from, to] = container.querySelectorAll<HTMLSelectElement>('.qaqc-filter-date select')
+    choose(from, 202635)
+    choose(to, 202637)
+    click(filterButton(container))
+    expect(container.querySelector('.qaqc-panel-main .qaqc-hit[data-week="202630"]')).toBeNull()
+    click(hit(container, 'Finals + SORs by Work Week', 202636))
+    expect(pageRows(container).map((row) => row[2])).toEqual(['NCR B', 'NCR C'])
+    expect(dialog(container, "Issues · WW36'2026")).not.toBeNull()
+  })
+
+  it('shows every bound column, with dates and numbers as text', () => {
+    const rows: InspectionRows = [
+      ["WW40'2026", 'Final', 'Tray bent', 'F63.1', 'Greyfox', 'Supplier A', 'Electrical', 'Tray', 'Open', 'INS-1', 'TAG-1', 90123, 'Damage', new Date(2026, 8, 30), 'QCR A', 'Rework'],
+    ]
+    const container = drawDrill(rows)
+    click(hit(container, 'Finals + SORs by Work Week', 202640))
+    expect(pageHeaders(container)).toEqual([
+      'Building', 'Phase', 'Issue', 'Inspection ID', 'Equipment ID / Tag Number', 'Issue ID', 'Finding Type', 'Status', 'Date Observed', 'QCR/FE', 'Notes',
+    ])
+    expect(pageRows(container)).toEqual([['F63.1', 'Final', 'Tray bent', 'INS-1', 'TAG-1', '90123', 'Damage', 'Open', '2026-09-30', 'QCR A', 'Rework']])
+  })
+
+  it('works on a compact tile', () => {
+    const container = drawDrill(PLACEHOLDER_ROWS, PLACEHOLDER_OPTIONAL, { viewport: { width: 500, height: 480 } })
+    click(hit(container, 'Finals + SORs by Work Week', ISSUE_WEEK))
+    const open = dialog(container, ISSUE_TITLE)
+    expect(open?.classList.contains('is-compact')).toBe(true)
+    const minWidth = open?.querySelector('table')?.style.minWidth ?? ''
+    expect(Number.parseInt(minWidth, 10)).toBeGreaterThan(500)
+  })
+
+  it('keeps the page open if the tile becomes cards-only', () => {
+    const container = drawDrill()
+    click(hit(container, 'Finals + SORs by Work Week', ISSUE_WEEK))
+    const index = buildInspectionIndex(PLACEHOLDER_ROWS, COLUMNS, TODAY)
+    view?.rerender(
+      <InspectionDashboard
+        title="Electrical Inspections"
+        icon={Zap}
+        index={index}
+        filterSource={filterSourceFor(PLACEHOLDER_ROWS, TODAY, PLACEHOLDER_OPTIONAL)}
+        theme={THEME}
+        interactive
+        animate={false}
+        describeCharts
+        loading={false}
+        footnotes={[]}
+        viewport={{ width: 1280, height: 400 }}
+        onHover={vi.fn()}
+      />,
+    )
+    expect(dialog(container, ISSUE_TITLE)).not.toBeNull()
+  })
+
+  it('says so when a refresh leaves the open week with no issues', () => {
+    const container = drawDrill()
+    click(hit(container, 'Finals + SORs by Work Week', ISSUE_WEEK))
+    const clean = PLACEHOLDER_ROWS.map((row) => row.map((cell, position) => (position === COLUMNS.issue ? 'No Issue Found' : cell)))
+    view?.rerender(
+      <InspectionDashboard
+        title="Electrical Inspections"
+        icon={Zap}
+        index={buildInspectionIndex(clean, COLUMNS, TODAY)}
+        filterSource={filterSourceFor(clean, TODAY, PLACEHOLDER_OPTIONAL)}
+        theme={THEME}
+        interactive
+        animate={false}
+        describeCharts
+        loading={false}
+        footnotes={[]}
+        viewport={{ width: 1280, height: 720 }}
+        onHover={vi.fn()}
+      />,
+    )
+    expect(dialog(container, ISSUE_TITLE)?.querySelector('.qaqc-chart-empty')?.textContent).toBe('No issues in this week')
+  })
+
+  it('opens on Mechanical the same way', () => {
+    const container = drawDrill(MECHANICAL_ROWS, UNBOUND_OPTIONAL, { title: 'Mechanical / Process Inspections', icon: Cog })
+    const index = buildInspectionIndex(MECHANICAL_ROWS, COLUMNS, TODAY)
+    clickRange(container, 'All')
+    const issueWeek = index.weeks.find((item) => item.issuesFound > 0)
+    if (issueWeek === undefined) throw new Error('the fixture has no issue week')
+    click(hit(container, 'Finals + SORs by Work Week', issueWeek.week.key))
+    expect(pageRows(container)).toHaveLength(issueWeek.issuesFound)
   })
 })

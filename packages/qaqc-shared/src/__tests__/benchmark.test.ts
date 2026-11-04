@@ -44,6 +44,15 @@ describe('performance budgets', () => {
     expect(bestOf(TIMING_RUNS, () => elapsed(() => buildInspectionIndex(rows, COLUMNS, TODAY)))).toBeLessThan(300)
   })
 
+  it('building the index with issueRowsByWeek stays inside the existing 100k budget', () => {
+    const rows = syntheticInspectionRows(100_000)
+    const index = buildInspectionIndex(rows, COLUMNS, TODAY)
+    const listed = index.issueRowsByWeek.reduce((sum, positions) => sum + positions.length, 0)
+    expect(listed).toBe(index.cumulativeIssues[index.cumulativeIssues.length - 1])
+    expect(listed).toBeGreaterThan(0)
+    expect(bestOf(TIMING_RUNS, () => elapsed(() => buildInspectionIndex(rows, COLUMNS, TODAY)))).toBeLessThan(300)
+  })
+
   it('indexes 500,000 rows within budget', () => {
     const rows = syntheticInspectionRows(500_000)
     buildInspectionIndex(rows, COLUMNS, TODAY)
