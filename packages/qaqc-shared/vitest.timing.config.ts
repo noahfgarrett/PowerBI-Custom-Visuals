@@ -5,6 +5,7 @@ export const TIMING_TESTS = [
   'src/__tests__/benchmark.test.ts',
   'src/__tests__/performanceBenchmark.test.ts',
   'src/__tests__/ffuMapBenchmark.test.ts',
+  'src/__tests__/rowFiltersBenchmark.test.ts',
 ];
 
 /**
