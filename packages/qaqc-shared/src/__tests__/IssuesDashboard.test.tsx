@@ -892,7 +892,31 @@ describe('IssuesDashboard filters', () => {
     expect(groupSubtitle(container)).toBe("WW40'2024 to WW50'2024")
   })
 
-  it('a range with no issues shows the empty state, and Clear filters returns', () => {
+  it('a current-week range keeps the real Remaining Open and the Aging charts', () => {
+    const container = drawEnriched()
+    const agingBefore = panel(container, OPEN_AGING_TITLE)?.textContent
+    openMenu(container)
+    setRange(container, 202645, 202645)
+    expect(container.querySelector('.qaqc-filter-empty')).toBeNull()
+    expect(toDateValues(container)).toEqual(['0', '0', '56', 'n/a'])
+    expect(cardDetail(container, 'Closure Rate')).toBe('No issues opened in range')
+    expect(panel(container, OPEN_AGING_TITLE)?.textContent).toBe(agingBefore)
+    expect(BASE.openAging.reduce((sum, bucket) => sum + bucket.count, 0)).toBe(56)
+    expect(panel(container, OPEN_AGING_TITLE)?.querySelector('svg')).not.toBeNull()
+    expect(mainHitWeeks(container)).toEqual(['202645'])
+  })
+
+  it('a quiet range under a field filter draws the chart, with no word about 30 WW', () => {
+    const container = drawEnriched()
+    openMenu(container)
+    click(checkbox(container, 'Greyfox'))
+    setRange(container, 202645, 202645)
+    expect(container.querySelector('.qaqc-filter-empty')).toBeNull()
+    expect(panel(container, TREND_TITLE)?.textContent).not.toContain('switch to All')
+    expect(mainHitWeeks(container)).toEqual(['202645'])
+  })
+
+  it('a range before any issue shows the empty state, and Clear filters returns', () => {
     const container = drawEnriched()
     openMenu(container)
     setRange(container, 202301, 202310)
@@ -1103,6 +1127,17 @@ describe('IssuesDashboard week drill-down', () => {
     expect(open?.querySelector('h3')?.textContent).toBe(BUSY_TITLE)
     expect(groupHeadings(container)).toEqual(['Opened (2)', 'Closed (1)'])
     expect(open?.querySelector('.qaqc-week-issues-count')?.textContent).toBe("3 issues in WW42'2026")
+  })
+
+  it('counts an issue opened and closed in the same week once, with the split in the headings', () => {
+    const container = drawDrill()
+    openMenu(container)
+    click(checkbox(container, 'Greyfox'))
+    click(checkbox(container, 'Bayside'))
+    pressEscape(pick(container, '.qaqc-filter-popover', HTMLElement))
+    click(hit(container, 202640))
+    expect(groupHeadings(container)).toEqual(['Opened (2)', 'Closed (5)'])
+    expect(page(container)?.querySelector('.qaqc-week-issues-count')?.textContent).toBe("6 issues in WW40'2026")
   })
 
   it('a click on a week with no activity only selects it', () => {

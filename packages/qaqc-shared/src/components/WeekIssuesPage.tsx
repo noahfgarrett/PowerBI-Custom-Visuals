@@ -81,7 +81,8 @@ export interface WeekIssuesPageProps {
 
 /** A week's issue rows, drawn inside a `kind: 'page'` panel titled with the week. */
 export function WeekIssuesPage({ weekLabel, groups }: WeekIssuesPageProps): ReactElement {
-  const count = groups.reduce((sum, group) => sum + group.rows.length, 0)
+  // A row in two groups is one issue, such as one opened and closed in the same week. The headings give the split.
+  const count = new Set(groups.flatMap((group) => group.rows)).size
 
   return (
     <div className="qaqc-week-issues">

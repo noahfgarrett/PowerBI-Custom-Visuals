@@ -169,7 +169,8 @@ export function IssuesDashboard({
   const closureRate = toDate.closureRate
   const isInRange = model.rangeLabel !== null
   const hasNoMatch = filters.isAnyActive && !model.hasData
-  const areRowsOutsideWindow = isFieldFilterActive && range === 'recent' && model.windowTotals.opened + model.windowTotals.closed === 0
+  // In a range the toggle is off and the chart shows the range's weeks, so there's no window for rows to fall outside.
+  const areRowsOutsideWindow = isFieldFilterActive && !isInRange && range === 'recent' && model.windowTotals.opened + model.windowTotals.closed === 0
   const notes = isFieldFilterActive
     ? restateIssueFootnotes(footnotes, baseIndex, index, rowsLeftOutByCompany(filters.menu.catalog, filters.menu.selection))
     : footnotes

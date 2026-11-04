@@ -369,10 +369,25 @@ describe('buildIssueModel in a date range', () => {
     expect(buildIssueModel(index, defaultViewState(index)).rangeLabel).toBeNull()
   })
 
-  it('has no data when nothing was opened or closed in the range', () => {
+  it('a quiet range with issues still open has data, and reads the true count', () => {
     const quiet = buildIssueIndex([issue('#1', '9/22/2026')], COLUMNS, TODAY)
-    expect(buildIssueModel(quiet, inRange(WW41, WW42)).hasData).toBe(false)
+    const model = buildIssueModel(quiet, inRange(WW41, WW42))
+    expect(model.hasData).toBe(true)
+    expect(model.toDate.opened.value).toBe(0)
+    expect(model.toDate.closed.value).toBe(0)
+    expect(model.toDate.remaining.value).toBe(1)
+    expect(model.toDate.closureRate.value).toBeNull()
     expect(buildIssueModel(quiet, inRange(WW39, WW42)).hasData).toBe(true)
+  })
+
+  it('a quiet range with everything closed has no data', () => {
+    const closed = buildIssueIndex([issue('#1', '9/22/2026', 'Closed', '9/30/2026')], COLUMNS, TODAY)
+    expect(buildIssueModel(closed, inRange(WW41, WW42)).hasData).toBe(false)
+  })
+
+  it('a range before any issue has no data', () => {
+    const later = buildIssueIndex([issue('#1', '10/13/2026')], COLUMNS, TODAY, { axisFromKey: WW39 })
+    expect(buildIssueModel(later, inRange(WW39, WW40)).hasData).toBe(false)
   })
 
   it('Aging and Pareto aren\'t restated by the range', () => {

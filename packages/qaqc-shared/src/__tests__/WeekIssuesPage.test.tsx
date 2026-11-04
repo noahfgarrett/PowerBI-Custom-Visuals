@@ -151,9 +151,14 @@ describe('WeekIssuesPage', () => {
     expect(widthOf(tag, '')).toBe(widthOf(plain, ''))
   })
 
-  it('labels each titled group and counts them together', () => {
-    const container = draw([{ ...GROUP, title: 'Opened' }, { ...GROUP, title: 'Closed', rows: [ROWS[0]] }])
+  it('adds groups with no row in common', () => {
+    const container = draw([{ ...GROUP, title: 'Opened' }, { ...GROUP, title: 'Closed', rows: [['F63.3', 'Other', 4, '']] }])
     expect(container.querySelector('.qaqc-week-issues-count')?.textContent).toBe("4 issues in WW23'2026")
+  })
+
+  it('labels each titled group and counts a row in both once', () => {
+    const container = draw([{ ...GROUP, title: 'Opened' }, { ...GROUP, title: 'Closed', rows: [ROWS[0]] }])
+    expect(container.querySelector('.qaqc-week-issues-count')?.textContent).toBe("3 issues in WW23'2026")
     expect([...container.querySelectorAll('.qaqc-week-issues-group h4')].map((node) => node.textContent)).toEqual(['Opened (3)', 'Closed (1)'])
     expect(container.querySelectorAll('table')).toHaveLength(2)
   })

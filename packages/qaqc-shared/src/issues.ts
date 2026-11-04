@@ -727,6 +727,7 @@ export function buildIssueModel(index: IssueIndex, view: ViewState): IssueModel 
     windowTotals,
     rangeLabel: view.dateRange === null ? null : formatWeekRange(view.dateRange),
     rangeClosure,
-    hasData: span === null ? cumulativeOpened[lastPosition] > 0 : openedInWindow + closedInWindow > 0,
+    // A quiet range with issues still open has real numbers: its Remaining Open and the Aging charts.
+    hasData: span === null ? cumulativeOpened[lastPosition] > 0 : openedInWindow + closedInWindow > 0 || remainingAt(endPosition) > 0,
   }
 }
