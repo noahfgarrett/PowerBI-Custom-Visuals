@@ -8,6 +8,7 @@ import { ELECTRICAL_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/ele
 import { INSPECTION_OPTIONAL_SLOTS } from '../../../qaqc-shared/src/dataView'
 import type { InspectionRows } from '../../../qaqc-shared/src/types'
 import capabilities from '../../capabilities.json'
+import packageJson from '../../package.json'
 import pbiviz from '../../pbiviz.json'
 import { QaqcElectricalVisual } from '../visual'
 import { tableDataView } from './tableDataView'
@@ -120,6 +121,11 @@ describe('QaqcElectricalVisual name', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(ELECTRICAL_ROWS)))
     expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QCx Electrical Inspections')
+  })
+
+  it('is version 1.2.0 in pbiviz.json and package.json', () => {
+    expect(pbiviz.visual.version).toBe('1.2.0.0')
+    expect(packageJson.version).toBe('1.2.0')
   })
 
   it('shows its QCx name in Power BI', () => {

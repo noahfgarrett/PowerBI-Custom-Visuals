@@ -12,6 +12,7 @@ import { splitCombinedRows } from '../../../qaqc-shared/src/combined'
 import { buildPerformanceIndex, buildPerformanceModel } from '../../../qaqc-shared/src/performance'
 import type { CombinedColumns } from '../../../qaqc-shared/src/types'
 import capabilities from '../../capabilities.json'
+import packageJson from '../../package.json'
 import pbiviz from '../../pbiviz.json'
 import { QaqcPerformanceVisual } from '../visual'
 import { ALL_ROLES, FILTER_ROLE_POSITIONS, tableDataView, type Cell, type FilterRole } from './tableDataView'
@@ -200,6 +201,11 @@ describe('QaqcPerformanceVisual name', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(COMBINED_ROWS)))
     expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QCx Performance')
+  })
+
+  it('is version 1.2.0 in pbiviz.json and package.json', () => {
+    expect(pbiviz.visual.version).toBe('1.2.0.0')
+    expect(packageJson.version).toBe('1.2.0')
   })
 
   it('shows its QCx name in Power BI', () => {

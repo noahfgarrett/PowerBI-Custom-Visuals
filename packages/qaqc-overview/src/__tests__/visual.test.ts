@@ -9,6 +9,7 @@ import { OVERVIEW_SLOTS } from '../../../qaqc-shared/src/dataView'
 import { COMBINED_COLUMNS, COMBINED_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/combinedRows'
 import { ENRICHED_COMBINED_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/enrichedCombinedRows'
 import capabilities from '../../capabilities.json'
+import packageJson from '../../package.json'
 import pbiviz from '../../pbiviz.json'
 import { QaqcOverviewVisual } from '../visual'
 import { ALL_ROLES, ENRICHMENT_ROLES, tableDataView } from './tableDataView'
@@ -215,6 +216,11 @@ describe('QaqcOverviewVisual name', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(COMBINED_ROWS)))
     expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QCx Overview')
+  })
+
+  it('is version 1.3.0 in pbiviz.json and package.json', () => {
+    expect(pbiviz.visual.version).toBe('1.3.0.0')
+    expect(packageJson.version).toBe('1.3.0')
   })
 
   it('shows its QCx name in Power BI', () => {

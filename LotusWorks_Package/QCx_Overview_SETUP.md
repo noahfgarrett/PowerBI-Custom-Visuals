@@ -2,6 +2,8 @@
 
 One page with Electrical, Mechanical, Welding and BIM Issues side by side, a quality strip, and two charts. Its numbers match the four discipline visuals for the same week.
 
+**Version 1.3.0:** a **Filter** menu in the header filters the page by date range, Contractor, Building and Discipline, and clicking a week with NCRs lists them. The new slots are optional and read the longer QCx Combined table, so re-paste its script (see [QCx_Combined_SETUP.md](QCx_Combined_SETUP.md)). Its identity is unchanged, so importing the new file updates existing reports in place and keeps your field bindings.
+
 **Version 1.2.0:** the BIM issues come from the **enriched Autodesk export** through QCx Combined. Four new optional slots, BIM360 Created By, BIM360 Created On, BIM360 Closed On and Closed At, carry the real creator and dates of the issues migrated from BIM 360.
 
 **Version 1.1.0:** the BIM Issues row's fourth card is now **Past normal close window**, with the closure rate in its sub-line. The quality strip gains a sixth card, **Top root cause**, fed by a new optional Root Cause slot.
@@ -9,16 +11,16 @@ One page with Electrical, Mechanical, Welding and BIM Issues side by side, a qua
 ## 1. Import the visual (once per report)
 
 1. In Power BI Desktop, open the Visualizations pane, select the three dots (…), then **Import a visual from a file**.
-2. Choose `qaqcOverview_AE84E1DA71E7.1.2.0.0.pbiviz`.
+2. Choose `qaqcOverview_AE84E1DA71E7.1.3.0.0.pbiviz`.
 3. To update later, import the newer file the same way. It replaces the old version in place and keeps your field bindings.
 
 ## 2. Add the QCx Combined table (once per report, required)
 
-The visual reads one table that holds all four sources: the Electrical, Mechanical and Welding sheets and the enriched Autodesk issues export. Follow [QCx_Combined_SETUP.md](QCx_Combined_SETUP.md) to add the **QCx Combined** query. It already includes the Row ID, so you don't need to add an index column for this visual.
+The visual reads one table that holds all four sources: the Electrical, Mechanical and Welding sheets and the enriched Autodesk issues export. Follow [QCx_Combined_SETUP.md](QCx_Combined_SETUP.md) to add the **QCx Combined** query. It already includes the Row ID, so you don't need to add an index column for this visual. If you added the table before version 1.3.0, re-paste the script so it has the 39 columns.
 
 ## 3. Bind the columns
 
-The first 14 column slots are required. The visual shows its setup screen, listing the slots still empty, until every one is bound. Root Cause, the four BIM360 and Closed At slots, and Green tags are optional.
+The first 14 column slots are required. The visual shows its setup screen, listing the slots still empty, until every one is bound. Root Cause, the four BIM360 and Closed At slots, the filter and drill-down slots, and Green tags are optional.
 
 | Field slot | QCx Combined column |
 |---|---|
@@ -41,6 +43,20 @@ The first 14 column slots are required. The visual shows its setup screen, listi
 | BIM360 Created On (optional) | BIM360 Created On |
 | BIM360 Closed On (optional) | BIM360 Closed On |
 | Closed At (optional) | Closed At |
+| General Contractor (optional) | General Contractor |
+| Contractor (optional) | Contractor |
+| Discipline (optional) | Discipline |
+| Tag No (optional) | Tag No |
+| Welder (optional) | Welder |
+| Pipe Spec (optional) | Pipe Spec |
+| Fluid Code (optional) | Fluid Code |
+| Inspection ID (optional) | Inspection ID |
+| Equipment ID / Tag Number (optional) | Equipment ID / Tag Number |
+| Issue ID (optional) | Issue ID |
+| Finding Type (optional) | Finding Type |
+| Date Observed (optional) | Date Observed |
+| QCR/FE (optional) | QCR/FE |
+| Notes (optional) | Notes |
 | Green tags (optional) | your Green tags measure (see below) |
 
 Set every column to **Don't summarize**. The visual is designed to fill a full report page.
@@ -60,6 +76,16 @@ About 1,000 issues in the enriched export were migrated from BIM 360. Autodesk s
 
 These are the same rules as the QCx Issues visual; see its guide's Counting rules.
 
+### Filter and drill-down slots (optional)
+
+These add fields to the Filter menu and columns to the week's NCR list. A report that doesn't bind them keeps working and still has Date range and Building.
+
+- **General Contractor** and **Contractor** make one **Contractor** field: General Contractor on inspection rows, Contractor on BIM rows, merged into one list.
+- **Discipline** adds that field, read from inspection and BIM rows.
+- **Tag No** lets Building filter Welding rows, through the building the visual takes from the tag. It's also a column in the Welding list.
+- **Welder**, **Pipe Spec** and **Fluid Code** are columns in the Welding list.
+- **Inspection ID**, **Equipment ID / Tag Number**, **Issue ID**, **Finding Type**, **Date Observed**, **QCR/FE** and **Notes** are columns in the Electrical and Mechanical lists.
+
 ### Green tags (optional)
 
 The DWNs card shows the DWN rate: DWNs to date ÷ your green tag count. To get it, create a measure and bind it to **Green tags**. The measure must be wrapped in `COALESCE`, like this:
@@ -76,19 +102,69 @@ The measure doesn't need a relationship to QCx Combined; the visual reads its va
 
 ## 4. Use it
 
-The header holds three controls:
+The header holds four controls:
 
+- **Filter** narrows the page by date range and by field (see Filter menu below).
 - **`This WW | To date`** sets what the cards show. **This WW** (the default) shows the selected week. **To date** shows everything through the selected week. The choice resets to This WW when the report is reopened.
 - **`30 WW | All`** switches the two charts between the last 30 weeks and full history.
 - **The week dropdown** opens on the current work week every time the report opens. Pick any week to see its cards.
 
-You can also click a week on either chart, or move along a chart with the arrow keys and press Enter, to select that week without moving the chart. The selected week is highlighted on both charts.
+You can also click a week on either chart, or move along a chart with the arrow keys and press Enter, to select that week without moving the chart. The selected week is highlighted on both charts. If the week has NCRs, its list opens too (see See a week's NCRs below).
 
 Click the expand icon on a chart to fill the visual with more detail; press Esc or the collapse icon to return. The icon is hidden on empty charts and in read-only views.
 
 Format pane: **Colors → Preset** (QCx, Blue, LotusWorks, Grayscale), **Background** (color, background opacity, card opacity), **Animation**, **Accessibility**.
 
 Week labels include the year, for example `WW41'2026`. Chart axes show `WW41` ticks, with the year under the first labelled week and under the first labelled week of each new year.
+
+### Filter menu
+
+- **Date range:** From and To work-week dropdowns, labelled `(start)` and `(now)` at the data's limits, and the presets Last 4 WW, Last 13 WW and This year. Presets end at the current work week.
+- **Fields,** in this order: Contractor, Building and Discipline. Contractor and Discipline appear when their slots are bound. Each field has a search box and tick boxes with row counts, most rows first.
+- **Building** treats `F63.1` and `F631` as one choice, ignoring punctuation as well as letter case, because inspection rows spell a building one way and the building taken from a weld's Tag No another. A blank Building reads Unspecified, as on the charts, and a blank Contractor reads Unassigned.
+- **Changes apply at once.** There's no Apply button. Press Esc or click outside to close the menu.
+- **Ticks:** within a field, a row matches any ticked value. Across fields, it must match all of them. Ticking nothing in a field means no filter on it. The footer's **Showing X of Y rows** updates as you tick.
+- **Chips:** each active filter shows as a chip under the header. Click a chip's × to remove it, or **Clear all** to remove every filter. The Filter button shows how many filters are active.
+- **Grouping:** values are grouped ignoring letter case and extra spaces, so `Electrical` and `ELECTRICAL` are one choice. Blank, `N/A`, `NA`, `None` and `-` are one **Not recorded** choice, listed last.
+- **Typos:** a typo in the sheet appears as a separate choice. Nothing corrects spelling; fix it in the sheet.
+- **No matching rows:** the cards and charts give way to a message with a **Clear filters** button, so zeros can't be read as real results.
+- **Keeping filters:** filters survive a data refresh, and a ticked value no longer in the data is dropped. They reset when the report is reopened. They apply to this visual only.
+- **Read-only views:** the Filter button is disabled when interactions are off.
+
+**Showing X of Y rows** counts the rows this visual reads, so Y can be less than the table's row count. See the QCx Combined guide.
+
+### Sources a filter doesn't apply to
+
+Not every source has every field. A filter leaves a source without that field unfiltered, and a small note under the chips says so while that filter is active:
+
+| Filter | Note |
+|---|---|
+| Contractor | `Welding isn't filtered by Contractor` |
+| Discipline | `Welding isn't filtered by Discipline` |
+| Building | `BIM issues aren't filtered by Building` |
+
+If a filter leaves one source with no rows while others still have some, that row reads `No Electrical rows match these filters` (or Mechanical, Welding, BIM Issues).
+
+There's no Created By (Company) filter here: the BIM Issues row keeps counting LotusWorks-created issues only.
+
+### In range
+
+Setting a date range changes the page to read that range:
+
+- `30 WW | All` is disabled, and the charts show exactly the weeks in the range.
+- `This WW | To date` becomes `This WW | In range`. **In range** counts over the range, with the subtitle `WW.. to WW..`. **This WW** follows the selected week.
+- The week dropdown offers only the weeks in the range, and the selected week stays inside it.
+- **BIM Remaining open** and **Past normal close window** read at the end of the range in In range, because they're readings at a moment. So does **Top root cause**, which still counts from the start of the data.
+- A range from the first week of the data to the current week is the same as no range, so it isn't counted as a filter.
+
+### See a week's NCRs
+
+Click a week on either chart, or focus a chart, move with the arrow keys and press Enter. That selects the week. A click hits the whole week, not one line. If the week has NCRs, a list of them opens too; a week with none is only selected.
+
+- The title names the week, for example `Issues · WW23'2026`, and the line under it gives the count.
+- The list holds that week's NCRs from **Electrical**, **Mechanical** and **Welding**, labelled by source, under the active filters. BIM rows aren't listed, because the Overview doesn't count BIM NCRs.
+- A column whose slot isn't bound is hidden. Click a column header to sort. Long text is cut short; hover it for the full value.
+- Press Esc or **Back** to return, with the focus back on the chart.
 
 ## 5. What the page shows
 
@@ -145,7 +221,7 @@ Each row has the discipline's name, four cards, and a sparkline of the 30 weeks 
 - **NCRs come from final walks only:** Electrical and Mechanical finals with an issue found, and welds with an issue. BIM issues typed `NCR` are **not** counted here.
 - **Pass rates** show `n/a` when there are no finals (or no welds) to divide by.
 - **Top root cause** shows the cause's name, with `n of N issues · p%` in To date and `n of N opened this WW` in This WW. A week with no new issues reads `None` with `None opened this WW`, and To date before the first issue reads `None` with `No issues to date`. When none of the counted issues has a Root Cause, the card reads `None` with `n issues · none recorded` (To date) or `n opened this WW · none recorded` (This WW). Causes are grouped ignoring letter case and extra spaces, ties go to the name that sorts first, and a long name is cut short (hover it for the full name). Only counted BIM issues are included. Without the Root Cause slot the card reads `Add Root Cause`.
-- **DWN rate** is always to date: DWNs through the selected week ÷ Green tags, shown as, for example, `2.1% of green tags (to date)`. Without a Green tags value it reads `DWN rate n/a: add Green tags`.
+- **DWN rate** is always to date: DWNs through the selected week ÷ Green tags, shown as, for example, `2.1% of green tags (to date)`. Without a Green tags value it reads `DWN rate n/a: add Green tags`. While any filter is active it shows `n/a` with `Not available with filters`, because Green tags is one number the filters can't reach. The DWNs count itself still follows the filters.
 
 ### Charts
 
@@ -163,10 +239,12 @@ The charts follow `30 WW | All`.
 - **Cards only (under 660 px tall):** the charts are hidden.
   - From 480 to 660 px tall, and at least 900 px wide: full cards, no charts.
   - Under 480 px tall, or under 900 px wide: a dense one-line layout. Each discipline row is its name, four values with a coloured trend arrow, and the sparkline; the quality strip is one line of six values. Hover a value (or use a screen reader) for its full detail. An 800 × 300 tile fits without scrolling.
+  - Under 640 px wide: the dense layout drops the sparklines and row icons, and the quality strip takes two lines, so values aren't cut short. The page scrolls.
+- **With filters on:** one row of chips comes out of the charts' height at a 660 px tile, so the charts stay. On a smaller tile, the page or the cards scroll under the chips.
 
 ## 7. Not connected and footnotes
 
-**"Not connected: no Electrical rows in QCx Combined"** (or Mechanical, Welding, BIM Issues) replaces a row's cards when QCx Combined has no rows for that source. Check that the source query is named correctly at the top of the QCx Combined script and returns rows, and that no report filter or slicer removes that source. If every row says Not connected, check the Green tags measure is wrapped in `COALESCE` (see above).
+**"Not connected: no Electrical rows in QCx Combined"** (or Mechanical, Welding, BIM Issues) replaces a row's cards when QCx Combined has no rows for that source. Check that the source query is named correctly at the top of the QCx Combined script and returns rows, and that no report filter or slicer removes that source. If every row says Not connected, check the Green tags measure is wrapped in `COALESCE` (see above). With filters on, a row with no matching rows reads `No Electrical rows match these filters` instead; that's the filter, not the connection.
 
 The footnotes at the bottom report, per source:
 

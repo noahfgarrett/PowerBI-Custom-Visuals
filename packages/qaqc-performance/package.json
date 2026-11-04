@@ -1,6 +1,6 @@
 {
   "name": "@pbi/qaqc-performance",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "scripts": {
     "build": "node scripts/ensure-api.cjs && pbiviz package --all-locales && node ../../scripts/verify-pbiviz-css.mjs . .qaqc-root",

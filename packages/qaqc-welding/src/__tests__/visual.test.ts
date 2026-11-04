@@ -7,6 +7,7 @@ import { checkbox, chipTexts, click, openMenu, showing, toggleSection } from '..
 import { WELD_OPTIONAL_SLOTS, WELD_SLOTS } from '../../../qaqc-shared/src/dataView'
 import { WELDING_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/weldingRows'
 import capabilities from '../../capabilities.json'
+import packageJson from '../../package.json'
 import pbiviz from '../../pbiviz.json'
 import { QaqcWeldingVisual } from '../visual'
 import { tableDataView } from './tableDataView'
@@ -145,6 +146,11 @@ describe('QaqcWeldingVisual name', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(WELDING_ROWS)))
     expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QCx Welding Signoffs')
+  })
+
+  it('is version 1.1.0 in pbiviz.json and package.json', () => {
+    expect(pbiviz.visual.version).toBe('1.1.0.0')
+    expect(packageJson.version).toBe('1.1.0')
   })
 
   it('shows its QCx name in Power BI', () => {

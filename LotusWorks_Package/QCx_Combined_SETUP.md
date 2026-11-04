@@ -1,6 +1,6 @@
 # QCx Combined table: setup
 
-The QCx Overview and QCx Performance visuals read one table, **QCx Combined**. This guide adds it to your report.
+The QCx Overview and QCx Performance visuals read one table, **QCx Combined**. The QCx Issues visual can read it too, for its NCR Pass Rate card. This guide adds it to your report.
 
 ## Why the table is needed
 
@@ -22,6 +22,16 @@ The BIM issues come from the **enriched Autodesk export**, for example `Automate
 8. Select **Home → Close & Apply**.
 
 The script is also saved next to this guide as `QCx_Combined.pq`, so you can open it in a text editor and copy it from there.
+
+### Already have QCx Combined? Re-paste the script
+
+The script has grown from 22 columns to 39, for the Filter menu, the week drill-down and the NCR Pass Rate on QCx Issues. The first 22 columns keep their names and order, and the 17 new ones come after them, so your existing bindings keep working.
+
+1. Select **Home → Transform data**, select **QCx Combined**, then **Home → Advanced Editor**. Note the four source names at the top of your current script.
+2. Delete everything in the editor, paste the script below, and select **Done**.
+3. Change the same four names at the top to match, as you did before.
+4. Check the preview. It should show the 39 columns.
+5. Select **Home → Close & Apply**.
 
 ### Edit only the four names at the top
 
@@ -286,12 +296,16 @@ in
 
 What it does:
 
-1. **Selects** the columns the visuals need from each source. `MissingField.Error` makes the refresh fail if one of those columns is missing (see Troubleshooting), so a renamed column can never turn into silent zeros. On the BIM side, ID, Status, Type, Created on, Updated on and Created by are required. Root cause and the four enrichment columns are optional: `BIM360_Created By`, `BIM360_Created On`, `BIM360_Closed On` and `Closed at`. They are selected with `MissingField.UseNull`, so an export without one still loads, and that column is empty on its rows.
-2. **Renames** them to the combined names (for example `Work Week Observed` → `Work Week`, `Created on` → `Created On`, `BIM360_Created By` → `BIM360 Created By`) and adds **Source**: `Electrical`, `Mechanical`, `Welding` or `BIM`. Power Query matches column names case-sensitively, so the script spells the export's columns exactly as the export does, for example `Created on` with a lower-case "o".
+1. **Selects** the columns the visuals need from each source. `MissingField.Error` makes the refresh fail if one of those columns is missing (see Troubleshooting), so a renamed column can never turn into silent zeros. On the BIM side, ID, Status, Type, Created on, Updated on and Created by are required. Every other column is optional, selected with `MissingField.UseNull`, so a source without one still loads, and that column is empty on its rows:
+   - **Electrical and Mechanical:** General Contractor, Trade Supplier, Discipline, Inspection Category, Status, Equipment ID / Tag Number, Issue ID, Finding Type, Date Observed and Notes. Electrical also has Inspection ID; Mechanical has no such column.
+   - **Welding:** PIPE SPEC, FLUID CODE and WORK PKG.
+   - **BIM:** Root cause, `BIM360_Created By`, `BIM360_Created On`, `BIM360_Closed On`, `Closed at`, Title, Contractor, Due date, Discipline and Created By (Company).
+2. **Renames** them to the combined names (for example `Work Week Observed` → `Work Week`, `Created on` → `Created On`, `BIM360_Created By` → `BIM360 Created By`, `WORK PKG` → `Work Package`) and adds **Source**: `Electrical`, `Mechanical`, `Welding` or `BIM`. Power Query matches column names case-sensitively, so the script spells the export's columns exactly as the export does, for example `Created on` with a lower-case "o".
 3. **Appends** the four tables. A column a source doesn't have is empty (null) on that source's rows.
-4. **Sets types:** text for every text column, including both Work Week columns and the BIM360 dates, and date for Created On, Updated On and Closed At. The BIM360 dates stay text, such as `10/15/22 3:45 PM`, and the visuals read the date part. If a Work Week column comes through as a number (for example `42.2026`), it becomes the text `42.2026`, which the visuals read as WW42'2026, the same as `WW42'2026` typed as text. One catch: a number drops trailing zeros, so `42.2030` would arrive as `42.203`. Keep the Smartsheet column as text if you can.
-5. **Adds Row ID**, numbered from 1 after the append. Power BI merges rows that are identical in every bound column; Row ID keeps every row separate. You don't need a separate index column in any of the four sheet queries for this table.
-6. **Orders** the columns as listed below.
+4. **Sets types:** text for every text column, including both Work Week columns and the BIM360 dates, and date for Created On, Updated On, Closed At, Date Observed and Due Date. The BIM360 dates stay text, such as `10/15/22 3:45 PM`, and the visuals read the date part. If a Work Week column comes through as a number (for example `42.2026`), it becomes the text `42.2026`, which the visuals read as WW42'2026, the same as `WW42'2026` typed as text. One catch: a number drops trailing zeros, so `42.2030` would arrive as `42.203`. Keep the Smartsheet column as text if you can.
+5. **Blanks bad dates** in Date Observed and Due Date. These two only show in a drill-down list, so a cell that isn't a date becomes blank there, and the refresh carries on. A bad date in the other date columns is still an error (see Troubleshooting).
+6. **Adds Row ID**, numbered from 1 after the append. Power BI merges rows that are identical in every bound column; Row ID keeps every row separate. You don't need a separate index column in any of the four sheet queries for this table.
+7. **Orders** the columns as listed below.
 
 ## 3. Column reference
 
@@ -309,7 +323,7 @@ What it does:
 | Signature | — | — | SIGNATURE | — |
 | Work Week Signed | — | — | WORK WEEK SIGNED | — |
 | ID | — | — | — | ID |
-| Status | — | — | — | Status |
+| Status | Status (optional) | Status (optional) | — | Status |
 | Type | — | — | — | Type |
 | Created On | — | — | — | Created on |
 | Updated On | — | — | — | Updated on |
@@ -319,10 +333,39 @@ What it does:
 | BIM360 Created On | — | — | — | BIM360_Created On (optional) |
 | BIM360 Closed On | — | — | — | BIM360_Closed On (optional) |
 | Closed At | — | — | — | Closed at (optional) |
+| General Contractor | General Contractor (optional) | General Contractor (optional) | — | — |
+| Contractor | — | — | — | Contractor (optional) |
+| Trade Supplier | Trade Supplier (optional) | Trade Supplier (optional) | — | — |
+| Discipline | Discipline (optional) | Discipline (optional) | — | Discipline (optional) |
+| Inspection Category | Inspection Category (optional) | Inspection Category (optional) | — | — |
+| Inspection ID | Inspection ID (optional) | — | — | — |
+| Equipment ID / Tag Number | Equipment ID / Tag Number (optional) | Equipment ID / Tag Number (optional) | — | — |
+| Issue ID | Issue ID (optional) | Issue ID (optional) | — | — |
+| Finding Type | Finding Type (optional) | Finding Type (optional) | — | — |
+| Date Observed | Date Observed (optional) | Date Observed (optional) | — | — |
+| Notes | Notes (optional) | Notes (optional) | — | — |
+| Pipe Spec | — | — | PIPE SPEC (optional) | — |
+| Fluid Code | — | — | FLUID CODE (optional) | — |
+| Work Package | — | — | WORK PKG (optional) | — |
+| Title | — | — | — | Title (optional) |
+| Due Date | — | — | — | Due date (optional) |
+| Created By (Company) | — | — | — | Created By (Company) (optional) |
 
 Row ID is one sequence, 1, 2, 3 …, through every row of the combined table. A dash (—) means the column is empty on that source's rows. Note the Mechanical header spelling `QCR / FE`, with spaces, which differs from Electrical's `QCR/FE`.
 
-The QCx Overview binds 14 of these columns, plus Root Cause and the four BIM360 and Closed At columns in its optional slots, and the QCx Performance visual binds 9. See `QCx_Overview_SETUP.md` and `QCx_Performance_SETUP.md`.
+Status holds the inspection status on Electrical and Mechanical rows and the issue status on BIM rows; the row's Source tells them apart. General Contractor (inspections) and Contractor (BIM) stay separate columns, and the QCx Overview merges them into one Contractor filter.
+
+The QCx Overview requires 14 of these columns and the QCx Performance visual requires 9. Both have optional slots for others, and QCx Issues can bind to this table in place of the Issues export. No visual binds Trade Supplier, Inspection Category or Work Package from this table: the Electrical, Mechanical and Welding visuals read those from their own sheets. See `QCx_Overview_SETUP.md`, `QCx_Performance_SETUP.md` and `QCx_Issues_SETUP.md`.
+
+### What the Filter menu's row count means
+
+**Showing X of Y rows** in a visual's Filter menu counts the rows that visual actually reads, so Y can be less than the table's row count. X is the ones that match the filters and date range.
+
+- **QCx Overview:** every Electrical, Mechanical and Welding row, and the BIM rows created by LotusWorks. Other companies' BIM rows aren't in Y, because the Overview never counts them.
+- **QCx Performance:** the group on screen. Every Electrical and Mechanical row on QCR / FE, and every Welding row on Welders.
+- **QCx Issues bound to this table:** every BIM row, or only the LotusWorks-created ones if the Created By (Company) slot isn't bound. Inspection rows aren't in Y.
+
+Rows with an unknown Source are never in Y. Y does include rows the cards don't count, such as SORs, void issues and rows with an unreadable week.
 
 ## Troubleshooting
 
@@ -333,7 +376,7 @@ A source column was renamed, or the source query renames it. The message names t
 A name at the top of the script doesn't match a query in the Queries pane. Copy the name exactly, including spaces and capital letters.
 
 **"DataFormat.Error" on the type step.**
-A value can't be converted, usually a Created On, Updated On or Closed At cell that isn't a date. Fix the cell in the source, or check the source query's own type for that column.
+A value can't be converted, usually a Created On, Updated On or Closed At cell that isn't a date. Fix the cell in the source, or check the source query's own type for that column. A bad cell in Date Observed or Due Date doesn't raise this: it becomes blank.
 
 **The visuals' footnote says "n rows with an unknown Source".**
 The visuals read Source ignoring case and extra spaces, and only `Electrical`, `Mechanical`, `Welding` and `BIM` are counted. Rows with any other Source value are skipped, and the footnote gives how many. With the script unchanged this can't happen, so check whether the text in one of the `"Source", each "…"` lines was edited, or whether another step or table was appended to QCx Combined.

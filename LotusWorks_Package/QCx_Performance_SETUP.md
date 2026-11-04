@@ -2,19 +2,21 @@
 
 NCR performance per person: each QCR / FE across Electrical and Mechanical final inspections, and, separately, each welder. People are ranked by NCR Pass Rate, lowest first, over a period you choose, and each has their own page.
 
+**Version 1.2.0:** a **Filter** menu in the header filters the page by date range and field. Four new optional slots feed it, and read the longer QCx Combined table, so re-paste its script (see [QCx_Combined_SETUP.md](QCx_Combined_SETUP.md)). Its identity is unchanged, so importing the new file updates existing reports in place and keeps your field bindings.
+
 ## 1. Import the visual (once per report)
 
 1. In Power BI Desktop, open the Visualizations pane, select the three dots (…), then **Import a visual from a file**.
-2. Choose `qaqcPerformance_AD661934E05F.1.1.0.0.pbiviz`.
+2. Choose `qaqcPerformance_AD661934E05F.1.2.0.0.pbiviz`.
 3. To update later, import the newer file the same way. It replaces the old version in place and keeps your field bindings.
 
 ## 2. Add the QCx Combined table (once per report, required)
 
-The visual reads one table that holds all four sheets. Follow [QCx_Combined_SETUP.md](QCx_Combined_SETUP.md) to add the **QCx Combined** query. It already includes the Row ID, so you don't need to add an index column for this visual.
+The visual reads one table that holds all four sheets. Follow [QCx_Combined_SETUP.md](QCx_Combined_SETUP.md) to add the **QCx Combined** query. It already includes the Row ID, so you don't need to add an index column for this visual. If you added the table before version 1.2.0, re-paste the script so it has the 39 columns.
 
 ## 3. Bind the columns
 
-All nine slots are required. The visual shows its setup screen, listing the slots still empty, until every one is bound.
+The first nine slots are required. The visual shows its setup screen, listing the slots still empty, until every one is bound. The other four are optional: they add fields to the Filter menu, and a report that doesn't bind them keeps working.
 
 | Field slot | QCx Combined column |
 |---|---|
@@ -27,14 +29,19 @@ All nine slots are required. The visual shows its setup screen, listing the slot
 | QCR/FE | QCR/FE |
 | Welder | Welder |
 | Tag No | Tag No |
+| General Contractor (optional) | General Contractor |
+| Discipline (optional) | Discipline |
+| Pipe Spec (optional) | Pipe Spec |
+| Fluid Code (optional) | Fluid Code |
 
 Set every field to **Don't summarize**. The visual is designed to fill a full report page.
 
 ## 4. Use it
 
-The header holds three controls:
+The header holds four controls:
 
 - **`QCR / FE | Welders`** switches between the two groups. QCR / FE (the default) ranks the people on Electrical and Mechanical finals; Welders ranks the welders on the welding log. The two groups are never mixed.
+- **Filter** narrows the page by date range and by field (see Filter menu below).
 - **`30 WW | All`** sets the ranking period: the 30 weeks ending at the selected week, or every week from the start of the data up to it.
 - **The week dropdown** opens on the current work week every time the report opens. The period ends at the week you pick.
 
@@ -46,6 +53,42 @@ Format pane: **Colors → Preset** (QCx, Blue, LotusWorks, Grayscale), **Backgro
 | Minimum welds | 10 | 1 to 100 | A welder needs at least this many welds in the period to be ranked |
 
 Week labels include the year, for example `WW41'2026`. Chart axes show `WW41` ticks, with the year under the first labelled week and under the first labelled week of each new year.
+
+### Filter menu
+
+Select **Filter** in the header, before `30 WW | All`.
+
+- **Date range:** From and To work-week dropdowns, labelled `(start)` and `(now)` at the data's limits, and the presets Last 4 WW, Last 13 WW and This year. Presets end at the current work week.
+- **Fields** depend on the group on screen, and appear when their slots are bound:
+
+| Group | Filters offered |
+|---|---|
+| QCR / FE | Contractor (from the General Contractor slot), Building, Discipline |
+| Welders | Building (taken from Tag No), Pipe Spec, Fluid Code |
+
+- **Switching groups:** a filter on the other group's field stays set but doesn't apply, and its chip is hidden until you switch back. **Clear all** clears both groups' fields.
+- **Building** is one field across both groups, and treats `F63.1` and `F631` as one choice, because inspection rows spell a building one way and the building taken from a weld's Tag No another.
+- **Showing X of Y rows** counts the group on screen: every Electrical and Mechanical row on QCR / FE, and every Welding row on Welders. See the QCx Combined guide.
+- Each field has a search box and tick boxes with row counts, most rows first.
+- **Changes apply at once.** There's no Apply button. Press Esc or click outside to close the menu.
+- **Ticks:** within a field, a row matches any ticked value. Across fields, it must match all of them. Ticking nothing in a field means no filter on it. The footer's **Showing X of Y rows** updates as you tick.
+- **Chips:** each active filter shows as a chip under the header. Click a chip's × to remove it, or **Clear all** to remove every filter. The Filter button shows how many filters are active.
+- **Grouping:** values are grouped ignoring letter case and extra spaces, so `Electrical` and `ELECTRICAL` are one choice. Blank, `N/A`, `NA`, `None` and `-` are one **Not recorded** choice, listed last.
+- **Typos:** a typo in the sheet appears as a separate choice. Nothing corrects spelling; fix it in the sheet.
+- **No matching rows:** the cards and charts give way to a message with a **Clear filters** button, so zeros can't be read as real results.
+- **Keeping filters:** filters survive a data refresh, and a ticked value no longer in the data is dropped. They reset when the report is reopened. They apply to this visual only.
+- **Read-only views:** the Filter button is disabled when interactions are off.
+
+Rankings, cards, minimums and the Below minimum and Not recorded blocks all restate to the filtered rows. So does the Person page's **This period**, its week-by-week chart and its NCR table. The Person page's **All time** cards stay unfiltered.
+
+### In range
+
+Setting a date range makes the range the ranking period:
+
+- `30 WW | All` is disabled. Ranks, cards and the Trend column read exactly the weeks in the range.
+- Past 30 weeks, the Trend column fits every week of the range into its width.
+- The week dropdown offers only the weeks in the range. No number reads the selected week while a range is set; your pick is kept for when the range is cleared.
+- A range from the first week of the data to the current week is the same as no range, so it isn't counted as a filter.
 
 ## 5. What the page shows
 
@@ -76,7 +119,7 @@ Click any column header to sort by it; click again to reverse. NCR Pass Rate sta
 
 ### Trend
 
-The Trend column is a strip of the 30 weeks ending at the selected week: one tiny bar per week for the person's finals (or welds), with weeks that had an NCR drawn in red and flagged above the bar. Screen readers hear the same as text: "NCRs in n of the last 30 weeks".
+The Trend column is a strip of the 30 weeks ending at the selected week, or of the weeks in a date range: one tiny bar per week for the person's finals (or welds), with weeks that had an NCR drawn in red and flagged above the bar. Screen readers hear the same as text, for example "NCRs in n of the last 30 weeks".
 
 It is not a weekly NCR Pass Rate line on purpose. Most people have a handful of finals a week, so a weekly pass rate would jump between 0% and 100% and hide the pattern; bars plus NCR weeks show both volume and when NCRs happened.
 
@@ -86,7 +129,7 @@ Click a person's row, or press Enter on their name, to open their page over the 
 
 The page shows:
 
-- **Cards:** Finals (or Welds), NCRs and NCR Pass Rate for **This period**, and the same three for **All time**.
+- **Cards:** Finals (or Welds), NCRs and NCR Pass Rate for **This period**, and the same three for **All time**, which filters don't change.
 - **Week by week:** a bar per week for the person's finals (or welds) over the period, with NCRs as red bars beside them, and the **Running NCR Pass Rate** within the period as a line on the right axis, which always runs from 0% to 100%. Hover a week for its numbers.
 - **NCR table:** each NCR in the period, with Work Week, Source (Electrical, Mechanical or Welding), Building (inspections) or Tag No (welds), and Issue (the cell text). It opens newest first; click a header to sort.
 

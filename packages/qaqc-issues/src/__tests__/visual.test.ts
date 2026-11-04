@@ -12,6 +12,7 @@ import type { ViewState } from '../../../qaqc-shared/src/types'
 import { ENRICHED_ISSUE_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/enrichedIssueRows'
 import { ISSUE_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/issueRows'
 import capabilities from '../../capabilities.json'
+import packageJson from '../../package.json'
 import pbiviz from '../../pbiviz.json'
 import { QaqcIssuesVisual } from '../visual'
 import { ALL_ROLES, combinedIssueRows, COMBINED_ROLES, ENRICHMENT_ROLES, ROOT_CAUSE_ROLES, tableDataView, type Cell, type SlotRole } from './tableDataView'
@@ -193,6 +194,11 @@ describe('QaqcIssuesVisual name', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(ISSUE_ROWS)))
     expect(harness.element.querySelector('.qaqc-header h2')?.textContent).toBe('QCx Issues')
+  })
+
+  it('is version 1.3.0 in pbiviz.json and package.json', () => {
+    expect(pbiviz.visual.version).toBe('1.3.0.0')
+    expect(packageJson.version).toBe('1.3.0')
   })
 
   it('shows its QCx name in Power BI', () => {

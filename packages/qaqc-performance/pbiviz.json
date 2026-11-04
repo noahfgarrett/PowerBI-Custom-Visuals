@@ -4,7 +4,7 @@
     "displayName": "QCx Performance",
     "guid": "qaqcPerformance_AD661934E05F",
     "visualClassName": "QaqcPerformanceVisual",
-    "version": "1.1.0.0",
+    "version": "1.2.0.0",
     "description": "NCR performance by QCR/FE and by welder, ranked by NCR Pass Rate with a 30-week trend.",
     "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
     "gitHubUrl": "https://github.com/noahgarrett/PowerBI"
