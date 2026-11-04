@@ -414,6 +414,26 @@ describe('useDashboardFilters', () => {
       expect(chipTexts(container)).toEqual(["Date range: WW42'2026 to WW43'2026"])
     })
 
+    it('stays off when a full range was chosen and a later refresh adds a week', () => {
+      const container = mount()
+      openMenu(container)
+      choose(fromSelect(container), 202640)
+      choose(fromSelect(container), 202630)
+      expect(current().dateRange).toBeNull()
+      view?.rerender(harness({ weeks: [...WEEKS, makeWorkWeek(2026, 46)], currentKey: 202646 }))
+      expect(current().dateRange).toBeNull()
+      expect(current().isAnyActive).toBe(false)
+      expect(badge(container)).toBeNull()
+    })
+
+    it('keeps a partial range as chosen when a later refresh adds a week', () => {
+      const container = mount()
+      openMenu(container)
+      choose(fromSelect(container), 202640)
+      view?.rerender(harness({ weeks: [...WEEKS, makeWorkWeek(2026, 46)], currentKey: 202646 }))
+      expect(current().dateRange).toEqual({ fromKey: 202640, toKey: CURRENT_KEY })
+    })
+
     it('a date range drops out when the clamped range covers all the weeks', () => {
       const container = mount()
       openMenu(container)

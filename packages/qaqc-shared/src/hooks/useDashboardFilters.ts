@@ -131,6 +131,11 @@ export function useDashboardFilters({ rows, fields, weeks, currentKey, notes = N
     setFieldKeys(field.def.id, new Set(field.options.map((option) => option.key)))
   }
 
+  // A range covering every week is no range, so it's stored as none: stored, new weeks would turn it into an active one.
+  function changeRange(range: WeekRange | null): void {
+    setPickedRange(range === null ? null : clampRange(range, weeks))
+  }
+
   function clearAll(): void {
     setTicked(NO_SELECTION)
     setPickedRange(null)
@@ -173,7 +178,7 @@ export function useDashboardFilters({ rows, fields, weeks, currentKey, notes = N
       buttonRef: filterButtonRef,
       onToggleValue: toggleValue,
       onSelectAll: selectAll,
-      onRangeChange: setPickedRange,
+      onRangeChange: changeRange,
       onClearAll: clearAll,
     },
     chips: {
