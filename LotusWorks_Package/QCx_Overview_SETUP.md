@@ -125,7 +125,7 @@ Week labels include the year, for example `WW41'2026`. Chart axes show `WW41` ti
 - **Changes apply at once.** There's no Apply button. Press Esc or click outside to close the menu.
 - **Ticks:** within a field, a row matches any ticked value. Across fields, it must match all of them. Ticking nothing in a field means no filter on it. The footer's **Showing X of Y rows** updates as you tick.
 - **Chips:** each active filter shows as a chip under the header. Click a chip's × to remove it, or **Clear all** to remove every filter. The Filter button shows how many filters are active.
-- **Grouping:** values are grouped ignoring letter case and extra spaces, so `Electrical` and `ELECTRICAL` are one choice. Blank, `N/A`, `NA`, `None` and `-` are one **Not recorded** choice, listed last.
+- **Grouping:** values are grouped ignoring letter case and extra spaces, so `Electrical` and `ELECTRICAL` are one choice. On Discipline, blank, `N/A`, `NA`, `None` and `-` are one **Not recorded** choice, listed last. On Contractor they're one **Unassigned** choice, listed last. Building matches the charts: a blank or `-` is **Unspecified**, listed last, `N/A` and `NA` are one choice of their own, and `None` is another.
 - **Typos:** a typo in the sheet appears as a separate choice. Nothing corrects spelling; fix it in the sheet.
 - **No matching rows:** the cards and charts give way to a message with a **Clear filters** button, so zeros can't be read as real results.
 - **Keeping filters:** filters survive a data refresh, and a ticked value no longer in the data is dropped. They reset when the report is reopened. They apply to this visual only.
