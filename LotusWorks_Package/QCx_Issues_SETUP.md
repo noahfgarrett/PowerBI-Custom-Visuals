@@ -132,7 +132,7 @@ By default the page shows the issues LotusWorks created, as it always has. Bind 
 - Tick more companies, or untick LotusWorks and tick others. **Select all** ticks every company. Unticking everything goes back to LotusWorks, and so does **Clear all**.
 - **Showing X of Y rows** counts every issue row, whichever companies are ticked.
 - Every card, chart, Issue Detail, the Pareto and Issue Aging recalculate for the ticked companies. The excluded-issues footnote follows the selection.
-- The QCx Overview and QCx Performance visuals have no such choice. They keep counting LotusWorks issues only.
+- The QCx Overview visual has no such choice: its BIM Issues row keeps counting LotusWorks-created issues only. QCx Performance counts no issues.
 
 Without the slot, the choice isn't in the menu and only LotusWorks-created issues count.
 
