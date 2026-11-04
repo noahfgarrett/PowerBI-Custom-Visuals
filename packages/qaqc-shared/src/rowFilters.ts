@@ -193,17 +193,28 @@ function matchesFilter(row: Row, filter: ActiveFilter, keyOf: (text: string) => 
   return valuesOf(read).some((text) => keys.has(keyOf(text)))
 }
 
+/** The keys a field filters by: the ticked ones, or the field's `defaultKeys` when none are ticked. */
+export function effectiveKeys(field: CatalogField, selection: FilterSelection): ReadonlySet<string> {
+  const keys = selection.get(field.def.id)
+  if (keys !== undefined && keys.size > 0) return keys
+  return new Set(field.def.defaultKeys)
+}
+
 /**
- * The rows every active field accepts: a row passes a field when any of its values is ticked, and must pass all
- * active fields. Returns `rows` itself when no field is active.
+ * The rows every filtered field accepts: a row passes a field when any of its values is in the field's effective
+ * keys, and must pass all of them. Once any field is active, fields with `defaultKeys` filter too (by their
+ * default when nothing else is ticked), so the default limit holds while other fields are filtered.
+ *
+ * When no field is active this returns `rows` itself, all of them: a dashboard must keep its default-limited
+ * base index in that case rather than use the result.
  */
 export function matchRows(rows: ReadonlyArray<Row>, catalog: FilterCatalog, selection: FilterSelection): ReadonlyArray<Row> {
-  const active: ActiveFilter[] = []
+  if (activeFieldCount(catalog, selection) === 0) return rows
+  const filters: ActiveFilter[] = []
   for (const field of catalog.fields) {
-    const keys = selection.get(field.def.id)
-    if (keys !== undefined && isFieldActive(field, keys)) active.push({ def: field.def, keys })
+    const keys = effectiveKeys(field, selection)
+    if (keys.size > 0) filters.push({ def: field.def, keys })
   }
-  if (active.length === 0) return rows
   const keyOf = createKeyReader()
-  return rows.filter((row) => active.every((filter) => matchesFilter(row, filter, keyOf)))
+  return rows.filter((row) => filters.every((filter) => matchesFilter(row, filter, keyOf)))
 }

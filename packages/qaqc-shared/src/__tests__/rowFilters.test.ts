@@ -4,6 +4,7 @@ import {
   activeFieldCount,
   buildFilterCatalog,
   cellDisplayText,
+  effectiveKeys,
   groupKey,
   isFieldActive,
   matchRows,
@@ -186,6 +187,30 @@ describe('defaultKeys', () => {
     expect(activeFieldCount(catalog, selectionOf({ company: ['lotusworks'] }))).toBe(0)
     expect(matchRows(rows, catalog, selectionOf({ company: ['lotusworks'] }))).toBe(rows)
     expect(matchRows(rows, catalog, selectionOf({ company: [] }))).toBe(rows)
+  })
+
+  it('keeps the default applied while another field is active', () => {
+    const status: FilterFieldDef = { id: 'status', label: 'Status', read: (row) => cellDisplayText(row[1]) }
+    const issues: Row[] = [['LotusWorks', 'Open'], ['Acme', 'Open'], ['LotusWorks', 'Closed'], ['Acme', 'Closed']]
+    const issueCatalog = buildFilterCatalog(issues, [company, status])
+    expect(matchRows(issues, issueCatalog, selectionOf({ status: ['open'] }))).toEqual([issues[0]])
+    expect(matchRows(issues, issueCatalog, selectionOf({ company: ['lotusworks'], status: ['open'] }))).toEqual([issues[0]])
+  })
+
+  it('filters by a company selection that differs from the default, with no other field', () => {
+    const issues: Row[] = [['LotusWorks'], ['Greyfox'], ['Acme']]
+    const issueCatalog = buildFilterCatalog(issues, [company])
+    const selection = selectionOf({ company: ['lotusworks', 'greyfox'] })
+    expect(activeFieldCount(issueCatalog, selection)).toBe(1)
+    expect(matchRows(issues, issueCatalog, selection)).toEqual([issues[0], issues[1]])
+  })
+
+  it('effectiveKeys gives the ticked keys, or the default when none are ticked', () => {
+    expect([...effectiveKeys(field, selectionOf({ company: ['acme'] }))]).toEqual(['acme'])
+    expect([...effectiveKeys(field, selectionOf({ company: [] }))]).toEqual(['lotusworks'])
+    expect([...effectiveKeys(field, NO_SELECTION)]).toEqual(['lotusworks'])
+    const plain = buildFilterCatalog(rows, [DISCIPLINE]).fields[0]
+    expect(effectiveKeys(plain, NO_SELECTION).size).toBe(0)
   })
 
   it('treats a field without defaultKeys as active for any ticked key', () => {
