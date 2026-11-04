@@ -358,6 +358,11 @@ describe('the QCx Combined script', () => {
     }
   })
 
+  it('turns a stray non-date cell in the optional date columns into a blank, before the index', () => {
+    expect(block('Cleaned')).toContain('Table.ReplaceErrorValues(Typed, {{"Date Observed", null}, {"Due Date", null}})')
+    expect(block('Indexed')).toContain('Table.AddIndexColumn(Cleaned,')
+  })
+
   it('renames the Welding and export headers', () => {
     for (const [from, to] of [['PIPE SPEC', 'Pipe Spec'], ['FLUID CODE', 'Fluid Code'], ['WORK PKG', 'Work Package']]) {
       expect(block('WeldingSelected')).toContain(`"${from}"`)

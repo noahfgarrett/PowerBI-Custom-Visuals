@@ -187,8 +187,11 @@ let
         }
     ),
 
+    // These two only show in a drill-down list, so a stray non-date cell in them becomes a blank, not an error.
+    Cleaned = Table.ReplaceErrorValues(Typed, {{"Date Observed", null}, {"Due Date", null}}),
+
     // ---- Row ID keeps identical rows apart, so Power BI never merges them. ----
-    Indexed = Table.AddIndexColumn(Typed, "Row ID", 1, 1, Int64.Type),
+    Indexed = Table.AddIndexColumn(Cleaned, "Row ID", 1, 1, Int64.Type),
 
     Result = Table.SelectColumns(
         Indexed,
