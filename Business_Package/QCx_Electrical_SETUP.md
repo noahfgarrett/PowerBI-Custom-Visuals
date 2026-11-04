@@ -58,7 +58,7 @@ Set every field to **Don't summarize**. The visual is designed to fill a full re
 Select **Filter** in the header, before `30 WW | All`.
 
 - **Date range:** From and To work-week dropdowns, labelled `(start)` and `(now)` at the data's limits, and the presets Last 4 WW, Last 13 WW and This year. Presets end at the current work week.
-- **Fields,** in this order, when their slots are bound: General Contractor, Trade Supplier, Building, Discipline, Inspection Category and Status. Building is required, so it's always there. A blank Building reads Unspecified, as on the charts. Each field has a search box and tick boxes with row counts, most rows first.
+- **Fields,** in this order, when their slots are bound: General Contractor, Trade Supplier, Building, Discipline, Inspection Category and Status. Building is required, so it's always there. A blank Building reads Unspecified, as on the charts, and a blank General Contractor reads Unassigned, as on the QCx Overview and QCx Performance. Each field has a search box and tick boxes with row counts, most rows first.
 - **Changes apply at once.** There's no Apply button. Press Esc or click outside to close the menu.
 - **Ticks:** within a field, a row matches any ticked value. Across fields, it must match all of them. Ticking nothing in a field means no filter on it. The footer's **Showing X of Y rows** updates as you tick.
 - **Chips:** each active filter shows as a chip under the header. Click a chip's × to remove it, or **Clear all** to remove every filter. The Filter button shows how many filters are active.
