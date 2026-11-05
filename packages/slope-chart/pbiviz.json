@@ -6,8 +6,8 @@
     "visualClassName": "SlopeChartVisual",
     "version": "1.0.14.0",
     "description": "Before/after slope chart with color-coded direction lines, staggered animations, and glassmorphic styling.",
-    "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
-    "gitHubUrl": "https://github.com/noahgarrett/PowerBI"
+    "supportUrl": "https://github.com/noahfgarrett/PowerBI-Custom-Visuals",
+    "gitHubUrl": "https://github.com/noahfgarrett/PowerBI-Custom-Visuals"
   },
   "apiVersion": "5.3.0",
   "author": {

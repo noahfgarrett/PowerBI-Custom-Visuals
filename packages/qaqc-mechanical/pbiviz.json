@@ -6,8 +6,8 @@
     "visualClassName": "QaqcMechanicalVisual",
     "version": "1.1.0.0",
     "description": "Weekly Mechanical / Process inspection Finals, SORs, NCR pass rate, and building breakdown from the Smartsheet Mechanical / Process Inspection Log.",
-    "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
-    "gitHubUrl": "https://github.com/noahgarrett/PowerBI"
+    "supportUrl": "https://github.com/noahfgarrett/PowerBI-Custom-Visuals",
+    "gitHubUrl": "https://github.com/noahfgarrett/PowerBI-Custom-Visuals"
   },
   "apiVersion": "5.3.0",
   "author": {

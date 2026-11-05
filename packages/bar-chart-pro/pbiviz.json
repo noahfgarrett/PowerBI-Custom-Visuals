@@ -6,8 +6,8 @@
     "visualClassName": "BarChartProVisual",
     "version": "1.0.31.0",
     "description": "Advanced bar chart with grouped, stacked, combo, horizontal, and diverging modes. Glassmorphic styling and staggered animations.",
-    "supportUrl": "https://github.com/noahfgarrett/PowerBI/issues",
-    "gitHubUrl": "https://github.com/noahfgarrett/PowerBI"
+    "supportUrl": "https://github.com/noahfgarrett/PowerBI-Custom-Visuals",
+    "gitHubUrl": "https://github.com/noahfgarrett/PowerBI-Custom-Visuals"
   },
   "apiVersion": "5.3.0",
   "author": {

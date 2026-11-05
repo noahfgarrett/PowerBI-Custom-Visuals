@@ -6,8 +6,8 @@
     "visualClassName": "AnimatedWaterfallVisual",
     "version": "1.0.14.0",
     "description": "Waterfall chart with Tetris-style drop animations, bounceOut easing, dashed connectors, and glassmorphic styling.",
-    "supportUrl": "https://github.com/noahfgarrett/PowerBI/issues",
-    "gitHubUrl": "https://github.com/noahfgarrett/PowerBI"
+    "supportUrl": "https://github.com/noahfgarrett/PowerBI-Custom-Visuals",
+    "gitHubUrl": "https://github.com/noahfgarrett/PowerBI-Custom-Visuals"
   },
   "apiVersion": "5.3.0",
   "author": {

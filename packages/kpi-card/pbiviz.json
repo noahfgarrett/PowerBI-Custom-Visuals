@@ -6,8 +6,8 @@
     "visualClassName": "KpiCardVisual",
     "version": "1.1.18.0",
     "description": "Advanced KPI card with count-up animation, trend arrow, sparkline, and glassmorphic styling.",
-    "supportUrl": "https://github.com/noahfgarrett/PowerBI/issues",
-    "gitHubUrl": "https://github.com/noahfgarrett/PowerBI"
+    "supportUrl": "https://github.com/noahfgarrett/PowerBI-Custom-Visuals",
+    "gitHubUrl": "https://github.com/noahfgarrett/PowerBI-Custom-Visuals"
   },
   "apiVersion": "5.3.0",
   "author": {

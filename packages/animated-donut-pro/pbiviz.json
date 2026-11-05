@@ -6,8 +6,8 @@
     "visualClassName": "AnimatedDonutProVisual",
     "version": "1.0.14.0",
     "description": "Animated donut chart with sweeping arc entrance, center value count-up, and spring-explode hover. Glassmorphic styling.",
-    "supportUrl": "https://github.com/noahfgarrett/PowerBI/issues",
-    "gitHubUrl": "https://github.com/noahfgarrett/PowerBI"
+    "supportUrl": "https://github.com/noahfgarrett/PowerBI-Custom-Visuals",
+    "gitHubUrl": "https://github.com/noahfgarrett/PowerBI-Custom-Visuals"
   },
   "apiVersion": "5.3.0",
   "author": {

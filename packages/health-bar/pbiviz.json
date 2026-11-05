@@ -6,8 +6,8 @@
     "visualClassName": "HealthBarVisual",
     "version": "1.0.15.0",
     "description": "Vertical bar chart with red-to-green gradient showing health percentages",
-    "supportUrl": "https://github.com/noahfgarrett/PowerBI/issues",
-    "gitHubUrl": "https://github.com/noahfgarrett/PowerBI"
+    "supportUrl": "https://github.com/noahfgarrett/PowerBI-Custom-Visuals",
+    "gitHubUrl": "https://github.com/noahfgarrett/PowerBI-Custom-Visuals"
   },
   "apiVersion": "5.3.0",
   "author": {

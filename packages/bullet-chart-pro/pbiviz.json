@@ -6,8 +6,8 @@
     "visualClassName": "BulletChartProVisual",
     "version": "1.0.14.0",
     "description": "Bullet charts with qualitative ranges, animated value bars, target markers, and glassmorphic styling.",
-    "supportUrl": "https://github.com/noahgarrett/PowerBI/issues",
-    "gitHubUrl": "https://github.com/noahgarrett/PowerBI"
+    "supportUrl": "https://github.com/noahfgarrett/PowerBI-Custom-Visuals",
+    "gitHubUrl": "https://github.com/noahfgarrett/PowerBI-Custom-Visuals"
   },
   "apiVersion": "5.3.0",
   "author": {
