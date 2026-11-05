@@ -8,6 +8,7 @@
   "scripts": {
     "preview": "cd preview && npx vite",
     "preview:build": "cd preview && npx vite build",
+    "postinstall": "node scripts/link-visuals-api.mjs",
     "build:all": "npm run build --workspaces --if-present",
     "typecheck": "tsc --noEmit -p tsconfig.base.json",
     "review:business": "node scripts/review-business-package.mjs",
