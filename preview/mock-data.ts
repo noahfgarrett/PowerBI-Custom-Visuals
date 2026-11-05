@@ -1,6 +1,5 @@
 /**
- * QC-themed mock data for the preview dashboard.
- * Modeled after real QCx Dashboard metrics.
+ * Made-up data with a construction QA theme for the preview dashboard.
  */
 
 // ── KPI Card Data ────────────────────────────────────────────
