@@ -9,7 +9,7 @@ import { createConstructorOptions } from '../../../core/src/__test-utils__'
 import { PERFORMANCE_SLOTS } from '../../../qaqc-shared/src/dataView'
 import { COMBINED_COLUMNS, COMBINED_ROWS } from '../../../qaqc-shared/src/__tests__/fixtures/combinedRows'
 import { splitCombinedRows } from '../../../qaqc-shared/src/combined'
-import { buildPerformanceIndex, buildPerformanceModel } from '../../../qaqc-shared/src/performance'
+import { buildPerformanceIndex, buildPerformanceModel, isNotRecorded } from '../../../qaqc-shared/src/performance'
 import type { CombinedColumns } from '../../../qaqc-shared/src/types'
 import capabilities from '../../capabilities.json'
 import packageJson from '../../package.json'
@@ -76,8 +76,10 @@ function createHarness(hostOverrides: Record<string, unknown> = {}): Harness {
 const RESIZE_UPDATE = 4
 const STYLE_UPDATE = 16
 
-// The All period's finals with no QCR/FE; every 30 WW final has one, so 30 WW has no such note.
-const NOT_RECORDED_NOTE = '7 finals have no QCR/FE'
+// Finals with no QCR/FE in each period. Counts are pinned to the seeded synthetic fixtures from
+// scripts/generate-qaqc-fixtures.mjs.
+const RECENT_NOT_RECORDED_NOTE = '66 finals have no QCR/FE'
+const ALL_NOT_RECORDED_NOTE = '90 finals have no QCR/FE'
 const ROW_LIMIT_NOTE = 'Showing the first 2,385 rows (Power BI data limit)'
 const SOURCE = COMBINED_COLUMNS.indexOf('Source')
 const QCR = COMBINED_COLUMNS.indexOf('QCR/FE')
@@ -274,19 +276,19 @@ describe('QaqcPerformanceVisual', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(COMBINED_ROWS)))
     expect(harness.element.querySelector('.qaqc-perf-summary .qaqc-kpi-group-head em')?.textContent).toBe("WW13'2026 to WW42'2026")
-    expect(summaryValues(harness.element)).toEqual(['6', '221', '2', '99.10%'])
+    expect(summaryValues(harness.element)).toEqual(['6', '214', '7', '96.73%'])
   })
 
   it('renders the WW42 welder summary strip', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(COMBINED_ROWS)))
     click(groupButton(harness.element, 'Welders'))
-    expect(summaryValues(harness.element)).toEqual(['38', '1,570', '11', '99.30%'])
+    expect(summaryValues(harness.element)).toEqual(['61', '1,423', '8', '99.44%'])
   })
 
   it('ranks with the Format pane minimum finals', () => {
     harness = createHarness()
-    apply(harness, update(tableDataView(COMBINED_ROWS, { objects: ranking({ minimumFinals: 60 }) })))
+    apply(harness, update(tableDataView(COMBINED_ROWS, { objects: ranking({ minimumFinals: 30 }) })))
     expect(cardValue(harness.element, 'QCR/FE ranked')).toBe('2')
   })
 
@@ -294,7 +296,7 @@ describe('QaqcPerformanceVisual', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(COMBINED_ROWS, { objects: ranking({ minimumWelds: 100 }) })))
     click(groupButton(harness.element, 'Welders'))
-    expect(Number(cardValue(harness.element, 'Welders ranked'))).toBeLessThan(38)
+    expect(Number(cardValue(harness.element, 'Welders ranked'))).toBeLessThan(61)
     expect(cardValue(harness.element, 'Welders ranked')).not.toBe('0')
   })
 
@@ -308,7 +310,7 @@ describe('QaqcPerformanceVisual', () => {
     expect(cardValue(harness.element, 'QCR/FE ranked')).toBe(String(expected.ranked.length))
   })
 
-  it('ranks nobody at a minimum of 100 finals, the most QCR 01 has is 94', () => {
+  it('ranks nobody at a minimum of 100 finals, the most QCR 01 has is 46', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(COMBINED_ROWS, { objects: ranking({ minimumFinals: 100 }) })))
     expect(cardValue(harness.element, 'QCR/FE ranked')).toBe('0')
@@ -318,7 +320,7 @@ describe('QaqcPerformanceVisual', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(COMBINED_ROWS, { objects: ranking({ minimumFinals: 250 }) })))
     expect(cardValue(harness.element, 'QCR/FE ranked')).toBe('0')
-    expect(harness.element.querySelector('[aria-label^="QCR/FE ranked:"] .qaqc-kpi-detail')?.textContent).toBe('Minimum 100 finals · 10 below')
+    expect(harness.element.querySelector('[aria-label^="QCR/FE ranked:"] .qaqc-kpi-detail')?.textContent).toBe('Minimum 100 finals · 15 below')
   })
 
   it('indexes the rows once per data update, not on a settings or resize update', () => {
@@ -335,21 +337,24 @@ describe('QaqcPerformanceVisual', () => {
   it('re-ranks when only the Format pane changes', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(COMBINED_ROWS)))
-    apply(harness, update(tableDataView(COMBINED_ROWS, { objects: ranking({ minimumFinals: 60 }) }), undefined, 0, RESIZE_UPDATE))
+    apply(harness, update(tableDataView(COMBINED_ROWS, { objects: ranking({ minimumFinals: 30 }) }), undefined, 0, RESIZE_UPDATE))
     expect(cardValue(harness.element, 'QCR/FE ranked')).toBe('2')
   })
 
-  it('has no footnote in 30 WW, where every final has a QCR/FE', () => {
+  it('has no footnote in 30 WW when every final has a QCR/FE', () => {
+    // The fixture without its Electrical and Mechanical rows that have no QCR/FE.
+    const recorded = COMBINED_ROWS.filter((row) => row[SOURCE] === 'Welding' || row[SOURCE] === 'BIM' || !isNotRecorded(row[QCR]))
     harness = createHarness()
-    apply(harness, update(tableDataView(COMBINED_ROWS)))
+    apply(harness, update(tableDataView(recorded)))
     expect(footnotes(harness.element)).toEqual([])
   })
 
-  it('footnotes the All finals with no QCR/FE', () => {
+  it('footnotes the 30 WW and All finals with no QCR/FE', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(COMBINED_ROWS)))
+    expect(footnotes(harness.element)).toEqual([RECENT_NOT_RECORDED_NOTE])
     showAll(harness.element)
-    expect(footnotes(harness.element)).toEqual([NOT_RECORDED_NOTE])
+    expect(footnotes(harness.element)).toEqual([ALL_NOT_RECORDED_NOTE])
   })
 
   it('footnotes the rows with an unknown Source', () => {
@@ -363,13 +368,13 @@ describe('QaqcPerformanceVisual', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(COMBINED_ROWS)))
     click(nameButton(harness.element, 'QCR 02'))
-    expect(harness.element.querySelector('[role="dialog"]')?.getAttribute('aria-label')).toBe('QCR 02 · QCR / FE · Electrical')
+    expect(harness.element.querySelector('[role="dialog"]')?.getAttribute('aria-label')).toBe('QCR 02 · QCR / FE · Electrical and Mechanical')
   })
 
   it('shows plain names and disabled controls when interactions are not allowed', () => {
     harness = createHarness({ hostCapabilities: { allowInteractions: false } })
     apply(harness, update(tableDataView(COMBINED_ROWS)))
-    expect(summaryValues(harness.element)).toEqual(['6', '221', '2', '99.10%'])
+    expect(summaryValues(harness.element)).toEqual(['6', '214', '7', '96.73%'])
     expect(nameButton(harness.element, 'QCR 02')).toBeNull()
     expect(groupButton(harness.element, 'Welders')?.disabled).toBe(true)
     expect(harness.element.querySelector('select')?.disabled).toBe(true)
@@ -406,9 +411,9 @@ describe('QaqcPerformanceVisual', () => {
   it('renders what it has with a footnote when Power BI refuses more segments', () => {
     harness = createHarness({ fetchMoreData: () => false })
     apply(harness, update(tableDataView(COMBINED_ROWS, { segment: true })))
-    expect(footnotes(harness.element)).toEqual([ROW_LIMIT_NOTE])
+    expect(footnotes(harness.element)).toEqual([ROW_LIMIT_NOTE, RECENT_NOT_RECORDED_NOTE])
     showAll(harness.element)
-    expect(footnotes(harness.element)).toEqual([ROW_LIMIT_NOTE, NOT_RECORDED_NOTE])
+    expect(footnotes(harness.element)).toEqual([ROW_LIMIT_NOTE, ALL_NOT_RECORDED_NOTE])
   })
 
   it('keeps the row-limit footnote across a resize', () => {
@@ -425,7 +430,7 @@ describe('QaqcPerformanceVisual', () => {
     expect(harness.element.querySelector('[role="progressbar"]')).not.toBeNull()
     apply(harness, update(tableDataView(COMBINED_ROWS), undefined, 1))
     expect(harness.element.querySelector('[role="progressbar"]')).toBeNull()
-    expect(summaryValues(harness.element)).toEqual(['6', '221', '2', '99.10%'])
+    expect(summaryValues(harness.element)).toEqual(['6', '214', '7', '96.73%'])
   })
 
   it('refreshes the ranking when a row changes and the row count stays the same', () => {
@@ -480,7 +485,7 @@ describe('QaqcPerformanceVisual', () => {
     applyOutsideAct(harness, update(tableDataView(COMBINED_ROWS)))
     dashboardControl.shouldThrow = false
     apply(harness, update(tableDataView(COMBINED_ROWS)))
-    expect(summaryValues(harness.element)).toEqual(['6', '221', '2', '99.10%'])
+    expect(summaryValues(harness.element)).toEqual(['6', '214', '7', '96.73%'])
     expect(harness.events.renderingFinished).toHaveBeenCalledTimes(1)
   })
 

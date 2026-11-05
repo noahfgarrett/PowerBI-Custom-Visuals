@@ -1158,15 +1158,15 @@ describe('PersonDetail', () => {
     expect(view.container.querySelector('.qaqc-perf-person')?.firstElementChild?.textContent).not.toContain('QCR 02')
   })
 
-  it('shows the period and all-time cards for a ranked QCR / FE (spec: QCR 02 65 / 2 / 96.92%, all 70 / 2 / 97.14%)', () => {
+  it('shows the period and all-time cards for a ranked QCR / FE (QCR 02 38 / 1 / 97.37%, all 47 / 2 / 95.74%)', () => {
     view = drawDetail()
     expect(cardLabels(view.container)).toEqual([
-      'Finals: 65. Final inspections',
+      'Finals: 38. Final inspections',
+      'NCRs: 1. Finals with an issue found',
+      'NCR Pass Rate: 97.37%',
+      'Finals: 47. Final inspections',
       'NCRs: 2. Finals with an issue found',
-      'NCR Pass Rate: 96.92%',
-      'Finals: 70. Final inspections',
-      'NCRs: 2. Finals with an issue found',
-      'NCR Pass Rate: 97.14%',
+      'NCR Pass Rate: 95.74%',
     ])
   })
 
@@ -1182,39 +1182,40 @@ describe('PersonDetail', () => {
     expect(groupHeads(view.container)).toEqual(["This periodWW13'2026 to WW42'2026", "All timeWW51'2025 to WW42'2026"])
   })
 
-  it('shows the period and all-time cards for a ranked welder (spec: Welder 024 22 / 3 / 86.36%, all 27 / 3 / 88.89%)', () => {
-    view = drawDetail({ group: 'welders', personKey: 'welder 024' })
+  it('shows the period and all-time cards for a ranked welder (Welder 040 19 / 2 / 89.47%, all 22 / 3 / 86.36%)', () => {
+    view = drawDetail({ group: 'welders', personKey: 'welder 040' })
     expect(cardLabels(view.container)).toEqual([
+      'Welds: 19. Welds credited',
+      'NCRs: 2. Welds with an issue',
+      'NCR Pass Rate: 89.47%',
       'Welds: 22. Welds credited',
       'NCRs: 3. Welds with an issue',
       'NCR Pass Rate: 86.36%',
-      'Welds: 27. Welds credited',
-      'NCRs: 3. Welds with an issue',
-      'NCR Pass Rate: 88.89%',
     ])
     expect(view.container.querySelector('.qaqc-perf-person-head')).toBeNull()
   })
 
   it('marks the welds cards with the flame icon, as the summary strip does', () => {
-    view = drawDetail({ group: 'welders', personKey: 'welder 024' })
+    view = drawDetail({ group: 'welders', personKey: 'welder 040' })
     const welds = [...view.container.querySelectorAll('article.qaqc-kpi')].filter((card) => card.getAttribute('aria-label')?.startsWith('Welds:'))
     expect(welds).toHaveLength(2)
     expect(welds.every((card) => card.querySelector('svg.lucide-flame') !== null)).toBe(true)
   })
 
   it('uses the whole history as the period in All', () => {
-    view = drawDetail({ group: 'welders', personKey: 'welder 024', view: fixtureView('all') })
+    view = drawDetail({ group: 'welders', personKey: 'welder 040', view: fixtureView('all') })
     expect(cardLabels(view.container).slice(0, 3)).toEqual([
-      'Welds: 27. Welds credited',
+      'Welds: 22. Welds credited',
       'NCRs: 3. Welds with an issue',
-      'NCR Pass Rate: 88.89%',
+      'NCR Pass Rate: 86.36%',
     ])
   })
 
   it('lists one NCR row per NCR in the period, newest first', () => {
-    view = drawDetail({ group: 'welders', personKey: 'welder 024' })
+    view = drawDetail({ group: 'welders', personKey: 'welder 040' })
     const rows = ncrRows(view.container)
-    expect(rows).toHaveLength(3)
+    expect(rows).toHaveLength(2)
+    expect(rows.map((row) => row.cells[0].textContent)).toEqual(["WW39'2026", "WW26'2026"])
     const header = view.container.querySelector('.qaqc-perf-ncr-table thead th[aria-sort]')
     expect(header?.textContent).toBe('Work Week')
     expect(header?.getAttribute('aria-sort')).toBe('descending')
@@ -1227,7 +1228,7 @@ describe('PersonDetail', () => {
   })
 
   it('heads the place column Tag No for welders', () => {
-    view = drawDetail({ group: 'welders', personKey: 'welder 024' })
+    view = drawDetail({ group: 'welders', personKey: 'welder 040' })
     expect([...view.container.querySelectorAll('.qaqc-perf-ncr-table thead th')].map((cell) => cell.textContent)).toEqual(['Work Week', 'Source', 'Tag No', 'Issue'])
   })
 
@@ -1256,7 +1257,7 @@ describe('PersonDetail', () => {
   })
 
   it('sorts the NCR table by Work Week oldest first on a second click', () => {
-    view = drawDetail({ group: 'welders', personKey: 'welder 024' })
+    view = drawDetail({ group: 'welders', personKey: 'welder 040' })
     const before = ncrRows(view.container).map((row) => row.cells[0].textContent)
     const button = [...view.container.querySelectorAll('.qaqc-perf-ncr-table thead th button')].find((item) => item.textContent === 'Work Week')
     if (!button) throw new Error('Work Week button missing')
@@ -1270,20 +1271,21 @@ describe('PersonDetail', () => {
     view = drawDetail({ personKey: 'qcr 01' })
     expect(view.container.querySelector('.qaqc-perf-ncr-table')).toBeNull()
     expect(view.container.querySelector('.qaqc-perf-person-empty strong')?.textContent).toBe('No NCRs in this period')
-    expect(cardLabels(view.container)[0]).toBe('Finals: 94. Final inspections')
+    expect(cardLabels(view.container)[0]).toBe('Finals: 46. Final inspections')
   })
 
   it('says how many finals the period had when none had an NCR', () => {
     view = drawDetail({ personKey: 'qcr 01' })
-    expect(view.container.querySelector('.qaqc-perf-person-empty span')?.textContent).toBe("94 finals in WW13'2026 to WW42'2026, none with an NCR.")
+    expect(view.container.querySelector('.qaqc-perf-person-empty span')?.textContent).toBe("46 finals in WW13'2026 to WW42'2026, none with an NCR.")
   })
 
   it('shows a message instead of the chart and says so when the period has no finals', () => {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 900, 260))
-    // QCR 03's finals are all before WW13.
-    view = drawDetail({ personKey: 'qcr 03' })
+    // QCR 11's only final is in WW36, after the 30 weeks ending at WW35.
+    const ww35: ViewState = { selectedKey: 202635, windowEndKey: 202635, range: 'recent', dateRange: null }
+    view = drawDetail({ personKey: 'qcr 11', view: ww35 })
     expect(view.container.querySelector('.qaqc-perf-person-chart .qaqc-chart-empty')?.textContent).toBe('No finals in this period')
-    expect(view.container.querySelector('.qaqc-perf-person-empty span')?.textContent).toBe("No finals in WW13'2026 to WW42'2026.")
+    expect(view.container.querySelector('.qaqc-perf-person-empty span')?.textContent).toBe("No finals in WW06'2026 to WW35'2026.")
   })
 
   it('shows a message for a key that is not in the group', () => {
@@ -1334,7 +1336,7 @@ describe('PersonDetail', () => {
     hoverChartWeek(view.container)
     view.rerender(<PersonDetail {...props} view={fixtureView('all')} />)
     expect(view.container.querySelector('.qaqc-perf-chart-hover')).toBeNull()
-    expect(cardLabels(view.container)[0]).toBe('Finals: 70. Final inspections')
+    expect(cardLabels(view.container)[0]).toBe('Finals: 47. Final inspections')
   })
 })
 

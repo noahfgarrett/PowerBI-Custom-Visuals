@@ -313,10 +313,10 @@ describe('QaqcIssuesVisual', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(ISSUE_ROWS, { roles: [...ALL_ROLES, 'rootCause'] })))
     const page = openPareto(harness.element)
-    // The page opens on the dashboard's 30 WW window, where Bonding leads.
-    expect(page.querySelector('.qaqc-pareto-table h3')?.textContent).toBe('Bonding')
+    // The page opens on the dashboard's 30 WW window, where Installation leads.
+    expect(page.querySelector('.qaqc-pareto-table h3')?.textContent).toBe('Installation')
     expect(page.querySelector('section.qaqc-pareto-side')).toBeNull()
-    expect(page.querySelector('.qaqc-pareto-readout.is-inline')?.textContent).toContain('Bonding is 5 of 37 (13.5%).')
+    expect(page.querySelector('.qaqc-pareto-readout.is-inline')?.textContent).toContain('Installation is 9 of 37 (24.3%).')
   })
 
   it('opens the Pareto with the category panel when both Root Cause slots are bound', () => {
@@ -508,20 +508,20 @@ describe('QaqcIssuesVisual with the enriched Autodesk export', () => {
   it('shows the WW42 week cards with the enrichment slots bound', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(ENRICHED_ROWS, { roles: [...ENRICHED_ROLES] })))
-    expect([cardValue(harness.element, 'Issues Opened'), cardValue(harness.element, 'Issues Closed')]).toEqual(['2', '1'])
+    expect([cardValue(harness.element, 'Issues Opened'), cardValue(harness.element, 'Issues Closed')]).toEqual(['3', '3'])
   })
 
   it('shows the WW42 project-to-date cards with the enrichment slots bound, counting the migrated issues', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(ENRICHED_ROWS, { roles: [...ENRICHED_ROLES] })))
-    expect(toDateCardValues(harness.element)).toEqual(['231', '174', '57', '75.3%'])
+    expect(toDateCardValues(harness.element)).toEqual(['231', '173', '58', '74.9%'])
     expect(footnotes(harness.element)).toEqual(['846 issues not created by LotusWorks are excluded'])
   })
 
   it('counts only the native Autodesk issues with the enrichment slots unbound, since migrated ones carry the migration account', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(ENRICHED_ROWS, { roles: [...ALL_ROLES, 'rootCause'] })))
-    expect(toDateCardValues(harness.element)).toEqual(['29', '16', '13', '55.2%'])
+    expect(toDateCardValues(harness.element)).toEqual(['29', '13', '16', '44.8%'])
     expect(footnotes(harness.element)).toEqual(['1,048 issues not created by LotusWorks are excluded'])
   })
 })
@@ -545,7 +545,7 @@ describe('QaqcIssuesVisual filters', () => {
   it('opens on today\'s visual with the company slot bound', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(ENRICHED_ROWS, { roles: [...COMPANY_ROLES] })))
-    expect(toDateCardValues(harness.element)).toEqual(['231', '174', '57', '75.3%'])
+    expect(toDateCardValues(harness.element)).toEqual(['231', '173', '58', '74.9%'])
     expect(footnotes(harness.element)).toEqual(['846 issues not created by LotusWorks are excluded'])
   })
 
@@ -648,16 +648,16 @@ describe('QaqcIssuesVisual bound to QCx Combined', () => {
     harness = createHarness()
     apply(harness, update(combinedView()))
     expect(cardValue(harness.element, CARD)).toBe(overviewPassRate(WW42))
-    expect(cardValue(harness.element, CARD)).toBe('98.9%')
+    expect(cardValue(harness.element, CARD)).toBe('95.7%')
     pickWeek(harness.element, 202630)
     expect(cardValue(harness.element, CARD)).toBe(overviewPassRate(202630))
-    expect(cardValue(harness.element, CARD)).toBe('98.5%')
+    expect(cardValue(harness.element, CARD)).toBe('95.3%')
   })
 
   it('takes the dashboard\'s issues from the BIM rows alone', () => {
     harness = createHarness()
     apply(harness, update(combinedView()))
-    expect(toDateCardValues(harness.element)).toEqual(['231', '174', '57', '75.3%'])
+    expect(toDateCardValues(harness.element)).toEqual(['231', '173', '58', '74.9%'])
     expect(footnotes(harness.element)).toEqual(['846 issues not created by LotusWorks are excluded'])
     openFilterMenu(harness.element)
     expect(harness.element.querySelector('.qaqc-filter-showing')?.textContent).toBe('Showing 231 of 1,077 rows')
@@ -673,8 +673,8 @@ describe('QaqcIssuesVisual bound to QCx Combined', () => {
       hit.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
     const page = [...harness.element.querySelectorAll('[role="dialog"]')].find((node) => node.getAttribute('aria-label')?.startsWith('Issues · '))
-    // WW42 on the enriched cards: 2 opened and 1 closed, whatever inspection or welding rows share the week.
-    expect([...(page?.querySelectorAll('.qaqc-week-issues-group h4') ?? [])].map((node) => node.textContent)).toEqual(['Opened (2)', 'Closed (1)'])
+    // WW42 on the enriched cards: 3 opened and 3 closed, whatever inspection or welding rows share the week.
+    expect([...(page?.querySelectorAll('.qaqc-week-issues-group h4') ?? [])].map((node) => node.textContent)).toEqual(['Opened (3)', 'Closed (3)'])
   })
 
   it('ignores Welding rows, in the issues and in the card', () => {
@@ -682,7 +682,7 @@ describe('QaqcIssuesVisual bound to QCx Combined', () => {
     harness = createHarness()
     apply(harness, update(combinedView(BOUND_ROLES, withoutWelding)))
     expect(cardValue(harness.element, CARD)).toBe(overviewPassRate(WW42))
-    expect(toDateCardValues(harness.element)).toEqual(['231', '174', '57', '75.3%'])
+    expect(toDateCardValues(harness.element)).toEqual(['231', '173', '58', '74.9%'])
   })
 
   it('notes rows with an unknown Source and counts them nowhere, as the Overview does', () => {
@@ -708,7 +708,7 @@ describe('QaqcIssuesVisual bound to QCx Combined', () => {
     harness = createHarness()
     apply(harness, update(combinedView(roles)))
     expect(cardValue(harness.element, CARD)).toBeNull()
-    expect(toDateCardValues(harness.element)).toEqual(['231', '174', '57', '75.3%'])
+    expect(toDateCardValues(harness.element)).toEqual(['231', '173', '58', '74.9%'])
     // Every inspection row has no creator, so it reads as another company's issue.
     expect(footnotes(harness.element)).toEqual([`${(rowCount - 231).toLocaleString('en-US')} issues not created by LotusWorks are excluded`])
     openFilterMenu(harness.element)
@@ -719,7 +719,7 @@ describe('QaqcIssuesVisual bound to QCx Combined', () => {
     harness = createHarness()
     apply(harness, update(combinedView(BOUND_ROLES.filter((role) => role !== 'workWeek' && role !== 'issue'))))
     expect(cardValue(harness.element, CARD)).toBeNull()
-    expect(toDateCardValues(harness.element)).toEqual(['231', '174', '57', '75.3%'])
+    expect(toDateCardValues(harness.element)).toEqual(['231', '173', '58', '74.9%'])
     expect(footnotes(harness.element)).toEqual([
       '846 issues not created by LotusWorks are excluded',
       'NCR Pass Rate hidden: add Work Week, Issue',
@@ -759,7 +759,7 @@ describe('QaqcIssuesVisual bound to QCx Combined', () => {
     harness = createHarness()
     apply(harness, update(combinedView(BOUND_ROLES.filter((role) => role !== 'rowId'))))
     expect(cardValue(harness.element, CARD)).toBeNull()
-    expect(toDateCardValues(harness.element)).toEqual(['231', '174', '57', '75.3%'])
+    expect(toDateCardValues(harness.element)).toEqual(['231', '173', '58', '74.9%'])
     expect(footnotes(harness.element)).toEqual(['846 issues not created by LotusWorks are excluded', 'NCR Pass Rate hidden: add Row ID'])
   })
 

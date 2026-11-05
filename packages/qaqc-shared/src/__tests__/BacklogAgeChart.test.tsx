@@ -20,7 +20,7 @@ function draw(overrides: Partial<BacklogAgeChartProps> = {}): Rendered {
   return render(
     <BacklogAgeChart
       points={RECENT}
-      windowDays={77}
+      windowDays={81}
       selectedKey={WW42}
       width={600}
       height={280}
@@ -64,13 +64,13 @@ describe('BacklogAgeChart', () => {
 
   it('labels the last point with its median age', () => {
     view = draw()
-    expect(texts(view.container, '.qaqc-aging-label.is-last')).toEqual(['351 d'])
+    expect(texts(view.container, '.qaqc-aging-label.is-last')).toEqual(['462 d'])
   })
 
   it('draws the dashed normal close window line with its label', () => {
     view = draw()
     expect(view.container.querySelector('.qaqc-aging-window-line')?.getAttribute('stroke-dasharray')).toBe('5 4')
-    expect(texts(view.container, '.qaqc-aging-label.is-window')).toEqual(['normal close window 77 d'])
+    expect(texts(view.container, '.qaqc-aging-label.is-window')).toEqual(['normal close window 81 d'])
   })
 
   it('draws no window line without a window', () => {
@@ -93,7 +93,7 @@ describe('BacklogAgeChart', () => {
     expect(onHover).toHaveBeenLastCalledWith({
       title: "WW42'2026",
       rows: [
-        { label: 'Median age of open issues', value: '351 d' },
+        { label: 'Median age of open issues', value: '462 d' },
         { label: 'Open issues', value: '51' },
       ],
       clientX: 1,
@@ -119,7 +119,7 @@ describe('BacklogAgeChart', () => {
   })
 
   it('keys the legend to the window', () => {
-    expect(backlogLegend(AGING_COLORS, 77).map((item) => item.label)).toEqual(['Median age of open issues', 'Normal close window (77 d)'])
+    expect(backlogLegend(AGING_COLORS, 81).map((item) => item.label)).toEqual(['Median age of open issues', 'Normal close window (81 d)'])
     expect(backlogLegend(AGING_COLORS, null).map((item) => item.label)).toEqual(['Median age of open issues'])
   })
 
@@ -135,9 +135,9 @@ describe('BacklogAgeChart', () => {
   }
 
   it('moves the last label clear of the window label when the median sits on the window', () => {
-    const points = RECENT.map((point) => ({ ...point, median: 77 }))
+    const points = RECENT.map((point) => ({ ...point, median: 81 }))
     view = draw({ points })
     expect(textCollisions(view.container)).toEqual([])
-    expect(texts(view.container, '.qaqc-aging-label')).toEqual(['normal close window 77 d', '77 d'])
+    expect(texts(view.container, '.qaqc-aging-label')).toEqual(['normal close window 81 d', '81 d'])
   })
 })

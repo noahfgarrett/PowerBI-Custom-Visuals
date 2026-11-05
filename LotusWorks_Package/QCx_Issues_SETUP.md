@@ -297,6 +297,6 @@ Past the normal close window is red when it is above 0. Then it shows `View issu
 - **Created date and work week:** the created date is BIM360 Created On when it is filled in, otherwise Created On. An issue's work week is the week of its created date. Issues whose created date is blank or unreadable are skipped and noted in a footnote. That includes a filled-in BIM360 Created On that is not a date: the visual does not fall back to Created On.
 - **Closed:** an issue is closed when its Status is Closed. Its closed date is the first filled-in value of BIM360 Closed On, Closed At and Updated On, and its closed week is the week of that date. A closed issue with no closed date counts as opened but is not counted as closed in any week.
 - **Open:** every other status (blank, Open, Pending, Not approved, Ready to Inspect).
-- **Contractor:** a blank Contractor shows as Bayside when the ID's number is 1021, otherwise Unassigned.
+- **Contractor:** a blank Contractor shows as Unassigned.
 - **Subtype and Title:** a blank Type shows as Uncategorized and a blank Title as Untitled issue.
 - **Future weeks:** issues created after the current work week are not counted and are noted in a footnote.

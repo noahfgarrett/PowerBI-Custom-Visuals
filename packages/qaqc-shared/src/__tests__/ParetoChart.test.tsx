@@ -30,8 +30,8 @@ const ALL: ViewState = { selectedKey: 202642, windowEndKey: 202642, range: 'all'
 const INDEX = buildIssueIndex(ISSUE_ROWS, COLUMNS, TODAY)
 const ALL_ISSUES = buildRootCausePareto(INDEX, ALL, 'all', TODAY)
 const OPEN_ONLY = buildRootCausePareto(INDEX, ALL, 'open', TODAY)
-// 30 WW to WW42: Other is the tallest bar, so the line ends right above its count label.
-const RECENT = buildRootCausePareto(INDEX, { ...ALL, range: 'recent' }, 'all', TODAY)
+// 30 WW to WW22'2026: Other (15) is the tallest bar, so the line ends right above its count label.
+const RECENT = buildRootCausePareto(INDEX, { ...ALL, selectedKey: 202622, windowEndKey: 202622, range: 'recent' }, 'all', TODAY)
 
 const COLORS: ChartColors = {
   series1: '#2E5AAC',
@@ -188,6 +188,7 @@ describe('layoutPareto', () => {
   }
 
   it('keeps the end label when the line ends over the tallest bar', () => {
+    expect(RECENT.bars.find((bar) => bar.kind === 'other')?.count).toBe(Math.max(...RECENT.bars.map((bar) => bar.count)))
     const layout = layoutPareto(RECENT.bars, RECENT.crossIndex, 1440, 330)
     expect(layout.valueLabels.filter((label) => label.kind === 'line').map((label) => label.text)).toContain('100.0%')
   })
@@ -195,19 +196,19 @@ describe('layoutPareto', () => {
   it('labels every bar with its count', () => {
     const layout = layoutPareto(ALL_ISSUES.bars, ALL_ISSUES.crossIndex, 900, 330)
     const counts = layout.valueLabels.filter((label) => label.kind === 'count').map((label) => label.text)
-    expect(counts).toEqual(['48', '21', '19', '18', '10', '9', '5', '5', '5', '37'])
+    expect(counts).toEqual(['46', '24', '20', '17', '10', '6', '5', '4', '4', '38', '3'])
   })
 
   it('labels the line where it reaches 80% and at the end', () => {
     const layout = layoutPareto(OPEN_ONLY.bars, OPEN_ONLY.crossIndex, 900, 330)
     const lineLabels = layout.valueLabels.filter((label) => label.kind === 'line').map((label) => label.text)
-    expect(lineLabels).toEqual(['82.4% · 80% reached', '100.0%'])
+    expect(lineLabels).toEqual(['81.6% · 80% reached', '100.0%'])
   })
 
-  it('also labels the point before the crossing when 80% is reached only at the last bar', () => {
+  it('also labels the point before the crossing when 80% is reached only at the last cumulative bar, Other', () => {
     const layout = layoutPareto(ALL_ISSUES.bars, ALL_ISSUES.crossIndex, 900, 330)
     const lineLabels = layout.valueLabels.filter((label) => label.kind === 'line').map((label) => label.text)
-    expect(lineLabels).toEqual(['79.1%', '100.0%'])
+    expect(lineLabels).toEqual(['78.2%', '100.0%'])
   })
 
   it('shrinks every axis label together when one word is too wide for its bar', () => {
@@ -247,10 +248,10 @@ describe('ParetoChart', () => {
   })
 
   it('highlights the selected bar and its axis label', () => {
-    view = draw(ALL_ISSUES.bars, ALL_ISSUES.crossIndex, ALL_ISSUES.bars[2].key)
+    view = draw(ALL_ISSUES.bars, ALL_ISSUES.crossIndex, ALL_ISSUES.bars[3].key)
     const selected = view.container.querySelectorAll('.qaqc-pareto-bar.is-selected')
     expect(selected).toHaveLength(1)
-    expect(selected[0].getAttribute('data-key')).toBe(ALL_ISSUES.bars[2].key)
+    expect(selected[0].getAttribute('data-key')).toBe(ALL_ISSUES.bars[3].key)
     expect(view.container.querySelector('.qaqc-pareto-outline')).not.toBeNull()
     const boldLabels = [...view.container.querySelectorAll('.qaqc-pareto-axis-label.is-selected')].map((node) => node.textContent)
     expect(boldLabels.join(' ')).toBe('Casting/ Pouring/ Erection')
@@ -285,7 +286,8 @@ describe('ParetoChart', () => {
     act(() => chart.focus())
     press(chart, 'End')
     press(chart, ' ')
-    expect(onSelect).toHaveBeenCalledWith('other')
+    expect(ALL_ISSUES.bars[ALL_ISSUES.bars.length - 1].key).toBe('notRecorded')
+    expect(onSelect).toHaveBeenCalledWith('notRecorded')
   })
 
   it('announces the focused bar in a live region', () => {
@@ -293,7 +295,7 @@ describe('ParetoChart', () => {
     const chart = svg(view.container)
     act(() => chart.focus())
     press(chart, 'ArrowRight')
-    expect(view.container.querySelector('[aria-live="polite"]')?.textContent).toBe('Coordination: 21 issues, 11.9% of issues, 39.0% cumulative')
+    expect(view.container.querySelector('[aria-live="polite"]')?.textContent).toBe('Coordination: 24 issues, 13.6% of issues, 40.2% cumulative')
   })
 
   it('keeps a static name on the chart', () => {
@@ -312,9 +314,9 @@ describe('ParetoChart', () => {
     expect(onHover).toHaveBeenLastCalledWith({
       title: 'Installation',
       rows: [
-        { label: 'Issues', value: '48' },
-        { label: 'Share', value: '27.1%' },
-        { label: 'Cumulative', value: '27.1%' },
+        { label: 'Issues', value: '46' },
+        { label: 'Share', value: '26.0%' },
+        { label: 'Cumulative', value: '26.4%' },
       ],
       clientX: 10,
       clientY: 20,

@@ -190,14 +190,27 @@ describe('WeldingDashboard cards', () => {
     view = draw()
     const { container } = view
     expect(weekTitle(container)).toBe("WW42'2026")
-    expect(cardValue(container, 'Welds Logged')).toBe('0')
-    expect(cardDetail(container, 'Welds Logged')).toBe("−84 vs WW41'2026")
-    expect(cardValue(container, 'Signed This Week')).toBe('70')
-    expect(cardDetail(container, 'Signed This Week')).toBe("+24 vs WW41'2026")
-    expect(cardValue(container, 'Sign-off %')).toBe('80%')
-    expect(cardDetail(container, 'Sign-off %')).toBe("67 of 84 · WW41'2026")
-    expect(cardValue(container, 'Issues Created')).toBe('0')
+    expect(cardValue(container, 'Welds Logged')).toBe('65')
+    expect(cardDetail(container, 'Welds Logged')).toBe("+1 vs WW41'2026")
+    expect(cardValue(container, 'Signed This Week')).toBe('59')
+    expect(cardDetail(container, 'Signed This Week')).toBe("+38 vs WW41'2026")
+    expect(cardValue(container, 'Sign-off %')).toBe('32%')
+    expect(cardDetail(container, 'Sign-off %')).toBe("21 of 65 · WW42'2026")
+    expect(cardValue(container, 'Issues Created')).toBe('1')
     expect(cardDetail(container, 'Issues Created')).toBe("No change vs WW41'2026")
+  })
+
+  it('shows the latest weld week sign-off when the current week has no welds', () => {
+    // A week later, WW43'2026 has no welds yet.
+    const later = buildWeldIndex(WELDING_ROWS, COLUMNS, new Date(2026, 9, 22))
+    view = draw({ index: later, filterSource: weldFilterSourceFor(WELDING_ROWS, new Date(2026, 9, 22)) })
+    const { container } = view
+    expect(weekTitle(container)).toBe("WW43'2026")
+    expect(cardValue(container, 'Welds Logged')).toBe('0')
+    expect(cardDetail(container, 'Welds Logged')).toBe("−65 vs WW42'2026")
+    expect(cardValue(container, 'Sign-off %')).toBe('32%')
+    expect(cardDetail(container, 'Sign-off %')).toBe("21 of 65 · WW42'2026")
+    expect(cardDetail(container, 'Overall Sign-off %')).toBe("No change vs WW42'2026")
   })
 
   it('opens with the three project-to-date cards through the current week', () => {
@@ -205,14 +218,14 @@ describe('WeldingDashboard cards', () => {
     const { container } = view
     expect(container.querySelector('.qaqc-kpi-group.is-toDate em')?.textContent).toBe("Through WW42'2026")
     expect(cardValue(container, 'Total Welds')).toBe('1,751')
-    expect(cardDetail(container, 'Total Welds')).toBe('+0 this WW')
-    expect(cardValue(container, 'Welds Signed')).toBe('1,054')
-    expect(cardDetail(container, 'Welds Signed')).toBe('+70 signed this WW')
-    expect(cardValue(container, 'Overall Sign-off %')).toBe('60.2%')
-    expect(cardDetail(container, 'Overall Sign-off %')).toBe("No change vs WW41'2026")
+    expect(cardDetail(container, 'Total Welds')).toBe('+65 this WW')
+    expect(cardValue(container, 'Welds Signed')).toBe('1,105')
+    expect(cardDetail(container, 'Welds Signed')).toBe('+59 signed this WW')
+    expect(cardValue(container, 'Overall Sign-off %')).toBe('63.1%')
+    expect(cardDetail(container, 'Overall Sign-off %')).toBe("−1.2 pts vs WW41'2026")
   })
 
-  it('marks Overall Sign-off % on track at 60%', () => {
+  it('marks Overall Sign-off % on track at 63%', () => {
     view = draw()
     const overall = card(view.container, 'Overall Sign-off %')
     expect(overall?.querySelector('.qaqc-kpi-status.is-good')).not.toBeNull()
@@ -225,39 +238,39 @@ describe('WeldingDashboard cards', () => {
     const { container } = view
     expect(weekTitle(container)).toBe("WW41'2026")
     expect(container.querySelector('.qaqc-kpi-group.is-toDate em')?.textContent).toBe("Through WW41'2026")
-    expect(cardValue(container, 'Welds Logged')).toBe('84')
-    expect(cardDetail(container, 'Welds Logged')).toBe("−42 vs WW40'2026")
-    expect(cardValue(container, 'Signed This Week')).toBe('46')
-    expect(cardDetail(container, 'Signed This Week')).toBe("−21 vs WW40'2026")
-    expect(cardDetail(container, 'Sign-off %')).toBe("67 of 84 · WW41'2026")
-    expect(cardDetail(container, 'Total Welds')).toBe('+84 this WW')
-    expect(cardDetail(container, 'Welds Signed')).toBe('+46 signed this WW')
+    expect(cardValue(container, 'Welds Logged')).toBe('64')
+    expect(cardDetail(container, 'Welds Logged')).toBe("−3 vs WW40'2026")
+    expect(cardValue(container, 'Signed This Week')).toBe('21')
+    expect(cardDetail(container, 'Signed This Week')).toBe("−3 vs WW40'2026")
+    expect(cardDetail(container, 'Sign-off %')).toBe("21 of 64 · WW41'2026")
+    expect(cardDetail(container, 'Total Welds')).toBe('+64 this WW')
+    expect(cardDetail(container, 'Welds Signed')).toBe('+21 signed this WW')
   })
 
   it('shows the latest weld week sign-off for WW40', () => {
     view = draw()
     pickWeekInDropdown(view.container, '202640')
-    expect(cardValue(view.container, 'Welds Logged')).toBe('126')
-    expect(cardDetail(view.container, 'Sign-off %')).toBe("46 of 126 · WW40'2026")
-    expect(cardValue(view.container, 'Signed This Week')).toBe('67')
+    expect(cardValue(view.container, 'Welds Logged')).toBe('67')
+    expect(cardDetail(view.container, 'Sign-off %')).toBe("24 of 67 · WW40'2026")
+    expect(cardValue(view.container, 'Signed This Week')).toBe('24')
   })
 
   it('colors Overall Sign-off % green when it rises and red when it falls', () => {
     view = draw()
-    pickWeekInDropdown(view.container, '202641')
+    pickWeekInDropdown(view.container, '202625')
     expect(card(view.container, 'Overall Sign-off %')?.querySelector('.qaqc-kpi-detail.is-good')).not.toBeNull()
-    pickWeekInDropdown(view.container, '202640')
+    pickWeekInDropdown(view.container, '202626')
     expect(card(view.container, 'Overall Sign-off %')?.querySelector('.qaqc-kpi-detail.is-bad')).not.toBeNull()
   })
 
   it('warns when Issues Created goes up', () => {
     view = draw()
-    pickWeekInDropdown(view.container, '202617')
-    expect(cardDetail(view.container, 'Issues Created')).toBe("+2 vs WW16'2026")
+    pickWeekInDropdown(view.container, '202615')
+    expect(cardDetail(view.container, 'Issues Created')).toBe("+1 vs WW14'2026")
     expect(card(view.container, 'Issues Created')?.querySelector('.qaqc-kpi-detail.is-warn')).not.toBeNull()
   })
 
-  it('does not color the Sign-off % value at 80%', () => {
+  it('does not color the Sign-off % value at 32%', () => {
     view = draw()
     expect(card(view.container, 'Sign-off %')?.querySelector('.qaqc-kpi-value.is-bad')).toBeNull()
   })
@@ -361,7 +374,7 @@ describe('WeldingDashboard week and window', () => {
     view = draw()
     clickHit(view.container, '202635')
     expect(weekTitle(view.container)).toBe("WW35'2026")
-    expect(cardValue(view.container, 'Welds Logged')).toBe('100')
+    expect(cardValue(view.container, 'Welds Logged')).toBe('50')
     expect(lastHitWeek(view.container)).toBe('202642')
   })
 
@@ -409,7 +422,10 @@ describe('WeldingDashboard system drill-down', () => {
     drillInto(view.container, 'AW')
     expect(breadcrumb(view.container)?.textContent).toBe('All systems›AW')
     const labels = [...(panel(view.container, SYSTEMS_TITLE)?.querySelectorAll('.qaqc-row-label') ?? [])].map((node) => node.textContent)
-    expect(labels).toEqual(['PCH', 'QCH', 'MDW', 'PCHA'])
+    expect(labels).toEqual([
+      'A1A', 'PCH', 'B_MDW', 'J1A', 'PCHA', 'D1A', 'MCF', 'MQW', 'K1A', 'PCHF', 'QCH',
+      'K2A', 'O1U', 'B_PAQ', 'M2W', 'M3W', 'MDW', 'B_MQW', 'J1B', 'MCV', 'N1W',
+    ])
     const allSystems = breadcrumb(view.container)?.querySelector('button')
     if (!allSystems) throw new Error('All systems button missing')
     click(allSystems)
@@ -427,7 +443,9 @@ describe('WeldingDashboard system drill-down', () => {
 
   it('returns to all systems when the drilled system leaves the window, and stays there', () => {
     stubSize()
-    view = draw()
+    // The fixtures have AW welds in every week, so drop those through WW10 to leave the WW10 window without AW.
+    const lateAw = WELDING_ROWS.filter((row) => !(row[4] === 'AW' && (parseWorkWeek(row[0])?.key ?? 0) <= 202610))
+    view = draw({ index: indexOf(lateAw), filterSource: weldFilterSourceFor(lateAw, TODAY) })
     drillInto(view.container, 'AW')
     pickWeekInDropdown(view.container, '202610')
     expect(breadcrumb(view.container)).toBeNull()
@@ -486,7 +504,7 @@ describe('WeldingDashboard expanded charts', () => {
     const terms = [...open.querySelectorAll('.qaqc-summary dt')].map((node) => node.textContent)
     const values = [...open.querySelectorAll('.qaqc-summary dd')].map((node) => node.textContent)
     expect(terms).toEqual(['Welds', 'Signed', 'Sign-off %', 'Issues created'])
-    expect(values).toEqual(['1,570', '963', '61.3%', '11'])
+    expect(values).toEqual(['1,423', '878', '61.7%', '8'])
     expect(view.container.querySelector('.qaqc-root.is-expanded')).not.toBeNull()
   })
 
@@ -505,7 +523,7 @@ describe('WeldingDashboard expanded charts', () => {
     stubSize()
     view = draw()
     const open = expandPanel(view.container, SYSTEMS_TITLE)
-    expect(open.querySelectorAll('table.qaqc-table .qaqc-disclosure')).toHaveLength(56)
+    expect(open.querySelectorAll('table.qaqc-table .qaqc-disclosure')).toHaveLength(57)
     expect(open.querySelector('.qaqc-legend')).toBeNull()
   })
 
@@ -577,7 +595,7 @@ describe('WeldingDashboard filters', () => {
   it('no filter leaves existing output identical', () => {
     const container = drawFiltered(WELDING_ROWS, UNBOUND_WELD_OPTIONAL)
     expect(cardValue(container, 'Total Welds')).toBe('1,751')
-    expect(cardValue(container, 'Overall Sign-off %')).toBe('60.2%')
+    expect(cardValue(container, 'Overall Sign-off %')).toBe('63.1%')
     expect(chipTexts(container)).toEqual([])
     const before = container.querySelector('.qaqc-kpi-row')?.innerHTML
     openMenu(container)
@@ -851,8 +869,8 @@ describe('WeldingDashboard filters', () => {
 
 describe('WeldingDashboard week drill-down', () => {
   const PLACEHOLDER_ROWS = withPlaceholderWeldColumns(WELDING_ROWS)
-  const ISSUE_KEY = 202617
-  const ISSUE_TITLE = "Issues · WW17'2026"
+  const ISSUE_KEY = 202618
+  const ISSUE_TITLE = "Issues · WW18'2026"
 
   function drawDrill(
     rows: InspectionRows = PLACEHOLDER_ROWS,
@@ -914,14 +932,14 @@ describe('WeldingDashboard week drill-down', () => {
     return Number(row.value)
   }
 
-  it('a click on a week with issues selects it and opens the page titled Issues · WW17\'2026', () => {
+  it('a click on a week with issues selects it and opens the page titled Issues · WW18\'2026', () => {
     const container = drawDrill()
     click(hit(container, ISSUE_KEY))
-    expect(weekTitle(container)).toBe("WW17'2026")
+    expect(weekTitle(container)).toBe("WW18'2026")
     const open = page(container)
     expect(open?.getAttribute('aria-label')).toBe(ISSUE_TITLE)
     expect(open?.querySelector('h3')?.textContent).toBe(ISSUE_TITLE)
-    expect(open?.querySelector('.qaqc-week-issues-count')?.textContent).toBe("2 issues in WW17'2026")
+    expect(open?.querySelector('.qaqc-week-issues-count')?.textContent).toBe("1 issue in WW18'2026")
   })
 
   it('a click on a week with none only selects it', () => {
@@ -933,8 +951,10 @@ describe('WeldingDashboard week drill-down', () => {
 
   it('Enter on the focused week behaves the same', () => {
     const container = drawDrill()
+    // The focus follows the selected week; WW40 has no issues.
+    pickWeekInDropdown(container, '202640')
     pressOn(chart(container), 'Enter')
-    expect(weekTitle(container)).toBe("WW42'2026")
+    expect(weekTitle(container)).toBe("WW40'2026")
     expect(container.querySelector('[role="dialog"]')).toBeNull()
     pickWeekInDropdown(container, String(ISSUE_KEY))
     pressOn(chart(container), 'Enter')
@@ -1017,7 +1037,8 @@ describe('WeldingDashboard week drill-down', () => {
     const filtered = PLACEHOLDER_ROWS.filter((row) => weldBuilding(row[COLUMNS.tagNo]) === building)
     const filteredIndex = buildWeldIndex(filtered, COLUMNS, TODAY, { axisFromKey: baseIndex.weeks[0].week.key })
     expect(expectListsToMatch(filteredIndex)).toBeGreaterThan(0)
-  })
+    // Opens the page for every issue week twice, which takes a while on a busy machine.
+  }, 30_000)
 
   it('lists the filtered rows, not the rows at the same positions of the full data', () => {
     const rows: InspectionRows = [
@@ -1069,7 +1090,7 @@ describe('WeldingDashboard week drill-down', () => {
     click(filterButton(container))
     expect(mainHitWeeks(container)).toHaveLength(6)
     click(hit(container, ISSUE_KEY))
-    expect(pageRows(container)).toHaveLength(2)
+    expect(pageRows(container)).toHaveLength(1)
   })
 
   it('with interactions off, a click neither selects nor opens', () => {

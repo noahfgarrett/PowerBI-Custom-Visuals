@@ -156,13 +156,13 @@ describe("Issue Aging cards as of WW42'2026", () => {
     expect(cardText(openPage(), 'Open issues')).toEqual(['51', "No change vs WW41'2026"])
   })
 
-  it('shows that most issues close within 32 days', () => {
-    expect(cardText(openPage(), 'Most issues close within')).toEqual(['32 days', '90% within 77 days · from 126 closed'])
+  it('shows that most issues close within 43 days', () => {
+    expect(cardText(openPage(), 'Most issues close within')).toEqual(['43 days', '90% within 81 days · from 126 closed'])
   })
 
-  it('shows 51 past the window in red, 28 of them older than any closure', () => {
+  it('shows 49 past the window in red, all 49 older than any closure', () => {
     const page = openPage()
-    expect(cardText(page, 'Past the normal close window')).toEqual(['51', '28 are older than any issue ever closed'])
+    expect(cardText(page, 'Past the normal close window')).toEqual(['49', '49 are older than any issue ever closed'])
     expect(card(page, 'Past the normal close window').querySelector('.qaqc-kpi-value')?.classList.contains('is-bad')).toBe(true)
     expect(pastCardButton(page).textContent).toContain('View issues')
   })
@@ -178,40 +178,40 @@ describe('Issue Aging charts', () => {
     ])
   })
 
-  it('puts the WW42 open issues in 0 / 0 / 3 / 10 / 19 / 19', () => {
-    expect(texts(openPage(), '.qaqc-aging-count')).toEqual(['0', '0', '3', '10', '19', '19'])
+  it('puts the WW42 open issues in 0 / 2 / 0 / 4 / 14 / 31', () => {
+    expect(texts(openPage(), '.qaqc-aging-count')).toEqual(['0', '2', '0', '4', '14', '31'])
   })
 
   it('shows the WW42 median open age on the backlog line', () => {
-    expect(texts(openPage(), '.qaqc-aging-label.is-last')).toEqual(['351 d'])
+    expect(texts(openPage(), '.qaqc-aging-label.is-last')).toEqual(['462 d'])
   })
 })
 
 describe('Issue Aging issue list', () => {
-  it('lists the 19 issues of 12+ months when that bar is clicked', () => {
+  it('lists the 31 issues of 12+ months when that bar is clicked', () => {
     const page = openPage()
     click(bucket(page, '12+ months'))
-    expect(listTitle(page)).toBe('12+ months · 19 open issues')
-    expect(list(page)?.querySelector('table')?.getAttribute('aria-rowcount')).toBe('20')
+    expect(listTitle(page)).toBe('12+ months · 31 open issues')
+    expect(list(page)?.querySelector('table')?.getAttribute('aria-rowcount')).toBe('32')
     expect(list(page)?.querySelector('.qaqc-aging-chip')?.textContent).toBe('Showing: 12+ months')
   })
 
   it('opens a bar from the keyboard', () => {
     const page = openPage()
     pressKey(bucket(page, '3–6 months'), 'Enter')
-    expect(listTitle(page)).toBe('3–6 months · 10 open issues')
+    expect(listTitle(page)).toBe('3–6 months · 4 open issues')
   })
 
   it('lists the issues past the window from the red card', () => {
     const page = openPage()
     click(pastCardButton(page))
-    expect(listTitle(page)).toBe('Past the normal close window · 51 open issues')
+    expect(listTitle(page)).toBe('Past the normal close window · 49 open issues')
   })
 
   it('opens the past-window list from the card with Enter', () => {
     const page = openPage()
     pressKey(pastCardButton(page), 'Enter')
-    expect(listTitle(page)).toBe('Past the normal close window · 51 open issues')
+    expect(listTitle(page)).toBe('Past the normal close window · 49 open issues')
   })
 
   it('lists every open issue from the expand button', () => {
@@ -331,13 +331,13 @@ describe('Issue Aging list closing and focus', () => {
 })
 
 describe('Issue Aging week and range', () => {
-  it("shows WW30'2026 from the page's week picker: 50 open and 39 past the window", () => {
+  it("shows WW30'2026 from the page's week picker: 62 open and 45 past the window", () => {
     const page = openPage()
     pickWeek(page, '202630')
     expect(page.getAttribute('aria-label')).toBe("Issue Aging · as of WW30'2026")
-    expect(cardText(page, 'Open issues')[0]).toBe('50')
-    expect(cardText(page, 'Past the normal close window')[0]).toBe('39')
-    expect(texts(page, '.qaqc-aging-count')).toEqual(['5', '6', '0', '6', '33', '0'])
+    expect(cardText(page, 'Open issues')[0]).toBe('62')
+    expect(cardText(page, 'Past the normal close window')[0]).toBe('45')
+    expect(texts(page, '.qaqc-aging-count')).toEqual(['8', '9', '0', '7', '10', '28'])
   })
 
   it("moves the dashboard to the page's week", () => {
@@ -369,7 +369,7 @@ describe('Issue Aging memoization', () => {
     click(titleHeader)
     const compares = countCompares()
     view?.rerender(dashboard({ onHover: vi.fn() }))
-    expect(listTitle(page)).toBe('Past the normal close window · 51 open issues')
+    expect(listTitle(page)).toBe('Past the normal close window · 49 open issues')
     expect(compares()).toBe(0)
   })
 
@@ -420,7 +420,7 @@ describe('Issue Aging footnotes', () => {
   })
 
   it('notes closed issues without an Updated On', () => {
-    const rows = ISSUE_ROWS.map((row) => (row[0] === '#1006' ? row.map((cell, at) => (at === 6 ? null : cell)) : row))
+    const rows = ISSUE_ROWS.map((row) => (row[0] === '#1004' ? row.map((cell, at) => (at === 6 ? null : cell)) : row))
     const index: IssueIndex = agingIndex(rows)
     const page = openPage({ index })
     expect(texts(page, '.qaqc-footnotes li')).toEqual(['1 closed issue has no Updated On and is left out of close times'])

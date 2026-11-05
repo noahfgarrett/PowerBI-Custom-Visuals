@@ -228,26 +228,38 @@ describe('OverviewDashboard discipline rows, This WW', () => {
   it('shows the WW42 Electrical cards with their change against WW41', () => {
     view = draw()
     const electrical = row(view.container, 'Electrical')
-    expect(shown(electrical, 'Finals')).toEqual(['3', "−3 vs WW41'2026"])
-    expect(shown(electrical, 'SORs')).toEqual(['3', "No change vs WW41'2026"])
-    expect(shown(electrical, 'NCRs')).toEqual(['0', "No change vs WW41'2026"])
-    expect(shown(electrical, 'NCR pass rate')).toEqual(['100.0%', "3 / 3 Finals · No change vs WW41'2026"])
+    expect(shown(electrical, 'Finals')).toEqual(['4', "−5 vs WW41'2026"])
+    expect(shown(electrical, 'SORs')).toEqual(['1', "No change vs WW41'2026"])
+    expect(shown(electrical, 'NCRs')).toEqual(['0', "−1 vs WW41'2026"])
+    expect(shown(electrical, 'NCR pass rate')).toEqual(['100.0%', "4 / 4 Finals · +11.1 pts vs WW41'2026"])
   })
 
-  it('shows Mechanical\'s WW42 pass rate as n/a with no finals', () => {
+  it('shows Mechanical\'s WW39 pass rate as n/a with no finals', () => {
     view = draw()
+    pickWeekInDropdown(view.container, '202639')
     const mechanical = row(view.container, 'Mechanical')
-    expect(shown(mechanical, 'SORs')).toEqual(['0', "−2 vs WW41'2026"])
+    expect(shown(mechanical, 'SORs')).toEqual(['5', "+4 vs WW38'2026"])
     expect(shown(mechanical, 'NCR pass rate')).toEqual(['n/a', '0 Finals · Change n/a'])
   })
 
-  it('shows the WW42 Welding cards, with Sign-off % from the latest weld week', () => {
+  it('shows the WW42 Welding cards, with Signed by signing week', () => {
     view = draw()
     const welding = row(view.container, 'Welding')
-    expect(shown(welding, 'Welds logged')).toEqual(['0', "−84 vs WW41'2026"])
-    expect(shown(welding, 'Signed')).toEqual(['70', "+24 vs WW41'2026"])
-    expect(shown(welding, 'Sign-off %')).toEqual(['80%', "67 of 84 · WW41'2026"])
-    expect(shown(welding, 'NCRs')).toEqual(['0', "No change vs WW41'2026"])
+    expect(shown(welding, 'Welds logged')).toEqual(['65', "+1 vs WW41'2026"])
+    expect(shown(welding, 'Signed')).toEqual(['59', "+38 vs WW41'2026"])
+    expect(shown(welding, 'Sign-off %')).toEqual(['32%', "21 of 65 · WW42'2026"])
+    expect(shown(welding, 'NCRs')).toEqual(['1', "No change vs WW41'2026"])
+  })
+
+  // The fixtures log welds every week, so a week without welds is built from a few rows.
+  it('takes Sign-off % from the latest weld week when WW42 has no welds', () => {
+    const signed = { signedWeek: "WW41'2026" }
+    view = draw({ index: overviewIndexOf([weld("WW41'2026", signed), weld("WW41'2026", signed), weld("WW41'2026")]) })
+    const welding = row(view.container, 'Welding')
+    expect(shown(welding, 'Welds logged')).toEqual(['0', "−3 vs WW41'2026"])
+    expect(shown(welding, 'Signed')).toEqual(['0', "−2 vs WW41'2026"])
+    expect(shown(welding, 'Sign-off %')).toEqual(['67%', "2 of 3 · WW41'2026"])
+    expect(shownLines(quality(view.container), 'Welding NCR pass rate')).toEqual(['n/a', '0 welds', 'Change n/a'])
   })
 
   it('shows the WW42 BIM cards, with Remaining open and Past normal close window as of WW42', () => {
@@ -255,7 +267,7 @@ describe('OverviewDashboard discipline rows, This WW', () => {
     const issues = row(view.container, 'BIM Issues')
     expect(shown(issues, 'Opened')).toEqual(['0', "No change vs WW41'2026"])
     expect(shown(issues, 'Remaining open')).toEqual(['51', "No change vs WW41'2026"])
-    expect(shown(issues, 'Past normal close window')).toEqual(['51', 'of 51 open · 28 older than any closure · 71.2% closed'])
+    expect(shown(issues, 'Past normal close window')).toEqual(['49', 'of 51 open · 49 older than any closure · 71.2% closed'])
   })
 
   it('shows Past normal close window in red, with an hourglass', () => {
@@ -267,7 +279,7 @@ describe('OverviewDashboard discipline rows, This WW', () => {
 
   it('colors the cards with the model tones', () => {
     view = draw()
-    pickWeekInDropdown(view.container, '202622')
+    pickWeekInDropdown(view.container, '202641')
     const electrical = row(view.container, 'Electrical')
     expect(tone(electrical, 'Finals')).toBe('is-neutral')
     expect(tone(electrical, 'NCRs')).toBe('is-warn')
@@ -298,8 +310,8 @@ describe('OverviewDashboard discipline rows, This WW', () => {
 
   it('states each row\'s trend in its group label', () => {
     view = draw()
-    expect(row(view.container, 'Electrical').getAttribute('aria-label')).toBe("Electrical: Finals + SORs down 3 vs WW41'2026")
-    expect(row(view.container, 'Welding').getAttribute('aria-label')).toBe("Welding: Welds logged down 84 vs WW41'2026")
+    expect(row(view.container, 'Electrical').getAttribute('aria-label')).toBe("Electrical: Finals + SORs down 5 vs WW41'2026")
+    expect(row(view.container, 'Welding').getAttribute('aria-label')).toBe("Welding: Welds logged up 1 vs WW41'2026")
     expect(row(view.container, 'BIM Issues').getAttribute('aria-label')).toBe("BIM Issues: Remaining open no change vs WW41'2026")
   })
 })
@@ -317,27 +329,27 @@ describe('OverviewDashboard discipline rows, To date', () => {
     view = draw()
     showToDate(view.container)
     const electrical = row(view.container, 'Electrical')
-    expect(shown(electrical, 'Finals')).toEqual(['238', '+3 this WW'])
-    expect(shown(electrical, 'SORs')).toEqual(['48', '+3 this WW'])
-    expect(shown(electrical, 'NCR pass rate')).toEqual(['99.2%', "236 / 238 Finals · +0.01 pts vs WW41'2026"])
+    expect(shown(electrical, 'Finals')).toEqual(['238', '+4 this WW'])
+    expect(shown(electrical, 'SORs')).toEqual(['48', '+1 this WW'])
+    expect(shown(electrical, 'NCR pass rate')).toEqual(['96.6%', "230 / 238 Finals · +0.06 pts vs WW41'2026"])
   })
 
   it('shows the Mechanical totals through WW42', () => {
     view = draw()
     showToDate(view.container)
     const mechanical = row(view.container, 'Mechanical')
-    expect(shown(mechanical, 'Finals')).toEqual(['44', '+0 this WW'])
-    expect(shown(mechanical, 'NCR pass rate')).toEqual(['97.7%', "43 / 44 Finals · No change vs WW41'2026"])
+    expect(shown(mechanical, 'Finals')).toEqual(['44', '+1 this WW'])
+    expect(shown(mechanical, 'NCR pass rate')).toEqual(['90.9%', "40 / 44 Finals · +0.2 pts vs WW41'2026"])
   })
 
   it('shows the Welding totals through WW42, with Signed this WW by signing week', () => {
     view = draw()
     showToDate(view.container)
     const welding = row(view.container, 'Welding')
-    expect(shown(welding, 'Welds logged')).toEqual(['1,751', '+0 this WW'])
-    expect(shown(welding, 'Signed')).toEqual(['1,054', '+70 signed this WW'])
-    expect(shown(welding, 'Sign-off %')).toEqual(['60.2%', "1,054 of 1,751 signed · No change vs WW41'2026"])
-    expect(shown(welding, 'NCRs')).toEqual(['11', '+0 this WW'])
+    expect(shown(welding, 'Welds logged')).toEqual(['1,751', '+65 this WW'])
+    expect(shown(welding, 'Signed')).toEqual(['1,105', '+59 signed this WW'])
+    expect(shown(welding, 'Sign-off %')).toEqual(['63.1%', "1,105 of 1,751 signed · −1.2 pts vs WW41'2026"])
+    expect(shown(welding, 'NCRs')).toEqual(['11', '+1 this WW'])
   })
 
   it('shows the BIM totals through WW42', () => {
@@ -353,14 +365,14 @@ describe('OverviewDashboard discipline rows, To date', () => {
     view = draw()
     showToDate(view.container)
     pickWeekInDropdown(view.container, '202641')
-    expect(shown(row(view.container, 'Electrical'), 'Finals')).toEqual(['235', '+6 this WW'])
+    expect(shown(row(view.container, 'Electrical'), 'Finals')).toEqual(['234', '+9 this WW'])
   })
 
   it('switches back to This WW', () => {
     view = draw()
     showToDate(view.container)
     click(modeButton(view.container, 'This WW'))
-    expect(shown(row(view.container, 'Electrical'), 'Finals')).toEqual(['3', "−3 vs WW41'2026"])
+    expect(shown(row(view.container, 'Electrical'), 'Finals')).toEqual(['4', "−5 vs WW41'2026"])
   })
 
   it('disables the mode toggle when interactions are not allowed', () => {
@@ -383,9 +395,9 @@ describe('OverviewDashboard quality strip', () => {
     view = draw()
     const strip = quality(view.container)
     expect(shownLines(strip, 'CORs')).toEqual(['0', null, "No change vs WW41'2026"])
-    expect(shownLines(strip, 'NCRs')).toEqual(['0', 'E 0 · M 0 · W 0', "No change vs WW41'2026"])
-    expect(shownLines(strip, 'Inspection NCR pass rate')).toEqual(['100.0%', '0 NCRs of 3 finals', "No change vs WW41'2026"])
-    expect(shownLines(strip, 'Welding NCR pass rate')).toEqual(['n/a', '0 welds', 'Change n/a'])
+    expect(shownLines(strip, 'NCRs')).toEqual(['1', 'E 0 · M 0 · W 1', "−1 vs WW41'2026"])
+    expect(shownLines(strip, 'Inspection NCR pass rate')).toEqual(['100.0%', '0 NCRs of 5 finals', "+9.1 pts vs WW41'2026"])
+    expect(shownLines(strip, 'Welding NCR pass rate')).toEqual(['98.5%', '1 NCR of 65 welds', "+0.02 pts vs WW41'2026"])
     expect(shownLines(strip, 'DWNs')).toEqual(['0', 'DWN rate n/a: add Green tags', "No change vs WW41'2026"])
     expect(shownLines(strip, 'Top root cause')).toEqual(['None', null, 'None opened this WW'])
   })
@@ -395,10 +407,10 @@ describe('OverviewDashboard quality strip', () => {
     showToDate(view.container)
     const strip = quality(view.container)
     expect(shownLines(strip, 'CORs')).toEqual(['171', null, '+0 this WW'])
-    expect(shownLines(strip, 'NCRs')).toEqual(['14', 'E 2 · M 1 · W 11', '+0 this WW'])
-    expect(shownLines(strip, 'Inspection NCR pass rate')).toEqual(['98.9%', '3 NCRs of 282 finals', "+0.01 pts vs WW41'2026"])
-    expect(shownLines(strip, 'Welding NCR pass rate')).toEqual(['99.4%', '11 NCRs of 1,751 welds', "No change vs WW41'2026"])
-    expect(shownLines(strip, 'Top root cause')).toEqual(['Installation', null, '48 of 177 issues · 27%'])
+    expect(shownLines(strip, 'NCRs')).toEqual(['23', 'E 8 · M 4 · W 11', '+1 this WW'])
+    expect(shownLines(strip, 'Inspection NCR pass rate')).toEqual(['95.7%', '12 NCRs of 282 finals', "+0.08 pts vs WW41'2026"])
+    expect(shownLines(strip, 'Welding NCR pass rate')).toEqual(['99.4%', '11 NCRs of 1,751 welds', "−0.04 pts vs WW41'2026"])
+    expect(shownLines(strip, 'Top root cause')).toEqual(['Installation', null, '46 of 177 issues · 26%'])
   })
 
   it('gives the top root cause its full name as a tooltip, and cuts a long name short', () => {
@@ -552,18 +564,18 @@ describe('OverviewDashboard layout', () => {
   it('keeps each dense value\'s full detail in its label and tooltip', () => {
     view = draw({ viewport: { width: 800, height: 300 } })
     const finals = denseValue(row(view.container, 'Electrical'), 'Finals')
-    expect(finals.getAttribute('aria-label')).toBe("Finals: 3. −3 vs WW41'2026")
-    expect(finals.getAttribute('title')).toBe("Finals: 3. −3 vs WW41'2026")
+    expect(finals.getAttribute('aria-label')).toBe("Finals: 4. −5 vs WW41'2026")
+    expect(finals.getAttribute('title')).toBe("Finals: 4. −5 vs WW41'2026")
     expect(finals.querySelector('.qaqc-overview-value-label')?.textContent).toBe('Finals')
-    expect(finals.querySelector('.qaqc-overview-value-number')?.textContent).toBe('3')
+    expect(finals.querySelector('.qaqc-overview-value-number')?.textContent).toBe('4')
     expect(finals.querySelector('.qaqc-overview-value-trend svg.lucide-arrow-down-right')).not.toBeNull()
     const rate = denseValue(row(view.container, 'Electrical'), 'NCR pass rate')
-    expect(rate.getAttribute('aria-label')).toBe("NCR pass rate: 100.0%. 3 / 3 Finals · No change vs WW41'2026")
+    expect(rate.getAttribute('aria-label')).toBe("NCR pass rate: 100.0%. 4 / 4 Finals · +11.1 pts vs WW41'2026")
   })
 
   it('colours each dense trend arrow with the card tone', () => {
     view = draw({ viewport: { width: 800, height: 300 } })
-    pickWeekInDropdown(view.container, '202622')
+    pickWeekInDropdown(view.container, '202641')
     const electrical = row(view.container, 'Electrical')
     expect(denseTone(electrical, 'NCRs')).toBe('is-warn')
     expect(denseTone(electrical, 'NCR pass rate')).toBe('is-bad')
@@ -679,8 +691,8 @@ describe('OverviewDashboard week selection', () => {
     view = draw()
     clickHit(view.container, ACTIVITY_TITLE, '202619')
     expect(rowsSubtitle(view.container)).toBe("WW19'2026")
-    expect(shown(row(view.container, 'Electrical'), 'Finals')[0]).toBe('6')
-    expect(shown(row(view.container, 'Electrical'), 'SORs')[0]).toBe('1')
+    expect(shown(row(view.container, 'Electrical'), 'Finals')[0]).toBe('8')
+    expect(shown(row(view.container, 'Electrical'), 'SORs')[0]).toBe('0')
   })
 
   it('selects a week from a click on the quality rates chart', () => {
@@ -688,7 +700,7 @@ describe('OverviewDashboard week selection', () => {
     view = draw()
     clickHit(view.container, RATES_TITLE, '202623')
     expect(rowsSubtitle(view.container)).toBe("WW23'2026")
-    expect(shown(row(view.container, 'Mechanical'), 'Finals')[0]).toBe('2')
+    expect(shown(row(view.container, 'Mechanical'), 'Finals')[0]).toBe('1')
   })
 
   it('selects a week from the keyboard on the activity chart', () => {
@@ -698,7 +710,7 @@ describe('OverviewDashboard week selection', () => {
     if (!chart) throw new Error('activity chart missing')
     pressKeys(chart, ['ArrowLeft', 'Enter'])
     expect(rowsSubtitle(view.container)).toBe("WW41'2026")
-    expect(shown(row(view.container, 'Electrical'), 'Finals')).toEqual(['6', "+2 vs WW40'2026"])
+    expect(shown(row(view.container, 'Electrical'), 'Finals')).toEqual(['9', "No change vs WW40'2026"])
   })
 
   it('selects a week from the keyboard on the quality rates chart', () => {
@@ -714,7 +726,7 @@ describe('OverviewDashboard week selection', () => {
     stubSize()
     view = draw()
     clickHit(view.container, ACTIVITY_TITLE, '202619')
-    expect(row(view.container, 'Electrical').getAttribute('aria-label')).toBe("Electrical: Finals + SORs up 3 vs WW18'2026")
+    expect(row(view.container, 'Electrical').getAttribute('aria-label')).toBe("Electrical: Finals + SORs up 6 vs WW18'2026")
   })
 })
 

@@ -172,7 +172,7 @@ describe('builders read absent columns (−1) as blank cells', () => {
     const index = buildIssueIndex(rows, issueColumnsOf(COLUMNS), TODAY)
     expect(index.issues).toHaveLength(2)
     expect(index.issues.map((issue) => issue.title)).toEqual([DEFAULT_TITLE, DEFAULT_TITLE])
-    expect(index.issues.map((issue) => issue.contractor).sort()).toEqual(['Bayside', DEFAULT_CONTRACTOR].sort())
+    expect(index.issues.map((issue) => issue.contractor)).toEqual([DEFAULT_CONTRACTOR, DEFAULT_CONTRACTOR])
     expect(index.issues.map((issue) => issue.dueDate)).toEqual([null, null])
     expect(index.issues.map((issue) => issue.subtype).sort()).toEqual(['COR', 'NCR'])
   })

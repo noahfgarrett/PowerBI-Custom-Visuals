@@ -24,7 +24,7 @@ function draw(overrides: Partial<AgingIssueListProps> = {}): Rendered {
     <AgingIssueList
       rows={OLDEST}
       filterLabel="12+ months"
-      windowDays={77}
+      windowDays={81}
       asOfLabel="WW42'2026"
       animate={false}
       onClearFilter={vi.fn()}
@@ -47,8 +47,8 @@ function header(root: ParentNode, label: string): HTMLButtonElement {
 describe('AgingIssueList', () => {
   it('names the filter and its count in the title', () => {
     view = draw()
-    expect(view.container.querySelector('h3')?.textContent).toBe('12+ months · 19 open issues')
-    expect(view.container.querySelector('[role="dialog"]')?.getAttribute('aria-label')).toBe('12+ months · 19 open issues')
+    expect(view.container.querySelector('h3')?.textContent).toBe('12+ months · 31 open issues')
+    expect(view.container.querySelector('[role="dialog"]')?.getAttribute('aria-label')).toBe('12+ months · 31 open issues')
   })
 
   it('titles the unfiltered list as all open issues, with no chip', () => {
@@ -70,15 +70,16 @@ describe('AgingIssueList', () => {
 
   it('notes the week and the normal close window', () => {
     view = draw()
-    expect(view.container.querySelector('.qaqc-aging-list-note')?.textContent).toBe("As of WW42'2026 · normal close window 77 days")
+    expect(view.container.querySelector('.qaqc-aging-list-note')?.textContent).toBe("As of WW42'2026 · normal close window 81 days")
   })
 
   it('lists the oldest issues first, against the window', () => {
     stubSize(1200, 600)
     view = draw()
     const rows = bodyRows(view.container)
-    expect(rows[0]).toEqual(['#759', 'Basin 1 Spillway Matting Deficiency', 'To Be Transferred to Bayside', '08/28/25', '413 d', '5.4× the 77-day window'])
-    expect(rows.slice(0, 3).map((row) => row[0])).toEqual(['#759', '#760', '#764'])
+    expect(rows[0]).toEqual(['#367', 'Gouge in piping at IWW Pump Station.', 'Greyfox', '11/14/24', '700 d', '8.6× the 81-day window'])
+    // #378 and #379 tie at 689 days and keep ID order.
+    expect(rows.slice(0, 4).map((row) => row[0])).toEqual(['#367', '#378', '#379', '#402'])
     expect(view.container.querySelector('thead th[aria-sort="descending"]')?.textContent).toBe('Age')
   })
 
@@ -154,7 +155,7 @@ describe('AgingIssueList', () => {
     const onPageKey = vi.fn()
     view = render(
       <div onKeyDown={onPageKey}>
-        <AgingIssueList rows={OLDEST} filterLabel={null} windowDays={77} asOfLabel="WW42'2026" animate={false} onClearFilter={vi.fn()} onClose={onClose} />
+        <AgingIssueList rows={OLDEST} filterLabel={null} windowDays={81} asOfLabel="WW42'2026" animate={false} onClearFilter={vi.fn()} onClose={onClose} />
       </div>,
     )
     const back = view.container.querySelector('.qaqc-back-button')

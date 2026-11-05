@@ -12,6 +12,9 @@ import pbiviz from '../../pbiviz.json'
 import { QaqcWeldingVisual } from '../visual'
 import { tableDataView } from './tableDataView'
 
+// F632 has exactly 10 welds in the default window; without its WW13 weld it has 9, under the default minimum of 10.
+const F632_BELOW_MINIMUM_ROWS = WELDING_ROWS.filter((row) => !(row[0] === "WW13'2026" && String(row[6]).startsWith('F632')))
+
 const dashboardControl = vi.hoisted(() => ({ shouldThrow: false }))
 const indexBuilds = vi.hoisted((): { rows: unknown[] } => ({ rows: [] }))
 
@@ -189,7 +192,7 @@ describe('QaqcWeldingVisual', () => {
   it('renders the dashboard from bound columns', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(WELDING_ROWS)))
-    expect(cardValue(harness.element, 'Signed This Week')).toBe('70')
+    expect(cardValue(harness.element, 'Signed This Week')).toBe('59')
     expect(cardValue(harness.element, 'Total Welds')).toBe('1,751')
     expect(totalGroupLabel(harness.element)).toContain("Through WW42'2026")
     expect(harness.element.querySelector('.qaqc-footnotes')).toBeNull()
@@ -268,7 +271,7 @@ describe('QaqcWeldingVisual', () => {
     applyOutsideAct(harness, update(tableDataView(WELDING_ROWS)))
     dashboardControl.shouldThrow = false
     apply(harness, update(tableDataView(WELDING_ROWS)))
-    expect(cardValue(harness.element, 'Signed This Week')).toBe('70')
+    expect(cardValue(harness.element, 'Signed This Week')).toBe('59')
     expect(cardValue(harness.element, 'Total Welds')).toBe('1,751')
     expect(totalGroupLabel(harness.element)).toContain("Through WW42'2026")
     expect(harness.events.renderingFinished).toHaveBeenCalledTimes(1)
@@ -288,8 +291,8 @@ describe('QaqcWeldingVisual', () => {
     )
     apply(harness, update(tableDataView(edited)))
 
-    expect(before).toBe('70')
-    expect(cardValue(harness.element, 'Signed This Week')).toBe('69')
+    expect(before).toBe('59')
+    expect(cardValue(harness.element, 'Signed This Week')).toBe('58')
   })
 
   it('keeps the row-limit footnote across a resize', () => {
@@ -313,7 +316,7 @@ describe('QaqcWeldingVisual', () => {
 
     apply(harness, update(tableDataView(WELDING_ROWS), undefined, 1))
     expect(harness.element.querySelector('[role="progressbar"]')).toBeNull()
-    expect(cardValue(harness.element, 'Signed This Week')).toBe('70')
+    expect(cardValue(harness.element, 'Signed This Week')).toBe('59')
     expect(cardValue(harness.element, 'Total Welds')).toBe('1,751')
     expect(harness.element.querySelector('.qaqc-footnotes')).toBeNull()
   })
@@ -369,7 +372,8 @@ describe('QaqcWeldingVisual', () => {
   it('rolls buildings under the default minimum of 10 welds into Other', () => {
     stubChartSize()
     harness = createHarness()
-    apply(harness, update(tableDataView(WELDING_ROWS)))
+    expect(F632_BELOW_MINIMUM_ROWS).toHaveLength(WELDING_ROWS.length - 1)
+    apply(harness, update(tableDataView(F632_BELOW_MINIMUM_ROWS)))
     const labels = buildingRowLabels(harness.element)
     expect(labels).not.toContain('F632')
     expect(labels.some((label) => label.startsWith('Other'))).toBe(true)
@@ -378,7 +382,7 @@ describe('QaqcWeldingVisual', () => {
   it('passes the Hotspots minimum welds setting to the dashboard', () => {
     stubChartSize()
     harness = createHarness()
-    apply(harness, update(tableDataView(WELDING_ROWS, { objects: { hotspots: { minWelds: 1 } } })))
+    apply(harness, update(tableDataView(F632_BELOW_MINIMUM_ROWS, { objects: { hotspots: { minWelds: 1 } } })))
     const labels = buildingRowLabels(harness.element)
     expect(labels).toContain('F632')
     expect(labels.some((label) => label.startsWith('Other'))).toBe(false)

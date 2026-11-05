@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { splitCombinedRows } from '../combined'
 import { PerformanceDashboard, type PerformanceDashboardProps } from '../components/PerformanceDashboard'
-import { buildPerformanceIndex, buildPerformanceModel, type PerformanceIndex } from '../performance'
+import { buildPerformanceIndex, buildPerformanceModel, isNotRecorded, type PerformanceIndex } from '../performance'
 import { resolveTheme } from '../theme'
 import type { CombinedColumns } from '../types'
 import { buttonNamed, checkbox, chipTexts, choose, filterButton, openMenu, showing, toggleSection } from './filterHarness'
@@ -54,6 +54,7 @@ const COLUMNS: CombinedColumns = {
 }
 const TODAY = new Date(2026, 9, 15) // WW42'2026
 const CURRENT = 202642
+// Expected values are pinned to the seeded synthetic fixtures from scripts/generate-qaqc-fixtures.mjs.
 const INDEX = buildPerformanceIndex(splitCombinedRows(COMBINED_ROWS, COLUMNS.source), COLUMNS, TODAY)
 const THEME = resolveTheme({ preset: 'qaqc', backgroundColor: '', backgroundOpacity: 100, cardOpacity: 100, highContrast: null })
 
@@ -237,36 +238,42 @@ describe('PerformanceDashboard header', () => {
 describe('PerformanceDashboard ranking', () => {
   it('ranks the 30 WW QCR/FEs lowest NCR Pass Rate first, then NCRs, then name', () => {
     view = draw()
-    expect(rankedNames(view.container)).toEqual(['QCR 02', 'QCR 01', 'QCR 04', 'QCR 05', 'QCR 06', 'QCR 07'])
+    expect(rankedNames(view.container)).toEqual(['QCR 05', 'QCR 04', 'QCR 03', 'QCR 02', 'QCR 01', 'QCR 06'])
   })
 
-  it('ranks QCR 03 too over All', () => {
-    view = draw()
+  it('ranks QCR 06 too over All, at a minimum of 6 finals', () => {
+    // QCR 06 has 5 finals in 30 WW and 9 in All.
+    view = draw({ minimumFinals: 6 })
+    expect(rankedNames(view.container)).toEqual(['QCR 05', 'QCR 04', 'QCR 03', 'QCR 02', 'QCR 01'])
     showRange(view.container, 'All')
-    expect(rankedNames(view.container)).toEqual(['QCR 02', 'QCR 01', 'QCR 03', 'QCR 04', 'QCR 05', 'QCR 06', 'QCR 07'])
+    expect(rankedNames(view.container)).toEqual(['QCR 05', 'QCR 04', 'QCR 02', 'QCR 03', 'QCR 01', 'QCR 06'])
   })
 
-  it('collapses the four people below the minimum', () => {
+  it('collapses the nine people below the minimum', () => {
     view = draw()
-    expect(disclosure(view.container)?.textContent).toBe('Below minimum (4 people)')
+    expect(disclosure(view.container)?.textContent).toBe('Below minimum (9 people)')
     expect(disclosure(view.container)?.getAttribute('aria-expanded')).toBe('false')
   })
 
   it('leaves out the people with only SORs', () => {
-    // A minimum of 1 ranks everyone with a final, so all ten rows fit among the rows jsdom renders.
+    // A minimum of 1 ranks everyone with a final; a 400 px tall table renders all fifteen rows.
+    stubSize()
     view = draw({ minimumFinals: 1 })
-    expect([...rankedNames(view.container)].sort()).toEqual(['QCR 01', 'QCR 02', 'QCR 04', 'QCR 05', 'QCR 06', 'QCR 07', 'QCR 08', 'QCR 10', 'QCR 11', 'QCR 15'])
+    expect([...rankedNames(view.container)].sort()).toEqual([
+      'QCR 01', 'QCR 02', 'QCR 03', 'QCR 04', 'QCR 05', 'QCR 06', 'QCR 07', 'QCR 08', 'QCR 10', 'QCR 11', 'QCR 12', 'QCR 13',
+      'QCR 14', 'QCR 15', 'QCR 17',
+    ])
     expect(disclosure(view.container)).toBeNull()
   })
 
-  it('ranks the 30 WW welders, Welder 024 first', () => {
+  it('ranks the 30 WW welders, Welder 040 first', () => {
     view = draw()
     showGroup(view.container, 'Welders')
-    expect(rankedNames(view.container).slice(0, 3)).toEqual(['Welder 024', 'Welder 028', 'Welder 043'])
+    expect(rankedNames(view.container).slice(0, 3)).toEqual(['Welder 040', 'Welder 047', 'Welder 048'])
   })
 
   it('ranks fewer QCR/FEs with a higher minimum finals', () => {
-    view = draw({ minimumFinals: 60 })
+    view = draw({ minimumFinals: 30 })
     expect(rankedNames(view.container)).toEqual(['QCR 02', 'QCR 01'])
     expect(cardValue(view.container, 'QCR/FE ranked')).toBe('2')
   })
@@ -275,7 +282,7 @@ describe('PerformanceDashboard ranking', () => {
     const expected = buildPerformanceModel(INDEX, { selectedKey: CURRENT, windowEndKey: CURRENT, range: 'recent', dateRange: null }, 'welders', 100)
     view = draw({ minimumWelds: 100 })
     showGroup(view.container, 'Welders')
-    expect(expected.ranked.length).toBeLessThan(38)
+    expect(expected.ranked.length).toBeLessThan(61)
     expect(cardValue(view.container, 'Welders ranked')).toBe(String(expected.ranked.length))
     expect(rankedNames(view.container)).toEqual(expected.ranked.map((row) => row.name))
   })
@@ -311,21 +318,21 @@ describe('PerformanceDashboard summary strip', () => {
 
   it('shows the 30 WW QCR/FE totals for the whole group', () => {
     view = draw()
-    expect(summaryValues(view.container)).toEqual(['6', '221', '2', '99.10%'])
+    expect(summaryValues(view.container)).toEqual(['6', '214', '7', '96.73%'])
     expect(summaryHead(view.container)).toEqual(['QCR / FE', "WW13'2026 to WW42'2026"])
   })
 
   it('shows the All QCR/FE totals', () => {
     view = draw()
     showRange(view.container, 'All')
-    expect(summaryValues(view.container)).toEqual(['7', '282', '3', '98.94%'])
+    expect(summaryValues(view.container)).toEqual(['6', '282', '12', '95.74%'])
     expect(summaryHead(view.container)).toEqual(['QCR / FE', "WW51'2025 to WW42'2026"])
   })
 
   it('shows the 30 WW welder totals', () => {
     view = draw()
     showGroup(view.container, 'Welders')
-    expect(summaryValues(view.container)).toEqual(['38', '1,570', '11', '99.30%'])
+    expect(summaryValues(view.container)).toEqual(['61', '1,423', '8', '99.44%'])
     expect(summaryHead(view.container)[0]).toBe('Welders')
   })
 
@@ -333,14 +340,14 @@ describe('PerformanceDashboard summary strip', () => {
     view = draw()
     showGroup(view.container, 'Welders')
     showRange(view.container, 'All')
-    expect(summaryValues(view.container)).toEqual(['45', '1,751', '11', '99.37%'])
+    expect(summaryValues(view.container)).toEqual(['61', '1,751', '11', '99.37%'])
   })
 
   it('names the minimum and the people below it', () => {
     view = draw()
-    expect(cardDetail(view.container, 'QCR/FE ranked')).toBe('Minimum 5 finals · 4 below')
+    expect(cardDetail(view.container, 'QCR/FE ranked')).toBe('Minimum 5 finals · 9 below')
     showGroup(view.container, 'Welders')
-    expect(cardDetail(view.container, 'Welders ranked')).toBe('Minimum 10 welds · 27 below')
+    expect(cardDetail(view.container, 'Welders ranked')).toBe('Minimum 10 welds · 1 below')
   })
 
   it('says the totals cover the whole group', () => {
@@ -353,14 +360,14 @@ describe('PerformanceDashboard summary strip', () => {
   it('shows the group NCR Pass Rate with no small print', () => {
     view = draw()
     const qcrCard = card(view.container, 'NCR Pass Rate')
-    expect(qcrCard?.querySelector('.qaqc-kpi-value')?.textContent).toBe('99.10%')
+    expect(qcrCard?.querySelector('.qaqc-kpi-value')?.textContent).toBe('96.73%')
     expect(qcrCard?.querySelector('.qaqc-kpi-detail')).toBeNull()
-    expect(qcrCard?.getAttribute('aria-label')).toBe('NCR Pass Rate: 99.10%')
+    expect(qcrCard?.getAttribute('aria-label')).toBe('NCR Pass Rate: 96.73%')
     showGroup(view.container, 'Welders')
     const welderCard = card(view.container, 'NCR Pass Rate')
-    expect(welderCard?.querySelector('.qaqc-kpi-value')?.textContent).toBe('99.30%')
+    expect(welderCard?.querySelector('.qaqc-kpi-value')?.textContent).toBe('99.44%')
     expect(welderCard?.querySelector('.qaqc-kpi-detail')).toBeNull()
-    expect(welderCard?.getAttribute('aria-label')).toBe('NCR Pass Rate: 99.30%')
+    expect(welderCard?.getAttribute('aria-label')).toBe('NCR Pass Rate: 99.44%')
   })
 
   it('moves the period with the week picker', () => {
@@ -402,9 +409,9 @@ describe('PerformanceDashboard person page', () => {
   it('opens a person from their name, titled with the name, group and discipline', () => {
     stubSize()
     view = draw()
-    click(nameButton(view.container, 'QCR 02'))
-    expect(dialog(view.container)?.getAttribute('aria-label')).toBe('QCR 02 · QCR / FE · Electrical')
-    expect(dialog(view.container)?.querySelector('h3')?.textContent).toBe('QCR 02 · QCR / FE · Electrical')
+    click(nameButton(view.container, 'QCR 05'))
+    expect(dialog(view.container)?.getAttribute('aria-label')).toBe('QCR 05 · QCR / FE · Electrical')
+    expect(dialog(view.container)?.querySelector('h3')?.textContent).toBe('QCR 05 · QCR / FE · Electrical')
     expect(dialog(view.container)?.querySelector('.qaqc-perf-person')).not.toBeNull()
   })
 
@@ -412,22 +419,24 @@ describe('PerformanceDashboard person page', () => {
     stubSize()
     view = draw()
     showGroup(view.container, 'Welders')
-    click(nameButton(view.container, 'Welder 024'))
-    expect(dialog(view.container)?.getAttribute('aria-label')).toBe('Welder 024 · Welder')
+    click(nameButton(view.container, 'Welder 040'))
+    expect(dialog(view.container)?.getAttribute('aria-label')).toBe('Welder 040 · Welder')
   })
 
   it('opens a person from another cell of their row', () => {
     stubSize()
     view = draw()
     click(rowNamed(view.container, 'QCR 01').cells[2])
-    expect(dialog(view.container)?.getAttribute('aria-label')).toBe('QCR 01 · QCR / FE · Electrical')
+    expect(dialog(view.container)?.getAttribute('aria-label')).toBe('QCR 01 · QCR / FE · Electrical and Mechanical')
   })
 
   it('names a Mechanical QCR/FE\'s discipline in the title', () => {
+    // QCR 15's one 30 WW final is Mechanical, so QCR 15 is below the minimum.
     stubSize()
     view = draw()
-    click(nameButton(view.container, 'QCR 05'))
-    expect(dialog(view.container)?.getAttribute('aria-label')).toBe('QCR 05 · QCR / FE · Mechanical')
+    click(disclosure(view.container))
+    click(nameButton(view.container, 'QCR 15'))
+    expect(dialog(view.container)?.getAttribute('aria-label')).toBe('QCR 15 · QCR / FE · Mechanical')
   })
 
   it('falls back to the person\'s all-time disciplines when the period row has none', () => {
@@ -438,7 +447,7 @@ describe('PerformanceDashboard person page', () => {
     stubSize()
     view = draw({ index })
     click(nameButton(view.container, 'QCR 02'))
-    expect(dialog(view.container)?.getAttribute('aria-label')).toBe('QCR 02 · QCR / FE · Electrical')
+    expect(dialog(view.container)?.getAttribute('aria-label')).toBe('QCR 02 · QCR / FE · Electrical and Mechanical')
   })
 
   it('shows the person\'s period cards on the page', () => {
@@ -446,7 +455,7 @@ describe('PerformanceDashboard person page', () => {
     view = draw()
     click(nameButton(view.container, 'QCR 02'))
     const values = [...(dialog(view.container)?.querySelectorAll('.qaqc-kpi-group.is-period .qaqc-kpi-value') ?? [])].map((node) => node.textContent)
-    expect(values).toEqual(['65', '2', '96.92%'])
+    expect(values).toEqual(['38', '1', '97.37%'])
   })
 
   it('names the person chart with its weeks when chart summaries are on', () => {
@@ -551,7 +560,7 @@ describe('PerformanceDashboard layout', () => {
     const root = view.container.querySelector('.qaqc-root')
     expect(root?.classList.contains('is-cards-only')).toBe(true)
     expect(root?.classList.contains('is-compact')).toBe(true)
-    expect(summaryValues(view.container)).toEqual(['6', '221', '2', '99.10%'])
+    expect(summaryValues(view.container)).toEqual(['6', '214', '7', '96.73%'])
   })
 
   it('shows the loading bar', () => {
@@ -575,28 +584,31 @@ describe('PerformanceDashboard layout', () => {
 })
 
 describe('PerformanceDashboard footnotes', () => {
-  it('has no QCR/FE note in 30 WW, where every final has a QCR/FE', () => {
-    view = draw()
+  it('has no QCR/FE note in 30 WW when every final has a QCR/FE', () => {
+    // The fixture without its Electrical and Mechanical rows that have no QCR/FE.
+    const recorded = COMBINED_ROWS.filter((row) => row[COLUMNS.source] === 'Welding' || row[COLUMNS.source] === 'BIM' || !isNotRecorded(row[COLUMNS.qcr]))
+    view = draw({ index: indexOf(recorded) })
     expect(footnotes(view.container)).toEqual([])
   })
 
-  it('notes the All finals with no QCR/FE', () => {
+  it('notes the 30 WW and All finals with no QCR/FE', () => {
     view = draw()
+    expect(footnotes(view.container)).toEqual(['66 finals have no QCR/FE'])
     showRange(view.container, 'All')
-    expect(footnotes(view.container)).toEqual(['7 finals have no QCR/FE'])
+    expect(footnotes(view.container)).toEqual(['90 finals have no QCR/FE'])
   })
 
   it('notes the welds that credit several welders, by period', () => {
     view = draw()
     showGroup(view.container, 'Welders')
-    expect(footnotes(view.container)).toEqual(['89 welds list more than one welder; each welder is credited'])
+    expect(footnotes(view.container)).toEqual(['199 welds list more than one welder; each welder is credited'])
     showRange(view.container, 'All')
-    expect(footnotes(view.container)).toEqual(['131 welds list more than one welder; each welder is credited'])
+    expect(footnotes(view.container)).toEqual(['244 welds list more than one welder; each welder is credited'])
   })
 
   it('puts the row limit first', () => {
     view = draw({ rowLimitReached: true })
-    expect(footnotes(view.container)).toEqual(['Showing the first 2,385 rows (Power BI data limit)'])
+    expect(footnotes(view.container)).toEqual(['Showing the first 2,385 rows (Power BI data limit)', '66 finals have no QCR/FE'])
   })
 })
 

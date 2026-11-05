@@ -7,7 +7,7 @@ import { buildIssueIndex } from '../issues'
 import type { IssueColumns, IssueIndex } from '../types'
 import { ISSUE_ROWS } from './fixtures/issueRows'
 
-// Shared by the Issue Aging page tests: the October export, its columns, and DOM helpers for the charts.
+// Shared by the Issue Aging page tests: the issue log fixture, its columns, and DOM helpers for the charts.
 
 export const AGING_COLUMNS: IssueColumns = {
   id: 0,
@@ -35,7 +35,7 @@ export function agingIndex(rows: ReadonlyArray<ReadonlyArray<string | null>> = I
   return buildIssueIndex(rows, AGING_COLUMNS, AGING_TODAY)
 }
 
-/** The October export without its closed issues: nothing has closed as of any week, so there is no window. */
+/** The issue log fixture without its closed issues: nothing has closed as of any week, so there is no window. */
 export function noClosuresIndex(): IssueIndex {
   return agingIndex(ISSUE_ROWS.filter((row) => row[2] !== 'Closed'))
 }

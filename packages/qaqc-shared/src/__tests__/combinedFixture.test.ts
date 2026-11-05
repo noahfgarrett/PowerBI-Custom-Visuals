@@ -45,7 +45,7 @@ function pick(rows: ReadonlyArray<ReadonlyArray<unknown>>, columns: number[]): u
   return rows.map((row) => columns.map((column) => row[column]))
 }
 
-describe('QAQC Combined fixture (2026-10-14 exports)', () => {
+describe('QAQC Combined fixture (seeded synthetic data)', () => {
   it('holds 2,385 rows with 1-based Row IDs in append order', () => {
     expect(COMBINED_ROWS).toHaveLength(2385)
     expect(COMBINED_ROWS.map((row) => row[position('Row ID')])).toEqual(COMBINED_ROWS.map((_, rowIndex) => rowIndex + 1))
@@ -125,7 +125,7 @@ describe('QAQC Combined fixture (2026-10-14 exports)', () => {
     const index = buildWeldIndex(split.welding, weldColumnsOf(COLUMNS), TODAY)
     const last = index.weeks.length - 1
     expect(index.cumulativeLogged[last]).toBe(1751)
-    expect(index.cumulativeSigned[last]).toBe(1054)
+    expect(index.cumulativeSigned[last]).toBe(1105)
   })
 
   it('reproduces the BIM opened, closed and remaining cards', () => {
@@ -136,9 +136,9 @@ describe('QAQC Combined fixture (2026-10-14 exports)', () => {
     expect(model.toDate.remaining.value).toBe(51)
   })
 
-  it('reproduces the 48 Installation issues through the combined Root Cause column', () => {
+  it('reproduces the 46 Installation issues through the combined Root Cause column', () => {
     const index = buildIssueIndex(split.bim, issueColumnsOf(COLUMNS), TODAY)
     expect(index.hasRootCause).toBe(true)
-    expect(index.issues.filter((issue) => issue.rootCause === 'Installation')).toHaveLength(48)
+    expect(index.issues.filter((issue) => issue.rootCause === 'Installation')).toHaveLength(46)
   })
 })

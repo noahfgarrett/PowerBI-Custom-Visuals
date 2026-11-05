@@ -263,7 +263,7 @@ describe('buildIssueIndex', () => {
     const [first, second] = index.issues
     expect(first).toMatchObject({
       id: '#1021',
-      contractor: 'Bayside',
+      contractor: 'Unassigned',
       subtype: 'Uncategorized',
       title: 'Untitled issue',
       statusKind: 'pending',
@@ -560,7 +560,7 @@ describe('issueFilterFields', () => {
     return field?.options.map((option) => [option.label, option.count]) ?? []
   }
 
-  it('Contractor reads as the charts do: blank is Unassigned, listed last, and ID 1021 defaults to Bayside', () => {
+  it('Contractor reads as the charts do: blank is Unassigned and listed last', () => {
     const rows = [
       companyRow('#1', LW, null, { contractor: 'Greyfox' }),
       companyRow('#2', LW, null, { contractor: 'greyfox ' }),
@@ -569,7 +569,7 @@ describe('issueFilterFields', () => {
       companyRow('#4', LW, null, { contractor: 'Unassigned' }),
       companyRow('#5', LW, null, { contractor: 'N/A' }),
     ]
-    expect(optionsOf('contractor', rows)).toEqual([['Greyfox', 2], ['Bayside', 1], ['N/A', 1], ['Unassigned', 2]])
+    expect(optionsOf('contractor', rows)).toEqual([['Greyfox', 2], ['N/A', 1], ['Unassigned', 3]])
   })
 
   it('Status lists the sheet\'s values, with Pending apart from Open and Void as a value of its own', () => {

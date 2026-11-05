@@ -12,7 +12,7 @@
 
 ## 2. Add a Row ID (Power Query, once per report, required)
 
-Power BI merges rows that are identical in every bound column (on the October export that hides 151 of 238 Finals). The visual shows its setup screen until a Row ID is bound. To add one:
+Power BI merges rows that are identical in every bound column. The visual shows its setup screen until a Row ID is bound. To add one:
 
 1. **Home → Transform data**, select the Electrical Inspection Log query.
 2. **Add Column → Index Column → From 1**.

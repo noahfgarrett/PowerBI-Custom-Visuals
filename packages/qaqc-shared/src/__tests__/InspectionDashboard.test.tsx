@@ -82,18 +82,18 @@ describe('InspectionDashboard', () => {
     const { container } = view
     expect(container.querySelector('h2')?.textContent).toBe('Electrical Inspections')
     expect(container.querySelector('.qaqc-kpi-group.is-week span')?.textContent).toBe("WW42'2026")
-    expect(cardValue(container, 'Final Inspections')).toBe('3')
-    expect(cardValue(container, 'SORs')).toBe('3')
+    expect(cardValue(container, 'Final Inspections')).toBe('4')
+    expect(cardValue(container, 'SORs')).toBe('1')
     expect(cardValue(container, 'Issues Found')).toBe('0')
     expect(cardValue(container, 'Finals to Date')).toBe('238')
     expect(cardValue(container, 'SORs to Date')).toBe('48')
-    expect(cardValue(container, 'NCR Pass Rate')).toBe('99.2%')
+    expect(cardValue(container, 'NCR Pass Rate')).toBe('96.6%')
   })
 
   it('compares the week cards against the previous week by its full label', () => {
     view = draw()
     const { container } = view
-    expect(cardDetail(container, 'Final Inspections')).toBe("−3 vs WW41'2026")
+    expect(cardDetail(container, 'Final Inspections')).toBe("−5 vs WW41'2026")
     expect(cardDetail(container, 'SORs')).toMatch(/ vs WW41'2026$/)
     expect(cardDetail(container, 'Issues Found')).toMatch(/ vs WW41'2026$/)
   })
@@ -113,7 +113,7 @@ describe('InspectionDashboard', () => {
       select.value = '202641'
       select.dispatchEvent(new Event('change', { bubbles: true }))
     })
-    expect(cardValue(view.container, 'Final Inspections')).toBe('6')
+    expect(cardValue(view.container, 'Final Inspections')).toBe('9')
     expect(view.container.querySelector('.qaqc-kpi-group.is-toDate em')?.textContent).toBe("Through WW41'2026")
   })
 
@@ -277,10 +277,10 @@ describe('InspectionDashboard with measured charts', () => {
   it('selects a week from a bar click without moving the window', () => {
     stubSize()
     view = draw()
-    expect(cardValue(view.container, 'Final Inspections')).toBe('3')
+    expect(cardValue(view.container, 'Final Inspections')).toBe('4')
     clickHit(view.container, '202635')
     expect(weekTitle(view.container)).toBe("WW35'2026")
-    expect(cardValue(view.container, 'Final Inspections')).toBe('9')
+    expect(cardValue(view.container, 'Final Inspections')).toBe('8')
     expect(lastHitWeek(view.container)).toBe('202642')
   })
 
@@ -346,7 +346,7 @@ describe('InspectionDashboard with measured charts', () => {
     view = draw()
     expandPanel(view.container, 'Inspections by Building')
     const table = dialog(view.container, 'Inspections by Building')?.querySelector('table.qaqc-table')
-    expect(table?.querySelectorAll('tbody tr')).toHaveLength(19)
+    expect(table?.querySelectorAll('tbody tr')).toHaveLength(21)
     expect(view.container.querySelector('.qaqc-root.is-expanded')).not.toBeNull()
   })
 
@@ -392,8 +392,9 @@ describe('InspectionDashboard with measured charts', () => {
     view = draw()
     expandPanel(view.container, 'NCR Pass Rate Trend')
     const items = view.container.querySelectorAll('[role="dialog"] .qaqc-issue-list > li')
-    expect(items).toHaveLength(2)
-    expect(items[0].querySelector('strong')?.textContent).toBe("WW23'2026")
+    expect(items).toHaveLength(5)
+    expect(items[0].querySelector('strong')?.textContent).toBe("WW41'2026")
+    expect(items[4].querySelector('strong')?.textContent).toBe("WW20'2026")
   })
 
   it('draws a week axis on the expanded pass-rate chart only', () => {
@@ -422,7 +423,7 @@ describe('InspectionDashboard with measured charts', () => {
     expandPanel(view.container, 'Finals + SORs by Work Week')
     pickWeekInDropdown(view.container, '202641')
     expect(dialog(view.container, 'Finals + SORs by Work Week')).not.toBeNull()
-    expect(cardValue(view.container, 'Final Inspections')).toBe('6')
+    expect(cardValue(view.container, 'Final Inspections')).toBe('9')
   })
 
   it('draws the expanded chart outside the scrolling root, inside the frame', () => {
@@ -655,10 +656,10 @@ describe('InspectionDashboard filters', () => {
     setRange(container, 202610, 202630)
     expect(groupShading(container, 'In range')).toEqual(['is-toDate'])
     expect(groupSubtitle(container)).toBe("WW10'2026 to WW30'2026")
-    expect(cardValue(container, 'Finals in Range')).toBe('117')
-    expect(cardValue(container, 'SORs in Range')).toBe('12')
-    expect(cardValue(container, 'NCR Pass Rate')).toBe('98.3%')
-    expect(cardDetail(container, 'NCR Pass Rate')).toBe('115 / 117 Finals')
+    expect(cardValue(container, 'Finals in Range')).toBe('106')
+    expect(cardValue(container, 'SORs in Range')).toBe('18')
+    expect(cardValue(container, 'NCR Pass Rate')).toBe('96.2%')
+    expect(cardDetail(container, 'NCR Pass Rate')).toBe('102 / 106 Finals')
     expect(cardValue(container, 'Finals to Date')).toBeNull()
     expect(chipTexts(container)).toEqual(["Date range: WW10'2026 to WW30'2026"])
   })
@@ -668,8 +669,8 @@ describe('InspectionDashboard filters', () => {
     openMenu(container)
     setRange(container, 202610, 202630)
     expect(weekTitle(container)).toBe("WW30'2026")
-    expect(cardValue(container, 'Final Inspections')).toBe('7')
-    expect(cardDetail(container, 'Finals in Range')).toBe('+7 this WW')
+    expect(cardValue(container, 'Final Inspections')).toBe('6')
+    expect(cardDetail(container, 'Finals in Range')).toBe('+6 this WW')
   })
 
   it('the 30 WW | All toggle is disabled during a range', () => {
@@ -976,8 +977,8 @@ describe('InspectionDashboard filters', () => {
 })
 
 describe('InspectionDashboard week drill-down', () => {
-  const ISSUE_WEEK = 202623
-  const ISSUE_TITLE = "Issues · WW23'2026"
+  const ISSUE_WEEK = 202634
+  const ISSUE_TITLE = "Issues · WW34'2026"
   const PLACEHOLDER_ROWS = withPlaceholderColumns(ELECTRICAL_ROWS)
   const COLUMNS = { workWeek: 0, phase: 1, issue: 2, building: 3 }
 
@@ -1048,15 +1049,15 @@ describe('InspectionDashboard week drill-down', () => {
     })
   }
 
-  it('a click on a week with issues selects it and opens the page titled Issues · WW23\'2026', () => {
+  it('a click on a week with issues selects it and opens the page titled Issues · WW34\'2026', () => {
     const container = drawDrill()
     click(hit(container, 'Finals + SORs by Work Week', ISSUE_WEEK))
-    expect(weekTitle(container)).toBe("WW23'2026")
+    expect(weekTitle(container)).toBe("WW34'2026")
     const open = dialog(container, ISSUE_TITLE)
     expect(open).not.toBeNull()
     expect(open?.querySelector('h3')?.textContent).toBe(ISSUE_TITLE)
     expect(open?.querySelector('.qaqc-back-button')).not.toBeNull()
-    expect(open?.querySelector('.qaqc-week-issues-count')?.textContent).toBe("1 issue in WW23'2026")
+    expect(open?.querySelector('.qaqc-week-issues-count')?.textContent).toBe("1 issue in WW34'2026")
   })
 
   it('a click on a week with none only selects it', () => {
@@ -1106,7 +1107,7 @@ describe('InspectionDashboard week drill-down', () => {
     act(() => {
       rect.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 5, clientY: 6 }))
     })
-    expect(onHover).toHaveBeenLastCalledWith(expect.objectContaining({ title: "WW23'2026" }))
+    expect(onHover).toHaveBeenLastCalledWith(expect.objectContaining({ title: "WW34'2026" }))
     expect(page(container)).toBeNull()
 
     click(rect)
@@ -1125,7 +1126,7 @@ describe('InspectionDashboard week drill-down', () => {
     act(() => {
       rect.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 5, clientY: 6 }))
     })
-    expect(onHover).toHaveBeenLastCalledWith(expect.objectContaining({ title: "WW23'2026" }))
+    expect(onHover).toHaveBeenLastCalledWith(expect.objectContaining({ title: "WW34'2026" }))
     click(rect)
     expect(dialog(container, ISSUE_TITLE)).not.toBeNull()
     expect(onHover).toHaveBeenLastCalledWith(null)
@@ -1148,7 +1149,7 @@ describe('InspectionDashboard week drill-down', () => {
     act(() => {
       rect.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 5, clientY: 6 }))
     })
-    expect(onHover).toHaveBeenLastCalledWith(expect.objectContaining({ title: "WW23'2026" }))
+    expect(onHover).toHaveBeenLastCalledWith(expect.objectContaining({ title: "WW34'2026" }))
     click(rect)
     expect(dialog(container, panel)).toBeNull()
     expect(dialog(container, ISSUE_TITLE)).not.toBeNull()
@@ -1281,7 +1282,8 @@ describe('InspectionDashboard week drill-down', () => {
     const filtered = PLACEHOLDER_ROWS.filter((row) => row[COLUMNS.building] === building)
     const filteredIndex = buildInspectionIndex(filtered, COLUMNS, TODAY, { axisFromKey: baseIndex.weeks[0].week.key })
     expect(expectListsToMatch(filteredIndex)).toBeGreaterThan(0)
-  })
+    // Opens the page for every issue week twice, which takes a while on a busy machine.
+  }, 30_000)
 
   it('lists the filtered rows, not the rows at the same positions of the full data', () => {
     const rows: InspectionRows = [

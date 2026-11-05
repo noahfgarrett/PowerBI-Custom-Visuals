@@ -55,16 +55,28 @@ describe('issueContractor', () => {
     expect(issueContractor('#1021', ' Bayside Corp ')).toBe('Bayside Corp')
   })
 
-  it('defaults a blank contractor to Bayside when the ID ends in exactly 1021', () => {
-    expect(issueContractor('#1021', '')).toBe('Bayside')
-    expect(issueContractor('BIM-1021', null)).toBe('Bayside')
+  it('defaults a blank contractor to Unassigned when no override is given', () => {
+    expect(issueContractor('#1021', '')).toBe('Unassigned')
+    expect(issueContractor('#1022', '  ')).toBe('Unassigned')
+    expect(issueContractor('', null)).toBe('Unassigned')
   })
 
-  it('defaults other blank contractors to Unassigned', () => {
-    expect(issueContractor('#11021', '')).toBe('Unassigned')
-    expect(issueContractor('#1022', '  ')).toBe('Unassigned')
-    expect(issueContractor('#1021a', '')).toBe('Unassigned')
-    expect(issueContractor('', '')).toBe('Unassigned')
+  const OVERRIDES = new Map([['1021', 'Bayside']])
+
+  it('uses an override for a blank contractor when the ID ends in exactly that number', () => {
+    expect(issueContractor('#1021', '', OVERRIDES)).toBe('Bayside')
+    expect(issueContractor('BIM-1021', null, OVERRIDES)).toBe('Bayside')
+  })
+
+  it('keeps a populated contractor over an override', () => {
+    expect(issueContractor('#1021', 'Greyfox', OVERRIDES)).toBe('Greyfox')
+  })
+
+  it('defaults other blank contractors to Unassigned even with overrides', () => {
+    expect(issueContractor('#11021', '', OVERRIDES)).toBe('Unassigned')
+    expect(issueContractor('#1022', '  ', OVERRIDES)).toBe('Unassigned')
+    expect(issueContractor('#1021a', '', OVERRIDES)).toBe('Unassigned')
+    expect(issueContractor('', '', OVERRIDES)).toBe('Unassigned')
   })
 })
 

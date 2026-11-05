@@ -16,7 +16,7 @@ import type { IssueIndex, ViewState } from '../types'
 import { ENRICHED_ISSUE_ROWS } from './fixtures/enrichedIssueRows'
 import { ENRICHED_COLUMNS as COLUMNS } from './issueFilterFixture'
 
-const TODAY = new Date(2026, 10, 4) // WW45'2026, after the export of 20 Oct
+const TODAY = new Date(2026, 10, 4) // WW45'2026, after the fixture's last update on 19 Oct
 
 const CATALOG = buildFilterCatalog(ENRICHED_ISSUE_ROWS, issueFilterFields(COLUMNS))
 const BASE = buildIssueIndex(ENRICHED_ISSUE_ROWS, COLUMNS, TODAY)
@@ -34,31 +34,35 @@ function allWeeksView(index: IssueIndex): ViewState {
   return { selectedKey: index.currentWeek.key, windowEndKey: index.currentWeek.key, range: 'all', dateRange: null }
 }
 
+// Expected values are pinned to the seeded synthetic fixtures from scripts/generate-qaqc-fixtures.mjs.
 const THREE = companies(LOTUSWORKS_COMPANY, 'Greyfox', 'Bayside')
+// Every Greyfox and Bayside issue in the fixture is closed, so Ivory - Ops adds the open issues the open-issue views
+// need to show a difference.
+const WITH_OPEN = companies(LOTUSWORKS_COMPANY, 'Greyfox', 'Bayside', 'Ivory - Ops')
 
-describe('Created By (Company) on the enriched export', () => {
-  it('company distribution is LotusWorks 231, Ivory - QA 515, Ivory - Ops 256, Ivory 23, Greyfox 17, Bayside 21, Larch 4, Not recorded 10, total 1,077', () => {
+describe('Created By (Company) on the enriched fixture', () => {
+  it('company distribution is LotusWorks 231, Ivory - QA 392, Ivory - Ops 213, Ivory 189, Greyfox 19, Bayside 19, Larch 4, Not recorded 10, total 1,077', () => {
     const field = CATALOG.fields[0]
     expect(field.def.id).toBe('company')
     expect(field.options.map((option) => [option.label, option.count])).toEqual([
-      ['Ivory - QA', 515],
-      ['Ivory - Ops', 256],
+      ['Ivory - QA', 392],
       ['LotusWorks', 231],
-      ['Ivory', 23],
-      ['Bayside', 21],
-      ['Greyfox', 17],
+      ['Ivory - Ops', 213],
+      ['Ivory', 189],
+      ['Bayside', 19],
+      ['Greyfox', 19],
       ['Larch', 4],
       ['Not recorded', 10],
     ])
     expect(CATALOG.totalRows).toBe(1077)
   })
 
-  it('LotusWorks + Greyfox + Bayside gives 269 opened, 211 closed, 58 remaining, 78.4%', () => {
+  it('LotusWorks + Greyfox + Bayside gives 269 opened, 213 closed, 56 remaining, 79.2%', () => {
     const { toDate } = buildIssueModel(indexFor(THREE), allWeeksView(BASE))
     expect(toDate.opened.value).toBe(269)
-    expect(toDate.closed.value).toBe(211)
-    expect(toDate.remaining.value).toBe(58)
-    expect(toDate.closureRate.value?.toFixed(1)).toBe('78.4')
+    expect(toDate.closed.value).toBe(213)
+    expect(toDate.remaining.value).toBe(56)
+    expect(toDate.closureRate.value?.toFixed(1)).toBe('79.2')
   })
 
   it('the default view equals today\'s visual exactly', () => {
@@ -77,27 +81,27 @@ describe('Created By (Company) on the enriched export', () => {
 
   it('the menu\'s weeks reach back to the first week of any company, though the default view starts later', () => {
     expect(issueDataWeeks(ENRICHED_ISSUE_ROWS, COLUMNS, TODAY)[0].label).toBe("WW09'2022")
-    expect(BASE.weeks[0].week.label).toBe("WW46'2024")
+    expect(BASE.weeks[0].week.label).toBe("WW13'2022")
   })
 
   it('issue Detail, the Pareto and Issue Aging recalculate for selected companies', () => {
-    const three = indexFor(THREE)
-    const view = allWeeksView(three)
+    const selected = indexFor(WITH_OPEN)
+    const view = allWeeksView(selected)
 
-    expect(three.openAging.reduce((sum, bucket) => sum + bucket.count, 0)).toBe(58)
-    expect(three.overallAging.reduce((sum, bucket) => sum + bucket.count, 0)).toBe(269)
+    expect(selected.openAging.reduce((sum, bucket) => sum + bucket.count, 0)).toBe(62)
+    expect(selected.overallAging.reduce((sum, bucket) => sum + bucket.count, 0)).toBe(482)
 
-    const detail = buildIssueDetail(three, three.currentWeek.key)
+    const detail = buildIssueDetail(selected, selected.currentWeek.key)
     const baseDetail = buildIssueDetail(BASE, BASE.currentWeek.key)
-    expect(detail.discussionRows).toHaveLength(58)
+    expect(detail.discussionRows).toHaveLength(62)
     expect(baseDetail.discussionRows).toHaveLength(56)
 
-    expect(buildRootCausePareto(three, view, 'all', TODAY).total).toBe(269)
+    expect(buildRootCausePareto(selected, view, 'all', TODAY).total).toBe(482)
     expect(buildRootCausePareto(BASE, view, 'all', TODAY).total).toBe(231)
 
-    const benchmarks = buildIssueBenchmarks(three, three.currentWeek.key, TODAY)
+    const benchmarks = buildIssueBenchmarks(selected, selected.currentWeek.key, TODAY)
     const baseBenchmarks = buildIssueBenchmarks(BASE, BASE.currentWeek.key, TODAY)
-    expect(benchmarks.open).toHaveLength(58)
+    expect(benchmarks.open).toHaveLength(62)
     expect(baseBenchmarks.open).toHaveLength(56)
   })
 

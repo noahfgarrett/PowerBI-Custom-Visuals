@@ -6,9 +6,8 @@ import { buildIssueIndex, buildIssueModel } from '../issues'
 import { buildRootCausePareto } from '../rootCauses'
 import { ENRICHED_ISSUE_COLUMNS, ENRICHED_ISSUE_ROWS } from './fixtures/enrichedIssueRows'
 
-// The spec's Expected numbers, derived independently in Python from the enriched xlsx by porting the HTML app's
-// report.ts (include rule, created and closed date fallbacks, OAC counts) and the mockup's compute2.py (benchmarks
-// and Pareto), with today = 2026-10-20 and W = WW43'2026.
+// Expected values are pinned to the seeded synthetic fixtures from scripts/generate-qaqc-fixtures.mjs, with
+// today = 2026-10-20 and W = WW43'2026.
 
 function position(name: (typeof ENRICHED_ISSUE_COLUMNS)[number]): number {
   return ENRICHED_ISSUE_COLUMNS.indexOf(name)
@@ -43,20 +42,20 @@ function viewAt(key: number, range: ViewState['range'] = 'recent'): ViewState {
 
 /** Opened and closed per week, WW30–WW43'2026. */
 const PER_WEEK: ReadonlyArray<[string, number, number]> = [
-  ["WW30'2026", 1, 1],
-  ["WW31'2026", 3, 2],
-  ["WW32'2026", 7, 2],
-  ["WW33'2026", 2, 0],
-  ["WW34'2026", 2, 2],
-  ["WW35'2026", 2, 1],
-  ["WW36'2026", 2, 2],
-  ["WW37'2026", 2, 0],
-  ["WW38'2026", 2, 3],
-  ["WW39'2026", 1, 1],
-  ["WW40'2026", 2, 5],
-  ["WW41'2026", 2, 4],
-  ["WW42'2026", 2, 1],
-  ["WW43'2026", 0, 1],
+  ["WW30'2026", 0, 13],
+  ["WW31'2026", 2, 2],
+  ["WW32'2026", 0, 1],
+  ["WW33'2026", 4, 1],
+  ["WW34'2026", 2, 0],
+  ["WW35'2026", 1, 3],
+  ["WW36'2026", 1, 3],
+  ["WW37'2026", 2, 3],
+  ["WW38'2026", 5, 2],
+  ["WW39'2026", 0, 1],
+  ["WW40'2026", 1, 1],
+  ["WW41'2026", 3, 1],
+  ["WW42'2026", 3, 3],
+  ["WW43'2026", 0, 2],
 ]
 
 describe('the enriched fixture', () => {
@@ -70,11 +69,11 @@ describe('the enriched fixture', () => {
   it('keeps the BIM360 dates as M/D/YY h:mm AM/PM text', () => {
     const isExportText = (cell: string | null): boolean => cell !== null && /^\d{1,2}\/\d{1,2}\/\d{2} \d{1,2}:\d{2} [AP]M$/.test(cell)
     expect(ENRICHED_ISSUE_ROWS.filter((row) => isExportText(row[position('BIM360_Created On')]))).toHaveLength(1018)
-    expect(ENRICHED_ISSUE_ROWS.filter((row) => isExportText(row[position('BIM360_Closed On')]))).toHaveLength(956)
+    expect(ENRICHED_ISSUE_ROWS.filter((row) => isExportText(row[position('BIM360_Closed On')]))).toHaveLength(957)
   })
 })
 
-describe("enriched Autodesk export (2026-10-20), as of WW43'2026", () => {
+describe("enriched issue fixture, as of WW43'2026", () => {
   it('reads 1,077 rows and keeps 231 included issues', () => {
     expect(index.totalRows).toBe(1077)
     expect(index.issues).toHaveLength(231)
@@ -83,8 +82,8 @@ describe("enriched Autodesk export (2026-10-20), as of WW43'2026", () => {
     expect(index.futureRows).toBe(0)
   })
 
-  it("starts at WW46'2024 and runs through WW43'2026", () => {
-    expect(index.weeks[0].week.label).toBe("WW46'2024")
+  it("starts at WW13'2022 and runs through WW43'2026", () => {
+    expect(index.weeks[0].week.label).toBe("WW13'2022")
     expect(index.weeks[index.weeks.length - 1].week.label).toBe("WW43'2026")
   })
 
@@ -102,8 +101,10 @@ describe("enriched Autodesk export (2026-10-20), as of WW43'2026", () => {
   })
 
   it('does not lump the migrated issues into WW30', () => {
+    // 207 included issues have a Created on of 7/24/2026, the migration day. The 13 closures are BIM 360 closed dates
+    // in that week, not the Closed at the migration wrote.
     const ww30 = index.weeks[index.positionByKey.get(202630) ?? -1]
-    expect([ww30.opened, ww30.closed]).toEqual([1, 1])
+    expect([ww30.opened, ww30.closed]).toEqual([0, 13])
   })
 
   it('matches the project-to-date cards through WW43', () => {
@@ -116,11 +117,11 @@ describe("enriched Autodesk export (2026-10-20), as of WW43'2026", () => {
 
   it('matches the WW42 week and project-to-date cards', () => {
     const model = buildIssueModel(index, viewAt(WW42))
-    expect([model.thisWeek.opened.value, model.thisWeek.closed.value]).toEqual([2, 1])
+    expect([model.thisWeek.opened.value, model.thisWeek.closed.value]).toEqual([3, 3])
     expect(model.toDate.opened.value).toBe(231)
-    expect(model.toDate.closed.value).toBe(174)
-    expect(model.toDate.remaining.value).toBe(57)
-    expect(model.toDate.closureRate.value).toBeCloseTo(75.32, 2)
+    expect(model.toDate.closed.value).toBe(173)
+    expect(model.toDate.remaining.value).toBe(58)
+    expect(model.toDate.closureRate.value).toBeCloseTo(74.89, 2)
   })
 })
 
@@ -132,45 +133,46 @@ describe("enriched issue benchmarks as of WW43'2026", () => {
     expect(benchmarks.closedWithoutDate).toBe(0)
   })
 
-  it('closes typically in 28 days, 90% within 80 days, the slowest in 314 days', () => {
-    expect(benchmarks.typical).toBe(28)
-    expect(benchmarks.window).toBe(80)
-    expect(benchmarks.slowest).toBe(314)
+  it('closes typically in 75 days, 90% within 147 days, the slowest in 1,388 days', () => {
+    expect(benchmarks.typical).toBe(75)
+    expect(benchmarks.window).toBe(147)
+    expect(benchmarks.slowest).toBe(1388)
   })
 
-  it('has 56 open issues, 44 past the window and 33 older than any closure, with a median age of 349 days', () => {
+  it('has 56 open issues, 42 past the window and 2 older than any closure, with a median age of 466.5 days', () => {
     expect(benchmarks.open).toHaveLength(56)
-    expect(benchmarks.pastWindow).toBe(44)
-    expect(benchmarks.olderThanAny).toBe(33)
-    expect(benchmarks.medianOpenAge).toBe(349)
+    expect(benchmarks.pastWindow).toBe(42)
+    expect(benchmarks.olderThanAny).toBe(2)
+    expect(benchmarks.medianOpenAge).toBe(466.5)
   })
 
-  it("closes typically in 28.5 days as of WW42'2026", () => {
-    expect(buildIssueBenchmarks(index, WW42, TODAY).typical).toBe(28.5)
+  it("closes typically in 76 days as of WW42'2026", () => {
+    expect(buildIssueBenchmarks(index, WW42, TODAY).typical).toBe(76)
   })
 })
 
 describe("enriched root cause Pareto, All and All issues, as of WW43'2026", () => {
   const model = buildRootCausePareto(index, viewAt(WW43, 'all'), 'all', TODAY)
 
-  it('covers 231 issues with 30 recorded causes', () => {
+  it('covers 231 issues with 31 recorded causes', () => {
     expect(model.total).toBe(231)
-    expect(model.distinct).toBe(30)
+    expect(model.distinct).toBe(31)
   })
 
-  it('has the top 9 causes, Other (21 causes) and one Not recorded', () => {
+  it('has the top 9 causes, Other (22 causes) and 6 Not recorded', () => {
+    // 'Other' is also a recorded cause in the fixture, ranked by its own count ahead of the Other bar.
     expect(model.bars.map((bar) => [bar.label, bar.count])).toEqual([
-      ['Installation', 54],
-      ['Coordination', 28],
-      ['Casting/Pouring/Erection', 24],
-      ['Incomplete Work', 24],
-      ['Housekeeping', 15],
-      ['Trade Damage', 13],
-      ['Quality', 10],
-      ['Bonding', 7],
-      ['Workmanship', 6],
-      ['Other (21 causes)', 49],
-      ['Not recorded', 1],
+      ['Quality', 65],
+      ['Installation', 49],
+      ['Casting/Pouring/Erection', 18],
+      ['Incomplete Work', 17],
+      ['Coordination', 14],
+      ['Materials', 12],
+      ['Housekeeping', 4],
+      ['Other', 4],
+      ['Code Compliance', 3],
+      ['Other (22 causes)', 39],
+      ['Not recorded', 6],
     ])
   })
 

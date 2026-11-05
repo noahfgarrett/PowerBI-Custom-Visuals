@@ -160,10 +160,10 @@ describe('QaqcMechanicalVisual', () => {
   it('renders the dashboard from bound columns', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(MECHANICAL_ROWS)))
-    expect(cardValue(harness.element, 'Final Inspections')).toBe('0')
+    expect(cardValue(harness.element, 'Final Inspections')).toBe('1')
     expect(cardValue(harness.element, 'Finals to Date')).toBe('44')
     expect(totalGroupLabel(harness.element)).toContain("Through WW42'2026")
-    expect(cardValue(harness.element, 'NCR Pass Rate')).toBe('97.7%')
+    expect(cardValue(harness.element, 'NCR Pass Rate')).toBe('90.9%')
     expect(harness.element.querySelector('.qaqc-footnotes')).toBeNull()
   })
 
@@ -240,7 +240,7 @@ describe('QaqcMechanicalVisual', () => {
     applyOutsideAct(harness, update(tableDataView(MECHANICAL_ROWS)))
     dashboardControl.shouldThrow = false
     apply(harness, update(tableDataView(MECHANICAL_ROWS)))
-    expect(cardValue(harness.element, 'Final Inspections')).toBe('0')
+    expect(cardValue(harness.element, 'Final Inspections')).toBe('1')
     expect(cardValue(harness.element, 'Finals to Date')).toBe('44')
     expect(totalGroupLabel(harness.element)).toContain("Through WW42'2026")
     expect(harness.events.renderingFinished).toHaveBeenCalledTimes(1)
@@ -261,8 +261,8 @@ describe('QaqcMechanicalVisual', () => {
     )
     apply(harness, update(tableDataView(edited)))
 
-    expect(before).toBe('97.7%')
-    expect(cardValue(harness.element, 'NCR Pass Rate')).toBe('95.5%')
+    expect(before).toBe('90.9%')
+    expect(cardValue(harness.element, 'NCR Pass Rate')).toBe('88.6%')
   })
 
   it('keeps the row-limit footnote across a resize', () => {
@@ -286,8 +286,8 @@ describe('QaqcMechanicalVisual', () => {
 
     apply(harness, update(tableDataView(MECHANICAL_ROWS), undefined, 1))
     expect(harness.element.querySelector('[role="progressbar"]')).toBeNull()
-    expect(cardValue(harness.element, 'Final Inspections')).toBe('0')
-    expect(cardValue(harness.element, 'NCR Pass Rate')).toBe('97.7%')
+    expect(cardValue(harness.element, 'Final Inspections')).toBe('1')
+    expect(cardValue(harness.element, 'NCR Pass Rate')).toBe('90.9%')
     expect(harness.element.querySelector('.qaqc-footnotes')).toBeNull()
   })
 

@@ -25,7 +25,8 @@ function viewAt(key: number): ViewState {
   return { selectedKey: key, windowEndKey: 202642, range: 'recent', dateRange: null }
 }
 
-describe('BIM Issues Log export (2026-10-14)', () => {
+// Expected values are pinned to the seeded synthetic fixtures from scripts/generate-qaqc-fixtures.mjs.
+describe('BIM Issues Log fixture', () => {
   it('reads 208 rows and keeps 177 included issues', () => {
     expect(index.totalRows).toBe(208)
     expect(index.issues).toHaveLength(177)
@@ -75,9 +76,9 @@ describe('BIM Issues Log export (2026-10-14)', () => {
 
   it('matches the WW31, WW30 and WW28 week cards', () => {
     const ww31 = buildIssueModel(index, viewAt(202631))
-    expect([ww31.thisWeek.opened.value, ww31.thisWeek.closed.value]).toEqual([2, 1])
+    expect([ww31.thisWeek.opened.value, ww31.thisWeek.closed.value]).toEqual([3, 14])
     const ww30 = buildIssueModel(index, viewAt(202630))
-    expect([ww30.thisWeek.opened.value, ww30.thisWeek.closed.value]).toEqual([1, 1])
+    expect([ww30.thisWeek.opened.value, ww30.thisWeek.closed.value]).toEqual([1, 0])
     const ww28 = buildIssueModel(index, viewAt(202628))
     expect([ww28.thisWeek.opened.value, ww28.thisWeek.closed.value]).toEqual([3, 4])
   })
@@ -89,21 +90,21 @@ describe('BIM Issues Log export (2026-10-14)', () => {
 
   it('matches the overall aging buckets', () => {
     expect(index.overallAging.map((bucket) => [bucket.label, bucket.count])).toEqual([
-      ['0-14 Days', 38],
-      ['14-28 Days', 19],
-      ['28+ Days', 120],
+      ['0-14 Days', 21],
+      ['14-28 Days', 14],
+      ['28+ Days', 142],
     ])
-    expect(index.overallAging.map((bucket) => bucket.closed + bucket.open)).toEqual([38, 19, 120])
+    expect(index.overallAging.map((bucket) => bucket.closed + bucket.open)).toEqual([21, 14, 142])
   })
 
-  it('counts the WW31 Issue Detail this-week cards: 2 opened, 1 closed', () => {
+  it('counts the WW31 Issue Detail this-week cards: 3 opened, 14 closed', () => {
     const detail = buildIssueDetail(index, 202631)
-    expect([detail.openedThisWeek, detail.closedThisWeek]).toEqual([2, 1])
+    expect([detail.openedThisWeek, detail.closedThisWeek]).toEqual([3, 14])
   })
 
   it('counts the WW32 Issue Detail last-week cards from WW31', () => {
     const detail = buildIssueDetail(index, 202632)
-    expect([detail.openedLastWeek, detail.closedLastWeek]).toEqual([2, 1])
+    expect([detail.openedLastWeek, detail.closedLastWeek]).toEqual([3, 14])
   })
 
   it('has only discussion rows in the WW42 Issue Detail', () => {
@@ -112,9 +113,12 @@ describe('BIM Issues Log export (2026-10-14)', () => {
     expect(detail.discussionRows).toHaveLength(51)
   })
 
-  it('reports #1020, #1019 and #1004 in the WW32 Issue Detail', () => {
+  it('reports the 16 issues created or closed in WW31 in the WW32 Issue Detail', () => {
     const detail = buildIssueDetail(index, 202632)
-    expect(detail.reportRows.map((row) => row.id)).toEqual(['#1020', '#1019', '#1004'])
+    expect(detail.reportRows.map((row) => row.id)).toEqual([
+      '#1020', '#1018', '#1016', '#1011', '#1004', '#1002', '#1001', '#998',
+      '#996', '#995', '#987', '#983', '#981', '#976', '#968', '#960',
+    ])
     expect(detail.discussionRows).toHaveLength(49)
   })
 
@@ -130,24 +134,31 @@ describe('BIM Issues Log export (2026-10-14)', () => {
     })
   })
 
-  it('records a Root Cause and a Root Cause Category for every included issue', () => {
+  it('records a Root Cause and a Root Cause Category for every included issue but #959, #907 and #472', () => {
     expect(index.hasRootCause).toBe(true)
     expect(index.hasRootCauseCategory).toBe(true)
-    expect(index.issues.filter((issue) => issue.rootCause === '' || issue.rootCauseCategory === '')).toEqual([])
+    const blank = index.issues.filter((issue) => issue.rootCause === '' || issue.rootCauseCategory === '')
+    expect(blank.map((issue) => [issue.id, issue.rootCause, issue.rootCauseCategory])).toEqual([
+      ['#959', '', ''],
+      ['#907', '', ''],
+      ['#472', '', ''],
+    ])
   })
 
-  it('counts 48 Installation issues across 27 root causes among the 177 included issues', () => {
+  it('counts 46 Installation issues across 27 root causes, plus 3 blank, among the 177 included issues', () => {
     const causes = tally(index.issues.map((issue) => issue.rootCause))
-    expect(causes.get('Installation')).toBe(48)
-    expect(causes.size).toBe(27)
+    expect(causes.get('Installation')).toBe(46)
+    expect(causes.get('')).toBe(3)
+    expect(causes.size).toBe(28)
   })
 
   it('splits the included issues by Root Cause Category', () => {
     expect(Object.fromEntries(tally(index.issues.map((issue) => issue.rootCauseCategory)))).toEqual({
-      Quality: 162,
-      Design: 10,
-      Coordination: 4,
+      Quality: 163,
+      Design: 5,
+      Coordination: 5,
       Safety: 1,
+      '': 3,
     })
   })
 })

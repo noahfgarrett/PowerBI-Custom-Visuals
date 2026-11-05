@@ -156,8 +156,8 @@ describe('QaqcElectricalVisual', () => {
   it('renders the dashboard from bound columns', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(ELECTRICAL_ROWS)))
-    expect(cardValue(harness.element, 'Final Inspections')).toBe('3')
-    expect(cardValue(harness.element, 'NCR Pass Rate')).toBe('99.2%')
+    expect(cardValue(harness.element, 'Final Inspections')).toBe('4')
+    expect(cardValue(harness.element, 'NCR Pass Rate')).toBe('96.6%')
     expect(harness.element.querySelector('.qaqc-footnotes')).toBeNull()
   })
 
@@ -234,7 +234,7 @@ describe('QaqcElectricalVisual', () => {
     applyOutsideAct(harness, update(tableDataView(ELECTRICAL_ROWS)))
     dashboardControl.shouldThrow = false
     apply(harness, update(tableDataView(ELECTRICAL_ROWS)))
-    expect(cardValue(harness.element, 'Final Inspections')).toBe('3')
+    expect(cardValue(harness.element, 'Final Inspections')).toBe('4')
     expect(harness.events.renderingFinished).toHaveBeenCalledTimes(1)
   })
 
@@ -274,8 +274,8 @@ describe('QaqcElectricalVisual', () => {
 
     apply(harness, update(tableDataView(ELECTRICAL_ROWS), undefined, 1))
     expect(harness.element.querySelector('[role="progressbar"]')).toBeNull()
-    expect(cardValue(harness.element, 'Final Inspections')).toBe('3')
-    expect(cardValue(harness.element, 'NCR Pass Rate')).toBe('99.2%')
+    expect(cardValue(harness.element, 'Final Inspections')).toBe('4')
+    expect(cardValue(harness.element, 'NCR Pass Rate')).toBe('96.6%')
     expect(harness.element.querySelector('.qaqc-footnotes')).toBeNull()
   })
 

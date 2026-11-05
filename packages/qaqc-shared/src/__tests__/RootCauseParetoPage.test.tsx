@@ -161,12 +161,13 @@ describe('RootCauseParetoPage, All issues', () => {
     expect(chartNote(view.container)).toBe('177 issues · 27 distinct causes')
   })
 
-  it('draws the top 9 causes and Other, Installation first at 48', () => {
+  it('draws the top 9 causes, Other and Not recorded, Installation first at 46', () => {
     view = draw()
     expect(axisLabels(view.container)[0]).toBe('Installation')
-    expect(axisLabels(view.container)).toHaveLength(10)
+    expect(axisLabels(view.container)).toHaveLength(11)
+    expect(axisLabels(view.container)[10]).toBe('Not recorded')
     const counts = [...view.container.querySelectorAll('.qaqc-pareto-value.qaqc-bar-value')].map((node) => node.textContent)
-    expect(counts[0]).toBe('48')
+    expect(counts[0]).toBe('46')
   })
 
   it('selects the top bar by default and lists its issues, open first', () => {
@@ -174,15 +175,15 @@ describe('RootCauseParetoPage, All issues', () => {
     expect(view.container.querySelector('.qaqc-pareto-bar.is-selected')?.getAttribute('data-key')).toBe(
       view.container.querySelector('.qaqc-pareto-bar')?.getAttribute('data-key'),
     )
-    expect(drillHeading(view.container)).toEqual(['Installation', '48 issues', '18 open · 30 closed · open first, oldest first · click a bar to switch'])
+    expect(drillHeading(view.container)).toEqual(['Installation', '46 issues', '11 open · 35 closed · open first, oldest first · click a bar to switch'])
   })
 
   it('shows the read-out', () => {
     view = draw()
     const readout = view.container.querySelector('.qaqc-pareto-readout')
     expect([...(readout?.querySelectorAll('p') ?? [])].map((line) => line.textContent)).toEqual([
-      'The top 9 causes cover 79.1%; 80% is reached only inside Other.',
-      'Installation is 48 of 177 (27.1%).',
+      'The top 9 causes cover 78.2%; 80% is reached only inside Other.',
+      'Installation is 46 of 177 (26.0%).',
     ])
   })
 
@@ -192,9 +193,10 @@ describe('RootCauseParetoPage, All issues', () => {
     expect(panel?.querySelector('.qaqc-pareto-side-note')?.textContent).toBe("177 issues · WW46'2024 to WW42'2026")
     expect([...(panel?.querySelectorAll('.qaqc-pareto-categories li span') ?? [])].map((node) => node.textContent)).toEqual([
       'Quality',
-      'Design',
       'Coordination',
+      'Design',
       'Safety',
+      'Not recorded',
     ])
     expect(panel?.querySelector('.qaqc-pareto-other h4')?.textContent).toBe('Inside Other (18 causes)')
   })
@@ -204,19 +206,19 @@ describe('RootCauseParetoPage, Open only', () => {
   it('recounts the open issues as of the selected week', () => {
     view = draw()
     click(button(view.container, 'Open only'))
-    expect(chartNote(view.container)).toBe("51 open as of WW42'2026 · 18 distinct causes")
+    expect(chartNote(view.container)).toBe("51 open as of WW42'2026 · 15 distinct causes")
     expect(view.container.querySelector('.qaqc-pareto-side-note')?.textContent).toBe("51 open issues · WW46'2024 to WW42'2026")
   })
 
-  it('reaches 80% at Incomplete Work, so the bars after it are muted', () => {
+  it('reaches 80% at Trade Damage, so the bars after it are muted', () => {
     view = draw()
     click(button(view.container, 'Open only'))
     const vital = view.container.querySelectorAll('.qaqc-pareto-bar.is-vital')
-    expect(vital).toHaveLength(9)
-    expect(axisLabels(view.container)[8]).toBe('Incomplete Work')
-    expect(view.container.querySelectorAll('.qaqc-pareto-bar.is-beyond')).toHaveLength(1)
+    expect(vital).toHaveLength(6)
+    expect(axisLabels(view.container)[5]).toBe('Trade Damage')
+    expect(view.container.querySelectorAll('.qaqc-pareto-bar.is-beyond')).toHaveLength(4)
     const lineLabels = [...view.container.querySelectorAll('.qaqc-pareto-value.qaqc-end-label')].map((node) => node.textContent)
-    expect(lineLabels).toEqual(['82.4% · 80% reached', '100.0%'])
+    expect(lineLabels).toEqual(['81.6% · 80% reached', '100.0%'])
   })
 
   it('marks Open only as the pressed scope', () => {
@@ -231,7 +233,7 @@ describe('RootCauseParetoPage selection', () => {
   it('follows a bar click in the drill-down table', () => {
     view = draw()
     clickBar(view.container, 'Coordination')
-    expect(drillHeading(view.container).slice(0, 2)).toEqual(['Coordination', '21 issues'])
+    expect(drillHeading(view.container).slice(0, 2)).toEqual(['Coordination', '24 issues'])
     expect(axisLabels(view.container)[1]).toBe('Coordination')
     expect(view.container.querySelectorAll('.qaqc-pareto-axis-label.is-selected')[0]?.textContent).toBe('Coordination')
   })
@@ -246,27 +248,29 @@ describe('RootCauseParetoPage selection', () => {
     press(chart, 'ArrowRight')
     press(chart, 'ArrowRight')
     press(chart, 'Enter')
-    expect(drillHeading(view.container)[0]).toBe('Casting/Pouring/Erection')
+    expect(drillHeading(view.container)[0]).toBe('Incomplete Work')
   })
 
   it('keeps the selected cause when it is still a bar after the scope changes', () => {
     view = draw()
     clickBar(view.container, 'Coordination')
     click(button(view.container, 'Open only'))
-    expect(drillHeading(view.container).slice(0, 2)).toEqual(['Coordination', '6 issues'])
+    expect(drillHeading(view.container).slice(0, 2)).toEqual(['Coordination', '9 issues'])
   })
 
   it('goes back to the top bar when the selected cause folds into Other', () => {
     view = draw()
-    clickBar(view.container, 'Documentation Incomplete')
-    expect(drillHeading(view.container)[0]).toBe('Documentation Incomplete')
+    clickBar(view.container, 'Housekeeping')
+    expect(drillHeading(view.container)[0]).toBe('Housekeeping')
     click(button(view.container, 'Open only'))
-    expect(drillHeading(view.container).slice(0, 2)).toEqual(['Installation', '18 issues'])
+    expect(axisLabels(view.container)).not.toContain('Housekeeping')
+    expect(drillHeading(view.container).slice(0, 2)).toEqual(['Installation', '11 issues'])
   })
 
   it('goes back to the top bar when the period changes and the cause is gone', () => {
     view = draw()
-    clickBar(view.container, 'Documentation Incomplete')
+    clickBar(view.container, 'Bonding')
+    expect(drillHeading(view.container)[0]).toBe('Bonding')
     const element = (
       <RootCauseParetoPage
         index={INDEX}
@@ -282,7 +286,7 @@ describe('RootCauseParetoPage selection', () => {
     view.rerender(element)
     const first = axisLabels(view.container)[0]
     expect(drillHeading(view.container)[0]).toBe(first)
-    expect(axisLabels(view.container)).not.toContain('Documentation Incomplete')
+    expect(axisLabels(view.container)).not.toContain('Bonding')
   })
 })
 
@@ -302,8 +306,8 @@ describe('RootCauseParetoPage drill-down table', () => {
   it('lists open issues oldest first with their age, and closed issues with their time to close', () => {
     view = draw()
     const rows = drillRows(view.container)
-    expect(rows[0][0]).toBe('#815')
-    expect(rows[0][5]).toBe('380 d old')
+    expect(rows[0][0]).toBe('#367')
+    expect(rows[0][5]).toBe('700 d old')
     expect(rows[0][4]).toMatch(/^\d\d\/\d\d\/\d\d$/)
     expect(drill(view.container).querySelector('tbody .qaqc-status-pill')).not.toBeNull()
   })
@@ -311,23 +315,23 @@ describe('RootCauseParetoPage drill-down table', () => {
   it('windows the rows', () => {
     view = draw()
     const table = drill(view.container).querySelector('table')
-    expect(table?.getAttribute('aria-rowcount')).toBe('49')
-    expect(drillRows(view.container).length).toBeLessThan(48)
+    expect(table?.getAttribute('aria-rowcount')).toBe('47')
+    expect(drillRows(view.container).length).toBeLessThan(46)
   })
 
   it('sorts by any column, starting the day counts largest first', () => {
     view = draw()
     sortBy(view.container, 'Age / To close')
     sortBy(view.container, 'Age / To close')
-    expect(drillRows(view.container)[0].slice(0, 1)).toEqual(['#925'])
-    expect(drillRows(view.container)[0][5]).toBe('2 d to close')
+    expect(drillRows(view.container)[0].slice(0, 1)).toEqual(['#1018'])
+    expect(drillRows(view.container)[0][5]).toBe('0 d to close')
     expect(drill(view.container).querySelector('.qaqc-pareto-table-note')?.textContent).toContain('sorted by Age / To close')
   })
 
   it('sorts IDs numerically', () => {
     view = draw()
     sortBy(view.container, 'ID')
-    expect(drillRows(view.container)[0][0]).toBe('#472')
+    expect(drillRows(view.container)[0][0]).toBe('#367')
   })
 
   it('starts unsorted again for another bar', () => {
@@ -346,7 +350,7 @@ describe('RootCauseParetoPage without categories or issues', () => {
   it('hides the category panel and shows the read-out under the chart when Root Cause Category is unbound', () => {
     view = draw({ index: indexWithout('rootCauseCategory') })
     expect(view.container.querySelector('section.qaqc-pareto-side')).toBeNull()
-    expect(view.container.querySelector('.qaqc-pareto-chart-panel .qaqc-pareto-readout')?.textContent).toContain('Installation is 48 of 177')
+    expect(view.container.querySelector('.qaqc-pareto-chart-panel .qaqc-pareto-readout')?.textContent).toContain('Installation is 46 of 177')
   })
 
   it('says so when no issue is open in the period', () => {

@@ -8,6 +8,8 @@ import { render, type Rendered } from './render'
 const INDEX = agingIndex()
 const AT_WW42 = buildIssueBenchmarks(INDEX, WW42, INDEX.today)
 const AT_WW30 = buildIssueBenchmarks(INDEX, WW30, INDEX.today)
+// The only weeks of the issue log fixture with every open issue past the window are WW01 and WW02'2025.
+const AT_WW02_2025 = buildIssueBenchmarks(INDEX, 202502, INDEX.today)
 const NO_CLOSURES_INDEX = noClosuresIndex()
 const NO_CLOSURES = buildIssueBenchmarks(NO_CLOSURES_INDEX, WW42, NO_CLOSURES_INDEX.today)
 
@@ -48,22 +50,22 @@ function bucket(key: string, count: number, tone: AgeBucketTone): AgeBucket {
 }
 
 describe('AgeBucketsChart bars', () => {
-  it("draws a bar for each bucket with issues, in bad red past the WW42'2026 window", () => {
+  it("draws a bar for each bucket with issues, good inside and bad red past the WW42'2026 window", () => {
     view = draw(AT_WW42)
-    expect(barFills(view.container)).toEqual(Array(4).fill(AGING_COLORS.bad))
+    expect(barFills(view.container)).toEqual([AGING_COLORS.good, AGING_COLORS.bad, AGING_COLORS.bad, AGING_COLORS.bad])
   })
 
   it('labels every bucket with its count, including the empty ones', () => {
     view = draw(AT_WW42)
-    expect(texts(view.container, '.qaqc-aging-count')).toEqual(['0', '0', '3', '10', '19', '19'])
+    expect(texts(view.container, '.qaqc-aging-count')).toEqual(['0', '2', '0', '4', '14', '31'])
   })
 
   it('names each bucket and its day range under the axis', () => {
     view = draw(AT_WW42)
     expect(texts(view.container, '.qaqc-aging-bucket-label')).toEqual([
-      'Under 1 month', '1 month – 77 days', '78 days – 3 months', '3–6 months', '6–12 months', '12+ months',
+      'Under 1 month', '1 month – 81 days', '82 days – 3 months', '3–6 months', '6–12 months', '12+ months',
     ])
-    expect(texts(view.container, '.qaqc-aging-bucket-range')[1]).toBe('30–77 days')
+    expect(texts(view.container, '.qaqc-aging-bucket-range')[1]).toBe('30–81 days')
   })
 
   it('colors inside buckets good, a straddling bucket warn and past buckets bad', () => {
@@ -71,9 +73,9 @@ describe('AgeBucketsChart bars', () => {
     expect(barFills(view.container)).toEqual([AGING_COLORS.good, AGING_COLORS.warn, AGING_COLORS.bad])
   })
 
-  it('puts the WW30 open issues in 5 / 6 / 0 / 6 / 33 / 0', () => {
+  it('puts the WW30 open issues in 8 / 9 / 0 / 7 / 10 / 28', () => {
     view = draw(AT_WW30)
-    expect(texts(view.container, '.qaqc-aging-count')).toEqual(['5', '6', '0', '6', '33', '0'])
+    expect(texts(view.container, '.qaqc-aging-count')).toEqual(['8', '9', '0', '7', '10', '28'])
   })
 })
 
@@ -81,12 +83,12 @@ describe('AgeBucketsChart window', () => {
   it('draws the normal close window band with its label', () => {
     view = draw(AT_WW42)
     expect(view.container.querySelector('.qaqc-aging-band')).not.toBeNull()
-    expect(texts(view.container, '.qaqc-aging-band-label')).toEqual(['Normal close window', '90% of issues close within 77 days'])
+    expect(texts(view.container, '.qaqc-aging-band-label')).toEqual(['Normal close window', '90% of issues close within 81 days'])
   })
 
   it('marks the typical close time', () => {
     view = draw(AT_WW42)
-    expect(texts(view.container, '.qaqc-aging-typical-label')).toEqual(['typical: 32 d'])
+    expect(texts(view.container, '.qaqc-aging-typical-label')).toEqual(['typical: 43 d'])
   })
 
   it('draws the typical marker line', () => {
@@ -100,7 +102,7 @@ describe('AgeBucketsChart window', () => {
     expect(all(view.container, '.qaqc-aging-typical-marker')).toHaveLength(1)
   })
 
-  it('draws the band from the left of the plot to the window edge, between the 77 and 78 day buckets', () => {
+  it('draws the band from the left of the plot to the window edge, between the 81 and 82 day buckets', () => {
     view = draw(AT_WW42)
     const band = view.container.querySelector('.qaqc-aging-band')
     const ticks = all(view.container, '.qaqc-aging-bucket-label').map((node) => Number(node.getAttribute('x')))
@@ -126,12 +128,12 @@ describe('AgeBucketsChart window', () => {
 })
 
 describe('AgeBucketsChart caption', () => {
-  it('says all open issues are past the window at WW42', () => {
-    expect(agingCaption(AT_WW42)).toBe('All 51 open issues are older than the normal close window.')
+  it("says all open issues are past the window at WW02'2025", () => {
+    expect(agingCaption(AT_WW02_2025)).toBe('All 22 open issues are older than the normal close window.')
   })
 
   it('says how many of the open issues are past the window at WW30', () => {
-    expect(agingCaption(AT_WW30)).toBe('39 of 50 open issues are older than the normal close window.')
+    expect(agingCaption(AT_WW30)).toBe('45 of 62 open issues are older than the normal close window.')
   })
 
   it('says there is no window yet without closures', () => {
@@ -142,7 +144,7 @@ describe('AgeBucketsChart caption', () => {
     view = draw(AT_WW42)
     const caption = view.container.querySelector('.qaqc-aging-caption')
     expect(caption?.classList.contains('is-bad')).toBe(true)
-    expect(caption?.textContent).toBe('All 51 open issues are older than the normal close window. Click a bar to see its issues.')
+    expect(caption?.textContent).toBe('49 of 51 open issues are older than the normal close window. Click a bar to see its issues.')
     expect(caption?.querySelector('.qaqc-aging-caption-hint')?.textContent).toBe(' Click a bar to see its issues.')
   })
 })
@@ -171,7 +173,7 @@ describe('AgeBucketsChart clicks', () => {
     const full = bucketGroup(view.container, '12+ months')
     expect(full.getAttribute('role')).toBe('button')
     expect(full.getAttribute('tabindex')).toBe('0')
-    expect(full.getAttribute('aria-label')).toBe('12+ months: 19 open issues. Press Enter to view them.')
+    expect(full.getAttribute('aria-label')).toBe('12+ months: 31 open issues. Press Enter to view them.')
   })
 
   it('does nothing when an empty bucket is clicked or Enter is pressed on it', () => {
@@ -200,12 +202,13 @@ describe('AgeBucketsChart clicks', () => {
   it('names the oldest issues in the tooltip and ends with the click hint', () => {
     const onHover = vi.fn()
     view = draw(AT_WW42, { onHover })
-    fire(bucketGroup(view.container, '12+ months'), new MouseEvent('mousemove', { bubbles: true, clientX: 5, clientY: 6 }))
+    // #933 and #934 tie as the oldest of 3–6 months.
+    fire(bucketGroup(view.container, '3–6 months'), new MouseEvent('mousemove', { bubbles: true, clientX: 5, clientY: 6 }))
     expect(onHover).toHaveBeenLastCalledWith({
-      title: '12+ months (365+ days)',
+      title: '3–6 months (90–179 days)',
       rows: [
-        { label: 'Open issues', value: '19' },
-        { label: 'Oldest', value: '#759, #760 (413 d)' },
+        { label: 'Open issues', value: '4' },
+        { label: 'Oldest', value: '#933, #934 (160 d)' },
         { label: 'Click to view these issues', value: '' },
       ],
       clientX: 5,
@@ -234,7 +237,7 @@ describe('AgeBucketsChart labels', () => {
 
   it('falls back to the short day ranges when the bucket names do not fit', () => {
     view = draw(AT_WW42, { width: 520, height: 320 })
-    expect(texts(view.container, '.qaqc-aging-bucket-label')).toEqual(['0–29 d', '30–77 d', '78–89 d', '90–179 d', '180–364 d', '365+ d'])
+    expect(texts(view.container, '.qaqc-aging-bucket-label')).toEqual(['0–29 d', '30–81 d', '82–89 d', '90–179 d', '180–364 d', '365+ d'])
     expect(view.container.querySelector('.qaqc-aging-bucket-range')).toBeNull()
   })
 })

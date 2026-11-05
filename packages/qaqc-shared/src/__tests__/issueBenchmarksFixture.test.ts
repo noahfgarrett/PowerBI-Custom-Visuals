@@ -23,7 +23,9 @@ const WW42 = 202642
 const WW30 = 202630
 const index = buildIssueIndex(ISSUE_ROWS, COLUMNS, TODAY)
 
-describe("issue benchmarks as of WW42'2026 (October export)", () => {
+// Expected values are pinned to the seeded synthetic fixtures from scripts/generate-qaqc-fixtures.mjs.
+
+describe("issue benchmarks as of WW42'2026 (issue log fixture)", () => {
   const benchmarks = buildIssueBenchmarks(index, WW42, TODAY)
 
   it('counts 126 closures', () => {
@@ -31,91 +33,91 @@ describe("issue benchmarks as of WW42'2026 (October export)", () => {
     expect(benchmarks.closedWithoutDate).toBe(0)
   })
 
-  it('closes typically in 32 days, 90% within 77 days, the slowest in 314 days', () => {
-    expect(benchmarks.typical).toBe(32)
-    expect(benchmarks.window).toBe(77)
-    expect(benchmarks.slowest).toBe(314)
+  it('closes typically in 43 days, 90% within 81 days, the slowest in 90 days', () => {
+    expect(benchmarks.typical).toBe(43)
+    expect(benchmarks.window).toBe(81)
+    expect(benchmarks.slowest).toBe(90)
   })
 
-  it('has 51 open issues, all 51 past the window and 28 older than any closure', () => {
+  it('has 51 open issues, 49 past the window and 49 older than any closure', () => {
     expect(benchmarks.open).toHaveLength(51)
-    expect(benchmarks.pastWindow).toBe(51)
-    expect(benchmarks.olderThanAny).toBe(28)
+    expect(benchmarks.pastWindow).toBe(49)
+    expect(benchmarks.olderThanAny).toBe(49)
   })
 
   it('has the same open count as WW41', () => {
     expect(benchmarks.openDelta).toBe(0)
   })
 
-  it('has a median open age of 351 days', () => {
-    expect(benchmarks.medianOpenAge).toBe(351)
+  it('has a median open age of 462 days', () => {
+    expect(benchmarks.medianOpenAge).toBe(462)
   })
 
-  it('has #759 and #760 as the oldest open issues at 413 days', () => {
-    const [first, second, third] = benchmarks.open
-    expect([first.issue.id, first.age]).toEqual(['#759', 413])
-    expect([second.issue.id, second.age]).toEqual(['#760', 413])
-    expect(third.age).toBeLessThan(413)
+  it('has #367 as the oldest open issue at 700 days, then #378 and #379 tied at 689 days in ID order', () => {
+    const [first, second, third, fourth] = benchmarks.open
+    expect([first.issue.id, first.age]).toEqual(['#367', 700])
+    expect([second.issue.id, second.age]).toEqual(['#378', 689])
+    expect([third.issue.id, third.age]).toEqual(['#379', 689])
+    expect(fourth.age).toBeLessThan(689)
   })
 
-  it('buckets the open issues 0 / 0 / 3 / 10 / 19 / 19', () => {
+  it('buckets the open issues 0 / 2 / 0 / 4 / 14 / 31', () => {
     const buckets = ageBuckets(benchmarks)
     expect(buckets.map((bucket) => [bucket.label, bucket.count])).toEqual([
       ['Under 1 month', 0],
-      ['1 month – 77 days', 0],
-      ['78 days – 3 months', 3],
-      ['3–6 months', 10],
-      ['6–12 months', 19],
-      ['12+ months', 19],
+      ['1 month – 81 days', 2],
+      ['82 days – 3 months', 0],
+      ['3–6 months', 4],
+      ['6–12 months', 14],
+      ['12+ months', 31],
     ])
   })
 
-  it('ends the backlog age line at 351 days with 51 open', () => {
+  it('ends the backlog age line at 462 days with 51 open', () => {
     const profile = agingProfile(index, { selectedKey: WW42, windowEndKey: WW42, range: 'recent', dateRange: null }, TODAY)
     expect(profile).toHaveLength(30)
-    expect(profile[29]).toMatchObject({ median: 351, open: 51 })
+    expect(profile[29]).toMatchObject({ median: 462, open: 51 })
   })
 })
 
 describe("issue benchmarks as of WW30'2026", () => {
   const benchmarks = buildIssueBenchmarks(index, WW30, TODAY)
 
-  it('has 50 open issues and 39 past the window', () => {
-    expect(benchmarks.open).toHaveLength(50)
-    expect(benchmarks.pastWindow).toBe(39)
+  it('has 62 open issues and 45 past the window', () => {
+    expect(benchmarks.open).toHaveLength(62)
+    expect(benchmarks.pastWindow).toBe(45)
   })
 
-  it('recomputes the window as 77 days from 125 closures', () => {
-    expect(benchmarks.closures).toBe(125)
-    expect(benchmarks.window).toBe(77)
+  it('recomputes the window as 82 days from 112 closures', () => {
+    expect(benchmarks.closures).toBe(112)
+    expect(benchmarks.window).toBe(82)
   })
 
-  it('buckets the open issues 5 / 6 / 0 / 6 / 33 / 0', () => {
-    expect(ageBuckets(benchmarks).map((bucket) => bucket.count)).toEqual([5, 6, 0, 6, 33, 0])
+  it('buckets the open issues 8 / 9 / 0 / 7 / 10 / 28', () => {
+    expect(ageBuckets(benchmarks).map((bucket) => bucket.count)).toEqual([8, 9, 0, 7, 10, 28])
   })
 })
 
 describe("quarterly median days to close as of WW42'2026", () => {
   const points = quarterMedians(index, WW42, TODAY)
 
-  it("runs Q4'24 to Q4'26 with each median and closed count", () => {
+  it("runs Q1'25 to Q4'26 with each median and closed count", () => {
     expect(points.map((point) => [point.label, point.median, point.closed])).toEqual([
-      ["Q4'24", 30, 2],
-      ["Q1'25", 19, 3],
-      ["Q2'25", 14, 8],
-      ["Q3'25", 22.5, 32],
-      ["Q4'25", 59, 45],
-      ["Q1'26", 13.5, 10],
-      ["Q2'26", 16, 17],
-      ["Q3'26", 32, 9],
+      ["Q1'25", 43.5, 20],
+      ["Q2'25", 60, 19],
+      ["Q3'25", 28, 13],
+      ["Q4'25", 41.5, 16],
+      ["Q1'26", 46, 18],
+      ["Q2'26", 54.5, 20],
+      ["Q3'26", 34, 20],
       ["Q4'26", null, 0],
     ])
   })
 
-  it("has Q4'25 as the only quarter slower than typical", () => {
+  it("has Q1'25, Q2'25, Q1'26 and Q2'26 as the quarters slower than typical", () => {
     const typical = buildIssueBenchmarks(index, WW42, TODAY).typical ?? 0
     const slower = points.filter((point) => point.median !== null && point.median > typical).map((point) => point.label)
-    expect(slower).toEqual(["Q4'25"])
+    expect(slower).toEqual(["Q1'25", "Q2'25", "Q1'26", "Q2'26"])
   })
 
   it('counts every closure once', () => {

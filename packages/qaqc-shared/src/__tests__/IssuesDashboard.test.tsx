@@ -253,30 +253,31 @@ describe('IssuesDashboard cards', () => {
     expect(cardDetail(container, 'Closure Rate')).toBe("No change vs WW41'2026")
   })
 
-  it('shows the WW31 activity when WW31 is picked', () => {
+  // WW01'2026: 3 opened (2 the week before), 1 closed (1 the week before), so Remaining Open rises and the rate falls.
+  it('shows the WW01 activity when WW01 is picked', () => {
     view = draw()
-    pickWeekInDropdown(view.container, '202631')
+    pickWeekInDropdown(view.container, '202601')
     const { container } = view
-    expect(weekSubtitle(container)).toBe("WW31'2026")
-    expect(cardValue(container, 'Issues Opened')).toBe('2')
-    expect(cardDetail(container, 'Issues Opened')).toBe("+1 vs WW30'2026")
+    expect(weekSubtitle(container)).toBe("WW01'2026")
+    expect(cardValue(container, 'Issues Opened')).toBe('3')
+    expect(cardDetail(container, 'Issues Opened')).toBe("+1 vs WW52'2025")
     expect(cardValue(container, 'Issues Closed')).toBe('1')
-    expect(cardDetail(container, 'Issues Closed')).toBe("No change vs WW30'2026")
+    expect(cardDetail(container, 'Issues Closed')).toBe("No change vs WW52'2025")
   })
 
   it('shows the project-to-date change in the picked week', () => {
     view = draw()
-    pickWeekInDropdown(view.container, '202631')
+    pickWeekInDropdown(view.container, '202601')
     const { container } = view
-    expect(cardDetail(container, 'Total Opened')).toBe('+2 this WW')
+    expect(cardDetail(container, 'Total Opened')).toBe('+3 this WW')
     expect(cardDetail(container, 'Total Closed')).toBe('+1 this WW')
-    expect(cardDetail(container, 'Remaining Open')).toBe('+1 this WW')
-    expect(cardDetail(container, 'Closure Rate')).toBe("−0.2 pts vs WW30'2026")
+    expect(cardDetail(container, 'Remaining Open')).toBe('+2 this WW')
+    expect(cardDetail(container, 'Closure Rate')).toBe("−0.7 pts vs WW52'2025")
   })
 
   it('colors each card with the model tone', () => {
     view = draw()
-    pickWeekInDropdown(view.container, '202631')
+    pickWeekInDropdown(view.container, '202601')
     const { container } = view
     expect(cardTone(container, 'Issues Opened')).toBe('is-warn')
     expect(cardTone(container, 'Issues Closed')).toBe('is-good')
@@ -416,7 +417,7 @@ describe('IssuesDashboard week and window', () => {
     view = draw()
     clickHit(view.container, '202631')
     expect(weekSubtitle(view.container)).toBe("WW31'2026")
-    expect(cardValue(view.container, 'Issues Opened')).toBe('2')
+    expect(cardValue(view.container, 'Issues Opened')).toBe('3')
     expect(lastHitWeek(view.container)).toBe('202642')
   })
 
@@ -450,7 +451,7 @@ describe('IssuesDashboard expanded charts', () => {
     const terms = [...open.querySelectorAll('.qaqc-summary dt')].map((node) => node.textContent)
     const values = [...open.querySelectorAll('.qaqc-summary dd')].map((node) => node.textContent)
     expect(terms).toEqual(['Opened', 'Closed', 'Change in remaining', 'Closure rate'])
-    expect(values).toEqual(['37', '27', '+10', '71.2%'])
+    expect(values).toEqual(['37', '41', '−4', '71.2%'])
     expect(view.container.querySelector('.qaqc-root.is-expanded')).not.toBeNull()
   })
 
@@ -477,9 +478,9 @@ describe('IssuesDashboard expanded charts', () => {
     expect(open.querySelectorAll('.qaqc-aging-row')).toHaveLength(3)
     const rows = [...open.querySelectorAll('table.qaqc-table tbody tr')].map((row) => [...row.children].map((cell) => cell.textContent))
     expect(rows).toEqual([
-      ['0-14 Days', '38', '38', '0'],
-      ['14-28 Days', '19', '19', '0'],
-      ['28+ Days', '120', '69', '51'],
+      ['0-14 Days', '21', '21', '0'],
+      ['14-28 Days', '14', '14', '0'],
+      ['28+ Days', '142', '91', '51'],
     ])
   })
 
@@ -510,11 +511,11 @@ describe('IssuesDashboard Issue Detail', () => {
     view = draw()
     pickWeekInDropdown(view.container, '202632')
     const open = openDetail(view.container)
-    expect(detailRowIds(open).slice(0, 4)).toEqual(['#1020', '#1019', '#1004', '#1018'])
-    expect(open.querySelector('tbody tr[aria-rowindex="4"]')?.classList.contains('is-discussion')).toBe(false)
-    expect(open.querySelector('tbody tr[aria-rowindex="5"]')?.classList.contains('is-discussion')).toBe(true)
+    expect(detailRowIds(open).slice(0, 4)).toEqual(['#1020', '#1018', '#1016', '#1011'])
+    expect(open.querySelector('tbody tr[aria-rowindex="17"]')?.classList.contains('is-discussion')).toBe(false)
+    expect(open.querySelector('tbody tr[aria-rowindex="18"]')?.classList.contains('is-discussion')).toBe(true)
     const legend = [...open.querySelectorAll('.qaqc-issue-detail-legend li')].map((item) => item.textContent)
-    expect(legend).toEqual(['Reporting week3', 'Open for discussion49'])
+    expect(legend).toEqual(['Reporting week16', 'Open for discussion49'])
   })
 
   it('builds the detail only while the page is open', () => {
@@ -609,15 +610,15 @@ describe('IssuesDashboard Issues by Root Cause Pareto', () => {
     expect(view.container.querySelector('.qaqc-root')?.hasAttribute('inert')).toBe(true)
   })
 
-  it('shows Installation 48 and the read-out over every week', () => {
+  it('shows Installation 46 and the read-out over every week', () => {
     stubSize()
     view = draw()
     clickRange(view.container, 'All')
     const open = openPareto(view.container, PARETO_ALL_TITLE)
     const counts = [...open.querySelectorAll('.qaqc-pareto-value.qaqc-bar-value')].map((node) => node.textContent)
-    expect(counts[0]).toBe('48')
+    expect(counts[0]).toBe('46')
     expect(open.querySelector('.qaqc-pareto-table h3')?.textContent).toBe('Installation')
-    expect(open.querySelector('.qaqc-pareto-readout')?.textContent).toContain('Installation is 48 of 177 (27.1%).')
+    expect(open.querySelector('.qaqc-pareto-readout')?.textContent).toContain('Installation is 46 of 177 (26.0%).')
   })
 
   it("changes the dashboard's range from the page, and the title follows", () => {
@@ -674,7 +675,7 @@ describe('IssuesDashboard Issues by Root Cause Pareto', () => {
 })
 
 describe('IssuesDashboard filters', () => {
-  const FILTER_TODAY = new Date(2026, 10, 4) // WW45'2026, after the export of 20 Oct
+  const FILTER_TODAY = new Date(2026, 10, 4) // WW45'2026, after the fixture's last update (19 Oct)
   const BASE = buildIssueIndex(ENRICHED_ISSUE_ROWS, ENRICHED_COLUMNS, FILTER_TODAY)
   const NOTES = buildIssueFootnotes(BASE, false)
   const UNBOUND_COMPANY: IssueColumns = { ...ENRICHED_COLUMNS, createdByCompany: -1 }
@@ -755,7 +756,7 @@ describe('IssuesDashboard filters', () => {
     const container = drawEnriched()
     openMenu(container)
     tickCompanies(container, 'Greyfox', 'Bayside')
-    expect(toDateValues(container)).toEqual(['269', '211', '58', '78.4%'])
+    expect(toDateValues(container)).toEqual(['269', '213', '56', '79.2%'])
     expect(chipTexts(container)).toEqual(['Created By (Company): LotusWorks, Bayside, Greyfox'])
     expect(badge(container)).toBe('1')
   })
@@ -852,21 +853,21 @@ describe('IssuesDashboard filters', () => {
   it('a filter never shortens the axis', () => {
     const container = drawEnriched()
     clickRange(container, 'All')
-    expect(mainHitWeeks(container)[0]).toBe('202446')
+    expect(mainHitWeeks(container)[0]).toBe('202213')
     openMenu(container)
     toggleSection(container, 'Status')
     click(checkbox(container, 'Pending'))
     const firstPending = Math.min(...BASE.issues.filter((issue) => issue.statusKind === 'pending').map((issue) => issue.createdWeek.key))
-    expect(firstPending).toBeGreaterThan(202446)
-    expect(mainHitWeeks(container)[0]).toBe('202446')
+    expect(firstPending).toBeGreaterThan(202213)
+    expect(mainHitWeeks(container)[0]).toBe('202213')
   })
 
   it('a company with earlier issues widens the axis to them', () => {
     const container = drawEnriched()
     clickRange(container, 'All')
     openMenu(container)
-    tickCompanies(container, 'Greyfox')
-    expect(mainHitWeeks(container)[0]).toBe('202330')
+    tickCompanies(container, 'Ivory - Ops')
+    expect(mainHitWeeks(container)[0]).toBe('202209')
   })
 
   it('the Pareto and Issue Aging follow a field filter', () => {
@@ -890,11 +891,11 @@ describe('IssuesDashboard filters', () => {
   it('reaches a range before the default view\'s first week: charts show the range\'s weeks', () => {
     const container = drawEnriched()
     openMenu(container)
-    setRange(container, 202440, 202450)
+    setRange(container, 202209, 202220)
     const weeks = mainHitWeeks(container)
-    expect(weeks[0]).toBe('202440')
-    expect(weeks[weeks.length - 1]).toBe('202450')
-    expect(groupSubtitle(container)).toBe("WW40'2024 to WW50'2024")
+    expect(weeks[0]).toBe('202209')
+    expect(weeks[weeks.length - 1]).toBe('202220')
+    expect(groupSubtitle(container)).toBe("WW09'2022 to WW20'2022")
   })
 
   it('a current-week range keeps the real Remaining Open and the Aging charts', () => {
@@ -924,7 +925,8 @@ describe('IssuesDashboard filters', () => {
   it('a range before any issue shows the empty state, and Clear filters returns', () => {
     const container = drawEnriched()
     openMenu(container)
-    setRange(container, 202301, 202310)
+    // The default (LotusWorks) view's first issue is in WW13'2022; other companies' start in WW09.
+    setRange(container, 202209, 202212)
     expect(container.querySelector('.qaqc-filter-empty')?.textContent).toContain('There are no issues in this date range')
     expect(container.querySelector('.qaqc-kpi-row')).toBeNull()
     click(buttonNamed(container, 'Clear filters'))
@@ -1050,7 +1052,7 @@ describe('IssuesDashboard filters', () => {
 describe('IssuesDashboard week drill-down', () => {
   const FILTER_TODAY = new Date(2026, 10, 4)
   const BASE = buildIssueIndex(ENRICHED_ISSUE_ROWS, ENRICHED_COLUMNS, FILTER_TODAY)
-  // WW42: 2 opened, 1 closed. WW44: nothing, after the export.
+  // WW42: 3 opened, 3 closed. WW44: nothing, after the fixture's last update.
   const BUSY_KEY = 202642
   const QUIET_KEY = 202644
   const BUSY_TITLE = "Issues · WW42'2026"
@@ -1130,8 +1132,8 @@ describe('IssuesDashboard week drill-down', () => {
     const open = page(container)
     expect(open?.getAttribute('aria-label')).toBe(BUSY_TITLE)
     expect(open?.querySelector('h3')?.textContent).toBe(BUSY_TITLE)
-    expect(groupHeadings(container)).toEqual(['Opened (2)', 'Closed (1)'])
-    expect(open?.querySelector('.qaqc-week-issues-count')?.textContent).toBe("3 issues in WW42'2026")
+    expect(groupHeadings(container)).toEqual(['Opened (3)', 'Closed (3)'])
+    expect(open?.querySelector('.qaqc-week-issues-count')?.textContent).toBe("6 issues in WW42'2026")
   })
 
   it('counts an issue opened and closed in the same week once, with the split in the headings', () => {
@@ -1140,9 +1142,9 @@ describe('IssuesDashboard week drill-down', () => {
     click(checkbox(container, 'Greyfox'))
     click(checkbox(container, 'Bayside'))
     pressEscape(pick(container, '.qaqc-filter-popover', HTMLElement))
-    click(hit(container, 202640))
-    expect(groupHeadings(container)).toEqual(['Opened (2)', 'Closed (5)'])
-    expect(page(container)?.querySelector('.qaqc-week-issues-count')?.textContent).toBe("6 issues in WW40'2026")
+    click(hit(container, 202641))
+    expect(groupHeadings(container)).toEqual(['Opened (4)', 'Closed (3)'])
+    expect(page(container)?.querySelector('.qaqc-week-issues-count')?.textContent).toBe("6 issues in WW41'2026")
   })
 
   it('a click on a week with no activity only selects it', () => {
@@ -1203,8 +1205,9 @@ describe('IssuesDashboard week drill-down', () => {
     click(checkbox(container, 'Bayside'))
     pressEscape(pick(container, '.qaqc-filter-popover', HTMLElement))
     expect(expectGroupsToMatchChart(container, onHover)).toBeGreaterThan(10)
-    // Draws the page for every week of two long axes, which takes a while on a busy machine.
-  }, 30_000)
+    // Draws the page for every week of two long axes (about 240 weeks each, from WW13'2022), which takes a while on
+    // a busy machine.
+  }, 120_000)
 
   it('a closed row shows the week it closed, in the Closed group', () => {
     const container = drawDrill()
@@ -1267,10 +1270,10 @@ describe('IssuesDashboard week drill-down', () => {
     expect(open.querySelector('.qaqc-issue-detail-legend')?.textContent).toContain('56')
     click(pick(open, '.qaqc-back-button', HTMLButtonElement))
     openMenu(container)
-    click(checkbox(container, 'Greyfox'))
-    click(checkbox(container, 'Bayside'))
+    // Greyfox and Bayside have no open issues, so Ivory - Ops (6 open) shows the count following the filter.
+    click(checkbox(container, 'Ivory - Ops'))
     pressEscape(pick(container, '.qaqc-filter-popover', HTMLElement))
-    expect(openDetail(container).querySelector('.qaqc-issue-detail-legend')?.textContent).toContain('58')
+    expect(openDetail(container).querySelector('.qaqc-issue-detail-legend')?.textContent).toContain('62')
   })
 
   it('the Issue Aging page\'s Esc still closes its list before the page', () => {
@@ -1289,7 +1292,7 @@ describe('IssuesDashboard week drill-down', () => {
 
 describe('IssuesDashboard NCR Pass Rate', () => {
   const CARD = 'NCR Pass Rate'
-  const CARD_TODAY = new Date(2026, 10, 4) // WW45'2026, after the export of 20 Oct
+  const CARD_TODAY = new Date(2026, 10, 4) // WW45'2026, after the fixture's last update (19 Oct)
   const position = (name: (typeof COMBINED_COLUMNS)[number]): number => COMBINED_COLUMNS.indexOf(name)
   const COMBINED: CombinedColumns = {
     source: position('Source'),

@@ -11,6 +11,7 @@ import { render, type Rendered } from './render'
 
 const INDEX = agingIndex()
 const QUARTERS = quarterMedians(INDEX, WW42, INDEX.today)
+// 43 d is the issue log fixture's typical close time as of WW42'2026.
 
 let view: Rendered | null = null
 
@@ -21,7 +22,7 @@ afterEach(() => {
 
 function draw(overrides: Partial<QuarterCloseChartProps> = {}): Rendered {
   return render(
-    <QuarterCloseChart points={QUARTERS} typical={32} width={600} height={280} colors={AGING_COLORS} onHover={vi.fn()} {...overrides} />,
+    <QuarterCloseChart points={QUARTERS} typical={43} width={600} height={280} colors={AGING_COLORS} onHover={vi.fn()} {...overrides} />,
   )
 }
 
@@ -47,7 +48,7 @@ function quarterHit(root: ParentNode, label: string): Element {
 describe('QuarterCloseChart', () => {
   it("labels each quarter's median days to close", () => {
     view = draw()
-    expect(texts(view.container, '.qaqc-aging-label.is-median')).toEqual(['30 d', '19 d', '14 d', '22.5 d', '59 d', '13.5 d', '16 d', '32 d'])
+    expect(texts(view.container, '.qaqc-aging-label.is-median')).toEqual(['43.5 d', '60 d', '28 d', '41.5 d', '46 d', '54.5 d', '34 d'])
   })
 
   it("keeps the newest quarter's median label inside the right edge of a narrow chart", () => {
@@ -65,13 +66,13 @@ describe('QuarterCloseChart', () => {
 
   it('names every quarter under the axis, with its closed count', () => {
     view = draw()
-    expect(texts(view.container, '.qaqc-aging-quarter')).toEqual(["Q4'24", "Q1'25", "Q2'25", "Q3'25", "Q4'25", "Q1'26", "Q2'26", "Q3'26", "Q4'26"])
-    expect(texts(view.container, '.qaqc-aging-closed')).toEqual(['closed', '2', '3', '8', '32', '45', '10', '17', '9', '0'])
+    expect(texts(view.container, '.qaqc-aging-quarter')).toEqual(["Q1'25", "Q2'25", "Q3'25", "Q4'25", "Q1'26", "Q2'26", "Q3'26", "Q4'26"])
+    expect(texts(view.container, '.qaqc-aging-closed')).toEqual(['closed', '20', '19', '13', '16', '18', '20', '20', '0'])
   })
 
-  it('names all nine quarters and their closed counts in the 370 px side panel', () => {
+  it('names all eight quarters and their closed counts in the 370 px side panel', () => {
     view = draw({ width: 370, height: 290 })
-    expect(texts(view.container, '.qaqc-aging-quarter')).toHaveLength(9)
+    expect(texts(view.container, '.qaqc-aging-quarter')).toHaveLength(8)
     expect(texts(view.container, '.qaqc-aging-empty-quarter text')).toEqual(['no', 'closures'])
     expect(textCollisions(view.container)).toEqual([])
   })
@@ -79,8 +80,8 @@ describe('QuarterCloseChart', () => {
   it('colors quarters above typical warn and the rest good', () => {
     view = draw()
     const fills = all(view.container, '.qaqc-aging-quarter-bar').map((node) => node.getAttribute('fill'))
-    const good = AGING_COLORS.good
-    expect(fills).toEqual([good, good, good, good, AGING_COLORS.warn, good, good, good])
+    const { good, warn } = AGING_COLORS
+    expect(fills).toEqual([warn, warn, good, good, warn, warn, good])
   })
 
   it('draws an empty dashed slot for a quarter with no closures', () => {
@@ -109,14 +110,14 @@ describe('QuarterCloseChart', () => {
   it('shows the closed count, median, slowest and difference from typical in the tooltip', () => {
     const onHover = vi.fn()
     view = draw({ onHover })
-    fire(quarterHit(view.container, "Q4'25"), new MouseEvent('mousemove', { bubbles: true, clientX: 3, clientY: 4 }))
+    fire(quarterHit(view.container, "Q2'25"), new MouseEvent('mousemove', { bubbles: true, clientX: 3, clientY: 4 }))
     expect(onHover).toHaveBeenLastCalledWith({
-      title: "Q4'25",
+      title: "Q2'25",
       rows: [
-        { label: 'Closed', value: '45' },
-        { label: 'Median days to close', value: '59 d' },
-        { label: 'Slowest', value: `${QUARTERS[4].slowest} d` },
-        { label: 'vs typical', value: '27 d slower than typical' },
+        { label: 'Closed', value: '19' },
+        { label: 'Median days to close', value: '60 d' },
+        { label: 'Slowest', value: `${QUARTERS[1].slowest} d` },
+        { label: 'vs typical', value: '17 d slower than typical' },
       ],
       clientX: 3,
       clientY: 4,
@@ -126,20 +127,21 @@ describe('QuarterCloseChart', () => {
   it('says how much faster than typical a quarter under typical closed', () => {
     const onHover = vi.fn()
     view = draw({ onHover })
-    fire(quarterHit(view.container, "Q2'26"), new MouseEvent('mousemove', { bubbles: true }))
-    expect(onHover.mock.lastCall?.[0].rows[3]).toEqual({ label: 'vs typical', value: '16 d faster than typical' })
+    fire(quarterHit(view.container, "Q3'25"), new MouseEvent('mousemove', { bubbles: true }))
+    expect(onHover.mock.lastCall?.[0].rows[3]).toEqual({ label: 'vs typical', value: '15 d faster than typical' })
   })
 
   it('keeps half days in the difference from typical', () => {
     const onHover = vi.fn()
     view = draw({ onHover })
-    fire(quarterHit(view.container, "Q3'25"), new MouseEvent('mousemove', { bubbles: true }))
-    expect(onHover.mock.lastCall?.[0].rows[3]).toEqual({ label: 'vs typical', value: '9.5 d faster than typical' })
+    fire(quarterHit(view.container, "Q4'25"), new MouseEvent('mousemove', { bubbles: true }))
+    expect(onHover.mock.lastCall?.[0].rows[3]).toEqual({ label: 'vs typical', value: '1.5 d faster than typical' })
   })
 
   it('says a quarter at typical is the same as typical', () => {
+    // No quarter's median is exactly 43 d, so typical is set to Q3'26's 34 d.
     const onHover = vi.fn()
-    view = draw({ onHover })
+    view = draw({ onHover, typical: 34 })
     fire(quarterHit(view.container, "Q3'26"), new MouseEvent('mousemove', { bubbles: true }))
     expect(onHover.mock.lastCall?.[0].rows[3]).toEqual({ label: 'vs typical', value: 'same as typical' })
   })
@@ -147,9 +149,9 @@ describe('QuarterCloseChart', () => {
   it('reads out each quarter, its median and its closed count to screen readers', () => {
     view = draw()
     expect(view.container.querySelector('svg')?.getAttribute('aria-label')).toBe(
-      "Median days to close by calendar quarter, typical 32 d. Q4'24: 30 d, 2 closed; Q1'25: 19 d, 3 closed; "
-        + "Q2'25: 14 d, 8 closed; Q3'25: 22.5 d, 32 closed; Q4'25: 59 d, 45 closed; Q1'26: 13.5 d, 10 closed; "
-        + "Q2'26: 16 d, 17 closed; Q3'26: 32 d, 9 closed; Q4'26: no closures.",
+      "Median days to close by calendar quarter, typical 43 d. Q1'25: 43.5 d, 20 closed; Q2'25: 60 d, 19 closed; "
+        + "Q3'25: 28 d, 13 closed; Q4'25: 41.5 d, 16 closed; Q1'26: 46 d, 18 closed; Q2'26: 54.5 d, 20 closed; "
+        + "Q3'26: 34 d, 20 closed; Q4'26: no closures.",
     )
   })
 
@@ -160,7 +162,7 @@ describe('QuarterCloseChart', () => {
 
   it('reads out the quarters without a typical close time', () => {
     view = draw({ points: QUARTERS.slice(0, 1), typical: null })
-    expect(view.container.querySelector('svg')?.getAttribute('aria-label')).toBe("Median days to close by calendar quarter. Q4'24: 30 d, 2 closed.")
+    expect(view.container.querySelector('svg')?.getAttribute('aria-label')).toBe("Median days to close by calendar quarter. Q1'25: 43.5 d, 20 closed.")
   })
 
   it('shows only the closed count for a quarter with no closures', () => {
@@ -171,11 +173,11 @@ describe('QuarterCloseChart', () => {
   })
 
   it('keys the legend to typical', () => {
-    expect(quarterLegend(AGING_COLORS, 32).map((item) => item.label)).toEqual(['At or under typical', 'Slower than typical', 'Typical 32 d'])
+    expect(quarterLegend(AGING_COLORS, 43).map((item) => item.label)).toEqual(['At or under typical', 'Slower than typical', 'Typical 43 d'])
     expect(quarterLegend(AGING_COLORS, 22.5).map((item) => item.label)[2]).toBe('Typical 22.5 d')
   })
 
-  describe('with the enriched export, whose newest quarter is tall and sits at the right edge', () => {
+  describe("with the enriched fixture as of WW52'2024, whose newest quarter is tall and sits at the right edge", () => {
     const position = (name: (typeof ENRICHED_ISSUE_COLUMNS)[number]): number => ENRICHED_ISSUE_COLUMNS.indexOf(name)
     const columns: IssueColumns = {
       id: position('ID'),
@@ -195,12 +197,22 @@ describe('QuarterCloseChart', () => {
       closedAt: position('Closed at'),
     }
     const index = buildIssueIndex(ENRICHED_ISSUE_ROWS, columns, AGING_TODAY)
-    const points = quarterMedians(index, WW42, AGING_TODAY)
-    const typical = buildIssueBenchmarks(index, WW42, AGING_TODAY).typical
+    // As of WW52'2024 the fixture's quarters run Q2'22 to Q4'24, eleven of them, the newest at 108.5 d. As of WW42'2026
+    // there are nineteen, too many to label every bar in a side panel.
+    const asOf = 202452
+    const points = quarterMedians(index, asOf, AGING_TODAY)
+    const typical = buildIssueBenchmarks(index, asOf, AGING_TODAY).typical
 
-    // The newest label, 41.5 d, is wider than its slot below about 394 px; from about 349 px every neighbouring pair of
-    // labels fits side by side, so between them each bar can keep its label. The sizes: a narrower panel, the 370 px
-    // side panel, and the chart as drawn on the 1280 × 720 dashboard's Issue Aging page.
+    it("runs Q2'22 to Q4'24, ending with a tall 108.5 d", () => {
+      expect(points.map((point) => point.label)).toEqual([
+        "Q2'22", "Q3'22", "Q4'22", "Q1'23", "Q2'23", "Q3'23", "Q4'23", "Q1'24", "Q2'24", "Q3'24", "Q4'24",
+      ])
+      expect(points[points.length - 1].median).toBe(108.5)
+    })
+
+    // The newest label, 108.5 d, is wider than its slot at all three sizes, so it shifts inward to end at the plot edge.
+    // The sizes: a narrower panel, the 370 px side panel, and the chart as drawn on the 1280 × 720 dashboard's Issue
+    // Aging page.
     for (const [width, height] of [[355, 220], [370, 290], [382, 190]] as const) {
       it(`labels every bar, the newest included, inside the plot at ${width} × ${height}`, () => {
         view = draw({ points, typical, width, height })

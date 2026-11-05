@@ -177,10 +177,10 @@ describe('issueDrillColumns', () => {
     }
   })
 
-  it('shows Pending as Open, a blank Type as Uncategorized and the ID 1021 contractor default, as Issue Detail does', () => {
+  it('shows Pending as Open, a blank Type as Uncategorized and a blank Contractor as Unassigned, as Issue Detail does', () => {
     expect(cell(columns, 'Status', OPEN)).toBe('Open')
     expect(cell(columns, 'Subtype', OPEN)).toBe('Uncategorized')
-    expect(cell(columns, 'Contractor', OPEN)).toBe('Bayside')
+    expect(cell(columns, 'Contractor', OPEN)).toBe('Unassigned')
   })
 
   it('sorts weeks and dates by time, newest first, and a blank last', () => {

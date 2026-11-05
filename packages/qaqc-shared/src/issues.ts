@@ -29,7 +29,6 @@ import { formatWeekRange } from './weekRange'
 import { enumerateWorkWeeks, previousWorkWeek, toIsoWorkWeek, workWeekFromKey } from './workWeeks'
 
 export const DEFAULT_CONTRACTOR = 'Unassigned'
-export const ISSUE_1021_CONTRACTOR = 'Bayside'
 export const DEFAULT_SUBTYPE = 'Uncategorized'
 export const DEFAULT_TITLE = 'Untitled issue'
 export const LOTUSWORKS_COMPANY = 'LotusWorks'
@@ -67,10 +66,23 @@ export function contractorFilterValue(name: string): string {
   return groupKey(name) === UNASSIGNED_KEY ? '' : name
 }
 
-export function issueContractor(id: unknown, contractor: unknown): string {
+/**
+ * Contractors for issues whose Contractor cell is blank, keyed by the issue number (the ID's trailing digits). Empty
+ * by default, so a blank contractor reads as Unassigned. Pass entries when an export is known to have dropped the
+ * contractor on particular issues.
+ */
+export const NO_CONTRACTOR_OVERRIDES: ReadonlyMap<string, string> = new Map()
+
+export function issueContractor(
+  id: unknown,
+  contractor: unknown,
+  overrides: ReadonlyMap<string, string> = NO_CONTRACTOR_OVERRIDES,
+): string {
   const populated = cellText(contractor)
   if (populated) return populated
-  return TRAILING_DIGITS.exec(cellText(id))?.[0] === '1021' ? ISSUE_1021_CONTRACTOR : DEFAULT_CONTRACTOR
+  if (overrides.size === 0) return DEFAULT_CONTRACTOR
+  const number = TRAILING_DIGITS.exec(cellText(id))?.[0]
+  return (number === undefined ? undefined : overrides.get(number)) ?? DEFAULT_CONTRACTOR
 }
 
 export function issueSubtype(value: unknown): string {

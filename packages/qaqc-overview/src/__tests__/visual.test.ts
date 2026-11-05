@@ -83,7 +83,7 @@ const CREATED_BY = COMBINED_COLUMNS.indexOf('Created By')
 
 /**
  * The fixture with its first `count` open, LotusWorks-created CORs retyped as DWNs, so they count toward the DWN
- * rate. The October exports have no DWNs.
+ * rate. The fixtures have no DWNs.
  */
 function rowsWithDwns(count: number): Array<ReadonlyArray<string | number | null>> {
   let retyped = 0
@@ -321,9 +321,9 @@ describe('QaqcOverviewVisual dashboard', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(COMBINED_ROWS)))
     const { element } = harness
-    expect(cardValue(row(element, 'Electrical'), 'Finals')).toBe('3')
-    expect(cardValue(row(element, 'Mechanical'), 'SORs')).toBe('0')
-    expect(cardValue(row(element, 'Welding'), 'Signed')).toBe('70')
+    expect(cardValue(row(element, 'Electrical'), 'Finals')).toBe('4')
+    expect(cardValue(row(element, 'Mechanical'), 'SORs')).toBe('3')
+    expect(cardValue(row(element, 'Welding'), 'Signed')).toBe('59')
     expect(cardValue(row(element, 'BIM Issues'), 'Remaining open')).toBe('51')
     expect(cardValue(quality(element), 'Inspection NCR pass rate')).toBe('100.0%')
   })
@@ -337,7 +337,7 @@ describe('QaqcOverviewVisual dashboard', () => {
     expect(cardValue(row(element, 'Welding'), 'Welds logged')).toBe('1,751')
     expect(cardValue(row(element, 'BIM Issues'), 'Opened')).toBe('177')
     expect(cardValue(quality(element), 'CORs')).toBe('171')
-    expect(cardValue(quality(element), 'NCRs')).toBe('14')
+    expect(cardValue(quality(element), 'NCRs')).toBe('23')
   })
 
   it('shows Add Root Cause in the Top root cause card when Root Cause is unbound', () => {
@@ -354,7 +354,7 @@ describe('QaqcOverviewVisual dashboard', () => {
     click(modeButton(harness.element, 'To date'))
     const topCause = card(quality(harness.element), 'Top root cause')
     expect(topCause?.querySelector('.qaqc-kpi-value')?.textContent).toBe('Installation')
-    expect(topCause?.querySelector('.qaqc-kpi-detail')?.textContent).toBe('48 of 177 issues · 27%')
+    expect(topCause?.querySelector('.qaqc-kpi-detail')?.textContent).toBe('46 of 177 issues · 26%')
   })
 
   it('shows None opened this WW in the Top root cause card for WW42 when Root Cause is bound', () => {
@@ -368,9 +368,9 @@ describe('QaqcOverviewVisual dashboard', () => {
   it('shows the BIM issues past the normal close window in both modes', () => {
     harness = createHarness()
     apply(harness, update(tableDataView(COMBINED_ROWS)))
-    expect(cardValue(row(harness.element, 'BIM Issues'), 'Past normal close window')).toBe('51')
+    expect(cardValue(row(harness.element, 'BIM Issues'), 'Past normal close window')).toBe('49')
     click(modeButton(harness.element, 'To date'))
-    expect(cardValue(row(harness.element, 'BIM Issues'), 'Past normal close window')).toBe('51')
+    expect(cardValue(row(harness.element, 'BIM Issues'), 'Past normal close window')).toBe('49')
   })
 
   it('divides the DWNs to date by a bound Green tags value', () => {
@@ -425,13 +425,13 @@ describe('QaqcOverviewVisual dashboard', () => {
     apply(harness, update(tableDataView(COMBINED_ROWS, { objects: { colors: { preset: 'grayscale' } } }), undefined, 0, STYLE_UPDATE))
     expect(harness.element.style.getPropertyValue('--qaqc-series-1')).toBe('#3A3A3A')
     expect(indexBuilds.count).toBe(1)
-    expect(cardValue(row(harness.element, 'Electrical'), 'Finals')).toBe('3')
+    expect(cardValue(row(harness.element, 'Electrical'), 'Finals')).toBe('4')
   })
 
   it('shows the cards with disabled controls when interactions are not allowed', () => {
     harness = createHarness({ hostCapabilities: { allowInteractions: false } })
     apply(harness, update(tableDataView(COMBINED_ROWS)))
-    expect(cardValue(row(harness.element, 'Electrical'), 'Finals')).toBe('3')
+    expect(cardValue(row(harness.element, 'Electrical'), 'Finals')).toBe('4')
     expect(modeButton(harness.element, 'To date')?.disabled).toBe(true)
     expect(harness.element.querySelector('select')?.disabled).toBe(true)
   })
@@ -486,7 +486,7 @@ describe('QaqcOverviewVisual data loading', () => {
     expect(harness.element.querySelector('[role="progressbar"]')).not.toBeNull()
     apply(harness, update(tableDataView(COMBINED_ROWS), undefined, 1))
     expect(harness.element.querySelector('[role="progressbar"]')).toBeNull()
-    expect(cardValue(row(harness.element, 'Electrical'), 'Finals')).toBe('3')
+    expect(cardValue(row(harness.element, 'Electrical'), 'Finals')).toBe('4')
   })
 
   it('does not fetch more data on a non-data update', () => {
@@ -533,7 +533,7 @@ describe('QaqcOverviewVisual host integration', () => {
     applyOutsideAct(harness, update(tableDataView(COMBINED_ROWS)))
     dashboardControl.shouldThrow = false
     apply(harness, update(tableDataView(COMBINED_ROWS)))
-    expect(cardValue(row(harness.element, 'Electrical'), 'Finals')).toBe('3')
+    expect(cardValue(row(harness.element, 'Electrical'), 'Finals')).toBe('4')
     expect(harness.events.renderingFinished).toHaveBeenCalledTimes(1)
   })
 
@@ -604,7 +604,7 @@ describe('QaqcOverviewVisual with the enriched Autodesk export as the BIM source
     harness = createHarness()
     apply(harness, update(tableDataView(ENRICHED_COMBINED_ROWS, { roles: [...enrichedRoles] })))
     const bim = row(harness.element, 'BIM Issues')
-    expect(['Opened', 'Closed', 'Remaining open'].map((label) => cardValue(bim, label))).toEqual(['2', '1', '57'])
+    expect(['Opened', 'Closed', 'Remaining open'].map((label) => cardValue(bim, label))).toEqual(['3', '3', '58'])
     expect(footnotes(harness.element)).toEqual(['BIM Issues: 846 issues not created by LotusWorks are excluded'])
   })
 
@@ -613,10 +613,10 @@ describe('QaqcOverviewVisual with the enriched Autodesk export as the BIM source
     apply(harness, update(tableDataView(ENRICHED_COMBINED_ROWS, { roles: [...enrichedRoles] })))
     click(modeButton(harness.element, 'To date'))
     const bim = row(harness.element, 'BIM Issues')
-    expect([cardValue(bim, 'Opened'), cardValue(bim, 'Closed')]).toEqual(['231', '174'])
+    expect([cardValue(bim, 'Opened'), cardValue(bim, 'Closed')]).toEqual(['231', '173'])
     const topCause = card(quality(harness.element), 'Top root cause')
-    expect(topCause?.querySelector('.qaqc-kpi-value')?.textContent).toBe('Installation')
-    expect(topCause?.querySelector('.qaqc-kpi-detail')?.textContent).toBe('54 of 231 issues · 23%')
+    expect(topCause?.querySelector('.qaqc-kpi-value')?.textContent).toBe('Quality')
+    expect(topCause?.querySelector('.qaqc-kpi-detail')?.textContent).toBe('65 of 231 issues · 28%')
   })
 
   it('counts only the native Autodesk issues with the enrichment slots unbound', () => {
@@ -624,7 +624,7 @@ describe('QaqcOverviewVisual with the enriched Autodesk export as the BIM source
     apply(harness, update(tableDataView(ENRICHED_COMBINED_ROWS, { roles: [...ALL_ROLES, 'rootCause'] })))
     click(modeButton(harness.element, 'To date'))
     const bim = row(harness.element, 'BIM Issues')
-    expect([cardValue(bim, 'Opened'), cardValue(bim, 'Closed'), cardValue(bim, 'Remaining open')]).toEqual(['29', '16', '13'])
+    expect([cardValue(bim, 'Opened'), cardValue(bim, 'Closed'), cardValue(bim, 'Remaining open')]).toEqual(['29', '13', '16'])
     expect(footnotes(harness.element)).toEqual(['BIM Issues: 1,048 issues not created by LotusWorks are excluded'])
   })
 })
@@ -664,7 +664,7 @@ describe('QaqcOverviewVisual filter and drill-down', () => {
     click(filterButton(harness.element))
     tickBuilding(harness.element, 'BK1')
     expect(notes(harness.element)).toEqual(["BIM issues aren't filtered by Building", "Welding isn't filtered by Building"])
-    expect(cardValue(row(harness.element, 'Welding'), 'Signed')).toBe('70')
+    expect(cardValue(row(harness.element, 'Welding'), 'Signed')).toBe('59')
   })
 
   it('filters welding by Building once Tag No is bound', () => {
@@ -673,7 +673,7 @@ describe('QaqcOverviewVisual filter and drill-down', () => {
     click(filterButton(harness.element))
     tickBuilding(harness.element, 'BK1')
     expect(notes(harness.element)).toEqual(["BIM issues aren't filtered by Building"])
-    expect(cardValue(row(harness.element, 'Welding'), 'Signed')).not.toBe('70')
+    expect(cardValue(row(harness.element, 'Welding'), 'Signed')).not.toBe('59')
   })
 
   it('keeps a filter across a resize, without indexing again', () => {
