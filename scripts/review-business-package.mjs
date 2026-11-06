@@ -9,7 +9,6 @@ const __dirname = path.dirname(__filename);
 const workspaceRoot = path.resolve(__dirname, '..');
 const packagesRoot = path.join(workspaceRoot, 'packages');
 const reportPath = path.join(workspaceRoot, 'Business_Package', 'review-report.json');
-const lotusReportPath = path.join(workspaceRoot, 'LotusWorks_Package', 'review-report.json');
 
 // Checks a visual is exempt from, keyed by package dir, then by issue code, with the reason. An exempt check is
 // recorded in the report as "exempt: <reason>" instead of a warning. Every entry needs a reason a reviewer can audit.
@@ -594,17 +593,12 @@ async function main() {
   };
 
   await fs.mkdir(path.dirname(reportPath), { recursive: true });
-  await fs.mkdir(path.dirname(lotusReportPath), { recursive: true });
   const reportJson = JSON.stringify(report, null, 2) + '\n';
-  await Promise.all([
-    fs.writeFile(reportPath, reportJson, 'utf8'),
-    fs.writeFile(lotusReportPath, reportJson, 'utf8'),
-  ]);
+  await fs.writeFile(reportPath, reportJson, 'utf8');
 
   console.log(`[review] Checked ${results.length} visual packages.`);
   console.log(`[review] warnings=${warningCount}, errors=${errorCount}, exempt=${exemptCount}`);
   console.log(`[review] Wrote ${path.relative(workspaceRoot, reportPath)}`);
-  console.log(`[review] Wrote ${path.relative(workspaceRoot, lotusReportPath)}`);
 
   const topFindings = results
     .filter((result) => result.issueCount > 0)

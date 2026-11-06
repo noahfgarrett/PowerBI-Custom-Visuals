@@ -311,7 +311,7 @@ describe('the QCx Combined script', () => {
     return readFileSync(join(REPO_ROOT, ...parts), 'utf8')
   }
 
-  const script = readRepoFile('LotusWorks_Package', 'QCx_Combined.pq')
+  const script = readRepoFile('Business_Package', 'QCx_Combined.pq')
 
   function block(name: string): string {
     const start = script.indexOf(`    ${name} = `)
@@ -371,15 +371,11 @@ describe('the QCx Combined script', () => {
     expect(block('BimRenamed')).toContain('{"Due date", "Due Date"}')
   })
 
-  it('all four copies are identical', () => {
-    expect(readRepoFile('Business_Package', 'QCx_Combined.pq')).toBe(script)
-    expect(setupGuideScript('LotusWorks_Package')).toBe(script)
+  it('the setup guide embeds the same script', () => {
     expect(setupGuideScript('Business_Package')).toBe(script)
   })
 
-  it('both guides state the new column count', () => {
-    for (const folder of ['LotusWorks_Package', 'Business_Package']) {
-      expect(readRepoFile(folder, 'QCx_Combined_SETUP.md')).toContain('It should show 39 columns')
-    }
+  it('the guide states the new column count', () => {
+    expect(readRepoFile('Business_Package', 'QCx_Combined_SETUP.md')).toContain('It should show 39 columns')
   })
 })

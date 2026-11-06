@@ -13,8 +13,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.base.json",
     "review:business": "node scripts/review-business-package.mjs",
     "sync:business": "node scripts/sync-business-package.mjs",
-    "sync:lotusworks": "node scripts/sync-lotusworks-package.mjs",
-    "package:business": "npm run build:all && npm run sync:business && npm run sync:lotusworks",
+    "package:business": "npm run build:all && npm run sync:business",
     "qa:business": "npm run typecheck && npm run review:business",
     "test": "vitest run",
     "test:watch": "vitest"

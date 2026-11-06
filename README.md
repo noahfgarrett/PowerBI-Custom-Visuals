@@ -88,7 +88,6 @@ preview/             Vite page that renders the general charts with mock data
 showcase.html        single-file version of that gallery
 scripts/             packaging, review and maintenance scripts
 Business_Package/    built .pbiviz files and setup guides
-LotusWorks_Package/  the same files, copied by npm run sync:lotusworks
 ```
 
 `packages/core` holds the format pane cards the visuals pick from (axis, legend, data labels, title, number format, sort, reference lines, trend line, target, conditional formatting, crosshair, annotations, color theme, accessibility), plus selection and cross-highlighting helpers, context menu handling, ARIA labels and keyboard navigation, high contrast colors, localization lookups and the animation helpers. Visuals import it with a relative path (`../../core/src`).
@@ -105,7 +104,7 @@ npm install
 npm run build:all                       # pbiviz package in every visual
 npm run build -w @pbi/bar-chart-pro     # one visual
 npm run typecheck
-npm run package:business                # build everything, then copy the .pbiviz files into both package folders
+npm run package:business                # build everything, then copy the .pbiviz files into Business_Package/
 npm run qa:business                     # typecheck, then review every visual's manifest and capabilities
 ```
 

@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 const VISUAL_PACKAGES = ['qaqc-electrical', 'qaqc-issues', 'qaqc-mechanical', 'qaqc-overview', 'qaqc-performance', 'qaqc-welding'] as const
 
 /** The folders the setup guides ship in. */
-const GUIDE_FOLDERS = ['LotusWorks_Package', 'Business_Package'] as const
+const GUIDE_FOLDERS = ['Business_Package'] as const
 
 /**
  * Text that keeps "QAQC" because it names the user's own data: Smartsheet columns and the QAQC sign-off they record.
